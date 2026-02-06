@@ -12,7 +12,12 @@
           "package_name": "com.dabbler.dabblerapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "836345375454-o9pv3luuovmc4d3rdc0ohbsqaaqqtssm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyANuXa9tsj6aIo7SXA0a4G_crkRqrFACoE"

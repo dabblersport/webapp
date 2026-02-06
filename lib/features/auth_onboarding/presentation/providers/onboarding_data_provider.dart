@@ -8,10 +8,12 @@ class OnboardingData {
   final String? displayName;
   final int? age;
   final String? gender;
-  final String? intention; // organise, compete, social
+  final String?
+  intention; // persona_type: player, organiser, hoster, socialiser
   final String? preferredSport; // single sport (required)
   final List<String>? interests; // up to 3 sports (optional)
   final String? username;
+  final String? country; // User's country from country picker
 
   OnboardingData({
     this.email,
@@ -23,6 +25,7 @@ class OnboardingData {
     this.preferredSport,
     this.interests,
     this.username,
+    this.country,
   }) : assert(
          email != null || phone != null,
          'Either email or phone must be provided',
@@ -38,6 +41,7 @@ class OnboardingData {
     String? preferredSport,
     List<String>? interests,
     String? username,
+    String? country,
   }) {
     return OnboardingData(
       email: email ?? this.email,
@@ -49,6 +53,7 @@ class OnboardingData {
       preferredSport: preferredSport ?? this.preferredSport,
       interests: interests ?? this.interests,
       username: username ?? this.username,
+      country: country ?? this.country,
     );
   }
 
@@ -64,6 +69,7 @@ class OnboardingData {
       'preferredSport': preferredSport,
       'interests': interests,
       'username': username,
+      'country': country,
     };
   }
 
@@ -81,12 +87,12 @@ class OnboardingData {
           ? List<String>.from(map['interests'] as List)
           : null,
       username: map['username'] as String?,
+      country: map['country'] as String?,
     );
   }
 
   /// Check if user info screen is complete
-  bool get hasUserInfo =>
-      displayName != null && age != null && age! >= 16 && gender != null;
+  bool get hasUserInfo => age != null && age! >= 16 && gender != null;
 
   /// Check if intention is selected
   bool get hasIntention => intention != null;
@@ -101,10 +107,12 @@ class OnboardingData {
   bool get isComplete =>
       hasUserInfo && hasIntention && hasSports && hasUsername;
 
-  /// Get profile_type based on intention
-  /// organise -> organiser, compete/social -> player
+  /// Get profile_type based on intention (DEPRECATED - use persona_type instead)
+  /// Database now uses ONLY persona_type column with values: player, organiser, hoster, socialiser
+  @Deprecated('Use intention field directly as persona_type')
   String get profileType {
-    if (intention == 'organise') return 'organiser';
+    // Legacy mapping for backwards compatibility
+    if (intention == 'organiser') return 'organiser';
     return 'player';
   }
 
@@ -131,7 +139,7 @@ class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
 
   /// Update user info (Screen 1)
   void setUserInfo({
-    required String displayName,
+    String? displayName,
     required int age,
     required String gender,
   }) {

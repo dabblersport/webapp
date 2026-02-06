@@ -118,7 +118,7 @@ class AuthProfileService {
     String? nationality,
     String? skillLevel,
     List<String>? sports,
-    List<String>? interests,
+    String? interests,
     String? intent,
     String? location,
     String? timezone,

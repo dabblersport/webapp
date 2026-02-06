@@ -13,20 +13,33 @@ class RoutePaths {
   static const String resetPassword = '/reset-password';
   static const String register = '/register';
   static const String createUserInfo = '/create-user-info';
-  static const String sportsSelection = '/sports-selection';
+  static const String interestsSelection = '/interests-selection';
   static const String intentSelection = '/intent-selection';
   static const String setPassword = '/set-password';
   static const String setUsername = '/set-username';
+  static const String authWelcome = '/auth-welcome';
   static const String welcome = '/welcome';
   static const String emailVerification = '/email-verification';
 
   // Onboarding Routes
   static const String onboardingWelcome = '/onboarding-welcome';
   static const String onboardingBasicInfo = '/onboarding-basic-info';
+  static const String onboardingPersonaSelection =
+      '/onboarding-persona-selection';
+  static const String onboardingInterestsSelection =
+      '/onboarding-interests-selection';
+  static const String onboardingPrimarySport = '/onboarding-primary-sport';
   static const String onboardingSports = '/onboarding-sports';
   static const String onboardingPreferences = '/onboarding-preferences';
   static const String onboardingPrivacy = '/onboarding-privacy';
   static const String onboardingCompletion = '/onboarding-completion';
+  static const String profileSwitcher = '/profile-switcher';
+
+  // Add Persona Flow (from Settings)
+  static const String addPersonaInterests = '/add-persona/interests';
+  static const String addPersonaPrimarySport = '/add-persona/primary-sport';
+  static const String addPersonaUsername = '/add-persona/username';
+  static const String addPersonaWelcome = '/add-persona/welcome';
 
   // Main App
   static const String home = '/home';
@@ -117,10 +130,22 @@ class RouteNames {
   // Profile Onboarding Routes
   static const String onboardingWelcome = 'onboarding-welcome';
   static const String onboardingBasicInfo = 'onboarding-basic-info';
+  static const String onboardingPersonaSelection =
+      'onboarding-persona-selection';
+  static const String onboardingInterestsSelection =
+      'onboarding-interests-selection';
+  static const String onboardingPrimarySport = 'onboarding-primary-sport';
   static const String onboardingSports = 'onboarding-sports';
   static const String onboardingPreferences = 'onboarding-preferences';
   static const String onboardingPrivacy = 'onboarding-privacy';
   static const String onboardingCompletion = 'onboarding-completion';
+  static const String profileSwitcher = 'profile-switcher';
+
+  // Add Persona Flow Routes
+  static const String addPersonaInterests = 'add-persona-interests';
+  static const String addPersonaPrimarySport = 'add-persona-primary-sport';
+  static const String addPersonaUsername = 'add-persona-username';
+  static const String addPersonaWelcome = 'add-persona-welcome';
 
   // Feature Routes
   static const String profile = 'profile';

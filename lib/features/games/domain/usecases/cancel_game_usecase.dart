@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import '../../../../features/authentication/domain/usecases/usecase.dart';
+import 'package:dabbler/features/auth_onboarding/domain/usecases/usecase.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import '../repositories/games_repository.dart';
 import '../repositories/bookings_repository.dart';
@@ -265,6 +265,7 @@ class CancelGameUseCase
       // This would integrate with your notification service
       // Could be push notifications, email, SMS, or in-app notifications
 
+      // ignore: unused_local_variable
       final message =
           'Game "${game.title}" scheduled for '
           '${game.scheduledDate.day}/${game.scheduledDate.month} '

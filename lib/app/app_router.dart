@@ -8,32 +8,40 @@ import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 // Onboarding screens
-import 'package:dabbler/features/landing/presentation/screens/landing_page.dart';
-import 'package:dabbler/features/misc/presentation/screens/identity_verification_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/email_input_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/otp_verification_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/auth_welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/identity_verification_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/email_input_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
-import 'package:dabbler/features/misc/presentation/screens/create_user_information.dart';
-import 'package:dabbler/features/misc/presentation/screens/sports_selection_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/intent_selection_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/set_password_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/set_username_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/welcome_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/email_verification_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/create_user_information.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/intent_selection_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/interests_selection_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/set_password_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/set_username_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/email_verification_screen.dart';
 
 // Profile Onboarding screens
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_welcome_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_basic_info_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_sports_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_preferences_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_privacy_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/onboarding/onboarding_completion_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_sports_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_preferences_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_privacy_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_completion_screen.dart';
+
+// New Onboarding System screens
+import 'package:dabbler/features/auth_onboarding/presentation/screens/primary_sport_selection_screen.dart';
+
+// DB-authoritative onboarding state
+import 'package:dabbler/features/auth_onboarding/presentation/controllers/onboarding_controller.dart'
+    as db_onboarding;
+import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_state.dart';
 
 // Authentication screens
-import 'package:dabbler/features/authentication/presentation/screens/forgot_password_screen.dart';
-import 'package:dabbler/features/authentication/presentation/screens/enter_password_screen.dart';
-import 'package:dabbler/features/authentication/presentation/screens/reset_password_screen.dart';
-import 'package:dabbler/features/authentication/presentation/screens/register_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/forgot_password_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/email_password_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/reset_password_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/register_screen.dart';
 
 // Core screens
 import 'package:dabbler/features/error/presentation/pages/error_page.dart';
@@ -55,13 +63,16 @@ import 'package:dabbler/features/profile/presentation/screens/settings/notificat
 import 'package:dabbler/features/profile/presentation/screens/preferences/game_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/preferences/availability_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
-import 'package:dabbler/features/misc/presentation/screens/language_selection_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/language_selection_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/contact_support_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/bug_report_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/terms_of_service_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/privacy_policy_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/licenses_screen.dart';
+
+// Add Persona screens (using consolidated onboarding screens with mode parameter)
+// No longer need separate add_persona_* imports - using unified screens
 
 // Organiser venue submissions
 import 'package:dabbler/data/models/venue_submission_model.dart';
@@ -84,11 +95,11 @@ import 'package:dabbler/features/social/presentation/screens/social_feed_screen.
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/social_feed/thread_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/onboarding/social_onboarding_welcome_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/onboarding/social_onboarding_friends_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/onboarding/social_onboarding_privacy_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/onboarding/social_onboarding_notifications_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/onboarding/social_onboarding_complete_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_friends_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_privacy_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_notifications_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_complete_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/add_friends_screen.dart';
 
@@ -98,7 +109,7 @@ import 'package:dabbler/features/admin/presentation/screens/safety_overview_scre
 
 // Utilities
 import '../utils/constants/route_constants.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import '../utils/transitions/page_transitions.dart';
 
 // Import RegistrationData from the correct location
@@ -120,7 +131,8 @@ class AppRouter {
 
   static final router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: '/landing', // Start with landing page
+    // Show landing immediately after the native splash.
+    initialLocation: RoutePaths.landing,
     debugLogDiagnostics: true, // Enable debug logging to see what's happening
     observers: [_routeObserver],
     errorBuilder: (context, state) => ErrorPage(message: state.error?.message),
@@ -156,6 +168,7 @@ class AppRouter {
       // Phone users become authenticated before onboarding, so we handle them separately
       const authPaths = <String>{
         RoutePaths.landing, // Landing page
+        RoutePaths.authWelcome,
         RoutePaths.register,
         RoutePaths.enterPassword,
         RoutePaths.forgotPassword,
@@ -165,10 +178,15 @@ class AppRouter {
         RoutePaths.otpVerification,
         RoutePaths.createUserInfo,
         RoutePaths.intentSelection,
-        RoutePaths.sportsSelection,
+        RoutePaths.interestsSelection,
         RoutePaths.setPassword,
         RoutePaths.setUsername,
         RoutePaths.emailVerification,
+
+        // New DB-authoritative onboarding routes
+        RoutePaths.onboardingPersonaSelection,
+        RoutePaths.onboardingInterestsSelection,
+        RoutePaths.onboardingPrimarySport,
       };
 
       // Onboarding paths that both authenticated and unauthenticated users can access
@@ -178,9 +196,14 @@ class AppRouter {
         RoutePaths.otpVerification,
         RoutePaths.createUserInfo,
         RoutePaths.intentSelection,
-        RoutePaths.sportsSelection,
+        RoutePaths.interestsSelection,
         RoutePaths.setPassword,
         RoutePaths.setUsername,
+
+        // New DB-authoritative onboarding routes
+        RoutePaths.onboardingPersonaSelection,
+        RoutePaths.onboardingInterestsSelection,
+        RoutePaths.onboardingPrimarySport,
       };
 
       final loc = state.matchedLocation;
@@ -199,53 +222,91 @@ class AppRouter {
 
       // PRIORITY CHECK: Check Supabase auth state directly (may be updated before provider)
       // This catches OAuth callbacks where auth state might not be reflected in provider yet
+      // Also ensures ALL authenticated users have a profile before accessing protected routes
       try {
         final supabase = Supabase.instance.client;
         final currentUser = supabase.auth.currentUser;
         if (currentUser != null) {
-          // Check if this is a Google user
-          final identities = currentUser.identities;
-          final isGoogleUser =
-              currentUser.emailConfirmedAt != null &&
-              ((identities != null &&
-                      identities.isNotEmpty &&
-                      identities.any(
-                        (identity) => identity.provider == 'google',
-                      )) ||
-                  (currentUser.appMetadata['provider'] == 'google'));
+          // Check if profile exists for this user
+          final profileResponse = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('user_id', currentUser.id)
+              .limit(1)
+              .maybeSingle();
 
-          if (isGoogleUser) {
-            // Check if profile exists and onboarding is complete
-            final profileResponse = await supabase
-                .from('profiles')
-                .select('id, onboard')
-                .eq('user_id', currentUser.id)
-                .limit(1)
-                .maybeSingle();
+          final hasProfile = profileResponse != null;
 
-            final isOnboarded =
-                profileResponse != null &&
-                (profileResponse['onboard'] == true ||
-                    profileResponse['onboard'] == 'true');
-
-            if (profileResponse == null || !isOnboarded) {
-              // Google user without profile or not onboarded - redirect to onboarding start
-              // Allow them to stay on any onboarding screen (CreateUserInfo, SportsSelection, IntentSelection, SetUsername)
-              if (!isOnboardingPage) {
-                logRoute(
-                  'redirect (google not onboarded) -> ${RoutePaths.createUserInfo}',
-                );
-                return RoutePaths.createUserInfo;
-              }
-              // Already on onboarding, allow it
-              logRoute('allow (google onboarding)');
-              return null;
+          if (!hasProfile) {
+            // User is authenticated but has no profile - redirect to onboarding
+            // Allow them to stay on any onboarding screen OR welcome screen
+            if (!isOnboardingPage && loc != RoutePaths.welcome) {
+              logRoute('redirect (no profile) -> ${RoutePaths.createUserInfo}');
+              return RoutePaths.createUserInfo;
             }
+            // Already on onboarding or welcome, allow it
+            logRoute('allow (onboarding/welcome - no profile)');
+            return null;
           }
         }
       } catch (e) {
-        logRoute('google onboard check failed: $e');
+        logRoute('profile check failed: $e');
         // Continue with normal flow if check fails
+      }
+
+      // DB-authoritative onboarding routing for authenticated users.
+      // This is the single place that decides which onboarding step screen is next.
+      // Skip enforcement when navigating to welcome screen (handles returning users)
+      if (isAuthenticated && loc != RoutePaths.welcome) {
+        final onboardingNotifier = container.read(
+          db_onboarding.onboardingControllerProvider.notifier,
+        );
+        var onboardingState = container.read(
+          db_onboarding.onboardingControllerProvider,
+        );
+
+        // Only hit the DB when we haven't resolved resume state yet.
+        if (onboardingState.step == OnboardingStep.checking &&
+            !onboardingState.isLoading) {
+          // Important: don't await network/DB work inside redirect.
+          // Kicking this off asynchronously avoids the app appearing to “freeze”
+          // on routes like OTP when the network is slow.
+          unawaited(onboardingNotifier.checkResumeState());
+        }
+
+        String? desired;
+        switch (onboardingState.step) {
+          case OnboardingStep.collectingBasicInfo:
+            desired = RoutePaths.createUserInfo;
+            break;
+
+          case OnboardingStep.selectingPersona:
+            // If persona already chosen (in-memory), proceed to the next data-collection screen.
+            desired = onboardingState.data.personaType == null
+                ? RoutePaths.onboardingPersonaSelection
+                : RoutePaths.createUserInfo;
+            break;
+
+          case OnboardingStep.selectingPrimarySport:
+            desired = RoutePaths.onboardingInterestsSelection;
+            break;
+
+          case OnboardingStep.completed:
+          case OnboardingStep.creatingProfile:
+          case OnboardingStep.creatingPersonaExtension:
+          case OnboardingStep.creatingSportProfile:
+          case OnboardingStep.finalizing:
+          case OnboardingStep.checking:
+          case OnboardingStep.error:
+            desired = null;
+            break;
+        }
+
+        // If onboarding needs a specific route, enforce it.
+        if (desired != null && loc != desired) {
+          logRoute('redirect (onboarding step) -> $desired');
+          return desired;
+        }
       }
 
       // If not authenticated, always stay on onboarding/auth screens
@@ -260,74 +321,29 @@ class AppRouter {
         return null;
       }
 
-      // Check if user has completed onboarding
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser != null && !isOnboardingPage && loc != '/welcome') {
-        try {
-          final profileResponse = await Supabase.instance.client
-              .from('profiles')
-              .select('id, onboard')
-              .eq('user_id', currentUser.id)
-              .limit(1)
-              .maybeSingle();
-
-          final isOnboarded =
-              profileResponse != null &&
-              (profileResponse['onboard'] == true ||
-                  profileResponse['onboard'] == 'true');
-
-          if (profileResponse == null || !isOnboarded) {
-            // User not onboarded - redirect to onboarding
-            logRoute(
-              'redirect (not onboarded) -> ${RoutePaths.createUserInfo}',
-            );
-            return RoutePaths.createUserInfo;
-          }
-        } catch (e) {
-          logRoute('onboard check failed: $e');
-          // Continue with normal flow if check fails
-        }
+      // After each explicit login, force a welcome screen once per session.
+      // This intentionally does not run during onboarding enforcement above.
+      if (routerRefreshNotifier.needsPostLoginWelcome &&
+          loc != RoutePaths.welcome &&
+          loc != RoutePaths.authWelcome &&
+          loc != RoutePaths.emailVerification &&
+          !isOnboardingPage) {
+        logRoute('redirect (post-login welcome) -> ${RoutePaths.welcome}');
+        return RoutePaths.welcome;
       }
+
+      // NOTE: Legacy onboard redirects removed.
+      // Authenticated onboarding gating is handled above via OnboardingController DB state.
 
       // If authenticated and on an auth page (except welcome, email verification, and onboarding), check profile
       // Allow authenticated users to access onboarding (for phone users completing profile)
       // Allow authenticated users to access email verification (to complete profile creation)
       if (isAuthenticated &&
           isOnAuthPage &&
-          loc != '/welcome' &&
+          loc != RoutePaths.welcome &&
+          loc != RoutePaths.authWelcome &&
           loc != RoutePaths.emailVerification &&
           !isOnboardingPage) {
-        // Check if user has completed onboarding
-        try {
-          final supabase = Supabase.instance.client;
-          final currentUser = supabase.auth.currentUser;
-          if (currentUser != null) {
-            final profileResponse = await supabase
-                .from('profiles')
-                .select('id, onboard')
-                .eq('user_id', currentUser.id)
-                .limit(1)
-                .maybeSingle();
-
-            final isOnboarded =
-                profileResponse != null &&
-                (profileResponse['onboard'] == true ||
-                    profileResponse['onboard'] == 'true');
-
-            // If no profile exists or not onboarded, user needs to complete onboarding
-            if (profileResponse == null || !isOnboarded) {
-              // Redirect to onboarding start
-              logRoute(
-                'redirect (auth page but not onboarded) -> ${RoutePaths.createUserInfo}',
-              );
-              return RoutePaths.createUserInfo;
-            }
-          }
-        } catch (e) {
-          logRoute('auth-page onboard check failed: $e');
-          // If check fails, proceed with normal redirect
-        }
-
         // User has completed onboarding - redirect to home
         logRoute('redirect (authed on auth page) -> ${RoutePaths.home}');
         return RoutePaths.home;
@@ -338,35 +354,9 @@ class AppRouter {
       if (isAuthenticated &&
           !isOnAuthPage &&
           !isOnboardingPage &&
-          loc != '/welcome') {
-        try {
-          final supabase = Supabase.instance.client;
-          final currentUser = supabase.auth.currentUser;
-          if (currentUser != null) {
-            final profileResponse = await supabase
-                .from('profiles')
-                .select('id, onboard')
-                .eq('user_id', currentUser.id)
-                .limit(1)
-                .maybeSingle();
-
-            final isOnboarded =
-                profileResponse != null &&
-                (profileResponse['onboard'] == true ||
-                    profileResponse['onboard'] == 'true');
-
-            // If no profile exists or not onboarded, redirect to onboarding
-            if (profileResponse == null || !isOnboarded) {
-              logRoute(
-                'redirect (protected route not onboarded) -> ${RoutePaths.createUserInfo}',
-              );
-              return RoutePaths.createUserInfo;
-            }
-          }
-        } catch (e) {
-          logRoute('protected-route onboard check failed: $e');
-          // If check fails, allow access (better UX than blocking)
-        }
+          loc != RoutePaths.welcome &&
+          loc != RoutePaths.authWelcome) {
+        // Protected-route gating handled via onboarding step enforcement above.
       }
 
       logRoute('allow');
@@ -379,11 +369,36 @@ class AppRouter {
 
   // Route Definitions - Minimal working set
   static List<RouteBase> get _routes => [
+    // Root route - handles OAuth callbacks with ?code=xxx
+    GoRoute(
+      path: '/',
+      redirect: (context, state) {
+        // If there's a code query param, this is an OAuth callback
+        // Let the redirect logic handle where to send the user
+        final hasCode = state.uri.queryParameters.containsKey('code');
+        if (hasCode) {
+          // Return landing so redirect logic can properly route authenticated user
+          return RoutePaths.landing;
+        }
+        // Otherwise redirect to landing
+        return RoutePaths.landing;
+      },
+    ),
+
     // Landing page route
     GoRoute(
       path: '/landing',
       pageBuilder: (context, state) =>
           FadeTransitionPage(key: state.pageKey, child: const LandingPage()),
+    ),
+
+    // Auth-choice welcome screen (after landing)
+    GoRoute(
+      path: RoutePaths.authWelcome,
+      pageBuilder: (context, state) => FadeTransitionPage(
+        key: state.pageKey,
+        child: const AuthWelcomeScreen(),
+      ),
     ),
 
     GoRoute(
@@ -515,13 +530,13 @@ class AppRouter {
       ),
     ),
 
-    // Sports selection route
+    // Interests selection route (after intent selection)
     GoRoute(
-      path: RoutePaths.sportsSelection,
+      path: RoutePaths.interestsSelection,
       pageBuilder: (context, state) {
         return SlideTransitionPage(
           key: state.pageKey,
-          child: const SportsSelectionScreen(),
+          child: const InterestsSelectionScreen(),
           direction: SlideDirection.fromLeft,
         );
       },
@@ -571,9 +586,17 @@ class AppRouter {
         final displayName = extra is Map
             ? extra['displayName'] as String?
             : 'Player';
+        final personaType = extra is Map
+            ? extra['personaType'] as String?
+            : 'player';
+        final isFirstTime = extra is Map ? extra['isFirstTime'] as bool? : true;
         return ScaleTransitionPage(
           key: state.pageKey,
-          child: WelcomeScreen(displayName: displayName ?? 'Player'),
+          child: WelcomeScreen(
+            displayName: displayName ?? 'Player',
+            personaType: personaType ?? 'player',
+            isFirstTime: isFirstTime ?? true,
+          ),
         );
       },
     ),
@@ -598,16 +621,6 @@ class AppRouter {
       pageBuilder: (context, state) => SlideTransitionPage(
         key: state.pageKey,
         child: const ProfileOnboardingWelcomeScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    ),
-
-    GoRoute(
-      path: RoutePaths.onboardingBasicInfo,
-      name: RouteNames.onboardingBasicInfo,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingBasicInfoScreen(),
         direction: SlideDirection.fromLeft,
       ),
     ),
@@ -648,6 +661,28 @@ class AppRouter {
       pageBuilder: (context, state) => ScaleTransitionPage(
         key: state.pageKey,
         child: const OnboardingCompletionScreen(),
+      ),
+    ),
+
+    // Interests Selection Route
+    // Note: This is the sports interests selection during onboarding
+    GoRoute(
+      path: RoutePaths.onboardingInterestsSelection,
+      name: RouteNames.onboardingInterestsSelection,
+      pageBuilder: (context, state) => FadeTransitionPage(
+        key: state.pageKey,
+        child: const InterestsSelectionScreen(),
+      ),
+    ),
+
+    // Primary Sport Selection Route
+    // Note: Select ONE sport to represent the user
+    GoRoute(
+      path: RoutePaths.onboardingPrimarySport,
+      name: RouteNames.onboardingPrimarySport,
+      pageBuilder: (context, state) => FadeTransitionPage(
+        key: state.pageKey,
+        child: const PrimarySportSelectionScreen(),
       ),
     ),
 
@@ -841,6 +876,55 @@ class AppRouter {
         child: const SettingsScreen(),
         type: SharedAxisType.horizontal,
       ),
+    ),
+
+    // Add Persona Flow Routes (from Settings)
+    GoRoute(
+      path: RoutePaths.addPersonaInterests,
+      name: RouteNames.addPersonaInterests,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const InterestsSelectionScreen(
+          mode: InterestsSelectionMode.addPersona,
+        ),
+        type: SharedAxisType.horizontal,
+      ),
+    ),
+    GoRoute(
+      path: RoutePaths.addPersonaPrimarySport,
+      name: RouteNames.addPersonaPrimarySport,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const PrimarySportSelectionScreen(
+          mode: PrimarySportSelectionMode.addPersona,
+        ),
+        type: SharedAxisType.horizontal,
+      ),
+    ),
+    GoRoute(
+      path: RoutePaths.addPersonaUsername,
+      name: RouteNames.addPersonaUsername,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const SetUsernameScreen(mode: SetUsernameMode.addPersona),
+        type: SharedAxisType.horizontal,
+      ),
+    ),
+    GoRoute(
+      path: RoutePaths.addPersonaWelcome,
+      name: RouteNames.addPersonaWelcome,
+      pageBuilder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return FadeTransitionPage(
+          key: state.pageKey,
+          child: WelcomeScreen(
+            displayName: extra?['displayName'] as String? ?? '',
+            personaType: extra?['personaType'] as String? ?? 'player',
+            isFirstTime: extra?['isFirstTime'] as bool? ?? false,
+            isConversion: extra?['isConversion'] as bool? ?? false,
+          ),
+        );
+      },
     ),
 
     // Transactions route

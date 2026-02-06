@@ -10,7 +10,7 @@ import 'package:dabbler/data/models/social/conversation_model.dart';
 import 'package:dabbler/providers.dart' as global;
 import '../../../../utils/enums/social_enums.dart'; // Import MessageType
 import '../services/social_service.dart';
-import '../../authentication/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 
 // =============================================================================
 // POSTS CONTROLLER PROVIDER

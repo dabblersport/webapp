@@ -88,45 +88,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  void _showNotificationDrawer() {
-    showModalBottomSheet<void>(
+  Future<void> _showNotificationDrawer() async {
+    final didTakeAction = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       isDismissible: true,
       enableDrag: true,
       showDragHandle: true,
+      useSafeArea: true,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (context) {
         return NotificationPermissionDrawer(
           onEnableNotifications: () async {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
             final notificationService = PushNotificationService.instance;
-            await notificationService.saveNotificationPreference('allow');
             final granted = await notificationService
                 .requestNotificationPermission();
-            if (mounted && granted) {
-              ScaffoldMessenger.of(context).showSnackBar(
+
+            if (!mounted) return;
+
+            if (granted) {
+              await notificationService.saveNotificationPreference('allow');
+              if (!mounted) return;
+              ScaffoldMessenger.of(this.context).showSnackBar(
                 const SnackBar(
                   content: Text('Notifications enabled!'),
                   behavior: SnackBarBehavior.floating,
                 ),
               );
+            } else {
+              // Don't mark as "allow" unless permission is actually granted.
+              // Also avoid re-prompting immediately.
+              await notificationService.saveNotificationPreference(
+                'remind_later',
+              );
             }
           },
           onRemindLater: () async {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
             final notificationService = PushNotificationService.instance;
             await notificationService.saveNotificationPreference(
               'remind_later',
             );
           },
           onNoThanks: () async {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
             final notificationService = PushNotificationService.instance;
             await notificationService.saveNotificationPreference('never');
           },
         );
       },
     );
+
+    // If the user dismissed the sheet (tap outside / swipe down) without
+    // choosing any explicit action, apply the remind-later cooldown to avoid
+    // showing it again immediately when they return to Home.
+    if (!mounted) return;
+    if (didTakeAction != true) {
+      await PushNotificationService.instance.saveNotificationPreference(
+        'remind_later',
+      );
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -193,7 +218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go(RoutePaths.profile),
+            onTap: () => context.push(RoutePaths.profile),
             child: DSAvatar.size48(
               imageUrl: resolveAvatarUrl(
                 _userProfile?['avatar_url'] as String?,
@@ -221,7 +246,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(width: 12),
           if (FeatureFlags.enableNotificationCenter)
             IconButton.filledTonal(
-              onPressed: () => context.go(RoutePaths.notifications),
+              onPressed: () => context.push(RoutePaths.notifications),
               icon: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -253,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           if (FeatureFlags.enableNotificationCenter) const SizedBox(width: 8),
           IconButton.filledTonal(
-            onPressed: () => context.go(RoutePaths.socialFriends),
+            onPressed: () => context.push(RoutePaths.socialFriends),
             icon: const Icon(Iconsax.people_copy),
             style: IconButton.styleFrom(
               backgroundColor: Colors.transparent,
@@ -367,7 +392,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   return GestureDetector(
                     onTap: () {
                       if (player['user_id'] != null) {
-                        context.go(
+                        context.push(
                           '${RoutePaths.userProfile}/${player['user_id']}',
                         );
                       }
@@ -514,12 +539,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Feed',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.only(top: 12),
                 child: Card(
@@ -577,28 +596,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               )
             else
-              Column(
-                children: filteredPosts.map((post) {
-                  // Subscribe to realtime updates for each post
-                  _subscribeToPostLikes(post.id);
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  children: filteredPosts.map((post) {
+                    // Subscribe to realtime updates for each post
+                    _subscribeToPostLikes(post.id);
 
-                  return PostCard(
-                    post: post,
-                    onLike: () => _handleLikePost(post.id),
-                    onComment: () => _handleCommentPost(post.id),
-                    onDelete: () {
-                      // Refresh feed after deletion
-                      ref.invalidate(latestFeedPostsProvider);
-                    },
-                    onPostTap: () => context.pushNamed(
-                      RouteNames.socialPostDetail,
-                      pathParameters: {'postId': post.id},
-                    ),
-                    onProfileTap: () {
-                      context.go('${RoutePaths.userProfile}/${post.authorId}');
-                    },
-                  );
-                }).toList(),
+                    return PostCard(
+                      post: post,
+                      onLike: () => _handleLikePost(post.id),
+                      onComment: () => _handleCommentPost(post.id),
+                      onDelete: () {
+                        // Refresh feed after deletion
+                        ref.invalidate(latestFeedPostsProvider);
+                      },
+                      onPostTap: () => context.pushNamed(
+                        RouteNames.socialPostDetail,
+                        pathParameters: {'postId': post.id},
+                      ),
+                      onProfileTap: () {
+                        context.push(
+                          '${RoutePaths.userProfile}/${post.authorId}',
+                        );
+                      },
+                    );
+                  }).toList(),
+                ),
               ),
           ],
         );
@@ -606,12 +630,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       loading: () => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Feed',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Column(
@@ -627,12 +645,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       error: (error, stack) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Feed',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.only(top: 12),
             child: Card(

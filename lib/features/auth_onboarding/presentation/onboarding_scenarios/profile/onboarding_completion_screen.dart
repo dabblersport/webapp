@@ -2,7 +2,8 @@ import 'package:flutter/material.dart' hide Badge;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
-import '../../../services/onboarding_gamification.dart' as gamification;
+import 'package:dabbler/features/profile/services/onboarding_gamification.dart'
+    as gamification;
 import '../../../../../themes/design_system.dart';
 import 'onboarding_welcome_screen.dart'; // For providers
 

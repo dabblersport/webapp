@@ -1,4 +1,4 @@
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/domain/services/persona_service.dart';
+import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -23,7 +26,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final String _appVersion = '1.0.5';
+  final String _appVersion = '1.6.1';
 
   final List<SettingsSection> _allSections = [
     SettingsSection(
@@ -169,6 +172,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         );
 
     _animationController.forward();
+
+    // Fetch user's active personas for dynamic "Add Profile" section
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(personaServiceProvider.notifier).fetchUserPersonas();
+    });
   }
 
   @override
@@ -196,6 +204,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 const SizedBox(height: 24),
                 _buildHeroCard(context),
                 _buildSearchBar(context),
+                _buildProfileSection(context),
                 ..._buildFilteredSectionsList(context),
                 _buildSignOutSection(context),
                 _buildVersionInfo(context),
@@ -475,6 +484,311 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
+  /// Build dynamic "Profile" section based on available personas
+  Widget _buildProfileSection(BuildContext context) {
+    final personaState = ref.watch(personaServiceProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    // Don't show if still loading
+    if (personaState.isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    // Check if user is at profile limit
+    final isAtLimit = personaState.isAtProfileLimit;
+
+    // Get available personas (only if not at limit)
+    final availablePersonas = isAtLimit
+        ? <PersonaAvailability>[]
+        : personaState.availablePersonas;
+
+    // Filter by search if active
+    final filteredPersonas = _searchQuery.isEmpty
+        ? availablePersonas
+        : availablePersonas.where((p) {
+            final searchLower = _searchQuery.toLowerCase();
+            return p.targetPersona.displayName.toLowerCase().contains(
+                  searchLower,
+                ) ||
+                p.targetPersona.description.toLowerCase().contains(
+                  searchLower,
+                ) ||
+                'profile'.contains(searchLower) ||
+                'become'.contains(searchLower) ||
+                'add'.contains(searchLower);
+          }).toList();
+
+    // Show limit message if at limit (and search matches or empty)
+    final showLimitMessage =
+        isAtLimit &&
+        (_searchQuery.isEmpty ||
+            'profile'.contains(_searchQuery.toLowerCase()) ||
+            'limit'.contains(_searchQuery.toLowerCase()) ||
+            'add'.contains(_searchQuery.toLowerCase()));
+
+    // Don't show section if no available personas AND not showing limit message
+    if (filteredPersonas.isEmpty && !showLimitMessage) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 0, bottom: 12),
+            child: Text(
+              'Profiles',
+              style: textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurfaceVariant,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          // Show limit message if at max profiles
+          if (showLimitMessage)
+            Card(
+              elevation: 0,
+              color: colorScheme.surfaceContainerLow,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Iconsax.info_circle_copy,
+                      color: colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        PersonaRules.profileLimitMessage,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          // Show add options if available
+          if (filteredPersonas.isNotEmpty) ...[
+            if (showLimitMessage) const SizedBox(height: 12),
+            Card(
+              elevation: 0,
+              color: colorScheme.categoryProfile.withValues(
+                alpha: isDarkMode ? 0.08 : 0.06,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                children: filteredPersonas.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final availability = entry.value;
+                  final isLast = index == filteredPersonas.length - 1;
+
+                  return _buildPersonaItem(
+                    context,
+                    availability,
+                    showDivider: !isLast,
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPersonaItem(
+    BuildContext context,
+    PersonaAvailability availability, {
+    required bool showDivider,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isConversion = availability.actionType == PersonaActionType.convert;
+
+    // Get icon based on persona type
+    IconData icon;
+    switch (availability.targetPersona) {
+      case PersonaType.player:
+        icon = Iconsax.people_copy;
+        break;
+      case PersonaType.organiser:
+        icon = Iconsax.calendar_edit_copy;
+        break;
+      case PersonaType.hoster:
+        icon = Iconsax.building_copy;
+        break;
+      case PersonaType.socialiser:
+        icon = Iconsax.message_copy;
+        break;
+    }
+
+    // Title based on action type
+    final title = isConversion
+        ? 'Convert to ${availability.targetPersona.displayName}'
+        : 'Become a ${availability.targetPersona.displayName}';
+
+    // Subtitle with description
+    final subtitle = isConversion
+        ? 'Replace your ${availability.convertFrom?.displayName} profile'
+        : availability.targetPersona.description;
+
+    return Column(
+      children: [
+        ListTile(
+          onTap: () => _startPersonaFlow(availability),
+          leading: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isConversion
+                  ? colorScheme.tertiary.withValues(alpha: 0.12)
+                  : colorScheme.categoryProfile.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              color: isConversion
+                  ? colorScheme.tertiary
+                  : colorScheme.categoryProfile,
+            ),
+          ),
+          title: Text(
+            title,
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isConversion)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.tertiary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'CONVERT',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.tertiary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+              Icon(
+                Iconsax.arrow_right_3_copy,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ),
+        ),
+        if (showDivider)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _startPersonaFlow(PersonaAvailability availability) {
+    final personaState = ref.read(personaServiceProvider);
+    final primaryProfile = personaState.primaryProfile;
+
+    // Initialize add persona data with shared attributes
+    ref
+        .read(addPersonaDataProvider.notifier)
+        .init(
+          targetPersona: availability.targetPersona,
+          actionType: availability.actionType,
+          convertFrom: availability.convertFrom,
+          age: primaryProfile?.age,
+          gender: primaryProfile?.gender,
+          existingProfileId:
+              availability.actionType == PersonaActionType.convert
+              ? personaState.activeProfiles
+                    .firstWhere(
+                      (p) => p.personaType == availability.convertFrom,
+                      orElse: () => personaState.activeProfiles.first,
+                    )
+                    .profileId
+              : null,
+        );
+
+    // Show confirmation for conversion, otherwise start flow directly
+    if (availability.actionType == PersonaActionType.convert) {
+      _showConversionConfirmDialog(availability);
+    } else {
+      // Navigate to first screen of add flow (interests selection)
+      context.push(RoutePaths.addPersonaInterests);
+    }
+  }
+
+  void _showConversionConfirmDialog(PersonaAvailability availability) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        title: Text('Convert to ${availability.targetPersona.displayName}?'),
+        content: Text(
+          'This will deactivate your ${availability.convertFrom?.displayName} profile and create a new ${availability.targetPersona.displayName} profile.\n\n'
+          'Your account data (age, gender) will be preserved.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to first screen of add flow
+              context.push(RoutePaths.addPersonaInterests);
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSignOutSection(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
@@ -529,33 +843,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-      child: Column(
-        children: [
-          Text(
-            'Dabbler',
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Dabbler',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Version $_appVersion',
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            const SizedBox(height: 6),
+            Text(
+              'Version $_appVersion',
+              style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '© 2025 Dabbler. All rights reserved.',
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            const SizedBox(height: 8),
+            Text(
+              '© 2026 Dabbler. All rights reserved.',
+              style: textTheme.labelSmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

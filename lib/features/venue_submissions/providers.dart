@@ -7,7 +7,7 @@ import 'package:dabbler/data/models/profile.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/data/repositories/venue_submission_repository.dart';
 import 'package:dabbler/data/repositories/venue_submission_repository_impl.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_profile_providers.dart'
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show myProfileProvider;
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 

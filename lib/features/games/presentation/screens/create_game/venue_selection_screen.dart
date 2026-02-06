@@ -35,6 +35,18 @@ class _VenueSelectionScreenState extends ConsumerState<VenueSelectionScreen> {
   bool _isLoadingVenues = true;
   String? _venuesError;
 
+  // Filter state
+  double? _minPrice;
+  double? _maxPrice;
+  double? _maxDistance;
+  double? _minRating;
+
+  bool get _hasActiveFilters =>
+      _minPrice != null ||
+      _maxPrice != null ||
+      _maxDistance != null ||
+      _minRating != null;
+
   List<Map<String, dynamic>> get _filteredVenues {
     var venues = _allVenues.where((venue) {
       // Filter by sport (case-insensitive)
@@ -59,6 +71,30 @@ class _VenueSelectionScreenState extends ConsumerState<VenueSelectionScreen> {
         final name = venue['name']?.toString().toLowerCase() ?? '';
         final address = venue['address']?.toString().toLowerCase() ?? '';
         if (!name.contains(query) && !address.contains(query)) {
+          return false;
+        }
+      }
+
+      // Filter by max price
+      if (_maxPrice != null) {
+        final price = venue['price'] as double?;
+        if (price != null && price > _maxPrice!) {
+          return false;
+        }
+      }
+
+      // Filter by max distance
+      if (_maxDistance != null) {
+        final distance = venue['distance'] as double?;
+        if (distance != null && distance > _maxDistance!) {
+          return false;
+        }
+      }
+
+      // Filter by min rating
+      if (_minRating != null) {
+        final rating = venue['rating'] as double?;
+        if (rating == null || rating < _minRating!) {
           return false;
         }
       }
@@ -369,10 +405,28 @@ class _VenueSelectionScreenState extends ConsumerState<VenueSelectionScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                TextButton.icon(
-                  onPressed: _showFilters,
-                  icon: const Icon(Icons.filter_list, size: 16),
-                  label: const Text('Filters'),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _showFilters,
+                      icon: const Icon(Icons.filter_list, size: 16),
+                      label: const Text('Filters'),
+                    ),
+                    if (_hasActiveFilters)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -989,58 +1043,160 @@ class _VenueSelectionScreenState extends ConsumerState<VenueSelectionScreen> {
   }
 
   void _showFilters() {
+    // Local copies for the dialog
+    double? tempMinPrice = _minPrice;
+    double? tempMaxPrice = _maxPrice;
+    double? tempMaxDistance = _maxDistance;
+    double? tempMinRating = _minRating;
+
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Filters',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Filters',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
 
-            const ListTile(
-              leading: Icon(Icons.monetization_on),
-              title: Text('Price Range'),
-              subtitle: Text('Free - \$50/hour'),
-              trailing: Icon(Icons.arrow_forward_ios),
-            ),
-            const ListTile(
-              leading: Icon(Icons.location_city),
-              title: Text('Distance'),
-              subtitle: Text('Within 5 km'),
-              trailing: Icon(Icons.arrow_forward_ios),
-            ),
-            const ListTile(
-              leading: Icon(Icons.star),
-              title: Text('Rating'),
-              subtitle: Text('4+ stars'),
-              trailing: Icon(Icons.arrow_forward_ios),
-            ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Clear'),
-                  ),
+              // Price Range Filter
+              ListTile(
+                leading: const Icon(Icons.monetization_on),
+                title: const Text('Max Price'),
+                subtitle: Text(
+                  tempMaxPrice != null
+                      ? '\$${tempMaxPrice!.toStringAsFixed(0)}/hour'
+                      : 'Any price',
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Apply'),
-                  ),
+                trailing: Switch(
+                  value: tempMaxPrice != null,
+                  onChanged: (enabled) {
+                    setDialogState(() {
+                      tempMaxPrice = enabled ? 50.0 : null;
+                    });
+                  },
                 ),
-              ],
-            ),
-          ],
+              ),
+              if (tempMaxPrice != null)
+                Slider(
+                  value: tempMaxPrice!,
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  label: '\$${tempMaxPrice!.toStringAsFixed(0)}',
+                  onChanged: (value) {
+                    setDialogState(() {
+                      tempMaxPrice = value;
+                    });
+                  },
+                ),
+
+              // Distance Filter
+              ListTile(
+                leading: const Icon(Icons.location_city),
+                title: const Text('Max Distance'),
+                subtitle: Text(
+                  tempMaxDistance != null
+                      ? 'Within ${tempMaxDistance!.toStringAsFixed(0)} km'
+                      : 'Any distance',
+                ),
+                trailing: Switch(
+                  value: tempMaxDistance != null,
+                  onChanged: (enabled) {
+                    setDialogState(() {
+                      tempMaxDistance = enabled ? 5.0 : null;
+                    });
+                  },
+                ),
+              ),
+              if (tempMaxDistance != null)
+                Slider(
+                  value: tempMaxDistance!,
+                  min: 1,
+                  max: 50,
+                  divisions: 49,
+                  label: '${tempMaxDistance!.toStringAsFixed(0)} km',
+                  onChanged: (value) {
+                    setDialogState(() {
+                      tempMaxDistance = value;
+                    });
+                  },
+                ),
+
+              // Rating Filter
+              ListTile(
+                leading: const Icon(Icons.star),
+                title: const Text('Minimum Rating'),
+                subtitle: Text(
+                  tempMinRating != null
+                      ? '${tempMinRating!.toStringAsFixed(1)}+ stars'
+                      : 'Any rating',
+                ),
+                trailing: Switch(
+                  value: tempMinRating != null,
+                  onChanged: (enabled) {
+                    setDialogState(() {
+                      tempMinRating = enabled ? 4.0 : null;
+                    });
+                  },
+                ),
+              ),
+              if (tempMinRating != null)
+                Slider(
+                  value: tempMinRating!,
+                  min: 1,
+                  max: 5,
+                  divisions: 8,
+                  label: tempMinRating!.toStringAsFixed(1),
+                  onChanged: (value) {
+                    setDialogState(() {
+                      tempMinRating = value;
+                    });
+                  },
+                ),
+
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _minPrice = null;
+                          _maxPrice = null;
+                          _maxDistance = null;
+                          _minRating = null;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Clear'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _minPrice = tempMinPrice;
+                          _maxPrice = tempMaxPrice;
+                          _maxDistance = tempMaxDistance;
+                          _minRating = tempMinRating;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Apply'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

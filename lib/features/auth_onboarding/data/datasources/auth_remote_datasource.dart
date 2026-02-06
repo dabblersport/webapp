@@ -1,5 +1,5 @@
 import 'package:dabbler/data/models/authentication/user_model.dart';
-import 'package:dabbler/data/models/authentication/auth_response_model.dart';
+import 'package:dabbler/features/auth_onboarding/data/models/auth_response_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> signInWithEmail({

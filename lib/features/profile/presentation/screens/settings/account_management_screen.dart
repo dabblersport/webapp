@@ -6,7 +6,7 @@ import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
 import 'package:dabbler/core/design_system/colors/profile_colors.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
-import '../../../../../features/authentication/presentation/providers/auth_profile_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart';
 import '../../../../../features/profile/data/datasources/supabase_profile_datasource.dart';
 
 /// Screen for managing account settings like email, password, and security

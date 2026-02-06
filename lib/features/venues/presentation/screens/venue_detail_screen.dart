@@ -7,9 +7,9 @@ import 'package:dabbler/themes/app_theme.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
-  as games_providers;
-import 'package:dabbler/features/authentication/presentation/providers/auth_profile_providers.dart'
-  show currentUserIdProvider;
+    as games_providers;
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
   final String venueId;
@@ -65,21 +65,24 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             ],
           ),
         ),
-        bottomSection: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildQuickInfoCards(venue, textTheme, sportsScheme),
-            const SizedBox(height: 20),
-            _buildAboutSection(venue, textTheme, sportsScheme),
-            const SizedBox(height: 20),
-            _buildSportsSection(venue, textTheme, sportsScheme),
-            const SizedBox(height: 20),
-            _buildAmenitiesSection(venue, textTheme, sportsScheme),
-            const SizedBox(height: 20),
-            _buildHoursSection(venue, textTheme, sportsScheme),
-            const SizedBox(height: 20),
-            _buildBottomBar(venue, sportsScheme, textTheme),
-          ],
+        bottomSection: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildQuickInfoCards(venue, textTheme, sportsScheme),
+              const SizedBox(height: 20),
+              _buildAboutSection(venue, textTheme, sportsScheme),
+              const SizedBox(height: 20),
+              _buildSportsSection(venue, textTheme, sportsScheme),
+              const SizedBox(height: 20),
+              _buildAmenitiesSection(venue, textTheme, sportsScheme),
+              const SizedBox(height: 20),
+              _buildHoursSection(venue, textTheme, sportsScheme),
+              const SizedBox(height: 20),
+              _buildBottomBar(venue, sportsScheme, textTheme),
+            ],
+          ),
         ),
       ),
       loading: () => TwoSectionLayout(
@@ -146,11 +149,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   Widget _buildHeaderSection(
     dynamic venue,
     ColorScheme colorScheme,
-    TextTheme textTheme,
-    {
+    TextTheme textTheme, {
     required bool isFavorited,
-  }
-  ) {
+  }) {
     return Row(
       children: [
         IconButton.filledTonal(
@@ -814,10 +815,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     messenger
       ..clearSnackBars()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.fixed,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.fixed),
       );
   }
 
@@ -859,9 +857,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           _favoriteBusy = false;
           _favoriteOptimistic = null;
         });
-        _showInfoSnackBar(
-          currentlyFavorited ? 'Removed from saved' : 'Saved',
-        );
+        _showInfoSnackBar(currentlyFavorited ? 'Removed from saved' : 'Saved');
       },
     );
   }

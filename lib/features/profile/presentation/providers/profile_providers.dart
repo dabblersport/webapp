@@ -15,7 +15,7 @@ import '../../data/datasources/profile_data_sources.dart'
     show ProfileLocalDataSource, ProfileLocalDataSourceImpl;
 import '../../data/datasources/profile_remote_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_profile_providers.dart'
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
 
 // Domain layer imports

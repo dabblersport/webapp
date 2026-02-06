@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/ui_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/themes/app_theme.dart';
 
@@ -142,7 +143,12 @@ class TwoSectionLayout extends StatelessWidget {
                       ),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 78),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg,
+                          12,
+                          AppSpacing.lg,
+                          78,
+                        ),
 
                         clipBehavior: Clip.none,
                         decoration: ShapeDecoration(

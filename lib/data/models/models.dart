@@ -6,7 +6,7 @@
 export 'core/game_creation_model.dart';
 
 // Authentication models
-export 'authentication/auth_response_model.dart';
+export '../../features/auth_onboarding/data/models/auth_response_model.dart';
 export 'authentication/auth_session.dart';
 export 'authentication/user.dart';
 export 'authentication/user_model.dart';

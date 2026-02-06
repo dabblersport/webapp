@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/domain/services/persona_service.dart';
+import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import '../../../../../app/app_router.dart';
 import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
@@ -611,17 +614,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     final baseOnTop = colorScheme.onPrimaryContainer;
 
+    // Get primary sport info
+    final primarySport = profile?.preferredSport;
+    final primarySportProfile = profileState.profile?.sportsProfiles
+        .where((sp) => sp.isPrimarySport)
+        .firstOrNull;
+    final skillLevel = primarySportProfile?.skillLevel;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          profile?.getDisplayName().isNotEmpty == true
-              ? profile!.getDisplayName()
-              : 'Complete your profile',
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: baseOnTop,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                profile?.getDisplayName().isNotEmpty == true
+                    ? profile!.getDisplayName()
+                    : 'Complete your profile',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: baseOnTop,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Profile type pill next to name
+            if (profile?.profileType != null &&
+                profile!.profileType!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: baseOnTop.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  profile.profileType![0].toUpperCase() +
+                      profile.profileType!.substring(1),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Pills row for persona type and primary sport
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            // Persona type pill
+            if (profile?.personaType != null &&
+                profile!.personaType!.isNotEmpty)
+              _buildInfoPill(
+                context,
+                icon: profile.personaType == 'organiser'
+                    ? Iconsax.calendar_copy
+                    : profile.personaType == 'hoster'
+                    ? Iconsax.building_copy
+                    : profile.personaType == 'socialiser'
+                    ? Iconsax.people_copy
+                    : Iconsax.profile_circle_copy,
+                label:
+                    profile.personaType![0].toUpperCase() +
+                    profile.personaType!.substring(1),
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+                baseOnTop: baseOnTop,
+              ),
+            // Primary sport pill
+            if (primarySport != null && primarySport.isNotEmpty)
+              _buildInfoPill(
+                context,
+                icon: Iconsax.medal_star_copy,
+                label: skillLevel != null
+                    ? '${_formatSportName(primarySport)} · ${_getSkillLevelText(skillLevel)}'
+                    : _formatSportName(primarySport),
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+                baseOnTop: baseOnTop,
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         Text(
@@ -631,6 +707,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           overflow: TextOverflow.ellipsis,
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoPill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
+    required Color baseOnTop,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.categoryProfile.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.categoryProfile.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: colorScheme.categoryProfile),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(
+              color: baseOnTop,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -802,63 +912,66 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         DefaultTextStyle.of(context).style.color ??
         colorScheme.onPrimaryContainer;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colorScheme.categoryProfile.withValues(
-          alpha: isDarkMode ? 0.08 : 0.06,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.categoryProfile.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colorScheme.categoryProfile.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Iconsax.medal_star_copy,
-              color: colorScheme.categoryProfile,
-            ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.categoryProfile.withValues(
+            alpha: isDarkMode ? 0.08 : 0.06,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'No sport profile yet',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: baseOnTop.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Create a sport profile to track your level, positions, and achievements.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: baseOnTop.withValues(alpha: 0.78),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: () {
-                    // Start player profile creation flow
-                    context.push(RoutePaths.intentSelection);
-                  },
-                  icon: const Icon(Iconsax.profile_circle_copy),
-                  label: const Text('Create player profile'),
-                ),
-              ],
-            ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.categoryProfile.withValues(alpha: 0.2),
           ),
-        ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: colorScheme.categoryProfile.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Iconsax.medal_star_copy,
+                color: colorScheme.categoryProfile,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'No sport profile yet',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: baseOnTop.withValues(alpha: 0.92),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Create a sport profile to track your level, positions, and achievements.',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: baseOnTop.withValues(alpha: 0.78),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () {
+                      // Start player profile creation flow
+                      context.push(RoutePaths.intentSelection);
+                    },
+                    icon: const Icon(Iconsax.profile_circle_copy),
+                    label: const Text('Create player profile'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2072,15 +2185,31 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 }
 
-class ManageProfilesSheet extends ConsumerWidget {
+class ManageProfilesSheet extends ConsumerStatefulWidget {
   const ManageProfilesSheet({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ManageProfilesSheet> createState() =>
+      _ManageProfilesSheetState();
+}
+
+class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch user personas when sheet opens
+    Future.microtask(() {
+      ref.read(personaServiceProvider.notifier).fetchUserPersonas();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final availableProfilesAsync = ref.watch(availableProfilesProvider);
     final activeProfileType = ref.watch(activeProfileTypeProvider);
+    final personaState = ref.watch(personaServiceProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -2127,9 +2256,20 @@ class ManageProfilesSheet extends ConsumerWidget {
                     );
                   }
 
+                  // Get available persona options (only if not at limit)
+                  final availablePersonas = personaState.canAddNewProfile
+                      ? personaState.availablePersonas
+                            .where((p) => p.canProceed)
+                            .toList()
+                      : <PersonaAvailability>[];
+
+                  // Check if at profile limit
+                  final isAtLimit = personaState.isAtProfileLimit;
+
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Existing profiles section
                       ...profiles.map((profile) {
                         final isActive =
                             profile.profileType?.toLowerCase() ==
@@ -2151,37 +2291,62 @@ class ManageProfilesSheet extends ConsumerWidget {
                           },
                         );
                       }),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            // Determine which profile type to create
-                            final hasPlayer = profiles.any(
-                              (p) => p.profileType?.toLowerCase() == 'player',
-                            );
-                            final hasOrganiser = profiles.any(
-                              (p) =>
-                                  p.profileType?.toLowerCase() == 'organiser',
-                            );
 
-                            if (!hasPlayer) {
-                              context.push(RoutePaths.intentSelection);
-                            } else if (!hasOrganiser) {
-                              context.push(RoutePaths.createUserInfo);
-                            } else {
-                              // Show choice dialog if both exist (future)
-                              context.push(RoutePaths.intentSelection);
-                            }
-                          },
-                          icon: const Icon(Iconsax.add_copy),
-                          label: const Text('Add Profile'),
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                      // Profile limit message (when at max)
+                      if (isAtLimit) ...[
+                        const SizedBox(height: 24),
+                        Divider(color: colorScheme.outlineVariant),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Iconsax.info_circle_copy,
+                                color: colorScheme.onSurfaceVariant,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  PersonaRules.profileLimitMessage,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                      ],
+
+                      // Add persona options section (only if not at limit)
+                      if (availablePersonas.isNotEmpty && !isAtLimit) ...[
+                        const SizedBox(height: 24),
+                        Divider(color: colorScheme.outlineVariant),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Add Profile',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...availablePersonas.map((availability) {
+                          return _PersonaOptionTile(
+                            availability: availability,
+                            onTap: () => _startPersonaFlow(availability),
+                          );
+                        }),
+                      ],
                     ],
                   );
                 },
@@ -2204,6 +2369,186 @@ class ManageProfilesSheet extends ConsumerWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _startPersonaFlow(PersonaAvailability availability) {
+    final personaState = ref.read(personaServiceProvider);
+    final primaryProfile = personaState.primaryProfile;
+
+    // Initialize add persona data with shared attributes
+    ref
+        .read(addPersonaDataProvider.notifier)
+        .init(
+          targetPersona: availability.targetPersona,
+          actionType: availability.actionType,
+          convertFrom: availability.convertFrom,
+          age: primaryProfile?.age,
+          gender: primaryProfile?.gender,
+          existingProfileId:
+              availability.actionType == PersonaActionType.convert
+              ? personaState.activeProfiles
+                    .firstWhere(
+                      (p) => p.personaType == availability.convertFrom,
+                      orElse: () => personaState.activeProfiles.first,
+                    )
+                    .profileId
+              : null,
+        );
+
+    Navigator.pop(context); // Close the sheet first
+
+    // Show confirmation for conversion, otherwise start flow directly
+    if (availability.actionType == PersonaActionType.convert) {
+      _showConversionConfirmDialog(availability);
+    } else {
+      // Navigate to first screen of add flow (interests selection)
+      context.push(RoutePaths.addPersonaInterests);
+    }
+  }
+
+  void _showConversionConfirmDialog(PersonaAvailability availability) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colorScheme.surface,
+        surfaceTintColor: Colors.transparent,
+        title: Text('Convert to ${availability.targetPersona.displayName}?'),
+        content: Text(
+          'This will deactivate your ${availability.convertFrom?.displayName} profile and create a new ${availability.targetPersona.displayName} profile.\n\n'
+          'Your account data (age, gender) will be preserved.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // Navigate to first screen of add flow
+              context.push(RoutePaths.addPersonaInterests);
+            },
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tile for displaying an available persona option
+class _PersonaOptionTile extends StatelessWidget {
+  final PersonaAvailability availability;
+  final VoidCallback onTap;
+
+  const _PersonaOptionTile({required this.availability, required this.onTap});
+
+  IconData get _personaIcon {
+    switch (availability.targetPersona) {
+      case PersonaType.player:
+        return Iconsax.user_copy;
+      case PersonaType.organiser:
+        return Iconsax.calendar_copy;
+      case PersonaType.hoster:
+        return Iconsax.building_copy;
+      case PersonaType.socialiser:
+        return Iconsax.people_copy;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isConversion = availability.actionType == PersonaActionType.convert;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: isConversion
+                        ? colorScheme.tertiaryContainer
+                        : colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    _personaIcon,
+                    color: isConversion
+                        ? colorScheme.onTertiaryContainer
+                        : colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            availability.targetPersona.displayName,
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          if (isConversion) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.tertiaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Convert',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.onTertiaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        availability.targetPersona.description,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Iconsax.arrow_right_3_copy,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),

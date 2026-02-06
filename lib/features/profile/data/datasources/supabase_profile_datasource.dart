@@ -26,11 +26,12 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     String? profileType,
   }) async {
     try {
+      // profileType parameter is actually persona_type (player, organiser, etc.)
       final response = profileType != null
           ? await _fetchProfileRow(
               userId,
               includeSports: includeSports,
-              profileType: profileType,
+              personaType: profileType,
             )
           : await _preferPlayerProfile(userId, includeSports: includeSports);
 
@@ -98,10 +99,11 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     required bool includeSports,
   }) async {
     // Try to load the player's profile first; fall back to organiser/any profile.
+    // Note: 'player', 'organiser' etc. are stored in persona_type column, not profile_type
     final playerProfile = await _fetchProfileRow(
       userId,
       includeSports: includeSports,
-      profileType: 'player',
+      personaType: 'player',
     );
 
     if (playerProfile != null) {
@@ -111,7 +113,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     final organiserProfile = await _fetchProfileRow(
       userId,
       includeSports: includeSports,
-      profileType: 'organiser',
+      personaType: 'organiser',
     );
 
     if (organiserProfile != null) {
@@ -124,13 +126,14 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
   Future<Map<String, dynamic>?> _fetchProfileRow(
     String userId, {
     required bool includeSports,
-    String? profileType,
+    String? personaType,
   }) async {
     // Build select query - fetch profile first
     var query = _client.from(_usersTable).select('*').eq('user_id', userId);
 
-    if (profileType != null) {
-      query = query.eq('profile_type', profileType);
+    if (personaType != null) {
+      // Filter by persona_type (player, organiser, hoster, socialiser)
+      query = query.eq('persona_type', personaType);
       final response = await query.maybeSingle();
       if (response == null) {
         return null;

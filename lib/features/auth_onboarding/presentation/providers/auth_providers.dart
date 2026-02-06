@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 import '../controllers/auth_controller.dart';
-import '../controllers/register_controller.dart';
+import 'package:dabbler/features/authentication/presentation/controllers/register_controller.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../domain/usecases/logout_usecase.dart';
@@ -22,6 +22,21 @@ class RouterRefreshNotifier extends ChangeNotifier {
   static final _instance = RouterRefreshNotifier._internal();
   factory RouterRefreshNotifier() => _instance;
   RouterRefreshNotifier._internal();
+
+  bool _needsPostLoginWelcome = false;
+
+  bool get needsPostLoginWelcome => _needsPostLoginWelcome;
+
+  void requirePostLoginWelcome() {
+    _needsPostLoginWelcome = true;
+    notifyListeners();
+  }
+
+  void clearPostLoginWelcome() {
+    if (!_needsPostLoginWelcome) return;
+    _needsPostLoginWelcome = false;
+    notifyListeners();
+  }
 
   void notifyAuthStateChanged() {
     notifyListeners();
@@ -128,9 +143,16 @@ class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
     ) async {
       final event = data.event;
 
+      // Show welcome after each explicit login.
+      // Do NOT trigger this on initialSession to avoid showing welcome on app restart.
+      if (event == supa.AuthChangeEvent.signedIn) {
+        routerRefreshNotifier.requirePostLoginWelcome();
+      }
+
       if (event == supa.AuthChangeEvent.signedOut) {
         final wasAuthenticated = state.isAuthenticated;
         state = const SimpleAuthState();
+        routerRefreshNotifier.clearPostLoginWelcome();
         if (wasAuthenticated) {
           routerRefreshNotifier.notifyAuthStateChanged();
         }

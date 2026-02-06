@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:dabbler/features/authentication/presentation/providers/onboarding_data_provider.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
-import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
+import 'package:dabbler/design_system/tokens/main_dark.dart'
+    as main_dark_tokens;
+import 'package:dabbler/design_system/tokens/main_light.dart'
+    as main_light_tokens;
+import 'package:dabbler/utils/ui_constants.dart';
 
 class EmailInputScreen extends ConsumerStatefulWidget {
   const EmailInputScreen({super.key});
@@ -25,6 +30,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   String? _errorMessage;
   String? _successMessage;
   bool _isEmailValid = false;
+  bool _keepInLoop = true;
 
   @override
   void initState() {
@@ -76,26 +82,21 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       final authService = ref.read(authServiceProvider);
       final userExists = await authService.checkUserExistsByEmail(email);
 
-      if (mounted) {
-        // Always use OTP for email, regardless of whether the user exists.
-        // Password-based login remains available elsewhere but is not used here.
+      // Always use OTP for email, regardless of whether the user exists.
+      // Password-based login remains available elsewhere but is not used here.
+      await authService.sendOtp(identifier: email, type: IdentifierType.email);
 
-        // Send OTP using unified method
-        await authService.sendOtp(
-          identifier: email,
-          type: IdentifierType.email,
-        );
+      if (!mounted) return;
 
-        // Navigate to OTP verification screen
-        context.push(
-          RoutePaths.otpVerification,
-          extra: {
-            'identifier': email,
-            'identifierType': IdentifierType.email.name,
-            'userExistsBeforeOtp': userExists,
-          },
-        );
-      }
+      // Navigate to OTP verification screen
+      context.push(
+        RoutePaths.otpVerification,
+        extra: {
+          'identifier': email,
+          'identifierType': IdentifierType.email.name,
+          'userExistsBeforeOtp': userExists,
+        },
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -114,296 +115,224 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+
+    // Kept for existing widget helpers that still use ColorScheme.
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                child: _buildHeroSection(),
+      backgroundColor: tokens.main.background,
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: ClipRRect(
+          borderRadius: AppRadius.extraExtraLarge,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xxl,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: AppSpacing.xxxl),
+                              Text(
+                                'Authenticate',
+                                style: theme.textTheme.displayMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: tokens.main.onSecondaryContainer,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xl),
+                              Text(
+                                'Enter your email to get started',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: tokens.main.onSecondaryContainer,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              _buildTermsTextInline(context),
+                              const SizedBox(height: AppSpacing.xxxl * 2),
+                              Text(
+                                'Email',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.main.onSecondaryContainer,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              _buildEmailInputPill(context),
+                              const SizedBox(height: AppSpacing.lg),
+                              _buildContinueButtonPill(context),
+                              const SizedBox(height: AppSpacing.lg),
+                              _buildKeepInLoopRow(context),
+                              const Spacer(),
+                              _buildGoogleButton(),
+                              if (!kIsWeb &&
+                                  defaultTargetPlatform ==
+                                      TargetPlatform.iOS) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                _buildAppleButton(context),
+                              ],
+                              const SizedBox(height: AppSpacing.lg),
+                              Center(
+                                child: TextButton(
+                                  onPressed: _isLoading ? null : _goToLogin,
+                                  child: Text(
+                                    'Already have an account? Log in',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.primary,
+                                        ),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: AppSpacing.xxl),
+                              if (_errorMessage != null) ...[
+                                const SizedBox(height: AppSpacing.lg),
+                                _InlineMessage(
+                                  message: _errorMessage!,
+                                  color: colorScheme.error,
+                                ),
+                              ],
+                              if (_successMessage != null) ...[
+                                const SizedBox(height: AppSpacing.lg),
+                                _InlineMessage(
+                                  message: _successMessage!,
+                                  color: Colors.green,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
-                child: _buildBottomSection(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroSection() {
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    final heroColor = isDarkMode
-        ? const Color(0xFF4A148C)
-        : const Color(0xFFE0C7FF);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subtextColor = isDarkMode
-        ? Colors.white.withOpacity(0.85)
-        : Colors.black.withOpacity(0.7);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: heroColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          // Dabbler logo and text
-          _buildLogo(textColor),
-          const SizedBox(height: 24),
-          // Welcome text
-          Text(
-            'Welcome to dabbler!',
-            style: textTheme.headlineSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Enter your email address to get started',
-            style: textTheme.bodyLarge?.copyWith(color: subtextColor),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogo(Color iconColor) {
-    return Column(
-      children: [
-        // Dabbler geometric icon
-        SvgPicture.asset(
-          'assets/images/dabbler_logo.svg',
-          width: 80,
-          height: 88,
-          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        ),
-        const SizedBox(height: 16),
-        // Dabbler text logo
-        SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 110,
-          height: 21,
-          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomSection() {
-    return Column(
-      children: [
-        // Email input field
-        _buildEmailInput(),
-        SizedBox(height: 16.0),
-
-        // Continue with Email button
-        _buildContinueButton(),
-
-        SizedBox(height: 24.0),
-
-        // Divider with "or"
-        _buildDivider(),
-
-        SizedBox(height: 24.0),
-
-        // Continue with Google button
-        _buildGoogleButton(),
-
-        SizedBox(height: 12.0),
-
-        // Continue with Phone button
-        _buildPhoneButton(),
-
-        SizedBox(height: 32.0),
-
-        // Terms and privacy
-        _buildTermsText(),
-
-        // Error/Success messages
-        if (_errorMessage != null) ...[
-          SizedBox(height: 16.0),
-          Container(
-            padding: EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(color: AppColors.error.withOpacity(0.3)),
-            ),
-            child: Text(
-              _errorMessage!,
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
-
-        if (_successMessage != null) ...[
-          SizedBox(height: 16.0),
-          Container(
-            padding: EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(color: AppColors.success.withOpacity(0.3)),
-            ),
-            child: Text(
-              _successMessage!,
-              style: TextStyle(color: AppColors.success),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildEmailInput() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: AppColors.cardColor(context),
-        borderRadius: BorderRadius.circular(AppSpacing.cardBorderRadius),
-        border: Border.all(color: AppColors.borderDark),
-      ),
-      child: Form(
-        key: _formKey,
-        child: TextFormField(
-          controller: _emailController,
-          decoration: InputDecoration(
-            hintText: 'email@example.com',
-            hintStyle: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
-          ),
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          keyboardType: TextInputType.emailAddress,
-          onChanged: _onEmailChanged,
-          validator: _validateEmail,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContinueButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleSubmit,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryPurple,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-        ),
-        child: _isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('📧', style: TextStyle(fontSize: 18)),
-                  SizedBox(width: 8.0),
-                  Text(
-                    'Continue with Email',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(child: Container(height: 1, color: AppColors.borderDark)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            'or',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w400,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
-        Expanded(child: Container(height: 1, color: AppColors.borderDark)),
-      ],
+      ),
     );
   }
 
   Widget _buildGoogleButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: AppColors.categoryBgMain(context),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-        ),
-        child: _isLoading
-            ? SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onSurface,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+
+    return FilledButton(
+      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      style: FilledButton.styleFrom(
+        backgroundColor: isDark
+            ? tokens.main.inverseSurface
+            : tokens.main.surfaceContainerLowest,
+        foregroundColor: isDark
+            ? tokens.main.inverseOnSurface
+            : tokens.main.onSurface,
+        minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
+        padding: AppButtonSize.extraLargePadding,
+        shape: const StadiumBorder(),
+      ),
+      child: _isLoading
+          ? SizedBox(
+              height: AppSpacing.xxl,
+              width: AppSpacing.xxl,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  isDark ? tokens.main.inverseOnSurface : tokens.main.onSurface,
+                ),
+              ),
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/google.svg',
+                  width: AppIconSize.sm,
+                  height: AppIconSize.sm,
+                  colorFilter: ColorFilter.mode(
+                    isDark
+                        ? tokens.main.inverseOnSurface
+                        : tokens.main.onSurface,
+                    BlendMode.srcIn,
                   ),
                 ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'G',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Continue with Google',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isDark
+                        ? tokens.main.inverseOnSurface
+                        : tokens.main.onSurface,
+                    fontWeight: FontWeight.w800,
                   ),
-                  SizedBox(width: 8.0),
-                  Text(
-                    'Continue with Google',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildAppleButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+
+    return FilledButton(
+      onPressed: _isLoading
+          ? null
+          : () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Apple sign-in is coming soon.')),
+              );
+            },
+      style: FilledButton.styleFrom(
+        backgroundColor: tokens.main.scrim,
+        foregroundColor: isDark
+            ? tokens.main.onBackground
+            : tokens.main.onPrimary,
+        minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
+        padding: AppButtonSize.extraLargePadding,
+        shape: const StadiumBorder(),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            'assets/icons/apple.svg',
+            width: AppIconSize.sm,
+            height: AppIconSize.sm,
+            colorFilter: ColorFilter.mode(
+              isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+              BlendMode.srcIn,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'Continue with Apple',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -416,18 +345,14 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     });
 
     try {
-      final authService = AuthService();
+      final authService = ref.read(authServiceProvider);
 
-      // Launch Google OAuth (this opens browser/app)
-      await authService.signInWithGoogle();
-
-      // Note: OAuth is asynchronous - the user will complete sign-in in browser/app
-      // The auth state listener will detect when they return and handle routing
-      // For now, we'll wait a bit and then check, but ideally this should be handled
-      // by the auth state listener in the router
-
-      // Wait for OAuth to complete (user will be redirected back)
-      await Future.delayed(const Duration(seconds: 3));
+      // Token-based Google Sign-In (native / popup) should complete in-app.
+      final launched = await authService.signInWithGoogle();
+      if (!launched) {
+        // User cancelled.
+        return;
+      }
 
       // Now check the result after OAuth completes
       final result = await authService.handleGoogleSignInFlow();
@@ -501,30 +426,124 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     }
   }
 
-  Widget _buildPhoneButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          context.go(RoutePaths.phoneInput);
-        },
-        style: ElevatedButton.styleFrom(
-          elevation: 0,
-          backgroundColor: AppColors.categoryBgMain(context),
-          foregroundColor: Theme.of(context).colorScheme.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
+  Widget _buildEmailInputPill(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final borderRadius = BorderRadius.circular(999);
+
+    return Form(
+      key: _formKey,
+      child: TextFormField(
+        controller: _emailController,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        textInputAction: TextInputAction.done,
+        onChanged: _onEmailChanged,
+        validator: _validateEmail,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: colorScheme.onSurface,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          hintText: 'email@domain.com',
+          hintStyle: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+          filled: true,
+          fillColor: colorScheme.surface,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 22,
+            vertical: 16,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide(color: colorScheme.error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: borderRadius,
+            borderSide: BorderSide(color: colorScheme.error, width: 2),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildContinueButtonPill(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final canSubmit = _isEmailValid && !_isLoading;
+
+    return FilledButton(
+      onPressed: canSubmit ? _handleSubmit : null,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(56),
+        shape: const StadiumBorder(),
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        textStyle: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      child: _isLoading
+          ? const SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Text('Continue'),
+    );
+  }
+
+  Widget _buildKeepInLoopRow(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: _isLoading
+          ? null
+          : () {
+              setState(() => _keepInLoop = !_keepInLoop);
+            },
+      child: Container(
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(Icons.phone, size: 18),
-            SizedBox(width: 8.0),
-            Text(
-              'Continue with Phone',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            Checkbox(
+              value: _keepInLoop,
+              onChanged: _isLoading
+                  ? null
+                  : (v) => setState(() => _keepInLoop = v ?? false),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              activeColor: colorScheme.primary,
+              checkColor: colorScheme.onPrimary,
+              side: BorderSide(color: colorScheme.primary, width: 2),
+            ),
+            Expanded(
+              child: Text(
+                'Keep me in the loop with emails about updates & more',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
             ),
           ],
         ),
@@ -532,63 +551,87 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     );
   }
 
-  Widget _buildTermsText() {
-    return Wrap(
-      alignment: WrapAlignment.center,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      children: [
-        Text(
-          'By continuing, you agree to our',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+  Widget _buildTermsTextInline(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return RichText(
+      text: TextSpan(
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface,
+          height: 1.35,
         ),
-        GestureDetector(
-          onTap: () async {
-            final url = Uri.parse('https://dabbler.app/terms');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
-          },
-          child: Text(
-            'Terms of Service',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
-              decoration: TextDecoration.underline,
+        children: [
+          const TextSpan(
+            text:
+                'By clicking Continue, you are indicating that you have read and agree to the ',
+          ),
+          TextSpan(
+            text: 'Terms of Service',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: colorScheme.primary,
             ),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () =>
+                  _openExternalUrl('https://www.dabbler.pro/terms.html'),
           ),
-        ),
-        Text(
-          'and',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        GestureDetector(
-          onTap: () async {
-            final url = Uri.parse('https://dabbler.app/privacy');
-            if (await canLaunchUrl(url)) {
-              await launchUrl(url, mode: LaunchMode.externalApplication);
-            }
-          },
-          child: Text(
-            'Privacy Policy',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurface,
-              decoration: TextDecoration.underline,
+          const TextSpan(text: ' & '),
+          TextSpan(
+            text: 'Privacy Policy',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: colorScheme.primary,
             ),
+            recognizer: TapGestureRecognizer()
+              ..onTap = () =>
+                  _openExternalUrl('https://www.dabbler.pro/privacy.html'),
           ),
+          const TextSpan(text: '.'),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openExternalUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _goToLogin() {
+    context.go(RoutePaths.enterPassword);
+  }
+}
+
+class _InlineMessage extends StatelessWidget {
+  const _InlineMessage({required this.message, required this.color});
+
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bg = color.withValues(alpha: 0.10);
+    final border = color.withValues(alpha: 0.30);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+      ),
+      child: Text(
+        message,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
         ),
-      ],
+      ),
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../config/environment.dart';
 import '../config/supabase_config.dart';
 import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_result.dart';
@@ -238,11 +240,7 @@ class AuthService {
         );
       }
 
-      // After successful OTP verification, ensure stub profile exists
-      if (response.user != null) {
-        await ensureStubProfileForCurrentUser();
-      }
-
+      // No profile creation here - all DB writes deferred to completeOnboarding()
       return response;
     } catch (e) {
       throw Exception('OTP verification failed: $e');
@@ -294,17 +292,68 @@ class AuthService {
   /// Sign in with Google OAuth
   Future<bool> signInWithGoogle() async {
     try {
-      // For mobile, use the app's custom scheme for OAuth callback
-      // For web, use the current origin
-      final redirectUrl = kIsWeb ? Uri.base.origin : 'dabbler://app';
+      // Use token-based Google Sign-In to avoid browser redirects.
+      // - Android/iOS: uses native account chooser (requires SHA-1 in Firebase).
+      // - Web: uses a popup flow (no full-page redirect) when clientId is set.
+      if (kIsWeb && Environment.googleWebClientId.isEmpty) {
+        throw Exception(
+          'Missing GOOGLE_WEB_CLIENT_ID for web Google sign-in. '
+          'Add it to your .env as the OAuth Client ID for a Web application '
+          '(ends with .apps.googleusercontent.com).',
+        );
+      }
 
-      final launched = await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectUrl,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+      // Temporarily use browser redirect on Android until SHA-1 is added to Firebase
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final launched = await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: 'dabbler://app',
+        );
+        return launched;
+      }
+
+      // Use native flow for iOS and web
+      final googleSignIn = GoogleSignIn(
+        scopes: const ['email', 'profile', 'openid'],
+        clientId: kIsWeb ? Environment.googleWebClientId : null,
       );
 
-      return launched;
+      GoogleSignInAccount? account;
+
+      // On web, try silent sign-in first to check for existing session
+      if (kIsWeb) {
+        try {
+          account = await googleSignIn.signInSilently(suppressErrors: true);
+        } catch (e) {
+          // Silent sign-in failed, will try interactive below
+          print('Silent sign-in failed: $e');
+        }
+      }
+
+      // If no existing session, use interactive sign-in
+      // Note: On web, signIn() is deprecated but still works for now
+      // TODO: Migrate to renderButton() approach for web
+      if (account == null) {
+        account = await googleSignIn.signIn();
+        if (account == null) {
+          // User cancelled.
+          return false;
+        }
+      }
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Google sign-in did not return an idToken.');
+      }
+
+      await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: auth.accessToken,
+      );
+
+      return true;
     } catch (e) {
       throw Exception('Google sign-in failed: $e');
     }
@@ -532,10 +581,15 @@ class AuthService {
       final stubProfileData = {
         'user_id': user.id,
         'display_name': safeDisplayName,
-        'profile_type': 'player', // Default, will be updated during onboarding
+        'username':
+            '', // Empty string to satisfy NOT NULL constraint, will be updated during onboarding
+        'profile_type':
+            'personal', // ALWAYS personal for new profiles (structural type, not persona)
         'onboard': false, // Explicitly set to FALSE
         'is_active': true,
-        'is_player': true,
+        'is_player':
+            false, // Will be set to true during onboarding if persona is 'player'
+        'skill_level': 1, // Default skill level
       };
 
       await _supabase.from(SupabaseConfig.usersTable).insert(stubProfileData);
@@ -546,7 +600,9 @@ class AuthService {
   }
 
   /// Complete onboarding by updating profile with all user data and setting onboard=TRUE
-  /// Also creates sport_profiles or organiser_profiles row and syncs to auth.users metadata
+  /// Creates sport_profiles for ALL personas and persona-specific tables
+  /// Tables: auth.users → profiles (persona_type) → sport_profiles → [player|organiser|hoster]
+  /// Persona mapping: player→player table, organiser→organiser table, hoster→hoster table, socialiser→no table
   Future<void> completeOnboarding({
     required String displayName,
     required String username,
@@ -555,6 +611,8 @@ class AuthService {
     required String intention,
     required String preferredSport,
     String? interests,
+    String? country,
+    String? city,
     String? password, // Required for email users, null for phone/Google users
   }) async {
     try {
@@ -563,8 +621,30 @@ class AuthService {
         throw Exception('User not authenticated');
       }
 
-      // Map intention to profile_type
-      final profileType = intention == 'organise' ? 'organiser' : 'player';
+      // Persona type is already mapped in intent_selection_screen:
+      // compete → player, organise → organiser, host → hoster, socialise → socialiser
+      // Database validates persona_type in triggers when inserting into persona tables
+      final personaType = intention; // Already mapped to final values in UI
+
+      // Map persona_type to profile_type (structural container type)
+      // player → personal, organiser → business, hoster → venue, socialiser → personal
+      final String profileType;
+      switch (personaType) {
+        case 'player':
+          profileType = 'personal';
+          break;
+        case 'organiser':
+          profileType = 'business';
+          break;
+        case 'hoster':
+          profileType = 'venue';
+          break;
+        case 'socialiser':
+          profileType = 'personal';
+          break;
+        default:
+          profileType = 'personal'; // Fallback
+      }
 
       // Update password if provided (for email users)
       if (password != null && password.isNotEmpty) {
@@ -581,16 +661,16 @@ class AuthService {
 
       await _supabase.auth.updateUser(UserAttributes(data: userMetadata));
 
-      // Check if profile exists (should exist as stub from ensureStubProfileForCurrentUser)
+      // Check if profile exists (shouldn't exist since we removed stub creation)
       final existingProfile = await _supabase
           .from(SupabaseConfig.usersTable)
-          .select('id, profile_type')
+          .select('id, profile_type, persona_type')
           .eq('user_id', user.id)
           .maybeSingle();
 
       String profileId;
       if (existingProfile != null) {
-        // Update existing profile
+        // Update existing profile (rare case - user went through onboarding twice)
         profileId = existingProfile['id'] as String;
 
         final updateData = {
@@ -598,13 +678,21 @@ class AuthService {
           'username': username,
           'age': age,
           'gender': gender.toLowerCase(),
-          'intention': intention.toLowerCase(),
-          'profile_type': profileType,
+          'profile_type':
+              profileType, // Mapped from persona: player→personal, organiser→business, hoster→venue
+          'persona_type':
+              personaType, // User's chosen role: player, organiser, hoster, socialiser
+          'intention':
+              intention, // Original intention value (compete, organise, host, socialise)
           'preferred_sport': preferredSport.toLowerCase(),
           'primary_sport': preferredSport.toLowerCase(),
           'interests': interests,
+          'country': country, // User's detected/selected country
+          'city': city, // User's detected city from IP
+          'is_player':
+              personaType == 'player', // Only true if persona is player
+          'skill_level': 1, // Default beginner skill level
           'onboard': true, // Mark onboarding as complete
-          'is_player': profileType == 'player',
         };
 
         await _supabase
@@ -620,14 +708,22 @@ class AuthService {
           'username': username,
           'age': age,
           'gender': gender.toLowerCase(),
-          'intention': intention.toLowerCase(),
-          'profile_type': profileType,
+          'profile_type':
+              profileType, // Mapped from persona: player→personal, organiser→business, hoster→venue
+          'persona_type':
+              personaType, // User's chosen role: player, organiser, hoster, socialiser
+          'intention':
+              intention, // Original intention value (compete, organise, host, socialise)
           'preferred_sport': preferredSport.toLowerCase(),
           'primary_sport': preferredSport.toLowerCase(),
           'interests': interests,
+          'country': country, // User's detected/selected country
+          'city': city, // User's detected city from IP
+          'is_player':
+              personaType == 'player', // Only true if persona is player
+          'skill_level': 1, // Default beginner skill level
           'onboard': true,
           'is_active': true,
-          'is_player': profileType == 'player',
         };
 
         final insertedProfile = await _supabase
@@ -639,56 +735,156 @@ class AuthService {
         profileId = insertedProfile['id'] as String;
       }
 
-      // Create child profile based on profile_type
-      if (profileType == 'player') {
-        // Create sport_profile for player
+      // 1️⃣ Get sport_id UUID from sports table (required for sport_profiles)
+      final sportRecord = await _supabase
+          .from('sports')
+          .select('id')
+          .eq('sport_key', preferredSport.toLowerCase())
+          .maybeSingle();
+
+      if (sportRecord == null) {
+        throw Exception(
+          'Sport "${preferredSport}" not found in sports table. Please ensure the sport exists.',
+        );
+      }
+
+      final sportId = sportRecord['id'] as String;
+
+      // 2️⃣ Create sport_profiles for ALL personas (player, organiser, host, socialiser)
+      try {
+        final sportProfileData = {
+          'profile_id': profileId,
+          'sport': preferredSport.toLowerCase(),
+          'sport_id': sportId,
+          'skill_level': 1, // Beginner level
+        };
+
+        // Check if sport_profile already exists
+        final existingSportProfile = await _supabase
+            .from('sport_profiles')
+            .select('profile_id')
+            .eq('profile_id', profileId)
+            .eq('sport', preferredSport.toLowerCase())
+            .maybeSingle();
+
+        if (existingSportProfile == null) {
+          await _supabase.from('sport_profiles').insert(sportProfileData);
+        }
+      } catch (e) {
+        // Log but don't fail - sport profile is important but not critical
+        print('Warning: Failed to create sport_profile: $e');
+      }
+
+      // 3️⃣ Create persona-specific profile based on persona_type
+      if (personaType == 'player') {
+        // Create player table for players
         try {
-          final sportProfileData = {
+          final playerProfileData = {
             'profile_id': profileId,
-            'sport': preferredSport.toLowerCase(),
-            'skill_level': 1, // Beginner level
+            // DB will use defaults for: player_level (1), player_xp_total (0),
+            // total_games_played (0), is_suspended (false), etc.
           };
 
-          // Check if sport_profile already exists
-          final existingSportProfile = await _supabase
-              .from('sport_profiles')
-              .select('profile_id')
+          // Check if player_profile already exists
+          final existingPlayerProfile = await _supabase
+              .from('player')
+              .select('id')
               .eq('profile_id', profileId)
-              .eq('sport', preferredSport.toLowerCase())
               .maybeSingle();
 
-          if (existingSportProfile == null) {
-            await _supabase.from('sport_profiles').insert(sportProfileData);
-          } else {}
+          if (existingPlayerProfile == null) {
+            await _supabase.from('player').insert(playerProfileData);
+          }
         } catch (e) {
-          // Don't rethrow - profile update succeeded, sport profile is secondary
+          // Log but don't fail completely
+          print('Warning: Failed to create player record: $e');
         }
-      } else if (profileType == 'organiser') {
-        // Create organiser_profile for organiser
+      } else if (personaType == 'organiser') {
+        // Create organiser table for organisers
         try {
           final organiserProfileData = {
             'profile_id': profileId,
             'sport': preferredSport.toLowerCase(),
-            // Use DB defaults for: organiser_level (1), commission_type ('percent'),
+            // DB will use defaults for: organiser_level (1), commission_type ('percent'),
             // commission_value (0), is_verified (false), is_active (true)
           };
 
           // Check if organiser_profile already exists
           final existingOrganiserProfile = await _supabase
-              .from('organiser_profiles')
+              .from('organiser')
               .select('id')
               .eq('profile_id', profileId)
               .eq('sport', preferredSport.toLowerCase())
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase
-                .from('organiser_profiles')
-                .insert(organiserProfileData);
-          } else {}
+            await _supabase.from('organiser').insert(organiserProfileData);
+          }
         } catch (e) {
-          // Don't rethrow - profile update succeeded, organiser profile is secondary
+          // Log but don't fail completely
+          print('Warning: Failed to create organiser record: $e');
         }
+      } else if (personaType == 'hoster') {
+        // Create host_profiles table for hosters
+        try {
+          final hostProfileData = {
+            'profile_id': profileId,
+            // DB will use defaults for: host_level (1), host_status ('pending'),
+            // venues_managed (0), total_bookings (0), is_suspended (false), etc.
+          };
+
+          // Check if host_profile already exists
+          final existingHostProfile = await _supabase
+              .from('hoster')
+              .select('id')
+              .eq('profile_id', profileId)
+              .maybeSingle();
+
+          if (existingHostProfile == null) {
+            await _supabase.from('hoster').insert(hostProfileData);
+          }
+        } catch (e) {
+          // Log but don't fail completely
+          print('Warning: Failed to create hoster record: $e');
+        }
+      }
+      // Note: 'socialiser' persona type does NOT create a persona-specific table
+      // They only get: auth.users + profiles + sport_profiles
+
+      // 4️⃣ Assign default tier (membership level)
+      try {
+        // Get the default tier from tiers table (uses 'code' as identifier)
+        final defaultTier = await _supabase
+            .from('tiers')
+            .select('code')
+            .eq('is_default', true)
+            .maybeSingle();
+
+        if (defaultTier != null) {
+          final tierCode = defaultTier['code'] as String;
+
+          // Check if tier assignment already exists
+          final existingTierAssignment = await _supabase
+              .from('profile_tiers')
+              .select('profile_id')
+              .eq('profile_id', profileId)
+              .maybeSingle();
+
+          if (existingTierAssignment == null) {
+            // Assign default tier to profile
+            await _supabase.from('profile_tiers').insert({
+              'profile_id': profileId,
+              'tier_code':
+                  tierCode, // Using tier_code since tiers table uses 'code' as PK
+              'is_active': true,
+            });
+          }
+        } else {
+          print('Warning: No default tier found in tiers table');
+        }
+      } catch (e) {
+        // Log but don't fail - tier assignment is important but not critical for onboarding
+        print('Warning: Failed to assign default tier: $e');
       }
     } catch (e) {
       throw Exception('Failed to complete onboarding: ${e.toString()}');
@@ -745,7 +941,7 @@ class AuthService {
     String? nationality,
     String? skillLevel,
     List<String>? sports,
-    List<String>? interests,
+    String? interests,
     String? intent,
     String? location,
     String? timezone,
@@ -850,7 +1046,11 @@ class AuthService {
               : skillLevel.trim();
         }
         if (sports != null) updates['sports'] = sports;
-        // Note: interests not supported, we use sports instead
+        if (interests != null) {
+          updates['interests'] = interests.trim().isEmpty
+              ? null
+              : interests.trim();
+        }
         if (intent != null && intent.trim().isNotEmpty) {
           updates['intent'] = intent.trim();
         }

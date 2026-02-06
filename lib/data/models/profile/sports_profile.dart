@@ -96,9 +96,15 @@ class SportProfile {
 
   /// Creates a SportProfile from JSON
   /// Supports both simple schema (sport/sport_key, skill_level) and full schema
-  factory SportProfile.fromJson(Map<String, dynamic> json) {
+  /// [primarySportId] - Optional UUID of the user's primary sport to set isPrimarySport flag
+  factory SportProfile.fromJson(
+    Map<String, dynamic> json, {
+    String? primarySportId,
+  }) {
     // Handle simple schema from database: sport or sport_key, skill_level, plus optional fields
     final sportKey = json['sport'] as String? ?? json['sport_key'] as String?;
+    final sportId = json['sport_id'] as String?;
+
     if (sportKey != null) {
       final skillLevelInt = json['skill_level'] as int? ?? 0;
 
@@ -113,6 +119,12 @@ class SportProfile {
           ? [primaryPosition]
           : <String>[];
 
+      // Determine if this is the primary sport by comparing sport_id with primarySportId
+      final isPrimary =
+          primarySportId != null &&
+          sportId != null &&
+          sportId == primarySportId;
+
       return SportProfile(
         sportId: sportKey,
         sportName: _getSportNameFromKey(sportKey),
@@ -121,8 +133,7 @@ class SportProfile {
         preferredPositions: preferredPositions,
         certifications: const [], // Not in simple schema
         achievements: const [], // Not in simple schema
-        isPrimarySport:
-            false, // Not stored in database - would need to determine from preferred_sport in profiles table
+        isPrimarySport: isPrimary,
         lastPlayed: null, // Not stored in database
         gamesPlayed:
             (json['matches_played'] as int?) ??

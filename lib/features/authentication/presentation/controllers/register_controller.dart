@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/usecases/register_usecase.dart';
+import 'package:dabbler/features/auth_onboarding/domain/usecases/register_usecase.dart';
 import 'package:dabbler/data/models/authentication/auth_session.dart';
 import 'package:dabbler/data/models/authentication/user.dart';
 

@@ -1443,7 +1443,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               backgroundColor: colorScheme.categorySports.withValues(
                 alpha: 0.0,
               ),
-              foregroundColor: colorScheme.onSurface,
+              foregroundColor: colorScheme.categorySports,
               minimumSize: const Size(48, 48),
             ),
           ),
@@ -2077,7 +2077,7 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: ListView.separated(
                   controller: _scrollController,
                   padding: const EdgeInsets.symmetric(vertical: 0),

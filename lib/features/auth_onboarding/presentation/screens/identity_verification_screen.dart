@@ -10,7 +10,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/design_system/widgets/app_input_field.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
-import 'package:dabbler/features/authentication/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 
 class IdentityVerificationScreen extends ConsumerStatefulWidget {
   const IdentityVerificationScreen({super.key});

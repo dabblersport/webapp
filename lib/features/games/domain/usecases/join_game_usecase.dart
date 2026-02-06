@@ -1,6 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import '../../../../features/authentication/domain/usecases/usecase.dart';
+import 'package:dabbler/features/auth_onboarding/domain/usecases/usecase.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import '../repositories/games_repository.dart';
 

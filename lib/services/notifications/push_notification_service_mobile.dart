@@ -17,6 +17,9 @@ class PushNotificationService {
   bool _initialized = false;
   static const String _notificationPromptPreferenceKey =
       'notification_prompt_preference';
+  static const String _notificationPromptNextAtKey =
+      'notification_prompt_next_at_ms';
+  static const Duration _remindLaterCooldown = Duration(hours: 72);
 
   Future<void> init() async {
     if (_initialized) return;
@@ -138,8 +141,37 @@ class PushNotificationService {
   Future<bool> shouldShowNotificationPrompt() async {
     final prefs = await SharedPreferences.getInstance();
     final preference = prefs.getString(_notificationPromptPreferenceKey);
-    // Show if never asked or if user chose "remind later"
-    return preference == null || preference == 'remind_later';
+
+    // Never prompt again
+    if (preference == 'never' || preference == 'allow') {
+      return false;
+    }
+
+    // First time
+    if (preference == null) {
+      return true;
+    }
+
+    // Cooldown gating for "remind_later"
+    if (preference == 'remind_later') {
+      final nextAtMs = prefs.getInt(_notificationPromptNextAtKey);
+
+      // Backward-compat: older installs stored only the string.
+      // Apply the cooldown starting now.
+      if (nextAtMs == null) {
+        final nextAt = DateTime.now().add(_remindLaterCooldown);
+        await prefs.setInt(
+          _notificationPromptNextAtKey,
+          nextAt.millisecondsSinceEpoch,
+        );
+        return false;
+      }
+
+      return DateTime.now().millisecondsSinceEpoch >= nextAtMs;
+    }
+
+    // Unknown value -> treat as eligible
+    return true;
   }
 
   /// Save user's notification permission preference
@@ -147,6 +179,17 @@ class PushNotificationService {
   Future<void> saveNotificationPreference(String preference) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_notificationPromptPreferenceKey, preference);
+
+    if (preference == 'remind_later') {
+      final nextAt = DateTime.now().add(_remindLaterCooldown);
+      await prefs.setInt(
+        _notificationPromptNextAtKey,
+        nextAt.millisecondsSinceEpoch,
+      );
+    } else {
+      // If user allowed or never wants prompts, clear any scheduled reminder.
+      await prefs.remove(_notificationPromptNextAtKey);
+    }
   }
 
   /// Check current permission status without requesting

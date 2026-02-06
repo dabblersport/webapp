@@ -1,0 +1,12 @@
+{
+  "files.exclude": {
+    "archive/**": true,
+    "backups/**": true,
+    "build/**": true
+  },
+  "search.exclude": {
+    "archive/**": true,
+    "backups/**": true,
+    "build/**": true
+  }
+}

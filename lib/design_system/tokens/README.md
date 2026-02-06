@@ -2,11 +2,21 @@
 
 This directory contains design token definitions for the Dabbler app theme system.
 
+It includes:
+
+- Source Material 3 JSON theme files (`*-light-theme.json`, `*-dark-theme.json`)
+- Generated Dart token files (`*_light.dart`, `*_dark.dart`)
+
 ## Structure
 
 ### Main Theme
 - `main-light-theme.json` - Main light theme color tokens
 - `main-dark-theme.json` - Main dark theme color tokens
+
+Generated Dart:
+
+- `main_light.dart`
+- `main_dark.dart`
 
 ### Category Themes
 - `social-light-theme.json` - Social category light theme
@@ -17,6 +27,13 @@ This directory contains design token definitions for the Dabbler app theme syste
 - `activity-dark-theme.json` - Activity category dark theme
 - `profile-light-theme.json` - Profile category light theme
 - `profile-dark-theme.json` - Profile category dark theme
+
+Generated Dart:
+
+- `social_light.dart`, `social_dark.dart`
+- `sports_light.dart`, `sports_dark.dart`
+- `activity_light.dart`, `activity_dark.dart`
+- `profile_light.dart`, `profile_dark.dart`
 
 ## Token Schema
 
@@ -65,17 +82,6 @@ All theme tokens follow the Material Design 3 color system specification:
 - `tertiaryFixed` / `onTertiaryFixed` - Fixed tertiary colors
 - `tertiaryFixedDim` / `onTertiaryFixedVariant` - Tertiary fixed variants
 
-## Usage
+## Dart Tokens
 
-These tokens are not yet applied to the app. When ready to implement:
-
-1. Import tokens into the Flutter theme configuration
-2. Map token values to Material Design 3 ColorScheme
-3. Update theme files in `lib/themes/`
-4. Test across light/dark modes and all screens
-
-## Future Additions
-
-- `main-dark-theme.json` - Dark theme variant
-- Category-specific color tokens (profile, social, sports, activities)
-- Component-specific tokens (buttons, cards, inputs)
+See `DART_TOKENS.md` for the generated Dart token file rules and shape.

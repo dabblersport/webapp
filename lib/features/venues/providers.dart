@@ -11,8 +11,8 @@ import 'package:dabbler/data/repositories/venues_repository_impl.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
-import 'package:dabbler/features/authentication/presentation/providers/auth_profile_providers.dart'
-  show currentUserIdProvider;
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 
 final venuesRepositoryProvider = Provider<VenuesRepository>((ref) {
   final svc = ref.watch(supabaseServiceProvider);
@@ -80,6 +80,8 @@ final favoriteVenuesForCurrentUserProvider =
 /// Convenience: Set of favorited venue ids for current user.
 final favoriteVenueIdsForCurrentUserProvider =
     FutureProvider.autoDispose<Set<String>>((ref) async {
-      final venues = await ref.watch(favoriteVenuesForCurrentUserProvider.future);
+      final venues = await ref.watch(
+        favoriteVenuesForCurrentUserProvider.future,
+      );
       return venues.map((v) => v.id).toSet();
     });

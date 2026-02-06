@@ -10,9 +10,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/widgets/custom_avatar.dart';
 import 'package:dabbler/features/profile/services/image_upload_service.dart';
 import 'package:dabbler/core/utils/validators.dart';
-import 'package:dabbler/core/utils/helpers.dart';
-import 'package:dabbler/core/utils/constants.dart';
-import 'package:dabbler/core/config/feature_flags.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -25,18 +22,19 @@ class ProfileEditScreen extends StatefulWidget {
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _bioController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _interestsController = TextEditingController();
 
   String? _avatarPath;
   String? _avatarUrl;
   bool _isUploadingAvatar = false;
 
   String? _selectedGender;
-  List<String> _selectedSports = [];
-
-  String _normalizeSportKey(String value) {
-    return value.trim().toLowerCase().replaceAll(RegExp(r'[\s-]+'), '_');
-  }
+  String? _selectedLanguage;
 
   List<String> get _genderOptions {
     const base = ['male', 'female'];
@@ -46,6 +44,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
     return base;
   }
+
+  List<String> get _languageOptions => ['en', 'ar', 'fr', 'es', 'de'];
 
   bool _isLoading = false;
   late AuthService _authService;
@@ -75,25 +75,22 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       if (response != null) {
         _displayNameController.text =
             (response['display_name'] as String?) ?? '';
-        _phoneController.text = (response['phone'] as String?) ?? '';
+        _usernameController.text = (response['username'] as String?) ?? '';
+        _bioController.text = (response['bio'] as String?) ?? '';
+        _cityController.text = (response['city'] as String?) ?? '';
+        _countryController.text = (response['country'] as String?) ?? '';
+        _ageController.text = response['age'] != null
+            ? response['age'].toString()
+            : '';
+        _interestsController.text = (response['interests'] as String?) ?? '';
         _selectedGender = (response['gender'] as String?)?.toLowerCase();
+        _selectedLanguage = response['language'] as String?;
         _avatarPath = response['avatar_url'] as String?;
         _avatarUrl = _avatarPath == null
             ? null
             : Supabase.instance.client.storage
                   .from(SupabaseConfig.avatarsBucket)
                   .getPublicUrl(_avatarPath!);
-
-        if (response['sports'] != null) {
-          final sports = response['sports'];
-          if (sports is List) {
-            _selectedSports = sports
-                .cast<String>()
-                .map(_normalizeSportKey)
-                .toSet()
-                .toList();
-          }
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -162,7 +159,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void dispose() {
     _displayNameController.dispose();
-    _phoneController.dispose();
+    _usernameController.dispose();
+    _bioController.dispose();
+    _cityController.dispose();
+    _countryController.dispose();
+    _ageController.dispose();
+    _interestsController.dispose();
     super.dispose();
   }
 
@@ -230,7 +232,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           children: [
             Expanded(
               child: Text(
-                AppHelpers.capitalize(gender),
+                gender[0].toUpperCase() + gender.substring(1),
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: isSelected
                       ? colorScheme.categoryProfile
@@ -252,44 +254,91 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  Widget _buildSelectableSportChip(String sportKey) {
+  Widget _buildTextField(
+    BuildContext context, {
+    required String label,
+    required TextEditingController controller,
+    required String hintText,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    bool readOnly = false,
+    String? helperText,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isSelected = _selectedSports.contains(sportKey);
 
-    return FilterChip(
-      label: Text(
-        AppHelpers.getSportDisplayName(sportKey),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: isSelected
-              ? colorScheme.categoryProfile
-              : colorScheme.onSurface,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
-      ),
-      avatar: Icon(
-        AppHelpers.getSportIcon(sportKey),
-        size: 20,
-        color: isSelected ? colorScheme.categoryProfile : colorScheme.onSurface,
-      ),
-      selected: isSelected,
-      showCheckmark: false,
-      onSelected: (bool selected) {
-        setState(() {
-          if (selected) {
-            _selectedSports.add(sportKey);
-          } else {
-            _selectedSports.remove(sportKey);
-          }
-        });
-      },
-      backgroundColor: Colors.transparent,
-      selectedColor: colorScheme.categoryProfile.withValues(alpha: 0.2),
-      side: BorderSide(
-        color: isSelected ? colorScheme.categoryProfile : colorScheme.outline,
-        width: isSelected ? 2 : 1.5,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        const SizedBox(height: 6),
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: hintText,
+            border: const OutlineInputBorder(),
+            helperText: helperText,
+            helperStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+          validator: validator,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          readOnly: readOnly,
+          style: readOnly
+              ? TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6))
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageSelect(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final languageNames = {
+      'en': 'English',
+      'ar': 'Arabic',
+      'fr': 'French',
+      'es': 'Spanish',
+      'de': 'German',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Language',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField<String>(
+          value: _selectedLanguage,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Select language',
+          ),
+          items: _languageOptions.map((lang) {
+            return DropdownMenuItem<String>(
+              value: lang,
+              child: Text(languageNames[lang] ?? lang),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() => _selectedLanguage = value);
+          },
+        ),
+      ],
     );
   }
 
@@ -400,75 +449,95 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
                     const SizedBox(height: 30),
 
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Display Name',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _displayNameController,
-                          decoration: const InputDecoration(
-                            hintText: 'Choose a name',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: AppValidators.validateName,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildGenderSelect(context),
-
-                    const SizedBox(height: 12),
-
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Phone number',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                        ),
-                        const SizedBox(height: 6),
-                        TextFormField(
-                          controller: _phoneController,
-                          decoration: const InputDecoration(
-                            hintText: 'Optional',
-                            border: OutlineInputBorder(),
-                          ),
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ],
+                    // Display Name
+                    _buildTextField(
+                      context,
+                      label: 'Display Name',
+                      controller: _displayNameController,
+                      hintText: 'Choose a name',
+                      validator: AppValidators.validateName,
                     ),
 
                     const SizedBox(height: 16),
 
-                    Text(
-                      'Sports Preferences',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
+                    // Username (read-only)
+                    _buildTextField(
+                      context,
+                      label: 'Username',
+                      controller: _usernameController,
+                      hintText: 'Your username',
+                      readOnly: true,
+                      helperText: 'Username cannot be changed',
                     ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: AppConstants.availableSports
-                          .where(FeatureFlags.isSportEnabled)
-                          .map(_buildSelectableSportChip)
-                          .toList(),
+
+                    const SizedBox(height: 16),
+
+                    // Bio
+                    _buildTextField(
+                      context,
+                      label: 'Bio',
+                      controller: _bioController,
+                      hintText: 'Tell us about yourself',
+                      maxLines: 3,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Age
+                    _buildTextField(
+                      context,
+                      label: 'Age',
+                      controller: _ageController,
+                      hintText: 'Your age',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return null;
+                        final age = int.tryParse(value);
+                        if (age == null || age < 13 || age > 120) {
+                          return 'Enter a valid age (13-120)';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _buildGenderSelect(context),
+
+                    const SizedBox(height: 16),
+
+                    // City
+                    _buildTextField(
+                      context,
+                      label: 'City',
+                      controller: _cityController,
+                      hintText: 'Your city',
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Country
+                    _buildTextField(
+                      context,
+                      label: 'Country',
+                      controller: _countryController,
+                      hintText: 'Your country',
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Language
+                    _buildLanguageSelect(context),
+
+                    const SizedBox(height: 16),
+
+                    // Interests
+                    _buildTextField(
+                      context,
+                      label: 'Interests',
+                      controller: _interestsController,
+                      hintText: 'Your interests (comma-separated)',
+                      maxLines: 2,
                     ),
 
                     const SizedBox(height: 30),
@@ -489,6 +558,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         child: const Text('Save changes'),
                       ),
                     ),
+
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -502,16 +573,43 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Parse age if provided
+      int? age;
+      if (_ageController.text.trim().isNotEmpty) {
+        age = int.tryParse(_ageController.text.trim());
+      }
+
       await _authService.updateUserProfile(
         displayName: _displayNameController.text.trim().isEmpty
             ? null
             : _displayNameController.text.trim(),
-        phone: _phoneController.text.trim().isEmpty
+        bio: _bioController.text.trim().isEmpty
             ? null
-            : _phoneController.text.trim(),
+            : _bioController.text.trim(),
+        age: age,
         gender: _selectedGender,
-        sports: _selectedSports.isNotEmpty ? _selectedSports : null,
+        language: _selectedLanguage,
+        interests: _interestsController.text.trim().isEmpty
+            ? null
+            : _interestsController.text.trim(),
       );
+
+      // Update city and country directly (not in AuthService yet)
+      final user = _authService.getCurrentUser();
+      if (user != null) {
+        await Supabase.instance.client
+            .from(SupabaseConfig.usersTable)
+            .update({
+              'city': _cityController.text.trim().isEmpty
+                  ? null
+                  : _cityController.text.trim(),
+              'country': _countryController.text.trim().isEmpty
+                  ? null
+                  : _countryController.text.trim(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', user.id);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

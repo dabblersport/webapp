@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/core/utils/constants.dart';
 import 'package:dabbler/widgets/app_button.dart';
 import 'package:dabbler/widgets/input_field.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/services/onboarding_service.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:dabbler/features/authentication/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -223,6 +223,17 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
           if (currentUser != null && currentUser.email == normalizedEmail) {
             // User is already authenticated via OTP - just set password and complete onboarding
 
+            // Get selected location (country and city) from provider
+            final locationState = ref.read(selectedLocationProvider);
+            final country = locationState.maybeWhen(
+              data: (loc) => loc.country,
+              orElse: () => null,
+            );
+            final city = locationState.maybeWhen(
+              data: (loc) => loc.city,
+              orElse: () => null,
+            );
+
             // Complete onboarding with password
             await authService.completeOnboarding(
               displayName: onboardingData.displayName!,
@@ -232,6 +243,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               intention: onboardingData.intention!,
               preferredSport: onboardingData.preferredSport!,
               interests: onboardingData.interestsString,
+              country: country,
+              city: city,
               password: password, // Email users set password
             );
           } else {
@@ -248,6 +261,17 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
             }
 
             // Complete onboarding after account creation
+            // Get selected location (country and city) from provider
+            final locationStateFallback = ref.read(selectedLocationProvider);
+            final countryFallback = locationStateFallback.maybeWhen(
+              data: (loc) => loc.country,
+              orElse: () => null,
+            );
+            final cityFallback = locationStateFallback.maybeWhen(
+              data: (loc) => loc.city,
+              orElse: () => null,
+            );
+
             await authService.completeOnboarding(
               displayName: onboardingData.displayName!,
               username: username,
@@ -256,6 +280,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               intention: onboardingData.intention!,
               preferredSport: onboardingData.preferredSport!,
               interests: onboardingData.interestsString,
+              country: countryFallback,
+              city: cityFallback,
               password:
                   null, // Password already set via signUpWithEmailAndPassword
             );
@@ -336,169 +362,198 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
   Widget build(BuildContext context) {
     final onboardingData = ref.watch(onboardingDataProvider);
     final email = onboardingData?.email ?? '';
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    final backgroundColor = isDarkMode
+        ? colorScheme.surface
+        : const Color(0xFFF6F2FF);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Account'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      backgroundColor: backgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Create Your Account',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                if (email.isNotEmpty)
-                  Text(
-                    'Email: $email',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                  ),
-                const SizedBox(height: 32),
-
-                // Username Field
-                Text(
-                  'Username',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CustomInputField(
-                  controller: _usernameController,
-                  label: 'Username',
-                  hintText: 'Choose a unique username',
-                  onChanged: _checkUsernameAvailability,
-                  suffixIcon: _isCheckingUsername
-                      ? const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Create Your Account',
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: colorScheme.onSurface,
+                            ),
                           ),
-                        )
-                      : _usernameError == null &&
-                            _usernameController.text.isNotEmpty
-                      ? Icon(Icons.check_circle, color: Colors.green[600])
-                      : null,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Username is required';
-                    }
-                    if (_usernameError != null) {
-                      return _usernameError;
-                    }
-                    return null;
-                  },
-                ),
-                if (_usernameError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      _usernameError!,
-                      style: TextStyle(color: Colors.red[700], fontSize: 12),
+                          const SizedBox(height: 18),
+                          if (email.isNotEmpty)
+                            Text(
+                              'Email: $email',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          const SizedBox(height: 32),
+
+                          // Username Field
+                          Text(
+                            'Username',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          CustomInputField(
+                            controller: _usernameController,
+                            label: 'Username',
+                            hintText: 'Choose a unique username',
+                            onChanged: _checkUsernameAvailability,
+                            suffixIcon: _isCheckingUsername
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12.0),
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : _usernameError == null &&
+                                      _usernameController.text.isNotEmpty
+                                ? Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green[600],
+                                  )
+                                : null,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Username is required';
+                              }
+                              if (_usernameError != null) {
+                                return _usernameError;
+                              }
+                              return null;
+                            },
+                          ),
+                          if (_usernameError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                _usernameError!,
+                                style: TextStyle(
+                                  color: Colors.red[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+
+                          const SizedBox(height: 24),
+
+                          // Password Field
+                          Text(
+                            'Password',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          CustomInputField(
+                            controller: _passwordController,
+                            label: 'Password',
+                            hintText: 'Enter a strong password',
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (value.length < 6) {
+                                return 'Password must be at least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // Confirm Password Field
+                          Text(
+                            'Confirm Password',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 8),
+                          CustomInputField(
+                            controller: _confirmPasswordController,
+                            label: 'Confirm Password',
+                            hintText: 'Re-enter your password',
+                            obscureText: _obscureConfirmPassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscureConfirmPassword =
+                                    !_obscureConfirmPassword,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 32),
+
+                          // Create Account Button
+                          AppButton(
+                            label: _isLoading
+                                ? 'Creating account...'
+                                : (_cooldown > 0
+                                      ? 'Wait $_cooldown s'
+                                      : 'Create Account'),
+                            onPressed: _isLoading || _cooldown > 0
+                                ? null
+                                : _handleSubmit,
+                            isLoading: _isLoading,
+                            fullWidth: true,
+                          ),
+
+                          const SizedBox(height: 24),
+                        ],
+                      ),
                     ),
                   ),
-
-                const SizedBox(height: 24),
-
-                // Password Field
-                Text(
-                  'Password',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
-                const SizedBox(height: 8),
-                CustomInputField(
-                  controller: _passwordController,
-                  label: 'Password',
-                  hintText: 'Enter a strong password',
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password is required';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Confirm Password Field
-                Text(
-                  'Confirm Password',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CustomInputField(
-                  controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hintText: 'Re-enter your password',
-                  obscureText: _obscureConfirmPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () => setState(
-                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 32),
-
-                // Create Account Button
-                AppButton(
-                  label: _isLoading
-                      ? 'Creating account...'
-                      : (_cooldown > 0
-                            ? 'Wait $_cooldown s'
-                            : 'Create Account'),
-                  onPressed: _isLoading || _cooldown > 0 ? null : _handleSubmit,
-                  isLoading: _isLoading,
-                  fullWidth: true,
-                ),
-
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

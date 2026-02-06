@@ -1,7 +1,7 @@
 import 'package:meta/meta.dart';
 import 'package:dabbler/data/models/authentication/auth_session.dart';
 import 'package:dabbler/data/models/authentication/user.dart';
-import 'user_model.dart';
+import 'package:dabbler/data/models/authentication/user_model.dart';
 
 @immutable
 class AuthResponseModel {

@@ -24,7 +24,8 @@ class UserProfile {
   final String? phoneNumber; // from auth.users, not profiles table
   final String? email; // from auth.users, not profiles table
   final String? gender;
-  final String? profileType; // organiser/player
+  final String? profileType; // personal/business/venue/team/organisation
+  final String? personaType; // player/organiser/hoster/socialiser
   final String? intention; // organise/play
   final String? preferredSport;
   final String? interests;
@@ -57,6 +58,7 @@ class UserProfile {
     this.email,
     this.gender,
     this.profileType,
+    this.personaType,
     this.intention,
     this.preferredSport,
     this.interests,
@@ -313,10 +315,18 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     // Parse nested sport_profiles if included in the response
     // Note: Database uses simple schema: profile_id, sport_key, skill_level
+    // Extract primary_sport_id to mark the primary sport profile
+    final primarySportId = json['primary_sport_id'] as String?;
+
     List<SportProfile> parsedSportsProfiles = [];
     if (json['sport_profiles'] != null && json['sport_profiles'] is List) {
       parsedSportsProfiles = (json['sport_profiles'] as List)
-          .map((sp) => SportProfile.fromJson(sp as Map<String, dynamic>))
+          .map(
+            (sp) => SportProfile.fromJson(
+              sp as Map<String, dynamic>,
+              primarySportId: primarySportId,
+            ),
+          )
           .toList();
     }
 
@@ -340,6 +350,7 @@ class UserProfile {
       email: json['email'] as String?, // from auth.users if needed
       gender: json['gender'] as String?,
       profileType: json['profile_type'] as String?,
+      personaType: json['persona_type'] as String?,
       intention: json['intention'] as String?,
       preferredSport: json['preferred_sport'] as String?,
       interests: json['interests'] as String?,
@@ -349,7 +360,10 @@ class UserProfile {
       geoLat: (json['geo_lat'] as num?)?.toDouble(),
       geoLng: (json['geo_lng'] as num?)?.toDouble(),
       sportsProfiles: parsedSportsProfiles,
-      statistics: const ProfileStatistics(),
+      statistics:
+          json['sport_profiles'] != null && json['sport_profiles'] is List
+          ? ProfileStatistics.fromSportProfiles(json['sport_profiles'] as List)
+          : const ProfileStatistics(),
       privacySettings: const PrivacySettings(),
       preferences: const UserPreferences(userId: ''),
       settings: const UserSettings(),

@@ -231,6 +231,51 @@ class ProfileStatistics {
     );
   }
 
+  /// Creates ProfileStatistics by aggregating data from sport_profiles table
+  /// This computes real statistics from the raw sport_profiles data
+  factory ProfileStatistics.fromSportProfiles(List<dynamic> sportProfiles) {
+    if (sportProfiles.isEmpty) {
+      return const ProfileStatistics();
+    }
+
+    int totalGamesPlayed = 0;
+    int totalRatingsReceived = 0;
+    double totalRatingSum = 0.0;
+    Map<String, int> sportGamesCount = {};
+
+    for (final sp in sportProfiles) {
+      if (sp is! Map<String, dynamic>) continue;
+
+      // Sum up matches played from sport_profiles.matches_played
+      final matchesPlayed = (sp['matches_played'] as int?) ?? 0;
+      totalGamesPlayed += matchesPlayed;
+
+      // Aggregate ratings from sport_profiles.rating_total and rating_count
+      final ratingCount = (sp['rating_count'] as int?) ?? 0;
+      final ratingTotal = (sp['rating_total'] as num?)?.toDouble() ?? 0.0;
+      totalRatingsReceived += ratingCount;
+      totalRatingSum += ratingTotal;
+
+      // Track games per sport for sportGamesCount map
+      final sportKey = sp['sport'] as String?;
+      if (sportKey != null && matchesPlayed > 0) {
+        sportGamesCount[sportKey] = matchesPlayed;
+      }
+    }
+
+    // Calculate average rating across all sports
+    final averageRating = totalRatingsReceived > 0
+        ? totalRatingSum / totalRatingsReceived
+        : 0.0;
+
+    return ProfileStatistics(
+      totalGamesPlayed: totalGamesPlayed,
+      averageRating: averageRating,
+      totalRatingsReceived: totalRatingsReceived,
+      sportGamesCount: sportGamesCount,
+    );
+  }
+
   /// Converts ProfileStatistics to JSON
   Map<String, dynamic> toJson() {
     return {

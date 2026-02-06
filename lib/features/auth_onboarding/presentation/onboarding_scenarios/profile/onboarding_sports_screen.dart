@@ -344,7 +344,7 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
       child: Row(
         children: [
           IconButton(
-            onPressed: () => context.go(RoutePaths.onboardingBasicInfo),
+            onPressed: () => context.go(RoutePaths.createUserInfo),
             icon: Icon(
               Icons.arrow_back,
               color: DesignSystem.colors.textPrimary,

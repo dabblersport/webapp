@@ -11,6 +11,12 @@ class Environment {
   static String get appName => dotenv.env['APP_NAME'] ?? '';
   static String get environment => dotenv.env['ENVIRONMENT'] ?? 'production';
 
+  // Optional: Google Sign-In configuration
+  // - Web: required for google_sign_in on Flutter web
+  // - Mobile: usually configured via google-services.json / GoogleService-Info.plist
+  static String get googleWebClientId =>
+      dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
+
   static void _validate() {
     final missing = <String>[];
     if (supabaseUrl.isEmpty) missing.add('SUPABASE_URL');

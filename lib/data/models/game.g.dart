@@ -32,6 +32,8 @@ _$GameImpl _$$GameImplFromJson(Map<String, dynamic> json) => _$GameImpl(
   updatedAt: DateTime.parse(json['updated_at'] as String),
   squadId: json['squad_id'] as String?,
   searchTsv: json['search_tsv'] as String?,
+  venueLat: (json['venue_lat'] as num?)?.toDouble(),
+  venueLng: (json['venue_lng'] as num?)?.toDouble(),
 );
 
 Map<String, dynamic> _$$GameImplToJson(_$GameImpl instance) =>
@@ -59,4 +61,6 @@ Map<String, dynamic> _$$GameImplToJson(_$GameImpl instance) =>
       'updated_at': instance.updatedAt.toIso8601String(),
       'squad_id': instance.squadId,
       'search_tsv': instance.searchTsv,
+      'venue_lat': instance.venueLat,
+      'venue_lng': instance.venueLng,
     };

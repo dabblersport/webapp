@@ -125,6 +125,7 @@ class AppButtonSize {
   static const double smallHeight = 36.0;
   static const double mediumHeight = 44.0;
   static const double largeHeight = 52.0;
+  static const double extraLargeHeight = largeHeight + AppSpacing.sm;
 
   // Padding
   static const EdgeInsets smallPadding = EdgeInsets.symmetric(
@@ -138,5 +139,9 @@ class AppButtonSize {
   static const EdgeInsets largePadding = EdgeInsets.symmetric(
     horizontal: 20,
     vertical: 14,
+  );
+  static const EdgeInsets extraLargePadding = EdgeInsets.symmetric(
+    horizontal: AppSpacing.xxl,
+    vertical: AppSpacing.lg,
   );
 }

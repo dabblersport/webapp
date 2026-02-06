@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dabbler/core/design_system/tokens/token_based_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,25 +15,28 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
+  // Matches the brand-purple splash background in the provided reference.
+  static const Color _splashPurple = Color(0xFF7328CE);
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 900),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeIn),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+        curve: const Interval(0.0, 0.7, curve: Curves.easeOutBack),
       ),
     );
 
@@ -56,10 +60,8 @@ class _SplashScreenState extends State<SplashScreen>
       data: theme,
       child: Builder(
         builder: (context) {
-          final colorScheme = Theme.of(context).colorScheme;
-
           return Scaffold(
-            backgroundColor: colorScheme.surface,
+            backgroundColor: _splashPurple,
             body: Center(
               child: AnimatedBuilder(
                 animation: _controller,
@@ -71,45 +73,21 @@ class _SplashScreenState extends State<SplashScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // App Logo/Icon
-                          Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Icon(
-                              Icons.sports_soccer,
-                              size: 64,
-                              color: colorScheme.primary,
-                            ),
+                          Image.asset(
+                            'assets/logo.png',
+                            width: 110,
+                            height: 110,
+                            fit: BoxFit.contain,
+                            color: Colors.white,
+                            colorBlendMode: BlendMode.srcIn,
                           ),
-                          const SizedBox(height: 32),
-                          // App Name
+                          const SizedBox(height: 20),
                           Text(
-                            'Dabbler',
-                            style: Theme.of(context).textTheme.headlineLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: colorScheme.onSurface,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          // Tagline
-                          Text(
-                            'Play. Connect. Win.',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(height: 48),
-                          // Loading Indicator
-                          SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 3,
-                              color: colorScheme.primary,
+                            'dabbler',
+                            style: GoogleFonts.pressStart2p(
+                              fontSize: 28,
+                              color: Colors.white,
+                              height: 1.1,
                             ),
                           ),
                         ],

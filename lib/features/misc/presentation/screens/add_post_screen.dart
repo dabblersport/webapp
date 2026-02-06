@@ -6,7 +6,7 @@ import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/features/social/services/social_service.dart';
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/enums/social_enums.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/social/providers/social_providers.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';

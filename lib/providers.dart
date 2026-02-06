@@ -10,3 +10,7 @@ export 'features/misc/data/datasources/supabase_remote_data_source.dart';
 export 'features/social/circles_providers.dart';
 export 'features/social/providers.dart';
 export 'features/home/presentation/providers/home_providers.dart';
+
+// Onboarding
+export 'features/auth_onboarding/presentation/controllers/onboarding_controller.dart';
+export 'features/auth_onboarding/data/repositories/onboarding_repository.dart';

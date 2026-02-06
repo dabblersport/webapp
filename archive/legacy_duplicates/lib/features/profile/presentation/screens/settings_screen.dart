@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

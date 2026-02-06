@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../services/onboarding_controller.dart';
-import '../../../services/onboarding_gamification.dart';
+import 'package:dabbler/features/profile/services/onboarding_controller.dart';
+import 'package:dabbler/features/profile/services/onboarding_gamification.dart';
 import 'package:dabbler/themes/design_system.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -451,7 +451,7 @@ class _ProfileOnboardingWelcomeScreenState
   void _startOnboarding() {
     final controller = ref.read(onboardingControllerProvider);
     controller.startOnboarding();
-    context.go(RoutePaths.onboardingBasicInfo);
+    context.go(RoutePaths.createUserInfo);
   }
 
   void _showSkipWarning(BuildContext context) {

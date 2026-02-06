@@ -1,228 +1,347 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/design_system/tokens/main_dark.dart'
+    as main_dark_tokens;
+import 'package:dabbler/design_system/tokens/main_light.dart'
+    as main_light_tokens;
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
+    show routerRefreshNotifier;
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/utils/ui_constants.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends StatelessWidget {
   final String displayName;
+  final String personaType; // player, organiser, hoster, socialiser
+  final bool
+  isFirstTime; // true = onboarding, false = returning user or add persona
+  final bool isConversion; // true = converting from one persona type to another
 
-  const WelcomeScreen({super.key, required this.displayName});
-
-  @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
-}
-
-class _WelcomeScreenState extends State<WelcomeScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: const Interval(0.2, 0.8, curve: Curves.easeOut),
-          ),
-        );
-
-    // Start animation
-    _animationController.forward();
-
-    // Auto-navigate to home after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        context.go('/home');
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
+  const WelcomeScreen({
+    super.key,
+    required this.displayName,
+    required this.personaType,
+    this.isFirstTime = true,
+    this.isConversion = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
 
-    return SingleSectionLayout(
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: (screenHeight - topPadding - bottomPadding - 48)
-                      .clamp(0.0, double.infinity)
-                      .toDouble(),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Spacer(),
+    // Get persona-specific content
+    final personaContent = _getPersonaContent(personaType);
 
-                    // Dabbler logo
-                    Center(
-                      child: SvgPicture.asset(
-                        'assets/images/dabbler_logo.svg',
-                        width: 100,
-                        height: 110,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
+    return Scaffold(
+      backgroundColor: tokens.main.background,
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: ClipRRect(
+          borderRadius: AppRadius.extraExtraLarge,
+          child: DecoratedBox(
+            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
+            child: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                    ),
+                      child: IntrinsicHeight(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xxl),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(height: AppSpacing.xxxl),
 
-                    SizedBox(height: 16.0),
-
-                    // Dabbler text logo
-                    Center(
-                      child: SvgPicture.asset(
-                        'assets/images/dabbler_text_logo.svg',
-                        width: 130,
-                        height: 25,
-                        colorFilter: const ColorFilter.mode(
-                          Colors.white,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 24.0),
-
-                    // Success Icon with pulse animation
-                    AnimatedBuilder(
-                      animation: _animationController,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (0.1 * _animationController.value),
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFC18FFF).withOpacity(0.2),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFC18FFF),
-                                width: 2,
+                              // 2. Title
+                              Text(
+                                _getWelcomeTitle(),
+                                style: theme.textTheme.displaySmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: tokens.main.onSecondaryContainer,
+                                ),
+                                textAlign: TextAlign.left,
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.check_rounded,
-                              size: 50,
-                              color: Color(0xFFC18FFF),
-                            ),
+
+                              const SizedBox(height: AppSpacing.xxxl),
+
+                              Row(
+                                children: [
+                                  // 1. Avatar with initials
+                                  Center(
+                                    child: CircleAvatar(
+                                      radius: 40,
+                                      backgroundColor: tokens.main.primary,
+                                      child: Text(
+                                        _getInitials(displayName),
+                                        style: theme.textTheme.displaySmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              color: tokens.main.onPrimary,
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.lg),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // 3. Display name
+                                      Text(
+                                        displayName,
+                                        style: theme.textTheme.headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                              color: tokens
+                                                  .main
+                                                  .onSecondaryContainer,
+                                            ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                      const SizedBox(height: AppSpacing.sm),
+
+                                      // 4. Persona chip
+                                      Center(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.lg,
+                                            vertical: AppSpacing.xs,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: tokens.main.secondary,
+                                            borderRadius: BorderRadius.circular(
+                                              999,
+                                            ),
+                                            border: Border.all(
+                                              color: tokens.main.outline
+                                                  .withOpacity(0.3),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            personaContent.chipLabel,
+                                            style: theme.textTheme.labelLarge
+                                                ?.copyWith(
+                                                  color:
+                                                      tokens.main.onSecondary,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: AppSpacing.xxxl),
+
+                              // 5. Primary guidance text
+                              Text(
+                                personaContent.guidanceText,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: tokens.main.onSecondaryContainer,
+                                  height: 1.25,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+
+                              const SizedBox(height: AppSpacing.xxl),
+
+                              // 5. Core philosophy statement
+                              Text(
+                                personaContent.philosophyStatement,
+                                style: theme.textTheme.headlineLarge?.copyWith(
+                                  color: tokens.main.primary,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.3,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+
+                              const SizedBox(height: AppSpacing.xxxl),
+                              const SizedBox(height: AppSpacing.xl),
+
+                              // 6. Reminder section
+                              Container(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Don\'t forget',
+                                      style: theme.textTheme.titleMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: tokens
+                                                .main
+                                                .onSecondaryContainer,
+                                          ),
+                                    ),
+                                    const SizedBox(height: AppSpacing.xs),
+                                    Text(
+                                      personaContent.reminderText,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: tokens
+                                                .main
+                                                .onSecondaryContainer,
+                                            height: 1.7,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const Spacer(),
+
+                              // 7. Final emphasis line
+                              Text(
+                                personaContent.finalEmphasis,
+                                style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: tokens.main.onSecondaryContainer,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+
+                              const SizedBox(height: AppSpacing.xl),
+                              // 8. Primary CTA
+                              FilledButton(
+                                onPressed: () {
+                                  routerRefreshNotifier.clearPostLoginWelcome();
+                                  context.go(RoutePaths.home);
+                                },
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(56),
+                                  shape: const StadiumBorder(),
+                                  backgroundColor: tokens.main.primary,
+                                  foregroundColor: tokens.main.onPrimary,
+                                  textStyle: theme.textTheme.titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                child: const Text('Continue'),
+                              ),
+
+                              const SizedBox(height: AppSpacing.lg),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-
-                    SizedBox(height: 24.0),
-
-                    // Welcome Message
-                    Text(
-                      'Welcome to Dabbler!',
-                      style: Theme.of(context).textTheme.headlineLarge
-                          ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    SizedBox(height: 12.0),
-
-                    // Personalized greeting
-                    Text(
-                      'Hi ${widget.displayName}! 👋',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: const Color(0xFFC18FFF),
-                            fontWeight: FontWeight.w500,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    SizedBox(height: 12.0),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
-                        'Your account has been created successfully.\nGet ready to discover amazing sports experiences!',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white.withOpacity(0.9),
                         ),
-                        textAlign: TextAlign.center,
                       ),
                     ),
-
-                    const Spacer(),
-
-                    // Progress indicator
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 48),
-                      child: LinearProgressIndicator(
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFFC18FFF),
-                        ),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-
-                    SizedBox(height: 12.0),
-
-                    Text(
-                      'Taking you to your home screen...',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-
-                    SizedBox(height: 12.0),
-
-                    // Skip button
-                    TextButton(
-                      onPressed: () => context.go('/home'),
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
-                      ),
-                      child: const Text('Continue to Home'),
-                    ),
-
-                    SizedBox(height: 24.0),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
+
+  String _getWelcomeTitle() {
+    if (isConversion) {
+      return 'Conversion Complete! 🎉';
+    } else if (isFirstTime) {
+      return 'Welcome to Dabbler 😉';
+    } else {
+      return 'Welcome Back! 👋';
+    }
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.isEmpty) return '';
+
+    if (parts.length == 1) {
+      // Single name: take first two characters
+      return parts[0].substring(0, parts[0].length.clamp(0, 2)).toUpperCase();
+    } else {
+      // Multiple names: take first character of first and last name
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+  }
+
+  _PersonaContent _getPersonaContent(String persona) {
+    switch (persona.toLowerCase()) {
+      case 'player':
+        return _PersonaContent(
+          chipLabel: 'Sports player',
+          guidanceText:
+              'Join games that match your level, respect the rules set by the organiser, and confirm only when you\'re ready to play.',
+          philosophyStatement: 'Your reliability builds your reputation.',
+          reminderText:
+              'Confirm only when you’re sure you can play.\nRespect the rules, timing, and other players.',
+          finalEmphasis: 'Confirm only when you\'re ready to play',
+        );
+
+      case 'organiser':
+        return _PersonaContent(
+          chipLabel: 'Games organiser',
+          guidanceText:
+              'Create games with clear rules, fair skill levels, and realistic timings.',
+          philosophyStatement:
+              'You set the tone — great games start with great organisation.',
+          reminderText:
+              'Set clear rules and realistic timings.\nCommunicate changes early and clearly.',
+          finalEmphasis: 'Continue only when you\'re ready!',
+        );
+
+      case 'hoster':
+        return _PersonaContent(
+          chipLabel: 'Venue host',
+          guidanceText:
+              'Help players feel welcome by keeping information accurate and spaces ready.',
+          philosophyStatement:
+              'Clear availability and smooth coordination make everyone\'s experience better.',
+          reminderText:
+              'Keep availability and details accurate.\nUpdate information as soon as things change.',
+          finalEmphasis: 'Continue only when you\'re ready!',
+        );
+
+      case 'socialiser':
+        return _PersonaContent(
+          chipLabel: 'Sports socialiser',
+          guidanceText:
+              'Connect with players, spark conversations, and help games feel more human.',
+          philosophyStatement:
+              'Your presence shapes the community — friendly, inclusive, and respectful.',
+          reminderText:
+              'Be respectful and inclusive.\nAdd value without disrupting the game.',
+          finalEmphasis: 'Continue only when you\'re ready!',
+        );
+
+      default:
+        // Fallback to player
+        return _PersonaContent(
+          chipLabel: 'Sports player',
+          guidanceText:
+              'Join games that match your level, respect the rules set by the organiser, and confirm only when you\'re ready to play.',
+          philosophyStatement: 'Your reliability builds your reputation.',
+          reminderText: 'Play fair, communicate clearly, and respect the game.',
+          finalEmphasis: 'Confirm only when you\'re ready to play',
+        );
+    }
+  }
+}
+
+/// Helper class to hold persona-specific content
+class _PersonaContent {
+  final String chipLabel;
+  final String guidanceText;
+  final String philosophyStatement;
+  final String reminderText;
+  final String finalEmphasis;
+
+  _PersonaContent({
+    required this.chipLabel,
+    required this.guidanceText,
+    required this.philosophyStatement,
+    required this.reminderText,
+    required this.finalEmphasis,
+  });
 }
