@@ -71,9 +71,9 @@ class OrganiserProfileController extends StateNotifier<OrganiserProfileState> {
         resolvedProfileId = profileRow['id'] as String;
       }
 
-      // Load organiser profiles from organiser_profiles table
+      // Load organiser profiles from organiser table
       final List<dynamic> rows = await client
-          .from('organiser_profiles')
+          .from('organiser')
           .select()
           .eq('profile_id', resolvedProfileId);
 

@@ -60,7 +60,7 @@ class AppStep extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: stepColor.withOpacity(0.3), width: 2.0),
+        border: Border.all(color: stepColor.withValues(alpha: 0.3), width: 2.0),
       ),
     );
   }

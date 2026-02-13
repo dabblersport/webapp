@@ -3,6 +3,7 @@
 // Supports keyset pagination, realtime updates, and comprehensive filtering
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ============================================================================
@@ -327,6 +328,20 @@ class NotificationsRepository {
     bool? isRead,
   }) async {
     try {
+      // Fetch blocked user IDs for filtering
+      final blockedByMe = await _client
+          .from('user_blocks')
+          .select('blocked_user_id')
+          .eq('blocker_user_id', userId);
+      final blockedMe = await _client
+          .from('user_blocks')
+          .select('blocker_user_id')
+          .eq('blocked_user_id', userId);
+      final blockedIds = <String>{
+        ...(blockedByMe as List).map((r) => r['blocked_user_id'] as String),
+        ...(blockedMe as List).map((r) => r['blocker_user_id'] as String),
+      };
+
       // Start query
       var query = _client
           .from('notifications')
@@ -366,6 +381,14 @@ class NotificationsRepository {
           .limit(limit);
 
       return (response as List)
+          .where((json) {
+            final map = json as Map<String, dynamic>;
+            final actorId =
+                map['from_user_id'] as String? ??
+                map['actor_user_id'] as String? ??
+                map['sender_id'] as String?;
+            return actorId == null || !blockedIds.contains(actorId);
+          })
           .map((json) => NotificationItem.fromMap(json as Map<String, dynamic>))
           .toList();
     } catch (e, stack) {
@@ -571,7 +594,13 @@ class NotificationsRepository {
             }
           },
         )
-        .subscribe();
+        .subscribe((status, [error]) {
+          if (status == RealtimeSubscribeStatus.timedOut) {
+            debugPrint(
+              'Realtime: notifications channel timed out for $channelKey',
+            );
+          }
+        });
 
     _subscriptions[channelKey] = channel;
 

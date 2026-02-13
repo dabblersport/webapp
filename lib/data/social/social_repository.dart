@@ -34,6 +34,7 @@ class SocialRepository {
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .eq('profile_type', 'personal')
         .maybeSingle();
 
     if (res == null) return null;
@@ -173,6 +174,7 @@ class SocialRepository {
     String? primaryVibeId,
     String? gameId,
     String? locationTagId,
+    List<String> tags = const [],
     List<String> extraVibeIds = const [],
     List<String> mentionProfileIds = const [],
   }) async {
@@ -219,6 +221,7 @@ class SocialRepository {
       if (primaryVibeId != null) 'primary_vibe_id': primaryVibeId,
       if (gameId != null) 'game_id': gameId,
       if (locationTagId != null) 'location_tag_id': locationTagId,
+      if (tags.isNotEmpty) 'tags': tags,
     };
 
     final inserted = await _client
@@ -290,7 +293,11 @@ class SocialRepository {
   // Feed & queries
   // ---------------------------------------------------------------------------
 
-  Future<List<PostModel>> getFeedPosts({int limit = 20, int offset = 0}) async {
+  Future<List<PostModel>> getFeedPosts({
+    int limit = 20,
+    int offset = 0,
+    Set<String> blockedUserIds = const {},
+  }) async {
     final posts = await _client
         .from('posts')
         .select('*')
@@ -300,11 +307,19 @@ class SocialRepository {
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
 
+    // Filter out posts from blocked users
+    final filteredPosts = blockedUserIds.isEmpty
+        ? posts
+        : posts.where((p) {
+            final authorId = p['author_user_id'] as String?;
+            return authorId == null || !blockedUserIds.contains(authorId);
+          }).toList();
+
     final user = _client.auth.currentUser;
     final currentUserId = user?.id;
 
     // Preload profiles
-    final authorIds = posts
+    final authorIds = filteredPosts
         .map((p) => p['author_user_id'] as String?)
         .whereType<String>()
         .toSet()
@@ -321,8 +336,8 @@ class SocialRepository {
 
     // Preload likes for current user
     final likedPostIds = <dynamic>{};
-    if (currentUserId != null && posts.isNotEmpty) {
-      final postIds = posts.map((p) => p['id']).toList();
+    if (currentUserId != null && filteredPosts.isNotEmpty) {
+      final postIds = filteredPosts.map((p) => p['id']).toList();
       final likedRows = await _client
           .from('post_likes')
           .select('post_id')
@@ -331,7 +346,7 @@ class SocialRepository {
       likedPostIds.addAll(likedRows.map((r) => r['post_id']));
     }
 
-    return posts
+    return filteredPosts
         .map<PostModel>(
           (row) => _mapPostRowToModel(
             row,

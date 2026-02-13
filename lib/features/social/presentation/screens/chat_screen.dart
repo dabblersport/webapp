@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
 import '../widgets/chat/chat_bubble.dart';
-import 'package:dabbler/widgets/avatar_widget.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/utils/enums/social_enums.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -112,7 +111,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            AvatarWidget(imageUrl: null, name: widget.userName, size: 32),
+            DSAvatar.small(
+              displayName: widget.userName,
+              context: AvatarContext.social,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -261,7 +263,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       decoration: BoxDecoration(
         color: context.colors.surface,
         border: Border(
-          top: BorderSide(color: context.colors.outline.withOpacity(0.2)),
+          top: BorderSide(color: context.colors.outline.withValues(alpha: 0.2)),
         ),
       ),
       child: Row(
@@ -280,7 +282,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 color: context.colors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: context.colors.outline.withOpacity(0.2),
+                  color: context.colors.outline.withValues(alpha: 0.2),
                 ),
               ),
               child: TextField(

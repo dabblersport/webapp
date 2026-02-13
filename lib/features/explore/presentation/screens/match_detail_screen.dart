@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dabbler/data/models/core/match_model.dart';
-import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/widgets/app_button.dart';
-import 'package:dabbler/widgets/avatar_widget.dart';
+import 'package:dabbler/core/design_system/design_system.dart' hide AppButton;
 
 class MatchDetailScreen extends StatefulWidget {
   final Match match;
@@ -474,10 +473,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AvatarWidget(
+          DSAvatar.small(
             imageUrl: participant.avatar,
-            name: participant.name,
-            size: 40,
+            displayName: participant.name,
+            context: AvatarContext.sports,
           ),
           const SizedBox(height: 8),
           Text(
@@ -632,10 +631,10 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       ),
       child: Row(
         children: [
-          AvatarWidget(
+          DSAvatar.medium(
             imageUrl: organizer.avatar,
-            name: organizer.name,
-            size: 48,
+            displayName: organizer.name,
+            context: AvatarContext.sports,
           ),
           const SizedBox(width: 12),
           Expanded(

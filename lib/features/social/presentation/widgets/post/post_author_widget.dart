@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 
 class PostAuthorWidget extends StatelessWidget {
   final dynamic author;
@@ -26,9 +26,10 @@ class PostAuthorWidget extends StatelessWidget {
     return Row(
       children: [
         // Author avatar
-        AppAvatar.small(
+        DSAvatar.small(
           imageUrl: author.avatar,
-          fallbackText: author.name,
+          displayName: author.name,
+          context: AvatarContext.social,
           onTap: onProfileTap,
         ),
 

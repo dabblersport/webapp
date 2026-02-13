@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/sport_profile.dart';
@@ -29,6 +30,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -70,6 +72,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -119,6 +122,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -166,6 +170,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -201,6 +206,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -262,6 +268,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -312,7 +319,11 @@ class SportProfilesRepositoryImpl extends BaseRepository
             ),
             callback: (_) => unawaited(emitCurrent()),
           )
-          .subscribe();
+          .subscribe((status, [error]) {
+            if (status == RealtimeSubscribeStatus.timedOut) {
+              debugPrint('Realtime: sport_profiles channel timed out');
+            }
+          });
     };
 
     controller.onCancel = () async {

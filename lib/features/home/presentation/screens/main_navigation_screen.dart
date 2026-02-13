@@ -361,7 +361,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             tween: ColorTween(end: targetPrimaryColor),
             builder: (context, animatedColor, child) {
               final foregroundColor = animatedColor ?? targetPrimaryColor;
-              final foregroundColorInactive = foregroundColor.withOpacity(0.8);
+              final foregroundColorInactive = foregroundColor.withValues(
+                alpha: 0.8,
+              );
               final borderColor = foregroundColor;
 
               return LayoutBuilder(

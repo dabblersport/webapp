@@ -74,13 +74,23 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
 
       String? resolvedProfileId = profileId;
 
-      // If profileId not provided, resolve the player profile.id for this auth user
+      // If profileId not provided, resolve the profile.id for this auth user.
+      // Prefer player persona, fallback to any active profile that has sport_profiles.
       if (resolvedProfileId == null) {
-        final profileRow = await client
+        var profileRow = await client
             .from('profiles')
             .select('id')
             .eq('user_id', userId)
-            .eq('profile_type', 'player')
+            .eq('persona_type', 'player')
+            .maybeSingle();
+
+        // Fallback: pick any profile for this user (organiser, hoster, etc.)
+        profileRow ??= await client
+            .from('profiles')
+            .select('id')
+            .eq('user_id', userId)
+            .order('created_at', ascending: true)
+            .limit(1)
             .maybeSingle();
 
         if (profileRow == null) {

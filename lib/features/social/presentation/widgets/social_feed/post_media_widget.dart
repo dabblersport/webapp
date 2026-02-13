@@ -341,7 +341,7 @@ class _PostMediaWidgetState extends ConsumerState<PostMediaWidget> {
                 shape: BoxShape.circle,
                 color: index == _currentIndex
                     ? Colors.white
-                    : Colors.white.withOpacity(0.4),
+                    : Colors.white.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -634,7 +634,7 @@ class _FullScreenMediaViewerState extends State<FullScreenMediaViewer> {
                               shape: BoxShape.circle,
                               color: index == _currentIndex
                                   ? Colors.white
-                                  : Colors.white.withOpacity(0.4),
+                                  : Colors.white.withValues(alpha: 0.4),
                             ),
                           ),
                         ),

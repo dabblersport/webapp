@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/usecases/create_post_usecase.dart';
 import 'package:dabbler/data/models/social/post_model.dart';
 import 'package:dabbler/data/models/authentication/user_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../utils/enums/social_enums.dart';
 
 /// State for post creation and management
@@ -662,19 +663,27 @@ class PostsController extends StateNotifier<PostsState> {
   }
 
   Future<List<UserModel>> _fetchMentionSuggestions(String query) async {
-    // Mock fetching mention suggestions
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      final rows = await Supabase.instance.client
+          .from('profiles')
+          .select('id, user_id, display_name, username, avatar_url')
+          .or('username.ilike.%$query%,display_name.ilike.%$query%')
+          .order('display_name', ascending: true)
+          .limit(6);
 
-    return List.generate(
-      5,
-      (index) => UserModel(
-        id: 'mention_user_$index',
-        fullName: 'User $index',
-        email: 'mention_user_$index@example.com',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    );
+      return (rows as List).map((row) {
+        return UserModel(
+          id: row['user_id'] ?? row['id'] ?? '',
+          username: row['username']?.toString(),
+          fullName: row['display_name']?.toString(),
+          email: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }).toList();
+    } catch (e) {
+      return [];
+    }
   }
 
   Future<List<String>> _fetchHashtagSuggestions(String query) async {

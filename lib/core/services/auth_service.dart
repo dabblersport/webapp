@@ -147,17 +147,17 @@ class AuthService {
           // But log extensively so we can debug
         }
       } else if (insertedProfileType == 'organiser') {
-        // Create organiser_profile for organiser
+        // Create organiser record for organiser/business profiles
         try {
-          final organiserProfileData = {
+          final organiserData = {
             'profile_id': profileId,
             'sport': primarySport.toLowerCase(),
             // Use DB defaults for: organiser_level (1), commission_type ('percent'),
             // commission_value (0), is_verified (false), is_active (true)
           };
           await _supabase
-              .from('organiser_profiles')
-              .insert(organiserProfileData)
+              .from('organiser')
+              .insert(organiserData)
               .select()
               .single();
         } catch (e) {
@@ -292,9 +292,10 @@ class AuthService {
   /// Sign in with Google OAuth
   Future<bool> signInWithGoogle() async {
     try {
-      // Use token-based Google Sign-In to avoid browser redirects.
-      // - Android/iOS: uses native account chooser (requires SHA-1 in Firebase).
-      // - Web: uses a popup flow (no full-page redirect) when clientId is set.
+      // Use native token-based Google Sign-In on all platforms (no browser redirect).
+      // - Android: native account chooser via Credential Manager (reads serverClientId from google-services.json).
+      // - iOS: native account chooser (reads clientId from GoogleService-Info.plist).
+      // - Web: popup flow when clientId is set.
       if (kIsWeb && Environment.googleWebClientId.isEmpty) {
         throw Exception(
           'Missing GOOGLE_WEB_CLIENT_ID for web Google sign-in. '
@@ -303,16 +304,7 @@ class AuthService {
         );
       }
 
-      // Temporarily use browser redirect on Android until SHA-1 is added to Firebase
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final launched = await _supabase.auth.signInWithOAuth(
-          OAuthProvider.google,
-          redirectTo: 'dabbler://app',
-        );
-        return launched;
-      }
-
-      // Use native flow for iOS and web
+      // Native flow for Android, iOS, and web
       final googleSignIn = GoogleSignIn(
         scopes: const ['email', 'profile', 'openid'],
         clientId: kIsWeb ? Environment.googleWebClientId : null,
@@ -514,8 +506,13 @@ class AuthService {
   // USER PROFILE METHODS
   // =====================================================
 
-  /// Get user profile from database
-  Future<Map<String, dynamic>?> getUserProfile({List<String>? fields}) async {
+  /// Get user profile from database.
+  /// For multi-profile users (player + organiser), returns the profile
+  /// matching [personaType] if provided, otherwise the oldest active profile.
+  Future<Map<String, dynamic>?> getUserProfile({
+    List<String>? fields,
+    String? personaType,
+  }) async {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) {
@@ -526,18 +523,27 @@ class AuthService {
           ? '*'
           : fields.join(',');
 
-      // Use maybeSingle() instead of single() to handle missing profiles gracefully
-      final response = await _supabase
+      var query = _supabase
           .from(SupabaseConfig.usersTable)
           .select(selectFields)
-          .eq('user_id', user.id) // Query by user_id, not id
-          .maybeSingle();
+          .eq('user_id', user.id)
+          .eq('is_active', true);
 
-      if (response == null) {
+      if (personaType != null) {
+        query = query.eq('persona_type', personaType);
+      }
+
+      // Use .limit(1) instead of .maybeSingle() to avoid crashes when
+      // a user has multiple active profiles (player + organiser).
+      final response = await query
+          .order('created_at', ascending: true)
+          .limit(1);
+
+      if ((response as List).isEmpty) {
         return null;
       }
 
-      return response;
+      return Map<String, dynamic>.from(response.first);
     } catch (e) {
       return null;
     }
@@ -744,7 +750,7 @@ class AuthService {
 
       if (sportRecord == null) {
         throw Exception(
-          'Sport "${preferredSport}" not found in sports table. Please ensure the sport exists.',
+          'Sport "$preferredSport" not found in sports table. Please ensure the sport exists.',
         );
       }
 
@@ -934,6 +940,7 @@ class AuthService {
     String? username,
     String? bio,
     String? avatarUrl,
+    String? profileId,
     String? phone,
     DateTime? dateOfBirth,
     int? age,
@@ -978,15 +985,21 @@ class AuthService {
 
         // If avatarUrl is requested, apply it via a separate table update to
         // keep compatibility with older RPC definitions.
+        // Scope to a specific profile via profileId to avoid updating all
+        // profiles for multi-profile users.
         if (avatarUrl != null) {
           final trimmed = avatarUrl.trim();
-          await _supabase
+          var avatarQuery = _supabase
               .from(SupabaseConfig.usersTable)
               .update({
                 'avatar_url': trimmed.isEmpty ? null : trimmed,
                 'updated_at': DateTime.now().toIso8601String(),
               })
               .eq('user_id', user.id);
+          if (profileId != null) {
+            avatarQuery = avatarQuery.eq('id', profileId);
+          }
+          await avatarQuery;
         }
 
         return response;

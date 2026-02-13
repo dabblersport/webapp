@@ -74,8 +74,8 @@ class SettingsTile extends StatelessWidget {
                         subtitle!,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: isEnabled
-                              ? theme.textTheme.bodyMedium?.color?.withOpacity(
-                                  0.7,
+                              ? theme.textTheme.bodyMedium?.color?.withValues(
+                                  alpha: 0.7,
                                 )
                               : theme.disabledColor,
                         ),
@@ -100,7 +100,7 @@ class SettingsTile extends StatelessWidget {
           Divider(
             height: 1,
             indent: leadingIcon != null || leadingWidget != null ? 56 : 16,
-            color: theme.dividerColor.withOpacity(0.3),
+            color: theme.dividerColor.withValues(alpha: 0.3),
           ),
         ],
       );
@@ -304,7 +304,7 @@ class SettingsSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

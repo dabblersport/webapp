@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
 import '../../../../../themes/app_text_styles.dart';
 import '../../../../../utils/formatters/time_formatter.dart';
@@ -282,10 +282,16 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
 
   Widget _buildAvatar() {
     if (!widget.showAvatar || widget.isConsecutive || widget.sender == null) {
-      return SizedBox(width: 32); // Placeholder for alignment
+      return SizedBox(
+        width: 40,
+      ); // Placeholder for alignment (DSAvatar.small size)
     }
 
-    return CustomAvatar(imageUrl: widget.sender?.profileImageUrl, radius: 16);
+    return DSAvatar.small(
+      imageUrl: widget.sender?.profileImageUrl,
+      displayName: widget.sender?.displayName ?? 'User',
+      context: AvatarContext.social,
+    );
   }
 
   Widget _buildMessageBubble() {
@@ -330,7 +336,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.05),
+          color: Colors.black.withValues(alpha: 0.05),
           blurRadius: 8,
           offset: const Offset(0, 2),
         ),
@@ -399,7 +405,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -432,7 +438,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
                     _formatFileSize(widget.message.mediaAttachments.first.size),
                     style: AppTextStyles.bodySmall.copyWith(
                       color: _bubbleType == MessageBubbleType.sent
-                          ? Colors.white.withOpacity(0.7)
+                          ? Colors.white.withValues(alpha: 0.7)
                           : Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -465,7 +471,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
                     (_bubbleType == MessageBubbleType.sent
                             ? Colors.white
                             : AppColors.primary)
-                        .withOpacity(0.3),
+                        .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(1),
               ),
             ),
@@ -475,7 +481,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
             '0:00',
             style: AppTextStyles.bodySmall.copyWith(
               color: _bubbleType == MessageBubbleType.sent
-                  ? Colors.white.withOpacity(0.8)
+                  ? Colors.white.withValues(alpha: 0.8)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
@@ -496,7 +502,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -528,7 +534,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
             'Link description preview...',
             style: AppTextStyles.bodySmall.copyWith(
               color: _bubbleType == MessageBubbleType.sent
-                  ? Colors.white.withOpacity(0.7)
+                  ? Colors.white.withValues(alpha: 0.7)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             maxLines: 2,
@@ -590,7 +596,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           decoration: BoxDecoration(
             color: Theme.of(
               context,
-            ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(

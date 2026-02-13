@@ -54,9 +54,9 @@ final getVenueSubmissionByIdUseCaseProvider =
       ),
     );
 
-/// Resolves the current user's organiser profile id (`organiser_profiles.id`).
+/// Resolves the current user's organiser profile id (`organiser.id`).
 ///
-/// Note: `venue_submissions.organiser_profile_id` is a FK to `organiser_profiles`.
+/// Note: `venue_submissions.organiser_profile_id` is a FK to `organiser`.
 final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
   final profileResult = await ref.watch(myProfileProvider.future);
 
@@ -81,10 +81,10 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
 
     Map<String, dynamic>? row;
 
-    // Prefer matching the organiser profile row for the preferred sport.
+    // Prefer matching the organiser row for the preferred sport.
     if (preferredSport != null && preferredSport.isNotEmpty) {
       row = await svc
-          .from('organiser_profiles')
+          .from('organiser')
           .select('id')
           .eq('profile_id', profile.id)
           .eq('sport', preferredSport)
@@ -92,17 +92,17 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
           .maybeSingle();
     }
 
-    // Fallback to the first active organiser profile for this profile.
+    // Fallback to the first active organiser record for this profile.
     row ??= await svc
-        .from('organiser_profiles')
+        .from('organiser')
         .select('id')
         .eq('profile_id', profile.id)
         .eq('is_active', true)
         .maybeSingle();
 
-    // Final fallback: any organiser profile row for this profile.
+    // Final fallback: any organiser row for this profile.
     row ??= await svc
-        .from('organiser_profiles')
+        .from('organiser')
         .select('id')
         .eq('profile_id', profile.id)
         .maybeSingle();

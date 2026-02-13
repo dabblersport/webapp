@@ -8,7 +8,7 @@ const theme = (
     onPrimaryContainer: Color(0xFF2A1700),
     secondary: Color(0xFFF2954B),
     onSecondary: Color(0xFF3E2000),
-    secondaryContainer: Color(0xFF5A3200),
+    secondaryContainer: Color(0xFF381F00),
     onSecondaryContainer: Color(0xFFFFDDBC),
     tertiary: Color(0xFF9B6D4B),
     onTertiary: Color(0xFF4A3321),

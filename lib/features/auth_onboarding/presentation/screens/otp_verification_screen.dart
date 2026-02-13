@@ -568,7 +568,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                               color: tokens
                                                   .main
                                                   .onSecondaryContainer
-                                                  .withOpacity(0.6),
+                                                  .withValues(alpha: 0.6),
                                             ),
                                       )
                                     else

@@ -230,7 +230,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
               width: isSelected ? 2 : 1,
             ),
             color: isSelected
-                ? Theme.of(context).primaryColor.withOpacity(0.05)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                 : null,
           ),
           child: Column(
@@ -240,7 +240,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: (data['color'] as Color).withOpacity(0.1),
+                  color: (data['color'] as Color).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -308,7 +308,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                           : Colors.grey[300]!,
                     ),
                     color: isSelected
-                        ? Theme.of(context).primaryColor.withOpacity(0.05)
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                         : null,
                   ),
                   child: Row(
@@ -512,7 +512,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                           : Colors.grey[300]!,
                     ),
                     color: isSelected
-                        ? Theme.of(context).primaryColor.withOpacity(0.05)
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                         : null,
                   ),
                   child: Row(
@@ -538,7 +538,9 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: (levelData['color'] as Color).withOpacity(0.1),
+                          color: (levelData['color'] as Color).withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -647,7 +649,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                     },
                     selectedColor: Theme.of(
                       context,
-                    ).primaryColor.withOpacity(0.2),
+                    ).primaryColor.withValues(alpha: 0.2),
                     checkmarkColor: Theme.of(context).primaryColor,
                   );
                 }).toList(),
@@ -753,7 +755,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen>
                   height: 32,
                   decoration: BoxDecoration(
                     color: value
-                        ? Theme.of(context).primaryColor.withOpacity(0.1)
+                        ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
                         : Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),

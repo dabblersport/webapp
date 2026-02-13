@@ -32,6 +32,7 @@ class UserProfile {
   final String? language;
   final bool verified; // matches DB column name
   final bool isActive;
+  final DateTime? lastSeen;
   final double? geoLat;
   final double? geoLng;
 
@@ -65,6 +66,7 @@ class UserProfile {
     this.language,
     this.verified = false,
     this.isActive = true,
+    this.lastSeen,
     this.geoLat,
     this.geoLng,
     this.sportsProfiles = const [],
@@ -171,6 +173,29 @@ class UserProfile {
     return isActive;
   }
 
+  /// Returns true if user was seen within the last 5 minutes
+  bool get isOnline {
+    if (lastSeen == null) return false;
+    return DateTime.now().difference(lastSeen!).inMinutes < 5;
+  }
+
+  /// Returns a human-readable "last seen" string
+  String getLastSeenText() {
+    if (lastSeen == null) return 'Offline';
+    if (isOnline) return 'Online';
+
+    final diff = DateTime.now().difference(lastSeen!);
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours}h ago';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays}d ago';
+    } else {
+      return 'Long time ago';
+    }
+  }
+
   /// Returns user's activity status
   String getActivityStatus() {
     return isActive ? 'Active' : 'Inactive';
@@ -271,6 +296,7 @@ class UserProfile {
     String? language,
     bool? verified,
     bool? isActive,
+    DateTime? lastSeen,
     double? geoLat,
     double? geoLng,
     List<SportProfile>? sportsProfiles,
@@ -301,6 +327,7 @@ class UserProfile {
       language: language ?? this.language,
       verified: verified ?? this.verified,
       isActive: isActive ?? this.isActive,
+      lastSeen: lastSeen ?? this.lastSeen,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,
       sportsProfiles: sportsProfiles ?? this.sportsProfiles,
@@ -357,6 +384,9 @@ class UserProfile {
       language: json['language'] as String?,
       verified: json['verified'] as bool? ?? false,
       isActive: json['is_active'] as bool? ?? true,
+      lastSeen: json['last_seen'] != null
+          ? DateTime.tryParse(json['last_seen'] as String)
+          : null,
       geoLat: (json['geo_lat'] as num?)?.toDouble(),
       geoLng: (json['geo_lng'] as num?)?.toDouble(),
       sportsProfiles: parsedSportsProfiles,
@@ -394,6 +424,7 @@ class UserProfile {
       'language': language,
       'verified': verified,
       'is_active': isActive,
+      'last_seen': lastSeen?.toIso8601String(),
       'geo_lat': geoLat,
       'geo_lng': geoLng,
     };
@@ -424,6 +455,7 @@ class UserProfile {
         other.language == language &&
         other.verified == verified &&
         other.isActive == isActive &&
+        other.lastSeen == lastSeen &&
         other.geoLat == geoLat &&
         other.geoLng == geoLng &&
         _listEquals(other.sportsProfiles, sportsProfiles) &&
@@ -457,6 +489,7 @@ class UserProfile {
       language,
       verified,
       isActive,
+      lastSeen,
       geoLat,
       geoLng,
       Object.hashAll(sportsProfiles),

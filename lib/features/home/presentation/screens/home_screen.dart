@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/home/presentation/widgets/inline_post_composer.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
@@ -28,6 +29,7 @@ import 'package:dabbler/features/home/presentation/widgets/notification_permissi
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_center_badge_providers.dart';
+import 'package:dabbler/app/app_router.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -37,7 +39,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _userProfile;
   String _selectedPostFilter = 'all'; // all, moment, dab, kickin
@@ -52,7 +54,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      AppRouter.routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    AppRouter.routeObserver.unsubscribe(this);
     _refreshDebounceTimer?.cancel();
     // Cancel all realtime subscriptions
     for (final subscription in _likeSubscriptions.values) {
@@ -60,6 +72,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
     _likeSubscriptions.clear();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when returning to home screen from another screen
+    // Reload user profile to sync any changes (e.g., avatar updates from profile edit)
+    _loadUserProfile();
   }
 
   Future<void> _checkNotificationPermission() async {
@@ -156,13 +175,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final profile = await _authService.getUserProfile();
+      // Pass the active persona type so the avatar matches the currently
+      // selected persona (player vs organiser) in multi-profile scenarios.
+      final activeType = ref.read(activeProfileTypeProvider);
+      final profile = await _authService.getUserProfile(
+        personaType: activeType,
+      );
       if (mounted) {
         setState(() {
           _userProfile = profile;
         });
       }
     } catch (e) {}
+  }
+
+  /// Resolves display name from raw profile map with fallback chain:
+  /// display_name → username → email prefix → 'User'
+  String _resolveDisplayName(Map<String, dynamic>? profile) {
+    if (profile == null) return 'User';
+
+    final displayName = (profile['display_name'] as String?)?.trim() ?? '';
+    if (displayName.isNotEmpty) return displayName;
+
+    final username = (profile['username'] as String?)?.trim() ?? '';
+    if (username.isNotEmpty) return username;
+
+    final email = (profile['email'] as String?)?.trim() ?? '';
+    if (email.isNotEmpty) return email.split('@').first;
+
+    return 'User';
   }
 
   Future<void> _handleRefresh() async {
@@ -202,29 +243,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final showNotificationCenterIndicator =
         hasUnreadNotifications || hasNewActivity;
 
-    // Extract initials from display name
-    String? getInitials(String? displayName) {
-      if (displayName == null || displayName.isEmpty) return null;
-      final parts = displayName.trim().split(' ');
-      if (parts.isEmpty) return null;
-      if (parts.length == 1) {
-        return parts[0][0].toUpperCase();
-      }
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => context.push(RoutePaths.profile),
-            child: DSAvatar.size48(
+            child: DSAvatar.medium(
               imageUrl: resolveAvatarUrl(
                 _userProfile?['avatar_url'] as String?,
               ),
-              initials: getInitials(_userProfile?['display_name']),
-              backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.2),
+              displayName: _resolveDisplayName(_userProfile),
+              context: AvatarContext.main,
             ),
           ),
           const SizedBox(width: 18),
@@ -306,7 +336,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 0),
             child: ThoughtsInput(
-              onTap: () => context.push('/social-create-post'),
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                    ),
+                    child: const InlinePostComposer(),
+                  ),
+                );
+              },
             ),
           ),
           // Post filters
@@ -386,9 +428,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final displayName = (player['display_name'] ?? 'U')
                       .toString()
                       .trim();
-                  final initial = displayName.isNotEmpty
-                      ? displayName.substring(0, 1).toUpperCase()
-                      : 'U';
                   return GestureDetector(
                     onTap: () {
                       if (player['user_id'] != null) {
@@ -397,14 +436,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       }
                     },
-                    child: CircleAvatar(
-                      radius: 24,
-                      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                          ? NetworkImage(avatarUrl)
-                          : null,
-                      child: avatarUrl == null || avatarUrl.isEmpty
-                          ? Text(initial)
-                          : null,
+                    child: DSAvatar.medium(
+                      imageUrl: avatarUrl,
+                      displayName: displayName,
+                      context: AvatarContext.main,
                     ),
                   );
                 },
@@ -597,7 +632,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               )
             else
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 0),
                 child: Column(
                   children: filteredPosts.map((post) {
                     // Subscribe to realtime updates for each post

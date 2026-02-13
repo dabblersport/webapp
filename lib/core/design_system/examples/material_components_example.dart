@@ -97,7 +97,7 @@ class MaterialComponentsExample extends StatelessWidget {
 
           // Card with custom color (using category token)
           Card.filled(
-            color: colorScheme.categorySocial.withOpacity(0.1),
+            color: colorScheme.categorySocial.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -213,8 +213,12 @@ class MaterialComponentsExample extends StatelessWidget {
               FilterChip(
                 label: const Text('Sports'),
                 selected: true,
-                backgroundColor: colorScheme.categorySports.withOpacity(0.1),
-                selectedColor: colorScheme.categorySports.withOpacity(0.2),
+                backgroundColor: colorScheme.categorySports.withValues(
+                  alpha: 0.1,
+                ),
+                selectedColor: colorScheme.categorySports.withValues(
+                  alpha: 0.2,
+                ),
                 checkmarkColor: colorScheme.categorySports,
                 labelStyle: TextStyle(color: colorScheme.categorySports),
                 onSelected: (value) {},
@@ -272,7 +276,7 @@ class MaterialComponentsExample extends StatelessWidget {
             children: [
               Expanded(
                 child: Card.filled(
-                  color: colorScheme.tertiary.withOpacity(0.1),
+                  color: colorScheme.tertiary.withValues(alpha: 0.1),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -291,7 +295,7 @@ class MaterialComponentsExample extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Card.filled(
-                  color: colorScheme.error.withOpacity(0.1),
+                  color: colorScheme.error.withValues(alpha: 0.1),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -310,7 +314,7 @@ class MaterialComponentsExample extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Card.filled(
-                  color: colorScheme.error.withOpacity(0.1),
+                  color: colorScheme.error.withValues(alpha: 0.1),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -392,6 +396,6 @@ class _CategoryColorCard extends StatelessWidget {
   }
 
   String _colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
   }
 }

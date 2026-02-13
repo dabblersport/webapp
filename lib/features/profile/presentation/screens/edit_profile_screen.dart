@@ -164,7 +164,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = context.getCategoryTheme('profile');
     final textTheme = Theme.of(context).textTheme;
 
     if (_isLoading) {
@@ -217,7 +217,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         Text(
           'Update your personal information',
           style: textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onPrimary.withOpacity(0.9),
+            color: colorScheme.onPrimary.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -277,17 +277,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 20),
             TextFormField(
               controller: _displayNameController,
-              style: textTheme.bodyLarge?.copyWith(
+              style: textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
-              decoration: InputDecoration(
-                labelText: 'Display Name',
+              decoration: _pillInputDecoration(
+                context,
                 hintText: 'Enter your display name',
                 prefixIcon: Icon(
                   Iconsax.user_copy,
                   color: colorScheme.onSurfaceVariant,
                 ),
-              ).applyDefaults(Theme.of(context).inputDecorationTheme),
+              ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Display name is required and cannot be empty';
@@ -304,18 +305,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: _selectedGender,
-              style: textTheme.bodyLarge?.copyWith(
+              style: textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
               dropdownColor: colorScheme.surfaceContainer,
-              decoration: InputDecoration(
-                labelText: 'Gender',
+              decoration: _pillInputDecoration(
+                context,
                 hintText: 'Select your gender',
                 prefixIcon: Icon(
                   Iconsax.profile_2user_copy,
                   color: colorScheme.onSurfaceVariant,
                 ),
-              ).applyDefaults(Theme.of(context).inputDecorationTheme),
+              ),
               items: [
                 DropdownMenuItem(
                   value: 'male',
@@ -437,11 +439,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             TextFormField(
               controller: _emailController,
               enabled: false,
-              style: textTheme.bodyLarge?.copyWith(
+              style: textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
-              decoration: InputDecoration(
-                labelText: 'Email',
+              decoration: _pillInputDecoration(
+                context,
                 hintText: 'Email address',
                 prefixIcon: Icon(
                   Iconsax.sms_copy,
@@ -455,7 +458,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     'Read-only',
@@ -464,25 +467,70 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     ),
                   ),
                 ),
-              ).applyDefaults(Theme.of(context).inputDecorationTheme),
+              ),
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _phoneController,
-              style: textTheme.bodyLarge?.copyWith(
+              style: textTheme.titleMedium?.copyWith(
                 color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
               ),
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
+              decoration: _pillInputDecoration(
+                context,
                 hintText: 'Enter your phone number',
                 prefixIcon: Icon(
                   Iconsax.call_copy,
                   color: colorScheme.onSurfaceVariant,
                 ),
-              ).applyDefaults(Theme.of(context).inputDecorationTheme),
+              ),
               keyboardType: TextInputType.phone,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _pillInputDecoration(
+    BuildContext context, {
+    required String hintText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    final colorScheme = context.getCategoryTheme('profile');
+    final textTheme = Theme.of(context).textTheme;
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: textTheme.titleMedium?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+        fontWeight: FontWeight.w500,
+      ),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: colorScheme.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide(color: colorScheme.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide(color: colorScheme.error, width: 2),
+      ),
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
       ),
     );

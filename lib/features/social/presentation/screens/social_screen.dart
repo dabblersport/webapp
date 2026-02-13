@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/features/home/presentation/widgets/inline_post_composer.dart';
 import '../widgets/feed/post_card.dart';
 import 'package:dabbler/widgets/thoughts_input.dart';
 import 'package:dabbler/data/models/social/post_model.dart';
@@ -13,7 +13,7 @@ import '../../services/social_service.dart';
 import '../../services/social_rewards_handler.dart';
 import '../../services/realtime_likes_service.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import '../../providers/social_providers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Instagram-like social feed screen with posts and interactions
 class SocialScreen extends StatefulWidget {
@@ -32,23 +32,34 @@ class _SocialScreenState extends State<SocialScreen> {
   final AuthService _authService = AuthService();
   final Map<String, StreamSubscription<PostLikeUpdate>> _likeSubscriptions = {};
 
+  /// Fetch blocked user IDs directly from Supabase (StatefulWidget, no Riverpod).
+  Future<Set<String>> _fetchBlockedUserIds() async {
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return {};
+      final db = Supabase.instance.client;
+      final blockedByMe = await db
+          .from('user_blocks')
+          .select('blocked_user_id')
+          .eq('blocker_user_id', uid);
+      final blockedMe = await db
+          .from('user_blocks')
+          .select('blocker_user_id')
+          .eq('blocked_user_id', uid);
+      return {
+        ...(blockedByMe as List).map((r) => r['blocked_user_id'] as String),
+        ...(blockedMe as List).map((r) => r['blocker_user_id'] as String),
+      };
+    } catch (_) {
+      return {};
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _rewardsHandler = SocialRewardsHandler();
     _loadPosts();
-
-    // Clear any stale friends-state errors so they don't flash in other screens.
-    final container = ProviderScope.containerOf(context, listen: false);
-    container.read(simpleFriendsControllerProvider.notifier).clearError();
-
-    // Preload friends data for the dashboard overview
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      container.read(simpleFriendsControllerProvider.notifier).loadFriends();
-      container
-          .read(simpleFriendsControllerProvider.notifier)
-          .loadSuggestions();
-    });
   }
 
   @override
@@ -95,7 +106,12 @@ class _SocialScreenState extends State<SocialScreen> {
 
     try {
       final socialService = SocialService();
-      final posts = await socialService.getFeedPosts();
+
+      // Fetch blocked user IDs for feed filtering
+      final blockedIds = await _fetchBlockedUserIds();
+      final posts = await socialService.getFeedPosts(
+        blockedUserIds: blockedIds,
+      );
 
       setState(() {
         _posts.clear();
@@ -137,15 +153,6 @@ class _SocialScreenState extends State<SocialScreen> {
 
   Future<void> _refreshPosts() async {
     await _loadPosts();
-
-    // Also refresh friends overview data
-    final container = ProviderScope.containerOf(context, listen: false);
-    await Future.wait([
-      container.read(simpleFriendsControllerProvider.notifier).loadFriends(),
-      container
-          .read(simpleFriendsControllerProvider.notifier)
-          .loadSuggestions(),
-    ]);
   }
 
   final Set<String> _likesInProgress = {};
@@ -291,8 +298,17 @@ class _SocialScreenState extends State<SocialScreen> {
   }
 
   void _navigateToCreatePost() {
-    // Navigate to create post screen
-    context.push('/social-create-post');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: const InlinePostComposer(),
+      ),
+    );
   }
 
   // Search-related methods & computed getters removed

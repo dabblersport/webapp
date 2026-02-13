@@ -20,6 +20,8 @@ library;
 // Design Tokens - PRIMARY EXPORTS
 export 'tokens/design_tokens.dart';
 export 'tokens/token_based_theme.dart';
+export 'tokens/avatar_tokens.dart';
+export 'tokens/avatar_color_palette.dart';
 export '../../themes/app_theme.dart'; // Includes color extensions
 
 // Colors
@@ -38,8 +40,11 @@ export 'layouts/single_section_layout.dart';
 // Specialized Widgets (not directly replaced by Material 3)
 export 'widgets/social_feed_widgets.dart';
 export 'widgets/app_sport_icon.dart';
-export 'widgets/ds_avatar.dart';
+export 'widgets/ds_avatar.dart'; // Unified avatar component
 export 'widgets/interactive_card_stack.dart';
+
+// Services
+export '../services/avatar_service.dart';
 export 'widgets/upcoming_game_card.dart';
 export 'widgets/app_tab.dart';
 export 'widgets/app_step.dart';

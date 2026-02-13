@@ -481,7 +481,7 @@ class UserEngagementDashboard extends ConsumerWidget {
                       barWidth: 3,
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                       ),
                       dotData: FlDotData(
                         show: true,

@@ -209,8 +209,8 @@ class _PodiumWidgetState extends State<PodiumWidget>
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.amber.withOpacity(0.1),
-            Colors.orange.withOpacity(0.05),
+            Colors.amber.withValues(alpha: 0.1),
+            Colors.orange.withValues(alpha: 0.05),
             Colors.transparent,
           ],
         ),
@@ -313,7 +313,7 @@ class _PodiumWidgetState extends State<PodiumWidget>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [color, color.withOpacity(0.7)],
+                  colors: [color, color.withValues(alpha: 0.7)],
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(8),
@@ -321,7 +321,7 @@ class _PodiumWidgetState extends State<PodiumWidget>
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -338,7 +338,7 @@ class _PodiumWidgetState extends State<PodiumWidget>
                       color: Colors.white,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           offset: const Offset(1, 1),
                           blurRadius: 2,
                         ),
@@ -350,7 +350,7 @@ class _PodiumWidgetState extends State<PodiumWidget>
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -421,7 +421,7 @@ class _PodiumWidgetState extends State<PodiumWidget>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _getPositionColor(position).withOpacity(0.2),
+                      color: _getPositionColor(position).withValues(alpha: 0.2),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -611,7 +611,7 @@ class ConfettiPainter extends CustomPainter {
       // Skip if particle is out of bounds
       if (y > size.height) continue;
 
-      paint.color = color.withOpacity(0.8 * (1 - progress));
+      paint.color = color.withValues(alpha: 0.8 * (1 - progress));
 
       // Draw confetti piece (small rectangle with rotation)
       canvas.save();

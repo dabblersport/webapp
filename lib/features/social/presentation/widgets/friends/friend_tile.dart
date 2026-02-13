@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
 import '../../../../../themes/app_text_styles.dart';
 import '../../../../../utils/formatters/time_formatter.dart';
@@ -183,14 +183,14 @@ class _FriendTileState extends ConsumerState<FriendTile>
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
                 border: Border.all(
                   color: _isPressed
-                      ? AppColors.primary.withOpacity(0.2)
+                      ? AppColors.primary.withValues(alpha: 0.2)
                       : Colors.transparent,
                   width: 1,
                 ),
@@ -240,9 +240,11 @@ class _FriendTileState extends ConsumerState<FriendTile>
       children: [
         Hero(
           tag: 'friend_avatar_${widget.friend.id}',
-          child: CustomAvatar(
+          child: DSAvatar(
+            size: AvatarSize.large,
             imageUrl: widget.friend.profileImageUrl,
-            radius: 28,
+            displayName: widget.friend.displayName,
+            context: AvatarContext.social,
           ),
         ),
         Positioned(
@@ -346,9 +348,9 @@ class _FriendTileState extends ConsumerState<FriendTile>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

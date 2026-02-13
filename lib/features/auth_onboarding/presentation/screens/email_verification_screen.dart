@@ -299,7 +299,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               Text(
                 'After confirming your email, come back to the app and tap "I\'ve confirmed my email" to continue.',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withOpacity(0.8),
+                  color: theme.textTheme.bodySmall?.color?.withValues(
+                    alpha: 0.8,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),

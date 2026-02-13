@@ -9,6 +9,7 @@ import 'package:dabbler/features/social/services/realtime_likes_service.dart';
 import 'package:dabbler/design_system/theme/app_theme.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'app/app_router.dart';
@@ -59,6 +60,14 @@ void _logFlagsOnce() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Enable edge-to-edge mode for Android 15+ compatibility (SDK 35+).
+  // This ensures the app draws behind system bars and handles insets properly.
+  // Note: Do NOT use SystemChrome.setSystemUIOverlayStyle with color properties
+  // as that triggers deprecated Window.setStatusBarColor/setNavigationBarColor
+  // on Android 15 (SDK 35+). The native enableEdgeToEdge() in MainActivity
+  // handles transparent bars via the modern WindowInsetsController API.
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   // Disable inspector features for web debugging
   if (kIsWeb && kDebugMode) {
     debugProfileBuildsEnabled = false;
@@ -81,6 +90,10 @@ Future<void> main() async {
     // Preload token-based color schemes and build ThemeData.
     await AppTheme.initialize();
 
+    // Always use the JWT anon key for Supabase initialisation.
+    // The publishable-key format (sb_publishable_*) is not a JWT and
+    // is incompatible with the current supabase_flutter SDK, causing
+    // every authenticated request to fail silently.
     final anonKey = Environment.supabaseAnonKey;
 
     // Initialize Supabase with deep-link detection enabled for auth flows
@@ -121,9 +134,11 @@ Future<void> main() async {
       unawaited(AuthService().refreshSession());
     });
 
-    // Initialize realtime likes service for social features
+    // Initialize realtime likes service for social features (non-blocking).
+    // Don't await websocket handshakes — they can timeout on flaky networks
+    // and would delay app launch. The service handles retries internally.
     if (FeatureFlags.socialFeed) {
-      await RealtimeLikesService().initialize();
+      unawaited(RealtimeLikesService().initialize());
     }
 
     runApp(const ProviderScope(child: MyApp()));

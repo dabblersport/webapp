@@ -14,6 +14,7 @@ class PostService {
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .eq('profile_type', 'personal')
         .maybeSingle();
 
     if (res == null) return null;

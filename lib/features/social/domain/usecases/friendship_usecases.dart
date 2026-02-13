@@ -57,27 +57,7 @@ class RemoveFriendUseCase {
   }
 }
 
-/// Use case for blocking users
-class BlockUserUseCase {
-  final FriendsRepository _repository;
-
-  BlockUserUseCase(this._repository);
-
-  Future<Result<void, Failure>> call(String peerUserId) async {
-    return await _repository.blockUser(peerUserId);
-  }
-}
-
-/// Use case for unblocking users
-class UnblockUserUseCase {
-  final FriendsRepository _repository;
-
-  UnblockUserUseCase(this._repository);
-
-  Future<Result<void, Failure>> call(String peerUserId) async {
-    return await _repository.unblockUser(peerUserId);
-  }
-}
+// NOTE: BlockUserUseCase/UnblockUserUseCase removed — use BlockRepository from block_providers.dart
 
 /// Use case for getting friendship status
 class GetFriendshipStatusUseCase {

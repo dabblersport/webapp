@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 
-/// Unified avatar widget following design system specifications
-/// Size: 48x48dp, Rounded corners: 18dp
-/// Supports optional badge overlay for sport types, status indicators, etc.
+/// @deprecated Use DSAvatar from the design system instead
+/// This widget is kept for backward compatibility but will be removed in future versions
+///
+/// Migration:
+/// - AppAvatar.small() → DSAvatar.small()
+/// - AppAvatar.medium() → DSAvatar.medium()
+/// - AppAvatar.large() → DSAvatar.large()
+/// - fallbackText parameter → displayName parameter
+/// - Add context parameter (AvatarContext.main, .social, .sports, etc.)
+@Deprecated(
+  'Use DSAvatar from core/design_system/widgets/ds_avatar.dart instead',
+)
 class AppAvatar extends StatelessWidget {
   final String? imageUrl;
   final String? fallbackText;

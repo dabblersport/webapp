@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/core/utils/initials_generator.dart';
 import 'package:dabbler/design_system/tokens/main_dark.dart'
     as main_dark_tokens;
 import 'package:dabbler/design_system/tokens/main_light.dart'
@@ -78,7 +79,7 @@ class WelcomeScreen extends StatelessWidget {
                                       radius: 40,
                                       backgroundColor: tokens.main.primary,
                                       child: Text(
-                                        _getInitials(displayName),
+                                        InitialsGenerator.generate(displayName),
                                         style: theme.textTheme.displaySmall
                                             ?.copyWith(
                                               fontWeight: FontWeight.w700,
@@ -120,7 +121,7 @@ class WelcomeScreen extends StatelessWidget {
                                             ),
                                             border: Border.all(
                                               color: tokens.main.outline
-                                                  .withOpacity(0.3),
+                                                  .withValues(alpha: 0.3),
                                             ),
                                           ),
                                           child: Text(
@@ -250,19 +251,6 @@ class WelcomeScreen extends StatelessWidget {
       return 'Welcome to Dabbler 😉';
     } else {
       return 'Welcome Back! 👋';
-    }
-  }
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return '';
-
-    if (parts.length == 1) {
-      // Single name: take first two characters
-      return parts[0].substring(0, parts[0].length.clamp(0, 2)).toUpperCase();
-    } else {
-      // Multiple names: take first character of first and last name
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
     }
   }
 

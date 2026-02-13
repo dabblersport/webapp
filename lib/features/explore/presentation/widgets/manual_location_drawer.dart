@@ -163,7 +163,9 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                     children: [
                       Expanded(
                         child: Divider(
-                          color: colorScheme.categorySports.withOpacity(0.3),
+                          color: colorScheme.categorySports.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                       ),
                       Padding(
@@ -171,13 +173,17 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                         child: Text(
                           'or choose from list',
                           style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.categorySports.withOpacity(0.8),
+                            color: colorScheme.categorySports.withValues(
+                              alpha: 0.8,
+                            ),
                           ),
                         ),
                       ),
                       Expanded(
                         child: Divider(
-                          color: colorScheme.categorySports.withOpacity(0.3),
+                          color: colorScheme.categorySports.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                       ),
                     ],
@@ -253,7 +259,9 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                           Icon(
                             Iconsax.location_slash_copy,
                             size: 64,
-                            color: colorScheme.categorySports.withOpacity(0.5),
+                            color: colorScheme.categorySports.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -266,8 +274,8 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                           Text(
                             'Try a different search term',
                             style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant.withOpacity(
-                                0.7,
+                              color: colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.7,
                               ),
                             ),
                           ),
@@ -283,7 +291,9 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                       itemCount: _filteredLocations.length,
                       separatorBuilder: (context, index) => Divider(
                         height: 1,
-                        color: colorScheme.outlineVariant.withOpacity(0.35),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.35,
+                        ),
                       ),
                       itemBuilder: (context, index) {
                         final location = _filteredLocations[index];
@@ -319,7 +329,7 @@ class _LocationTile extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: colorScheme.categorySports.withOpacity(0.2),
+          color: colorScheme.categorySports.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(

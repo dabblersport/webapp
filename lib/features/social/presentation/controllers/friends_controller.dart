@@ -4,6 +4,7 @@ import '../../domain/usecases/friendship_usecases.dart';
 import 'package:dabbler/data/models/authentication/user_model.dart';
 import 'package:dabbler/data/models/social/friend_request_model.dart';
 import 'package:dabbler/data/models/social/friend_request.dart';
+import 'package:dabbler/data/repositories/block_repository.dart';
 
 /// State for friends management
 class FriendsState {
@@ -126,13 +127,13 @@ enum FriendFilter { all, online, offline, recent, close }
 /// Controller for managing friends and friend requests
 class FriendsController extends StateNotifier<FriendsState> {
   final SendFriendRequestUseCase _sendFriendRequest;
-  final BlockUserUseCase _blockUser;
+  final BlockRepository _blockRepository;
 
   StreamSubscription? _onlineStatusSubscription;
   StreamSubscription? _friendRequestSubscription;
   Timer? _presenceUpdateTimer;
 
-  FriendsController(this._sendFriendRequest, this._blockUser)
+  FriendsController(this._sendFriendRequest, this._blockRepository)
     : super(const FriendsState()) {
     _setupOnlineStatusTracking();
     _setupFriendRequestUpdates();
@@ -333,7 +334,7 @@ class FriendsController extends StateNotifier<FriendsState> {
     );
 
     try {
-      final result = await _blockUser(userId);
+      final result = await _blockRepository.blockUser(userId);
 
       result.fold(
         (failure) {

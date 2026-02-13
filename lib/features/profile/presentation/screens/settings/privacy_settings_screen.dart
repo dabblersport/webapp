@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
+import 'package:dabbler/data/models/profile/privacy_settings.dart';
 
 enum PrivacyPreset { public, friendsOnly, private }
 
@@ -21,27 +26,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   // Privacy preset
   PrivacyPreset _selectedPreset = PrivacyPreset.public;
 
-  // Individual data toggles
-  bool _showProfilePhoto = true;
-  bool _showRealName = true;
-  bool _showEmail = false;
-  bool _showPhoneNumber = false;
-  bool _showLocation = true;
-  bool _showSportsProfiles = true;
-  bool _showActivityStatus = true;
-  bool _showGameHistory = true;
-  bool _showFriendsList = false;
-  bool _showStatistics = true;
-
-  // Data sharing preferences
-  bool _shareWithFriends = true;
-  bool _shareWithTeammates = true;
-  bool _shareForMatching = true;
-  bool _shareForRecommendations = false;
-  bool _shareAnalytics = false;
-
-  // Blocked users list (mock data)
-  final List<String> _blockedUsers = ['user123', 'player456'];
+  bool _initialized = false;
 
   @override
   void initState() {
@@ -64,6 +49,16 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
         );
 
     _animationController.forward();
+
+    // Load privacy settings from Supabase
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = ref.read(currentUserIdProvider);
+      if (userId != null) {
+        ref
+            .read(privacyControllerProvider.notifier)
+            .loadPrivacySettings(userId);
+      }
+    });
   }
 
   @override
@@ -75,6 +70,25 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final privacyState = ref.watch(privacyControllerProvider);
+    final settings = privacyState.settings;
+
+    // Sync local preset selection when settings first load
+    if (settings != null && !_initialized) {
+      _initialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _selectedPreset = _detectPreset(settings);
+        });
+      });
+    }
+
+    if (privacyState.isLoading) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -103,7 +117,16 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
                 SliverToBoxAdapter(
                   child: _buildProfileVisibilitySection(context),
                 ),
+                SliverToBoxAdapter(child: _buildCommunicationSection(context)),
+                SliverToBoxAdapter(
+                  child: _buildActivityVisibilitySection(context),
+                ),
+                SliverToBoxAdapter(
+                  child: _buildDiscoverabilitySection(context),
+                ),
                 SliverToBoxAdapter(child: _buildDataSharingSection(context)),
+                SliverToBoxAdapter(child: _buildNotificationsSection(context)),
+                SliverToBoxAdapter(child: _buildSecuritySection(context)),
                 SliverToBoxAdapter(child: _buildBlockedUsersSection(context)),
                 const SliverToBoxAdapter(child: SizedBox(height: 48)),
               ],
@@ -157,7 +180,6 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 
   Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -189,8 +211,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
             'Manage what information others can see about you and how your data is used.',
             style: textTheme.bodyMedium?.copyWith(
               color: isDarkMode
-                  ? Colors.white.withOpacity(0.85)
-                  : Colors.black.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.black.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -214,7 +236,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
             gradient: LinearGradient(
               colors: [
                 Colors.blue.shade50,
-                Colors.blue.shade100.withOpacity(0.3),
+                Colors.blue.shade100.withValues(alpha: 0.3),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
@@ -264,7 +286,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
                 width: isSelected ? 2 : 1,
               ),
               color: isSelected
-                  ? Theme.of(context).primaryColor.withOpacity(0.05)
+                  ? Theme.of(context).primaryColor.withValues(alpha: 0.05)
                   : null,
             ),
             child: Row(
@@ -339,240 +361,507 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 
   Widget _buildProfileVisibilitySection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
     return _buildSection(
       context,
-      'Profile Visibility',
-      'Control what information others can see about you',
+      'Profile & Identity',
+      'Control what personal information others can see',
       [
         _buildPrivacyToggle(
           'Profile Photo',
           'Show your profile picture',
           Icons.account_circle_outlined,
-          _showProfilePhoto,
-          (value) => setState(() => _showProfilePhoto = value),
+          settings.showProfilePhoto,
+          (value) => ctrl.updateSetting('showProfilePhoto', value),
           'Your profile photo helps others recognize you',
         ),
         _buildPrivacyToggle(
           'Real Name',
           'Show your full name',
           Icons.person_outline,
-          _showRealName,
-          (value) => setState(() => _showRealName = value),
+          settings.showRealName,
+          (value) => ctrl.updateSetting('showRealName', value),
           'Others will see your real name instead of username',
+        ),
+        _buildPrivacyToggle(
+          'Bio',
+          'Show your bio on your profile',
+          Icons.short_text_outlined,
+          settings.showBio,
+          (value) => ctrl.updateSetting('showBio', value),
+          'Your bio text will be visible on your profile',
+        ),
+        _buildPrivacyToggle(
+          'Age',
+          'Show your age on your profile',
+          Icons.cake_outlined,
+          settings.showAge,
+          (value) => ctrl.updateSetting('showAge', value),
+          'Your age will be calculated from your date of birth',
         ),
         _buildPrivacyToggle(
           'Email Address',
           'Show your email to others',
           Icons.email_outlined,
-          _showEmail,
-          (value) => setState(() => _showEmail = value),
+          settings.showEmail,
+          (value) => ctrl.updateSetting('showEmail', value),
           'Not recommended for privacy reasons',
         ),
         _buildPrivacyToggle(
           'Phone Number',
           'Show your phone number',
           Icons.phone_outlined,
-          _showPhoneNumber,
-          (value) => setState(() => _showPhoneNumber = value),
+          settings.showPhone,
+          (value) => ctrl.updateSetting('showPhone', value),
           'Only visible to teammates for coordination',
         ),
         _buildPrivacyToggle(
           'Location',
           'Show your general location',
           Icons.location_city_outlined,
-          _showLocation,
-          (value) => setState(() => _showLocation = value),
+          settings.showLocation,
+          (value) => ctrl.updateSetting('showLocation', value),
           'Helps with local game matching',
-        ),
-        _buildPrivacyToggle(
-          'Sports Profiles',
-          'Show your sports and skill levels',
-          Icons.sports_outlined,
-          _showSportsProfiles,
-          (value) => setState(() => _showSportsProfiles = value),
-          'Essential for finding suitable games',
-        ),
-        _buildPrivacyToggle(
-          'Activity Status',
-          'Show when you\'re online',
-          Icons.circle,
-          _showActivityStatus,
-          (value) => setState(() => _showActivityStatus = value),
-          'Let others know when you\'re available',
-        ),
-        _buildPrivacyToggle(
-          'Game History',
-          'Show your past games',
-          Icons.history_outlined,
-          _showGameHistory,
-          (value) => setState(() => _showGameHistory = value),
-          'Demonstrates your experience level',
         ),
         _buildPrivacyToggle(
           'Friends List',
           'Show your friends publicly',
           Icons.people_outline,
-          _showFriendsList,
-          (value) => setState(() => _showFriendsList = value),
+          settings.showFriendsList,
+          (value) => ctrl.updateSetting('showFriendsList', value),
           'Others can see who you\'re connected with',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommunicationSection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
+    return _buildSection(
+      context,
+      'Communication',
+      'Control who can contact you and how',
+      [
+        _buildCommunicationDropdown(
+          context,
+          'Direct Messages',
+          'Who can send you messages',
+          Icons.chat_outlined,
+          settings.messagePreference,
+          (value) => ctrl.updateSetting('messagePreference', value),
+        ),
+        _buildCommunicationDropdown(
+          context,
+          'Game Invites',
+          'Who can invite you to games',
+          Icons.sports_esports_outlined,
+          settings.gameInvitePreference,
+          (value) => ctrl.updateSetting('gameInvitePreference', value),
+        ),
+        _buildCommunicationDropdown(
+          context,
+          'Friend Requests',
+          'Who can send you friend requests',
+          Icons.person_add_outlined,
+          settings.friendRequestPreference,
+          (value) => ctrl.updateSetting('friendRequestPreference', value),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommunicationDropdown(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    CommunicationPreference value,
+    ValueChanged<CommunicationPreference> onChanged,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 20, color: colorScheme.primary),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          DropdownButton<CommunicationPreference>(
+            value: value,
+            underline: const SizedBox.shrink(),
+            borderRadius: BorderRadius.circular(12),
+            items: CommunicationPreference.values.map((pref) {
+              return DropdownMenuItem(
+                value: pref,
+                child: Text(
+                  _communicationPrefLabel(pref),
+                  style: textTheme.bodySmall,
+                ),
+              );
+            }).toList(),
+            onChanged: (newValue) {
+              if (newValue != null) onChanged(newValue);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _communicationPrefLabel(CommunicationPreference pref) {
+    switch (pref) {
+      case CommunicationPreference.anyone:
+        return 'Anyone';
+      case CommunicationPreference.friendsOnly:
+        return 'Friends Only';
+      case CommunicationPreference.organizersOnly:
+        return 'Organizers';
+      case CommunicationPreference.none:
+        return 'Nobody';
+    }
+  }
+
+  Widget _buildActivityVisibilitySection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
+    return _buildSection(
+      context,
+      'Activity & Stats',
+      'Control visibility of your activity and performance data',
+      [
+        _buildPrivacyToggle(
+          'Online Status',
+          'Show when you\'re online',
+          Icons.circle,
+          settings.showOnlineStatus,
+          (value) => ctrl.updateSetting('showOnlineStatus', value),
+          'Let others know when you\'re available',
+        ),
+        _buildPrivacyToggle(
+          'Activity Status',
+          'Show your recent activity',
+          Icons.local_activity_outlined,
+          settings.showActivityStatus,
+          (value) => ctrl.updateSetting('showActivityStatus', value),
+          'Others can see what you\'ve been up to',
+        ),
+        _buildPrivacyToggle(
+          'Check-ins',
+          'Show your venue check-ins',
+          Icons.place_outlined,
+          settings.showCheckIns,
+          (value) => ctrl.updateSetting('showCheckIns', value),
+          'Others can see where you\'ve checked in',
+        ),
+        _buildPrivacyToggle(
+          'Posts to Public',
+          'Make your posts visible to everyone',
+          Icons.public_outlined,
+          settings.showPostsToPublic,
+          (value) => ctrl.updateSetting('showPostsToPublic', value),
+          'When off, posts are only visible to friends',
+        ),
+        _buildPrivacyToggle(
+          'Sports Profiles',
+          'Show your sports and skill levels',
+          Icons.sports_outlined,
+          settings.showSportsProfiles,
+          (value) => ctrl.updateSetting('showSportsProfiles', value),
+          'Essential for finding suitable games',
+        ),
+        _buildPrivacyToggle(
+          'Game History',
+          'Show your past games',
+          Icons.history_outlined,
+          settings.showGameHistory,
+          (value) => ctrl.updateSetting('showGameHistory', value),
+          'Demonstrates your experience level',
         ),
         _buildPrivacyToggle(
           'Statistics',
           'Show your performance stats',
           Icons.bar_chart_outlined,
-          _showStatistics,
-          (value) => setState(() => _showStatistics = value),
-          'Your game statistics and achievements',
+          settings.showStats,
+          (value) => ctrl.updateSetting('showStats', value),
+          'Your game statistics and win/loss record',
+        ),
+        _buildPrivacyToggle(
+          'Achievements',
+          'Show your earned achievements',
+          Icons.emoji_events_outlined,
+          settings.showAchievements,
+          (value) => ctrl.updateSetting('showAchievements', value),
+          'Badges and trophies you\'ve earned',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiscoverabilitySection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
+    return _buildSection(
+      context,
+      'Discoverability',
+      'Control how others can find your profile',
+      [
+        _buildPrivacyToggle(
+          'Search Engine Indexing',
+          'Allow external services to find your profile',
+          Icons.search_outlined,
+          settings.allowProfileIndexing,
+          (value) => ctrl.updateSetting('allowProfileIndexing', value),
+          'Your profile may appear in search engine results',
+        ),
+        _buildPrivacyToggle(
+          'Hide from Nearby',
+          'Don\'t appear in nearby player searches',
+          Icons.location_off_outlined,
+          settings.hideFromNearby,
+          (value) => ctrl.updateSetting('hideFromNearby', value),
+          'You won\'t show up when people search for nearby players',
         ),
       ],
     );
   }
 
   Widget _buildDataSharingSection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
     return _buildSection(
       context,
-      'Data Sharing',
+      'Data & Analytics',
       'Control how your data is used to improve your experience',
       [
         _buildPrivacyToggle(
-          'Share with Friends',
-          'Friends can see your activity',
-          Icons.group_outlined,
-          _shareWithFriends,
-          (value) => setState(() => _shareWithFriends = value),
-          'Share game invites and activity updates',
+          'Location Tracking',
+          'Allow location-based features',
+          Icons.my_location_outlined,
+          settings.allowLocationTracking,
+          (value) => ctrl.updateSetting('allowLocationTracking', value),
+          'Used for finding nearby games and venues',
         ),
         _buildPrivacyToggle(
-          'Share with Teammates',
-          'Teammates can coordinate with you',
-          Icons.sports_outlined,
-          _shareWithTeammates,
-          (value) => setState(() => _shareWithTeammates = value),
-          'Share availability and contact info',
-        ),
-        _buildPrivacyToggle(
-          'Use for Game Matching',
-          'Help us find suitable games for you',
-          Icons.auto_awesome_outlined,
-          _shareForMatching,
-          (value) => setState(() => _shareForMatching = value),
-          'Uses your preferences and skill level',
-        ),
-        _buildPrivacyToggle(
-          'Personalized Recommendations',
-          'Get recommendations based on your activity',
+          'Game Recommendations',
+          'Personalized game suggestions',
           Icons.recommend_outlined,
-          _shareForRecommendations,
-          (value) => setState(() => _shareForRecommendations = value),
-          'Suggests games, players, and events',
+          settings.allowGameRecommendations,
+          (value) => ctrl.updateSetting('allowGameRecommendations', value),
+          'Uses your preferences and skill level to suggest games',
         ),
         _buildPrivacyToggle(
           'Anonymous Analytics',
           'Help improve the app',
           Icons.analytics_outlined,
-          _shareAnalytics,
-          (value) => setState(() => _shareAnalytics = value),
+          settings.allowDataAnalytics,
+          (value) => ctrl.updateSetting('allowDataAnalytics', value),
           'Anonymous usage data for app improvements',
         ),
       ],
     );
   }
 
-  Widget _buildBlockedUsersSection(BuildContext context) {
+  Widget _buildNotificationsSection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
     return _buildSection(
       context,
-      'Blocked Users',
-      'Manage users you\'ve blocked from contacting you',
+      'Notifications',
+      'Control how you receive notifications',
       [
-        if (_blockedUsers.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.check_circle_outline,
-                  color: Colors.green,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'You haven\'t blocked any users',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          ..._blockedUsers.map((username) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
+        _buildPrivacyToggle(
+          'Push Notifications',
+          'Receive push notifications on your device',
+          Icons.notifications_outlined,
+          settings.allowPushNotifications,
+          (value) => ctrl.updateSetting('allowPushNotifications', value),
+          'Game reminders, messages, and activity alerts',
+        ),
+        _buildPrivacyToggle(
+          'Email Notifications',
+          'Receive notifications via email',
+          Icons.mark_email_unread_outlined,
+          settings.allowEmailNotifications,
+          (value) => ctrl.updateSetting('allowEmailNotifications', value),
+          'Weekly digests, game invites, and important updates',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecuritySection(BuildContext context) {
+    final settings = ref.watch(privacyControllerProvider).settings;
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    if (settings == null) return const SizedBox.shrink();
+
+    return _buildSection(
+      context,
+      'Security',
+      'Protect your account with additional security measures',
+      [
+        _buildPrivacyToggle(
+          'Two-Factor Authentication',
+          'Add an extra layer of security',
+          Icons.security_outlined,
+          settings.twoFactorEnabled,
+          (value) => ctrl.updateSetting('twoFactorEnabled', value),
+          'Requires a verification code when signing in',
+        ),
+        _buildPrivacyToggle(
+          'Login Alerts',
+          'Get notified of new sign-ins',
+          Icons.login_outlined,
+          settings.loginAlerts,
+          (value) => ctrl.updateSetting('loginAlerts', value),
+          'Receive alerts when your account is accessed from a new device',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBlockedUsersSection(BuildContext context) {
+    final blockedUsersAsync = ref.watch(blockedUsersWithProfilesProvider);
+
+    return blockedUsersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => _buildSection(
+        context,
+        'Blocked Users',
+        'Failed to load blocked users',
+        [Text('Error: $e')],
+      ),
+      data: (blockedUsers) => _buildSection(
+        context,
+        'Blocked Users',
+        'Manage users you\'ve blocked from contacting you',
+        [
+          if (blockedUsers.isEmpty)
+            Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
+                color: Colors.grey[50],
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
               ),
               child: Row(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(Icons.block, color: Colors.red, size: 20),
+                  const Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 20,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          username,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Blocked user',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: Colors.grey[600]),
-                        ),
-                      ],
+                    child: Text(
+                      'You haven\'t blocked any users',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => _unblockUser(username),
-                    child: const Text('Unblock'),
                   ),
                 ],
               ),
-            );
-          }),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _showBlockUserDialog,
-            icon: const Icon(Icons.block),
-            label: const Text('Block a User'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-      ],
+            )
+          else
+            ...blockedUsers.map((user) {
+              final displayName = user['display_name'] as String? ?? 'Unknown';
+              final username = user['username'] as String? ?? '';
+              final userId = user['user_id'] as String;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.block,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          if (username.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              '@$username',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: Colors.grey[600]),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _unblockUser(userId, displayName),
+                      child: const Text('Unblock'),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
     );
   }
 
@@ -607,7 +896,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
               Text(
                 description,
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               const SizedBox(height: 16),
@@ -637,7 +926,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.5),
+              color: colorScheme.primaryContainer.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 20, color: colorScheme.primary),
@@ -662,7 +951,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
                       child: Icon(
                         Icons.info_outline,
                         size: 16,
-                        color: colorScheme.onSurface.withOpacity(0.5),
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
                   ],
@@ -671,7 +960,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
                 Text(
                   subtitle,
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -712,56 +1001,143 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 
   void _applyPreset(PrivacyPreset preset) {
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    PrivacySettings presetSettings;
+
     switch (preset) {
       case PrivacyPreset.public:
-        _showProfilePhoto = true;
-        _showRealName = true;
-        _showEmail = false;
-        _showPhoneNumber = false;
-        _showLocation = true;
-        _showSportsProfiles = true;
-        _showActivityStatus = true;
-        _showGameHistory = true;
-        _showFriendsList = true;
-        _showStatistics = true;
-        _shareWithFriends = true;
-        _shareWithTeammates = true;
-        _shareForMatching = true;
-        _shareForRecommendations = true;
+        presetSettings = const PrivacySettings(
+          // Profile & Identity
+          profileVisibility: ProfileVisibility.public,
+          showRealName: true,
+          showAge: false,
+          showLocation: true,
+          showPhone: false,
+          showEmail: false,
+          showBio: true,
+          showProfilePhoto: true,
+          showFriendsList: true,
+          allowProfileIndexing: true,
+          // Activity & Stats
+          showStats: true,
+          showSportsProfiles: true,
+          showGameHistory: true,
+          showAchievements: true,
+          showOnlineStatus: true,
+          showActivityStatus: true,
+          showCheckIns: true,
+          showPostsToPublic: true,
+          // Communication
+          messagePreference: CommunicationPreference.anyone,
+          gameInvitePreference: CommunicationPreference.anyone,
+          friendRequestPreference: CommunicationPreference.anyone,
+          // Notifications
+          allowPushNotifications: true,
+          allowEmailNotifications: true,
+          // Data & Analytics
+          allowLocationTracking: true,
+          allowDataAnalytics: true,
+          dataSharingLevel: DataSharingLevel.full,
+          allowGameRecommendations: true,
+          hideFromNearby: false,
+          // Security
+          twoFactorEnabled: false,
+          loginAlerts: true,
+        );
         break;
       case PrivacyPreset.friendsOnly:
-        _showProfilePhoto = true;
-        _showRealName = true;
-        _showEmail = false;
-        _showPhoneNumber = false;
-        _showLocation = true;
-        _showSportsProfiles = true;
-        _showActivityStatus = true;
-        _showGameHistory = false;
-        _showFriendsList = false;
-        _showStatistics = false;
-        _shareWithFriends = true;
-        _shareWithTeammates = true;
-        _shareForMatching = true;
-        _shareForRecommendations = false;
+        presetSettings = const PrivacySettings(
+          // Profile & Identity
+          profileVisibility: ProfileVisibility.friends,
+          showRealName: true,
+          showAge: false,
+          showLocation: true,
+          showPhone: false,
+          showEmail: false,
+          showBio: true,
+          showProfilePhoto: true,
+          showFriendsList: false,
+          allowProfileIndexing: false,
+          // Activity & Stats
+          showStats: false,
+          showSportsProfiles: true,
+          showGameHistory: false,
+          showAchievements: true,
+          showOnlineStatus: true,
+          showActivityStatus: true,
+          showCheckIns: false,
+          showPostsToPublic: false,
+          // Communication
+          messagePreference: CommunicationPreference.friendsOnly,
+          gameInvitePreference: CommunicationPreference.friendsOnly,
+          friendRequestPreference: CommunicationPreference.anyone,
+          // Notifications
+          allowPushNotifications: true,
+          allowEmailNotifications: true,
+          // Data & Analytics
+          allowLocationTracking: true,
+          allowDataAnalytics: true,
+          dataSharingLevel: DataSharingLevel.limited,
+          allowGameRecommendations: true,
+          hideFromNearby: false,
+          // Security
+          twoFactorEnabled: false,
+          loginAlerts: true,
+        );
         break;
       case PrivacyPreset.private:
-        _showProfilePhoto = false;
-        _showRealName = false;
-        _showEmail = false;
-        _showPhoneNumber = false;
-        _showLocation = false;
-        _showSportsProfiles = true;
-        _showActivityStatus = false;
-        _showGameHistory = false;
-        _showFriendsList = false;
-        _showStatistics = false;
-        _shareWithFriends = false;
-        _shareWithTeammates = true;
-        _shareForMatching = true;
-        _shareForRecommendations = false;
+        presetSettings = const PrivacySettings(
+          // Profile & Identity
+          profileVisibility: ProfileVisibility.private,
+          showRealName: false,
+          showAge: false,
+          showLocation: false,
+          showPhone: false,
+          showEmail: false,
+          showBio: false,
+          showProfilePhoto: false,
+          showFriendsList: false,
+          allowProfileIndexing: false,
+          // Activity & Stats
+          showStats: false,
+          showSportsProfiles: true,
+          showGameHistory: false,
+          showAchievements: false,
+          showOnlineStatus: false,
+          showActivityStatus: false,
+          showCheckIns: false,
+          showPostsToPublic: false,
+          // Communication
+          messagePreference: CommunicationPreference.friendsOnly,
+          gameInvitePreference: CommunicationPreference.friendsOnly,
+          friendRequestPreference: CommunicationPreference.friendsOnly,
+          // Notifications
+          allowPushNotifications: true,
+          allowEmailNotifications: false,
+          // Data & Analytics
+          allowLocationTracking: false,
+          allowDataAnalytics: false,
+          dataSharingLevel: DataSharingLevel.minimal,
+          allowGameRecommendations: false,
+          hideFromNearby: true,
+          // Security
+          twoFactorEnabled: false,
+          loginAlerts: true,
+        );
         break;
     }
+
+    ctrl.applyPreset(presetSettings);
+  }
+
+  PrivacyPreset _detectPreset(PrivacySettings s) {
+    if (s.profileVisibility == ProfileVisibility.private) {
+      return PrivacyPreset.private;
+    }
+    if (s.profileVisibility == ProfileVisibility.friends) {
+      return PrivacyPreset.friendsOnly;
+    }
+    return PrivacyPreset.public;
   }
 
   void _showTooltip(BuildContext context, String title, String description) {
@@ -780,77 +1156,51 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     );
   }
 
-  void _showBlockUserDialog() {
-    final controller = TextEditingController();
+  Future<void> _unblockUser(String userId, String displayName) async {
+    final repo = ref.read(blockRepositoryProvider);
+    final result = await repo.unblockUser(userId);
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Block User'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter the username of the user you want to block:'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'Username',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                _blockUser(controller.text.trim());
-                Navigator.of(context).pop();
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Block'),
-          ),
-        ],
-      ),
+    result.fold(
+      (err) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to unblock: ${err.message}')),
+        );
+      },
+      (_) {
+        ref.invalidate(blockedUserIdsProvider);
+        ref.invalidate(blockedUsersWithProfilesProvider);
+        ref.invalidate(isUserBlockedProvider(userId));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$displayName has been unblocked')),
+        );
+      },
     );
   }
 
-  void _blockUser(String username) {
-    setState(() {
-      if (!_blockedUsers.contains(username)) {
-        _blockedUsers.add(username);
-      }
-    });
+  Future<void> _saveSettings() async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('User $username has been blocked')));
-  }
+    final success = await ref
+        .read(privacyControllerProvider.notifier)
+        .saveAllChanges(userId);
 
-  void _unblockUser(String username) {
-    setState(() {
-      _blockedUsers.remove(username);
-    });
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('User $username has been unblocked')),
-    );
-  }
-
-  void _saveSettings() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Privacy settings saved!'),
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              success
+                  ? 'Privacy settings saved!'
+                  : 'Failed to save settings. Please try again.',
+            ),
           ],
         ),
         behavior: SnackBarBehavior.floating,

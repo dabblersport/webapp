@@ -6,6 +6,7 @@ import 'package:dabbler/design_system/tokens/main_light.dart'
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/utils/ui_constants.dart';
+import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -105,9 +106,72 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     setState(() => _isLoading = true);
     try {
       final authService = ref.read(authServiceProvider);
-      await authService.signInWithGoogle();
-      // Navigation after OAuth completes is handled by GoRouter redirect
-      // when auth state changes.
+
+      // Native Google Sign-In completes in-app
+      final launched = await authService.signInWithGoogle();
+      if (!launched) {
+        // User cancelled
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      // Check the result after OAuth completes
+      final result = await authService.handleGoogleSignInFlow();
+
+      if (!mounted) return;
+
+      // Navigate based on result
+      switch (result) {
+        case GoogleSignInResultGoToOnboarding():
+          // New Google user - go to onboarding
+          context.go(RoutePaths.createUserInfo, extra: {'email': result.email});
+          break;
+
+        case GoogleSignInResultGoToSetUsername():
+          // Legacy case
+          context.go(
+            RoutePaths.setUsername,
+            extra: {
+              'email': result.email,
+              'suggestedUsername': result.suggestedUsername,
+            },
+          );
+          break;
+
+        case GoogleSignInResultGoToPhoneOtp():
+          // New Google user (with phone) - go to OTP
+          context.push(
+            RoutePaths.otpVerification,
+            extra: {
+              'phone': result.phone,
+              'email': result.email,
+              'userExistsBeforeOtp': false,
+            },
+          );
+          break;
+
+        case GoogleSignInResultGoToHome():
+          // Existing Google user - navigate to home (welcome screen will show first via router)
+          context.go(RoutePaths.home);
+          break;
+
+        case GoogleSignInResultRequirePassword():
+          // Existing user (non-Google) - require password
+          context.push(
+            RoutePaths.enterPassword,
+            extra: {'email': result.email},
+          );
+          break;
+
+        case GoogleSignInResultError():
+          // Error occurred
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(result.message)));
+          }
+          break;
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

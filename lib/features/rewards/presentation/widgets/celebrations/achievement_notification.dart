@@ -267,8 +267,8 @@ class _AchievementNotificationState extends State<AchievementNotification>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: widget.achievement.tierColor.withOpacity(
-                  0.2 + 0.3 * _glowAnimation.value,
+                color: widget.achievement.tierColor.withValues(
+                  alpha: 0.2 + 0.3 * _glowAnimation.value,
                 ),
                 blurRadius: 12 + 8 * _glowAnimation.value,
                 spreadRadius: 2 + 2 * _glowAnimation.value,
@@ -281,8 +281,8 @@ class _AchievementNotificationState extends State<AchievementNotification>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
-                color: widget.achievement.tierColor.withOpacity(
-                  0.3 + 0.4 * _glowAnimation.value,
+                color: widget.achievement.tierColor.withValues(
+                  alpha: 0.3 + 0.4 * _glowAnimation.value,
                 ),
                 width: 2,
               ),
@@ -294,8 +294,8 @@ class _AchievementNotificationState extends State<AchievementNotification>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    widget.achievement.tierColor.withOpacity(0.05),
-                    widget.achievement.tierColor.withOpacity(0.02),
+                    widget.achievement.tierColor.withValues(alpha: 0.05),
+                    widget.achievement.tierColor.withValues(alpha: 0.02),
                     Colors.white,
                   ],
                 ),
@@ -325,7 +325,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
           Container(
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              color: widget.achievement.tierColor.withOpacity(0.2),
+              color: widget.achievement.tierColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Container(
@@ -335,7 +335,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
                 borderRadius: BorderRadius.circular(6),
                 gradient: RadialGradient(
                   colors: [
-                    widget.achievement.tierColor.withOpacity(0.8),
+                    widget.achievement.tierColor.withValues(alpha: 0.8),
                     widget.achievement.tierColor,
                   ],
                 ),
@@ -373,9 +373,9 @@ class _AchievementNotificationState extends State<AchievementNotification>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.withOpacity(0.3)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -421,7 +421,7 @@ class _AchievementNotificationState extends State<AchievementNotification>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: widget.achievement.tierColor.withOpacity(0.1),
+                  color: widget.achievement.tierColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(

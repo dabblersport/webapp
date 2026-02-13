@@ -106,6 +106,7 @@ class PostsRepositoryImpl extends BaseRepository implements PostsRepository {
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileRow == null) {
@@ -154,6 +155,7 @@ class PostsRepositoryImpl extends BaseRepository implements PostsRepository {
           .from('profiles')
           .select('id')
           .eq('user_id', uid)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileRow == null) {

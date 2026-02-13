@@ -90,7 +90,7 @@ class ProfileSharingService {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -105,7 +105,7 @@ class ProfileSharingService {
               'QR Code',
               style: TextStyle(
                 fontSize: 14,
-                color: foregroundColor.withOpacity(0.8),
+                color: foregroundColor.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -114,7 +114,7 @@ class ProfileSharingService {
               'Scan to view profile',
               style: TextStyle(
                 fontSize: 12,
-                color: foregroundColor.withOpacity(0.7),
+                color: foregroundColor.withValues(alpha: 0.7),
               ),
             ),
           ],

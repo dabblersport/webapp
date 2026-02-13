@@ -7,6 +7,7 @@ import '../../controllers/game_detail_controller.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/services/moderation_service.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 
 class GameDetailScreen extends ConsumerStatefulWidget {
   final String gameId;
@@ -305,13 +306,13 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
               Icon(
                 Icons.calendar_today,
                 size: 16,
-                color: textColor.withOpacity(0.8),
+                color: textColor.withValues(alpha: 0.8),
               ),
               const SizedBox(width: 8),
               Text(
                 formattedDate,
                 style: textTheme.bodyMedium?.copyWith(
-                  color: textColor.withOpacity(0.9),
+                  color: textColor.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -323,13 +324,13 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
               Icon(
                 Icons.access_time,
                 size: 16,
-                color: textColor.withOpacity(0.8),
+                color: textColor.withValues(alpha: 0.8),
               ),
               const SizedBox(width: 8),
               Text(
                 '${game.startTime} - ${game.endTime}',
                 style: textTheme.bodyMedium?.copyWith(
-                  color: textColor.withOpacity(0.9),
+                  color: textColor.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1148,7 +1149,16 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
           ListTile(
             leading: const Icon(Icons.report),
             title: const Text('Report Game'),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              showDialog(
+                context: this.context,
+                builder: (_) => ReportDialog(
+                  targetType: ReportTargetType.game,
+                  targetId: widget.gameId,
+                ),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.bookmark),

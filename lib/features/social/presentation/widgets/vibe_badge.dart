@@ -40,9 +40,9 @@ class VibeBadge extends StatelessWidget {
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: bgColor.withOpacity(0.15),
+        color: bgColor.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: bgColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: bgColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -78,7 +78,7 @@ class AppSportIcon extends StatelessWidget {
     final theme = Theme.of(context);
     final bgColor =
         backgroundColor ??
-        theme.colorScheme.onSurface.withOpacity(specs.opacity);
+        theme.colorScheme.onSurface.withValues(alpha: specs.opacity);
 
     return Container(
       width: specs.containerSize,

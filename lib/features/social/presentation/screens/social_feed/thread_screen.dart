@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +16,7 @@ import '../../../services/social_service.dart';
 import '../../../services/realtime_likes_service.dart';
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 
 class ThreadScreen extends ConsumerStatefulWidget {
   final String postId;
@@ -33,34 +33,6 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   bool _isSubmittingComment = false;
   StreamSubscription<PostLikeUpdate>? _likeSubscription;
   StreamSubscription<PostCommentUpdate>? _commentSubscription;
-
-  final Random _avatarRandom = Random();
-  final Map<String, ({Color backgroundColor, Color foregroundColor})>
-  _avatarColorCache = {};
-
-  ({Color backgroundColor, Color foregroundColor}) _avatarColors(
-    ColorScheme colorScheme,
-    String seed,
-  ) {
-    final palette = <({Color bg, Color fg})>[
-      (bg: colorScheme.primaryContainer, fg: colorScheme.onPrimaryContainer),
-      (
-        bg: colorScheme.secondaryContainer,
-        fg: colorScheme.onSecondaryContainer,
-      ),
-      (bg: colorScheme.tertiaryContainer, fg: colorScheme.onTertiaryContainer),
-      (bg: colorScheme.errorContainer, fg: colorScheme.onErrorContainer),
-    ];
-
-    final cacheKey = seed.isEmpty ? 'user' : seed;
-    final cached = _avatarColorCache[cacheKey];
-    if (cached != null) return cached;
-
-    final chosen = palette[_avatarRandom.nextInt(palette.length)];
-    final result = (backgroundColor: chosen.bg, foregroundColor: chosen.fg);
-    _avatarColorCache[cacheKey] = result;
-    return result;
-  }
 
   @override
   void initState() {
@@ -118,7 +90,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
               backgroundColor: _getVibeColor(
                 post,
                 colorScheme,
-              ).withOpacity(0.1),
+              ).withValues(alpha: 0.1),
               body: const Center(child: LoadingWidget()),
             );
           }
@@ -129,7 +101,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
               backgroundColor: _getVibeColor(
                 post,
                 colorScheme,
-              ).withOpacity(0.1),
+              ).withValues(alpha: 0.1),
               body: SafeArea(child: _buildTakedownPlaceholder(context, theme)),
             );
           }
@@ -138,7 +110,10 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             withScaffold: true,
             scrollable: false,
             padding: EdgeInsets.zero,
-            backgroundColor: _getVibeColor(post, colorScheme).withOpacity(0.2),
+            backgroundColor: _getVibeColor(
+              post,
+              colorScheme,
+            ).withValues(alpha: 0.2),
             child: Column(
               children: [
                 Expanded(child: _buildThreadContent(context, theme, post)),
@@ -230,22 +205,11 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                 // Avatar
                 GestureDetector(
                   onTap: () => _navigateToProfile(post.authorId),
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: _avatarColors(
-                      colorScheme,
-                      post.authorId?.toString() ?? post.authorName,
-                    ).backgroundColor,
-                    foregroundColor: _avatarColors(
-                      colorScheme,
-                      post.authorId?.toString() ?? post.authorName,
-                    ).foregroundColor,
-                    backgroundImage: post.authorAvatar.isNotEmpty
-                        ? NetworkImage(post.authorAvatar)
-                        : null,
-                    child: post.authorAvatar.isEmpty
-                        ? Text(post.authorName.substring(0, 1).toUpperCase())
-                        : null,
+                  child: DSAvatar(
+                    size: AvatarSize.medium,
+                    imageUrl: post.authorAvatar,
+                    displayName: post.authorName,
+                    context: AvatarContext.social,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -400,10 +364,13 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Container(
               decoration: BoxDecoration(
-                color: colorScheme.surface.withOpacity(0.3),
+                color: colorScheme.surface.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: _getVibeColor(post, colorScheme).withOpacity(0.3),
+                  color: _getVibeColor(
+                    post,
+                    colorScheme,
+                  ).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -464,7 +431,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                                 color: _getVibeColor(
                                   post,
                                   colorScheme,
-                                ).withOpacity(0.5),
+                                ).withValues(alpha: 0.5),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Row(
@@ -753,7 +720,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: colorScheme.primary.withOpacity(0.2),
+                      color: colorScheme.primary.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       Iconsax.play_copy,
@@ -831,13 +798,13 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     final kindLower = kind.toLowerCase();
     switch (kindLower) {
       case 'moment':
-        return colorScheme.primaryContainer.withOpacity(0.3);
+        return colorScheme.primaryContainer.withValues(alpha: 0.3);
       case 'dab':
-        return colorScheme.secondaryContainer.withOpacity(0.3);
+        return colorScheme.secondaryContainer.withValues(alpha: 0.3);
       case 'kickin':
-        return colorScheme.tertiaryContainer.withOpacity(0.3);
+        return colorScheme.tertiaryContainer.withValues(alpha: 0.3);
       default:
-        return colorScheme.primaryContainer.withOpacity(0.3);
+        return colorScheme.primaryContainer.withValues(alpha: 0.3);
     }
   }
 
@@ -894,7 +861,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
         // ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -910,7 +877,7 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
               decoration: InputDecoration(
                 hintText: 'Add a reply...',
                 hintStyle: TextStyle(
-                  color: colorScheme.onSurface.withOpacity(0.5),
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
                   fontSize: 15,
                 ),
                 filled: true,
@@ -1173,11 +1140,12 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   }
 
   void _reportComment(String commentId) {
-    // Show report dialog
     showDialog(
       context: context,
-      builder: (context) =>
-          ReportDialog(type: ReportType.comment, commentId: commentId),
+      builder: (context) => ReportDialog(
+        targetType: ReportTargetType.comment,
+        targetId: commentId,
+      ),
     );
   }
 
@@ -1353,36 +1321,15 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
                     final user = reaction['user'];
                     final emoji = reaction['emoji'] ?? '👍';
                     final userName = user?['display_name'] ?? 'Anonymous';
-                    final avatarSeed =
-                        user?['user_id']?.toString() ??
-                        (userName == 'Anonymous'
-                            ? 'Anonymous#$index'
-                            : userName);
                     final resolvedUserAvatar = resolveAvatarUrl(
                       user?['avatar_url']?.toString(),
                     );
 
                     return ListTile(
-                      leading: CircleAvatar(
-                        radius: 20,
-                        backgroundColor: _avatarColors(
-                          colorScheme,
-                          avatarSeed,
-                        ).backgroundColor,
-                        foregroundColor: _avatarColors(
-                          colorScheme,
-                          avatarSeed,
-                        ).foregroundColor,
-                        backgroundImage:
-                            resolvedUserAvatar != null &&
-                                resolvedUserAvatar.isNotEmpty
-                            ? NetworkImage(resolvedUserAvatar)
-                            : null,
-                        child:
-                            resolvedUserAvatar == null ||
-                                resolvedUserAvatar.isEmpty
-                            ? Text(userName.substring(0, 1).toUpperCase())
-                            : null,
+                      leading: DSAvatar.small(
+                        imageUrl: resolvedUserAvatar,
+                        displayName: userName,
+                        context: AvatarContext.social,
                       ),
                       title: Text(
                         userName,
@@ -1433,8 +1380,10 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
   void _reportPostWithData() {
     showDialog(
       context: context,
-      builder: (context) =>
-          ReportDialog(type: ReportType.post, postId: widget.postId),
+      builder: (_) => ReportDialog(
+        targetType: ReportTargetType.post,
+        targetId: widget.postId,
+      ),
     );
   }
 
@@ -1482,196 +1431,3 @@ class _ThreadScreenState extends ConsumerState<ThreadScreen> {
     );
   }
 }
-
-/// Report dialog
-class ReportDialog extends ConsumerStatefulWidget {
-  final ReportType type;
-  final String? postId;
-  final String? commentId;
-
-  const ReportDialog({
-    super.key,
-    required this.type,
-    this.postId,
-    this.commentId,
-  });
-
-  @override
-  ConsumerState<ReportDialog> createState() => _ReportDialogState();
-}
-
-class _ReportDialogState extends ConsumerState<ReportDialog> {
-  String? _selectedReason;
-  final TextEditingController _detailsController = TextEditingController();
-  bool _isSubmitting = false;
-
-  final List<String> _reportReasons = [
-    'Spam',
-    'Harassment',
-    'Inappropriate content',
-    'False information',
-    'Hate speech',
-    'Violence',
-    'Other',
-  ];
-
-  /// Map UI reason string to ReportReason enum
-  ReportReason _mapReasonToEnum(String reason) {
-    switch (reason.toLowerCase()) {
-      case 'spam':
-        return ReportReason.spam;
-      case 'harassment':
-        return ReportReason.harassment;
-      case 'inappropriate content':
-      case 'nudity':
-        return ReportReason.nudity;
-      case 'false information':
-      case 'scam':
-        return ReportReason.scam;
-      case 'hate speech':
-      case 'hate':
-        return ReportReason.hate;
-      case 'violence':
-      case 'danger':
-        return ReportReason.danger;
-      case 'abuse':
-        return ReportReason.abuse;
-      case 'illegal':
-        return ReportReason.illegal;
-      case 'impersonation':
-        return ReportReason.impersonation;
-      default:
-        return ReportReason.other;
-    }
-  }
-
-  /// Map ReportType to ModTarget
-  ModTarget _getModTarget() {
-    switch (widget.type) {
-      case ReportType.post:
-        return ModTarget.post;
-      case ReportType.comment:
-        return ModTarget.comment;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Report ${widget.type.name}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Why are you reporting this ${widget.type.name}?'),
-          const SizedBox(height: 16),
-
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _reportReasons.map((reason) {
-              final isSelected = _selectedReason == reason;
-
-              return ChoiceChip(
-                label: Text(reason),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() => _selectedReason = selected ? reason : null);
-                },
-              );
-            }).toList(),
-          ),
-
-          if (_selectedReason != null) ...[
-            const SizedBox(height: 16),
-            TextField(
-              controller: _detailsController,
-              decoration: const InputDecoration(
-                labelText: 'Additional details (optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: (_selectedReason != null && !_isSubmitting)
-              ? _submitReport
-              : null,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Report'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _submitReport() async {
-    final reason = _selectedReason;
-    if (reason == null) return;
-
-    // Determine target ID based on type
-    final targetId = widget.type == ReportType.post
-        ? widget.postId
-        : widget.commentId;
-
-    if (targetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to submit report: missing target ID'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      final moderationService = ref.read(moderationServiceProvider);
-      final details = _detailsController.text.trim().isEmpty
-          ? null
-          : _detailsController.text.trim();
-
-      await moderationService.submitReport(
-        target: _getModTarget(),
-        targetId: targetId,
-        reason: _mapReasonToEnum(reason),
-        details: details,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit report: ${e.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
-    }
-  }
-}
-
-enum ReportType { post, comment }

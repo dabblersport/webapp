@@ -334,7 +334,7 @@ class _LeaderboardItemState extends State<LeaderboardItem>
               boxShadow: widget.user.isTopThree
                   ? [
                       BoxShadow(
-                        color: rankColor.withOpacity(0.3),
+                        color: rankColor.withValues(alpha: 0.3),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),
@@ -404,7 +404,7 @@ class _LeaderboardItemState extends State<LeaderboardItem>
           height: 50,
           decoration: BoxDecoration(
             color: widget.user.isTopThree
-                ? rankColor.withOpacity(0.2)
+                ? rankColor.withValues(alpha: 0.2)
                 : Colors.grey[100],
             borderRadius: BorderRadius.circular(25),
             border: widget.user.isTopThree
@@ -422,8 +422,8 @@ class _LeaderboardItemState extends State<LeaderboardItem>
                           fontSize: 24,
                           shadows: [
                             Shadow(
-                              color: rankColor.withOpacity(
-                                0.5 + 0.5 * _shimmerAnimation.value,
+                              color: rankColor.withValues(
+                                alpha: 0.5 + 0.5 * _shimmerAnimation.value,
                               ),
                               blurRadius: 5,
                             ),
@@ -473,7 +473,7 @@ class _LeaderboardItemState extends State<LeaderboardItem>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: movementColor.withOpacity(0.2),
+              color: movementColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -549,7 +549,10 @@ class _LeaderboardItemState extends State<LeaderboardItem>
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [tierColor.withOpacity(0.3), tierColor.withOpacity(0.1)],
+          colors: [
+            tierColor.withValues(alpha: 0.3),
+            tierColor.withValues(alpha: 0.1),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -593,7 +596,7 @@ class _LeaderboardItemState extends State<LeaderboardItem>
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: tierColor.withOpacity(0.2),
+                  color: tierColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -613,7 +616,7 @@ class _LeaderboardItemState extends State<LeaderboardItem>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: tierColor.withOpacity(0.1),
+                color: tierColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -798,16 +801,16 @@ class _LeaderboardItemState extends State<LeaderboardItem>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: tierColor.withOpacity(0.05),
+        color: tierColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: tierColor.withOpacity(0.2)),
+        border: Border.all(color: tierColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: tierColor.withOpacity(0.2),
+              color: tierColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(Icons.emoji_events, size: 16, color: tierColor),

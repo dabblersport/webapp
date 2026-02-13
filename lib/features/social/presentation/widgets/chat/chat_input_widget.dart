@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
 import '../../../../../themes/app_text_styles.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
@@ -298,7 +298,10 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
           final mention = _filteredMentions[index];
           return ListTile(
             dense: true,
-            leading: CustomAvatar(radius: 16),
+            leading: DSAvatar.small(
+              displayName: mention,
+              context: AvatarContext.social,
+            ),
             title: Text(
               mention,
               style: AppTextStyles.bodyMedium.copyWith(
@@ -324,7 +327,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: AppColors.surfaceVariant.withOpacity(0.5),
+              color: AppColors.surfaceVariant.withValues(alpha: 0.5),
               border: Border(
                 left: BorderSide(color: AppColors.primary, width: 4),
               ),
@@ -402,7 +405,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
           const SizedBox(height: 4),
           LinearProgressIndicator(
             value: widget.uploadProgress,
-            backgroundColor: AppColors.surfaceVariant.withOpacity(0.3),
+            backgroundColor: AppColors.surfaceVariant.withValues(alpha: 0.3),
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
         ],
@@ -430,7 +433,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withOpacity(0.5),
+        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Material(
@@ -456,7 +459,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: _focusNode.hasFocus
-              ? AppColors.primary.withOpacity(0.3)
+              ? AppColors.primary.withValues(alpha: 0.3)
               : Theme.of(context).dividerColor,
         ),
       ),
@@ -487,7 +490,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withOpacity(0.5),
+        color: AppColors.surfaceVariant.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Material(
@@ -544,7 +547,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
             decoration: BoxDecoration(
               color: widget.isRecording
                   ? Colors.red
-                  : AppColors.surfaceVariant.withOpacity(0.5),
+                  : AppColors.surfaceVariant.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Material(
@@ -649,9 +652,9 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: color.withOpacity(0.3)),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
             child: Icon(icon, color: color, size: 28),
           ),

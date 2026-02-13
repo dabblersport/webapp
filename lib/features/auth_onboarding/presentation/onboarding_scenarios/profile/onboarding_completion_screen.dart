@@ -518,7 +518,7 @@ class _OnboardingCompletionScreenState
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: offerColor.withOpacity(0.3),
+        color: offerColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: DesignSystem.colors.primary.withValues(alpha: 0.3),

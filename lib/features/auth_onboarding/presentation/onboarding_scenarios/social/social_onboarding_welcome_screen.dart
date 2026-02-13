@@ -33,7 +33,7 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: theme.primaryColor.withOpacity(0.1),
+                  color: theme.primaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.group, size: 60, color: theme.primaryColor),
@@ -55,7 +55,7 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
               Text(
                 'Connect with fellow players, share your game experiences, and build your sports community.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -121,7 +121,9 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
@@ -174,7 +176,7 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             color: isActive
                 ? Theme.of(context).primaryColor
-                : Theme.of(context).primaryColor.withOpacity(0.3),
+                : Theme.of(context).primaryColor.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
         );

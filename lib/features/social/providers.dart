@@ -5,25 +5,14 @@ import 'package:dabbler/data/models/squad.dart';
 import 'package:dabbler/data/models/squad_invite.dart';
 import 'package:dabbler/data/models/squad_join_request.dart';
 import 'package:dabbler/data/models/squad_member.dart';
-import 'package:dabbler/data/models/friend_edge.dart';
-import 'package:dabbler/data/models/friendship.dart';
-import 'package:dabbler/data/repositories/friends_repository.dart';
-import 'package:dabbler/data/repositories/friends_repository_impl.dart';
 import 'package:dabbler/data/repositories/squads_repository.dart';
 import 'package:dabbler/data/repositories/squads_repository_impl.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-export 'package:dabbler/features/social/providers/friends_list_provider.dart';
-
 final squadsRepositoryProvider = Provider<SquadsRepository>((ref) {
   final svc = ref.watch(supabaseServiceProvider);
   return SquadsRepositoryImpl(svc);
-});
-
-final friendsRepositoryProvider = Provider<FriendsRepository>((ref) {
-  final svc = ref.watch(supabaseServiceProvider);
-  return FriendsRepositoryImpl(svc);
 });
 
 final mySquadsProvider = FutureProvider<Result<List<Squad>, Failure>>((ref) {
@@ -109,80 +98,4 @@ final createSquadProvider =
         maxMembers: params.maxMembers,
         city: params.city,
       );
-    });
-
-final sendFriendRequestProvider =
-    FutureProvider.family<Result<void, Failure>, String>((ref, peerUserId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.sendFriendRequest(peerUserId);
-    });
-
-final acceptFriendRequestProvider =
-    FutureProvider.family<Result<void, Failure>, String>((ref, peerUserId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.acceptFriendRequest(peerUserId);
-    });
-
-final rejectFriendRequestProvider =
-    FutureProvider.family<Result<void, Failure>, String>((ref, peerUserId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.rejectFriendRequest(peerUserId);
-    });
-
-final removeFriendProvider =
-    FutureProvider.family<Result<void, Failure>, String>((ref, peerUserId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.removeFriend(peerUserId);
-    });
-
-final blockUserProvider = FutureProvider.family<Result<void, Failure>, String>((
-  ref,
-  peerUserId,
-) {
-  final repo = ref.watch(friendsRepositoryProvider);
-  return repo.blockUser(peerUserId);
-});
-
-final unblockUserProvider =
-    FutureProvider.family<Result<void, Failure>, String>((ref, peerUserId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.unblockUser(peerUserId);
-    });
-
-final friendshipsProvider = FutureProvider<Result<List<Friendship>, Failure>>((
-  ref,
-) {
-  final repo = ref.watch(friendsRepositoryProvider);
-  return repo.listFriendships();
-});
-
-final friendEdgesProvider = FutureProvider<Result<List<FriendEdge>, Failure>>((
-  ref,
-) {
-  final repo = ref.watch(friendsRepositoryProvider);
-  return repo.listFriendEdges();
-});
-
-final inboxProvider =
-    FutureProvider<Result<List<Map<String, dynamic>>, Failure>>((ref) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.inbox();
-    });
-
-final outboxProvider =
-    FutureProvider<Result<List<Map<String, dynamic>>, Failure>>((ref) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.outbox();
-    });
-
-final friendshipStatusProvider =
-    StreamProvider.family<Result<String, Failure>, String>((ref, userId) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.getFriendshipStatusStream(userId);
-    });
-
-final friendsListProvider =
-    FutureProvider<Result<List<Map<String, dynamic>>, Failure>>((ref) {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return repo.getFriends();
     });

@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Real-time service for managing like updates across the app
 /// Provides streams that emit when posts/comments are liked/unliked by any user
+///
+/// Handles channel timeouts gracefully with automatic retry and exponential
+/// backoff. All channels are properly cleaned up on [dispose].
 class RealtimeLikesService {
   static final RealtimeLikesService _instance =
       RealtimeLikesService._internal();
@@ -26,23 +30,73 @@ class RealtimeLikesService {
   RealtimeChannel? _commentsChannel;
   RealtimeChannel? _postCommentsChannel;
 
+  // Retry state per channel
+  final Map<String, int> _retryAttempts = {};
+  final Map<String, Timer?> _retryTimers = {};
+  static const int _maxRetries = 3;
+  static const Duration _baseRetryDelay = Duration(seconds: 5);
+
   bool _isInitialized = false;
+  bool _isDisposed = false;
 
-  /// Initialize real-time subscriptions
+  /// Initialize real-time subscriptions.
+  /// Safe to call multiple times — subsequent calls are no-ops.
+  /// Does NOT throw on channel timeout; logs and retries instead.
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized || _isDisposed) return;
 
-    await _subscribeToPostLikes();
-    await _subscribeToPostUpdates();
-    await _subscribeToCommentLikes();
-    await _subscribeToCommentUpdates();
-    await _subscribeToPostComments();
+    _subscribeToPostLikes();
+    _subscribeToPostUpdates();
+    _subscribeToCommentLikes();
+    _subscribeToCommentUpdates();
+    _subscribeToPostComments();
 
     _isInitialized = true;
   }
 
+  /// Centralized subscribe helper with status callback and retry logic.
+  void _subscribeWithRetry(RealtimeChannel channel, String channelName) {
+    _retryAttempts[channelName] = 0;
+
+    channel.subscribe((status, [error]) {
+      if (_isDisposed) return;
+
+      switch (status) {
+        case RealtimeSubscribeStatus.subscribed:
+          _retryAttempts[channelName] = 0;
+          debugPrint('Realtime: $channelName subscribed');
+          break;
+        case RealtimeSubscribeStatus.timedOut:
+          final attempt = (_retryAttempts[channelName] ?? 0) + 1;
+          _retryAttempts[channelName] = attempt;
+          debugPrint(
+            'Realtime: $channelName timed out (attempt $attempt/$_maxRetries)',
+          );
+          if (attempt <= _maxRetries) {
+            final delay = _baseRetryDelay * attempt; // linear backoff
+            _retryTimers[channelName]?.cancel();
+            _retryTimers[channelName] = Timer(delay, () {
+              if (!_isDisposed) {
+                debugPrint('Realtime: retrying $channelName...');
+                channel.subscribe();
+              }
+            });
+          } else {
+            debugPrint('Realtime: $channelName exhausted retries, giving up');
+          }
+          break;
+        case RealtimeSubscribeStatus.channelError:
+          debugPrint('Realtime: $channelName error: $error');
+          break;
+        case RealtimeSubscribeStatus.closed:
+          debugPrint('Realtime: $channelName closed');
+          break;
+      }
+    });
+  }
+
   /// Subscribe to post_likes table changes (INSERT/DELETE)
-  Future<void> _subscribeToPostLikes() async {
+  void _subscribeToPostLikes() {
     _postLikesChannel = _supabase.channel('realtime:post_likes');
 
     _postLikesChannel!
@@ -83,46 +137,47 @@ class RealtimeLikesService {
               );
             }
           },
-        )
-        .subscribe();
+        );
+
+    _subscribeWithRetry(_postLikesChannel!, 'post_likes');
   }
 
   /// Subscribe to posts table updates (like_count changes)
-  Future<void> _subscribeToPostUpdates() async {
+  void _subscribeToPostUpdates() {
     _postsChannel = _supabase.channel('realtime:posts_likes');
 
-    _postsChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'posts',
-          callback: (payload) {
-            final postId = payload.newRecord['id'] as String?;
-            final newLikeCount = payload.newRecord['like_count'] as int?;
-            final oldLikeCount = payload.oldRecord['like_count'] as int?;
+    _postsChannel!.onPostgresChanges(
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'posts',
+      callback: (payload) {
+        final postId = payload.newRecord['id'] as String?;
+        final newLikeCount = payload.newRecord['like_count'] as int?;
+        final oldLikeCount = payload.oldRecord['like_count'] as int?;
 
-            // Only emit update if like_count actually changed
-            // This prevents double-invalidation when comment_count changes
-            if (postId != null &&
-                newLikeCount != null &&
-                newLikeCount != oldLikeCount) {
-              _postLikeUpdatesController.add(
-                PostLikeUpdate(
-                  postId: postId,
-                  userId: '', // Aggregate update, no specific user
-                  isLiked: true, // Doesn't matter for count updates
-                  timestamp: DateTime.now(),
-                  newLikeCount: newLikeCount,
-                ),
-              );
-            }
-          },
-        )
-        .subscribe();
+        // Only emit update if like_count actually changed
+        // This prevents double-invalidation when comment_count changes
+        if (postId != null &&
+            newLikeCount != null &&
+            newLikeCount != oldLikeCount) {
+          _postLikeUpdatesController.add(
+            PostLikeUpdate(
+              postId: postId,
+              userId: '', // Aggregate update, no specific user
+              isLiked: true, // Doesn't matter for count updates
+              timestamp: DateTime.now(),
+              newLikeCount: newLikeCount,
+            ),
+          );
+        }
+      },
+    );
+
+    _subscribeWithRetry(_postsChannel!, 'posts_likes');
   }
 
   /// Subscribe to comment_likes table changes
-  Future<void> _subscribeToCommentLikes() async {
+  void _subscribeToCommentLikes() {
     _commentLikesChannel = _supabase.channel('realtime:comment_likes');
 
     _commentLikesChannel!
@@ -163,40 +218,41 @@ class RealtimeLikesService {
               );
             }
           },
-        )
-        .subscribe();
+        );
+
+    _subscribeWithRetry(_commentLikesChannel!, 'comment_likes');
   }
 
   /// Subscribe to post_comments table updates (like_count changes)
-  Future<void> _subscribeToCommentUpdates() async {
+  void _subscribeToCommentUpdates() {
     _commentsChannel = _supabase.channel('realtime:comments_likes');
 
-    _commentsChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.update,
-          schema: 'public',
-          table: 'post_comments',
-          callback: (payload) {
-            final commentId = payload.newRecord['id'] as String?;
-            final likeCount = payload.newRecord['like_count'] as int?;
-            if (commentId != null && likeCount != null) {
-              _commentLikeUpdatesController.add(
-                CommentLikeUpdate(
-                  commentId: commentId,
-                  userId: '',
-                  isLiked: true,
-                  timestamp: DateTime.now(),
-                  newLikeCount: likeCount,
-                ),
-              );
-            }
-          },
-        )
-        .subscribe();
+    _commentsChannel!.onPostgresChanges(
+      event: PostgresChangeEvent.update,
+      schema: 'public',
+      table: 'post_comments',
+      callback: (payload) {
+        final commentId = payload.newRecord['id'] as String?;
+        final likeCount = payload.newRecord['like_count'] as int?;
+        if (commentId != null && likeCount != null) {
+          _commentLikeUpdatesController.add(
+            CommentLikeUpdate(
+              commentId: commentId,
+              userId: '',
+              isLiked: true,
+              timestamp: DateTime.now(),
+              newLikeCount: likeCount,
+            ),
+          );
+        }
+      },
+    );
+
+    _subscribeWithRetry(_commentsChannel!, 'comments_likes');
   }
 
   /// Subscribe to post_comments table for new comments (INSERT/DELETE)
-  Future<void> _subscribeToPostComments() async {
+  void _subscribeToPostComments() {
     _postCommentsChannel = _supabase.channel('realtime:post_comments');
 
     _postCommentsChannel!
@@ -237,8 +293,9 @@ class RealtimeLikesService {
               );
             }
           },
-        )
-        .subscribe();
+        );
+
+    _subscribeWithRetry(_postCommentsChannel!, 'post_comments');
   }
 
   /// Stream of post like updates
@@ -305,11 +362,26 @@ class RealtimeLikesService {
 
   /// Cleanup and unsubscribe from all channels
   Future<void> dispose() async {
+    _isDisposed = true;
+
+    // Cancel all retry timers
+    for (final timer in _retryTimers.values) {
+      timer?.cancel();
+    }
+    _retryTimers.clear();
+    _retryAttempts.clear();
+
     await _postLikesChannel?.unsubscribe();
     await _postsChannel?.unsubscribe();
     await _commentLikesChannel?.unsubscribe();
     await _commentsChannel?.unsubscribe();
     await _postCommentsChannel?.unsubscribe();
+
+    _postLikesChannel = null;
+    _postsChannel = null;
+    _commentLikesChannel = null;
+    _commentsChannel = null;
+    _postCommentsChannel = null;
 
     await _postLikeUpdatesController.close();
     await _commentLikeUpdatesController.close();

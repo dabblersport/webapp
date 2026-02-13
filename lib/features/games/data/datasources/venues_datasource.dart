@@ -689,13 +689,18 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
     String? description,
   ) async {
     try {
-      await _supabaseClient.from('venue_reports').insert({
-        'venue_id': venueId,
-        'reason': reason,
-        'description': description,
-        'reported_at': DateTime.now().toIso8601String(),
-      });
-
+      await _supabaseClient.rpc(
+        'report_content',
+        params: {
+          'p_target_type': 'venue',
+          'p_target_id': venueId,
+          'p_reason': 'other',
+          if (description != null)
+            'p_details': '$reason: $description'
+          else
+            'p_details': reason,
+        },
+      );
       return true;
     } on PostgrestException catch (e) {
       throw VenueServerException('Database error: ${e.message}');

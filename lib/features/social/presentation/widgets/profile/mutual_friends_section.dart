@@ -95,7 +95,7 @@ class MutualFriendsSection extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
         radius: 20,
-        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         backgroundImage:
             resolvedAvatarUrl != null && resolvedAvatarUrl.isNotEmpty
             ? NetworkImage(resolvedAvatarUrl)

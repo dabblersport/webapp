@@ -52,7 +52,7 @@ class OnboardingData with _$OnboardingData {
     String? language,
 
     // Sports
-    List<String>? preferredSportsSlugs, // List of sports.slug
+    String? preferredSport, // Single preferred sport slug
     List<String>? interestsSlugs, // List of sports.slug
     String? primarySportId, // UUID from sports.id
     // DB state

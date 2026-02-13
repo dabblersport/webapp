@@ -602,7 +602,31 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
           .order('start_at', ascending: true)
           .range((page - 1) * limit, page * limit - 1);
 
+      // Filter out games organized by blocked users
+      final uid = _supabaseClient.auth.currentUser?.id;
+      Set<String> blockedIds = {};
+      if (uid != null) {
+        try {
+          final blockedByMe = await _supabaseClient
+              .from('user_blocks')
+              .select('blocked_user_id')
+              .eq('blocker_user_id', uid);
+          final blockedMe = await _supabaseClient
+              .from('user_blocks')
+              .select('blocker_user_id')
+              .eq('blocked_user_id', uid);
+          blockedIds = {
+            ...(blockedByMe as List).map((r) => r['blocked_user_id'] as String),
+            ...(blockedMe as List).map((r) => r['blocker_user_id'] as String),
+          };
+        } catch (_) {}
+      }
+
       return response
+          .where((json) {
+            final organizerId = json['organizer_id'] as String?;
+            return organizerId == null || !blockedIds.contains(organizerId);
+          })
           .map<GameModel>((json) => GameModel.fromJson(json))
           .toList();
     } on PostgrestException catch (e) {
@@ -806,12 +830,18 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     String? description,
   ) async {
     try {
-      await _supabaseClient.from('game_reports').insert({
-        'game_id': gameId,
-        'reason': reason,
-        'description': description,
-        'reported_at': DateTime.now().toIso8601String(),
-      });
+      await _supabaseClient.rpc(
+        'report_content',
+        params: {
+          'p_target_type': 'game',
+          'p_target_id': gameId,
+          'p_reason': 'other',
+          if (description != null)
+            'p_details': '$reason: $description'
+          else
+            'p_details': reason,
+        },
+      );
       return true;
     } catch (e) {
       throw GameServerException('Failed to report game: ${e.toString()}');

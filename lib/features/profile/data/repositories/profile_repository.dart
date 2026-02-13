@@ -30,12 +30,16 @@ class ProfileRepository {
     if (online) {
       try {
         // Fetch from Supabase profiles table
+        // Use .limit(1) instead of .maybeSingle() to avoid crash for multi-profile users
         final supabase = Supabase.instance.client;
-        final response = await supabase
+        final rows = await supabase
             .from(_profilesTable)
             .select(_baseProfileColumns)
             .eq('user_id', userId)
-            .maybeSingle();
+            .eq('is_active', true)
+            .order('created_at', ascending: true)
+            .limit(1);
+        final response = rows.isNotEmpty ? rows.first : null;
         if (response != null) {
           await ProfileCacheService().updateProfilePartial(userId, response);
           return UserProfile.fromJson(response);

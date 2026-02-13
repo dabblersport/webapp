@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -375,7 +376,11 @@ class GamesRepositoryImpl extends BaseRepository implements GamesRepository {
                 }
               },
             )
-            .subscribe();
+            .subscribe((status, [error]) {
+              if (status == RealtimeSubscribeStatus.timedOut) {
+                debugPrint('Realtime: games channel timed out for $gameId');
+              }
+            });
 
         unawaited(emitCurrent());
       } catch (error, stackTrace) {

@@ -151,7 +151,7 @@ class UpcomingGameCard extends StatelessWidget {
     final tokens = context.colorTokens;
     final cardBg = Theme.of(
       context,
-    ).colorScheme.onPrimaryContainer.withOpacity(0.08);
+    ).colorScheme.onPrimaryContainer.withValues(alpha: 0.08);
 
     return GestureDetector(
       onTap: onTap,

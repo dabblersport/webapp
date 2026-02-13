@@ -125,7 +125,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                         color: isSelected
                             ? Theme.of(
                                 context,
-                              ).colorScheme.primary.withOpacity(0.07)
+                              ).colorScheme.primary.withValues(alpha: 0.07)
                             : Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(
                           AppConstants.borderRadius,
@@ -134,10 +134,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           color: isSelected
                               ? Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.3)
+                                ).colorScheme.primary.withValues(alpha: 0.3)
                               : Theme.of(
                                   context,
-                                ).colorScheme.outline.withOpacity(0.1),
+                                ).colorScheme.outline.withValues(alpha: 0.1),
                           width: 1,
                         ),
                       ),

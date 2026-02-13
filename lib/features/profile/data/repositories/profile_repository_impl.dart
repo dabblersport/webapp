@@ -32,10 +32,11 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       final cacheValid = await localDataSource.isCacheValid(userId);
 
       // If cached profile matches requested type, use it
+      // Compare against personaType (player/organiser) which is what the switching logic uses
       if (cachedProfile != null &&
           cacheValid &&
           (profileType == null ||
-              cachedProfile.profileType?.toLowerCase() ==
+              cachedProfile.personaType?.toLowerCase() ==
                   profileType.toLowerCase())) {
         return Right(cachedProfile);
       }
@@ -55,7 +56,7 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       final cachedProfile = await localDataSource.getCachedProfile(userId);
       if (cachedProfile != null &&
           (profileType == null ||
-              cachedProfile.profileType?.toLowerCase() ==
+              cachedProfile.personaType?.toLowerCase() ==
                   profileType.toLowerCase())) {
         return Right(cachedProfile);
       }
@@ -67,7 +68,7 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       final cachedProfile = await localDataSource.getCachedProfile(userId);
       if (cachedProfile != null &&
           (profileType == null ||
-              cachedProfile.profileType?.toLowerCase() ==
+              cachedProfile.personaType?.toLowerCase() ==
                   profileType.toLowerCase())) {
         return Right(cachedProfile);
       }
@@ -493,41 +494,7 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
     }
   }
 
-  @override
-  Future<Either<Failure, void>> blockUser(
-    String blockerUserId,
-    String blockedUserId,
-  ) async {
-    try {
-      await remoteDataSource.blockProfile(blockerUserId, blockedUserId);
-      return const Right(null);
-    } catch (e) {
-      return Left(DataFailure(message: 'Failed to block user: $e'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> unblockUser(
-    String blockerUserId,
-    String blockedUserId,
-  ) async {
-    try {
-      await remoteDataSource.unblockProfile(blockerUserId, blockedUserId);
-      return const Right(null);
-    } catch (e) {
-      return Left(DataFailure(message: 'Failed to unblock user: $e'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, List<String>>> getBlockedUsers(String userId) async {
-    try {
-      final blockedUsers = await remoteDataSource.getBlockedProfiles(userId);
-      return Right(blockedUsers);
-    } catch (e) {
-      return Left(DataFailure(message: 'Failed to get blocked users: $e'));
-    }
-  }
+  // NOTE: blockUser/unblockUser/getBlockedUsers removed — use BlockRepository from block_providers.dart
 
   @override
   Future<Either<Failure, void>> updateLastActive(String userId) async {

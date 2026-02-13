@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -211,7 +212,11 @@ class VenuesRepositoryImpl extends BaseRepository implements VenuesRepository {
             unawaited(emitCurrent());
           },
         )
-        ..subscribe();
+        ..subscribe((status, [error]) {
+          if (status == RealtimeSubscribeStatus.timedOut) {
+            debugPrint('Realtime: venue spaces channel timed out');
+          }
+        });
 
       unawaited(emitCurrent());
     };

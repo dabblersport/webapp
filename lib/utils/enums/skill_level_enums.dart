@@ -80,8 +80,8 @@ enum SkillLevel {
     return FilterChip(
       selected: selected,
       onSelected: onSelected != null ? (_) => onSelected() : null,
-      backgroundColor: color.withOpacity(0.1),
-      selectedColor: color.withOpacity(0.2),
+      backgroundColor: color.withValues(alpha: 0.1),
+      selectedColor: color.withValues(alpha: 0.2),
       checkmarkColor: color,
       label: Row(
         mainAxisSize: MainAxisSize.min,

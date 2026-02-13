@@ -130,8 +130,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
             'Choose how the app should look and when themes should automatically switch.',
             style: textTheme.bodyMedium?.copyWith(
               color: isDark
-                  ? Colors.white.withOpacity(0.85)
-                  : Colors.black.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.black.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -155,7 +155,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withOpacity(0.5),
+                color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -172,7 +172,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                   Text(
                     'Current Theme',
                     style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -334,7 +334,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
             Text(
               subtitle,
               style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 16),

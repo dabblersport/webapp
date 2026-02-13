@@ -214,8 +214,8 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
                       ),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? colorScheme.onPrimary.withOpacity(0.3)
-                            : colorScheme.primary.withOpacity(0.1),
+                            ? colorScheme.onPrimary.withValues(alpha: 0.3)
+                            : colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -244,7 +244,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
               side: BorderSide(
                 color: isSelected
                     ? colorScheme.primary
-                    : colorScheme.outline.withOpacity(0.2),
+                    : colorScheme.outline.withValues(alpha: 0.2),
                 width: 1,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -463,7 +463,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
           Icon(
             Icons.event_busy,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -507,7 +507,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
           Icon(
             Icons.filter_list,
             size: 48,
-            color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -543,7 +543,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
           Icon(
             Icons.error_outline,
             size: 48,
-            color: colorScheme.error.withOpacity(0.5),
+            color: colorScheme.error.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
@@ -587,7 +587,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
             Icon(
               Icons.person_off,
               size: 64,
-              color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(

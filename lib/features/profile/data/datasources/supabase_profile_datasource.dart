@@ -13,9 +13,8 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
   final String _sportProfilesTable = 'sport_profiles';
   // Note: user_statistics table does not exist - feature disabled for MVP1
   final String _avatarBucket = 'avatars';
-  final String _blockedUsersTable = 'blocked_users';
   final String _profileViewsTable = 'profile_views';
-  final String _reportsTable = 'profile_reports';
+  // Reports now route through report_content RPC → moderation_reports
 
   SupabaseProfileDataSource(this._client);
 
@@ -1088,70 +1087,18 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     }
   }
 
-  @override
-  Future<void> blockProfile(String userId, String blockedUserId) async {
-    try {
-      await _client.from(_blockedUsersTable).insert({
-        'user_id': userId,
-        'blocked_user_id': blockedUserId,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-    } on PostgrestException catch (e) {
-      if (e.code == '23505') {
-        throw const ConflictException(message: 'User is already blocked');
-      }
-      throw ServerException(
-        message: 'Database error: ${e.message}',
-        details: e,
-      );
-    } catch (e) {
-      throw NetworkException(message: 'Failed to block profile: $e');
-    }
-  }
-
-  @override
-  Future<void> unblockProfile(String userId, String blockedUserId) async {
-    try {
-      final response = await _client
-          .from(_blockedUsersTable)
-          .delete()
-          .eq('user_id', userId)
-          .eq('blocked_user_id', blockedUserId)
-          .select();
-
-      if (response.isEmpty) {
-        throw const DataNotFoundException(message: 'User is not blocked');
-      }
-    } catch (e) {
-      if (e is ProfileRemoteDataSourceException) rethrow;
-      throw NetworkException(message: 'Failed to unblock profile: $e');
-    }
-  }
-
-  @override
-  Future<List<String>> getBlockedProfiles(String userId) async {
-    try {
-      final response = await _client
-          .from(_blockedUsersTable)
-          .select('blocked_user_id')
-          .eq('user_id', userId);
-
-      return response
-          .map<String>((row) => row['blocked_user_id'] as String)
-          .toList();
-    } catch (e) {
-      throw NetworkException(message: 'Failed to get blocked profiles: $e');
-    }
-  }
+  // NOTE: blockProfile/unblockProfile/getBlockedProfiles removed — use BlockRepository from block_providers.dart
 
   @override
   Future<bool> isBlockedBy(String userId, String otherUserId) async {
     try {
+      // Query the canonical user_blocks table (bidirectional check)
       final response = await _client
-          .from(_blockedUsersTable)
+          .from('user_blocks')
           .select('id')
-          .eq('user_id', otherUserId)
-          .eq('blocked_user_id', userId)
+          .or(
+            'and(blocker_user_id.eq.$otherUserId,blocked_user_id.eq.$userId),and(blocker_user_id.eq.$userId,blocked_user_id.eq.$otherUserId)',
+          )
           .limit(1);
 
       return response.isNotEmpty;
@@ -1169,18 +1116,40 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     List<String>? evidence,
   }) async {
     try {
-      await _client.from(_reportsTable).insert({
-        'reporter_id': reporterId,
-        'reported_user_id': reportedUserId,
-        'reason': reason,
-        'description': description,
-        'evidence': evidence,
-        'status': 'pending',
-        'created_at': DateTime.now().toIso8601String(),
-      });
+      // Use unified report_content RPC → moderation_reports table
+      await _client.rpc(
+        'report_content',
+        params: {
+          'p_target_type': 'profile',
+          'p_target_id': reportedUserId,
+          'p_reason': _mapReasonToEnum(reason),
+          'p_details': [
+            if (description != null && description.isNotEmpty) description,
+            if (evidence != null && evidence.isNotEmpty)
+              'Evidence: ${evidence.join(', ')}',
+          ].join('\n').trim(),
+        },
+      );
     } catch (e) {
       throw NetworkException(message: 'Failed to report profile: $e');
     }
+  }
+
+  /// Map free-text reason to report_reason enum value
+  String _mapReasonToEnum(String reason) {
+    final lower = reason.toLowerCase();
+    if (lower.contains('spam')) return 'spam';
+    if (lower.contains('hate')) return 'hate';
+    if (lower.contains('harass')) return 'harassment';
+    if (lower.contains('nudity') || lower.contains('nsfw')) return 'nudity';
+    if (lower.contains('illegal')) return 'illegal';
+    if (lower.contains('danger')) return 'danger';
+    if (lower.contains('scam')) return 'scam';
+    if (lower.contains('impersonat')) return 'impersonation';
+    if (lower.contains('abuse') || lower.contains('inappropriate')) {
+      return 'abuse';
+    }
+    return 'other';
   }
 
   @override

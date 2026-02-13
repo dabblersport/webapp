@@ -62,11 +62,7 @@ mixin _$Game {
   @JsonKey(name: 'squad_id')
   String? get squadId => throw _privateConstructorUsedError;
   @JsonKey(name: 'search_tsv')
-  String? get searchTsv => throw _privateConstructorUsedError; // Venue coordinates for distance calculation
-  @JsonKey(name: 'venue_lat')
-  double? get venueLat => throw _privateConstructorUsedError;
-  @JsonKey(name: 'venue_lng')
-  double? get venueLng => throw _privateConstructorUsedError;
+  String? get searchTsv => throw _privateConstructorUsedError;
 
   /// Serializes this Game to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -107,8 +103,6 @@ abstract class $GameCopyWith<$Res> {
     @JsonKey(name: 'updated_at') DateTime updatedAt,
     @JsonKey(name: 'squad_id') String? squadId,
     @JsonKey(name: 'search_tsv') String? searchTsv,
-    @JsonKey(name: 'venue_lat') double? venueLat,
-    @JsonKey(name: 'venue_lng') double? venueLng,
   });
 }
 
@@ -150,8 +144,6 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
     Object? updatedAt = null,
     Object? squadId = freezed,
     Object? searchTsv = freezed,
-    Object? venueLat = freezed,
-    Object? venueLng = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -247,14 +239,6 @@ class _$GameCopyWithImpl<$Res, $Val extends Game>
                 ? _value.searchTsv
                 : searchTsv // ignore: cast_nullable_to_non_nullable
                       as String?,
-            venueLat: freezed == venueLat
-                ? _value.venueLat
-                : venueLat // ignore: cast_nullable_to_non_nullable
-                      as double?,
-            venueLng: freezed == venueLng
-                ? _value.venueLng
-                : venueLng // ignore: cast_nullable_to_non_nullable
-                      as double?,
           )
           as $Val,
     );
@@ -294,8 +278,6 @@ abstract class _$$GameImplCopyWith<$Res> implements $GameCopyWith<$Res> {
     @JsonKey(name: 'updated_at') DateTime updatedAt,
     @JsonKey(name: 'squad_id') String? squadId,
     @JsonKey(name: 'search_tsv') String? searchTsv,
-    @JsonKey(name: 'venue_lat') double? venueLat,
-    @JsonKey(name: 'venue_lng') double? venueLng,
   });
 }
 
@@ -334,8 +316,6 @@ class __$$GameImplCopyWithImpl<$Res>
     Object? updatedAt = null,
     Object? squadId = freezed,
     Object? searchTsv = freezed,
-    Object? venueLat = freezed,
-    Object? venueLng = freezed,
   }) {
     return _then(
       _$GameImpl(
@@ -431,14 +411,6 @@ class __$$GameImplCopyWithImpl<$Res>
             ? _value.searchTsv
             : searchTsv // ignore: cast_nullable_to_non_nullable
                   as String?,
-        venueLat: freezed == venueLat
-            ? _value.venueLat
-            : venueLat // ignore: cast_nullable_to_non_nullable
-                  as double?,
-        venueLng: freezed == venueLng
-            ? _value.venueLng
-            : venueLng // ignore: cast_nullable_to_non_nullable
-                  as double?,
       ),
     );
   }
@@ -472,8 +444,6 @@ class _$GameImpl implements _Game {
     @JsonKey(name: 'updated_at') required this.updatedAt,
     @JsonKey(name: 'squad_id') this.squadId,
     @JsonKey(name: 'search_tsv') this.searchTsv,
-    @JsonKey(name: 'venue_lat') this.venueLat,
-    @JsonKey(name: 'venue_lng') this.venueLng,
   }) : _rules = rules;
 
   factory _$GameImpl.fromJson(Map<String, dynamic> json) =>
@@ -550,17 +520,10 @@ class _$GameImpl implements _Game {
   @override
   @JsonKey(name: 'search_tsv')
   final String? searchTsv;
-  // Venue coordinates for distance calculation
-  @override
-  @JsonKey(name: 'venue_lat')
-  final double? venueLat;
-  @override
-  @JsonKey(name: 'venue_lng')
-  final double? venueLng;
 
   @override
   String toString() {
-    return 'Game(id: $id, gameType: $gameType, sport: $sport, title: $title, hostProfileId: $hostProfileId, hostUserId: $hostUserId, venueSpaceId: $venueSpaceId, startAt: $startAt, endAt: $endAt, capacity: $capacity, listingVisibility: $listingVisibility, joinPolicy: $joinPolicy, allowSpectators: $allowSpectators, minSkill: $minSkill, maxSkill: $maxSkill, rules: $rules, isCancelled: $isCancelled, cancelledAt: $cancelledAt, cancelledReason: $cancelledReason, createdAt: $createdAt, updatedAt: $updatedAt, squadId: $squadId, searchTsv: $searchTsv, venueLat: $venueLat, venueLng: $venueLng)';
+    return 'Game(id: $id, gameType: $gameType, sport: $sport, title: $title, hostProfileId: $hostProfileId, hostUserId: $hostUserId, venueSpaceId: $venueSpaceId, startAt: $startAt, endAt: $endAt, capacity: $capacity, listingVisibility: $listingVisibility, joinPolicy: $joinPolicy, allowSpectators: $allowSpectators, minSkill: $minSkill, maxSkill: $maxSkill, rules: $rules, isCancelled: $isCancelled, cancelledAt: $cancelledAt, cancelledReason: $cancelledReason, createdAt: $createdAt, updatedAt: $updatedAt, squadId: $squadId, searchTsv: $searchTsv)';
   }
 
   @override
@@ -606,11 +569,7 @@ class _$GameImpl implements _Game {
                 other.updatedAt == updatedAt) &&
             (identical(other.squadId, squadId) || other.squadId == squadId) &&
             (identical(other.searchTsv, searchTsv) ||
-                other.searchTsv == searchTsv) &&
-            (identical(other.venueLat, venueLat) ||
-                other.venueLat == venueLat) &&
-            (identical(other.venueLng, venueLng) ||
-                other.venueLng == venueLng));
+                other.searchTsv == searchTsv));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -640,8 +599,6 @@ class _$GameImpl implements _Game {
     updatedAt,
     squadId,
     searchTsv,
-    venueLat,
-    venueLng,
   ]);
 
   /// Create a copy of Game
@@ -685,8 +642,6 @@ abstract class _Game implements Game {
     @JsonKey(name: 'updated_at') required final DateTime updatedAt,
     @JsonKey(name: 'squad_id') final String? squadId,
     @JsonKey(name: 'search_tsv') final String? searchTsv,
-    @JsonKey(name: 'venue_lat') final double? venueLat,
-    @JsonKey(name: 'venue_lng') final double? venueLng,
   }) = _$GameImpl;
 
   factory _Game.fromJson(Map<String, dynamic> json) = _$GameImpl.fromJson;
@@ -755,13 +710,7 @@ abstract class _Game implements Game {
   String? get squadId;
   @override
   @JsonKey(name: 'search_tsv')
-  String? get searchTsv; // Venue coordinates for distance calculation
-  @override
-  @JsonKey(name: 'venue_lat')
-  double? get venueLat;
-  @override
-  @JsonKey(name: 'venue_lng')
-  double? get venueLng;
+  String? get searchTsv;
 
   /// Create a copy of Game
   /// with the given fields replaced by the non-null parameter values.

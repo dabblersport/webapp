@@ -8,5 +8,21 @@
     "archive/**": true,
     "backups/**": true,
     "build/**": true
+  },
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": ".github/copilot-instructions.md"
+    }
+  ],
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-supabase"],
+      "env": {
+        "SUPABASE_PROJECT_ID": "wtncuzcskpigqpmnxwws",
+        "SUPABASE_URL": "https://wtncuzcskpigqpmnxwws.supabase.co",
+        "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Yu3mrg94sf_yJS-hT_cW7w_lzGOCLz-"
+      }
+    }
   }
 }

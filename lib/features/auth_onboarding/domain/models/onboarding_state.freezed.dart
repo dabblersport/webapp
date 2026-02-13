@@ -29,8 +29,8 @@ mixin _$OnboardingData {
   String? get city => throw _privateConstructorUsedError;
   String? get country => throw _privateConstructorUsedError;
   String? get language => throw _privateConstructorUsedError; // Sports
-  List<String>? get preferredSportsSlugs =>
-      throw _privateConstructorUsedError; // List of sports.slug
+  String? get preferredSport =>
+      throw _privateConstructorUsedError; // Single preferred sport slug
   List<String>? get interestsSlugs =>
       throw _privateConstructorUsedError; // List of sports.slug
   String? get primarySportId =>
@@ -64,7 +64,7 @@ abstract class $OnboardingDataCopyWith<$Res> {
     String? city,
     String? country,
     String? language,
-    List<String>? preferredSportsSlugs,
+    String? preferredSport,
     List<String>? interestsSlugs,
     String? primarySportId,
     String? profileId,
@@ -96,7 +96,7 @@ class _$OnboardingDataCopyWithImpl<$Res, $Val extends OnboardingData>
     Object? city = freezed,
     Object? country = freezed,
     Object? language = freezed,
-    Object? preferredSportsSlugs = freezed,
+    Object? preferredSport = freezed,
     Object? interestsSlugs = freezed,
     Object? primarySportId = freezed,
     Object? profileId = freezed,
@@ -137,10 +137,10 @@ class _$OnboardingDataCopyWithImpl<$Res, $Val extends OnboardingData>
                 ? _value.language
                 : language // ignore: cast_nullable_to_non_nullable
                       as String?,
-            preferredSportsSlugs: freezed == preferredSportsSlugs
-                ? _value.preferredSportsSlugs
-                : preferredSportsSlugs // ignore: cast_nullable_to_non_nullable
-                      as List<String>?,
+            preferredSport: freezed == preferredSport
+                ? _value.preferredSport
+                : preferredSport // ignore: cast_nullable_to_non_nullable
+                      as String?,
             interestsSlugs: freezed == interestsSlugs
                 ? _value.interestsSlugs
                 : interestsSlugs // ignore: cast_nullable_to_non_nullable
@@ -185,7 +185,7 @@ abstract class _$$OnboardingDataImplCopyWith<$Res>
     String? city,
     String? country,
     String? language,
-    List<String>? preferredSportsSlugs,
+    String? preferredSport,
     List<String>? interestsSlugs,
     String? primarySportId,
     String? profileId,
@@ -216,7 +216,7 @@ class __$$OnboardingDataImplCopyWithImpl<$Res>
     Object? city = freezed,
     Object? country = freezed,
     Object? language = freezed,
-    Object? preferredSportsSlugs = freezed,
+    Object? preferredSport = freezed,
     Object? interestsSlugs = freezed,
     Object? primarySportId = freezed,
     Object? profileId = freezed,
@@ -257,10 +257,10 @@ class __$$OnboardingDataImplCopyWithImpl<$Res>
             ? _value.language
             : language // ignore: cast_nullable_to_non_nullable
                   as String?,
-        preferredSportsSlugs: freezed == preferredSportsSlugs
-            ? _value._preferredSportsSlugs
-            : preferredSportsSlugs // ignore: cast_nullable_to_non_nullable
-                  as List<String>?,
+        preferredSport: freezed == preferredSport
+            ? _value.preferredSport
+            : preferredSport // ignore: cast_nullable_to_non_nullable
+                  as String?,
         interestsSlugs: freezed == interestsSlugs
             ? _value._interestsSlugs
             : interestsSlugs // ignore: cast_nullable_to_non_nullable
@@ -298,14 +298,13 @@ class _$OnboardingDataImpl extends _OnboardingData {
     this.city,
     this.country,
     this.language,
-    final List<String>? preferredSportsSlugs,
+    this.preferredSport,
     final List<String>? interestsSlugs,
     this.primarySportId,
     this.profileId,
     this.personaExtensionCreated,
     this.sportProfileCreated,
-  }) : _preferredSportsSlugs = preferredSportsSlugs,
-       _interestsSlugs = interestsSlugs,
+  }) : _interestsSlugs = interestsSlugs,
        super._();
 
   // Basic info
@@ -330,21 +329,11 @@ class _$OnboardingDataImpl extends _OnboardingData {
   @override
   final String? language;
   // Sports
-  final List<String>? _preferredSportsSlugs;
-  // Sports
   @override
-  List<String>? get preferredSportsSlugs {
-    final value = _preferredSportsSlugs;
-    if (value == null) return null;
-    if (_preferredSportsSlugs is EqualUnmodifiableListView)
-      return _preferredSportsSlugs;
-    // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
-  }
-
-  // List of sports.slug
+  final String? preferredSport;
+  // Single preferred sport slug
   final List<String>? _interestsSlugs;
-  // List of sports.slug
+  // Single preferred sport slug
   @override
   List<String>? get interestsSlugs {
     final value = _interestsSlugs;
@@ -369,7 +358,7 @@ class _$OnboardingDataImpl extends _OnboardingData {
 
   @override
   String toString() {
-    return 'OnboardingData(age: $age, gender: $gender, personaType: $personaType, displayName: $displayName, username: $username, city: $city, country: $country, language: $language, preferredSportsSlugs: $preferredSportsSlugs, interestsSlugs: $interestsSlugs, primarySportId: $primarySportId, profileId: $profileId, personaExtensionCreated: $personaExtensionCreated, sportProfileCreated: $sportProfileCreated)';
+    return 'OnboardingData(age: $age, gender: $gender, personaType: $personaType, displayName: $displayName, username: $username, city: $city, country: $country, language: $language, preferredSport: $preferredSport, interestsSlugs: $interestsSlugs, primarySportId: $primarySportId, profileId: $profileId, personaExtensionCreated: $personaExtensionCreated, sportProfileCreated: $sportProfileCreated)';
   }
 
   @override
@@ -389,10 +378,8 @@ class _$OnboardingDataImpl extends _OnboardingData {
             (identical(other.country, country) || other.country == country) &&
             (identical(other.language, language) ||
                 other.language == language) &&
-            const DeepCollectionEquality().equals(
-              other._preferredSportsSlugs,
-              _preferredSportsSlugs,
-            ) &&
+            (identical(other.preferredSport, preferredSport) ||
+                other.preferredSport == preferredSport) &&
             const DeepCollectionEquality().equals(
               other._interestsSlugs,
               _interestsSlugs,
@@ -421,7 +408,7 @@ class _$OnboardingDataImpl extends _OnboardingData {
     city,
     country,
     language,
-    const DeepCollectionEquality().hash(_preferredSportsSlugs),
+    preferredSport,
     const DeepCollectionEquality().hash(_interestsSlugs),
     primarySportId,
     profileId,
@@ -451,7 +438,7 @@ abstract class _OnboardingData extends OnboardingData {
     final String? city,
     final String? country,
     final String? language,
-    final List<String>? preferredSportsSlugs,
+    final String? preferredSport,
     final List<String>? interestsSlugs,
     final String? primarySportId,
     final String? profileId,
@@ -480,7 +467,7 @@ abstract class _OnboardingData extends OnboardingData {
   @override
   String? get language; // Sports
   @override
-  List<String>? get preferredSportsSlugs; // List of sports.slug
+  String? get preferredSport; // Single preferred sport slug
   @override
   List<String>? get interestsSlugs; // List of sports.slug
   @override

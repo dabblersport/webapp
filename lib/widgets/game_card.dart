@@ -55,11 +55,11 @@ class _GameCardState extends State<GameCard>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = isDark ? Colors.white : const Color(0xFF1E0E33);
     final secondaryColor = isDark
-        ? Colors.white.withOpacity(0.70)
-        : const Color(0xFF1E0E33).withOpacity(0.70);
+        ? Colors.white.withValues(alpha: 0.70)
+        : const Color(0xFF1E0E33).withValues(alpha: 0.70);
     final tertiaryColor = isDark
-        ? Colors.white.withOpacity(0.90)
-        : const Color(0xFF1E0E33).withOpacity(0.90);
+        ? Colors.white.withValues(alpha: 0.90)
+        : const Color(0xFF1E0E33).withValues(alpha: 0.90);
 
     return AnimatedBuilder(
       animation: _animation,
@@ -400,11 +400,11 @@ class _OutlinePill extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pillColor = isDark ? Colors.white : const Color(0xFF1E0E33);
     final backgroundColor = isDark
-        ? Colors.white.withOpacity(0.05)
-        : const Color(0xFF1E0E33).withOpacity(0.08);
+        ? Colors.white.withValues(alpha: 0.05)
+        : const Color(0xFF1E0E33).withValues(alpha: 0.08);
     final borderColor = isDark
-        ? Colors.white.withOpacity(0.85)
-        : const Color(0xFF1E0E33).withOpacity(0.90);
+        ? Colors.white.withValues(alpha: 0.85)
+        : const Color(0xFF1E0E33).withValues(alpha: 0.90);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -306,7 +306,7 @@ class _AchievementCardState extends State<AchievementCard>
         border: Border.all(color: _getTierColor(), width: 3),
         boxShadow: [
           BoxShadow(
-            color: _getTierColor().withOpacity(0.3),
+            color: _getTierColor().withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -396,7 +396,10 @@ class _AchievementCardState extends State<AchievementCard>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(2),
               gradient: LinearGradient(
-                colors: [_getTierColor().withOpacity(0.8), _getTierColor()],
+                colors: [
+                  _getTierColor().withValues(alpha: 0.8),
+                  _getTierColor(),
+                ],
               ),
             ),
           ),
@@ -416,7 +419,7 @@ class _AchievementCardState extends State<AchievementCard>
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.amber.withOpacity(0.3),
+              color: Colors.amber.withValues(alpha: 0.3),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -444,7 +447,7 @@ class _AchievementCardState extends State<AchievementCard>
   Widget _buildLockOverlay() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
+        color: Colors.black.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: const Center(
@@ -468,7 +471,9 @@ class _AchievementCardState extends State<AchievementCard>
               color: Colors.green,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withOpacity(_glowAnimation.value * 0.5),
+                  color: Colors.green.withValues(
+                    alpha: _glowAnimation.value * 0.5,
+                  ),
                   blurRadius: _glowAnimation.value * 8,
                   spreadRadius: _glowAnimation.value * 2,
                 ),
@@ -494,7 +499,9 @@ class _AchievementCardState extends State<AchievementCard>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: _getTierColor().withOpacity(_glowAnimation.value * 0.3),
+                color: _getTierColor().withValues(
+                  alpha: _glowAnimation.value * 0.3,
+                ),
                 blurRadius: _glowAnimation.value * 12,
                 spreadRadius: _glowAnimation.value * 2,
               ),
@@ -513,7 +520,7 @@ class _AchievementCardState extends State<AchievementCard>
 
   Color _getBackgroundColor() {
     if (_isCompleted) {
-      return _getTierColor().withOpacity(0.1);
+      return _getTierColor().withValues(alpha: 0.1);
     }
     if (_isLocked) {
       return Colors.grey[100]!;
@@ -528,7 +535,7 @@ class _AchievementCardState extends State<AchievementCard>
     if (_isLocked) {
       return Colors.grey[300]!;
     }
-    return _getTierColor().withOpacity(0.3);
+    return _getTierColor().withValues(alpha: 0.3);
   }
 
   double _getBorderWidth() {
@@ -537,9 +544,9 @@ class _AchievementCardState extends State<AchievementCard>
 
   Color _getShadowColor() {
     if (_isCompleted) {
-      return _getTierColor().withOpacity(0.2);
+      return _getTierColor().withValues(alpha: 0.2);
     }
-    return Colors.black.withOpacity(0.1);
+    return Colors.black.withValues(alpha: 0.1);
   }
 
   Color _getTierColor() {
@@ -573,7 +580,10 @@ class _AchievementCardState extends State<AchievementCard>
     return LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [tierColor.withOpacity(0.1), tierColor.withOpacity(0.05)],
+      colors: [
+        tierColor.withValues(alpha: 0.1),
+        tierColor.withValues(alpha: 0.05),
+      ],
     );
   }
 

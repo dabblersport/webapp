@@ -3,6 +3,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import '../models/profile.dart';
 import '../models/venue.dart';
 import '../models/post.dart';
+import '../models/games/game_model.dart';
 
 abstract class SearchRepository {
   Future<Result<List<Profile>, Failure>> searchProfiles({
@@ -18,6 +19,12 @@ abstract class SearchRepository {
   });
 
   Future<Result<List<Post>, Failure>> searchPosts({
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  Future<Result<List<GameModel>, Failure>> searchGames({
     required String query,
     int limit = 20,
     int offset = 0,

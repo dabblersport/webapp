@@ -26,10 +26,10 @@ class DangerZoneSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1.5),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -43,7 +43,7 @@ class DangerZoneSection extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.05),
+              color: color.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -72,7 +72,7 @@ class DangerZoneSection extends StatelessWidget {
                           subtitle!,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.textTheme.bodyMedium?.color
-                                ?.withOpacity(0.7),
+                                ?.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -93,7 +93,7 @@ class DangerZoneSection extends StatelessWidget {
                 if (index > 0)
                   Divider(
                     height: 1,
-                    color: color.withOpacity(0.2),
+                    color: color.withValues(alpha: 0.2),
                     indent: 16,
                     endIndent: 16,
                   ),
@@ -118,7 +118,7 @@ class DangerZoneSection extends StatelessWidget {
               action.icon,
               color: action.severity == DangerSeverity.critical
                   ? color
-                  : color.withOpacity(0.7),
+                  : color.withValues(alpha: 0.7),
             )
           : null,
       title: Text(
@@ -134,7 +134,7 @@ class DangerZoneSection extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
               ),
             )
           : null,
@@ -142,7 +142,7 @@ class DangerZoneSection extends StatelessWidget {
           ? Icon(
               Icons.arrow_forward_ios,
               size: 16,
-              color: color.withOpacity(0.7),
+              color: color.withValues(alpha: 0.7),
             )
           : Icon(
               Icons.lock_outline,
@@ -196,9 +196,9 @@ class DangerZoneSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -471,7 +471,7 @@ class CompactDangerZone extends StatelessWidget {
             (action) => Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                border: Border.all(color: color.withOpacity(0.3)),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ListTile(
@@ -489,8 +489,8 @@ class CompactDangerZone extends StatelessWidget {
                     ? Text(
                         action.description!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color?.withOpacity(
-                            0.7,
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.7,
                           ),
                         ),
                       )
@@ -499,7 +499,7 @@ class CompactDangerZone extends StatelessWidget {
                     ? Icon(
                         Icons.arrow_forward_ios,
                         size: 14,
-                        color: color.withOpacity(0.7),
+                        color: color.withValues(alpha: 0.7),
                       )
                     : null,
                 onTap: action.isEnabled
@@ -559,9 +559,9 @@ class CompactDangerZone extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.3)),
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [

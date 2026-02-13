@@ -99,8 +99,8 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
         : const Color(0xFFE0C7FF);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final subtextColor = isDarkMode
-        ? Colors.white.withOpacity(0.85)
-        : Colors.black.withOpacity(0.7);
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.black.withValues(alpha: 0.7);
 
     return Container(
       width: double.infinity,
@@ -211,12 +211,12 @@ class _ChangePhoneScreenState extends State<ChangePhoneScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isDarkMode
-                  ? colorScheme.primaryContainer.withOpacity(0.3)
+                  ? colorScheme.primaryContainer.withValues(alpha: 0.3)
                   : Colors.blue[50],
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isDarkMode
-                    ? colorScheme.primary.withOpacity(0.5)
+                    ? colorScheme.primary.withValues(alpha: 0.5)
                     : Colors.blue[200]!,
               ),
             ),

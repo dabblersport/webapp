@@ -7,6 +7,7 @@ import 'package:dabbler/core/utils/json.dart';
 import '../models/profile.dart';
 import '../models/venue.dart';
 import '../models/post.dart';
+import '../models/games/game_model.dart';
 import 'base_repository.dart';
 import 'search_repository.dart';
 
@@ -18,13 +19,12 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
 
   // --- helpers ---------------------------------------------------------------
 
-  /// Builds a simple OR filter like:
-  /// or(username.ilike.%foo%,display_name.ilike.%foo%)
+  /// Builds an OR ilike filter string for use with `.or()`.
+  /// Result: "username.ilike.%foo%,display_name.ilike.%foo%"
   String _orIlike(List<String> fields, String query) {
     final q = query.trim();
     final needle = '%${q.replaceAll('%', r'\%').replaceAll('_', r'\_')}%';
-    final parts = fields.map((f) => '$f.ilike.$needle').join(',');
-    return 'or($parts)';
+    return fields.map((f) => '$f.ilike.$needle').join(',');
   }
 
   // --- profiles --------------------------------------------------------------
@@ -40,7 +40,6 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
 
       final rows = await _db
           .from('profiles')
-          // choose the columns your Profile.fromMap expects
           .select()
           .or(_orIlike(const ['username', 'display_name'], query))
           .order('display_name', ascending: true)
@@ -85,18 +84,39 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
     return guard<List<Post>>(() async {
       if (query.trim().isEmpty) return <Post>[];
 
-      // If your schema uses 'text' instead of 'caption', swap the field name.
       final rows = await _db
           .from('posts')
           .select()
-          .or(_orIlike(const ['caption'], query))
-          // RLS should ensure can_view_post; if you have a dedicated view for
-          // visible posts, point to it instead for safety/perf.
+          .or(_orIlike(const ['body'], query))
           .order('created_at', ascending: false)
           .limit(limit)
           .range(offset, offset + limit - 1);
 
       return rows.map((m) => Post.fromMap(asMap(m))).toList();
+    });
+  }
+
+  // --- games ----------------------------------------------------------------
+
+  @override
+  Future<Result<List<GameModel>, Failure>> searchGames({
+    required String query,
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    return guard<List<GameModel>>(() async {
+      if (query.trim().isEmpty) return <GameModel>[];
+
+      final rows = await _db
+          .from('games')
+          .select()
+          .or(_orIlike(const ['title', 'sport'], query))
+          .eq('is_cancelled', false)
+          .order('start_at', ascending: true)
+          .limit(limit)
+          .range(offset, offset + limit - 1);
+
+      return rows.map((m) => GameModel.fromJson(asMap(m))).toList();
     });
   }
 }

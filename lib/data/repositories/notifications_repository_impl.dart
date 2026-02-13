@@ -28,6 +28,20 @@ class NotificationsRepositoryImpl extends BaseRepository
         throw AuthException('Not authenticated');
       }
 
+      // Fetch blocked user IDs to filter notifications from blocked users
+      final blockedByMe = await _db
+          .from('user_blocks')
+          .select('blocked_user_id')
+          .eq('blocker_user_id', uid);
+      final blockedMe = await _db
+          .from('user_blocks')
+          .select('blocker_user_id')
+          .eq('blocked_user_id', uid);
+      final blockedIds = <String>{
+        ...(blockedByMe as List).map((r) => r['blocked_user_id'] as String),
+        ...(blockedMe as List).map((r) => r['blocker_user_id'] as String),
+      };
+
       var query = _db.from('notifications').select().eq('user_id', uid);
 
       if (since != null) {
@@ -37,7 +51,18 @@ class NotificationsRepositoryImpl extends BaseRepository
       final rows = await query
           .order('created_at', ascending: false)
           .limit(limit);
-      return rows.map((r) => AppNotification.fromMap(r)).toList();
+
+      // Filter out notifications from blocked users
+      return rows
+          .where((r) {
+            final actorId =
+                r['actor_user_id'] as String? ??
+                r['from_user_id'] as String? ??
+                r['sender_id'] as String?;
+            return actorId == null || !blockedIds.contains(actorId);
+          })
+          .map((r) => AppNotification.fromMap(r))
+          .toList();
     });
   }
 

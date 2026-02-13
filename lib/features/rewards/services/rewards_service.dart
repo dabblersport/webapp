@@ -115,6 +115,10 @@ class RewardsService extends ChangeNotifier {
   static const Duration _defaultCacheTtl = Duration(minutes: 5);
   static const Duration _longCacheTtl = Duration(hours: 1);
 
+  // Realtime channel references for proper cleanup
+  RealtimeChannel? _achievementsChannel;
+  RealtimeChannel? _tiersChannel;
+
   // Processing state
   bool _isInitialized = false;
   String? _currentUserId;
@@ -185,6 +189,12 @@ class RewardsService extends ChangeNotifier {
   /// Dispose of the service
   @override
   void dispose() {
+    // Clean up realtime channels
+    _achievementsChannel?.unsubscribe();
+    _tiersChannel?.unsubscribe();
+    _achievementsChannel = null;
+    _tiersChannel = null;
+
     _eventSubscription.cancel();
     _eventStreamController.close();
     _notificationService.dispose();
@@ -551,8 +561,12 @@ class RewardsService extends ChangeNotifier {
   Future<void> _setupRealtimeSubscriptions() async {
     if (_currentUserId == null) return;
 
+    // Clean up previous channels if re-initializing
+    await _achievementsChannel?.unsubscribe();
+    await _tiersChannel?.unsubscribe();
+
     // Subscribe to achievement unlocks
-    _supabase
+    _achievementsChannel = _supabase
         .channel('achievements')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
@@ -574,11 +588,18 @@ class RewardsService extends ChangeNotifier {
               ),
             );
           },
-        )
-        .subscribe();
+        );
+
+    _achievementsChannel!.subscribe((status, [error]) {
+      if (status == RealtimeSubscribeStatus.timedOut) {
+        debugPrint('Rewards: achievements channel timed out');
+      } else if (status == RealtimeSubscribeStatus.channelError) {
+        debugPrint('Rewards: achievements channel error: $error');
+      }
+    });
 
     // Subscribe to tier upgrades
-    _supabase
+    _tiersChannel = _supabase
         .channel('tiers')
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
@@ -607,8 +628,15 @@ class RewardsService extends ChangeNotifier {
               );
             }
           },
-        )
-        .subscribe();
+        );
+
+    _tiersChannel!.subscribe((status, [error]) {
+      if (status == RealtimeSubscribeStatus.timedOut) {
+        debugPrint('Rewards: tiers channel timed out');
+      } else if (status == RealtimeSubscribeStatus.channelError) {
+        debugPrint('Rewards: tiers channel error: $error');
+      }
+    });
   }
 
   Future<void> _loadInitialData() async {

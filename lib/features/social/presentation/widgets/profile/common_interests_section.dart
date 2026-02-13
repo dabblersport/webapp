@@ -86,7 +86,7 @@ class CommonInterestsSection extends StatelessWidget {
   Widget _buildInterestChip(ThemeData theme, dynamic interest) {
     return ActionChip(
       avatar: CircleAvatar(
-        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
         child: Icon(
           _getInterestIcon(interest.type),
           size: 16,
@@ -100,7 +100,7 @@ class CommonInterestsSection extends StatelessWidget {
         ),
       ),
       backgroundColor: theme.colorScheme.surface,
-      side: BorderSide(color: theme.colorScheme.outline.withOpacity(0.3)),
+      side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
       onPressed: () => onInterestTap(interest),
     );
   }

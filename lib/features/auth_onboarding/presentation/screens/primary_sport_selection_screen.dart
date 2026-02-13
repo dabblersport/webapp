@@ -212,7 +212,7 @@ class _PrimarySportSelectionScreenState
                               'You can change it later.',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: tokens.main.onSecondaryContainer
-                                    .withOpacity(0.7),
+                                    .withValues(alpha: 0.7),
                               ),
                             ),
 

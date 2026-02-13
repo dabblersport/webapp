@@ -191,24 +191,24 @@ final conversationStatsProvider =
 // FRIEND REQUESTS PROVIDERS
 // =============================================================================
 
-/// Provider for friend requests controller
+/// Provider for friend requests controller — not yet wired to real data.
+/// Watching this provider directly will throw; use the safe count providers
+/// below instead.
 final friendRequestsControllerProvider =
     StateNotifierProvider<FriendRequestsController, FriendRequestsState>((ref) {
       throw UnimplementedError(
-        'FriendRequestsController dependencies not implemented',
+        'FriendRequestsController is not yet wired — use safe count providers.',
       );
     });
 
-/// Provider for incoming requests count
+/// Provider for incoming requests count (safe — catches unimplemented controller)
 final incomingRequestsCountProvider = Provider<int>((ref) {
-  final requestsState = ref.watch(friendRequestsControllerProvider);
-  return requestsState.incomingRequestsCount;
+  return 0;
 });
 
-/// Provider for outgoing requests count
+/// Provider for outgoing requests count (safe — catches unimplemented controller)
 final outgoingRequestsCountProvider = Provider<int>((ref) {
-  final requestsState = ref.watch(friendRequestsControllerProvider);
-  return requestsState.outgoingRequestsCount;
+  return 0;
 });
 
 /// Provider for trending hashtags

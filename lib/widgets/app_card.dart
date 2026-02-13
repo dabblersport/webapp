@@ -39,7 +39,7 @@ class AppCard extends StatelessWidget {
         color: effectiveBackgroundColor,
         borderRadius: effectiveBorderRadius,
         border: Border.all(
-          color: colorScheme.outlineVariant.withOpacity(0.1),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.1),
           width: 1,
         ),
         // Material 3 uses color for depth, not shadows - shadows removed

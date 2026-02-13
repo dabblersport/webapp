@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'organiser_profile.freezed.dart';
 part 'organiser_profile.g.dart';
 
-/// Model representing an organiser profile from the organiser_profiles table
+/// Model representing an organiser profile from the public.organiser table
 /// This is linked to a profile via profile_id
 @freezed
 class OrganiserProfile with _$OrganiserProfile {

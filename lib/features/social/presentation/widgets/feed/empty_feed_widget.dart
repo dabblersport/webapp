@@ -19,8 +19,8 @@ class EmptyFeedWidget extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withOpacity(
-                  0.3,
+                color: theme.colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.3,
                 ),
                 shape: BoxShape.circle,
               ),

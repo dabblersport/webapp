@@ -83,7 +83,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         final isUnread = notification['isUnread'] as bool;
 
         return Container(
-          color: isUnread ? Colors.blue.withOpacity(0.05) : null,
+          color: isUnread ? Colors.blue.withValues(alpha: 0.05) : null,
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: _getNotificationColor(

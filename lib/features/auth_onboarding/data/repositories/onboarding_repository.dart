@@ -39,7 +39,7 @@ class OnboardingRepository {
               city,
               country,
               language,
-              preferred_sports,
+              preferred_sport,
               primary_sport_id,
               interests,
               onboard,
@@ -58,14 +58,15 @@ class OnboardingRepository {
     );
   }
 
-  /// Check if persona extension exists (player_profiles, organiser_profiles, or host_profiles)
+  /// Check if persona extension exists (player, organiser, or hoster table)
   Future<Result<bool, Failure>> personaExtensionExists({
     required String profileId,
     required String personaType,
   }) async {
     return Result.guard(
       () async {
-        final tableName = '${personaType}_profiles';
+        // Map persona type to actual table name
+        final tableName = _getPersonaTableName(personaType);
 
         final response = await _client
             .from(tableName)
@@ -81,6 +82,22 @@ class OnboardingRepository {
         cause: error,
       ),
     );
+  }
+
+  /// Map persona type to actual table name
+  String _getPersonaTableName(String personaType) {
+    switch (personaType.toLowerCase()) {
+      case 'player':
+        return 'player';
+      case 'organiser':
+      case 'business':
+        return 'organiser';
+      case 'host':
+      case 'hoster':
+        return 'hoster';
+      default:
+        return 'player'; // Default fallback
+    }
   }
 
   /// Check if sport_profiles entry exists
@@ -120,7 +137,7 @@ class OnboardingRepository {
     String? city,
     String? country,
     String? language,
-    List<String>? preferredSportsSlugs,
+    String? preferredSport,
     List<String>? interestsSlugs,
   }) async {
     return Result.guard(
@@ -160,7 +177,7 @@ class OnboardingRepository {
           'city': city,
           'country': country,
           'language': language ?? 'en',
-          'preferred_sports': preferredSportsSlugs ?? [],
+          'preferred_sport': preferredSport,
           'interests': interestsSlugs ?? [],
           'onboard': false, // Not complete yet
           'profile_completion': 'started',
@@ -186,7 +203,7 @@ class OnboardingRepository {
   /// STEP 5: Create Persona Extension (SECOND DB WRITE)
   /// ═══════════════════════════════════════════════════════════════
 
-  /// Create persona extension (player_profiles, organiser_profiles, or host_profiles)
+  /// Create persona extension (player, organiser, or hoster table)
   /// IDEMPOTENT: If row exists, does nothing
   Future<Result<void, Failure>> createPersonaExtension({
     required String profileId,
@@ -209,7 +226,7 @@ class OnboardingRepository {
           return; // Already created
         }
 
-        final tableName = '${personaType}_profiles';
+        final tableName = _getPersonaTableName(personaType);
 
         await _client.from(tableName).insert({'profile_id': profileId});
       },

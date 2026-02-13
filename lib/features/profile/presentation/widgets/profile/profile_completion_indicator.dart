@@ -89,7 +89,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -106,7 +106,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
                 painter: CircularProgressPainter(
                   progress: _progressAnimation.value,
                   color: color,
-                  backgroundColor: color.withOpacity(0.1),
+                  backgroundColor: color.withValues(alpha: 0.1),
                   strokeWidth: 8,
                 ),
                 child: SizedBox(
@@ -133,8 +133,9 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
                         Text(
                           'Complete',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.textTheme.bodySmall?.color
-                                ?.withOpacity(0.6),
+                            color: theme.textTheme.bodySmall?.color?.withValues(
+                              alpha: 0.6,
+                            ),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -162,7 +163,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
           Text(
             _getCompletionSubtitle(widget.completionPercentage),
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),
@@ -232,7 +233,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
               color: step.isCompleted ? color : Colors.transparent,
               shape: BoxShape.circle,
               border: Border.all(
-                color: step.isCompleted ? color : color.withOpacity(0.3),
+                color: step.isCompleted ? color : color.withValues(alpha: 0.3),
                 width: 2,
               ),
             ),
@@ -255,7 +256,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
                         ? null
                         : Theme.of(
                             context,
-                          ).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          ).textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                   ),
                 ),
                 if (step.description?.isNotEmpty == true)
@@ -264,7 +265,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(
                         context,
-                      ).textTheme.bodySmall?.color?.withOpacity(0.6),
+                      ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                     ),
                   ),
               ],
@@ -276,7 +277,7 @@ class _ProfileCompletionIndicatorState extends State<ProfileCompletionIndicator>
               icon: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: color.withOpacity(0.7),
+                color: color.withValues(alpha: 0.7),
               ),
             ),
         ],
@@ -392,9 +393,9 @@ class CompactProfileCompletionIndicator extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: primaryColor.withOpacity(0.1),
+          color: primaryColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: primaryColor.withOpacity(0.3)),
+          border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -405,7 +406,7 @@ class CompactProfileCompletionIndicator extends StatelessWidget {
                 painter: CircularProgressPainter(
                   progress: completionPercentage / 100,
                   color: primaryColor,
-                  backgroundColor: primaryColor.withOpacity(0.2),
+                  backgroundColor: primaryColor.withValues(alpha: 0.2),
                   strokeWidth: 4,
                 ),
                 child: Center(
@@ -436,7 +437,9 @@ class CompactProfileCompletionIndicator extends StatelessWidget {
                         ? 'Complete your profile'
                         : 'Profile complete!',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.textTheme.bodySmall?.color?.withOpacity(0.7),
+                      color: theme.textTheme.bodySmall?.color?.withValues(
+                        alpha: 0.7,
+                      ),
                     ),
                   ),
                 ],

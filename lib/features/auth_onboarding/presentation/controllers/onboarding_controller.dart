@@ -116,8 +116,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       city: profile['city'] as String?,
       country: profile['country'] as String?,
       language: profile['language'] as String?,
-      preferredSportsSlugs: (profile['preferred_sports'] as List?)
-          ?.cast<String>(),
+      preferredSport: profile['preferred_sport'] as String?,
       interestsSlugs: (profile['interests'] as List?)?.cast<String>(),
       primarySportId: profile['primary_sport_id'] as String?,
     );
@@ -218,7 +217,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     String? city,
     String? country,
     String? language,
-    List<String>? preferredSportsSlugs,
+    String? preferredSport,
     List<String>? interestsSlugs,
   }) {
     state = state.copyWith(
@@ -228,7 +227,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         city: city,
         country: country,
         language: language,
-        preferredSportsSlugs: preferredSportsSlugs,
+        preferredSport: preferredSport,
         interestsSlugs: interestsSlugs,
       ),
     );
@@ -257,7 +256,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       city: state.data.city,
       country: state.data.country,
       language: state.data.language,
-      preferredSportsSlugs: state.data.preferredSportsSlugs,
+      preferredSport: state.data.preferredSport,
       interestsSlugs: state.data.interestsSlugs,
     );
 

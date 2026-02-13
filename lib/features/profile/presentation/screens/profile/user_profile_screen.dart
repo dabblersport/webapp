@@ -7,22 +7,16 @@ import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
-import 'package:dabbler/data/models/profile/profile_statistics.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/data/models/profile/sports_profile.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
 import '../../widgets/profile/player_sport_profile_header.dart';
-import 'package:dabbler/data/repositories/friends_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_error_mapper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
-import 'package:dabbler/core/design_system/tokens/token_based_theme.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed/post_card.dart';
 import 'package:dabbler/data/models/social/post_model.dart';
 import 'package:dabbler/features/social/services/social_service.dart';
-import 'package:dabbler/features/social/providers.dart';
-import 'package:dabbler/features/profile/presentation/widgets/friends_list_widget.dart';
+import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 
 /// Provider to fetch all posts by a user for the activities tab
 final userPostsProvider = FutureProvider.family<List<PostModel>, String>((
@@ -299,7 +293,7 @@ class _ThemeableUndrawSvg extends StatelessWidget {
   }
 
   String _toHexRgb(Color color) {
-    final rgb = color.value & 0x00FFFFFF;
+    final rgb = color.toARGB32() & 0x00FFFFFF;
     return '#${rgb.toRadixString(16).padLeft(6, '0')}';
   }
 }
@@ -317,6 +311,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _refreshController;
+  final _activitiesKey = GlobalKey();
 
   @override
   void initState() {
@@ -470,14 +465,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             bottomSection: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
-                _buildFriendsSection(context),
-                const SizedBox(height: 24),
                 Text(
-                  'Activities',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  key: _activitiesKey,
+                  'Posts & Activities',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
                 _UserActivitiesTab(userId: widget.userId),
@@ -561,69 +554,62 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(0),
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: DefaultTextStyle.merge(
+        style: TextStyle(color: colorScheme.onPrimaryContainer),
+        child: IconTheme.merge(
+          data: IconThemeData(color: colorScheme.onPrimaryContainer),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildAvatar(context, profile),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildHeroDetails(
-                  context,
-                  profileState,
-                  textTheme,
-                  colorScheme,
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAvatar(context, profile),
+                  const SizedBox(width: 18),
+                  Expanded(
+                    child: _buildHeroDetails(
+                      context,
+                      profileState,
+                      textTheme,
+                      colorScheme,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: AppSpacing.xl),
+              // Pills row for persona type and primary sport
+              _buildInfoPills(context, profile, colorScheme, textTheme),
+              // Bio text below the avatar row
+              if (profile?.bio?.isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                Text(
+                  profile!.bio!,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              _buildUnifiedStats(context, profileState, sportsState),
             ],
           ),
-          const SizedBox(height: 9),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 9),
-            child: Text(
-              profile?.bio?.isNotEmpty == true
-                  ? profile!.bio!
-                  : 'No bio available.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 9),
-          _buildHeroStats(context, profileState, sportsState),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildAvatar(BuildContext context, UserProfile? profile) {
-    final colorScheme = Theme.of(context).colorScheme;
     final displayName = profile?.getDisplayName();
-    final initial = (displayName != null && displayName.isNotEmpty)
-        ? displayName[0].toUpperCase()
-        : 'U';
+    final fallbackText = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName
+        : 'User';
 
-    return CircleAvatar(
-      radius: 30,
-      backgroundColor: colorScheme.categorySocial.withValues(alpha: 0.2),
-      foregroundColor: colorScheme.categorySocial,
-      backgroundImage:
-          profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty
-          ? NetworkImage(profile.avatarUrl!)
-          : null,
-      child: profile?.avatarUrl == null || profile!.avatarUrl!.isEmpty
-          ? Text(
-              initial,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.categorySocial,
-              ),
-            )
-          : null,
+    return DSAvatar.large(
+      imageUrl: profile?.avatarUrl,
+      displayName: fallbackText,
+      context: AvatarContext.social,
     );
   }
 
@@ -635,107 +621,446 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   ) {
     final profile = profileState.profile;
 
+    final baseOnTop = colorScheme.onPrimaryContainer;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          profile?.getDisplayName().isNotEmpty == true
-              ? profile!.getDisplayName()
-              : 'User',
-          style: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
         Row(
           children: [
-            if (profile?.username != null && profile!.username!.isNotEmpty) ...[
-              Text(
-                '@${profile.username}',
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+            Flexible(
+              child: Text(
+                profile?.getDisplayName().isNotEmpty == true
+                    ? profile!.getDisplayName()
+                    : 'User',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: baseOnTop,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
-              if ((profile.city?.isNotEmpty == true ||
-                      profile.country?.isNotEmpty == true) ||
-                  profile.age != null) ...[
-                const SizedBox(width: 9),
-              ],
-            ],
-            if (profile?.city?.isNotEmpty == true ||
-                profile?.country?.isNotEmpty == true) ...[
-              Icon(
-                Iconsax.location_copy,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                _formatLocation(profile!.city, profile.country),
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+            ),
+            // Profile type pill next to name
+            if (profile?.profileType != null &&
+                profile!.profileType!.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: baseOnTop.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              if (profile.age != null) ...[const SizedBox(width: 9)],
-            ],
-            if (profile?.age != null) ...[
-              Icon(
-                Iconsax.cake_copy,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${profile!.age!} Yo',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                child: Text(
+                  profile.profileType![0].toUpperCase() +
+                      profile.profileType!.substring(1),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
           ],
         ),
+        const SizedBox(height: 6),
+        // Posts, Following, and Followers counter row
+        _buildPostsAndFollowingCounter(
+          context,
+          colorScheme,
+          textTheme,
+          baseOnTop,
+        ),
+        const SizedBox(height: 6),
+        // @username, location, age row
+        _buildUserMetaRow(
+          context,
+          profileState.profile,
+          textTheme,
+          colorScheme,
+        ),
       ],
     );
   }
 
-  Widget _buildHeroStats(
+  Widget _buildPostsAndFollowingCounter(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    Color baseOnTop,
+  ) {
+    final postsAsync = ref.watch(userPostsProvider(widget.userId));
+    final profileId = ref.watch(profileControllerProvider).profile?.id;
+    final followingCountAsync = profileId != null
+        ? ref.watch(followingCountProvider(profileId))
+        : const AsyncData<int>(0);
+    final followersCountAsync = profileId != null
+        ? ref.watch(followersCountProvider(profileId))
+        : const AsyncData<int>(0);
+
+    final postsCount = postsAsync.maybeWhen(
+      data: (posts) => posts.length,
+      orElse: () => 0,
+    );
+
+    final followingCount = followingCountAsync.maybeWhen(
+      data: (count) => count,
+      orElse: () => 0,
+    );
+
+    final followersCount = followersCountAsync.maybeWhen(
+      data: (count) => count,
+      orElse: () => 0,
+    );
+
+    return Row(
+      children: [
+        // Posts counter
+        InkWell(
+          onTap: () {
+            final ctx = _activitiesKey.currentContext;
+            if (ctx != null) {
+              Scrollable.ensureVisible(
+                ctx,
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$postsCount',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  postsCount == 1 ? 'Post' : 'Posts',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Following counter
+        InkWell(
+          onTap: profileId != null
+              ? () => context.pushNamed(
+                  RouteNames.following,
+                  pathParameters: {'profileId': profileId},
+                )
+              : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$followingCount',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Following',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        // Followers counter
+        InkWell(
+          onTap: profileId != null
+              ? () => context.pushNamed(
+                  RouteNames.followers,
+                  pathParameters: {'profileId': profileId},
+                )
+              : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '$followersCount',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  followersCount == 1 ? 'Follower' : 'Followers',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: baseOnTop.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserMetaRow(
+    BuildContext context,
+    UserProfile? profile,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    final baseOnTop = colorScheme.onPrimaryContainer;
+
+    return Wrap(
+      spacing: 9,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        // Online / Last seen indicator
+        if (profile != null)
+          _buildOnlineIndicator(profile, textTheme, baseOnTop),
+        if (profile?.username != null && profile!.username!.isNotEmpty)
+          Text(
+            '@${profile.username}',
+            style: textTheme.labelSmall?.copyWith(
+              color: baseOnTop.withValues(alpha: 0.7),
+            ),
+          ),
+        if (profile?.city?.isNotEmpty == true ||
+            profile?.country?.isNotEmpty == true)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Iconsax.location_copy,
+                size: 16,
+                color: baseOnTop.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                _formatLocation(profile!.city, profile.country),
+                style: textTheme.labelSmall?.copyWith(
+                  color: baseOnTop.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+        if (profile?.age != null)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Iconsax.cake_copy,
+                size: 16,
+                color: baseOnTop.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '${profile!.age!} Yo',
+                style: textTheme.bodySmall?.copyWith(
+                  color: baseOnTop.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildOnlineIndicator(
+    UserProfile profile,
+    TextTheme textTheme,
+    Color baseOnTop,
+  ) {
+    final isOnline = profile.isOnline;
+    final lastSeenText = profile.getLastSeenText();
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Pulsing dot for online, static grey dot for offline
+        _OnlineStatusDot(isOnline: isOnline),
+        const SizedBox(width: 4),
+        Text(
+          lastSeenText,
+          style: textTheme.labelSmall?.copyWith(
+            color: isOnline
+                ? const Color(0xFF4CAF50)
+                : baseOnTop.withValues(alpha: 0.5),
+            fontWeight: isOnline ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoPill(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
+    required Color baseOnTop,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.categorySocial.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.categorySocial.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: colorScheme.categorySocial),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(
+              color: baseOnTop,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoPills(
+    BuildContext context,
+    UserProfile? profile,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final baseOnTop = colorScheme.onPrimaryContainer;
+    final primarySport = profile?.preferredSport;
+    final primarySportProfile = profile?.sportsProfiles
+        .where((sp) => sp.isPrimarySport)
+        .firstOrNull;
+    final skillLevel = primarySportProfile?.skillLevel;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        // Persona type pill
+        if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
+          _buildInfoPill(
+            context,
+            icon: profile.personaType == 'organiser'
+                ? Iconsax.calendar_copy
+                : profile.personaType == 'hoster'
+                ? Iconsax.building_copy
+                : profile.personaType == 'socialiser'
+                ? Iconsax.people_copy
+                : Iconsax.profile_circle_copy,
+            label:
+                profile.personaType![0].toUpperCase() +
+                profile.personaType!.substring(1),
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+            baseOnTop: baseOnTop,
+          ),
+        // Primary sport pill
+        if (primarySport != null && primarySport.isNotEmpty)
+          _buildInfoPill(
+            context,
+            icon: Iconsax.medal_star_copy,
+            label: skillLevel != null
+                ? '${_formatSportName(primarySport)} · ${_getSkillLevelText(skillLevel)}'
+                : _formatSportName(primarySport),
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+            baseOnTop: baseOnTop,
+          ),
+      ],
+    );
+  }
+
+  String _getSkillLevelText(SkillLevel skillLevel) {
+    switch (skillLevel) {
+      case SkillLevel.beginner:
+        return 'Beginner';
+      case SkillLevel.intermediate:
+        return 'Intermediate';
+      case SkillLevel.advanced:
+        return 'Advanced';
+      case SkillLevel.expert:
+        return 'Expert';
+    }
+  }
+
+  String _formatSportName(String sportKey) {
+    if (sportKey.isEmpty) return sportKey;
+    final words = sportKey.split('_');
+    return words
+        .map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1);
+        })
+        .join(' ');
+  }
+
+  Widget _buildUnifiedStats(
     BuildContext context,
     ProfileState profileState,
     SportsProfileState sportsState,
   ) {
     final profile = profileState.profile;
-    final statistics = profile?.statistics ?? const ProfileStatistics();
+    if (profile == null) {
+      return const SizedBox.shrink();
+    }
+
+    final statistics = profile.statistics;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
     final allStats = [
-      _HeroStat(
+      _StatItem(
         label: 'Games',
         value: statistics.totalGamesPlayed.toString(),
-        icon: Iconsax.game_copy,
+        icon: Iconsax.medal_star_copy,
       ),
-      _HeroStat(
+      _StatItem(
         label: 'Win rate',
         value: statistics.winRateFormatted,
         icon: Iconsax.cup_copy,
       ),
-      _HeroStat(
+      _StatItem(
         label: 'Sports',
         value: sportsState.profiles.length.toString(),
-        icon: Iconsax.medal_star_copy,
+        icon: Iconsax.game_copy,
       ),
-      _HeroStat(
+      _StatItem(
         label: 'Reliability',
         value: '${statistics.getReliabilityScore().round()}%',
         icon: Iconsax.verify_copy,
       ),
-      _HeroStat(
+      _StatItem(
         label: 'Activity',
         value: statistics.getActivityLevel(),
-        icon: Iconsax.flash_1_copy,
+        icon: Iconsax.flash_copy,
       ),
-      _HeroStat(
+      _StatItem(
         label: 'Last play',
         value: statistics.lastActiveFormatted,
         icon: Iconsax.clock_copy,
@@ -749,10 +1074,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               .sublist(0, 3)
               .map(
                 (stat) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 0),
-                    child: _buildStatCard(stat, colorScheme, textTheme),
-                  ),
+                  child: _buildStatCard(stat, colorScheme, textTheme),
                 ),
               )
               .toList(),
@@ -762,10 +1084,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               .sublist(3)
               .map(
                 (stat) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 0),
-                    child: _buildStatCard(stat, colorScheme, textTheme),
-                  ),
+                  child: _buildStatCard(stat, colorScheme, textTheme),
                 ),
               )
               .toList(),
@@ -775,26 +1094,28 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 
   Widget _buildStatCard(
-    _HeroStat stat,
+    _StatItem stat,
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
+    final baseOnTop = colorScheme.onPrimaryContainer;
+
     return Card(
       elevation: 0,
       color: colorScheme.categorySocial.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide.none,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               stat.value,
               style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurface,
+                color: baseOnTop,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -802,7 +1123,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             Text(
               stat.label,
               style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: baseOnTop,
                 fontWeight: FontWeight.w400,
               ),
             ),
@@ -814,10 +1135,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   Widget _buildActionButtons(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final friendshipStatusAsync = ref.watch(
-      friendshipStatusProvider(widget.userId),
-    );
+    final myProfileIdAsync = ref.watch(myProfileIdProvider);
     final buttonTextStyle = Theme.of(context).textTheme.labelMedium;
+
+    final myProfileId = myProfileIdAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => null,
+    );
+    // Use the same profile ID displayed on screen (from profileControllerProvider)
+    // to ensure counters, follow state, and follow actions all reference the same profile.
+    final targetProfileId = ref.watch(profileControllerProvider).profile?.id;
 
     return Row(
       children: [
@@ -843,156 +1170,130 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         Expanded(
           child: SizedBox(
             height: 40,
-            child: friendshipStatusAsync.when(
-              data: (result) => switch (result) {
-                Ok(:final value) => _buildFriendButton(context, value),
-                Err() => _buildFriendButton(context, 'none'),
-                _ => _buildFriendButton(context, 'none'),
-              },
-              loading: () => OutlinedButton.icon(
-                onPressed: null,
-                icon: const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                label: const Text('Loading'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
-                  textStyle: buttonTextStyle,
-                  foregroundColor: colorScheme.categorySocial,
-                  side: BorderSide(
-                    color: colorScheme.categorySocial.withValues(alpha: 0.5),
+            child: (myProfileId == null || targetProfileId == null)
+                ? OutlinedButton.icon(
+                    onPressed: null,
+                    icon: const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    label: const Text('Loading'),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(40),
+                      textStyle: buttonTextStyle,
+                      foregroundColor: colorScheme.categorySocial,
+                      side: BorderSide(
+                        color: colorScheme.categorySocial.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  )
+                : _buildFollowButton(
+                    context,
+                    myProfileId: myProfileId,
+                    targetProfileId: targetProfileId,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              error: (_, __) => _buildFriendButton(context, 'none'),
-            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFriendButton(BuildContext context, String status) {
+  Widget _buildFollowButton(
+    BuildContext context, {
+    required String myProfileId,
+    required String targetProfileId,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final buttonTextStyle = Theme.of(context).textTheme.labelMedium;
 
-    switch (status) {
-      case 'friends':
-        return OutlinedButton.icon(
-          onPressed: () => _showUnfriendDialog(context),
-          icon: const Icon(Iconsax.user_tick_copy),
-          label: const Text('Friends'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(40),
-            textStyle: buttonTextStyle,
-            foregroundColor: colorScheme.categorySocial,
-            side: BorderSide(
-              color: colorScheme.categorySocial.withValues(alpha: 0.5),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      case 'pending_sent':
-        return OutlinedButton.icon(
-          onPressed: () => _cancelFriendRequest(context),
-          icon: const Icon(Iconsax.user_remove_copy),
-          label: const Text('Cancel Request'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(40),
-            textStyle: buttonTextStyle,
-            foregroundColor: colorScheme.onSurfaceVariant,
-            side: BorderSide(
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      case 'pending_received':
-        return Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _declineFriendRequest(context),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
-                  textStyle: buttonTextStyle,
-                  foregroundColor: colorScheme.onSurfaceVariant,
-                  side: BorderSide(
-                    color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Ignore'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: FilledButton(
-                onPressed: () => _acceptFriendRequest(context),
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(40),
-                  textStyle: buttonTextStyle,
-                  backgroundColor: colorScheme.categorySocial,
-                  foregroundColor: colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Accept'),
-              ),
-            ),
-          ],
-        );
-      case 'blocked':
-        return OutlinedButton.icon(
-          onPressed: null,
-          icon: const Icon(Iconsax.slash_copy),
-          label: const Text('Blocked'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(40),
-            textStyle: buttonTextStyle,
-            foregroundColor: colorScheme.error,
-            side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      case 'none':
-      default:
-        return OutlinedButton.icon(
-          onPressed: () => _addFriend(context),
-          icon: const Icon(Iconsax.user_add_copy),
-          label: const Text('Add Friend'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(40),
-            textStyle: buttonTextStyle,
-            foregroundColor: colorScheme.categorySocial,
-            side: BorderSide(
-              color: colorScheme.categorySocial.withValues(alpha: 0.5),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-    }
-  }
+    final isBlockedAsync = ref.watch(
+      isBlockedProvider((
+        currentProfileId: myProfileId,
+        targetProfileId: targetProfileId,
+      )),
+    );
+    final isBlocked = isBlockedAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => false,
+    );
 
-  void _declineFriendRequest(BuildContext context) {
-    // Same RPC as cancel (reject). Kept separate for clearer intent.
-    _cancelFriendRequest(context);
+    if (isBlocked) {
+      return OutlinedButton.icon(
+        onPressed: () => _unblockUser(context),
+        icon: const Icon(Iconsax.slash_copy),
+        label: const Text('Unblock'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(40),
+          textStyle: buttonTextStyle,
+          foregroundColor: colorScheme.error,
+          side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+
+    final isFollowingAsync = ref.watch(
+      isFollowingProvider((
+        currentProfileId: myProfileId,
+        targetProfileId: targetProfileId,
+      )),
+    );
+    final isFollowing = isFollowingAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => false,
+    );
+
+    if (isFollowing) {
+      return OutlinedButton.icon(
+        onPressed: () => _toggleFollow(
+          context,
+          myProfileId: myProfileId,
+          targetProfileId: targetProfileId,
+          currentlyFollowing: true,
+        ),
+        icon: const Icon(Iconsax.user_tick_copy),
+        label: const Text('Following'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(40),
+          textStyle: buttonTextStyle,
+          foregroundColor: colorScheme.categorySocial,
+          side: BorderSide(
+            color: colorScheme.categorySocial.withValues(alpha: 0.5),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+
+    return OutlinedButton.icon(
+      onPressed: () => _toggleFollow(
+        context,
+        myProfileId: myProfileId,
+        targetProfileId: targetProfileId,
+        currentlyFollowing: false,
+      ),
+      icon: const Icon(Iconsax.user_add_copy),
+      label: const Text('Follow'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(40),
+        textStyle: buttonTextStyle,
+        foregroundColor: colorScheme.categorySocial,
+        side: BorderSide(
+          color: colorScheme.categorySocial.withValues(alpha: 0.5),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   Widget _buildSportProfileHeaderSection(
@@ -1022,21 +1323,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     return const SizedBox.shrink();
   }
 
-  Widget _buildFriendsSection(BuildContext context) {
-    final friendsAsync = ref.watch(userFriendsListProvider(widget.userId));
-
-    return friendsAsync.when(
-      data: (friends) => FriendsListWidget(
-        friends: friends,
-        onViewAll: () {
-          // TODO: Navigate to full friends list screen
-        },
-      ),
-      loading: () => const FriendsListWidget(friends: [], isLoading: true),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
   String _formatLocation(String? city, String? country) {
     final cityStr = city?.trim();
     final countryStr = country?.trim();
@@ -1056,257 +1342,181 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   void _sendMessage(BuildContext context) {
     final userId = widget.userId;
-    context.push('${RoutePaths.socialChat}/$userId');
+    // Gate chat entry on block status
+    final isBlocked = ref.read(isUserBlockedProvider(userId));
+    isBlocked.whenData((blocked) {
+      if (blocked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cannot message a blocked user')),
+        );
+        return;
+      }
+      context.push('${RoutePaths.socialChat}/$userId');
+    });
   }
 
-  void _addFriend(BuildContext context) async {
+  Future<void> _toggleFollow(
+    BuildContext context, {
+    required String myProfileId,
+    required String targetProfileId,
+    required bool currentlyFollowing,
+  }) async {
     try {
-      final client = Supabase.instance.client;
-      final errorMapper = SupabaseErrorMapper();
-      final supabaseService = SupabaseService(client, errorMapper);
-      final friendsRepo = FriendsRepositoryImpl(supabaseService);
-
-      final result = await friendsRepo.sendFriendRequest(widget.userId);
-
-      if (mounted) {
-        switch (result) {
-          case Ok():
-            ref.invalidate(friendshipStatusProvider(widget.userId));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Friend request sent')),
-            );
-          case Err(:final error):
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Failed: ${error.message}')));
-        }
+      final supabase = Supabase.instance.client;
+      if (currentlyFollowing) {
+        await supabase
+            .from('profile_follows')
+            .delete()
+            .eq('follower_profile_id', myProfileId)
+            .eq('following_profile_id', targetProfileId);
+      } else {
+        await supabase.from('profile_follows').insert({
+          'follower_profile_id': myProfileId,
+          'following_profile_id': targetProfileId,
+        });
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
-  }
 
-  void _acceptFriendRequest(BuildContext context) async {
-    try {
-      final client = Supabase.instance.client;
-      final errorMapper = SupabaseErrorMapper();
-      final supabaseService = SupabaseService(client, errorMapper);
-      final friendsRepo = FriendsRepositoryImpl(supabaseService);
-
-      final result = await friendsRepo.acceptFriendRequest(widget.userId);
-
-      if (mounted) {
-        switch (result) {
-          case Ok():
-            ref.invalidate(friendshipStatusProvider(widget.userId));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Friend request accepted')),
-            );
-          case Err(:final error):
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Failed: ${error.message}')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
-  }
-
-  void _cancelFriendRequest(BuildContext context) async {
-    try {
-      final client = Supabase.instance.client;
-      final errorMapper = SupabaseErrorMapper();
-      final supabaseService = SupabaseService(client, errorMapper);
-      final friendsRepo = FriendsRepositoryImpl(supabaseService);
-
-      final result = await friendsRepo.rejectFriendRequest(widget.userId);
-
-      if (mounted) {
-        switch (result) {
-          case Ok():
-            ref.invalidate(friendshipStatusProvider(widget.userId));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Friend request cancelled')),
-            );
-          case Err(:final error):
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Failed: ${error.message}')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
-  }
-
-  void _showUnfriendDialog(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: Theme.of(dialogContext).colorScheme.surface,
-        title: const Text('Remove Friend'),
-        content: const Text('Are you sure you want to remove this friend?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _removeFriend(context);
-            },
-            style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _removeFriend(BuildContext context) async {
-    try {
-      final client = Supabase.instance.client;
-      final errorMapper = SupabaseErrorMapper();
-      final supabaseService = SupabaseService(client, errorMapper);
-      final friendsRepo = FriendsRepositoryImpl(supabaseService);
-
-      final result = await friendsRepo.removeFriend(widget.userId);
-
-      if (mounted) {
-        switch (result) {
-          case Ok():
-            ref.invalidate(friendshipStatusProvider(widget.userId));
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Friend removed')));
-          case Err(:final error):
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Failed: ${error.message}')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      // Invalidate relevant providers
+      ref.invalidate(
+        isFollowingProvider((
+          currentProfileId: myProfileId,
+          targetProfileId: targetProfileId,
+        )),
+      );
+      ref.invalidate(followingListProvider(myProfileId));
+      ref.invalidate(followingCountProvider(myProfileId));
+      ref.invalidate(followersCountProvider(targetProfileId));
+    } catch (_) {
+      // Silently fail — providers will stay stale until next refresh
     }
   }
 
   Future<void> _blockUser(BuildContext context) async {
-    try {
-      final client = Supabase.instance.client;
-      final errorMapper = SupabaseErrorMapper();
-      final supabaseService = SupabaseService(client, errorMapper);
-      final friendsRepo = FriendsRepositoryImpl(supabaseService);
+    // Confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
+        title: const Text('Block User'),
+        content: const Text(
+          'This will block the user across the entire app. '
+          'They won\'t be able to see your profile, posts, or interact with you. '
+          'You can unblock them later from their profile or Privacy Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Block'),
+          ),
+        ],
+      ),
+    );
 
-      final result = await friendsRepo.blockUser(widget.userId);
+    if (confirmed != true) return;
 
-      if (mounted) {
-        switch (result) {
-          case Ok():
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('User blocked')));
-          case Err(:final error):
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Failed: ${error.message}')));
+    final targetUserId = widget.userId;
+    final repo = ref.read(blockRepositoryProvider);
+    final result = await repo.blockUser(targetUserId);
+
+    result.fold(
+      (err) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${err.message}')));
         }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
+      },
+      (_) {
+        // Invalidate all block-dependent providers
+        ref.invalidate(blockedUserIdsProvider);
+        ref.invalidate(blockedUsersWithProfilesProvider);
+        ref.invalidate(isUserBlockedProvider(targetUserId));
+        final myProfileId = ref
+            .read(myProfileIdProvider)
+            .maybeWhen(data: (v) => v, orElse: () => null);
+        if (myProfileId != null) {
+          ref.invalidate(
+            isBlockedProvider((
+              currentProfileId: myProfileId,
+              targetProfileId:
+                  ref.read(profileControllerProvider).profile?.id ?? '',
+            )),
+          );
+          ref.invalidate(followingListProvider(myProfileId));
+          ref.invalidate(followersListProvider(myProfileId));
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('User blocked')));
+        }
+      },
+    );
+  }
+
+  Future<void> _unblockUser(BuildContext context) async {
+    final targetUserId = widget.userId;
+    final repo = ref.read(blockRepositoryProvider);
+    final result = await repo.unblockUser(targetUserId);
+
+    result.fold(
+      (err) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: ${err.message}')));
+        }
+      },
+      (_) {
+        ref.invalidate(blockedUserIdsProvider);
+        ref.invalidate(blockedUsersWithProfilesProvider);
+        ref.invalidate(isUserBlockedProvider(targetUserId));
+        final myProfileId = ref
+            .read(myProfileIdProvider)
+            .maybeWhen(data: (v) => v, orElse: () => null);
+        if (myProfileId != null) {
+          ref.invalidate(
+            isBlockedProvider((
+              currentProfileId: myProfileId,
+              targetProfileId:
+                  ref.read(profileControllerProvider).profile?.id ?? '',
+            )),
+          );
+          ref.invalidate(followingListProvider(myProfileId));
+          ref.invalidate(followersListProvider(myProfileId));
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('User unblocked')));
+        }
+      },
+    );
   }
 
   void _reportUser(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Report User'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Why are you reporting this user?'),
-            const SizedBox(height: 16),
-            ...[
-              'Harassment',
-              'Spam',
-              'Inappropriate content',
-              'Hate speech',
-              'Other',
-            ].map(
-              (reason) => ListTile(
-                title: Text(reason),
-                onTap: () {
-                  Navigator.pop(context);
-                  _submitUserReport(context, reason);
-                },
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
+      builder: (_) => ReportDialog(
+        targetType: ReportTargetType.user,
+        targetId: widget.userId,
+        targetUserId: widget.userId,
       ),
     );
   }
 
-  Future<void> _submitUserReport(BuildContext context, String reason) async {
-    try {
-      final client = Supabase.instance.client;
-
-      await client.from('reports').insert({
-        'reporter_id': client.auth.currentUser?.id,
-        'reported_user_id': widget.userId,
-        'reason': reason,
-        'target_type': 'user',
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Report submitted')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to submit report: $e')));
-      }
-    }
-  }
-
   void _showMoreOptions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final targetUserId = widget.userId;
+    final isBlocked = ref.read(isUserBlockedProvider(targetUserId));
+    final blocked = isBlocked.valueOrNull ?? false;
 
     showModalBottomSheet(
       context: context,
@@ -1316,20 +1526,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: const Icon(Iconsax.close_circle_copy),
-              title: const Text('Block user'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _blockUser(context);
-              },
-            ),
+            if (blocked)
+              ListTile(
+                leading: const Icon(Iconsax.close_circle_copy),
+                title: const Text('Unblock user'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _unblockUser(this.context);
+                },
+              )
+            else
+              ListTile(
+                leading: const Icon(Iconsax.close_circle_copy),
+                title: const Text('Block user'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _blockUser(this.context);
+                },
+              ),
             ListTile(
               leading: const Icon(Iconsax.warning_2_copy),
               title: const Text('Report user'),
               onTap: () {
                 Navigator.pop(context);
-                _reportUser(context);
+                _reportUser(this.context);
               },
             ),
           ],
@@ -1339,14 +1559,96 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 }
 
-class _HeroStat {
+class _StatItem {
+  final IconData icon;
   final String label;
   final String value;
-  final IconData icon;
 
-  const _HeroStat({
+  const _StatItem({
+    required this.icon,
     required this.label,
     required this.value,
-    required this.icon,
   });
+}
+
+/// Animated pulsing dot for online status
+class _OnlineStatusDot extends StatefulWidget {
+  final bool isOnline;
+  const _OnlineStatusDot({required this.isOnline});
+
+  @override
+  State<_OnlineStatusDot> createState() => _OnlineStatusDotState();
+}
+
+class _OnlineStatusDotState extends State<_OnlineStatusDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    if (widget.isOnline) _controller.repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _OnlineStatusDot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isOnline && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    } else if (!widget.isOnline && _controller.isAnimating) {
+      _controller.stop();
+      _controller.reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.isOnline
+        ? const Color(0xFF4CAF50)
+        : Colors.grey.withValues(alpha: 0.5);
+
+    if (!widget.isOnline) {
+      return Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: _animation.value),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: _animation.value * 0.5),
+                blurRadius: 4 * _animation.value,
+                spreadRadius: 1 * _animation.value,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/widgets/onboarding_progress.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/design_system/tokens/main_dark.dart'

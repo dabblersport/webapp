@@ -88,8 +88,8 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  _currentTier.color.withOpacity(0.1),
-                  _currentTier.color.withOpacity(0.05),
+                  _currentTier.color.withValues(alpha: 0.1),
+                  _currentTier.color.withValues(alpha: 0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -130,7 +130,7 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
+                      color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -239,7 +239,7 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -272,7 +272,7 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
       decoration: BoxDecoration(
         color: Theme.of(
           context,
-        ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -281,7 +281,7 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: achievement.tier.color.withOpacity(0.2),
+              color: achievement.tier.color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -315,7 +315,7 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: achievement.tier.color.withOpacity(0.1),
+              color: achievement.tier.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(

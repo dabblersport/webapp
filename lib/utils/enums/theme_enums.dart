@@ -159,7 +159,7 @@ enum AccentColor {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.5),
+                    color: color.withValues(alpha: 0.5),
                     blurRadius: 8,
                     spreadRadius: 2,
                   ),
@@ -200,7 +200,9 @@ enum FontSize {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          color: selected
+              ? Colors.blue.withValues(alpha: 0.1)
+              : Colors.transparent,
           border: Border.all(color: selected ? Colors.blue : Colors.grey[300]!),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -309,7 +311,9 @@ enum InterfaceDensity {
           vertical: 12 + (visualDensity.vertical * 2),
         ),
         decoration: BoxDecoration(
-          color: selected ? Colors.blue.withOpacity(0.1) : Colors.grey[100],
+          color: selected
+              ? Colors.blue.withValues(alpha: 0.1)
+              : Colors.grey[100],
           border: Border.all(color: selected ? Colors.blue : Colors.grey[300]!),
           borderRadius: BorderRadius.circular(8),
         ),

@@ -30,21 +30,29 @@ class AuditSafetyRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw AuthException('Not authenticated');
 
-      // RLS: INSERT allowed when reporter_user_id = auth.uid()
-      final payload = {
-        'reporter_user_id': uid,
-        'post_id': postId,
-        if (reason != null && reason.isNotEmpty) 'reason': reason,
-        if (details != null && details.isNotEmpty) 'details': details,
-      };
+      // Use the canonical report_content RPC → moderation_reports table
+      final response = await _db.rpc(
+        'report_content',
+        params: {
+          'p_target_type': 'post',
+          'p_target_id': postId,
+          'p_reason': reason ?? 'other',
+          if (details != null && details.isNotEmpty) 'p_details': details,
+        },
+      );
 
-      final inserted = await _db
-          .from('post_reports')
-          .insert(payload)
-          .select()
-          .single();
+      final data = Map<String, dynamic>.from(response as Map<dynamic, dynamic>);
 
-      return AbuseFlag.fromMap(inserted);
+      // Map moderation_reports row to AbuseFlag for backward compat
+      return AbuseFlag(
+        id: data['id'] as String,
+        reporterUserId: data['reporter_user_id'] as String,
+        postId: data['target_id'] as String,
+        reason: data['reason'] as String? ?? reason,
+        details: data['details'] as String?,
+        status: data['status'] as String? ?? 'open',
+        createdAt: DateTime.parse(data['created_at'] as String),
+      );
     });
   }
 
@@ -56,17 +64,16 @@ class AuditSafetyRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw AuthException('Not authenticated');
 
-      // RLS: reporter_user_id = auth.uid() OR admin
       final rows =
           await _db
-                  .from('post_reports')
+                  .from('moderation_reports')
                   .select()
                   .eq('reporter_user_id', uid)
                   .order('created_at', ascending: false)
                   .limit(limit)
               as List;
 
-      return rows.map((r) => AbuseFlag.fromMap(r)).toList();
+      return rows.map((r) => _modReportToAbuseFlag(r)).toList();
     });
   }
 
@@ -76,8 +83,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? since,
   }) async {
     return guard<List<AbuseFlag>>(() async {
-      // If the caller isn't admin, RLS will naturally reduce the set to their own reports.
-      var query = _db.from('post_reports').select();
+      var query = _db.from('moderation_reports').select();
 
       if (since != null) {
         query = query.gte('created_at', since.toIso8601String());
@@ -86,7 +92,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
       final rows =
           await query.order('created_at', ascending: false).limit(limit)
               as List;
-      return rows.map((r) => AbuseFlag.fromMap(r)).toList();
+      return rows.map((r) => _modReportToAbuseFlag(r)).toList();
     });
   }
 
@@ -97,16 +103,16 @@ class AuditSafetyRepositoryImpl extends BaseRepository
       return const Stream<List<AbuseFlag>>.empty();
     }
 
-    // Realtime subscription scoped to the reporter via filter.
     return _db
-        .from('post_reports')
+        .from('moderation_reports')
         .stream(primaryKey: ['id'])
         .eq('reporter_user_id', uid)
         .order('created_at', ascending: false)
         .limit(limit)
         .map(
-          (rows) =>
-              rows.map<AbuseFlag>((r) => AbuseFlag.fromMap(asMap(r))).toList(),
+          (rows) => rows
+              .map<AbuseFlag>((r) => _modReportToAbuseFlag(asMap(r)))
+              .toList(),
         );
   }
 
@@ -118,14 +124,14 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? before,
   }) async {
     return guard<List<AbuseFlag>>(() async {
-      var query = _db.from('post_reports').select();
+      var query = _db.from('moderation_reports').select();
 
       if (status != null) {
         query = query.eq('status', status);
       }
 
       if (subjectType != null) {
-        query = query.eq('subject_type', subjectType);
+        query = query.eq('target_type', subjectType);
       }
 
       if (before != null) {
@@ -136,8 +142,23 @@ class AuditSafetyRepositoryImpl extends BaseRepository
           await query.order('created_at', ascending: false).limit(limit)
               as List;
 
-      return rows.map((r) => AbuseFlag.fromMap(asMap(r))).toList();
+      return rows.map((r) => _modReportToAbuseFlag(asMap(r))).toList();
     });
+  }
+
+  /// Map a moderation_reports row to AbuseFlag for backward compatibility
+  static AbuseFlag _modReportToAbuseFlag(Map<String, dynamic> r) {
+    return AbuseFlag(
+      id: (r['id'] ?? '').toString(),
+      reporterUserId: (r['reporter_user_id'] ?? '').toString(),
+      postId: (r['target_id'] ?? '').toString(),
+      reason: r['reason']?.toString(),
+      details: r['details']?.toString(),
+      status: r['status']?.toString(),
+      createdAt: r['created_at'] != null
+          ? DateTime.parse(r['created_at'] as String)
+          : DateTime.fromMillisecondsSinceEpoch(0),
+    );
   }
 
   @override

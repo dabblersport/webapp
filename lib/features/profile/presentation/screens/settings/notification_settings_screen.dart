@@ -134,8 +134,8 @@ class _NotificationSettingsScreenState
             'Stay informed',
             style: textTheme.labelLarge?.copyWith(
               color: isDarkMode
-                  ? Colors.white.withOpacity(0.8)
-                  : Colors.black.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : Colors.black.withValues(alpha: 0.7),
               fontWeight: FontWeight.w600,
               letterSpacing: 0.6,
             ),
@@ -152,7 +152,7 @@ class _NotificationSettingsScreenState
           Text(
             'Control how and when you receive notifications about games, social activity, and account updates.',
             style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onPrimary.withOpacity(0.8),
+              color: colorScheme.onPrimary.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -406,7 +406,7 @@ class _NotificationSettingsScreenState
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.5),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 20, color: colorScheme.primary),
@@ -426,7 +426,7 @@ class _NotificationSettingsScreenState
               Text(
                 subtitle,
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],

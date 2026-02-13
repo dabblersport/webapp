@@ -54,13 +54,13 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                 Icon(
                   Icons.sports_esports,
                   size: 64,
-                  color: context.colors.onSurface.withOpacity(0.3),
+                  color: context.colors.onSurface.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'No ${widget.sport} games found',
                   style: context.textTheme.titleLarge?.copyWith(
-                    color: context.colors.onSurface.withOpacity(0.6),
+                    color: context.colors.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -141,7 +141,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
             side: BorderSide(
               width: 0.50,
               strokeAlign: BorderSide.strokeAlignCenter,
-              color: context.colors.outline.withOpacity(0.1),
+              color: context.colors.outline.withValues(alpha: 0.1),
             ),
             borderRadius: BorderRadius.circular(12),
           ),
@@ -177,7 +177,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                     Text(
                       game.skillLevel,
                       style: TextStyle(
-                        color: context.colors.onSurface.withOpacity(0.6),
+                        color: context.colors.onSurface.withValues(alpha: 0.6),
                         fontSize: 12,
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w400,
@@ -189,7 +189,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                   _getTimeFromNow(game.scheduledDate),
                   textAlign: TextAlign.right,
                   style: TextStyle(
-                    color: context.colors.onSurface.withOpacity(0.6),
+                    color: context.colors.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400,
@@ -220,7 +220,7 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                     Text(
                       '${game.startTime} - ${game.endTime}',
                       style: TextStyle(
-                        color: context.colors.onSurface.withOpacity(0.9),
+                        color: context.colors.onSurface.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w400,
@@ -238,7 +238,9 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                       child: Text(
                         game.venueName ?? 'Venue TBD',
                         style: TextStyle(
-                          color: context.colors.onSurface.withOpacity(0.9),
+                          color: context.colors.onSurface.withValues(
+                            alpha: 0.9,
+                          ),
                           fontSize: 14,
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w400,
@@ -267,7 +269,9 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                       Text(
                         '${game.currentPlayers}/${game.maxPlayers}',
                         style: TextStyle(
-                          color: context.colors.onSurface.withOpacity(0.6),
+                          color: context.colors.onSurface.withValues(
+                            alpha: 0.6,
+                          ),
                           fontSize: 12,
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w400,
@@ -281,11 +285,11 @@ class _MatchListScreenState extends ConsumerState<MatchListScreen> {
                       vertical: 2,
                     ),
                     decoration: ShapeDecoration(
-                      color: widget.sportColor.withOpacity(0.9),
+                      color: widget.sportColor.withValues(alpha: 0.9),
                       shape: RoundedRectangleBorder(
                         side: BorderSide(
                           width: 1,
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                         ),
                         borderRadius: BorderRadius.circular(22),
                       ),

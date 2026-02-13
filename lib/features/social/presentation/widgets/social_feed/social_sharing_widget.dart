@@ -100,7 +100,7 @@ class _SocialSharingWidgetState extends State<SocialSharingWidget>
           height: 4,
           margin: const EdgeInsets.only(top: 8),
           decoration: BoxDecoration(
-            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4),
+            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -153,9 +153,11 @@ class _SocialSharingWidgetState extends State<SocialSharingWidget>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
@@ -312,9 +314,9 @@ class _SocialSharingWidgetState extends State<SocialSharingWidget>
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Column(
             children: [

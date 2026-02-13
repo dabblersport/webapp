@@ -154,7 +154,17 @@ class ProfilesRepositoryImpl extends BaseRepository
       );
 
       try {
-        channel.subscribe();
+        channel.subscribe((status, [error]) {
+          if (status == RealtimeSubscribeStatus.timedOut) {
+            emit(
+              Err(
+                const NetworkFailure(
+                  message: 'Realtime profile channel timed out',
+                ),
+              ),
+            );
+          }
+        });
       } catch (error) {
         emit(Err(svc.mapPostgrest(error as PostgrestException)));
       }

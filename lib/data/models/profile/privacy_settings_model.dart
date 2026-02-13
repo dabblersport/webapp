@@ -8,18 +8,31 @@ class PrivacySettingsModel extends PrivacySettings {
     super.showLocation,
     super.showPhone,
     super.showEmail,
+    super.showBio,
+    super.showProfilePhoto,
+    super.showFriendsList,
+    super.allowProfileIndexing,
     super.showStats,
     super.showSportsProfiles,
     super.showGameHistory,
     super.showAchievements,
+    super.showOnlineStatus,
+    super.showActivityStatus,
+    super.showCheckIns,
+    super.showPostsToPublic,
     super.messagePreference,
     super.gameInvitePreference,
+    super.friendRequestPreference,
+    super.allowPushNotifications,
+    super.allowEmailNotifications,
     super.allowLocationTracking,
     super.allowDataAnalytics,
     super.dataSharingLevel,
-    super.blockedUsers,
-    super.showOnlineStatus,
     super.allowGameRecommendations,
+    super.hideFromNearby,
+    super.twoFactorEnabled,
+    super.loginAlerts,
+    super.blockedUsers,
   });
 
   /// Creates PrivacySettingsModel from domain entity
@@ -31,18 +44,31 @@ class PrivacySettingsModel extends PrivacySettings {
       showLocation: entity.showLocation,
       showPhone: entity.showPhone,
       showEmail: entity.showEmail,
+      showBio: entity.showBio,
+      showProfilePhoto: entity.showProfilePhoto,
+      showFriendsList: entity.showFriendsList,
+      allowProfileIndexing: entity.allowProfileIndexing,
       showStats: entity.showStats,
       showSportsProfiles: entity.showSportsProfiles,
       showGameHistory: entity.showGameHistory,
       showAchievements: entity.showAchievements,
+      showOnlineStatus: entity.showOnlineStatus,
+      showActivityStatus: entity.showActivityStatus,
+      showCheckIns: entity.showCheckIns,
+      showPostsToPublic: entity.showPostsToPublic,
       messagePreference: entity.messagePreference,
       gameInvitePreference: entity.gameInvitePreference,
+      friendRequestPreference: entity.friendRequestPreference,
+      allowPushNotifications: entity.allowPushNotifications,
+      allowEmailNotifications: entity.allowEmailNotifications,
       allowLocationTracking: entity.allowLocationTracking,
       allowDataAnalytics: entity.allowDataAnalytics,
       dataSharingLevel: entity.dataSharingLevel,
-      blockedUsers: entity.blockedUsers,
-      showOnlineStatus: entity.showOnlineStatus,
       allowGameRecommendations: entity.allowGameRecommendations,
+      hideFromNearby: entity.hideFromNearby,
+      twoFactorEnabled: entity.twoFactorEnabled,
+      loginAlerts: entity.loginAlerts,
+      blockedUsers: entity.blockedUsers,
     );
   }
 
@@ -55,6 +81,13 @@ class PrivacySettingsModel extends PrivacySettings {
       showLocation: _parseBoolWithDefault(json['show_location'], true),
       showPhone: _parseBoolWithDefault(json['show_phone'], false),
       showEmail: _parseBoolWithDefault(json['show_email'], false),
+      showBio: _parseBoolWithDefault(json['show_bio'], true),
+      showProfilePhoto: _parseBoolWithDefault(json['show_profile_photo'], true),
+      showFriendsList: _parseBoolWithDefault(json['show_friends_list'], false),
+      allowProfileIndexing: _parseBoolWithDefault(
+        json['allow_profile_indexing'],
+        true,
+      ),
       showStats: _parseBoolWithDefault(json['show_stats'], true),
       showSportsProfiles: _parseBoolWithDefault(
         json['show_sports_profiles'],
@@ -62,11 +95,32 @@ class PrivacySettingsModel extends PrivacySettings {
       ),
       showGameHistory: _parseBoolWithDefault(json['show_game_history'], true),
       showAchievements: _parseBoolWithDefault(json['show_achievements'], true),
+      showOnlineStatus: _parseBoolWithDefault(json['show_online_status'], true),
+      showActivityStatus: _parseBoolWithDefault(
+        json['show_activity_status'],
+        true,
+      ),
+      showCheckIns: _parseBoolWithDefault(json['show_check_ins'], true),
+      showPostsToPublic: _parseBoolWithDefault(
+        json['show_posts_to_public'],
+        true,
+      ),
       messagePreference: _parseCommunicationPreference(
         json['message_preference'],
       ),
       gameInvitePreference: _parseCommunicationPreference(
         json['game_invite_preference'],
+      ),
+      friendRequestPreference: _parseCommunicationPreference(
+        json['friend_request_preference'],
+      ),
+      allowPushNotifications: _parseBoolWithDefault(
+        json['allow_push_notifications'],
+        true,
+      ),
+      allowEmailNotifications: _parseBoolWithDefault(
+        json['allow_email_notifications'],
+        true,
       ),
       allowLocationTracking: _parseBoolWithDefault(
         json['allow_location_tracking'],
@@ -77,87 +131,23 @@ class PrivacySettingsModel extends PrivacySettings {
         true,
       ),
       dataSharingLevel: _parseDataSharingLevel(json['data_sharing_level']),
-      blockedUsers: _parseStringList(json['blocked_users']),
-      showOnlineStatus: _parseBoolWithDefault(json['show_online_status'], true),
       allowGameRecommendations: _parseBoolWithDefault(
         json['allow_game_recommendations'],
         true,
       ),
+      hideFromNearby: _parseBoolWithDefault(json['hide_from_nearby'], false),
+      twoFactorEnabled: _parseBoolWithDefault(
+        json['two_factor_enabled'],
+        false,
+      ),
+      loginAlerts: _parseBoolWithDefault(json['login_alerts'], true),
+      blockedUsers: _parseStringList(json['blocked_users']),
     );
   }
 
   /// Creates PrivacySettingsModel from legacy database format
   factory PrivacySettingsModel.fromLegacyJson(Map<String, dynamic> json) {
-    // Handle backward compatibility with older database schema
-    return PrivacySettingsModel(
-      profileVisibility: _parseProfileVisibility(
-        json['visibility'] ?? json['profile_visibility'],
-      ),
-      showRealName: _parseBoolWithDefault(
-        json['real_name_visible'] ?? json['show_real_name'],
-        true,
-      ),
-      showAge: _parseBoolWithDefault(
-        json['age_visible'] ?? json['show_age'],
-        false,
-      ),
-      showLocation: _parseBoolWithDefault(
-        json['location_visible'] ?? json['show_location'],
-        true,
-      ),
-      showPhone: _parseBoolWithDefault(
-        json['phone_visible'] ?? json['show_phone'],
-        false,
-      ),
-      showEmail: _parseBoolWithDefault(
-        json['email_visible'] ?? json['show_email'],
-        false,
-      ),
-      showStats: _parseBoolWithDefault(
-        json['stats_visible'] ?? json['show_stats'],
-        true,
-      ),
-      showSportsProfiles: _parseBoolWithDefault(
-        json['sports_visible'] ?? json['show_sports_profiles'],
-        true,
-      ),
-      showGameHistory: _parseBoolWithDefault(
-        json['history_visible'] ?? json['show_game_history'],
-        true,
-      ),
-      showAchievements: _parseBoolWithDefault(
-        json['achievements_visible'] ?? json['show_achievements'],
-        true,
-      ),
-      messagePreference: _parseCommunicationPreference(
-        json['message_pref'] ?? json['message_preference'],
-      ),
-      gameInvitePreference: _parseCommunicationPreference(
-        json['game_invite_pref'] ?? json['game_invite_preference'],
-      ),
-      allowLocationTracking: _parseBoolWithDefault(
-        json['location_tracking'] ?? json['allow_location_tracking'],
-        true,
-      ),
-      allowDataAnalytics: _parseBoolWithDefault(
-        json['data_analytics'] ?? json['allow_data_analytics'],
-        true,
-      ),
-      dataSharingLevel: _parseDataSharingLevel(
-        json['data_sharing'] ?? json['data_sharing_level'],
-      ),
-      blockedUsers: _parseStringList(
-        json['blocked_users'] ?? json['blocked_users'],
-      ),
-      showOnlineStatus: _parseBoolWithDefault(
-        json['online_status'] ?? json['show_online_status'],
-        true,
-      ),
-      allowGameRecommendations: _parseBoolWithDefault(
-        json['game_recommendations'] ?? json['allow_game_recommendations'],
-        true,
-      ),
-    );
+    return PrivacySettingsModel.fromJson(json);
   }
 
   /// Converts PrivacySettingsModel to JSON for API requests
@@ -170,18 +160,31 @@ class PrivacySettingsModel extends PrivacySettings {
       'show_location': showLocation,
       'show_phone': showPhone,
       'show_email': showEmail,
+      'show_bio': showBio,
+      'show_profile_photo': showProfilePhoto,
+      'show_friends_list': showFriendsList,
+      'allow_profile_indexing': allowProfileIndexing,
       'show_stats': showStats,
       'show_sports_profiles': showSportsProfiles,
       'show_game_history': showGameHistory,
       'show_achievements': showAchievements,
+      'show_online_status': showOnlineStatus,
+      'show_activity_status': showActivityStatus,
+      'show_check_ins': showCheckIns,
+      'show_posts_to_public': showPostsToPublic,
       'message_preference': messagePreference.index,
       'game_invite_preference': gameInvitePreference.index,
+      'friend_request_preference': friendRequestPreference.index,
+      'allow_push_notifications': allowPushNotifications,
+      'allow_email_notifications': allowEmailNotifications,
       'allow_location_tracking': allowLocationTracking,
       'allow_data_analytics': allowDataAnalytics,
       'data_sharing_level': dataSharingLevel.index,
-      'blocked_users': blockedUsers,
-      'show_online_status': showOnlineStatus,
       'allow_game_recommendations': allowGameRecommendations,
+      'hide_from_nearby': hideFromNearby,
+      'two_factor_enabled': twoFactorEnabled,
+      'login_alerts': loginAlerts,
+      'blocked_users': blockedUsers,
     };
   }
 
@@ -194,44 +197,37 @@ class PrivacySettingsModel extends PrivacySettings {
       'show_location': showLocation,
       'show_phone': showPhone,
       'show_email': showEmail,
+      'show_bio': showBio,
+      'show_profile_photo': showProfilePhoto,
+      'show_friends_list': showFriendsList,
+      'allow_profile_indexing': allowProfileIndexing,
       'show_stats': showStats,
       'show_sports_profiles': showSportsProfiles,
       'show_game_history': showGameHistory,
       'show_achievements': showAchievements,
+      'show_online_status': showOnlineStatus,
+      'show_activity_status': showActivityStatus,
+      'show_check_ins': showCheckIns,
+      'show_posts_to_public': showPostsToPublic,
       'message_preference': messagePreference.name,
       'game_invite_preference': gameInvitePreference.name,
+      'friend_request_preference': friendRequestPreference.name,
+      'allow_push_notifications': allowPushNotifications,
+      'allow_email_notifications': allowEmailNotifications,
       'allow_location_tracking': allowLocationTracking,
       'allow_data_analytics': allowDataAnalytics,
       'data_sharing_level': dataSharingLevel.name,
-      'blocked_users': blockedUsers,
-      'show_online_status': showOnlineStatus,
       'allow_game_recommendations': allowGameRecommendations,
+      'hide_from_nearby': hideFromNearby,
+      'two_factor_enabled': twoFactorEnabled,
+      'login_alerts': loginAlerts,
+      'blocked_users': blockedUsers,
     };
   }
 
   /// Converts to JSON for database updates (only changed fields)
   Map<String, dynamic> toUpdateJson() {
-    return {
-      'profile_visibility': profileVisibility.index,
-      'show_real_name': showRealName,
-      'show_age': showAge,
-      'show_location': showLocation,
-      'show_phone': showPhone,
-      'show_email': showEmail,
-      'show_stats': showStats,
-      'show_sports_profiles': showSportsProfiles,
-      'show_game_history': showGameHistory,
-      'show_achievements': showAchievements,
-      'message_preference': messagePreference.index,
-      'game_invite_preference': gameInvitePreference.index,
-      'allow_location_tracking': allowLocationTracking,
-      'allow_data_analytics': allowDataAnalytics,
-      'data_sharing_level': dataSharingLevel.index,
-      'blocked_users': blockedUsers,
-      'show_online_status': showOnlineStatus,
-      'allow_game_recommendations': allowGameRecommendations,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
+    return {...toJson(), 'updated_at': DateTime.now().toIso8601String()};
   }
 
   // Helper parsing methods
@@ -398,18 +394,31 @@ class PrivacySettingsModel extends PrivacySettings {
     bool? showLocation,
     bool? showPhone,
     bool? showEmail,
+    bool? showBio,
+    bool? showProfilePhoto,
+    bool? showFriendsList,
+    bool? allowProfileIndexing,
     bool? showStats,
     bool? showSportsProfiles,
     bool? showGameHistory,
     bool? showAchievements,
+    bool? showOnlineStatus,
+    bool? showActivityStatus,
+    bool? showCheckIns,
+    bool? showPostsToPublic,
     CommunicationPreference? messagePreference,
     CommunicationPreference? gameInvitePreference,
+    CommunicationPreference? friendRequestPreference,
+    bool? allowPushNotifications,
+    bool? allowEmailNotifications,
     bool? allowLocationTracking,
     bool? allowDataAnalytics,
     DataSharingLevel? dataSharingLevel,
-    List<String>? blockedUsers,
-    bool? showOnlineStatus,
     bool? allowGameRecommendations,
+    bool? hideFromNearby,
+    bool? twoFactorEnabled,
+    bool? loginAlerts,
+    List<String>? blockedUsers,
   }) {
     return PrivacySettingsModel(
       profileVisibility: profileVisibility ?? this.profileVisibility,
@@ -418,20 +427,36 @@ class PrivacySettingsModel extends PrivacySettings {
       showLocation: showLocation ?? this.showLocation,
       showPhone: showPhone ?? this.showPhone,
       showEmail: showEmail ?? this.showEmail,
+      showBio: showBio ?? this.showBio,
+      showProfilePhoto: showProfilePhoto ?? this.showProfilePhoto,
+      showFriendsList: showFriendsList ?? this.showFriendsList,
+      allowProfileIndexing: allowProfileIndexing ?? this.allowProfileIndexing,
       showStats: showStats ?? this.showStats,
       showSportsProfiles: showSportsProfiles ?? this.showSportsProfiles,
       showGameHistory: showGameHistory ?? this.showGameHistory,
       showAchievements: showAchievements ?? this.showAchievements,
+      showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
+      showActivityStatus: showActivityStatus ?? this.showActivityStatus,
+      showCheckIns: showCheckIns ?? this.showCheckIns,
+      showPostsToPublic: showPostsToPublic ?? this.showPostsToPublic,
       messagePreference: messagePreference ?? this.messagePreference,
       gameInvitePreference: gameInvitePreference ?? this.gameInvitePreference,
+      friendRequestPreference:
+          friendRequestPreference ?? this.friendRequestPreference,
+      allowPushNotifications:
+          allowPushNotifications ?? this.allowPushNotifications,
+      allowEmailNotifications:
+          allowEmailNotifications ?? this.allowEmailNotifications,
       allowLocationTracking:
           allowLocationTracking ?? this.allowLocationTracking,
       allowDataAnalytics: allowDataAnalytics ?? this.allowDataAnalytics,
       dataSharingLevel: dataSharingLevel ?? this.dataSharingLevel,
-      blockedUsers: blockedUsers ?? this.blockedUsers,
-      showOnlineStatus: showOnlineStatus ?? this.showOnlineStatus,
       allowGameRecommendations:
           allowGameRecommendations ?? this.allowGameRecommendations,
+      hideFromNearby: hideFromNearby ?? this.hideFromNearby,
+      twoFactorEnabled: twoFactorEnabled ?? this.twoFactorEnabled,
+      loginAlerts: loginAlerts ?? this.loginAlerts,
+      blockedUsers: blockedUsers ?? this.blockedUsers,
     );
   }
 
@@ -444,18 +469,31 @@ class PrivacySettingsModel extends PrivacySettings {
       showLocation: showLocation,
       showPhone: showPhone,
       showEmail: showEmail,
+      showBio: showBio,
+      showProfilePhoto: showProfilePhoto,
+      showFriendsList: showFriendsList,
+      allowProfileIndexing: allowProfileIndexing,
       showStats: showStats,
       showSportsProfiles: showSportsProfiles,
       showGameHistory: showGameHistory,
       showAchievements: showAchievements,
+      showOnlineStatus: showOnlineStatus,
+      showActivityStatus: showActivityStatus,
+      showCheckIns: showCheckIns,
+      showPostsToPublic: showPostsToPublic,
       messagePreference: messagePreference,
       gameInvitePreference: gameInvitePreference,
+      friendRequestPreference: friendRequestPreference,
+      allowPushNotifications: allowPushNotifications,
+      allowEmailNotifications: allowEmailNotifications,
       allowLocationTracking: allowLocationTracking,
       allowDataAnalytics: allowDataAnalytics,
       dataSharingLevel: dataSharingLevel,
-      blockedUsers: blockedUsers,
-      showOnlineStatus: showOnlineStatus,
       allowGameRecommendations: allowGameRecommendations,
+      hideFromNearby: hideFromNearby,
+      twoFactorEnabled: twoFactorEnabled,
+      loginAlerts: loginAlerts,
+      blockedUsers: blockedUsers,
     );
   }
 }

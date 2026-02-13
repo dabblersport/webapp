@@ -1,13 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../presentation/controllers/chat_controller.dart';
-import '../presentation/controllers/friends_controller.dart';
-import '../presentation/controllers/simple_friends_controller.dart';
 import '../presentation/controllers/posts_controller.dart';
 import '../presentation/controllers/social_feed_controller.dart';
-import '../domain/usecases/friendship_usecases.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
 import 'package:dabbler/data/models/social/conversation_model.dart';
-import 'package:dabbler/providers.dart' as global;
 import '../../../../utils/enums/social_enums.dart'; // Import MessageType
 import '../services/social_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
@@ -19,8 +15,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 /// Provider for PostsController
 final postsControllerProvider =
     StateNotifierProvider<PostsController, PostsState>((ref) {
-      // Placeholder implementation - in real app, inject proper use cases
-      throw UnimplementedError('PostsController dependencies not implemented');
+      // Stub implementation — real creation goes through SocialService directly.
+      return PostsController(null);
     });
 
 // =============================================================================
@@ -34,221 +30,13 @@ final socialFeedControllerProvider =
     });
 
 // =============================================================================
-// FRIENDSHIP USE CASES
-// =============================================================================
-
-final sendFriendRequestUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return SendFriendRequestUseCase(repository);
-});
-
-final acceptFriendRequestUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return AcceptFriendRequestUseCase(repository);
-});
-
-final rejectFriendRequestUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return RejectFriendRequestUseCase(repository);
-});
-
-final removeFriendUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return RemoveFriendUseCase(repository);
-});
-
-final blockUserUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return BlockUserUseCase(repository);
-});
-
-final unblockUserUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return UnblockUserUseCase(repository);
-});
-
-final getFriendshipStatusUseCaseProvider = Provider((ref) {
-  final repository = ref.watch(global.friendsRepositoryProvider);
-  return GetFriendshipStatusUseCase(repository);
-});
-
-// =============================================================================
-// FRIENDS CONTROLLER PROVIDER
-// =============================================================================
-
-/// Provider for SimpleFriendsController (new working implementation)
-final simpleFriendsControllerProvider =
-    StateNotifierProvider<SimpleFriendsController, SimpleFriendsState>((ref) {
-      return SimpleFriendsController(
-        sendFriendRequest: ref.watch(sendFriendRequestUseCaseProvider),
-        acceptFriendRequest: ref.watch(acceptFriendRequestUseCaseProvider),
-        rejectFriendRequest: ref.watch(rejectFriendRequestUseCaseProvider),
-        removeFriend: ref.watch(removeFriendUseCaseProvider),
-        blockUser: ref.watch(blockUserUseCaseProvider),
-        unblockUser: ref.watch(unblockUserUseCaseProvider),
-        repository: ref.watch(global.friendsRepositoryProvider),
-      );
-    });
-
-/// Legacy FriendsController provider (kept for backward compatibility)
-/// Use simpleFriendsControllerProvider for new code
-final friendsControllerProvider =
-    StateNotifierProvider<FriendsController, FriendsState>((ref) {
-      // Placeholder implementation - use simpleFriendsControllerProvider instead
-      throw UnimplementedError('Use simpleFriendsControllerProvider instead');
-    });
-
-// =============================================================================
-// FRIENDS COMPUTED PROVIDERS
-// =============================================================================
-
-/// Total friends count
-final totalFriendsCountProvider = Provider<int>((ref) {
-  final friendsState = ref.watch(simpleFriendsControllerProvider);
-  return friendsState.totalFriendsCount;
-});
-
-/// Online friends count (placeholder for now)
-final onlineFriendsCountProvider = Provider<int>((ref) {
-  // TODO: Implement online presence tracking
-  return 0;
-});
-
-/// Blocked users count (placeholder for now)
-final blockedUsersCountProvider = Provider<int>((ref) {
-  // TODO: Query blocked users from repository
-  return 0;
-});
-
-/// Has pending friend requests
-final hasPendingFriendRequestsProvider = Provider<bool>((ref) {
-  final friendsState = ref.watch(simpleFriendsControllerProvider);
-  return friendsState.incomingRequests.isNotEmpty;
-});
-
-// =============================================================================
-// FRIEND PROFILE + RELATED DATA PROVIDERS (PLACEHOLDERS)
-// =============================================================================
-
-/// Friend profile provider
-final friendProfileProvider = FutureProvider.family<dynamic, String>((
-  ref,
-  friendId,
-) async {
-  // Mock friend profile object using a simple map-like dynamic with fields used in widgets
-  await Future.delayed(const Duration(milliseconds: 200));
-  return _MockFriend(
-    id: friendId,
-    name: 'User $friendId',
-    username: 'user_$friendId',
-    avatarUrl: null,
-    friendsCount: 42,
-    activitiesCount: 12,
-    level: 3,
-  );
-});
-
-/// Mutual friends provider
-final mutualFriendsProvider = FutureProvider.family<List<dynamic>, String>((
-  ref,
-  friendId,
-) async {
-  await Future.delayed(const Duration(milliseconds: 200));
-  return List.generate(
-    6,
-    (i) => _MockFriend(
-      id: 'mutual_$i',
-      name: 'Mutual Friend $i',
-      username: 'mutual_$i',
-      avatarUrl: null,
-    ),
-  );
-});
-
-/// Shared activities provider
-final sharedActivitiesProvider = FutureProvider.family<List<dynamic>, String>((
-  ref,
-  friendId,
-) async {
-  await Future.delayed(const Duration(milliseconds: 200));
-  return List.generate(
-    4,
-    (i) => _MockActivity(
-      id: 'activity_$i',
-      title: 'Pickup Game $i',
-      description: 'Friendly match at the park',
-      type: i % 2 == 0 ? 'soccer' : 'basketball',
-      date: DateTime.now().subtract(Duration(days: i)),
-      location: 'City Park',
-    ),
-  );
-});
-
-/// Common interests provider
-final commonInterestsProvider = FutureProvider.family<List<dynamic>, String>((
-  ref,
-  friendId,
-) async {
-  await Future.delayed(const Duration(milliseconds: 200));
-  return [
-    _MockInterest(name: 'Football', type: 'sports'),
-    _MockInterest(name: 'Running', type: 'fitness'),
-    _MockInterest(name: 'Music', type: 'music'),
-  ];
-});
-
-// Simple mock classes to provide the minimal shape used in UI widgets
-class _MockFriend {
-  final String id;
-  final String? name;
-  final String? username;
-  final String? avatarUrl;
-  final int? friendsCount;
-  final int? activitiesCount;
-  final int? level;
-  _MockFriend({
-    required this.id,
-    this.name,
-    this.username,
-    this.avatarUrl,
-    this.friendsCount,
-    this.activitiesCount,
-    this.level,
-  });
-}
-
-class _MockActivity {
-  final String id;
-  final String? title;
-  final String? description;
-  final String? type;
-  final DateTime? date;
-  final String? location;
-  _MockActivity({
-    required this.id,
-    this.title,
-    this.description,
-    this.type,
-    this.date,
-    this.location,
-  });
-}
-
-class _MockInterest {
-  final String? name;
-  final String? type;
-  _MockInterest({this.name, this.type});
-}
-
-// =============================================================================
 // CHAT CONTROLLER PROVIDER
 // =============================================================================
 
 /// Provider for ChatController
 final chatControllerProvider = StateNotifierProvider<ChatController, ChatState>(
   (ref) {
-    // In real implementation, inject use case dependency
-    throw UnimplementedError('ChatController use case dependency not provided');
+    return ChatController();
   },
 );
 

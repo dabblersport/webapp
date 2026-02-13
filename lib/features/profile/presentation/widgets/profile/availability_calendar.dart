@@ -115,7 +115,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.2),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
         ),
       ),
       child: PageView.builder(
@@ -165,7 +165,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
                           fontWeight: FontWeight.bold,
                           color: Theme.of(
                             context,
-                          ).textTheme.bodySmall?.color?.withOpacity(0.6),
+                          ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -221,13 +221,13 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: _getAvailabilityColor(availability).withOpacity(0.7),
+          color: _getAvailabilityColor(availability).withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
                 ? Theme.of(context).primaryColor
                 : isToday
-                ? Theme.of(context).primaryColor.withOpacity(0.5)
+                ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
                 : Colors.transparent,
             width: isSelected ? 2 : 1,
           ),
@@ -258,7 +258,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withOpacity(0.2),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -532,7 +532,9 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
               margin: const EdgeInsets.symmetric(horizontal: 2),
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: _getAvailabilityColor(availability).withOpacity(0.7),
+                color: _getAvailabilityColor(
+                  availability,
+                ).withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(8),
                 border: isToday
                     ? Border.all(

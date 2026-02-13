@@ -186,7 +186,7 @@ class _SocialOnboardingFriendsScreenState
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: theme.primaryColor.withOpacity(0.1),
+                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
                     foregroundColor: theme.primaryColor,
                   ),
                 ),
@@ -223,7 +223,7 @@ class _SocialOnboardingFriendsScreenState
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: theme.primaryColor.withOpacity(0.1),
+                      color: theme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -310,7 +310,9 @@ class _SocialOnboardingFriendsScreenState
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: _getSourceColor(suggestion.source).withOpacity(0.1),
+                    color: _getSourceColor(
+                      suggestion.source,
+                    ).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -338,7 +340,7 @@ class _SocialOnboardingFriendsScreenState
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Row(
@@ -407,7 +409,7 @@ class _SocialOnboardingFriendsScreenState
           decoration: BoxDecoration(
             color: isActive
                 ? Theme.of(context).primaryColor
-                : Theme.of(context).primaryColor.withOpacity(0.3),
+                : Theme.of(context).primaryColor.withValues(alpha: 0.3),
             shape: BoxShape.circle,
           ),
         );

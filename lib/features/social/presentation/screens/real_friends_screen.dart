@@ -2,18 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
-import 'package:dabbler/features/social/presentation/controllers/simple_friends_controller.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import '../../providers/social_providers.dart';
 
-/// Friends screen showing friend lists and management with real data
+/// Community screen with Following, Followers, and People (discover) tabs.
+/// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
+///
+/// When [profileId] is provided, shows that user's Following/Followers (2 tabs).
+/// When [profileId] is null, shows the logged-in user's data with 3 tabs
+/// (Following, Followers, People).
+///
+/// [initialTab] selects the starting tab: 0 = Following, 1 = Followers, 2 = People.
 class RealFriendsScreen extends ConsumerStatefulWidget {
-  const RealFriendsScreen({super.key});
+  final String? profileId;
+  final int initialTab;
+
+  const RealFriendsScreen({super.key, this.profileId, this.initialTab = 0});
 
   @override
   ConsumerState<RealFriendsScreen> createState() => _RealFriendsScreenState();
@@ -21,29 +28,222 @@ class RealFriendsScreen extends ConsumerStatefulWidget {
 
 class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _mainTabController;
-  bool _hasLoadedAddFriends = false;
+  late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
-  String get _searchQuery => _searchController.text.trim();
-  bool get _isSearchMode => _searchQuery.length >= 2;
+  /// Whether we're viewing another user's data (no People tab).
+  bool get _isViewingOther => widget.profileId != null;
+
+  /// Number of tabs: 2 for other users, 3 for self.
+  int get _tabCount => _isViewingOther ? 2 : 3;
+
+  /// Resolved profile ID — either the explicit one or the logged-in user's.
+  String? get _resolvedProfileId {
+    if (widget.profileId != null) return widget.profileId;
+    // Use myProfileIdProvider for the logged-in user (not profileControllerProvider
+    // which can be overwritten by UserProfileScreen).
+    return ref
+        .read(myProfileIdProvider)
+        .maybeWhen(data: (v) => v, orElse: () => null);
+  }
 
   void _openProfile(String userId) {
     if (userId.isEmpty) return;
     context.push('${RoutePaths.userProfile}/$userId');
   }
 
-  Future<void> _inviteFromContacts() async {
-    await Share.share(
-      "Join me on Dabbler — let's connect and play together!",
-      subject: 'Invite to Dabbler',
+  @override
+  void initState() {
+    super.initState();
+    final clamped = widget.initialTab.clamp(0, _tabCount - 1);
+    _tabController = TabController(
+      length: _tabCount,
+      vsync: this,
+      initialIndex: clamped,
+    );
+    _tabController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // BUILD
+  // ---------------------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+
+    // Watch myProfileIdProvider reactively so it resolves on first load
+    if (!_isViewingOther) {
+      ref.watch(myProfileIdProvider);
+    }
+
+    return FutureBuilder<ColorScheme>(
+      future: AppTheme.getColorScheme('social', brightness),
+      builder: (context, snapshot) {
+        final socialScheme =
+            snapshot.data ?? context.getCategoryTheme('social');
+        final baseTheme = Theme.of(context);
+        final themed = baseTheme.copyWith(
+          colorScheme: socialScheme,
+          cardTheme: baseTheme.cardTheme.copyWith(
+            color: socialScheme.surfaceContainerLow,
+          ),
+        );
+
+        return Theme(
+          data: themed,
+          child: Builder(
+            builder: (context) {
+              final colorScheme = Theme.of(context).colorScheme;
+
+              return TwoSectionLayout(
+                category: 'social',
+                topSection: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildAppBar(colorScheme),
+                      _buildTabSwitcher(colorScheme),
+                      const SizedBox(height: 12),
+                      _buildSearchBar(colorScheme),
+                    ],
+                  ),
+                ),
+                bottomPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                bottomSection: _buildBottomSection(),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildSearchBar() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final notifier = ref.read(simpleFriendsControllerProvider.notifier);
+  // ---------------------------------------------------------------------------
+  // APP BAR
+  // ---------------------------------------------------------------------------
 
+  Widget _buildAppBar(ColorScheme colorScheme) {
+    return Row(
+      children: [
+        IconButton.filledTonal(
+          onPressed: () {
+            context.canPop() ? context.pop() : context.go(RoutePaths.home);
+          },
+          iconSize: 24,
+          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            foregroundColor: colorScheme.onSecondaryContainer,
+          ),
+          icon: const Icon(Iconsax.arrow_left_copy),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Community',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // TAB SWITCHER
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTabSwitcher(ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    final socialScheme = context.getCategoryTheme('social');
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<int>(
+          segments: [
+            const ButtonSegment(
+              value: 0,
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Text('Following')],
+              ),
+            ),
+            const ButtonSegment(
+              value: 1,
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [Text('Followers')],
+              ),
+            ),
+            if (!_isViewingOther)
+              const ButtonSegment(
+                value: 2,
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [Text('People')],
+                ),
+              ),
+          ],
+          selected: <int>{_tabController.index},
+          onSelectionChanged: (Set<int> s) {
+            final idx = s.first;
+            if (_tabController.index != idx) {
+              setState(() => _tabController.index = idx);
+            }
+          },
+          style: ButtonStyle(
+            side: WidgetStateProperty.all(
+              const BorderSide(color: Colors.transparent),
+            ),
+            backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+              if (states.contains(WidgetState.selected)) {
+                return socialScheme.primary;
+              }
+              return socialScheme.primary.withValues(alpha: 0.08);
+            }),
+            foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+              if (states.contains(WidgetState.selected)) {
+                return socialScheme.onPrimary;
+              }
+              return socialScheme.onSurfaceVariant;
+            }),
+            textStyle: WidgetStateProperty.all(
+              textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            padding: WidgetStateProperty.all(
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          showSelectedIcon: false,
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // SEARCH BAR
+  // ---------------------------------------------------------------------------
+
+  Widget _buildSearchBar(ColorScheme colorScheme) {
     return SizedBox(
       height: 48,
       child: TextField(
@@ -55,7 +255,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
         decoration: InputDecoration(
           filled: true,
           fillColor: colorScheme.primary.withValues(alpha: 0.12),
-          hintText: 'Display name or username',
+          hintText: 'Search by name or username',
           hintStyle: TextStyle(
             fontSize: 15,
             color: colorScheme.onSurfaceVariant,
@@ -67,8 +267,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
                   icon: const Icon(Iconsax.close_circle_copy),
                   onPressed: () {
                     _searchController.clear();
-                    notifier.searchUsers('');
-                    setState(() {});
+                    setState(() => _searchQuery = '');
                   },
                 ),
           border: OutlineInputBorder(
@@ -88,205 +287,169 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
             vertical: 12,
           ),
         ),
-        onChanged: (value) {
-          final trimmed = value.trim();
-          if (trimmed.length >= 2) {
-            notifier.searchUsers(trimmed);
-          } else {
-            notifier.searchUsers('');
-          }
-          setState(() {});
-        },
+        onChanged: (v) => setState(() => _searchQuery = v.trim()),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, {Widget? trailing}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  // ---------------------------------------------------------------------------
+  // BOTTOM SECTION ROUTER
+  // ---------------------------------------------------------------------------
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-          if (trailing != null) trailing,
-        ],
-      ),
+  Widget _buildBottomSection() {
+    final profileId = _resolvedProfileId;
+    if (profileId == null) return _buildSkeleton(6);
+
+    // If searching globally (People tab behaviour)
+    if (_searchQuery.length >= 2) {
+      return _buildSearchResults(profileId);
+    }
+
+    switch (_tabController.index) {
+      case 0:
+        return _buildFollowingTab(profileId);
+      case 1:
+        return _buildFollowersTab(profileId);
+      case 2:
+        return _buildPeopleTab(profileId);
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // FOLLOWING TAB
+  // ---------------------------------------------------------------------------
+
+  Widget _buildFollowingTab(String profileId) {
+    final async = ref.watch(followingListProvider(profileId));
+    return async.when(
+      loading: () => _buildSkeleton(6),
+      error: (_, __) => _buildError('Could not load following'),
+      data: (profiles) {
+        final filtered = _localFilter(profiles);
+        if (filtered.isEmpty) {
+          return _buildEmpty(
+            icon: Iconsax.people_copy,
+            title: 'Not following anyone yet',
+            subtitle: 'Discover people in the People tab!',
+          );
+        }
+        return _buildProfileList(filtered, profileId);
+      },
     );
   }
 
-  Widget _buildGlobalSearchResults(SimpleFriendsState state) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  // ---------------------------------------------------------------------------
+  // FOLLOWERS TAB
+  // ---------------------------------------------------------------------------
 
-    if (state.isSearching && state.searchResults.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Search Results'),
-          _buildListSkeleton(itemCount: 6, showActions: true),
-        ],
-      );
+  Widget _buildFollowersTab(String profileId) {
+    final async = ref.watch(followersListProvider(profileId));
+    return async.when(
+      loading: () => _buildSkeleton(6),
+      error: (_, __) => _buildError('Could not load followers'),
+      data: (profiles) {
+        final filtered = _localFilter(profiles);
+        if (filtered.isEmpty) {
+          return _buildEmpty(
+            icon: Iconsax.profile_2user_copy,
+            title: 'No followers yet',
+            subtitle: 'Share your profile to get followers!',
+          );
+        }
+        return _buildProfileList(filtered, profileId);
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // PEOPLE (DISCOVER) TAB
+  // ---------------------------------------------------------------------------
+
+  Widget _buildPeopleTab(String profileId) {
+    if (_searchQuery.length >= 2) {
+      return _buildSearchResults(profileId);
     }
 
-    if (state.error != null && state.searchResults.isEmpty) {
-      return _buildError(state.error!);
-    }
+    return _buildEmpty(
+      icon: Iconsax.search_normal_copy,
+      title: 'Discover People',
+      subtitle: 'Type a name or username above to find people to follow.',
+    );
+  }
 
-    if (state.searchResults.isEmpty) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Search Results'),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: Text(
-              'No users found',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
+  // ---------------------------------------------------------------------------
+  // GLOBAL SEARCH RESULTS
+  // ---------------------------------------------------------------------------
 
-    final friendIds = state.friends.map(_peerIdFromRow).toSet();
-    final incomingIds = state.incomingRequests.map(_peerIdFromRow).toSet();
-    final outgoingIds = state.outgoingRequests.map(_peerIdFromRow).toSet();
+  Widget _buildSearchResults(String profileId) {
+    final params = (query: _searchQuery, currentProfileId: profileId);
+    final async = ref.watch(searchProfilesProvider(params));
+    return async.when(
+      loading: () => _buildSkeleton(6),
+      error: (_, __) => _buildError('Search failed'),
+      data: (profiles) {
+        if (profiles.isEmpty) {
+          return _buildEmpty(
+            icon: Iconsax.search_normal_copy,
+            title: 'No results',
+            subtitle: 'Try a different name or username.',
+          );
+        }
+        return _buildProfileList(profiles, profileId);
+      },
+    );
+  }
 
-    final results = state.searchResults.where((row) {
-      final id = _peerIdFromRow(row).trim();
-      return id.isNotEmpty;
-    }).toList();
+  // ---------------------------------------------------------------------------
+  // SHARED PROFILE LIST
+  // ---------------------------------------------------------------------------
 
+  Widget _buildProfileList(
+    List<Map<String, dynamic>> profiles,
+    String currentProfileId,
+  ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Search Results'),
-        for (final user in results)
-          Builder(
-            builder: (context) {
-              final userId = _peerIdFromRow(user);
-              final displayName = _displayNameFromRow(user);
-              final username = _usernameFromRow(user);
-              final avatarUrl = _avatarUrlFromRow(user);
-              final isFriend = friendIds.contains(userId);
-              final hasIncomingRequest = incomingIds.contains(userId);
-              final hasOutgoingRequest = outgoingIds.contains(userId);
-              final isProcessing = state.processingIds[userId] == true;
-
-              Widget trailing;
-              if (isFriend) {
-                trailing = Chip(
-                  label: Text(
-                    'Friends',
-                    style: TextStyle(color: colorScheme.onSecondaryContainer),
-                  ),
-                  backgroundColor: colorScheme.secondaryContainer,
-                );
-              } else if (hasIncomingRequest) {
-                trailing = Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FilledButton(
-                      onPressed: isProcessing
-                          ? null
-                          : () {
-                              ref
-                                  .read(
-                                    simpleFriendsControllerProvider.notifier,
-                                  )
-                                  .acceptRequest(userId);
-                            },
-                      child: isProcessing
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Accept'),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: isProcessing
-                          ? null
-                          : () => _confirmRejectRequest(userId),
-                      icon: const Icon(Iconsax.close_circle_copy),
-                    ),
-                  ],
-                );
-              } else if (hasOutgoingRequest) {
-                trailing = Chip(
-                  label: Text(
-                    'Pending',
-                    style: TextStyle(color: colorScheme.onTertiaryContainer),
-                  ),
-                  backgroundColor: colorScheme.tertiaryContainer,
-                );
-              } else {
-                trailing = IconButton.filledTonal(
-                  onPressed: isProcessing
-                      ? null
-                      : () {
-                          ref
-                              .read(simpleFriendsControllerProvider.notifier)
-                              .sendRequest(userId);
-                        },
-                  icon: isProcessing
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Iconsax.user_add_copy, size: 18),
-                );
-              }
-
-              return Card.filled(
-                color: colorScheme.primary.withValues(alpha: 0.08),
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  onTap: () => _openProfile(userId),
-                  leading: AppAvatar.small(
-                    imageUrl: avatarUrl,
-                    fallbackText: displayName,
-                  ),
-                  title: Text(displayName),
-                  subtitle: Text('@$username'),
-                  trailing: trailing,
-                ),
-              );
+        for (final profile in profiles)
+          _ProfileTile(
+            profile: profile,
+            currentProfileId: currentProfileId,
+            onTap: () {
+              final userId = profile['user_id'] as String? ?? '';
+              _openProfile(userId);
             },
           ),
       ],
     );
   }
 
-  Widget _buildListSkeleton({
-    required int itemCount,
-    bool showActions = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
+  // ---------------------------------------------------------------------------
+  // HELPERS
+  // ---------------------------------------------------------------------------
 
+  /// Local client-side filter for the search query within already-loaded lists.
+  List<Map<String, dynamic>> _localFilter(List<Map<String, dynamic>> list) {
+    if (_searchQuery.length < 2) return list;
+    final q = _searchQuery.toLowerCase();
+    return list.where((p) {
+      final name = (p['display_name'] as String? ?? '').toLowerCase();
+      final uname = (p['username'] as String? ?? '').toLowerCase();
+      return name.contains(q) || uname.contains(q);
+    }).toList();
+  }
+
+  Widget _buildSkeleton(int count) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
-      children: List.generate(itemCount, (index) {
+      children: List.generate(count, (_) {
         return Card.filled(
           color: colorScheme.primary.withValues(alpha: 0.08),
           margin: const EdgeInsets.only(bottom: 8),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   width: 40,
@@ -318,32 +481,6 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      if (showActions) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainer,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Container(
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainer,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -355,597 +492,41 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     );
   }
 
-  String _peerIdFromRow(Map<String, dynamic> row) {
-    final dynamic value =
-        row['user_id'] ??
-        row['peer_user_id'] ??
-        row['friend_user_id'] ??
-        row['id'];
-    return (value is String) ? value : (value?.toString() ?? '');
-  }
-
-  String _displayNameFromRow(Map<String, dynamic> row) {
-    final dynamic peerProfile = row['peer_profile'];
-    if (peerProfile is Map) {
-      final profile = Map<String, dynamic>.from(peerProfile);
-      final dynamic nested = profile['display_name'] ?? profile['full_name'];
-      if (nested is String && nested.trim().isNotEmpty) return nested;
-    }
-
-    final dynamic value = row['display_name'] ?? row['full_name'];
-    return (value is String && value.trim().isNotEmpty)
-        ? value
-        : 'Unknown User';
-  }
-
-  String _usernameFromRow(Map<String, dynamic> row) {
-    final dynamic peerProfile = row['peer_profile'];
-    if (peerProfile is Map) {
-      final profile = Map<String, dynamic>.from(peerProfile);
-      final dynamic nested = profile['username'];
-      final username = (nested is String) ? nested : (nested?.toString() ?? '');
-      if (username.trim().isNotEmpty) return username;
-    }
-
-    final dynamic value = row['username'];
-    final username = (value is String) ? value : (value?.toString() ?? '');
-    return username.trim().isNotEmpty ? username : 'user';
-  }
-
-  String? _avatarUrlFromRow(Map<String, dynamic> row) {
-    final dynamic peerProfile = row['peer_profile'];
-    if (peerProfile is Map) {
-      final profile = Map<String, dynamic>.from(peerProfile);
-      final dynamic nested = profile['avatar_url'];
-      final url = (nested is String) ? nested : (nested?.toString() ?? '');
-      if (url.trim().isNotEmpty) return url;
-    }
-
-    final dynamic value = row['avatar_url'];
-    final url = (value is String) ? value : (value?.toString() ?? '');
-    return url.trim().isEmpty ? null : url;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _mainTabController = TabController(length: 2, vsync: this);
-    _mainTabController.addListener(() {
-      // Keep the segmented control + content in sync.
-      setState(() {});
-    });
-
-    // Prevent stale error UI flashes (e.g. from a previous suggestions failure).
-    ref.read(simpleFriendsControllerProvider.notifier).clearError();
-
-    // Load friends data on init
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(simpleFriendsControllerProvider.notifier).loadFriends();
-    });
-  }
-
-  @override
-  void dispose() {
-    _mainTabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(simpleFriendsControllerProvider);
-
-    final brightness = Theme.of(context).brightness;
-
-    return FutureBuilder<ColorScheme>(
-      future: AppTheme.getColorScheme('social', brightness),
-      builder: (context, snapshot) {
-        final socialScheme =
-            snapshot.data ?? context.getCategoryTheme('social');
-        final baseTheme = Theme.of(context);
-        final themed = baseTheme.copyWith(
-          colorScheme: socialScheme,
-          cardTheme: baseTheme.cardTheme.copyWith(
-            color: socialScheme.surfaceContainerLow,
-          ),
-        );
-
-        return Theme(
-          data: themed,
-          child: Builder(
-            builder: (context) {
-              final colorScheme = Theme.of(context).colorScheme;
-
-              return TwoSectionLayout(
-                category: 'social',
-                topSection: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          IconButton.filledTonal(
-                            onPressed: () {
-                              context.canPop()
-                                  ? context.pop()
-                                  : context.go(RoutePaths.home);
-                            },
-                            iconSize: 24,
-                            constraints: const BoxConstraints.tightFor(
-                              width: 48,
-                              height: 48,
-                            ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.transparent,
-                              foregroundColor: colorScheme.onSecondaryContainer,
-                            ),
-                            icon: const Icon(Iconsax.arrow_left_copy),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Community',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          if (state.isLoading)
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                        ],
-                      ),
-                      _buildTabSwitcher(),
-                      const SizedBox(height: 12),
-                      _buildSearchBar(),
-                    ],
-                  ),
-                ),
-                bottomPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                onRefresh: () async {
-                  if (_mainTabController.index == 0) {
-                    await ref
-                        .read(simpleFriendsControllerProvider.notifier)
-                        .loadFriends();
-                  } else {
-                    await ref
-                        .read(simpleFriendsControllerProvider.notifier)
-                        .loadSuggestions();
-                    await ref
-                        .read(simpleFriendsControllerProvider.notifier)
-                        .loadFriends();
-                  }
-                },
-                bottomSection: _buildBottomSection(state),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTabSwitcher() {
-    final textTheme = Theme.of(context).textTheme;
-    final socialScheme = context.getCategoryTheme('social');
-
+  Widget _buildEmpty({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<int>(
-          segments: const [
-            ButtonSegment(
-              value: 0,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Iconsax.people_copy, size: 18),
-                  SizedBox(width: 8, height: 30),
-                  Text('Friends'),
-                ],
-              ),
+      padding: const EdgeInsets.only(top: 36),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
             ),
-            ButtonSegment(
-              value: 1,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Iconsax.user_add_copy, size: 18),
-                  SizedBox(width: 8),
-                  Text('People'),
-                ],
+            const SizedBox(height: 16),
+            Text(title, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
-          selected: <int>{_mainTabController.index},
-          onSelectionChanged: (Set<int> newSelection) {
-            final newIndex = newSelection.first;
-            if (_mainTabController.index != newIndex) {
-              setState(() {
-                _mainTabController.index = newIndex;
-              });
-
-              // Lazily load Add Friends data the first time the tab is opened.
-              if (newIndex == 1 && !_hasLoadedAddFriends) {
-                _hasLoadedAddFriends = true;
-                ref
-                    .read(simpleFriendsControllerProvider.notifier)
-                    .loadSuggestions();
-                ref
-                    .read(simpleFriendsControllerProvider.notifier)
-                    .loadFriends();
-              }
-            }
-          },
-          style: ButtonStyle(
-            side: WidgetStateProperty.all(
-              const BorderSide(color: Colors.transparent),
-            ),
-            backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return socialScheme.primary.withValues(alpha: 1);
-              }
-              return socialScheme.primary.withValues(alpha: 0.08);
-            }),
-            foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return socialScheme.onPrimary;
-              }
-              return socialScheme.onSurfaceVariant;
-            }),
-            textStyle: WidgetStateProperty.all(
-              textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            padding: WidgetStateProperty.all(
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          showSelectedIcon: false,
         ),
       ),
     );
   }
 
-  Widget _buildBottomSection(SimpleFriendsState state) {
-    final tabIndex = _mainTabController.index;
-
-    if (_isSearchMode) {
-      return _buildGlobalSearchResults(state);
-    }
-
-    if (tabIndex == 1) {
-      if (state.error != null) return _buildError(state.error!);
-      return _buildAddFriendsTab();
-    }
-
-    if (state.error != null && state.friends.isEmpty) {
-      return _buildError(state.error!);
-    }
-
-    return _buildFriendsList(state.friends, isLoading: state.isLoading);
-  }
-
-  Widget _buildAddFriendsTab() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final state = ref.watch(simpleFriendsControllerProvider);
-
-    final friendIds = state.friends.map(_peerIdFromRow).toSet();
-    final incomingIds = state.incomingRequests.map(_peerIdFromRow).toSet();
-    final outgoingIds = state.outgoingRequests.map(_peerIdFromRow).toSet();
-
-    final allSuggestionRows = state.suggestions.where((row) {
-      final id = _peerIdFromRow(row).trim();
-      if (id.isEmpty) return false;
-      if (friendIds.contains(id)) return false;
-      if (incomingIds.contains(id)) return false;
-      if (outgoingIds.contains(id)) return false;
-      if (state.dismissedSuggestionIds.contains(id)) return false;
-      return true;
-    }).toList();
-
-    final addedMeRows = state.incomingRequests;
-
-    final findFriendsPreviewCount = allSuggestionRows.length > 5
-        ? 5
-        : allSuggestionRows.length;
-    final findFriendsPreview = allSuggestionRows.take(findFriendsPreviewCount);
-
-    Widget buildInviteRow() {
-      return SizedBox(
-        width: double.infinity,
-        child: OutlinedButton(
-          onPressed: _inviteFromContacts,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(
-                  Iconsax.user_add_copy,
-                  color: colorScheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('Invite your friends!'),
-                    if (theme.textTheme.bodySmall != null)
-                      Text(
-                        'Invite from contacts',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      )
-                    else
-                      const Text('Invite from contacts'),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Iconsax.arrow_right_3_copy,
-                color: colorScheme.onSurfaceVariant,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    Widget buildSkeletonList({required int itemCount}) {
-      return Column(
-        children: List.generate(itemCount, (index) {
-          return Card.filled(
-            color: colorScheme.primary.withValues(alpha: 0.08),
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 16,
-                          width: 160,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 12,
-                          width: 120,
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-      );
-    }
-
-    Widget buildAddedMeSection() {
-      if (addedMeRows.isEmpty) return const SizedBox.shrink();
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Added Me'),
-          for (final row in addedMeRows)
-            Builder(
-              builder: (context) {
-                final userId = _peerIdFromRow(row);
-                final displayName = _displayNameFromRow(row);
-                final username = _usernameFromRow(row);
-                final avatarUrl = _avatarUrlFromRow(row);
-                final isProcessing = state.processingIds[userId] == true;
-
-                return Card.filled(
-                  color: colorScheme.primary.withValues(alpha: 0.08),
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    onTap: () => _openProfile(userId),
-                    leading: AppAvatar.small(
-                      imageUrl: avatarUrl,
-                      fallbackText: displayName,
-                    ),
-                    title: Text(displayName),
-                    subtitle: Text('@$username'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          onPressed: isProcessing
-                              ? null
-                              : () => _confirmRejectRequest(userId),
-                          icon: const Icon(Iconsax.close_circle_copy),
-                        ),
-                        const SizedBox(width: 8),
-
-                        FilledButton(
-                          onPressed: isProcessing
-                              ? null
-                              : () {
-                                  ref
-                                      .read(
-                                        simpleFriendsControllerProvider
-                                            .notifier,
-                                      )
-                                      .acceptRequest(userId);
-                                },
-                          child: isProcessing
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Accept'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
-      );
-    }
-
-    Widget buildFindFriendsSection() {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(
-            'Find Friends',
-            trailing: TextButton(
-              onPressed: _inviteFromContacts,
-              child: const Text('All Contacts'),
-            ),
-          ),
-          if (state.isLoadingSuggestions && state.suggestions.isEmpty)
-            buildSkeletonList(itemCount: 6)
-          else if (allSuggestionRows.isEmpty)
-            Card.filled(
-              margin: EdgeInsets.zero,
-              color: colorScheme.surfaceContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'No suggestions available right now.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            )
-          else
-            for (final suggestion in findFriendsPreview)
-              Builder(
-                builder: (context) {
-                  final userId = _peerIdFromRow(suggestion);
-                  final displayName = _displayNameFromRow(suggestion);
-                  final username = _usernameFromRow(suggestion);
-                  final avatarUrl = _avatarUrlFromRow(suggestion);
-                  final mutualCount =
-                      suggestion['mutual_friends_count'] as int? ?? 0;
-                  final isProcessing = state.processingIds[userId] == true;
-
-                  return Card.filled(
-                    color: colorScheme.primary.withValues(alpha: 0.08),
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      onTap: () => _openProfile(userId),
-                      leading: AppAvatar.small(
-                        imageUrl: avatarUrl,
-                        fallbackText: displayName,
-                      ),
-                      title: Text(displayName),
-                      subtitle: Text(
-                        mutualCount > 0
-                            ? '@$username • $mutualCount mutual'
-                            : '@$username',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: () => _confirmDismissSuggestion(userId),
-                            icon: const Icon(Iconsax.close_circle_copy),
-                          ),
-                          const SizedBox(width: 6),
-                          IconButton.filledTonal(
-                            onPressed: isProcessing
-                                ? null
-                                : () {
-                                    ref
-                                        .read(
-                                          simpleFriendsControllerProvider
-                                              .notifier,
-                                        )
-                                        .sendRequest(userId);
-                                  },
-                            icon: isProcessing
-                                ? const SizedBox(
-                                    height: 16,
-                                    width: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Icon(Iconsax.user_add_copy, size: 24),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildInviteRow(),
-        buildAddedMeSection(),
-        buildFindFriendsSection(),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildError(String error) {
+  Widget _buildError(String message) {
     final colorScheme = Theme.of(context).colorScheme;
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -956,11 +537,15 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
             color: colorScheme.error.withValues(alpha: 0.8),
           ),
           const SizedBox(height: 16),
-          Text(error, textAlign: TextAlign.center),
+          Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              ref.read(simpleFriendsControllerProvider.notifier).loadFriends();
+              final pid = _resolvedProfileId;
+              if (pid != null) {
+                ref.invalidate(followingListProvider(pid));
+                ref.invalidate(followersListProvider(pid));
+              }
             },
             child: const Text('Retry'),
           ),
@@ -968,211 +553,129 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       ),
     );
   }
+}
 
-  Widget _buildFriendsList(
-    List<Map<String, dynamic>> friends, {
-    required bool isLoading,
-  }) {
-    if (isLoading && friends.isEmpty) {
-      return _buildListSkeleton(itemCount: 8);
-    }
+// =============================================================================
+// PROFILE TILE WITH FOLLOW / UNFOLLOW
+// =============================================================================
 
-    if (friends.isEmpty) {
-      final theme = Theme.of(context);
-      final colorScheme = theme.colorScheme;
+class _ProfileTile extends ConsumerStatefulWidget {
+  final Map<String, dynamic> profile;
+  final String currentProfileId;
+  final VoidCallback onTap;
 
-      return Padding(
-        padding: const EdgeInsets.only(top: 36),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Iconsax.people_copy,
-                size: 64,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-              const SizedBox(height: 16),
-              Text('No friends yet', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                'Start connecting with other players!',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+  const _ProfileTile({
+    required this.profile,
+    required this.currentProfileId,
+    required this.onTap,
+  });
+
+  @override
+  ConsumerState<_ProfileTile> createState() => _ProfileTileState();
+}
+
+class _ProfileTileState extends ConsumerState<_ProfileTile> {
+  bool _isProcessing = false;
+
+  String get _targetProfileId => widget.profile['id'] as String? ?? '';
+  String get _displayName =>
+      widget.profile['display_name'] as String? ?? 'Unknown';
+  String get _username => widget.profile['username'] as String? ?? 'user';
+  String? get _avatarUrl => widget.profile['avatar_url'] as String?;
+  bool get _verified => widget.profile['verified'] as bool? ?? false;
+
+  Future<void> _toggleFollow(bool isCurrentlyFollowing) async {
+    if (_isProcessing || _targetProfileId.isEmpty) return;
+    setState(() => _isProcessing = true);
+
+    try {
+      final supabase = Supabase.instance.client;
+      if (isCurrentlyFollowing) {
+        await supabase
+            .from('profile_follows')
+            .delete()
+            .eq('follower_profile_id', widget.currentProfileId)
+            .eq('following_profile_id', _targetProfileId);
+      } else {
+        await supabase.from('profile_follows').insert({
+          'follower_profile_id': widget.currentProfileId,
+          'following_profile_id': _targetProfileId,
+        });
+      }
+
+      // Invalidate relevant providers so lists refresh
+      ref.invalidate(
+        isFollowingProvider((
+          currentProfileId: widget.currentProfileId,
+          targetProfileId: _targetProfileId,
+        )),
       );
+      ref.invalidate(followingListProvider(widget.currentProfileId));
+      ref.invalidate(followingCountProvider(widget.currentProfileId));
+      ref.invalidate(followersCountProvider(_targetProfileId));
+    } catch (_) {
+      // Silently fail — UI will stay stale until next refresh
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
     }
-
-    return Column(
-      children: [
-        for (final friend in friends)
-          Builder(
-            builder: (context) {
-              final colorScheme = Theme.of(context).colorScheme;
-              final friendId = _peerIdFromRow(friend);
-              final avatarUrl = _avatarUrlFromRow(friend);
-              final displayName = _displayNameFromRow(friend);
-              final username = _usernameFromRow(friend);
-
-              return Card.filled(
-                color: colorScheme.primary.withValues(alpha: 0.08),
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  leading: AppAvatar.small(
-                    imageUrl: avatarUrl,
-                    fallbackText: displayName,
-                  ),
-                  title: Text(displayName),
-                  subtitle: Text('@$username'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'Unfriend',
-                        icon: Icon(
-                          Iconsax.user_remove_copy,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        onPressed: () => _showUnfriendDialog(friendId),
-                      ),
-                      const SizedBox(width: 6),
-                      IconButton(
-                        tooltip: 'Block',
-                        icon: Icon(
-                          Iconsax.danger_copy,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        onPressed: () => _showBlockDialog(friendId),
-                      ),
-                    ],
-                  ),
-                  onTap: () => _openProfile(friendId),
-                ),
-              );
-            },
-          ),
-      ],
-    );
   }
 
-  void _showUnfriendDialog(String friendId) {
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isSelf = _targetProfileId == widget.currentProfileId;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unfriend User?'),
-        content: const Text(
-          'Are you sure you want to remove this person from your friends?',
+    final isFollowingAsync = ref.watch(
+      isFollowingProvider((
+        currentProfileId: widget.currentProfileId,
+        targetProfileId: _targetProfileId,
+      )),
+    );
+
+    final isFollowing = isFollowingAsync.maybeWhen(
+      data: (v) => v,
+      orElse: () => false,
+    );
+
+    return Card.filled(
+      color: colorScheme.primary.withValues(alpha: 0.08),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        onTap: widget.onTap,
+        leading: DSAvatar.small(
+          imageUrl: _avatarUrl,
+          displayName: _displayName,
+          context: AvatarContext.social,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(simpleFriendsControllerProvider.notifier)
-                  .removeFriend(friendId);
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Unfriend'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showBlockDialog(String userId) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Block User?'),
-        content: const Text(
-          'This user will no longer be able to see your profile or send you messages.',
+        title: Row(
+          children: [
+            Flexible(
+              child: Text(_displayName, overflow: TextOverflow.ellipsis),
+            ),
+            if (_verified) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.verified, size: 16, color: colorScheme.primary),
+            ],
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(simpleFriendsControllerProvider.notifier)
-                  .blockUser(userId);
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Block'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmRejectRequest(String userId) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reject Friend Request?'),
-        content: const Text(
-          'This will decline the friend request. You can still add them later.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(simpleFriendsControllerProvider.notifier)
-                  .rejectRequest(userId);
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Reject'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDismissSuggestion(String userId) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hide This Suggestion?'),
-        content: const Text('We will hide this suggestion from your list.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref
-                  .read(simpleFriendsControllerProvider.notifier)
-                  .dismissSuggestion(userId);
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Hide'),
-          ),
-        ],
+        subtitle: Text('@$_username'),
+        trailing: isSelf
+            ? null
+            : _isProcessing
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : isFollowing
+            ? OutlinedButton(
+                onPressed: () => _toggleFollow(true),
+                child: const Text('Unfollow'),
+              )
+            : FilledButton(
+                onPressed: () => _toggleFollow(false),
+                child: const Text('Follow'),
+              ),
       ),
     );
   }

@@ -176,8 +176,9 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
 
   @override
   Future<void> cacheProfile(UserProfile profile) async {
-    _profileCache[profile.id] = profile;
-    _timestamps[profile.id] = DateTime.now();
+    // Use userId (auth UUID) as cache key to match getCachedProfile(userId) lookups
+    _profileCache[profile.userId] = profile;
+    _timestamps[profile.userId] = DateTime.now();
   }
 
   @override

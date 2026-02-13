@@ -221,7 +221,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: widget.quality == BadgeQualitySettings.ultra
                     ? 15
                     : 10,
@@ -271,7 +271,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
         boxShadow: widget.quality != BadgeQualitySettings.low
             ? [
                 BoxShadow(
-                  color: _getTierColor().withOpacity(0.5),
+                  color: _getTierColor().withValues(alpha: 0.5),
                   blurRadius: 8,
                   spreadRadius: 1,
                 ),
@@ -359,11 +359,11 @@ class _BadgeDisplayState extends State<BadgeDisplay>
       height: widget.size * 0.5,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         boxShadow: widget.quality != BadgeQualitySettings.low
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
+                  color: Colors.black.withValues(alpha: 0.2),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -390,7 +390,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
         boxShadow: widget.quality != BadgeQualitySettings.low
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 3,
                   offset: const Offset(0, 1),
                 ),
@@ -423,7 +423,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
               endAngle: _shineAnimation.value * 2 * math.pi + math.pi * 0.5,
               colors: [
                 Colors.transparent,
-                Colors.white.withOpacity(0.4),
+                Colors.white.withValues(alpha: 0.4),
                 Colors.transparent,
               ],
             ),
@@ -442,7 +442,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
         border: Border.all(color: _getRarityColor(), width: 3),
         boxShadow: [
           BoxShadow(
-            color: _getRarityColor().withOpacity(0.6),
+            color: _getRarityColor().withValues(alpha: 0.6),
             blurRadius: 12,
             spreadRadius: 2,
           ),
@@ -566,7 +566,7 @@ class _BadgeDisplayState extends State<BadgeDisplay>
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        baseColor.withOpacity(0.8),
+        baseColor.withValues(alpha: 0.8),
         baseColor,
         Color.lerp(baseColor, Colors.black, 0.2)!,
       ],
@@ -576,9 +576,9 @@ class _BadgeDisplayState extends State<BadgeDisplay>
   List<Color> _getMaterialEffectColors() {
     final baseColor = _getTierColor();
     return [
-      Colors.white.withOpacity(0.6),
-      baseColor.withOpacity(0.3),
-      baseColor.withOpacity(0.1),
+      Colors.white.withValues(alpha: 0.6),
+      baseColor.withValues(alpha: 0.3),
+      baseColor.withValues(alpha: 0.1),
     ];
   }
 
@@ -691,7 +691,7 @@ class RarityParticlePainter extends CustomPainter {
       }
 
       final alpha = (particle.opacity * (1 - progress)).clamp(0.0, 1.0);
-      paint.color = particle.color.withOpacity(alpha);
+      paint.color = particle.color.withValues(alpha: alpha);
 
       // Draw different particle shapes based on rarity
       switch (rarity) {

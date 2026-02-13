@@ -203,7 +203,7 @@ class _ProfileOnboardingWelcomeScreenState
       width: 200,
       height: 200,
       decoration: BoxDecoration(
-        color: heroColor.withOpacity(0.3),
+        color: heroColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Icon(
@@ -312,7 +312,7 @@ class _ProfileOnboardingWelcomeScreenState
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: DesignSystem.colors.primary.withOpacity(0.1),
+              color: DesignSystem.colors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -356,9 +356,11 @@ class _ProfileOnboardingWelcomeScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: DesignSystem.colors.success.withOpacity(0.1),
+        color: DesignSystem.colors.success.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DesignSystem.colors.success.withOpacity(0.3)),
+        border: Border.all(
+          color: DesignSystem.colors.success.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

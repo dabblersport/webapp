@@ -2,6 +2,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/features/auth_onboarding/domain/usecases/usecase.dart';
 import 'package:dabbler/data/models/games/game.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../repositories/games_repository.dart';
 
 // Game-specific failures
@@ -101,6 +102,28 @@ class JoinGameUseCase
     // Check if player is trying to join their own game
     if (game.organizerId == playerId) {
       return GameFailure('You cannot join your own game as a player');
+    }
+
+    // Check block status between player and organizer
+    try {
+      final db = Supabase.instance.client;
+      final currentUserId = db.auth.currentUser?.id;
+      final organizerUserId = game.organizerId; // may be user_id or profile_id
+      if (currentUserId != null) {
+        final blockCheck = await db
+            .from('user_blocks')
+            .select('id')
+            .or(
+              'and(blocker_user_id.eq.$currentUserId,blocked_user_id.eq.$organizerUserId),'
+              'and(blocker_user_id.eq.$organizerUserId,blocked_user_id.eq.$currentUserId)',
+            )
+            .maybeSingle();
+        if (blockCheck != null) {
+          return GameFailure('You cannot join this game');
+        }
+      }
+    } catch (_) {
+      // Non-fatal: if block check fails, allow join to proceed
     }
 
     // Check game timing

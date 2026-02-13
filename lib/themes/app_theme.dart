@@ -820,7 +820,7 @@ class AppTheme {
         selectedColor: colorScheme.primaryContainer,
         secondarySelectedColor: colorScheme.secondaryContainer,
         deleteIconColor: colorScheme.onSurfaceVariant,
-        disabledColor: colorScheme.onSurface.withOpacity(0.12),
+        disabledColor: colorScheme.onSurface.withValues(alpha: 0.12),
         side: BorderSide.none,
         checkmarkColor: colorScheme.onPrimaryContainer,
         labelStyle: textTheme.labelMedium,
@@ -962,7 +962,7 @@ class AppTheme {
         activeTrackColor: colorScheme.primary,
         inactiveTrackColor: colorScheme.surfaceContainerHighest,
         thumbColor: colorScheme.primary,
-        overlayColor: colorScheme.primary.withOpacity(0.12),
+        overlayColor: colorScheme.primary.withValues(alpha: 0.12),
       ),
 
       // Progress Indicator Theme

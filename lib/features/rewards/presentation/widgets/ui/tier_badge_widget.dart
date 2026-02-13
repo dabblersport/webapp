@@ -29,7 +29,7 @@ class TierBadgeWidget extends StatelessWidget {
           border: Border.all(color: _getTierBorderColor(tier), width: 2),
           boxShadow: [
             BoxShadow(
-              color: _getTierColor(tier).withOpacity(0.3),
+              color: _getTierColor(tier).withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

@@ -65,7 +65,7 @@ abstract class SportSpecificFilters extends StatelessWidget {
             side: BorderSide(
               color: isSelected
                   ? Colors.transparent
-                  : sportsScheme.outlineVariant.withOpacity(0.55),
+                  : sportsScheme.outlineVariant.withValues(alpha: 0.55),
             ),
           ),
         );

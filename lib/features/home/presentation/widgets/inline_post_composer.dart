@@ -8,6 +8,13 @@ import 'package:dabbler/features/home/presentation/providers/home_providers.dart
 import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:go_router/go_router.dart';
+// [DISABLED] Sport tags & @mentions – re-enable when ready
+// import 'package:dabbler/features/social/presentation/widgets/create_post/sport_tag_selector.dart';
+// import 'package:dabbler/features/social/presentation/widgets/create_post/mention_suggestions.dart';
+// import 'package:dabbler/data/models/authentication/user_model.dart';
+import 'package:dabbler/services/moderation_service.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart'; // [DISABLED] used by @mentions
+import 'dart:async';
 
 final socialRepositoryProvider = Provider<SocialRepository>(
   (ref) => SocialRepository(),
@@ -44,6 +51,17 @@ class _InlinePostComposerState extends ConsumerState<InlinePostComposer> {
   final List<XFile> _selectedMedia = [];
   CreationType _creationType = CreationType.post;
 
+  // [DISABLED] Sport tags & @mentions – re-enable when ready
+  // List<String> _selectedSports = [];
+  // List<UserModel> _mentionSuggestions = [];
+  // bool _showMentionSuggestions = false;
+  // Timer? _mentionDebounceTimer;
+  // final List<Map<String, String>> _mentionedUsers = [];
+
+  // Moderation
+  int _blocklistHits = 0;
+  Timer? _blocklistDebounceTimer;
+
   @override
   void initState() {
     super.initState();
@@ -58,8 +76,150 @@ class _InlinePostComposerState extends ConsumerState<InlinePostComposer> {
   void dispose() {
     _textController.dispose();
     _focusNode.dispose();
+    // _mentionDebounceTimer?.cancel(); // [DISABLED] @mentions
+    _blocklistDebounceTimer?.cancel();
     super.dispose();
   }
+
+  // ---------------------------------------------------------------------------
+  // Text change handlers (blocklist + @mention detection)
+  // ---------------------------------------------------------------------------
+
+  void _onTextChanged(String text) {
+    // Debounce blocklist check
+    _blocklistDebounceTimer?.cancel();
+    if (text.trim().isNotEmpty) {
+      _blocklistDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        _checkBlocklist(text);
+      });
+    } else {
+      setState(() => _blocklistHits = 0);
+    }
+
+    // [DISABLED] @mentions
+    // _checkForMentionTrigger(text);
+
+    setState(() {}); // refresh UI for post button
+  }
+
+  Future<void> _checkBlocklist(String text) async {
+    try {
+      final moderationService = ref.read(moderationServiceProvider);
+      final hits = await moderationService.contentHitsBlocklist(text);
+      if (mounted) {
+        setState(() => _blocklistHits = hits);
+      }
+    } catch (_) {
+      // Silently fail
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // [DISABLED] @Mention support – re-enable when ready
+  // ---------------------------------------------------------------------------
+  /*
+  void _checkForMentionTrigger(String text) {
+    _mentionDebounceTimer?.cancel();
+
+    final cursorPos = _textController.selection.baseOffset;
+    if (cursorPos <= 0) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    final textBeforeCursor = text.substring(0, cursorPos);
+    final atIndex = textBeforeCursor.lastIndexOf('@');
+    if (atIndex == -1) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    if (atIndex > 0 &&
+        textBeforeCursor[atIndex - 1] != ' ' &&
+        textBeforeCursor[atIndex - 1] != '\n') {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    final query = textBeforeCursor.substring(atIndex + 1);
+    if (query.contains(' ') || query.contains('\n') || query.isEmpty) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    _mentionDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _searchMentionProfiles(query);
+    });
+  }
+
+  Future<void> _searchMentionProfiles(String query) async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('profiles')
+          .select('id, user_id, display_name, username, avatar_url')
+          .or('username.ilike.%$query%,display_name.ilike.%$query%')
+          .order('display_name', ascending: true)
+          .limit(6);
+
+      if (mounted) {
+        final suggestions = (rows as List).map((row) {
+          return UserModel(
+            id: row['user_id'] ?? row['id'] ?? '',
+            username: row['username']?.toString(),
+            fullName: row['display_name']?.toString(),
+            email: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+
+        setState(() {
+          _mentionSuggestions = suggestions;
+          _showMentionSuggestions = suggestions.isNotEmpty;
+        });
+      }
+    } catch (_) {
+      _hideMentionSuggestions();
+    }
+  }
+
+  void _hideMentionSuggestions() {
+    if (_showMentionSuggestions) {
+      setState(() {
+        _showMentionSuggestions = false;
+        _mentionSuggestions = [];
+      });
+    }
+  }
+
+  void _onMentionSelected(UserModel user) {
+    final text = _textController.text;
+    final cursorPos = _textController.selection.baseOffset;
+    final textBeforeCursor = text.substring(0, cursorPos);
+    final atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex == -1) return;
+
+    final displayName = user.username ?? user.displayName;
+    final beforeAt = text.substring(0, atIndex);
+    final afterCursor = cursorPos < text.length
+        ? text.substring(cursorPos)
+        : '';
+    final newText = '$beforeAt@$displayName $afterCursor';
+
+    _textController.text = newText;
+    _textController.selection = TextSelection.collapsed(
+      offset: atIndex + displayName.length + 2,
+    );
+
+    if (!_mentionedUsers.any((m) => m['id'] == user.id)) {
+      _mentionedUsers.add({'id': user.id, 'displayName': displayName});
+    }
+
+    _hideMentionSuggestions();
+    setState(() {});
+  }
+  */
 
   Future<void> _loadVibes() async {
     setState(() {
@@ -108,12 +268,16 @@ class _InlinePostComposerState extends ConsumerState<InlinePostComposer> {
         );
       } else {
         // Handle post creation
+        // [DISABLED] Sport tags & @mentions – re-enable when ready
+        // final mentionProfileIds = _mentionedUsers.map((m) => m['id']!).toList();
+
         await repo.createPost(
           kind: _selectedKind,
           visibility: PostVisibility.public,
           body: _textController.text,
           primaryVibeId: _selectedVibeId?.toString(),
-          // TODO: Upload media
+          // tags: _selectedSports,
+          // mentionProfileIds: mentionProfileIds,
         );
       }
 
@@ -124,10 +288,16 @@ class _InlinePostComposerState extends ConsumerState<InlinePostComposer> {
       _textController.clear();
       setState(() {
         _selectedMedia.clear();
+        // _selectedSports.clear();   // [DISABLED]
+        // _mentionedUsers.clear();  // [DISABLED]
+        _blocklistHits = 0;
         _isPosting = false;
       });
 
       if (mounted) {
+        // Dismiss the bottom sheet
+        Navigator.of(context).pop();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -496,8 +666,63 @@ class _InlinePostComposerState extends ConsumerState<InlinePostComposer> {
                   vertical: 12,
                 ),
               ),
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onTextChanged(_textController.text),
             ),
+
+            // Blocklist warning
+            if (_blocklistHits > 0) ...[
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_rounded,
+                      size: 16,
+                      color: colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Contains inappropriate content ($_blocklistHits violation${_blocklistHits > 1 ? 's' : ''}). Please revise.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // [DISABLED] @Mention suggestions – re-enable when ready
+            // if (_showMentionSuggestions) ...[
+            //   const SizedBox(height: 4),
+            //   MentionSuggestions(
+            //     suggestions: _mentionSuggestions,
+            //     onMentionSelected: _onMentionSelected,
+            //   ),
+            // ],
+
+            // [DISABLED] Sport/Activity tags – re-enable when ready
+            // if (widget.mode == ComposerMode.post &&
+            //     _creationType == CreationType.post) ...[
+            //   const SizedBox(height: 12),
+            //   SportTagSelector(
+            //     selectedSports: _selectedSports,
+            //     onSportsChanged: (sports) {
+            //       setState(() => _selectedSports = sports);
+            //     },
+            //   ),
+            // ],
 
             // Media preview
             if (_selectedMedia.isNotEmpty) ...[

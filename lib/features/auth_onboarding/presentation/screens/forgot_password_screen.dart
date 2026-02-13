@@ -73,8 +73,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         : const Color(0xFFE0C7FF);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final subtextColor = isDarkMode
-        ? Colors.white.withOpacity(0.85)
-        : Colors.black.withOpacity(0.7);
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.black.withValues(alpha: 0.7);
 
     return Container(
       width: double.infinity,

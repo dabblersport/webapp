@@ -55,13 +55,13 @@ class EarlyBirdCheckInModal extends StatelessWidget {
                         end: Alignment.bottomRight,
                         colors: [
                           colorScheme.primaryContainer,
-                          colorScheme.primaryContainer.withOpacity(0.7),
+                          colorScheme.primaryContainer.withValues(alpha: 0.7),
                         ],
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: colorScheme.primary.withOpacity(0.15),
+                          color: colorScheme.primary.withValues(alpha: 0.15),
                           blurRadius: 16,
                           offset: const Offset(0, 4),
                         ),
@@ -113,10 +113,12 @@ class EarlyBirdCheckInModal extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(DesignTokens.spacingMd),
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    color: colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.3,
+                    ),
                     borderRadius: BorderRadius.circular(DesignTokens.spacingSm),
                     border: Border.all(
-                      color: colorScheme.outlineVariant.withOpacity(0.5),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
                       width: 1,
                     ),
                   ),
@@ -174,7 +176,7 @@ class EarlyBirdCheckInModal extends StatelessWidget {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: Colors.orange.withValues(alpha: 0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -205,7 +207,9 @@ class EarlyBirdCheckInModal extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(DesignTokens.spacingSm),
                     decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer.withOpacity(0.3),
+                      color: colorScheme.secondaryContainer.withValues(
+                        alpha: 0.3,
+                      ),
                       borderRadius: BorderRadius.circular(
                         DesignTokens.spacingXs,
                       ),

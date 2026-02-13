@@ -90,7 +90,6 @@ import 'package:dabbler/features/notifications/presentation/screens/notification
 import 'package:dabbler/features/misc/presentation/screens/create_game_screen.dart';
 
 // Social screens
-import 'package:dabbler/features/misc/presentation/screens/add_post_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/social_feed_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_screen.dart';
@@ -101,7 +100,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenari
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_notifications_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_complete_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/add_friends_screen.dart';
 
 // Admin screens
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
@@ -254,6 +252,21 @@ class AppRouter {
         // Continue with normal flow if check fails
       }
 
+      // ─── POST-LOGIN WELCOME (runs BEFORE onboarding enforcement) ───
+      // After each explicit login, force a welcome screen once per session.
+      // Must run before onboarding step enforcement to prevent the async
+      // checkResumeState() from short-circuiting returning users into
+      // createUserInfo.
+      if (isAuthenticated &&
+          routerRefreshNotifier.needsPostLoginWelcome &&
+          loc != RoutePaths.welcome &&
+          loc != RoutePaths.authWelcome &&
+          loc != RoutePaths.emailVerification &&
+          !isOnboardingPage) {
+        logRoute('redirect (post-login welcome) -> ${RoutePaths.welcome}');
+        return RoutePaths.welcome;
+      }
+
       // DB-authoritative onboarding routing for authenticated users.
       // This is the single place that decides which onboarding step screen is next.
       // Skip enforcement when navigating to welcome screen (handles returning users)
@@ -321,19 +334,9 @@ class AppRouter {
         return null;
       }
 
-      // After each explicit login, force a welcome screen once per session.
-      // This intentionally does not run during onboarding enforcement above.
-      if (routerRefreshNotifier.needsPostLoginWelcome &&
-          loc != RoutePaths.welcome &&
-          loc != RoutePaths.authWelcome &&
-          loc != RoutePaths.emailVerification &&
-          !isOnboardingPage) {
-        logRoute('redirect (post-login welcome) -> ${RoutePaths.welcome}');
-        return RoutePaths.welcome;
-      }
-
       // NOTE: Legacy onboard redirects removed.
       // Authenticated onboarding gating is handled above via OnboardingController DB state.
+      // Post-login welcome is handled above (before onboarding enforcement).
 
       // If authenticated and on an auth page (except welcome, email verification, and onboarding), check profile
       // Allow authenticated users to access onboarding (for phone users completing profile)
@@ -1127,29 +1130,8 @@ class AppRouter {
       ),
     ),
 
-    // Add Post route
-    GoRoute(
-      path: RoutePaths.addPost,
-      name: 'add-post',
-      pageBuilder: (context, state) => BottomSheetTransitionPage(
-        key: state.pageKey,
-        child: const AddPostScreen(),
-      ),
-    ),
-
-    // Social Create Post route (alias for add post) - hidden for MVP
-    GoRoute(
-      path: RoutePaths.socialCreatePost,
-      name: RouteNames.socialCreatePost,
-      redirect: (context, state) {
-        if (!FeatureFlags.socialFeed) return RoutePaths.home;
-        return null;
-      },
-      pageBuilder: (context, state) => BottomSheetTransitionPage(
-        key: state.pageKey,
-        child: const AddPostScreen(),
-      ),
-    ),
+    // Add Post and Social Create Post routes removed —
+    // post creation is handled exclusively via InlinePostComposer bottom sheet.
 
     // Social Routes - hidden for MVP
     GoRoute(
@@ -1253,6 +1235,45 @@ class AppRouter {
       ),
     ),
 
+    // Social Friends (People) screen — own profile, 3 tabs
+    GoRoute(
+      path: RoutePaths.socialFriends,
+      name: RouteNames.socialFriends,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const RealFriendsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    ),
+
+    // Following list for a specific profile (2 tabs, starts on Following)
+    GoRoute(
+      path: '${RoutePaths.following}/:profileId',
+      name: RouteNames.following,
+      pageBuilder: (context, state) {
+        final profileId = state.pathParameters['profileId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: RealFriendsScreen(profileId: profileId, initialTab: 0),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
+    // Followers list for a specific profile (2 tabs, starts on Followers)
+    GoRoute(
+      path: '${RoutePaths.followers}/:profileId',
+      name: RouteNames.followers,
+      pageBuilder: (context, state) {
+        final profileId = state.pathParameters['profileId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: RealFriendsScreen(profileId: profileId, initialTab: 1),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
     // Placeholder Social Routes (for routes referenced in code but screens don't exist yet)
     GoRoute(
       path: RoutePaths.socialChatList,
@@ -1260,24 +1281,6 @@ class AppRouter {
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
         child: const _PlaceholderScreen(title: 'Chat List'),
-      ),
-    ),
-
-    GoRoute(
-      path: RoutePaths.socialFriends,
-      name: RouteNames.socialFriends,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const RealFriendsScreen(),
-      ),
-    ),
-
-    GoRoute(
-      path: RoutePaths.socialAddFriends,
-      name: RouteNames.socialAddFriends,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const AddFriendsScreen(),
       ),
     ),
 

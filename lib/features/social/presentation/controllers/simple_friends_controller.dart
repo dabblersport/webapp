@@ -72,8 +72,7 @@ class SimpleFriendsController extends StateNotifier<SimpleFriendsState> {
   final AcceptFriendRequestUseCase _acceptFriendRequest;
   final RejectFriendRequestUseCase _rejectFriendRequest;
   final RemoveFriendUseCase _removeFriend;
-  final BlockUserUseCase _blockUser;
-  final UnblockUserUseCase _unblockUser;
+  // NOTE: BlockUserUseCase/UnblockUserUseCase removed — use BlockRepository from block_providers.dart
   final FriendsRepository _repository;
 
   SimpleFriendsController({
@@ -81,15 +80,11 @@ class SimpleFriendsController extends StateNotifier<SimpleFriendsState> {
     required AcceptFriendRequestUseCase acceptFriendRequest,
     required RejectFriendRequestUseCase rejectFriendRequest,
     required RemoveFriendUseCase removeFriend,
-    required BlockUserUseCase blockUser,
-    required UnblockUserUseCase unblockUser,
     required FriendsRepository repository,
   }) : _sendFriendRequest = sendFriendRequest,
        _acceptFriendRequest = acceptFriendRequest,
        _rejectFriendRequest = rejectFriendRequest,
        _removeFriend = removeFriend,
-       _blockUser = blockUser,
-       _unblockUser = unblockUser,
        _repository = repository,
        super(const SimpleFriendsState());
 
@@ -252,58 +247,14 @@ class SimpleFriendsController extends StateNotifier<SimpleFriendsState> {
     );
   }
 
-  /// Block user
+  /// Block user — deprecated, use BlockRepository from block_providers.dart
   Future<void> blockUser(String peerUserId) async {
-    if (state.processingIds[peerUserId] == true) return;
-
-    state = state.copyWith(
-      processingIds: {...state.processingIds, peerUserId: true},
-    );
-
-    final result = await _blockUser(peerUserId);
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          error: failure.message,
-          processingIds: {...state.processingIds, peerUserId: false},
-        );
-      },
-      (_) {
-        state = state.copyWith(
-          processingIds: {...state.processingIds, peerUserId: false},
-        );
-        // Reload data to get updated state
-        loadFriends();
-      },
-    );
+    // Blocking is now handled by BlockRepository. This method is a no-op stub.
   }
 
-  /// Unblock user
+  /// Unblock user — deprecated, use BlockRepository from block_providers.dart
   Future<void> unblockUser(String peerUserId) async {
-    if (state.processingIds[peerUserId] == true) return;
-
-    state = state.copyWith(
-      processingIds: {...state.processingIds, peerUserId: true},
-    );
-
-    final result = await _unblockUser(peerUserId);
-
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          error: failure.message,
-          processingIds: {...state.processingIds, peerUserId: false},
-        );
-      },
-      (_) {
-        state = state.copyWith(
-          processingIds: {...state.processingIds, peerUserId: false},
-        );
-        // Reload data to get updated state
-        loadFriends();
-      },
-    );
+    // Unblocking is now handled by BlockRepository. This method is a no-op stub.
   }
 
   /// Load friend suggestions

@@ -385,13 +385,13 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected
-              ? context.colors.primary.withOpacity(0.1)
+              ? context.colors.primary.withValues(alpha: 0.1)
               : context.violetWidgetBg,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
                 ? context.colors.primary
-                : context.colors.outline.withOpacity(0.1),
+                : context.colors.outline.withValues(alpha: 0.1),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -401,8 +401,8 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? context.colors.primary.withOpacity(0.1)
-                    : context.colors.outline.withOpacity(0.1),
+                    ? context.colors.primary.withValues(alpha: 0.1)
+                    : context.colors.outline.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -488,9 +488,9 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: context.colors.primary.withOpacity(0.1),
+        color: context.colors.primary.withValues(alpha: 0.1),
         border: Border.all(
-          color: context.colors.primary.withOpacity(0.2),
+          color: context.colors.primary.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -559,7 +559,7 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(
-                color: context.colors.outline.withOpacity(0.1),
+                color: context.colors.outline.withValues(alpha: 0.1),
               ),
             ),
             filled: true,

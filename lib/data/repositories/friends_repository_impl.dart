@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -327,47 +328,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
     }
   }
 
-  /// Attempts `rpc_block_user` variants (`target_user` first, fallback to `(p_peer, p_block)`).
-  @override
-  Future<Result<void, Failure>> blockUser(String peerUserId) async {
-    try {
-      await _db.rpc(
-        'rpc_block_user',
-        params: {'p_peer_profile_id': peerUserId},
-      );
-      return Ok(null);
-    } on PostgrestException catch (error) {
-      final details = (error.details as String?)?.toLowerCase() ?? '';
-      if (error.code == '42883' ||
-          error.code == 'PGRST116' ||
-          details.contains('ambiguous') ||
-          details.contains('function rpc_block_user')) {
-        try {
-          await _db.rpc('rpc_block_user', params: {'target_user': peerUserId});
-          return Ok(null);
-        } catch (fallbackError) {
-          return Err(svc.mapPostgrestError(fallbackError));
-        }
-      }
-      return Err(svc.mapPostgrestError(error));
-    } catch (error) {
-      return Err(svc.mapPostgrestError(error));
-    }
-  }
-
-  /// Relies on the RPC enforcing appropriate RLS.
-  @override
-  Future<Result<void, Failure>> unblockUser(String peerUserId) async {
-    try {
-      await _db.rpc(
-        'rpc_unblock_user',
-        params: {'p_peer_profile_id': peerUserId},
-      );
-      return Ok(null);
-    } catch (error) {
-      return Err(svc.mapPostgrestError(error));
-    }
-  }
+  // NOTE: blockUser/unblockUser removed — use BlockRepository from block_providers.dart
 
   /// Get friendship status with a user
   @override
@@ -418,7 +379,13 @@ class FriendsRepositoryImpl implements FriendsRepository {
             }
           },
         )
-        .subscribe();
+        .subscribe((status, [error]) {
+          if (status == RealtimeSubscribeStatus.timedOut) {
+            debugPrint(
+              'Realtime: friendship channel timed out for $channelName',
+            );
+          }
+        });
 
     // Handle cleanup
     controller.onCancel = () async {

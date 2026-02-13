@@ -199,7 +199,7 @@ class _DataRetentionSettingsScreenState
           color: colorScheme.surface,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -258,7 +258,7 @@ class _DataRetentionSettingsScreenState
               Text(
                 'GDPR Compliance',
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withOpacity(0.6),
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -301,8 +301,8 @@ class _DataRetentionSettingsScreenState
             'Configure how long different types of data are kept before automatic deletion.',
             style: textTheme.bodyMedium?.copyWith(
               color: isDarkMode
-                  ? Colors.white.withOpacity(0.85)
-                  : Colors.black.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.black.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -328,7 +328,7 @@ class _DataRetentionSettingsScreenState
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: colorScheme.primaryContainer.withOpacity(0.5),
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -354,7 +354,7 @@ class _DataRetentionSettingsScreenState
             ),
 
             const SizedBox(height: 12),
-            Divider(color: colorScheme.outline.withOpacity(0.2)),
+            Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -362,7 +362,7 @@ class _DataRetentionSettingsScreenState
                 gradient: LinearGradient(
                   colors: [
                     Colors.blue.shade50,
-                    Colors.blue.shade100.withOpacity(0.3),
+                    Colors.blue.shade100.withValues(alpha: 0.3),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -406,7 +406,7 @@ class _DataRetentionSettingsScreenState
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -415,7 +415,7 @@ class _DataRetentionSettingsScreenState
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _getDataTypeColor(dataType).withOpacity(0.1),
+              color: _getDataTypeColor(dataType).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -440,7 +440,7 @@ class _DataRetentionSettingsScreenState
                 Text(
                   _getDataTypeDescription(dataType),
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -469,7 +469,9 @@ class _DataRetentionSettingsScreenState
             onPressed: () => _requestGracePeriod(dataType),
             tooltip: 'Request grace period',
             style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primaryContainer.withOpacity(0.3),
+              backgroundColor: colorScheme.primaryContainer.withValues(
+                alpha: 0.3,
+              ),
               foregroundColor: colorScheme.primary,
             ),
           ),
@@ -524,7 +526,7 @@ class _DataRetentionSettingsScreenState
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade100.withOpacity(0.5),
+                    color: Colors.orange.shade100.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -560,7 +562,7 @@ class _DataRetentionSettingsScreenState
                       Text(
                         'No upcoming cleanups scheduled',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -595,7 +597,7 @@ class _DataRetentionSettingsScreenState
         border: Border.all(
           color: isUrgent
               ? Colors.red.shade300
-              : colorScheme.outline.withOpacity(0.2),
+              : colorScheme.outline.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -629,7 +631,7 @@ class _DataRetentionSettingsScreenState
                 Text(
                   'Scheduled: ${DateFormat('MMM dd, yyyy').format(scheduledDate)}',
                   style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -650,7 +652,9 @@ class _DataRetentionSettingsScreenState
             icon: const Icon(Icons.more_vert, size: 20),
             onPressed: () => _showCleanupOptions(dataType),
             style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primaryContainer.withOpacity(0.3),
+              backgroundColor: colorScheme.primaryContainer.withValues(
+                alpha: 0.3,
+              ),
               foregroundColor: colorScheme.primary,
             ),
           ),
@@ -699,7 +703,7 @@ class _DataRetentionSettingsScreenState
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100.withOpacity(0.5),
+                    color: Colors.green.shade100.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -737,7 +741,7 @@ class _DataRetentionSettingsScreenState
                       Text(
                         'Automatically delete data based on retention policies',
                         style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -753,7 +757,7 @@ class _DataRetentionSettingsScreenState
             ),
 
             const SizedBox(height: 16),
-            Divider(color: colorScheme.outline.withOpacity(0.2)),
+            Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
 
             Row(
@@ -773,7 +777,7 @@ class _DataRetentionSettingsScreenState
                       Text(
                         'Time before data deletion where you can request recovery',
                         style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.6),
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -827,7 +831,7 @@ class _DataRetentionSettingsScreenState
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade100.withOpacity(0.5),
+                    color: Colors.blue.shade100.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -864,7 +868,7 @@ class _DataRetentionSettingsScreenState
                       margin: const EdgeInsets.only(top: 2),
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade100.withOpacity(0.3),
+                        color: Colors.blue.shade100.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -878,7 +882,7 @@ class _DataRetentionSettingsScreenState
                       child: Text(
                         info,
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.8),
+                          color: colorScheme.onSurface.withValues(alpha: 0.8),
                         ),
                       ),
                     ),
@@ -888,7 +892,7 @@ class _DataRetentionSettingsScreenState
             ),
 
             const SizedBox(height: 16),
-            Divider(color: colorScheme.outline.withOpacity(0.2)),
+            Divider(color: colorScheme.outline.withValues(alpha: 0.2)),
             const SizedBox(height: 16),
 
             Row(
@@ -899,8 +903,8 @@ class _DataRetentionSettingsScreenState
                     icon: const Icon(Icons.help_outline, size: 18),
                     label: const Text('Data Types Help'),
                     style: TextButton.styleFrom(
-                      backgroundColor: colorScheme.primaryContainer.withOpacity(
-                        0.3,
+                      backgroundColor: colorScheme.primaryContainer.withValues(
+                        alpha: 0.3,
                       ),
                       foregroundColor: colorScheme.primary,
                       padding: const EdgeInsets.symmetric(
@@ -917,8 +921,8 @@ class _DataRetentionSettingsScreenState
                     icon: const Icon(Icons.policy_outlined, size: 18),
                     label: const Text('Retention Policy'),
                     style: TextButton.styleFrom(
-                      backgroundColor: colorScheme.primaryContainer.withOpacity(
-                        0.3,
+                      backgroundColor: colorScheme.primaryContainer.withValues(
+                        alpha: 0.3,
                       ),
                       foregroundColor: colorScheme.primary,
                       padding: const EdgeInsets.symmetric(

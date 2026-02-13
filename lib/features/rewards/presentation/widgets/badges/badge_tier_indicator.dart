@@ -285,10 +285,13 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: _getTierGradient(),
-        border: Border.all(color: _getTierColor().withOpacity(0.8), width: 3),
+        border: Border.all(
+          color: _getTierColor().withValues(alpha: 0.8),
+          width: 3,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _getTierColor().withOpacity(0.4),
+            color: _getTierColor().withValues(alpha: 0.4),
             blurRadius: 8,
             spreadRadius: 2,
           ),
@@ -378,7 +381,7 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
           gradient: _getMaterialGradient(),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -394,7 +397,7 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
       height: widget.size * 0.5,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
       ),
       child: Icon(
         _getTierIcon(),
@@ -415,7 +418,9 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: _getTierColor().withOpacity(0.3 * _glowAnimation.value),
+                color: _getTierColor().withValues(
+                  alpha: 0.3 * _glowAnimation.value,
+                ),
                 blurRadius: 20 + (10 * _glowAnimation.value),
                 spreadRadius: 5 + (5 * _glowAnimation.value),
               ),
@@ -452,7 +457,9 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                Colors.white.withOpacity(0.8 * (1 - _upgradeAnimation.value)),
+                Colors.white.withValues(
+                  alpha: 0.8 * (1 - _upgradeAnimation.value),
+                ),
                 Colors.transparent,
               ],
             ),
@@ -480,7 +487,10 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
                 gradient: LinearGradient(
-                  colors: [_getTierColor(), _getTierColor().withOpacity(0.7)],
+                  colors: [
+                    _getTierColor(),
+                    _getTierColor().withValues(alpha: 0.7),
+                  ],
                 ),
               ),
             ),
@@ -500,13 +510,15 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
         shape: BoxShape.circle,
         gradient: _getTierGradientForTier(tier),
         border: Border.all(
-          color: _getTierColorForTier(tier).withOpacity(isActive ? 1.0 : 0.5),
+          color: _getTierColorForTier(
+            tier,
+          ).withValues(alpha: isActive ? 1.0 : 0.5),
           width: 2,
         ),
         boxShadow: isActive
             ? [
                 BoxShadow(
-                  color: _getTierColorForTier(tier).withOpacity(0.3),
+                  color: _getTierColorForTier(tier).withValues(alpha: 0.3),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
@@ -550,10 +562,10 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getTierColorForTier(widget.nextTier!).withOpacity(0.1),
+        color: _getTierColorForTier(widget.nextTier!).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _getTierColorForTier(widget.nextTier!).withOpacity(0.3),
+          color: _getTierColorForTier(widget.nextTier!).withValues(alpha: 0.3),
         ),
       ),
       child: Text(
@@ -574,10 +586,10 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _getTierColor().withOpacity(0.3)),
+        border: Border.all(color: _getTierColor().withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -663,7 +675,7 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        baseColor.withOpacity(0.8),
+        baseColor.withValues(alpha: 0.8),
         baseColor,
         Color.lerp(baseColor, Colors.black, 0.2)!,
       ],
@@ -676,9 +688,9 @@ class _BadgeTierIndicatorState extends State<BadgeTierIndicator>
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Colors.white.withOpacity(0.6),
-        baseColor.withOpacity(0.3),
-        baseColor.withOpacity(0.1),
+        Colors.white.withValues(alpha: 0.6),
+        baseColor.withValues(alpha: 0.3),
+        baseColor.withValues(alpha: 0.1),
       ],
     );
   }
@@ -715,7 +727,7 @@ class SparklePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withOpacity(0.8)
+      ..color = color.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
 
     final center = Offset(size.width / 2, size.height / 2);

@@ -92,7 +92,7 @@ enum PrivacyLevel {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.2) : Colors.transparent,
+          color: selected ? color.withValues(alpha: 0.2) : Colors.transparent,
           border: Border.all(
             color: selected ? color : Colors.grey,
             width: selected ? 2 : 1,

@@ -93,13 +93,13 @@ class _WeekProgressCard extends StatelessWidget {
       padding: const EdgeInsets.all(DesignTokens.spacingSm),
       decoration: BoxDecoration(
         color: isActive
-            ? colorScheme.primaryContainer.withOpacity(0.3)
-            : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(DesignTokens.spacingSm),
         border: Border.all(
           color: isActive
-              ? colorScheme.primary.withOpacity(0.5)
-              : colorScheme.outlineVariant.withOpacity(0.3),
+              ? colorScheme.primary.withValues(alpha: 0.5)
+              : colorScheme.outlineVariant.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -122,7 +122,7 @@ class _WeekProgressCard extends StatelessWidget {
                       color: isCompleted
                           ? colorScheme.primary
                           : isActive
-                          ? colorScheme.primary.withOpacity(0.2)
+                          ? colorScheme.primary.withValues(alpha: 0.2)
                           : colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),

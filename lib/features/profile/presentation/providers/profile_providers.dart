@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/logger.dart';
@@ -17,6 +20,7 @@ import '../../data/datasources/profile_remote_datasource.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
+import 'package:dabbler/features/social/block_providers.dart';
 
 // Domain layer imports
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -33,6 +37,10 @@ import '../controllers/preferences_controller.dart';
 import '../controllers/privacy_controller.dart';
 import '../controllers/sports_profile_controller.dart';
 import '../controllers/organiser_profile_controller.dart';
+
+// Settings repository
+import '../../data/repositories/settings_repository_impl.dart';
+import '../../domain/usecases/manage_privacy_usecase.dart';
 
 // =============================================================================
 // CONTROLLER PROVIDERS (Simplified)
@@ -67,6 +75,13 @@ final profileRepositoryProvider = Provider<ProfileRepositoryImpl>((ref) {
     localDataSource: ref.watch(profileLocalDataSourceProvider),
   );
 });
+
+/// Method to clear profile cache for a specific user
+/// Call this when profile data is updated externally (e.g., profile edit screen)
+Future<void> clearProfileCache(WidgetRef ref, String userId) async {
+  final localDataSource = ref.read(profileLocalDataSourceProvider);
+  await localDataSource.clearUserCache(userId);
+}
 
 // Use cases
 final getProfileUseCaseProvider = Provider<GetProfileUseCase>((ref) {
@@ -168,10 +183,24 @@ final preferencesControllerProvider =
       return PreferencesController();
     });
 
+/// Settings repository provider (privacy persistence)
+final settingsRepositoryProvider = Provider<SettingsRepositoryImpl>((ref) {
+  final client = ref.watch(supabaseProvider);
+  return SettingsRepositoryImpl(client);
+});
+
+/// Privacy use case provider
+final managePrivacyUseCaseProvider = Provider<ManagePrivacyUseCase>((ref) {
+  return ManagePrivacyUseCase(ref.watch(settingsRepositoryProvider));
+});
+
 /// Privacy controller provider
 final privacyControllerProvider =
     StateNotifierProvider<PrivacyController, PrivacyState>((ref) {
-      return PrivacyController();
+      return PrivacyController(
+        settingsRepository: ref.watch(settingsRepositoryProvider),
+        managePrivacyUseCase: ref.watch(managePrivacyUseCaseProvider),
+      );
     });
 
 // =============================================================================
@@ -347,9 +376,9 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
       // Enrich with sport profiles
       try {
         final profileId = result['id'] as String;
-        final profileType = result['profile_type'] as String?;
+        final personaType = result['persona_type'] as String?;
 
-        if (profileType == 'player') {
+        if (personaType == 'player') {
           final sportProfilesResponse = await client
               .from('sport_profiles')
               .select(
@@ -363,14 +392,14 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
           result['sports_profiles'] = sportProfiles
               .map((sp) => sp.toJson())
               .toList();
-        } else if (profileType == 'organiser') {
-          final organiserProfilesResponse = await client
-              .from('organiser_profiles')
+        } else if (personaType == 'organiser' || personaType == 'hoster') {
+          final organiserResponse = await client
+              .from('organiser')
               .select('*')
               .eq('profile_id', profileId);
 
-          // For now, just mark that organiser profiles exist
-          result['organiser_profiles'] = organiserProfilesResponse;
+          // For now, just mark that organiser records exist
+          result['organiser_records'] = organiserResponse;
         }
       } catch (_) {
         // Ignore sport profile enrichment errors
@@ -387,10 +416,29 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
 });
 
 /// Active profile type provider - tracks which profile type is currently selected
-final activeProfileTypeProvider = StateProvider<String?>((ref) {
-  final profileState = ref.watch(profileControllerProvider);
-  return profileState.profile?.profileType;
-});
+/// This is a simple state holder. It must NOT watch other providers,
+/// otherwise manual state changes get reset when dependencies rebuild.
+final activeProfileTypeProvider = StateProvider<String?>((ref) => null);
+
+/// SharedPreferences key for the last-used profile type.
+const _kLastActiveProfileType = 'last_active_profile_type';
+
+/// Persists the active profile type to SharedPreferences so it survives
+/// logout / session refresh / app restart.
+Future<void> persistActiveProfileType(String? profileType) async {
+  final prefs = await SharedPreferences.getInstance();
+  if (profileType != null && profileType.isNotEmpty) {
+    await prefs.setString(_kLastActiveProfileType, profileType);
+  } else {
+    await prefs.remove(_kLastActiveProfileType);
+  }
+}
+
+/// Reads the last-used profile type from SharedPreferences.
+Future<String?> loadPersistedProfileType() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString(_kLastActiveProfileType);
+}
 
 /// Initialize all profile data provider
 final initializeProfileDataProvider = FutureProvider<bool>((ref) async {
@@ -410,19 +458,40 @@ final initializeProfileDataProvider = FutureProvider<bool>((ref) async {
 
   try {
     if (userId != null && userId.isNotEmpty) {
-      // Load default profile (prefer player)
-      await profileController.loadProfile(userId, profileType: 'player');
+      // Restore the last-used persona from SharedPreferences so the user
+      // returns to the same profile after logout / session refresh.
+      final persistedType = await loadPersistedProfileType();
 
-      // If no player profile, try organiser
-      var profileState = ref.read(profileControllerProvider);
-      if (profileState.profile == null) {
-        await profileController.loadProfile(userId, profileType: 'organiser');
-        profileState = ref.read(profileControllerProvider);
+      // Try the persisted type first, then fall back to player → organiser.
+      final typesToTry = <String>[
+        if (persistedType != null) persistedType,
+        'player',
+        'organiser',
+      ];
+
+      // Deduplicate while preserving order
+      final seen = <String>{};
+      final uniqueTypes = typesToTry.where((t) => seen.add(t)).toList();
+
+      for (final type in uniqueTypes) {
+        await profileController.loadProfile(userId, profileType: type);
+        final ps = ref.read(profileControllerProvider);
+        if (ps.profile != null) break;
       }
+
+      var profileState = ref.read(profileControllerProvider);
 
       final profile = profileState.profile;
       if (profile != null) {
-        if (profile.profileType == 'organiser') {
+        final effectiveType = profile.personaType ?? profile.profileType;
+
+        // Seed the active persona so myProfileIdProvider returns the right
+        // profile from the very first app launch.
+        ref.read(activeProfileTypeProvider.notifier).state = effectiveType;
+        // Persist so the next session starts on the same persona.
+        unawaited(persistActiveProfileType(effectiveType));
+
+        if (effectiveType == 'organiser') {
           await organiserController.loadOrganiserProfiles(userId);
         } else {
           await sportsController.loadSportsProfiles(userId);
@@ -458,10 +527,14 @@ final saveAllProfileChangesProvider = FutureProvider<bool>((ref) async {
   );
   final privacyController = ref.read(privacyControllerProvider.notifier);
 
+  // Privacy controller now needs the userId.
+  final userId = ref.read(currentUserIdProvider);
+  if (userId == null) return false;
+
   final results = await Future.wait([
     settingsController.saveAllChanges(),
     preferencesController.saveAllChanges(),
-    privacyController.saveAllChanges(),
+    privacyController.saveAllChanges(userId),
   ]);
 
   return results.every((success) => success);
@@ -562,3 +635,226 @@ bool _isPrimaryProfile(advanced_profile.SportProfile profile) {
   }
   return false;
 }
+
+// =============================================================================
+// PROFILE ID LOOKUP PROVIDERS
+// =============================================================================
+
+/// Get the current authenticated user's profile ID for the ACTIVE persona.
+/// Watches [activeProfileTypeProvider] so that switching persona (player ↔
+/// organiser) automatically returns the matching profile ID.
+/// Falls back to the oldest active profile when no persona is selected yet.
+final myProfileIdProvider = FutureProvider<String?>((ref) async {
+  final userId = Supabase.instance.client.auth.currentUser?.id;
+  if (userId == null) return null;
+
+  final activeType = ref.watch(activeProfileTypeProvider);
+
+  var query = Supabase.instance.client
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_active', true);
+
+  if (activeType != null) {
+    query = query.eq('persona_type', activeType);
+  }
+
+  final response = await query.order('created_at', ascending: true).limit(1);
+  if ((response as List).isEmpty) return null;
+  return response.first['id'] as String?;
+});
+
+/// Look up a profile ID from an auth user_id.
+/// Uses .limit(1) instead of .maybeSingle() because a user can have
+/// multiple active profiles (e.g. player + organiser).
+final profileIdByUserIdProvider = FutureProvider.family<String?, String>((
+  ref,
+  userId,
+) async {
+  final response = await Supabase.instance.client
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('created_at', ascending: true)
+      .limit(1);
+  if ((response as List).isEmpty) return null;
+  return response.first['id'] as String?;
+});
+
+// =============================================================================
+// FOLLOW COUNT PROVIDERS (profile_follows table)
+// =============================================================================
+
+/// Following count: number of profiles this profile follows
+/// Counts rows where follower_profile_id = profileId
+final followingCountProvider = FutureProvider.autoDispose.family<int, String>((
+  ref,
+  profileId,
+) async {
+  try {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('profile_follows')
+        .select('following_profile_id')
+        .eq('follower_profile_id', profileId);
+    return (response as List).length;
+  } catch (e) {
+    return 0;
+  }
+});
+
+/// Followers count: number of profiles following this profile
+/// Counts rows where following_profile_id = profileId
+final followersCountProvider = FutureProvider.autoDispose.family<int, String>((
+  ref,
+  profileId,
+) async {
+  try {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('profile_follows')
+        .select('follower_profile_id')
+        .eq('following_profile_id', profileId);
+    return (response as List).length;
+  } catch (e) {
+    return 0;
+  }
+});
+
+/// Following list: full profile data for profiles this user follows.
+/// Excludes hoster profiles and blocked users (via unified user_blocks).
+final followingListProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, profileId) async {
+      final supabase = Supabase.instance.client;
+
+      // Use cached blocked user IDs (user-level, not profile-level)
+      final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
+
+      final response = await supabase
+          .from('profile_follows')
+          .select(
+            'profiles!fk_following_profile(id, user_id, display_name, username, avatar_url, verified, persona_type, is_active)',
+          )
+          .eq('follower_profile_id', profileId);
+
+      final List<Map<String, dynamic>> profiles = [];
+      for (final row in (response as List)) {
+        final profile = row['profiles'] as Map<String, dynamic>?;
+        if (profile == null) continue;
+        if (profile['is_active'] != true) continue;
+        if (profile['persona_type'] == 'hoster') continue;
+        final userId = profile['user_id'] as String?;
+        if (userId != null && blockedUserIds.contains(userId)) continue;
+        profiles.add(profile);
+      }
+      return profiles;
+    });
+
+/// Check if currentProfileId is following targetProfileId.
+final isFollowingProvider = FutureProvider.autoDispose
+    .family<bool, ({String currentProfileId, String targetProfileId})>((
+      ref,
+      params,
+    ) async {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('profile_follows')
+          .select('follower_profile_id')
+          .eq('follower_profile_id', params.currentProfileId)
+          .eq('following_profile_id', params.targetProfileId)
+          .maybeSingle();
+      return response != null;
+    });
+
+/// Check if targetUserId is blocked (bidirectional) using unified user_blocks.
+/// Accepts user IDs (auth.users.id), NOT profile IDs.
+final isBlockedProvider = FutureProvider.autoDispose
+    .family<bool, ({String currentProfileId, String targetProfileId})>((
+      ref,
+      params,
+    ) async {
+      // Resolve profile IDs to user IDs if needed — but first try the
+      // cached blockedUserIdsProvider which already uses user-level IDs.
+      // The params still use "profileId" names for backwards compat with
+      // existing callers, but we look up the user_id from the profile.
+      final supabase = Supabase.instance.client;
+
+      // Resolve target profile ID to user_id
+      final targetProfile = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('id', params.targetProfileId)
+          .maybeSingle();
+      final targetUserId = targetProfile?['user_id'] as String?;
+      if (targetUserId == null) return false;
+
+      final blockedIds = await ref.watch(blockedUserIdsProvider.future);
+      return blockedIds.contains(targetUserId);
+    });
+
+/// Search profiles by display name or username (for People / discover tab).
+/// Excludes hosters, blocked users, and current profile.
+final searchProfilesProvider = FutureProvider.autoDispose
+    .family<
+      List<Map<String, dynamic>>,
+      ({String query, String currentProfileId})
+    >((ref, params) async {
+      if (params.query.length < 2) return [];
+      final supabase = Supabase.instance.client;
+
+      // Use cached blocked user IDs (user-level)
+      final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
+
+      final response = await supabase
+          .from('profiles')
+          .select(
+            'id, user_id, display_name, username, avatar_url, verified, persona_type, is_active',
+          )
+          .or(
+            'display_name.ilike.%${params.query}%,username.ilike.%${params.query}%',
+          )
+          .neq('id', params.currentProfileId)
+          .eq('is_active', true)
+          .limit(30);
+
+      final List<Map<String, dynamic>> results = [];
+      for (final row in (response as List)) {
+        final profile = Map<String, dynamic>.from(row);
+        if (profile['persona_type'] == 'hoster') continue;
+        final userId = profile['user_id'] as String?;
+        if (userId != null && blockedUserIds.contains(userId)) continue;
+        results.add(profile);
+      }
+      return results;
+    });
+
+/// Followers list: full profile data for profiles following this user.
+/// Excludes hoster profiles and blocked users (via unified user_blocks).
+final followersListProvider = FutureProvider.autoDispose
+    .family<List<Map<String, dynamic>>, String>((ref, profileId) async {
+      final supabase = Supabase.instance.client;
+
+      // Use cached blocked user IDs (user-level)
+      final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
+
+      final response = await supabase
+          .from('profile_follows')
+          .select(
+            'profiles!fk_follower_profile(id, user_id, display_name, username, avatar_url, verified, persona_type, is_active)',
+          )
+          .eq('following_profile_id', profileId);
+
+      final List<Map<String, dynamic>> profiles = [];
+      for (final row in (response as List)) {
+        final profile = row['profiles'] as Map<String, dynamic>?;
+        if (profile == null) continue;
+        if (profile['is_active'] != true) continue;
+        if (profile['persona_type'] == 'hoster') continue;
+        final userId = profile['user_id'] as String?;
+        if (userId != null && blockedUserIds.contains(userId)) continue;
+        profiles.add(profile);
+      }
+      return profiles;
+    });

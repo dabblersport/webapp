@@ -259,7 +259,7 @@ class CircularProgressVisualization extends StatelessWidget {
             height: dimension,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
             ),
           ),
 
@@ -373,7 +373,7 @@ class SegmentedProgressBar extends StatelessWidget {
               width: segmentWidth,
               height: height,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(height / 2),
               ),
               child: FractionallySizedBox(
@@ -393,7 +393,7 @@ class SegmentedProgressBar extends StatelessWidget {
               width: segmentWidth,
               height: height,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
+                color: color.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(height / 2),
               ),
             );
@@ -479,7 +479,9 @@ class StreakCalendar extends StatelessWidget {
           width: daySize,
           height: daySize,
           decoration: BoxDecoration(
-            color: isCompleted ? Colors.orange : Colors.grey.withOpacity(0.2),
+            color: isCompleted
+                ? Colors.orange
+                : Colors.grey.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(4),
             border: isToday ? Border.all(color: Colors.orange, width: 2) : null,
           ),
@@ -555,7 +557,7 @@ class StepIndicator extends StatelessWidget {
           width: stepSize,
           height: stepSize,
           decoration: BoxDecoration(
-            color: isCompleted ? color : color.withOpacity(0.2),
+            color: isCompleted ? color : color.withValues(alpha: 0.2),
             shape: BoxShape.circle,
             border: isCurrent ? Border.all(color: color, width: 2) : null,
           ),
@@ -630,8 +632,8 @@ class MysteryProgress extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [
-            Colors.purple.withOpacity(0.3),
-            Colors.indigo.withOpacity(0.3),
+            Colors.purple.withValues(alpha: 0.3),
+            Colors.indigo.withValues(alpha: 0.3),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -647,7 +649,10 @@ class MysteryProgress extends StatelessWidget {
     if (animated) {
       mystery = mystery
           .animate(onPlay: (controller) => controller.repeat())
-          .shimmer(duration: 2.seconds, color: Colors.purple.withOpacity(0.2));
+          .shimmer(
+            duration: 2.seconds,
+            color: Colors.purple.withValues(alpha: 0.2),
+          );
     }
 
     return mystery;

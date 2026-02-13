@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 class NotificationSender {
   static final supabase = Supabase.instance.client;
 
-  /// Send a push notification to a specific user
+  /// Send a push notification to a specific user.
+  /// Skips sending if either user has blocked the other.
   static Future<bool> sendToUser({
     required String userId,
     required String title,
@@ -14,6 +15,23 @@ class NotificationSender {
     List<String>? platforms, // Optional: ['android', 'iOS', etc.]
   }) async {
     try {
+      // Check if either user has blocked the other
+      final currentUserId = supabase.auth.currentUser?.id;
+      if (currentUserId != null) {
+        final blockCheck = await supabase
+            .from('user_blocks')
+            .select('id')
+            .or(
+              'and(blocker_user_id.eq.$currentUserId,blocked_user_id.eq.$userId),'
+              'and(blocker_user_id.eq.$userId,blocked_user_id.eq.$currentUserId)',
+            )
+            .maybeSingle();
+        if (blockCheck != null) {
+          debugPrint('⏭️ Notification skipped — user blocked');
+          return false;
+        }
+      }
+
       final response = await supabase.functions.invoke(
         'send-push-notification',
         body: {

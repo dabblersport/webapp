@@ -8,6 +8,8 @@ class Environment {
 
   static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get supabasePublishableKey =>
+      dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ?? '';
   static String get appName => dotenv.env['APP_NAME'] ?? '';
   static String get environment => dotenv.env['ENVIRONMENT'] ?? 'production';
 

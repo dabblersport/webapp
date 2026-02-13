@@ -174,8 +174,8 @@ class _OnboardingPrivacyScreenState
         : const Color(0xFFE0C7FF);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final subtextColor = isDarkMode
-        ? Colors.white.withOpacity(0.85)
-        : Colors.black.withOpacity(0.7);
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.black.withValues(alpha: 0.7);
 
     return Container(
       width: double.infinity,
@@ -562,9 +562,11 @@ class _OnboardingPrivacyScreenState
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DesignSystem.colors.primary.withOpacity(0.05),
+        color: DesignSystem.colors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: DesignSystem.colors.primary.withOpacity(0.2)),
+        border: Border.all(
+          color: DesignSystem.colors.primary.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         children: [
@@ -633,7 +635,7 @@ class _OnboardingPrivacyScreenState
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: DesignSystem.colors.success.withOpacity(0.1),
+                color: DesignSystem.colors.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -664,9 +666,11 @@ class _OnboardingPrivacyScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DesignSystem.colors.info.withOpacity(0.05),
+        color: DesignSystem.colors.info.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DesignSystem.colors.info.withOpacity(0.2)),
+        border: Border.all(
+          color: DesignSystem.colors.info.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [

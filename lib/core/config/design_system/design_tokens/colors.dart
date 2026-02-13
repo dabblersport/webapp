@@ -125,6 +125,6 @@ class DabblerColors {
       );
     }
 
-    return MaterialColor(color.value, swatch);
+    return MaterialColor(color.toARGB32(), swatch);
   }
 }

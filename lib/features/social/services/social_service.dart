@@ -73,6 +73,7 @@ class SocialService {
     String? locationName,
     PostVisibility visibility = PostVisibility.public,
     List<String> tags = const [],
+    List<String> mentionProfileIds = const [],
   }) async {
     try {
       await _ensureValidSession();
@@ -87,6 +88,7 @@ class SocialService {
           .from('profiles')
           .select('id, user_id, display_name, avatar_url, verified')
           .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
           .single();
 
       // Check for duplicate posts to prevent spam/reposting
@@ -116,12 +118,16 @@ class SocialService {
         // Required fields - must be set explicitly
         'author_user_id': user.id, // REQUIRED: Set the user ID
         'author_profile_id': userProfile['id'], // REQUIRED: Set the profile ID
+        'author_display_name':
+            userProfile['display_name'], // REQUIRED: RLS policy checks this
         'kind': 'moment', // Default post type
         'visibility': dbVisibility,
         'body': content, // Map content -> body
         'media': mediaUrls
             .map((url) => {'url': url})
             .toList(), // Map to media array format
+        // Tags (sport/activity tags)
+        if (tags.isNotEmpty) 'tags': tags,
         // Optional fields
         if (locationName != null) 'venue_id': locationName,
         // Stats fields default on server side
@@ -134,6 +140,19 @@ class SocialService {
           .insert(postData)
           .select()
           .single();
+
+      // Insert post mentions if any
+      if (mentionProfileIds.isNotEmpty) {
+        final mentionRows = mentionProfileIds
+            .map(
+              (profileId) => {
+                'post_id': inserted['id'],
+                'mentioned_profile_id': profileId,
+              },
+            )
+            .toList();
+        await _supabase.from('post_mentions').insert(mentionRows);
+      }
 
       // Transform database response to PostModel format
       final transformedPost = {
@@ -164,8 +183,13 @@ class SocialService {
     }
   }
 
-  /// Get posts for the social feed
-  Future<List<PostModel>> getFeedPosts({int limit = 20, int offset = 0}) async {
+  /// Get posts for the social feed.
+  /// Pass [blockedUserIds] to filter out posts from blocked users.
+  Future<List<PostModel>> getFeedPosts({
+    int limit = 20,
+    int offset = 0,
+    Set<String> blockedUserIds = const {},
+  }) async {
     try {
       final postsResponse = await _withJwtRefreshRetry(() async {
         return await _supabase
@@ -261,7 +285,7 @@ class SocialService {
               post['comment_count'] ?? 0, // Map comment_count -> comments_count
           'shares_count': 0, // Not in database, default to 0
           'location_name': post['venue_id'], // Could be mapped differently
-          'tags': [], // Not directly in schema
+          'tags': post['tags'] ?? [], // Pass through tags from DB
           'is_liked': likedPostIds.contains(
             postId,
           ), // Set is_liked based on user's likes
@@ -310,6 +334,7 @@ class SocialService {
           .from('profiles')
           .select('user_id, display_name, avatar_url, verified')
           .eq('user_id', userId)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       // Fetch current user's liked post IDs
@@ -391,7 +416,7 @@ class SocialService {
               post['comment_count'] ?? 0, // Map comment_count -> comments_count
           'shares_count': 0, // Not in database, default to 0
           'location_name': post['venue_id'], // Could be mapped differently
-          'tags': [], // Not directly in schema
+          'tags': post['tags'] ?? [], // Pass through tags from DB
           'is_liked': likedPostIds.contains(
             postId,
           ), // Set is_liked based on user's likes
@@ -534,6 +559,7 @@ class SocialService {
           .from('profiles')
           .select('user_id, display_name, avatar_url, verified')
           .eq('user_id', authorId)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       // Check if current user has liked this post
@@ -599,8 +625,8 @@ class SocialService {
         'primary_vibe_id': post['primary_vibe_id'],
         'vibes': post['vibes'], // Primary vibe from join
         'post_vibes': postVibes, // All assigned vibes
-        'reactions': postReactions, // User reactions
-        'mentions': postMentions, // Mentioned users
+        'post_reactions': postReactions, // User reactions
+        'post_mentions': postMentions, // Mentioned users
         'location_tag': locationTagData, // Location data fetched separately
         'location_tag_id': post['location_tag_id'],
         'venue_id': post['venue_id'],
@@ -610,7 +636,7 @@ class SocialService {
         'comments_count': post['comment_count'] ?? 0,
         'shares_count': 0,
         'location_name': post['venue_id'],
-        'tags': [],
+        'tags': post['tags'] ?? [],
         'is_liked': isLiked, // Set is_liked based on user's like status
         'profiles': profileResponse != null
             ? {
@@ -653,6 +679,7 @@ class SocialService {
           .from('profiles')
           .select('id')
           .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileRes == null) {
@@ -717,6 +744,72 @@ class SocialService {
     }
   }
 
+  /// Toggle an emoji reaction (vibe) on a post.
+  /// If the user already has this reaction, it is removed.
+  /// If the user has a different reaction, the old one is replaced.
+  Future<Map<String, dynamic>> toggleReaction({
+    required String postId,
+    required String vibeId,
+  }) async {
+    try {
+      await _ensureValidSession();
+
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      // Get profile id
+      final profileRes = await _supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
+          .maybeSingle();
+
+      if (profileRes == null) throw Exception('Profile not found');
+
+      final profileId = profileRes['id'] as String;
+
+      // Check for existing reaction by this user on this post
+      final existing = await _supabase
+          .from('post_reactions')
+          .select('vibe_id')
+          .eq('post_id', postId)
+          .eq('actor_profile_id', profileId)
+          .maybeSingle();
+
+      bool added;
+
+      if (existing != null && existing['vibe_id'] == vibeId) {
+        // Same reaction — remove it (toggle off)
+        await _supabase
+            .from('post_reactions')
+            .delete()
+            .eq('post_id', postId)
+            .eq('actor_profile_id', profileId);
+        added = false;
+      } else {
+        // Remove any previous reaction first
+        await _supabase
+            .from('post_reactions')
+            .delete()
+            .eq('post_id', postId)
+            .eq('actor_profile_id', profileId);
+
+        // Insert new reaction
+        await _supabase.from('post_reactions').insert({
+          'post_id': postId,
+          'actor_profile_id': profileId,
+          'vibe_id': vibeId,
+        });
+        added = true;
+      }
+
+      return {'added': added, 'vibeId': vibeId};
+    } catch (e) {
+      throw Exception('Failed to toggle reaction: $e');
+    }
+  }
+
   /// Get post likes with user details
   Future<List<dynamic>> getPostLikes(String postId) async {
     try {
@@ -752,6 +845,7 @@ class SocialService {
           .from('profiles')
           .select('id')
           .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileRes == null) {
@@ -825,6 +919,7 @@ class SocialService {
           .from('profiles')
           .select('id')
           .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileRes == null) {
@@ -903,6 +998,7 @@ class SocialService {
     required String postId,
     required String body,
     String? parentCommentId,
+    List<String> mentionProfileIds = const [],
   }) async {
     try {
       await _ensureValidSession();
@@ -917,6 +1013,7 @@ class SocialService {
           .from('profiles')
           .select('id')
           .eq('user_id', user.id)
+          .eq('profile_type', 'personal')
           .single();
 
       // Insert comment (trigger will increment comment_count automatically)
@@ -931,6 +1028,19 @@ class SocialService {
           })
           .select()
           .single();
+
+      // Insert comment mentions if any
+      if (mentionProfileIds.isNotEmpty) {
+        final mentionRows = mentionProfileIds
+            .map(
+              (profileId) => {
+                'comment_id': comment['id'],
+                'mentioned_profile_id': profileId,
+              },
+            )
+            .toList();
+        await _supabase.from('comment_mentions').insert(mentionRows);
+      }
 
       return comment;
     } catch (e) {

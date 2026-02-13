@@ -176,7 +176,7 @@ class SocialFeedController extends StateNotifier<SocialFeedState> {
     );
   }
 
-  /// React to a post (like, unlike, etc.)
+  /// React to a post (emoji reaction via vibe key)
   Future<void> reactToPost(String postId, String reactionType) async {
     try {
       // Find the post
@@ -185,7 +185,7 @@ class SocialFeedController extends StateNotifier<SocialFeedState> {
 
       final post = state.posts[postIndex];
 
-      // Update post optimistically
+      // Optimistic: toggle like state as visual feedback
       final updatedPost = post.copyWith(
         isLiked: !post.isLiked,
         likesCount: post.isLiked ? post.likesCount - 1 : post.likesCount + 1,
@@ -199,9 +199,9 @@ class SocialFeedController extends StateNotifier<SocialFeedState> {
         filteredPosts: _applyFilter(updatedPosts, state.filter),
       );
 
-      await Future.delayed(
-        const Duration(milliseconds: 500),
-      ); // Simulate API call
+      // Real API call
+      final socialService = SocialService();
+      await socialService.toggleReaction(postId: postId, vibeId: reactionType);
     } catch (e) {
       // Revert optimistic update on failure
       state = state.copyWith(error: e.toString());

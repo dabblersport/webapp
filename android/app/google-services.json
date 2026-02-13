@@ -15,6 +15,14 @@
       "oauth_client": [
         {
           "client_id": "836345375454-o9pv3luuovmc4d3rdc0ohbsqaaqqtssm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dabbler.dabblerapp",
+            "certificate_hash": "0ee1b2e9040d56e58607208b1a7d447feeb02205"
+          }
+        },
+        {
+          "client_id": "836345375454-odnbiq03puk9nq19oiilsnstpk2i8qhh.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -25,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "836345375454-odnbiq03puk9nq19oiilsnstpk2i8qhh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -88,7 +88,7 @@ class SharedActivitiesSection extends StatelessWidget {
         contentPadding: const EdgeInsets.all(16),
         leading: CircleAvatar(
           radius: 24,
-          backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
           child: Icon(
             _getActivityIcon(activity.type),
             color: theme.colorScheme.primary,

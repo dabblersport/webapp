@@ -38,7 +38,7 @@ class AchievementCard extends StatelessWidget {
           border: Border.all(color: _getTierBorderColor(), width: 2),
           boxShadow: [
             BoxShadow(
-              color: _getTierBorderColor().withOpacity(0.1),
+              color: _getTierBorderColor().withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -205,14 +205,14 @@ class AchievementCard extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             _getTierBorderColor(),
-            _getTierBorderColor().withOpacity(0.7),
+            _getTierBorderColor().withValues(alpha: 0.7),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: _getTierBorderColor().withOpacity(0.3),
+            color: _getTierBorderColor().withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -230,9 +230,9 @@ class AchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.1),
+        color: Colors.amber.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -338,7 +338,7 @@ class AchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-        color: _getCategoryColor().withOpacity(0.2),
+        color: _getCategoryColor().withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -372,7 +372,7 @@ class AchievementCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: rarityColors[achievement.tier]?.withOpacity(0.2),
+        color: rarityColors[achievement.tier]?.withValues(alpha: 0.2),
         shape: BoxShape.circle,
       ),
       child: Icon(
@@ -387,7 +387,7 @@ class AchievementCard extends StatelessWidget {
     return Positioned.fill(
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
+          color: Colors.black.withValues(alpha: 0.7),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Center(
@@ -416,8 +416,8 @@ class AchievementCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.purple.withOpacity(0.8),
-              Colors.indigo.withOpacity(0.8),
+              Colors.purple.withValues(alpha: 0.8),
+              Colors.indigo.withValues(alpha: 0.8),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -456,7 +456,7 @@ class AchievementCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.withOpacity(0.3),
+                  color: Colors.green.withValues(alpha: 0.3),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),
@@ -465,7 +465,10 @@ class AchievementCard extends StatelessWidget {
           ),
         )
         .animate(onPlay: (controller) => controller.repeat())
-        .shimmer(duration: 2.seconds, color: Colors.green.withOpacity(0.1));
+        .shimmer(
+          duration: 2.seconds,
+          color: Colors.green.withValues(alpha: 0.1),
+        );
   }
 
   Color _getTierBorderColor() {

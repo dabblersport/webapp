@@ -30,10 +30,10 @@ class SportsSkillIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withOpacity(0.2)),
+        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -48,7 +48,7 @@ class SportsSkillIndicator extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(_getSportIcon(sportName), color: color, size: 24),
@@ -68,8 +68,8 @@ class SportsSkillIndicator extends StatelessWidget {
                       Text(
                         skillLabel,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color?.withOpacity(
-                            0.7,
+                          color: theme.textTheme.bodySmall?.color?.withValues(
+                            alpha: 0.7,
                           ),
                         ),
                       ),
@@ -100,7 +100,7 @@ class SportsSkillIndicator extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: Theme.of(
               context,
-            ).textTheme.bodySmall?.color?.withOpacity(0.7),
+            ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 8),
@@ -114,7 +114,7 @@ class SportsSkillIndicator extends StatelessWidget {
                 width: 40,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: isActive ? color : color.withOpacity(0.2),
+                  color: isActive ? color : color.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -130,7 +130,7 @@ class SportsSkillIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.5),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
             Text(
@@ -138,7 +138,7 @@ class SportsSkillIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.5),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
           ],
@@ -157,7 +157,7 @@ class SportsSkillIndicator extends StatelessWidget {
             fontWeight: FontWeight.w600,
             color: Theme.of(
               context,
-            ).textTheme.bodySmall?.color?.withOpacity(0.7),
+            ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 8),
@@ -173,12 +173,12 @@ class SportsSkillIndicator extends StatelessWidget {
                   width: 40,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: isActive ? color : color.withOpacity(0.2),
+                    color: isActive ? color : color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: isActive
                         ? [
                             BoxShadow(
-                              color: color.withOpacity(0.3),
+                              color: color.withValues(alpha: 0.3),
                               blurRadius: 4,
                               offset: const Offset(0, 2),
                             ),
@@ -199,7 +199,7 @@ class SportsSkillIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.5),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
             Text(
@@ -207,7 +207,7 @@ class SportsSkillIndicator extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(
                   context,
-                ).textTheme.bodySmall?.color?.withOpacity(0.5),
+                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
           ],

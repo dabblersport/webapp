@@ -129,23 +129,7 @@ abstract class ProfileRepository {
     String? details,
   );
 
-  /// Blocks a user profile
-  /// Returns [void] on success or [Failure] on error
-  Future<Either<Failure, void>> blockUser(
-    String blockerUserId,
-    String blockedUserId,
-  );
-
-  /// Unblocks a previously blocked user
-  /// Returns [void] on success or [Failure] on error
-  Future<Either<Failure, void>> unblockUser(
-    String blockerUserId,
-    String blockedUserId,
-  );
-
-  /// Gets list of blocked users
-  /// Returns list of user IDs on success or [Failure] on error
-  Future<Either<Failure, List<String>>> getBlockedUsers(String userId);
+  // NOTE: blockUser/unblockUser/getBlockedUsers removed — use BlockRepository from block_providers.dart
 
   /// Updates the user's last active timestamp
   /// Called periodically to track user activity

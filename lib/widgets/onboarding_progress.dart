@@ -35,7 +35,7 @@ class OnboardingProgress extends StatelessWidget {
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(
                               context,
-                            ).colorScheme.onSurface.withOpacity(0.3),
+                            ).colorScheme.onSurface.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -51,7 +51,9 @@ class OnboardingProgress extends StatelessWidget {
           Text(
             'Step $currentStep of $totalSteps',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
               fontWeight: FontWeight.w500,
               fontSize: 13,
             ),

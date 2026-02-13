@@ -62,4 +62,6 @@ flutter {
 dependencies {
     // Core library desugaring to support newer Java language APIs
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // AndroidX Activity for enableEdgeToEdge() backward compatibility (Android 15+)
+    implementation("androidx.activity:activity-ktx:1.9.3")
 }

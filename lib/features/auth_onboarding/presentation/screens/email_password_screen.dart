@@ -7,6 +7,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
+import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -102,7 +103,36 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
       await ref.read(simpleAuthProvider.notifier).handleSuccessfulLogin();
       if (!mounted) return;
-      context.go(RoutePaths.home);
+
+      // Check if user has completed onboarding before going home
+      // (mirrors the logic in otp_verification_screen)
+      final userProfile = await AuthService().getUserProfile(
+        fields: ['id', 'onboard', 'display_name', 'intention'],
+      );
+      if (!mounted) return;
+
+      final isOnboarded =
+          userProfile != null &&
+          (userProfile['onboard'] == true || userProfile['onboard'] == 'true');
+
+      if (isOnboarded) {
+        final displayName = userProfile['display_name'] as String? ?? '';
+        final personaType = userProfile['intention'] as String? ?? 'player';
+        context.go(
+          RoutePaths.welcome,
+          extra: {
+            'displayName': displayName,
+            'personaType': personaType,
+            'isFirstTime': false,
+          },
+        );
+      } else if (userProfile == null) {
+        // No profile at all — go to onboarding
+        context.go(RoutePaths.createUserInfo, extra: {'email': email});
+      } else {
+        // Profile exists but onboard == false — let router redirect handle it
+        context.go(RoutePaths.home);
+      }
     } catch (e) {
       final errText = e.toString().toLowerCase();
       final isInvalidCreds =

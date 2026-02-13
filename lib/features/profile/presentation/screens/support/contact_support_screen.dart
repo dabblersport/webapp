@@ -196,8 +196,8 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
             'Send us a message and we\'ll get back to you as soon as possible.',
             style: textTheme.bodyMedium?.copyWith(
               color: isDarkMode
-                  ? Colors.white.withOpacity(0.85)
-                  : Colors.black.withOpacity(0.7),
+                  ? Colors.white.withValues(alpha: 0.85)
+                  : Colors.black.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -348,7 +348,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -374,7 +374,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -400,7 +400,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
               leading: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withOpacity(0.5),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

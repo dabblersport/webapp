@@ -162,32 +162,7 @@ final removeFriendProvider =
       return result;
     });
 
-/// Block a user
-final blockUserProvider = FutureProvider.family<Result<void, Failure>, String>((
-  ref,
-  peerUserId,
-) async {
-  final repo = ref.watch(friendsRepositoryProvider);
-  final result = await repo.blockUser(peerUserId);
-
-  // Refresh data after blocking
-  if (result.isRight) {
-    ref.invalidate(friendshipsProvider);
-    ref.invalidate(friendEdgesProvider);
-  }
-
-  return result;
-});
-
-/// Unblock a user
-final unblockUserProvider =
-    FutureProvider.family<Result<void, Failure>, String>((
-      ref,
-      peerUserId,
-    ) async {
-      final repo = ref.watch(friendsRepositoryProvider);
-      return await repo.unblockUser(peerUserId);
-    });
+// NOTE: blockUserProvider/unblockUserProvider removed — use BlockRepository from block_providers.dart
 
 // =============================================================================
 // SOCIAL FEED & POSTS

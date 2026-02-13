@@ -247,8 +247,8 @@ class _OnboardingPreferencesScreenState
         : const Color(0xFFE0C7FF);
     final textColor = isDarkMode ? Colors.white : Colors.black87;
     final subtextColor = isDarkMode
-        ? Colors.white.withOpacity(0.85)
-        : Colors.black.withOpacity(0.7);
+        ? Colors.white.withValues(alpha: 0.85)
+        : Colors.black.withValues(alpha: 0.7);
 
     return Container(
       width: double.infinity,
@@ -455,7 +455,7 @@ class _OnboardingPreferencesScreenState
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? DesignSystem.colors.primary.withOpacity(0.1)
+              ? DesignSystem.colors.primary.withValues(alpha: 0.1)
               : DesignSystem.colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -674,7 +674,7 @@ class _OnboardingPreferencesScreenState
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? DesignSystem.colors.primary.withOpacity(0.1)
+              ? DesignSystem.colors.primary.withValues(alpha: 0.1)
               : DesignSystem.colors.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -866,9 +866,11 @@ class _OnboardingPreferencesScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DesignSystem.colors.primary.withOpacity(0.05),
+        color: DesignSystem.colors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: DesignSystem.colors.primary.withOpacity(0.2)),
+        border: Border.all(
+          color: DesignSystem.colors.primary.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         children: [
@@ -1052,7 +1054,7 @@ class _OnboardingPreferencesScreenState
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: DesignSystem.colors.success.withOpacity(0.1),
+                color: DesignSystem.colors.success.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

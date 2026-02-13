@@ -3,7 +3,8 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/social/post_model.dart';
 import 'package:dabbler/features/social/services/social_service.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 
 /// A card widget for displaying social posts in the feed
 class PostCard extends StatefulWidget {
@@ -14,6 +15,7 @@ class PostCard extends StatefulWidget {
   final VoidCallback? onPostTap;
   final VoidCallback? onProfileTap;
   final VoidCallback? onDelete;
+  final Function(String vibeId)? onReaction;
   final bool isOptimistic;
 
   const PostCard({
@@ -25,6 +27,7 @@ class PostCard extends StatefulWidget {
     this.onPostTap,
     this.onProfileTap,
     this.onDelete,
+    this.onReaction,
     this.isOptimistic = false,
   });
 
@@ -122,7 +125,7 @@ class _PostCardState extends State<PostCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: _getVibeColor(colorScheme).withOpacity(0.1),
+        color: _getVibeColor(colorScheme).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(24),
         // border: Border.all(
         //   // color: _getVibeColor(colorScheme).withOpacity(0.3),
@@ -155,9 +158,10 @@ class _PostCardState extends State<PostCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Avatar
-        AppAvatar.small(
+        DSAvatar.small(
           imageUrl: widget.post.authorAvatar,
-          fallbackText: widget.post.authorName,
+          displayName: widget.post.authorName,
+          context: AvatarContext.social,
           onTap: widget.onProfileTap,
         ),
 
@@ -204,7 +208,7 @@ class _PostCardState extends State<PostCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: _getVibeColor(colorScheme).withOpacity(0.3),
+                  color: _getVibeColor(colorScheme).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -275,6 +279,49 @@ class _PostCardState extends State<PostCard> {
             const SizedBox(height: 0),
           ],
 
+          // Sport/Activity tags
+          if (widget.post.tags.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: widget.post.tags.map((tag) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.tertiaryContainer.withValues(
+                        alpha: 0.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.sports,
+                          size: 12,
+                          color: colorScheme.onTertiaryContainer,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          tag,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onTertiaryContainer,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+
           // Vibes and actions inline
           _buildActions(context),
         ],
@@ -318,7 +365,7 @@ class _PostCardState extends State<PostCard> {
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       Iconsax.play_copy,
@@ -374,7 +421,7 @@ class _PostCardState extends State<PostCard> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
               decoration: BoxDecoration(
-                color: _getVibeColor(colorScheme).withOpacity(0.3),
+                color: _getVibeColor(colorScheme).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Row(
@@ -405,6 +452,9 @@ class _PostCardState extends State<PostCard> {
             onTap: _handleLikeTap,
           ),
           const SizedBox(width: 12),
+          // Reaction picker (long press or tap)
+          if (widget.onReaction != null) _buildReactionPickerButton(context),
+          if (widget.onReaction != null) const SizedBox(width: 12),
           // Comment action
           _buildActionButton(
             context: context,
@@ -484,6 +534,89 @@ class _PostCardState extends State<PostCard> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Full list of reaction emojis available in the picker.
+  static const _reactionEmojis = [
+    {'emoji': '👍', 'label': 'Like'},
+    {'emoji': '❤️', 'label': 'Love'},
+    {'emoji': '😂', 'label': 'Haha'},
+    {'emoji': '😮', 'label': 'Wow'},
+    {'emoji': '😢', 'label': 'Sad'},
+    {'emoji': '😡', 'label': 'Angry'},
+    {'emoji': '🔥', 'label': 'Fire'},
+    {'emoji': '🏀', 'label': 'Ball'},
+    {'emoji': '💯', 'label': '100'},
+    {'emoji': '🎉', 'label': 'Party'},
+  ];
+
+  Widget _buildReactionPickerButton(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () => _showReactionPicker(context),
+      child: Icon(
+        Iconsax.emoji_happy_copy,
+        size: 22,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
+  }
+
+  void _showReactionPicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'React',
+                  style: Theme.of(
+                    sheetContext,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _reactionEmojis.map((r) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        // Use the label as the vibe key for now.
+                        // In production, map to actual vibe_id from DB.
+                        widget.onReaction?.call(r['label']!.toLowerCase());
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          r['emoji']!,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -623,23 +756,14 @@ class _PostCardState extends State<PostCard> {
     }
   }
 
-  Future<void> _reportPost(BuildContext context) async {
-    try {
-      // Simple quick-report flow; use ThreadScreen dialog for detailed flow
-      await SocialService().reportPost(
-        postId: widget.post.id,
-        reason: 'Inappropriate content',
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Report submitted')));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to report: $e')));
-    }
+  void _reportPost(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => ReportDialog(
+        targetType: ReportTargetType.post,
+        targetId: widget.post.id,
+      ),
+    );
   }
 
   Color _getVibeColor(ColorScheme colorScheme) {

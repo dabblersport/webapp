@@ -15,7 +15,10 @@ import '../../../services/social_service.dart';
 import '../../../services/realtime_likes_service.dart';
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/core/utils/avatar_url_resolver.dart';
+import 'package:dabbler/features/social/presentation/widgets/reactions_bar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
@@ -236,7 +239,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 color: colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: _getVibeColor(post, colorScheme).withOpacity(0.3),
+                  color: _getVibeColor(
+                    post,
+                    colorScheme,
+                  ).withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -287,10 +293,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                     PostContentWidget(
                       content: post.content,
                       media: post.mediaUrls,
-                      sports: const [], // PostModel doesn't have tags
-                      mentions:
-                          const [], // PostModel doesn't have mentionedUsers
-                      hashtags: const [], // PostModel doesn't have tags
+                      sports: post.tags,
+                      mentions: post.mentionedUsers,
+                      hashtags: const [],
                       onMediaTap: (mediaIndex) =>
                           _viewMedia(post.mediaUrls, mediaIndex),
                       onMentionTap: (userId) => _navigateToProfile(userId),
@@ -312,7 +317,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                         Container(
                           width: 1,
                           height: 20,
-                          color: colorScheme.outlineVariant.withOpacity(0.3),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         _buildStatItem(
                           theme,
@@ -323,7 +330,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                         Container(
                           width: 1,
                           height: 20,
-                          color: colorScheme.outlineVariant.withOpacity(0.3),
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
+                          ),
                         ),
                         _buildStatItem(
                           theme,
@@ -335,6 +344,21 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                     ),
 
                     const SizedBox(height: 16),
+
+                    // Reactions bar (emoji reactions from other users)
+                    if (post.reactions.isNotEmpty) ...[
+                      ReactionsBar(
+                        reactions: post.reactions,
+                        currentUserId: _currentUserId,
+                        onReactionTap: (reactionData) {
+                          final vibeId = reactionData['vibe_id'] as String?;
+                          if (vibeId != null) {
+                            _handleReaction(post.id, vibeId);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
 
                     // Action buttons
                     Row(
@@ -608,13 +632,13 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         color: colorScheme.surface,
         border: Border(
           top: BorderSide(
-            color: colorScheme.outlineVariant.withOpacity(0.5),
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),
@@ -700,6 +724,28 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   bool _likeInProgress = false;
+
+  String? get _currentUserId {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _handleReaction(String postId, String vibeId) async {
+    try {
+      final socialService = SocialService();
+      await socialService.toggleReaction(postId: postId, vibeId: vibeId);
+      ref.invalidate(postDetailsProvider(postId));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to react: $e')));
+      }
+    }
+  }
 
   void _handleLike(String postId) async {
     // Prevent multiple simultaneous like requests
@@ -907,11 +953,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _reportComment(String commentId) {
-    // Show report dialog
     showDialog(
       context: context,
-      builder: (context) =>
-          ReportDialog(type: ReportType.comment, commentId: commentId),
+      builder: (_) => ReportDialog(
+        targetType: ReportTargetType.comment,
+        targetId: commentId,
+      ),
     );
   }
 
@@ -1000,8 +1047,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   void _reportPost() {
     showDialog(
       context: context,
-      builder: (context) =>
-          ReportDialog(type: ReportType.post, postId: widget.postId),
+      builder: (_) => ReportDialog(
+        targetType: ReportTargetType.post,
+        targetId: widget.postId,
+      ),
     );
   }
 
@@ -1156,199 +1205,6 @@ class LikesListSheet extends ConsumerWidget {
     context.go('${RoutePaths.userProfile}/$userId');
   }
 }
-
-/// Report dialog
-class ReportDialog extends ConsumerStatefulWidget {
-  final ReportType type;
-  final String? postId;
-  final String? commentId;
-
-  const ReportDialog({
-    super.key,
-    required this.type,
-    this.postId,
-    this.commentId,
-  });
-
-  @override
-  ConsumerState<ReportDialog> createState() => _ReportDialogState();
-}
-
-class _ReportDialogState extends ConsumerState<ReportDialog> {
-  String? _selectedReason;
-  final TextEditingController _detailsController = TextEditingController();
-  bool _isSubmitting = false;
-
-  final List<String> _reportReasons = [
-    'Spam',
-    'Harassment',
-    'Inappropriate content',
-    'False information',
-    'Hate speech',
-    'Violence',
-    'Other',
-  ];
-
-  /// Map UI reason string to ReportReason enum
-  ReportReason _mapReasonToEnum(String reason) {
-    switch (reason.toLowerCase()) {
-      case 'spam':
-        return ReportReason.spam;
-      case 'harassment':
-        return ReportReason.harassment;
-      case 'inappropriate content':
-      case 'nudity':
-        return ReportReason.nudity;
-      case 'false information':
-      case 'scam':
-        return ReportReason.scam;
-      case 'hate speech':
-      case 'hate':
-        return ReportReason.hate;
-      case 'violence':
-      case 'danger':
-        return ReportReason.danger;
-      case 'abuse':
-        return ReportReason.abuse;
-      case 'illegal':
-        return ReportReason.illegal;
-      case 'impersonation':
-        return ReportReason.impersonation;
-      default:
-        return ReportReason.other;
-    }
-  }
-
-  /// Map ReportType to ModTarget
-  ModTarget _getModTarget() {
-    switch (widget.type) {
-      case ReportType.post:
-        return ModTarget.post;
-      case ReportType.comment:
-        return ModTarget.comment;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Report ${widget.type.name}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Why are you reporting this ${widget.type.name}?'),
-          const SizedBox(height: 16),
-
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _reportReasons.map((reason) {
-              final isSelected = _selectedReason == reason;
-
-              return ChoiceChip(
-                label: Text(reason),
-                selected: isSelected,
-                onSelected: (selected) {
-                  setState(() => _selectedReason = selected ? reason : null);
-                },
-              );
-            }).toList(),
-          ),
-
-          if (_selectedReason != null) ...[
-            const SizedBox(height: 16),
-            TextField(
-              controller: _detailsController,
-              decoration: const InputDecoration(
-                labelText: 'Additional details (optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: (_selectedReason != null && !_isSubmitting)
-              ? _submitReport
-              : null,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Report'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _submitReport() async {
-    final reason = _selectedReason;
-    if (reason == null) return;
-
-    // Determine target ID based on type
-    final targetId = widget.type == ReportType.post
-        ? widget.postId
-        : widget.commentId;
-
-    if (targetId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to submit report: missing target ID'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      final moderationService = ref.read(moderationServiceProvider);
-      final details = _detailsController.text.trim().isEmpty
-          ? null
-          : _detailsController.text.trim();
-
-      await moderationService.submitReport(
-        target: _getModTarget(),
-        targetId: targetId,
-        reason: _mapReasonToEnum(reason),
-        details: details,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to submit report: ${e.toString()}')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
-    }
-  }
-}
-
-enum ReportType { post, comment }
 
 /// Simple author data class for passing to PostAuthorWidget
 class _AuthorData {

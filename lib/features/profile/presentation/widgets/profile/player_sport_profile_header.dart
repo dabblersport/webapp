@@ -128,7 +128,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.onPrimary.withOpacity(0.12),
+        color: colorScheme.onPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -160,7 +160,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: colorScheme.onPrimary.withOpacity(0.12),
+        color: colorScheme.onPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
@@ -198,7 +198,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
             Text(
               '${xpCurrent.toStringAsFixed(0)} / ${xpTarget.toStringAsFixed(0)}',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: colorScheme.onPrimary.withOpacity(0.75),
+                color: colorScheme.onPrimary.withValues(alpha: 0.75),
               ),
             ),
           ],
@@ -209,7 +209,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress.isNaN ? 0.0 : progress,
             minHeight: 8,
-            backgroundColor: colorScheme.onPrimary.withOpacity(0.2),
+            backgroundColor: colorScheme.onPrimary.withValues(alpha: 0.2),
             valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
           ),
         ),
@@ -258,7 +258,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -271,7 +271,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: color.withOpacity(0.85),
+                  color: color.withValues(alpha: 0.85),
                 ),
               ),
               const SizedBox(height: 2),
@@ -316,7 +316,7 @@ class PlayerSportProfileHeader extends StatelessWidget {
               Text(
                 '+$remainingCount more',
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: color.withOpacity(0.8),
+                  color: color.withValues(alpha: 0.8),
                 ),
               ),
           ],
@@ -374,7 +374,7 @@ class _BadgeChip extends StatelessWidget {
     if (badge.iconUrl.isNotEmpty) {
       return CircleAvatar(
         radius: 18,
-        backgroundColor: color.withOpacity(0.15),
+        backgroundColor: color.withValues(alpha: 0.15),
         backgroundImage: NetworkImage(badge.iconUrl),
       );
     }
@@ -382,7 +382,7 @@ class _BadgeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(

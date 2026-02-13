@@ -52,7 +52,7 @@ class DS {
   // Chip style
   static ChipThemeData get chipTheme => ChipThemeData(
     backgroundColor: border,
-    selectedColor: primary.withOpacity(0.15),
+    selectedColor: primary.withValues(alpha: 0.15),
     shape: RoundedRectangleBorder(borderRadius: chipRadius),
     labelStyle: body,
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -65,7 +65,7 @@ class DS {
     border: Border.all(color: border),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.03),
+        color: Colors.black.withValues(alpha: 0.03),
         blurRadius: 6,
         offset: const Offset(0, 2),
       ),
@@ -102,7 +102,7 @@ class DS {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: primary.withOpacity(0.08),
+                color: primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, size: 48, color: primary),

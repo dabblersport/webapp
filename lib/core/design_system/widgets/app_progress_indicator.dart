@@ -53,7 +53,7 @@ class AppProgressIndicator extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withValues(alpha: 0.2),
           width: 1.0,
         ),
       ),

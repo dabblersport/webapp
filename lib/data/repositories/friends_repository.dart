@@ -30,11 +30,7 @@ abstract class FriendsRepository {
   /// Uses RLS policy `friend_edges_read`.
   Future<Result<List<FriendEdge>, Failure>> listFriendEdges();
 
-  /// Optional helper calling `rpc_block_user`.
-  Future<Result<void, Failure>> blockUser(String peerUserId);
-
-  /// Optional helper calling `rpc_unblock_user`.
-  Future<Result<void, Failure>> unblockUser(String peerUserId);
+  // NOTE: blockUser/unblockUser removed — use BlockRepository from block_providers.dart
 
   /// Get friendship status with a user
   Future<Result<String, Failure>> getFriendshipStatus(String peerUserId);

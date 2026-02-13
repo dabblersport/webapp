@@ -74,7 +74,9 @@ class AppSteps extends StatelessWidget {
                 width: 40.0, // Line width from Figma
                 height: lineThickness,
                 decoration: BoxDecoration(
-                  color: isCompleted ? stepColor : stepColor.withOpacity(0.2),
+                  color: isCompleted
+                      ? stepColor
+                      : stepColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(lineThickness / 2),
                 ),
               ),

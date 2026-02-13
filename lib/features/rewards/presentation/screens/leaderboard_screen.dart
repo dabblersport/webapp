@@ -353,7 +353,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
                 decoration: BoxDecoration(
                   color: isSelected
                       ? context.colors.primary
-                      : context.colors.surface.withOpacity(0.8),
+                      : context.colors.surface.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -435,7 +435,7 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
               Text(
                 'Loading leaderboard...',
                 style: context.textTheme.bodyLarge?.copyWith(
-                  color: context.colors.onSurface.withOpacity(0.6),
+                  color: context.colors.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -691,9 +691,9 @@ class _LeaderboardScreenState extends ConsumerState<LeaderboardScreen>
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

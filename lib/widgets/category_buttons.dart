@@ -121,7 +121,7 @@ class _CategoryButtonState extends State<_CategoryButton> {
                   : _isHovered
                   ? [
                       BoxShadow(
-                        color: widget.accentColor.withOpacity(0.15),
+                        color: widget.accentColor.withValues(alpha: 0.15),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -129,8 +129,8 @@ class _CategoryButtonState extends State<_CategoryButton> {
                   : [
                       BoxShadow(
                         color: isDark
-                            ? Colors.black.withOpacity(0.2)
-                            : Colors.black.withOpacity(0.04),
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : Colors.black.withValues(alpha: 0.04),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -182,12 +182,12 @@ class _CategoryButtonState extends State<_CategoryButton> {
 
   Color _getBorderColor(bool isDark) {
     if (_isHovered || _isPressed) {
-      return widget.accentColor.withOpacity(_isPressed ? 0.6 : 0.4);
+      return widget.accentColor.withValues(alpha: _isPressed ? 0.6 : 0.4);
     }
 
     return Theme.of(
       context,
-    ).colorScheme.outline.withOpacity(isDark ? 0.3 : 0.5);
+    ).colorScheme.outline.withValues(alpha: isDark ? 0.3 : 0.5);
   }
 
   Color _getIconColor(bool isDark) {
@@ -195,7 +195,7 @@ class _CategoryButtonState extends State<_CategoryButton> {
       return widget.accentColor;
     }
 
-    return widget.accentColor.withOpacity(isDark ? 0.9 : 0.85);
+    return widget.accentColor.withValues(alpha: isDark ? 0.9 : 0.85);
   }
 
   Color _getTextColor(bool isDark) {
@@ -203,6 +203,6 @@ class _CategoryButtonState extends State<_CategoryButton> {
       return widget.accentColor;
     }
 
-    return widget.accentColor.withOpacity(isDark ? 0.9 : 0.85);
+    return widget.accentColor.withValues(alpha: isDark ? 0.9 : 0.85);
   }
 }

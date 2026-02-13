@@ -8,6 +8,10 @@ import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/enums/social_enums.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/social/providers/social_providers.dart';
+import 'package:dabbler/features/social/presentation/widgets/create_post/sport_tag_selector.dart';
+import 'package:dabbler/features/social/presentation/widgets/create_post/mention_suggestions.dart';
+import 'package:dabbler/data/models/authentication/user_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:async';
 
@@ -25,10 +29,20 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
   int _blocklistHits = 0;
   Timer? _debounceTimer;
 
+  // Sport tags
+  List<String> _selectedSports = [];
+
+  // @Mention support
+  List<UserModel> _mentionSuggestions = [];
+  bool _showMentionSuggestions = false;
+  Timer? _mentionDebounceTimer;
+  final List<Map<String, String>> _mentionedUsers = []; // {id, displayName}
+
   @override
   void dispose() {
     _textController.dispose();
     _debounceTimer?.cancel();
+    _mentionDebounceTimer?.cancel();
     super.dispose();
   }
 
@@ -42,6 +56,121 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
     } else {
       setState(() => _blocklistHits = 0);
     }
+
+    // Check for @mention trigger
+    _checkForMentionTrigger(text);
+  }
+
+  /// Detects @mention trigger at cursor position and queries profiles.
+  void _checkForMentionTrigger(String text) {
+    _mentionDebounceTimer?.cancel();
+
+    final cursorPos = _textController.selection.baseOffset;
+    if (cursorPos <= 0) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    // Find the @ symbol before the cursor
+    final textBeforeCursor = text.substring(0, cursorPos);
+    final atIndex = textBeforeCursor.lastIndexOf('@');
+    if (atIndex == -1) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    // Ensure @ is at start of word (preceded by space or at start of text)
+    if (atIndex > 0 &&
+        textBeforeCursor[atIndex - 1] != ' ' &&
+        textBeforeCursor[atIndex - 1] != '\n') {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    final query = textBeforeCursor.substring(atIndex + 1);
+    // No spaces in the mention query
+    if (query.contains(' ') || query.contains('\n')) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    if (query.isEmpty) {
+      _hideMentionSuggestions();
+      return;
+    }
+
+    _mentionDebounceTimer = Timer(const Duration(milliseconds: 300), () {
+      _searchMentionProfiles(query);
+    });
+  }
+
+  Future<void> _searchMentionProfiles(String query) async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('profiles')
+          .select('id, user_id, display_name, username, avatar_url')
+          .or('username.ilike.%$query%,display_name.ilike.%$query%')
+          .order('display_name', ascending: true)
+          .limit(6);
+
+      if (mounted) {
+        final suggestions = (rows as List).map((row) {
+          return UserModel(
+            id: row['user_id'] ?? row['id'] ?? '',
+            username: row['username']?.toString(),
+            fullName: row['display_name']?.toString(),
+            email: '',
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+
+        setState(() {
+          _mentionSuggestions = suggestions;
+          _showMentionSuggestions = suggestions.isNotEmpty;
+        });
+      }
+    } catch (e) {
+      _hideMentionSuggestions();
+    }
+  }
+
+  void _hideMentionSuggestions() {
+    if (_showMentionSuggestions) {
+      setState(() {
+        _showMentionSuggestions = false;
+        _mentionSuggestions = [];
+      });
+    }
+  }
+
+  void _onMentionSelected(UserModel user) {
+    final text = _textController.text;
+    final cursorPos = _textController.selection.baseOffset;
+    final textBeforeCursor = text.substring(0, cursorPos);
+    final atIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (atIndex == -1) return;
+
+    final displayName = user.username ?? user.displayName;
+    final beforeAt = text.substring(0, atIndex);
+    final afterCursor = cursorPos < text.length
+        ? text.substring(cursorPos)
+        : '';
+    final newText = '$beforeAt@$displayName $afterCursor';
+
+    _textController.text = newText;
+    _textController.selection = TextSelection.collapsed(
+      offset: atIndex + displayName.length + 2, // +2 for @ and space
+    );
+
+    // Track mentioned user for persistence
+    if (!_mentionedUsers.any((m) => m['id'] == user.id)) {
+      _mentionedUsers.add({'id': user.id, 'displayName': displayName});
+    }
+
+    _hideMentionSuggestions();
+    setState(() {});
   }
 
   Future<void> _checkBlocklist(String text) async {
@@ -148,8 +277,8 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
 
                           return CircleAvatar(
                             radius: 20,
-                            backgroundColor: context.colors.primary.withOpacity(
-                              0.2,
+                            backgroundColor: context.colors.primary.withValues(
+                              alpha: 0.2,
                             ),
                             backgroundImage:
                                 resolvedAvatarUrl != null &&
@@ -254,7 +383,7 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
                     decoration: InputDecoration(
                       hintText: "What's on your mind?",
                       hintStyle: TextStyle(
-                        color: const Color(0xFFEBD7FA).withOpacity(0.70),
+                        color: const Color(0xFFEBD7FA).withValues(alpha: 0.70),
                         fontFamily: 'Roboto',
                         fontSize: 16,
                         fontWeight: FontWeight.w400,
@@ -265,21 +394,25 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(
-                          color: const Color(0xFFEBD7FA).withOpacity(0.24),
+                          color: const Color(
+                            0xFFEBD7FA,
+                          ).withValues(alpha: 0.24),
                           width: 1,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(
-                          color: const Color(0xFFEBD7FA).withOpacity(0.24),
+                          color: const Color(
+                            0xFFEBD7FA,
+                          ).withValues(alpha: 0.24),
                           width: 1,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(22),
                         borderSide: BorderSide(
-                          color: const Color(0xFFEBD7FA).withOpacity(0.5),
+                          color: const Color(0xFFEBD7FA).withValues(alpha: 0.5),
                           width: 1.5,
                         ),
                       ),
@@ -340,6 +473,22 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 16),
+
+                  // Sport/Activity tags
+                  SportTagSelector(
+                    selectedSports: _selectedSports,
+                    onSportsChanged: (sports) {
+                      setState(() => _selectedSports = sports);
+                    },
+                  ),
+
+                  // @Mention suggestions overlay
+                  if (_showMentionSuggestions)
+                    MentionSuggestions(
+                      suggestions: _mentionSuggestions,
+                      onMentionSelected: _onMentionSelected,
+                    ),
                 ],
               ),
             ),
@@ -381,12 +530,17 @@ class _AddPostScreenState extends ConsumerState<AddPostScreen> {
 
       final socialService = SocialService();
 
-      // Create the post (text only for MVP)
+      // Extract mention profile IDs
+      final mentionProfileIds = _mentionedUsers.map((m) => m['id']!).toList();
+
+      // Create the post with tags and mentions
       final post = await socialService.createPost(
         content: _textController.text.trim(),
         mediaUrls: [], // No media in MVP
         locationName: null, // No location in MVP
         visibility: PostVisibility.public,
+        tags: _selectedSports,
+        mentionProfileIds: mentionProfileIds,
       );
 
       // Set primary vibe if selected

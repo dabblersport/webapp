@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dabbler/core/widgets/custom_avatar.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../../utils/enums/social_enums.dart';
 
 class PostPreviewWidget extends StatelessWidget {
@@ -32,7 +32,10 @@ class PostPreviewWidget extends StatelessWidget {
           // Header
           Row(
             children: [
-              const AppAvatar.small(fallbackText: 'User'),
+              DSAvatar.small(
+                displayName: 'User',
+                context: AvatarContext.social,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

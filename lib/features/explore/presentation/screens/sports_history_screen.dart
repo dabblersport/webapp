@@ -188,7 +188,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                         Text(
                           'No past games',
                           style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -356,7 +356,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                       Text(
                         '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime} - ${game.endTime}',
                         style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface.withOpacity(0.9),
+                          color: colorScheme.onSurface.withValues(alpha: 0.9),
                         ),
                       ),
                     ],
@@ -374,7 +374,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                         child: Text(
                           game.venueName ?? 'Venue TBD',
                           style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.9),
+                            color: colorScheme.onSurface.withValues(alpha: 0.9),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

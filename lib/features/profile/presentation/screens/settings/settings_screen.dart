@@ -5,11 +5,11 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
-import 'package:dabbler/themes/material3_extensions.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -39,14 +39,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           route: '/settings/account',
           searchTerms: ['account', 'email', 'password', 'security', 'login'],
         ),
-        // Release 2: Privacy Settings
-        // SettingsItem(
-        //   title: 'Privacy Settings',
-        //   subtitle: 'Control your data and visibility',
-        //   icon: Iconsax.shield_tick_copy,
-        //   route: '/settings/privacy',
-        //   searchTerms: ['privacy', 'visibility', 'data', 'sharing', 'profile'],
-        // ),
+        SettingsItem(
+          title: 'Privacy Settings',
+          subtitle: 'Manage privacy settings and blocked users',
+          icon: Iconsax.slash_copy,
+          route: '/settings/privacy',
+          searchTerms: ['blocked', 'block', 'users', 'privacy', 'safety'],
+        ),
       ],
     ),
     // Release 2: Preferences section
@@ -549,36 +548,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               ),
             ),
           ),
-          // Show limit message if at max profiles
+          // Show existing profiles list when at limit
           if (showLimitMessage)
-            Card(
-              elevation: 0,
-              color: colorScheme.surfaceContainerLow,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Iconsax.info_circle_copy,
-                      color: colorScheme.onSurfaceVariant,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        PersonaRules.profileLimitMessage,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            _buildExistingProfilesList(
+              context,
+              colorScheme,
+              textTheme,
+              isDarkMode,
             ),
           // Show add options if available
           if (filteredPersonas.isNotEmpty) ...[
@@ -608,6 +584,110 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildExistingProfilesList(
+    BuildContext context,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    bool isDarkMode,
+  ) {
+    final availableProfilesAsync = ref.watch(availableProfilesProvider);
+    final activeProfileType = ref.watch(activeProfileTypeProvider);
+
+    return availableProfilesAsync.when(
+      data: (profiles) {
+        if (profiles.isEmpty) return const SizedBox.shrink();
+
+        return Card(
+          elevation: 0,
+          color: colorScheme.categoryProfile.withValues(
+            alpha: isDarkMode ? 0.08 : 0.06,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            children: profiles.asMap().entries.map((entry) {
+              final index = entry.key;
+              final profile = entry.value;
+              final isLast = index == profiles.length - 1;
+              final effectiveType = profile.personaType ?? profile.profileType;
+              final isActive =
+                  effectiveType?.toLowerCase() ==
+                  activeProfileType?.toLowerCase();
+
+              return Column(
+                children: [
+                  ListTile(
+                    onTap: () {
+                      if (!isActive) {
+                        // Switch profile and navigate back to profile screen
+                        ref.read(activeProfileTypeProvider.notifier).state =
+                            effectiveType;
+                        persistActiveProfileType(effectiveType);
+                        context.go('/profile');
+                      }
+                    },
+                    leading: DSAvatar.small(
+                      imageUrl: profile.avatarUrl,
+                      displayName: profile.getDisplayName().isNotEmpty
+                          ? profile.getDisplayName()
+                          : 'Profile',
+                      context: AvatarContext.profile,
+                    ),
+                    title: Text(
+                      profile.getDisplayName().isNotEmpty
+                          ? profile.getDisplayName()
+                          : 'Profile',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    subtitle: Text(
+                      (effectiveType ?? 'player').toUpperCase(),
+                      style: textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    trailing: isActive
+                        ? Icon(
+                            Iconsax.tick_circle_copy,
+                            color: colorScheme.categoryProfile,
+                          )
+                        : Icon(
+                            Iconsax.arrow_right_3_copy,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
+                  ),
+                  if (!isLast)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Divider(
+                        height: 1,
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }).toList(),
+          ),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

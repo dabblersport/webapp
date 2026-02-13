@@ -51,7 +51,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
+          color: theme.colorScheme.primary.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -84,8 +84,8 @@ class ProfileCheckInWidget extends ConsumerWidget {
                 Text(
                   'Completed 14-day challenge',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer.withOpacity(
-                      0.8,
+                    color: theme.colorScheme.onPrimaryContainer.withValues(
+                      alpha: 0.8,
                     ),
                   ),
                 ),

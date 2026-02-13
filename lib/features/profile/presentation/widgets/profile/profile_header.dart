@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
-import 'profile_avatar.dart';
 
 class ProfileHeader extends ConsumerWidget {
   final UserProfile profile;
@@ -30,7 +31,7 @@ class ProfileHeader extends ConsumerWidget {
           end: Alignment.bottomRight,
           colors: [
             Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withOpacity(0.8),
+            Theme.of(context).primaryColor.withValues(alpha: 0.8),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -39,7 +40,7 @@ class ProfileHeader extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -51,11 +52,12 @@ class ProfileHeader extends ConsumerWidget {
             children: [
               Stack(
                 children: [
-                  ProfileAvatar(
+                  DSAvatar.large(
                     imageUrl: profile.avatarUrl,
-                    size: 80,
-                    isOwnProfile: isOwnProfile,
-                    showEditOverlay: false,
+                    displayName: profile.getDisplayName(),
+                    context: isOwnProfile
+                        ? AvatarContext.profile
+                        : AvatarContext.social,
                     onTap: () => _showFullScreenAvatar(context),
                   ),
                   if (showOnlineIndicator)
@@ -92,7 +94,7 @@ class ProfileHeader extends ConsumerWidget {
                       Text(
                         profile.displayName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.8),
                         ),
                       ),
                     ],
@@ -102,7 +104,7 @@ class ProfileHeader extends ConsumerWidget {
                         children: [
                           Icon(
                             Icons.location_city,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             size: 16,
                           ),
                           const SizedBox(width: 4),
@@ -111,7 +113,7 @@ class ProfileHeader extends ConsumerWidget {
                               _getLocation(),
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
-                                    color: Colors.white.withOpacity(0.8),
+                                    color: Colors.white.withValues(alpha: 0.8),
                                   ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -130,14 +132,14 @@ class ProfileHeader extends ConsumerWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Text(
                 profile.bio!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -164,7 +166,11 @@ class ProfileHeader extends ConsumerWidget {
             Icons.sports_esports,
           ),
         ),
-        Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+        Container(
+          width: 1,
+          height: 40,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
         Expanded(
           child: _buildStatItem(
             context,
@@ -173,7 +179,11 @@ class ProfileHeader extends ConsumerWidget {
             Icons.star,
           ),
         ),
-        Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+        Container(
+          width: 1,
+          height: 40,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
         Expanded(
           child: _buildStatItem(
             context,
@@ -182,7 +192,11 @@ class ProfileHeader extends ConsumerWidget {
             Icons.sports,
           ),
         ),
-        Container(width: 1, height: 40, color: Colors.white.withOpacity(0.3)),
+        Container(
+          width: 1,
+          height: 40,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
         Expanded(
           child: _buildStatItem(
             context,
@@ -207,7 +221,7 @@ class ProfileHeader extends ConsumerWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: Colors.white, size: 16),
@@ -223,9 +237,9 @@ class ProfileHeader extends ConsumerWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.white.withOpacity(0.8)),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.white.withValues(alpha: 0.8),
+          ),
         ),
       ],
     );
@@ -300,7 +314,7 @@ class ProfileHeader extends ConsumerWidget {
             return FadeTransition(
               opacity: animation,
               child: Scaffold(
-                backgroundColor: Colors.black.withOpacity(0.9),
+                backgroundColor: Colors.black.withValues(alpha: 0.9),
                 body: Center(
                   child: GestureDetector(
                     onTap: () => Navigator.of(context).pop(),

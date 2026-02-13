@@ -483,6 +483,7 @@ class DataExportService {
           .from('profiles')
           .select('id')
           .eq('user_id', userId)
+          .eq('profile_type', 'personal')
           .maybeSingle();
 
       if (profileResponse == null) {
@@ -681,9 +682,9 @@ class DataExportService {
           .or('user_id.eq.$userId,friend_id.eq.$userId');
 
       final blockedUsers = await _supabase
-          .from('blocked_users')
+          .from('user_blocks')
           .select('*, profiles!blocked_user_id(name)')
-          .eq('blocker_id', userId);
+          .eq('blocker_user_id', userId);
 
       return [
             ...friendships.map(
@@ -696,7 +697,7 @@ class DataExportService {
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'friendships, blocked_users tables',
+              'data_source': 'friendships, user_blocks tables',
               'purpose': 'Social connection management',
               'legal_basis': 'User consent and contract performance',
             },

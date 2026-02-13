@@ -284,19 +284,9 @@ abstract class ProfileRemoteDataSource {
   });
 
   // Social Features
+  // NOTE: blockProfile/unblockProfile/getBlockedProfiles removed — use BlockRepository from block_providers.dart
 
-  /// Block another user's profile
-  /// Throws [ConflictException] if already blocked
-  Future<void> blockProfile(String userId, String blockedUserId);
-
-  /// Unblock a user's profile
-  /// Throws [DataNotFoundException] if not blocked
-  Future<void> unblockProfile(String userId, String blockedUserId);
-
-  /// Get list of blocked profiles
-  Future<List<String>> getBlockedProfiles(String userId);
-
-  /// Check if user is blocked by another user
+  /// Check if user is blocked by another user (queries user_blocks)
   Future<bool> isBlockedBy(String userId, String otherUserId);
 
   /// Report a profile for violations
