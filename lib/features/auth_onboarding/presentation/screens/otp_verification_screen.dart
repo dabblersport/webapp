@@ -445,6 +445,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
     return Scaffold(
       backgroundColor: tokens.main.background,
+      resizeToAvoidBottomInset: false,
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.xs),
         child: ClipRRect(
@@ -452,56 +453,131 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           child: DecoratedBox(
             decoration: BoxDecoration(color: tokens.main.secondaryContainer),
             child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: AppSpacing.xxxl),
+                          Text(
+                            title,
+                            style: theme.textTheme.displaySmall?.copyWith(
+                              color: tokens.main.onSecondaryContainer,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: tokens.main.onSecondaryContainer,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          Row(
                             children: [
-                              const SizedBox(height: AppSpacing.xxxl),
-                              Text(
-                                title,
-                                style: theme.textTheme.displaySmall?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Text(
-                                subtitle,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  height: 1.25,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      _identifier,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                          ),
-                                    ),
+                              Expanded(
+                                child: Text(
+                                  _identifier,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.main.onSecondaryContainer,
                                   ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => context.go(changeRoute),
+                                child: Text(
+                                  changeLabel,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: tokens.main.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xxxl),
+                          _buildOtpInputRow(context, theme, tokens),
+                        ],
+                      ),
+                    ),
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Column(
+                        children: [
+                          const Spacer(),
+                          FilledButton(
+                            onPressed: _isLoading ? null : _handleSubmit,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: tokens.main.primary,
+                              foregroundColor: tokens.main.onPrimary,
+                              minimumSize: const Size.fromHeight(
+                                AppButtonSize.extraLargeHeight,
+                              ),
+                              padding: AppButtonSize.extraLargePadding,
+                              shape: const StadiumBorder(),
+                            ),
+                            child: _isLoading
+                                ? SizedBox(
+                                    height: AppSpacing.xxl,
+                                    width: AppSpacing.xxl,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        tokens.main.onPrimary,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    'Continue',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: tokens.main.onPrimary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                          ),
+                          const SizedBox(height: AppSpacing.xxxl),
+                          Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Didn\'t get a code? ',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: tokens.main.onSecondaryContainer,
+                                  ),
+                                ),
+                                if (_resendCountdown > 0)
+                                  Text(
+                                    'Resend code (${_resendCountdown}s)',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: tokens.main.onSecondaryContainer
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                  )
+                                else
                                   TextButton(
-                                    onPressed: () => context.go(changeRoute),
+                                    onPressed: _isResending
+                                        ? null
+                                        : _handleResend,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
                                     child: Text(
-                                      changeLabel,
+                                      _isResending
+                                          ? 'Sending...'
+                                          : 'Resend code',
                                       style: theme.textTheme.labelLarge
                                           ?.copyWith(
                                             color: tokens.main.primary,
@@ -509,101 +585,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                           ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.xxxl),
-                              _buildOtpInputRow(context, theme, tokens),
-                              const Spacer(),
-                              FilledButton(
-                                onPressed: _isLoading ? null : _handleSubmit,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: tokens.main.primary,
-                                  foregroundColor: tokens.main.onPrimary,
-                                  minimumSize: const Size.fromHeight(
-                                    AppButtonSize.extraLargeHeight,
-                                  ),
-                                  padding: AppButtonSize.extraLargePadding,
-                                  shape: const StadiumBorder(),
-                                ),
-                                child: _isLoading
-                                    ? SizedBox(
-                                        height: AppSpacing.xxl,
-                                        width: AppSpacing.xxl,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                tokens.main.onPrimary,
-                                              ),
-                                        ),
-                                      )
-                                    : Text(
-                                        'Continue',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              color: tokens.main.onPrimary,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                      ),
-                              ),
-                              const SizedBox(height: AppSpacing.xxxl),
-                              Center(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Didn\'t get a code? ',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                          ),
-                                    ),
-                                    if (_resendCountdown > 0)
-                                      Text(
-                                        'Resend code (${_resendCountdown}s)',
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(
-                                              color: tokens
-                                                  .main
-                                                  .onSecondaryContainer
-                                                  .withValues(alpha: 0.6),
-                                            ),
-                                      )
-                                    else
-                                      TextButton(
-                                        onPressed: _isResending
-                                            ? null
-                                            : _handleResend,
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: Text(
-                                          _isResending
-                                              ? 'Sending...'
-                                              : 'Resend code',
-                                          style: theme.textTheme.labelLarge
-                                              ?.copyWith(
-                                                color: tokens.main.primary,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xxxl),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: AppSpacing.xxxl),
+                        ],
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
             ),
           ),
