@@ -21,12 +21,14 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: 3.38.9
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href /webapp/
+        run: flutter build web --release --base-href /webapp/ --no-wasm-dry-run
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
