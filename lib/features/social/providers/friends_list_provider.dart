@@ -77,7 +77,8 @@ final userFriendsListProvider = FutureProvider.autoDispose
         final profiles = await supabase
             .from('profiles')
             .select('user_id, display_name, avatar_url, username, verified')
-            .inFilter('user_id', friendIds.toList());
+            .inFilter('user_id', friendIds.toList())
+            .eq('is_active', true);
 
         return profiles.map((p) => Map<String, dynamic>.from(p)).toList();
       } catch (e) {

@@ -1,7 +1,7 @@
 import 'package:fpdart/fpdart.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/data/models/social/post.dart'; // For ConversationType
+import 'package:dabbler/data/models/social/conversation_type.dart'; // For ConversationType
 import '../../../../utils/enums/social_enums.dart'; // For MessageType
 import 'package:dabbler/data/models/social/conversation_model.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';

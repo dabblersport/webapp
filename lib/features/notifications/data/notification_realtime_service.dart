@@ -2,10 +2,10 @@ import 'dart:developer' as dev;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/data/models/notifications/notification_model.dart';
+import 'models/notification_model.dart';
 
 /// Callback signature for new realtime notifications.
-typedef OnNewNotification = void Function(NotificationModel notification);
+typedef OnNewNotification = void Function(AppNotification notification);
 
 /// Handles Supabase Realtime channel subscription for INSERT events
 /// on the `public.notifications` table, filtered by `to_user_id`.
@@ -38,7 +38,7 @@ class NotificationRealtimeService {
     required OnNewNotification onNewNotification,
   }) {
     // Already listening for the same user – nothing to do.
-    if (_isSubscribed && _subscribedUserId == userId) {
+    if (_isSubscribed && _subscribedUserId == userId && _channel != null) {
       dev.log(
         'NotificationRealtimeService: already subscribed for user $userId',
         name: 'notifications',
@@ -46,14 +46,19 @@ class NotificationRealtimeService {
       return;
     }
 
-    // Different user or stale channel – tear down first.
-    if (_isSubscribed) {
+    // Tear down any existing channel first.
+    if (_channel != null) {
       unsubscribe();
     }
 
     _subscribedUserId = userId;
 
-    _channel = _client.channel('notifications:$userId');
+    // Use a unique channel name to avoid conflicts with stale channel
+    // references in the Supabase client after rapid unsubscribe/subscribe.
+    final channelName =
+        'notifications:$userId:${DateTime.now().microsecondsSinceEpoch}';
+
+    _channel = _client.channel(channelName);
 
     _channel!
         .onPostgresChanges(
@@ -70,7 +75,7 @@ class NotificationRealtimeService {
               final newRecord = payload.newRecord;
               if (newRecord.isEmpty) return;
 
-              final model = NotificationModel.fromJson(newRecord);
+              final model = AppNotification.fromJson(newRecord);
               onNewNotification(model);
             } catch (e, st) {
               dev.log(

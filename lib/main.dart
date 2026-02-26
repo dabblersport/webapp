@@ -5,8 +5,9 @@ import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/features/social/services/realtime_likes_service.dart';
 import 'package:dabbler/design_system/theme/app_theme.dart';
+import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
+    as push_mobile;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -111,8 +112,19 @@ Future<void> main() async {
       ),
     );
 
-    // Push notification service is now initialized on-demand in home screen
-    // On web, this will be a no-op to avoid Firebase Messaging web compatibility issues
+    // Push notification service — initialize on mobile to set up
+    // foreground handling, token refresh, and notification tap listeners.
+    // Wire the tap callback BEFORE init so getInitialMessage can use it.
+    if (!kIsWeb) {
+      push_mobile.PushNotificationService.instance.onNotificationTap = (route) {
+        // Delay slightly to ensure router/navigator is mounted on cold start
+        Future.delayed(const Duration(milliseconds: 500), () {
+          appRouter.push(route);
+        });
+      };
+      // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
+      unawaited(push_mobile.PushNotificationService.instance.init());
+    }
 
     // Log the Supabase authorization token (JWT) after initialization and sign-in
     final authService = Supabase.instance.client.auth;
@@ -134,12 +146,7 @@ Future<void> main() async {
       unawaited(AuthService().refreshSession());
     });
 
-    // Initialize realtime likes service for social features (non-blocking).
-    // Don't await websocket handshakes — they can timeout on flaky networks
-    // and would delay app launch. The service handles retries internally.
-    if (FeatureFlags.socialFeed) {
-      unawaited(RealtimeLikesService().initialize());
-    }
+    // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
 
     runApp(const ProviderScope(child: MyApp()));
   } catch (e) {

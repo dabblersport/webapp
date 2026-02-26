@@ -6,10 +6,17 @@ class GetProfileUseCase {
 
   GetProfileUseCase(this.repository);
 
-  Future<UserProfile?> call(String userId, {String? profileType}) async {
+  Future<UserProfile?> call(
+    String userId, {
+    String? profileType,
+    bool filterActive = true,
+    String? profileId,
+  }) async {
     final result = await repository.getProfile(
       userId,
       profileType: profileType,
+      filterActive: filterActive,
+      profileId: profileId,
     );
     return result.fold((_) => null, (profile) => profile);
   }

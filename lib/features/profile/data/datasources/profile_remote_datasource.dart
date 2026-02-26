@@ -127,6 +127,8 @@ abstract class ProfileRemoteDataSource {
     String userId, {
     bool includeSports = true,
     String? profileType,
+    bool filterActive = true,
+    String? profileId,
   });
 
   /// Create a new profile

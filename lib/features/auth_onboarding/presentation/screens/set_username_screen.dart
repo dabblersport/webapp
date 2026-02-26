@@ -277,10 +277,23 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
     // Create the profile
     final service = ProfileCreationService(Supabase.instance.client);
-    await service.createProfile(
-      data: completeData,
-      deactivateProfileId: completeData.existingProfileId,
-    );
+    try {
+      await service.createProfile(
+        data: completeData,
+        deactivateProfileId: completeData.existingProfileId,
+      );
+    } on ProfileLimitException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      return;
+    }
 
     // Clear add persona data
     ref.read(addPersonaDataProvider.notifier).clear();

@@ -12,85 +12,12 @@ import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
 import '../../widgets/profile/player_sport_profile_header.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed/post_card.dart';
-import 'package:dabbler/data/models/social/post_model.dart';
-import 'package:dabbler/features/social/services/social_service.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
-
-/// Provider to fetch all posts by a user for the activities tab
-final userPostsProvider = FutureProvider.family<List<PostModel>, String>((
-  ref,
-  userId,
-) async {
-  final supabase = Supabase.instance.client;
-
-  try {
-    // Query posts by author_user_id, similar to SocialService.getFeedPosts
-    final postsResponse = await supabase
-        .from('posts')
-        .select(
-          '*, vibe:vibes!primary_vibe_id(emoji, label_en, key, color_hex)',
-        )
-        .eq('author_user_id', userId)
-        .eq('is_deleted', false)
-        .eq('is_hidden_admin', false)
-        .order('created_at', ascending: false)
-        .limit(50);
-
-    // Fetch author profile
-    final profileResponse = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, verified')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-    // Fetch current user's liked post IDs
-    final user = supabase.auth.currentUser;
-    final Set<String> likedPostIds = {};
-    if (user != null && postsResponse.isNotEmpty) {
-      final postIds = postsResponse
-          .map((post) => post['id'].toString())
-          .toList();
-      final likedPosts = await supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', user.id)
-          .inFilter('post_id', postIds);
-      likedPostIds.addAll(likedPosts.map((like) => like['post_id'].toString()));
-    }
-
-    // Transform database posts to PostModel
-    final posts = postsResponse.map((post) {
-      final postId = post['id'].toString();
-
-      // Extract media URL
-      List<String> mediaUrls = [];
-      final mediaData = post['media'];
-      if (mediaData is Map<String, dynamic>) {
-        final bucket = mediaData['bucket'] as String?;
-        final path = mediaData['path'] as String?;
-        if (bucket != null && path != null) {
-          final publicUrl = supabase.storage.from(bucket).getPublicUrl(path);
-          if (publicUrl.isNotEmpty) {
-            mediaUrls.add(publicUrl);
-          }
-        }
-      }
-
-      return {
-        ...post,
-        'profiles': profileResponse ?? {},
-        'is_liked': likedPostIds.contains(postId),
-        'media_urls': mediaUrls,
-      };
-    }).toList();
-
-    return posts.map((post) => PostModel.fromJson(post)).toList();
-  } catch (e) {
-    return [];
-  }
-});
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart'
+    show userPostsProvider;
+import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 
 class _UserActivitiesTab extends ConsumerWidget {
   final String userId;
@@ -101,7 +28,11 @@ class _UserActivitiesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final postsAsync = ref.watch(userPostsProvider(userId));
+    final profileId = ref.watch(profileControllerProvider).profile?.id;
+    final postsAsync = profileId != null
+        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
     return postsAsync.when(
       data: (posts) {
         if (posts.isEmpty) {
@@ -109,73 +40,24 @@ class _UserActivitiesTab extends ConsumerWidget {
             assetPath: _emptyIllustrationAssetPath,
           );
         }
-        // TwoSectionLayout already provides the scrolling container.
-        // Avoid nesting a ListView inside a SingleChildScrollView.
         return Column(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(posts.length, (index) {
-            final post = posts[index];
-            return PostCard(
-              post: post,
-              onLike: () => _handleLikePost(context, ref, post.id),
-              onComment: () => _handleCommentPost(context, post.id),
-              onDelete: () {
-                // Refresh activities after deletion
-                ref.invalidate(userPostsProvider(userId));
-              },
-              onPostTap: () => context.pushNamed(
-                RouteNames.socialPostDetail,
-                pathParameters: {'postId': post.id},
-              ),
-              onProfileTap: () {
-                context.go('${RoutePaths.userProfile}/$userId');
-              },
+          children: posts.map((post) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: FeedPostCard(post: post),
             );
-          }),
+          }).toList(),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.0),
-          child: Text('Failed to load activities.'),
-        ),
+      loading: () => const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
       ),
-    );
-  }
-
-  Future<void> _handleLikePost(
-    BuildContext context,
-    WidgetRef ref,
-    String postId,
-  ) async {
-    try {
-      final socialService = SocialService();
-      await socialService.toggleLike(postId);
-
-      // Wait for database trigger to update like_count
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      // Refresh posts to show updated like count
-      if (context.mounted) {
-        ref.invalidate(userPostsProvider(userId));
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to like post: $e'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  void _handleCommentPost(BuildContext context, String postId) {
-    context.pushNamed(
-      RouteNames.socialPostDetail,
-      pathParameters: {'postId': postId},
+      error: (_, __) => const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: Text('Failed to load posts.')),
+      ),
     );
   }
 }
@@ -301,7 +183,12 @@ class _ThemeableUndrawSvg extends StatelessWidget {
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
 
-  const UserProfileScreen({super.key, required this.userId});
+  /// Optional profile ID — when provided the screen shows this exact profile
+  /// and will NOT redirect to [ProfileScreen] even if [userId] belongs to the
+  /// current user (handles the "view own inactive profile" case).
+  final String? profileId;
+
+  const UserProfileScreen({super.key, required this.userId, this.profileId});
 
   @override
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -328,9 +215,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     _animationController.forward();
 
     // Check if viewing own profile and load data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadProfileData();
       _checkOwnProfile();
-      _loadProfileData();
     });
   }
 
@@ -343,11 +230,24 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   Future<void> _checkOwnProfile() async {
     final currentUser = ref.read(currentUserProvider);
-    if (currentUser != null && currentUser.id == widget.userId) {
-      // Redirect to own profile screen
-      if (mounted) {
-        context.go(RoutePaths.profile);
-      }
+    if (currentUser == null || currentUser.id != widget.userId) return;
+
+    // A specific profileId was requested — if it is not the active profile
+    // the caller explicitly wants to view an inactive persona, so stay here.
+    final myProfileId = await ref.read(myProfileIdProvider.future);
+    if (!mounted) return;
+
+    if (widget.profileId != null && widget.profileId != myProfileId) {
+      // Viewing own inactive profile — do NOT redirect to ProfileScreen.
+      return;
+    }
+
+    final loaded = ref.read(profileControllerProvider);
+    final viewedProfileId = loaded.profile?.id;
+
+    // If the loaded profile matches the active profile, redirect to own screen.
+    if (viewedProfileId != null && viewedProfileId == myProfileId) {
+      context.go(RoutePaths.profile);
     }
   }
 
@@ -356,7 +256,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final sportsController = ref.read(sportsProfileControllerProvider.notifier);
 
     await Future.wait<void>([
-      profileController.loadProfile(widget.userId),
+      profileController.loadProfile(
+        widget.userId,
+        filterActive: false,
+        profileId: widget.profileId,
+      ),
       sportsController.loadSportsProfiles(widget.userId),
     ]);
   }
@@ -688,8 +592,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     TextTheme textTheme,
     Color baseOnTop,
   ) {
-    final postsAsync = ref.watch(userPostsProvider(widget.userId));
     final profileId = ref.watch(profileControllerProvider).profile?.id;
+    final postsAsync = profileId != null
+        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
     final followingCountAsync = profileId != null
         ? ref.watch(followingCountProvider(profileId))
         : const AsyncData<int>(0);

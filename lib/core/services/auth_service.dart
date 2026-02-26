@@ -242,9 +242,25 @@ class AuthService {
 
       // No profile creation here - all DB writes deferred to completeOnboarding()
       return response;
+    } on AuthException catch (e) {
+      throw Exception(_friendlyOtpError(e));
     } catch (e) {
-      throw Exception('OTP verification failed: $e');
+      throw Exception('Something went wrong. Please try again.');
     }
+  }
+
+  /// Maps Supabase OTP auth errors to user-friendly messages.
+  String _friendlyOtpError(AuthException e) {
+    final msg = e.message.toLowerCase();
+    if (msg.contains('expired') ||
+        msg.contains('invalid') ||
+        e.code == 'otp_expired') {
+      return 'That code has expired or is incorrect. Please request a new one and try again.';
+    }
+    if (msg.contains('rate limit') || msg.contains('too many')) {
+      return 'Too many attempts. Please wait a moment before trying again.';
+    }
+    return 'Verification failed. Please try again.';
   }
 
   /// Legacy verifyOtp method for phone - use unified verifyOtp instead

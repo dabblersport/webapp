@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../utils/enums/social_enums.dart'; // For MessageType enum
-import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/models/social/conversation_type.dart';
 import 'package:dabbler/data/models/social/conversation_model.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
 

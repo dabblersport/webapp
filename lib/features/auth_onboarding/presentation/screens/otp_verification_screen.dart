@@ -232,9 +232,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ? main_dark_tokens.theme
             : main_light_tokens.theme;
 
+        // Strip the Exception wrapper added by auth_service for a clean message.
+        final rawMessage = e.toString().replaceFirst(
+          RegExp(r'^Exception:\s*'),
+          '',
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text(rawMessage),
             backgroundColor: tokens.main.error,
           ),
         );

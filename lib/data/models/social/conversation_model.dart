@@ -1,5 +1,5 @@
 import 'package:dabbler/data/models/social/conversation.dart';
-import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/models/social/conversation_type.dart';
 import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'chat_message_model.dart';
 

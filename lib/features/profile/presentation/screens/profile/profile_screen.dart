@@ -22,9 +22,10 @@ import '../../../../../utils/constants/route_constants.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/data/models/sport_tags.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed/post_card.dart';
-import 'package:dabbler/data/models/social/post_model.dart';
-import 'package:dabbler/features/social/services/social_service.dart';
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart'
+    show userPostsProvider;
+import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 // Extracted widgets for hero and basics live alongside this screen for now.
 // If you re-enable them, ensure the import paths match actual file locations.
 
@@ -64,81 +65,6 @@ final myPostsCountProvider = FutureProvider.autoDispose<int>((ref) async {
     return (response as List).length;
   } catch (e) {
     return 0;
-  }
-});
-
-/// Provider to fetch current user's posts
-final myPostsProvider = FutureProvider.autoDispose<List<PostModel>>((
-  ref,
-) async {
-  final supabase = Supabase.instance.client;
-  final userId = supabase.auth.currentUser?.id;
-  if (userId == null) return [];
-
-  try {
-    // Query posts by author_user_id
-    final postsResponse = await supabase
-        .from('posts')
-        .select(
-          '*, vibe:vibes!primary_vibe_id(emoji, label_en, key, color_hex)',
-        )
-        .eq('author_user_id', userId)
-        .eq('is_deleted', false)
-        .eq('is_hidden_admin', false)
-        .order('created_at', ascending: false)
-        .limit(50);
-
-    // Fetch author profile
-    final profileResponse = await supabase
-        .from('profiles')
-        .select('user_id, display_name, avatar_url, verified')
-        .eq('user_id', userId)
-        .eq('profile_type', 'personal')
-        .maybeSingle();
-
-    // Fetch current user's liked post IDs
-    final Set<String> likedPostIds = {};
-    if (postsResponse.isNotEmpty) {
-      final postIds = postsResponse
-          .map((post) => post['id'].toString())
-          .toList();
-      final likedPosts = await supabase
-          .from('post_likes')
-          .select('post_id')
-          .eq('user_id', userId)
-          .inFilter('post_id', postIds);
-      likedPostIds.addAll(likedPosts.map((like) => like['post_id'].toString()));
-    }
-
-    // Transform database posts to PostModel
-    final posts = postsResponse.map((post) {
-      final postId = post['id'].toString();
-
-      // Extract media URL
-      List<String> mediaUrls = [];
-      final mediaData = post['media'];
-      if (mediaData is Map<String, dynamic>) {
-        final bucket = mediaData['bucket'] as String?;
-        final path = mediaData['path'] as String?;
-        if (bucket != null && path != null) {
-          final publicUrl = supabase.storage.from(bucket).getPublicUrl(path);
-          if (publicUrl.isNotEmpty) {
-            mediaUrls.add(publicUrl);
-          }
-        }
-      }
-
-      return {
-        ...post,
-        'profiles': profileResponse ?? {},
-        'is_liked': likedPostIds.contains(postId),
-        'media_urls': mediaUrls,
-      };
-    }).toList();
-
-    return posts.map((post) => PostModel.fromJson(post)).toList();
-  } catch (e) {
-    return [];
   }
 });
 
@@ -251,7 +177,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         final effectiveType = profile.personaType ?? profile.profileType;
         _selectedProfileType = effectiveType;
         ref.read(activeProfileTypeProvider.notifier).state = effectiveType;
-        persistActiveProfileType(effectiveType);
 
         // Load profile-specific data using profile_id
         final profileId = profile.id;
@@ -278,6 +203,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     setState(() {
       _selectedProfileType = profileType;
     });
+
+    // Update is_active in the database: deactivate old, activate new
+    await ref
+        .read(personaServiceProvider.notifier)
+        .switchActiveProfile(profileType);
 
     await _loadProfileData(profileType: profileType);
   }
@@ -2178,61 +2108,50 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildPostsActivitiesSection(BuildContext context) {
-    final postsAsync = ref.watch(myPostsProvider);
+    final profileId = ref.watch(profileControllerProvider).profile?.id;
+    final postsAsync = profileId != null
+        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
     final textTheme = Theme.of(context).textTheme;
 
-    return Container(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Posts & Activities',
-            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 16),
-          postsAsync.when(
-            data: (posts) {
-              if (posts.isEmpty) {
-                return _buildActivitiesEmptyState(context);
-              }
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(posts.length, (index) {
-                  final post = posts[index];
-                  return PostCard(
-                    post: post,
-                    onLike: () => _handleLikePost(context, post.id),
-                    onComment: () => _handleCommentPost(context, post.id),
-                    onDelete: () {
-                      ref.invalidate(myPostsProvider);
-                      ref.invalidate(myPostsCountProvider);
-                    },
-                    onPostTap: () => context.pushNamed(
-                      RouteNames.socialPostDetail,
-                      pathParameters: {'postId': post.id},
-                    ),
-                    onProfileTap: () {
-                      // Already on own profile, no need to navigate
-                    },
-                  );
-                }),
-              );
-            },
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (_, __) => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: Text('Failed to load activities.'),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Posts & Activities',
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 16),
+        postsAsync.when(
+          data: (posts) {
+            if (posts.isEmpty) {
+              return _buildActivitiesEmptyState(context);
+            }
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(posts.length, (index) {
+                final post = posts[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: FeedPostCard(post: post),
+                );
+              }),
+            );
+          },
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: CircularProgressIndicator(),
             ),
           ),
-        ],
-      ),
+          error: (_, __) => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text('Failed to load activities.'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -2277,35 +2196,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _handleLikePost(BuildContext context, String postId) async {
-    try {
-      final socialService = SocialService();
-      await socialService.toggleLike(postId);
-
-      await Future.delayed(const Duration(milliseconds: 400));
-
-      if (context.mounted) {
-        ref.invalidate(myPostsProvider);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to like post: $e'),
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    }
-  }
-
-  void _handleCommentPost(BuildContext context, String postId) {
-    context.pushNamed(
-      RouteNames.socialPostDetail,
-      pathParameters: {'postId': postId},
     );
   }
 
@@ -2550,6 +2440,20 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
 
   void _startPersonaFlow(PersonaAvailability availability) {
     final personaState = ref.read(personaServiceProvider);
+
+    // Re-check active profile count before navigation
+    if (personaState.isAtProfileLimit &&
+        availability.actionType == PersonaActionType.add) {
+      Navigator.pop(context); // Close the sheet
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(PersonaRules.profileLimitMessage),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     final primaryProfile = personaState.primaryProfile;
 
     // Initialize add persona data with shared attributes

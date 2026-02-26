@@ -1,21 +1,19 @@
-import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import '../models/vibe.dart';
+import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/data/models/social/vibe.dart';
+import 'package:dabbler/data/repositories/base_repository.dart';
 
-abstract class VibesRepository {
-  /// Read the current vibe (latest row) for a post if visible to the viewer.
-  Future<Result<Vibe?, Failure>> getForPost(String postId);
+/// Repository for loading vibes from `public.vibes`.
+class VibesRepository extends BaseRepository {
+  VibesRepository(super.svc);
 
-  /// Return counts of each vibe token present for a post.
-  /// Implemented client-side by grouping returned rows.
-  Future<Result<Map<String, int>, Failure>> countsForPost(String postId);
-
-  /// Set/replace the author's vibe for a post (RLS allows only author/admin).
-  Future<Result<void, Failure>> setVibe({
-    required String postId,
-    required String vibe,
+  /// All active vibes, ordered by sort_order.
+  Future<Result<List<Vibe>, Failure>> getActiveVibes() => guard(() async {
+    final rows = await svc.client
+        .from('vibes')
+        .select()
+        .eq('is_active', true)
+        .order('sort_order');
+    return rows.map((r) => Vibe.fromMap(r)).toList();
   });
-
-  /// Clear vibe for a post (author/admin only).
-  Future<Result<void, Failure>> clearVibe(String postId);
 }

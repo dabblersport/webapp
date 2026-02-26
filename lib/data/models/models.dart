@@ -42,17 +42,16 @@ export 'games/venue_model.dart';
 export 'social/block_record_model.dart';
 export 'social/chat_message.dart';
 export 'social/chat_message_model.dart';
-export 'social/comment_model.dart';
+export 'social/comment.dart';
 export 'social/conversation.dart';
 export 'social/conversation_model.dart';
+export 'social/conversation_type.dart';
 export 'social/friend.dart';
 export 'social/friend_model.dart';
 export 'social/friend_request.dart';
 export 'social/friend_request_model.dart';
 export 'social/post.dart';
-export 'social/post_model.dart';
-export 'social/reaction_model.dart';
-export 'social/social_feed_model.dart';
+export 'social/post_enums.dart';
 
 // Rewards models
 export 'rewards/achievement.dart';

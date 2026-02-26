@@ -1,130 +1,197 @@
-import '../../../../utils/enums/social_enums.dart';
+import 'dart:convert';
 
-/// Domain entity for social posts.
-///
-/// This is the UI/domain representation built on top of the canonical
-/// `public.posts` schema and joined profile data.
-class Post {
-  final String id;
-  final String authorId;
-  final String authorName;
-  final String authorAvatar;
-  final String? authorProfileId; // author_profile_id from posts table
-  // Core content
-  final String content;
-  final List<String> mediaUrls;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  // Aggregated stats
-  final int likesCount;
-  final int commentsCount;
-  final int sharesCount;
-  // Visibility & routing
-  final PostVisibility visibility;
-  // Game / location context (optional)
-  final String? gameId;
-  final String? cityName;
-  final String? venueId; // venue_id from posts table
-  final String? locationTagId; // location_tag_id from posts table
-  // Per-user state
-  final bool isLiked;
-  final bool isBookmarked;
-  // Author profile details
-  final String? authorBio;
-  final bool authorVerified;
-  // Content metadata
-  final List<String> tags;
-  final List<String> mentionedUsers;
-  // Editing state
-  final bool isEdited;
-  final DateTime? editedAt;
-  // Conversation / sharing
-  final String? replyToPostId;
-  final String? shareOriginalId;
-  // Activity-specific fields for unified activity feed
-  final String? activityType;
-  final Map<String, dynamic>? activityData;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  /// Post kind maps directly to `public.posts.kind` (e.g. 'moment', 'dab', 'kickin').
-  final String kind;
+import 'post_enums.dart';
+import 'vibe.dart';
 
-  /// Primary vibe ID maps to `public.posts.primary_vibe_id` (nullable).
-  final String? primaryVibeId;
+part 'post.freezed.dart';
+part 'post.g.dart';
 
-  /// Primary vibe full data (joined from vibes table via primary_vibe_id)
-  final Map<String, dynamic>? primaryVibe;
+/// Domain model for a post, mapping 1:1 to the `posts` table.
+@freezed
+class Post with _$Post {
+  const factory Post({
+    required String id,
+    @JsonKey(name: 'author_profile_id') required String authorProfileId,
+    @JsonKey(name: 'author_user_id') required String authorUserId,
+    @JsonKey(name: 'author_display_name') String? authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
+    @JsonKey(name: 'author_username') String? authorUsername,
 
-  /// Vibe emoji for display (joined from vibes table)
-  final String? vibeEmoji;
+    /// `post_kind` enum column (NOT NULL in DB).
+    @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
+    required PostKind kind,
 
-  /// Vibe label for display (joined from vibes table)
-  final String? vibeLabel;
+    /// `post_type_enum` column (nullable in DB, default 'dab').
+    @JsonKey(
+      name: 'post_type',
+      fromJson: _postTypeFromJson,
+      toJson: _postTypeToJson,
+    )
+    @Default(PostType.dab)
+    PostType postType,
 
-  /// All assigned vibes from post_vibes table (joined)
-  final List<Map<String, dynamic>> postVibes;
+    /// `origin_type_enum` column (nullable in DB, default 'manual').
+    @JsonKey(
+      name: 'origin_type',
+      fromJson: _originTypeFromJson,
+      toJson: _originTypeToJson,
+    )
+    @Default(OriginType.manual)
+    OriginType originType,
 
-  /// Reactions from post_reactions table (who reacted with which vibe)
-  final List<Map<String, dynamic>> reactions;
+    /// Text column: public | followers | circle | squad | private | link.
+    @JsonKey(fromJson: _visibilityFromJson, toJson: _visibilityToJson)
+    required PostVisibility visibility,
 
-  /// Mentions from post_mentions table (who was mentioned)
-  final List<Map<String, dynamic>> mentions;
+    @JsonKey(name: 'link_token') String? linkToken,
+    String? body,
+    String? lang,
+    String? sport,
 
-  /// Location tag data from location_tags table (joined)
-  final Map<String, dynamic>? locationTag;
+    /// jsonb column, default '[]'. Supabase returns as List.
+    @JsonKey(fromJson: _mediaFromJson, toJson: _mediaToJson)
+    @Default(<dynamic>[])
+    List<dynamic> media,
 
-  /// Media metadata from posts.media jsonb
-  final List<Map<String, dynamic>> mediaMetadata;
+    @JsonKey(name: 'venue_id') String? venueId,
+    @JsonKey(name: 'geo_lat') double? geoLat,
+    @JsonKey(name: 'geo_lng') double? geoLng,
+    @JsonKey(name: 'game_id') String? gameId,
+    @JsonKey(name: 'sport_id') String? sportId,
+    @JsonKey(name: 'location_tag_id') String? locationTagId,
+    @JsonKey(name: 'vibe_id') String? primaryVibeId,
+    @JsonKey(name: 'origin_id') String? originId,
+    @JsonKey(name: 'content_class') String? contentClass,
 
-  const Post({
-    required this.id,
-    required this.authorId,
-    required this.authorName,
-    required this.authorAvatar,
-    this.authorProfileId,
-    required this.content,
-    required this.mediaUrls,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.likesCount,
-    required this.commentsCount,
-    required this.sharesCount,
-    required this.visibility,
-    this.gameId,
-    this.cityName,
-    this.venueId,
-    this.locationTagId,
-    this.isLiked = false,
-    this.isBookmarked = false,
-    this.authorBio,
-    this.authorVerified = false,
-    this.tags = const [],
-    this.mentionedUsers = const [],
-    this.isEdited = false,
-    this.editedAt,
-    this.replyToPostId,
-    this.shareOriginalId,
-    this.activityType,
-    this.activityData,
-    this.kind = 'moment',
-    this.primaryVibeId,
-    this.primaryVibe,
-    this.vibeEmoji,
-    this.vibeLabel,
-    this.postVibes = const [],
-    this.reactions = const [],
-    this.mentions = const [],
-    this.locationTag,
-    this.mediaMetadata = const [],
-  });
+    /// text[] column, nullable in DB, default '{}'.
+    @JsonKey(fromJson: _tagsFromJson, toJson: _tagsToJson)
+    @Default(<String>[])
+    List<String> tags,
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Post && runtimeType == other.runtimeType && id == other.id;
+    @JsonKey(name: 'like_count') @Default(0) int likeCount,
+    @JsonKey(name: 'comment_count') @Default(0) int commentCount,
+    @JsonKey(name: 'view_count') @Default(0) int viewCount,
+    @JsonKey(name: 'priority_score') @Default(0) int priorityScore,
 
-  @override
-  int get hashCode => id.hashCode;
+    @JsonKey(name: 'is_deleted') @Default(false) bool isDeleted,
+    @JsonKey(name: 'is_hidden_admin') @Default(false) bool isHiddenAdmin,
+    @JsonKey(name: 'is_active') @Default(true) bool isActive,
+    @JsonKey(name: 'allow_reposts') @Default(true) bool allowReposts,
+    @JsonKey(name: 'is_pinned') @Default(false) bool isPinned,
+    @JsonKey(name: 'is_edited') @Default(false) bool isEdited,
+    @JsonKey(name: 'requires_moderation')
+    @Default(false)
+    bool requiresModeration,
+
+    @JsonKey(name: 'persona_type_snapshot') String? personaTypeSnapshot,
+
+    /// jsonb column, nullable in DB, default '{}'. Supabase returns as Map.
+    @JsonKey(
+      name: 'reaction_breakdown',
+      fromJson: _reactionBreakdownFromJson,
+      toJson: _reactionBreakdownToJson,
+    )
+    @Default(<String, dynamic>{})
+    Map<String, dynamic> reactionBreakdown,
+
+    /// Vibes from the direct `vibe_id` FK, synthesised by the repository
+    /// into the `post_vibes` key so [_vibesFromJson] can parse them.
+    @JsonKey(name: 'post_vibes', fromJson: _vibesFromJson, toJson: _vibesToJson)
+    @Default(<Vibe>[])
+    List<Vibe> vibes,
+
+    @JsonKey(name: 'created_at') required DateTime createdAt,
+    @JsonKey(name: 'updated_at') required DateTime updatedAt,
+    @JsonKey(name: 'expires_at') DateTime? expiresAt,
+    @JsonKey(name: 'edited_at') DateTime? editedAt,
+  }) = _Post;
+
+  factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
 }
 
-/// Enum for conversation types
-enum ConversationType { direct, group, game, support }
+// ── Private helpers for enum serialization ────────────────────────────
+
+PostKind _postKindFromJson(String value) => PostKind.fromString(value);
+String _postKindToJson(PostKind v) => v.name;
+
+PostType _postTypeFromJson(String? value) =>
+    value == null ? PostType.dab : PostType.fromString(value);
+String _postTypeToJson(PostType v) => v.dbValue;
+
+OriginType _originTypeFromJson(String? value) =>
+    value == null ? OriginType.manual : OriginType.fromString(value);
+String _originTypeToJson(OriginType v) => v.name;
+
+PostVisibility _visibilityFromJson(String value) =>
+    PostVisibility.fromString(value);
+String _visibilityToJson(PostVisibility v) => v.name;
+
+// ── Private helpers for JSON collection fields ────────────────────────
+
+List<dynamic> _mediaFromJson(dynamic value) {
+  if (value is List) return value;
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is List) return decoded;
+    } catch (_) {
+      return [];
+    }
+  }
+  return [];
+}
+
+List<dynamic> _mediaToJson(List<dynamic> v) => v;
+
+List<String> _tagsFromJson(dynamic value) =>
+    _toDynamicList(value).map((e) => e.toString()).toList();
+List<String> _tagsToJson(List<String> v) => v;
+
+Map<String, dynamic> _reactionBreakdownFromJson(dynamic value) {
+  if (value is Map) {
+    return value.cast<String, dynamic>();
+  }
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is Map) return decoded.cast<String, dynamic>();
+    } catch (_) {
+      return {};
+    }
+  }
+  return {};
+}
+
+Map<String, dynamic> _reactionBreakdownToJson(Map<String, dynamic> v) => v;
+
+// ── Vibes nested-select helpers ───────────────────────────────────
+
+/// Parse the synthetic `post_vibes` key injected by the repository from
+/// the direct `vibe_id` FK join. Each element: `{ "vibe": { "id": ... } }`
+List<Vibe> _vibesFromJson(dynamic value) {
+  if (value is! List) return [];
+  return value
+      .whereType<Map<String, dynamic>>()
+      .map((pv) => pv['vibe'])
+      .where((v) => v != null && v is Map<String, dynamic>)
+      .map((v) => Vibe.fromMap(v as Map<String, dynamic>))
+      .toList();
+}
+
+List<Map<String, dynamic>> _vibesToJson(List<Vibe> vibes) =>
+    vibes.map((v) => {'vibe': v.toMap()}).toList();
+
+List<dynamic> _toDynamicList(dynamic value) {
+  if (value is List) return value;
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is List) return decoded;
+    } catch (_) {
+      return [];
+    }
+  }
+  return [];
+}

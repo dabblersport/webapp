@@ -27,7 +27,7 @@ class ActivePersonaProfile {
     return ActivePersonaProfile(
       profileId: json['id'] as String,
       personaType:
-          PersonaType.fromString(json['intention'] as String?) ??
+          PersonaType.fromString(json['persona_type'] as String?) ??
           PersonaType.player,
       displayName: json['display_name'] as String?,
       username: json['username'] as String?,
@@ -50,9 +50,10 @@ class PersonaState {
     this.errorMessage,
   });
 
-  /// Get the set of active persona types
+  /// Get the set of ALL persona types (active + inactive)
+  /// Used to prevent adding duplicate persona types
   Set<PersonaType> get activePersonaTypes =>
-      activeProfiles.where((p) => p.isActive).map((p) => p.personaType).toSet();
+      activeProfiles.map((p) => p.personaType).toSet();
 
   /// Get available personas based on current active personas
   List<PersonaAvailability> get availablePersonas =>
@@ -69,8 +70,8 @@ class PersonaState {
   /// Check if user has any active profiles
   bool get hasAnyProfile => activeProfiles.any((p) => p.isActive);
 
-  /// Count of active profiles (is_active = true)
-  int get activeProfileCount => activeProfiles.where((p) => p.isActive).length;
+  /// Total profile count (active + inactive) — max 2 profiles per user
+  int get activeProfileCount => activeProfiles.length;
 
   /// Check if user is at the maximum profile limit (2 active profiles)
   bool get isAtProfileLimit =>
@@ -121,7 +122,7 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
       final response = await _client
           .from('profiles')
           .select(
-            'id, intention, display_name, username, age, gender, is_active',
+            'id, persona_type, display_name, username, age, gender, is_active',
           )
           .eq('user_id', userId)
           .order('created_at', ascending: true);
@@ -148,6 +149,47 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
       currentPersonas: state.activePersonaTypes,
       targetPersona: targetPersona,
     );
+  }
+
+  /// Switch the active profile: sets the target profile to is_active=true
+  /// and all other profiles for this user to is_active=false.
+  Future<bool> switchActiveProfile(String targetPersonaType) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      // Find the profile matching the target persona type
+      final targetProfile = state.activeProfiles
+          .where(
+            (p) =>
+                p.personaType.name.toLowerCase() ==
+                targetPersonaType.toLowerCase(),
+          )
+          .firstOrNull;
+      if (targetProfile == null) return false;
+
+      final now = DateTime.now().toIso8601String();
+
+      // Deactivate all profiles for this user
+      await _client
+          .from('profiles')
+          .update({'is_active': false, 'updated_at': now})
+          .eq('user_id', userId);
+
+      // Activate the target profile
+      await _client
+          .from('profiles')
+          .update({'is_active': true, 'updated_at': now})
+          .eq('id', targetProfile.profileId)
+          .eq('user_id', userId);
+
+      // Refresh state
+      await fetchUserPersonas();
+      return true;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Failed to switch profile: $e');
+      return false;
+    }
   }
 
   /// Deactivate a profile (for conversion flow)

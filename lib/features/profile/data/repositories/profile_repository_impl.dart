@@ -25,8 +25,22 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
   Future<Either<Failure, UserProfile>> getProfile(
     String userId, {
     String? profileType,
+    bool filterActive = true,
+    String? profileId,
   }) async {
     try {
+      // When a specific profileId is requested, skip cache and fetch directly.
+      if (profileId != null) {
+        final remoteProfile = await remoteDataSource.getProfile(
+          userId,
+          profileType: profileType,
+          filterActive: false,
+          profileId: profileId,
+        );
+        await localDataSource.cacheProfile(remoteProfile);
+        return Right(remoteProfile);
+      }
+
       // Try to get from cache first (cache key should include profile type if specified)
       final cachedProfile = await localDataSource.getCachedProfile(userId);
       final cacheValid = await localDataSource.isCacheValid(userId);
@@ -45,6 +59,7 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       final remoteProfile = await remoteDataSource.getProfile(
         userId,
         profileType: profileType,
+        filterActive: filterActive,
       );
 
       // Cache the result

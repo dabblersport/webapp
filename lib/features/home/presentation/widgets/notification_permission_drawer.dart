@@ -24,89 +24,100 @@ class NotificationPermissionDrawer extends StatelessWidget {
 
     // Content-only widget: let `showModalBottomSheet` / BottomSheetTheme
     // provide the native Material 3 surface, shape, and drag handle.
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Iconsax.notification_copy,
-                size: 28,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 20),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.85,
+      expand: false,
+      builder: (context, scrollController) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Icon
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Iconsax.notification_copy,
+                      size: 28,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-            // Title
-            Text(
-              'Stay Updated',
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
+                  // Title
+                  Text(
+                    'Stay Updated',
+                    style: textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
 
-            // Description
-            Text(
-              'Get notified about game invites, squad updates, and messages. Never miss out on the action!',
-              style: textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 32),
+                  // Description
+                  Text(
+                    'Get notified about game invites, squad updates, and messages. Never miss out on the action!',
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
-            // Enable Notifications Button
-            FilledButton.icon(
-              onPressed: onEnableNotifications,
-              icon: const Icon(Iconsax.notification_bing_copy),
-              label: const Text('Enable Notifications'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
+                  // Enable Notifications Button
+                  FilledButton.icon(
+                    onPressed: onEnableNotifications,
+                    icon: const Icon(Iconsax.notification_bing_copy),
+                    label: const Text('Enable Notifications'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
 
-            // Remind Me Later Button
-            FilledButton.tonalIcon(
-              onPressed: onRemindLater,
-              icon: const Icon(Iconsax.clock_copy),
-              label: const Text('Remind Me Later'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+                  // Remind Me Later Button
+                  FilledButton.tonalIcon(
+                    onPressed: onRemindLater,
+                    icon: const Icon(Iconsax.clock_copy),
+                    label: const Text('Remind Me Later'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
 
-            // No Thanks Button
-            TextButton(
-              onPressed: onNoThanks,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                  // No Thanks Button
+                  TextButton(
+                    onPressed: onNoThanks,
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('No Thanks'),
+                  ),
+                ],
               ),
-              child: const Text('No Thanks'),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

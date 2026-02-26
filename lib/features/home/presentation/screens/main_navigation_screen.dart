@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
-import 'package:dabbler/features/home/presentation/widgets/inline_post_composer.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart'
     show ExploreScreen;
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
@@ -215,18 +217,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
   }
 
-  void _showCreatePostModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: const InlinePostComposer(),
-      ),
-    );
+  Future<void> _showCreatePostModal() async {
+    final result = await context.push<bool>(RoutePaths.socialCreatePost);
+    if (result == true && mounted) {
+      // Realtime subscription will prepend the new post automatically.
+      // Clear the badge so it doesn't flash unnecessarily for own posts.
+      ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
+    }
   }
 
   bool get _isAndroid =>

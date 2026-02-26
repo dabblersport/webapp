@@ -1,4 +1,4 @@
-import 'post.dart';
+import 'conversation_type.dart';
 
 /// Domain entity for conversations
 class Conversation {

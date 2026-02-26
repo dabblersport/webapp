@@ -23,16 +23,44 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     String userId, {
     bool includeSports = true,
     String? profileType,
+    bool filterActive = true,
+    String? profileId,
   }) async {
     try {
+      // When a specific profile PK is provided, use the SECURITY DEFINER RPC
+      // so we can load inactive profiles that RLS would otherwise block.
+      if (profileId != null) {
+        final rpcResponse = await _client.rpc(
+          'get_profile_by_id',
+          params: {'p_profile_id': profileId},
+        );
+
+        if (rpcResponse == null) {
+          throw const DataNotFoundException(message: 'Profile not found');
+        }
+
+        final result = Map<String, dynamic>.from(rpcResponse as Map);
+        final uid = result['user_id'] as String? ?? userId;
+        await _enrichWithAuthData(result, uid);
+        if (includeSports) {
+          await _enrichWithSportProfiles(result, profileId);
+        }
+        return UserProfile.fromJson(result);
+      }
+
       // profileType parameter is actually persona_type (player, organiser, etc.)
       final response = profileType != null
           ? await _fetchProfileRow(
               userId,
               includeSports: includeSports,
               personaType: profileType,
+              filterActive: filterActive,
             )
-          : await _preferPlayerProfile(userId, includeSports: includeSports);
+          : await _preferPlayerProfile(
+              userId,
+              includeSports: includeSports,
+              filterActive: filterActive,
+            );
 
       if (response == null) {
         throw const DataNotFoundException(message: 'Profile not found');
@@ -96,6 +124,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
   Future<Map<String, dynamic>?> _preferPlayerProfile(
     String userId, {
     required bool includeSports,
+    bool filterActive = true,
   }) async {
     // Try to load the player's profile first; fall back to organiser/any profile.
     // Note: 'player', 'organiser' etc. are stored in persona_type column, not profile_type
@@ -103,6 +132,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
       userId,
       includeSports: includeSports,
       personaType: 'player',
+      filterActive: filterActive,
     );
 
     if (playerProfile != null) {
@@ -113,22 +143,34 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
       userId,
       includeSports: includeSports,
       personaType: 'organiser',
+      filterActive: filterActive,
     );
 
     if (organiserProfile != null) {
       return organiserProfile;
     }
 
-    return _fetchProfileRow(userId, includeSports: includeSports);
+    return _fetchProfileRow(
+      userId,
+      includeSports: includeSports,
+      filterActive: filterActive,
+    );
   }
 
   Future<Map<String, dynamic>?> _fetchProfileRow(
     String userId, {
     required bool includeSports,
     String? personaType,
+    bool filterActive = true,
   }) async {
-    // Build select query - fetch profile first
+    // When filterActive is true, scope to is_active=true so the app only
+    // ever acts on behalf of the profile the user has designated as active.
+    // When viewing other users' profiles from search, filterActive=false
+    // so both active and inactive profiles are returned.
     var query = _client.from(_usersTable).select('*').eq('user_id', userId);
+    if (filterActive) {
+      query = query.eq('is_active', true);
+    }
 
     if (personaType != null) {
       // Filter by persona_type (player, organiser, hoster, socialiser)

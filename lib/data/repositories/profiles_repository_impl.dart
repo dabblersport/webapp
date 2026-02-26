@@ -208,6 +208,7 @@ class ProfilesRepositoryImpl extends BaseRepository
           .from(_table)
           .select()
           .eq('user_id', userId)
+          .eq('is_active', true)
           .maybeSingle();
 
       if (response == null) {

@@ -36,6 +36,9 @@ class TwoSectionLayout extends StatelessWidget {
   /// Optional pull-to-refresh callback
   final Future<void> Function()? onRefresh;
 
+  /// Optional scroll controller for the root scroll view
+  final ScrollController? scrollController;
+
   const TwoSectionLayout({
     super.key,
     required this.topSection,
@@ -48,6 +51,7 @@ class TwoSectionLayout extends StatelessWidget {
     this.floatingActionButton,
     this.floatingActionButtonLocation,
     this.onRefresh,
+    this.scrollController,
   });
 
   @override
@@ -61,148 +65,107 @@ class TwoSectionLayout extends StatelessWidget {
     // iPhone models with notch/Dynamic Island have ~39-47px radius
     final deviceRadius = topInset > 20 ? 50.0 : 0.0;
 
-    final screenHeight = MediaQuery.of(context).size.height;
-    final bottomNavHeight = MediaQuery.of(context).padding.bottom + 80;
-
     Widget buildContent(ColorScheme scheme) {
-      final background = bottomBackgroundColor ?? scheme.secondaryContainer;
+      final background = bottomBackgroundColor ?? scheme.primaryContainer;
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: (screenHeight - bottomNavHeight)
-                    .clamp(0.0, double.infinity)
-                    .toDouble(),
-              ),
+      return Container(
+        padding: const EdgeInsets.all(4),
+        clipBehavior: Clip.none,
+        decoration: ShapeDecoration(
+          color: background,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(deviceRadius > 0 ? 52 : 0),
+          ),
+        ),
+        child: CustomScrollView(
+          controller: scrollController,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // ========== TOP SECTION ==========
+            SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.all(0),
+                width: double.infinity,
+                padding:
+                    topPadding ??
+                    const EdgeInsets.only(
+                      top: 48,
+                      left: 0,
+                      right: 0,
+                      bottom: 18,
+                    ),
                 clipBehavior: Clip.none,
                 decoration: ShapeDecoration(
-                  // Native M3 outer surface background.
-                  color: background,
+                  color: topBackgroundColor ?? scheme.primaryContainer,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(
                       deviceRadius > 0 ? 52 : 0,
                     ),
                   ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ========== TOP SECTION ==========
-                    Container(
-                      width: double.infinity,
-                      padding:
-                          topPadding ??
-                          const EdgeInsets.only(
-                            top: 48,
-                            left: 0,
-                            right: 0,
-                            bottom: 18,
-                          ),
-                      clipBehavior: Clip.none,
-                      decoration: ShapeDecoration(
-                        // Default to primaryContainer (JSON token source-of-truth).
-                        color: topBackgroundColor ?? scheme.primaryContainer,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(deviceRadius > 0 ? 50 : 0),
-                            topRight: Radius.circular(
-                              deviceRadius > 0 ? 50 : 0,
-                            ),
-                            bottomLeft: const Radius.circular(24),
-                            bottomRight: const Radius.circular(24),
-                          ),
-                        ),
-                      ),
-                      child: IconTheme.merge(
-                        data: IconThemeData(color: scheme.onPrimaryContainer),
-                        child: DefaultTextStyle.merge(
-                          style: TextStyle(color: scheme.onPrimaryContainer),
-                          child: topSection,
-                        ),
-                      ),
-                    ),
-
-                    // 4px gap between sections
-                    const SizedBox(height: 4),
-
-                    // ========== BOTTOM SECTION ==========
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: (screenHeight - bottomNavHeight - 300)
-                            .clamp(0.0, double.infinity)
-                            .toDouble(),
-                      ),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.lg,
-                          12,
-                          AppSpacing.lg,
-                          78,
-                        ),
-
-                        clipBehavior: Clip.none,
-                        decoration: ShapeDecoration(
-                          // Default to secondaryContainer (JSON token source-of-truth).
-                          color:
-                              bottomBackgroundColor ??
-                              scheme.secondaryContainer,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(24),
-                              topRight: const Radius.circular(24),
-                              bottomLeft: Radius.circular(
-                                deviceRadius > 0 ? 50 : 0,
-                              ),
-                              bottomRight: Radius.circular(
-                                deviceRadius > 0 ? 50 : 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                        child: IconTheme.merge(
-                          data: IconThemeData(
-                            color: scheme.onSecondaryContainer,
-                          ),
-                          child: DefaultTextStyle.merge(
-                            style: TextStyle(
-                              color: scheme.onSecondaryContainer,
-                            ),
-                            child: bottomSection,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                child: IconTheme.merge(
+                  data: IconThemeData(color: scheme.onPrimaryContainer),
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(color: scheme.onPrimaryContainer),
+                    child: topSection,
+                  ),
                 ),
               ),
             ),
-          );
-        },
+
+            // 4px gap
+            const SliverToBoxAdapter(child: SizedBox(height: 4)),
+
+            // ========== BOTTOM SECTION ==========
+            SliverToBoxAdapter(
+              child: Container(
+                width: double.infinity,
+                clipBehavior: Clip.none,
+                decoration: ShapeDecoration(
+                  color: bottomBackgroundColor ?? scheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(24),
+                      topRight: const Radius.circular(24),
+                      bottomLeft: Radius.circular(deviceRadius > 0 ? 50 : 0),
+                      bottomRight: Radius.circular(deviceRadius > 0 ? 50 : 0),
+                    ),
+                  ),
+                ),
+                padding:
+                    bottomPadding ??
+                    const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.xxl,
+                    ),
+                child: IconTheme.merge(
+                  data: IconThemeData(color: scheme.onSurface),
+                  child: DefaultTextStyle.merge(
+                    style: TextStyle(color: scheme.onSurface),
+                    child: bottomSection,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
     Widget buildScaffold(ColorScheme scheme) {
-      final scrollView = buildContent(scheme);
+      final content = buildContent(scheme);
 
       return Scaffold(
-        // Match the screen background to the active scheme (category-aware).
-        backgroundColor: bottomBackgroundColor ?? scheme.secondaryContainer,
+        backgroundColor: bottomBackgroundColor ?? scheme.primaryContainer,
         floatingActionButton: floatingActionButton,
         floatingActionButtonLocation: floatingActionButtonLocation,
         extendBody: true,
         body: onRefresh != null
-            ? RefreshIndicator(onRefresh: onRefresh!, child: scrollView)
-            : scrollView,
+            ? RefreshIndicator(onRefresh: onRefresh!, child: content)
+            : content,
       );
     }
 

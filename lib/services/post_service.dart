@@ -1,116 +1,156 @@
+import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/models/social/post_enums.dart';
+import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final supabase = Supabase.instance.client;
-
+/// Service layer that sits between the UI and [PostRepository].
+///
+/// Responsibilities:
+/// - Client-side validation (empty post, rate limit, duplicate check)
+/// - System-decided field resolution (kind → post_type mapping)
+/// - Delegates all DB work (RLS, trigger validation, vibe compatibility)
+///   to the repository / Supabase RPC.
 class PostService {
-  const PostService();
+  PostService(this._repo, this._client);
 
-  /// Get the current user's profile id (profiles.id) from auth.uid()
-  Future<String?> getCurrentProfileId() async {
-    final user = supabase.auth.currentUser;
-    if (user == null) return null;
+  final PostRepository _repo;
+  final SupabaseClient _client;
 
-    final res = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('profile_type', 'personal')
-        .maybeSingle();
+  String get _uid => _client.auth.currentUser!.id;
 
-    if (res == null) return null;
-    return res['id'] as String;
-  }
+  // ── Public API ─────────────────────────────────────────────────────
 
-  /// Load vibes filtered by post kind: 'moment' | 'dab' | 'kickin'
-  Future<List<Map<String, dynamic>>> getVibesForKind(String kind) async {
-    final data = await supabase
-        .from('vibes')
-        .select('*')
-        .eq('is_active', true)
-        .contains('contexts', [kind]); // contexts is text[]
-
-    return List<Map<String, dynamic>>.from(data);
-  }
-
-  /// Upsert a location tag via the DB function and return its id.
-  Future<String?> upsertLocationTag({
-    required String label,
-    String? venueId,
-  }) async {
-    final result = await supabase
-        .rpc(
-          'upsert_location_tag',
-          params: {'_label': label, '_venue_id': venueId},
-        )
-        .maybeSingle();
-
-    if (result == null) return null;
-    return result['id'] as String;
-  }
-
-  /// Create a new post (moment/dab/kickin) with optional media, vibes, location, game, mentions.
-  Future<String> createPost({
-    required String kind, // 'moment' | 'dab' | 'kickin'
-    required String visibility, // 'public' | 'circle' | 'link' | 'private'
-    required String body,
-    Map<String, dynamic>? media, // single-file metadata JSON
+  /// Create a post after applying all validation rules.
+  ///
+  /// **System-decided**: [kind], [postType] (defaults to [kind]'s DB
+  /// mapping), [originType] (defaults to `manual`).
+  ///
+  /// **User-chosen**: [visibility], [body], [tags], [primaryVibeId],
+  /// [vibeIds], [circleIds], [squadIds], [mentionProfileIds].
+  Future<Result<Post, Failure>> createPost({
+    required PostKind kind,
+    required PostVisibility visibility,
+    PostType? postType,
+    OriginType originType = OriginType.manual,
+    String? body,
+    List<dynamic>? media,
+    List<String>? tags,
+    String? sport,
     String? gameId,
     String? locationTagId,
     String? primaryVibeId,
-    List<String> vibeIds = const [],
-    List<String> mentionProfileIds = const [],
+    List<String>? vibeIds,
+    List<String>? circleIds,
+    List<String>? squadIds,
+    List<String>? mentionProfileIds,
   }) async {
-    final profileId = await getCurrentProfileId();
-    if (profileId == null) {
-      throw StateError('No current profile for authenticated user');
+    // ── Validation ───────────────────────────────────────────────────
+
+    // 1. Prevent empty post (must have body OR media)
+    final hasBody = body != null && body.trim().isNotEmpty;
+    final hasMedia = media != null && media.isNotEmpty;
+    if (!hasBody && !hasMedia) {
+      return const Err(
+        Failure(
+          category: FailureCode.validation,
+          message: 'Post must have body text or media.',
+        ),
+      );
     }
 
-    final user = supabase.auth.currentUser;
-    if (user == null) {
-      throw StateError('No authenticated user');
+    // 2. Rate limit: max 3 posts per minute
+    final rateLimitErr = await _checkRateLimit();
+    if (rateLimitErr != null) return Err(rateLimitErr);
+
+    // 3. Duplicate prevention: same body within last 5 minutes
+    if (hasBody) {
+      final dupErr = await _checkDuplicate(body.trim());
+      if (dupErr != null) return Err(dupErr);
     }
 
-    // 1) Insert into posts
-    // Note: media should be a single JSON object (not array) per spec
-    // But DB defaults to '[]'::jsonb, so we need to handle null vs object
-    final insertPayload = <String, dynamic>{
-      'kind': kind,
-      'visibility': visibility,
-      'author_profile_id': profileId,
-      'author_user_id': user.id, // Required by DB schema
-      'body': body,
-      if (media != null) 'media': media, // Single object, not array
-      if (gameId != null) 'game_id': gameId,
-      if (locationTagId != null) 'location_tag_id': locationTagId,
-      if (primaryVibeId != null) 'primary_vibe_id': primaryVibeId,
-    };
+    // ── Resolve system-decided fields ────────────────────────────────
 
-    final inserted = await supabase
-        .from('posts')
-        .insert(insertPayload)
-        .select('id')
-        .single();
+    final resolvedPostType = postType ?? kind.defaultPostType;
 
-    final postId = inserted['id'] as String;
+    // ── Delegate to repository (RPC handles RLS, triggers, junctions) ─
 
-    // 2) Attach vibes (post_vibes)
-    if (vibeIds.isNotEmpty) {
-      final vibeRows = vibeIds
-          .map((vibeId) => {'post_id': postId, 'vibe_id': vibeId})
-          .toList();
+    return _repo.createPost(
+      kind: kind.name,
+      visibility: visibility.name,
+      postType: resolvedPostType.dbValue,
+      originType: originType.name,
+      body: hasBody ? body.trim() : null,
+      sport: sport,
+      media: media,
+      tags: tags,
+      gameId: gameId,
+      locationTagId: locationTagId,
+      primaryVibeId: primaryVibeId,
+      vibeIds: vibeIds,
+      circleIds: circleIds,
+      squadIds: squadIds,
+      mentionProfileIds: mentionProfileIds,
+    );
+  }
 
-      await supabase.from('post_vibes').insert(vibeRows);
+  // ── Private validation helpers ─────────────────────────────────────
+
+  /// Returns a [Failure] if the user has posted ≥ 3 times in the last minute.
+  Future<Failure?> _checkRateLimit() async {
+    try {
+      final oneMinuteAgo = DateTime.now()
+          .subtract(const Duration(minutes: 1))
+          .toUtc()
+          .toIso8601String();
+
+      final rows = await _client
+          .from('posts')
+          .select('id')
+          .eq('author_user_id', _uid)
+          .gte('created_at', oneMinuteAgo)
+          .limit(3);
+
+      if (rows.length >= 3) {
+        return const Failure(
+          category: FailureCode.rateLimited,
+          message: 'You\'re posting too fast. Please wait a moment.',
+        );
+      }
+      return null;
+    } catch (_) {
+      // Don't block post creation if the check itself fails.
+      return null;
     }
+  }
 
-    // 3) Mentions
-    if (mentionProfileIds.isNotEmpty) {
-      final mentionRows = mentionProfileIds
-          .map((pid) => {'post_id': postId, 'mentioned_profile_id': pid})
-          .toList();
+  /// Returns a [Failure] if an identical body was posted within the last
+  /// 5 minutes.
+  Future<Failure?> _checkDuplicate(String body) async {
+    try {
+      final fiveMinutesAgo = DateTime.now()
+          .subtract(const Duration(minutes: 5))
+          .toUtc()
+          .toIso8601String();
 
-      await supabase.from('post_mentions').insert(mentionRows);
+      final rows = await _client
+          .from('posts')
+          .select('id')
+          .eq('author_user_id', _uid)
+          .eq('body', body)
+          .gte('created_at', fiveMinutesAgo)
+          .limit(1);
+
+      if (rows.isNotEmpty) {
+        return const Failure(
+          category: FailureCode.validation,
+          message: 'You already posted this. Try something new!',
+        );
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
-
-    return postId;
   }
 }

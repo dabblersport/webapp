@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import 'dart:convert';
 
 /// Mobile implementation of push notification service (Android/iOS).
 class PushNotificationService {
@@ -15,6 +17,13 @@ class PushNotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  StreamSubscription<String>? _tokenRefreshSub;
+
+  /// Callback invoked when user taps a notification.
+  /// Receives the action_route string from the notification data payload.
+  /// Set this from your app's navigation layer (e.g. main.dart or router).
+  void Function(String route)? onNotificationTap;
+
   static const String _notificationPromptPreferenceKey =
       'notification_prompt_preference';
   static const String _notificationPromptNextAtKey =
@@ -31,6 +40,9 @@ class PushNotificationService {
     await _configureForegroundHandling();
     await _logFcmToken();
     await _subscribeToTopics();
+    _listenTokenRefresh();
+    await _handleInitialMessage();
+    _listenMessageOpenedApp();
 
     _initialized = true;
   }
@@ -68,7 +80,25 @@ class PushNotificationService {
       macOS: darwinInit,
     );
 
-    await _localNotificationsPlugin.initialize(initSettings);
+    await _localNotificationsPlugin.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: _onLocalNotificationTap,
+    );
+  }
+
+  /// Called when user taps a local notification (foreground-displayed).
+  void _onLocalNotificationTap(NotificationResponse response) {
+    final raw = response.payload;
+    if (raw == null || raw.isEmpty) return;
+    try {
+      final data = jsonDecode(raw) as Map<String, dynamic>;
+      final route = data['action_route'] as String?;
+      if (route != null && route.isNotEmpty) {
+        onNotificationTap?.call(route);
+      }
+    } catch (e) {
+      debugPrint('Failed to parse local notification payload: $e');
+    }
   }
 
   Future<void> _configureForegroundHandling() async {
@@ -76,10 +106,14 @@ class PushNotificationService {
       final notification = message.notification;
       if (notification == null) return;
 
+      // Pass data payload so local-notification tap can route correctly
+      final payload = message.data.isNotEmpty ? jsonEncode(message.data) : null;
+
       await _showLocalNotification(
         notification.hashCode,
         notification.title,
         notification.body,
+        payload: payload,
       );
     });
   }
@@ -87,8 +121,9 @@ class PushNotificationService {
   Future<void> _showLocalNotification(
     int id,
     String? title,
-    String? body,
-  ) async {
+    String? body, {
+    String? payload,
+  }) async {
     const androidDetails = AndroidNotificationDetails(
       'default_channel',
       'General',
@@ -105,7 +140,13 @@ class PushNotificationService {
       macOS: darwinDetails,
     );
 
-    await _localNotificationsPlugin.show(id, title, body, details);
+    await _localNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      details,
+      payload: payload,
+    );
   }
 
   Future<void> _logFcmToken() async {
@@ -115,7 +156,45 @@ class PushNotificationService {
       if (token != null) {
         await _saveTokenToSupabase(token);
       }
-    } catch (e) {}
+    } catch (e) {
+      debugPrint('Failed to get/save FCM token: $e');
+    }
+  }
+
+  /// Listen for FCM token refreshes and persist new token to Supabase.
+  void _listenTokenRefresh() {
+    _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((
+      newToken,
+    ) async {
+      debugPrint('FCM token refreshed');
+      await _saveTokenToSupabase(newToken);
+    }, onError: (e) => debugPrint('FCM token refresh error: $e'));
+  }
+
+  /// Handle the case where the app was terminated and opened via notification tap.
+  Future<void> _handleInitialMessage() async {
+    final initial = await FirebaseMessaging.instance.getInitialMessage();
+    if (initial != null) {
+      _handleRemoteMessageTap(initial);
+    }
+  }
+
+  /// Listen for notification taps when the app is in background (not terminated).
+  void _listenMessageOpenedApp() {
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleRemoteMessageTap);
+  }
+
+  /// Extract action_route from the remote message data and invoke the tap callback.
+  void _handleRemoteMessageTap(RemoteMessage message) {
+    debugPrint('Push tap received — data: ${message.data}');
+    final route = message.data['action_route'] as String?;
+    debugPrint('Push tap action_route: $route');
+    if (route != null && route.isNotEmpty) {
+      onNotificationTap?.call(route);
+    } else {
+      debugPrint('Push tap: no action_route in data payload');
+    }
   }
 
   Future<void> _saveTokenToSupabase(String token) async {
@@ -222,8 +301,9 @@ class PushNotificationService {
       await _configureForegroundHandling();
       await _logFcmToken();
       await _subscribeToTopics();
+      _listenTokenRefresh();
 
-      // Initialize local notifications
+      // Initialize local notifications with tap callback
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
       const darwinInit = DarwinInitializationSettings();
       const initSettings = InitializationSettings(
@@ -231,7 +311,10 @@ class PushNotificationService {
         iOS: darwinInit,
         macOS: darwinInit,
       );
-      await _localNotificationsPlugin.initialize(initSettings);
+      await _localNotificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onLocalNotificationTap,
+      );
 
       return true;
     }

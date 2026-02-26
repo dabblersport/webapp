@@ -33,13 +33,14 @@ Deno.serve(async (req: Request) => {
     const payload: NotificationPayload = await req.json();
     const { user_id, title, body, data, platforms } = payload;
 
-    // Validate required fields
-    if (!user_id || !title || !body) {
+    // Validate required fields (body is optional — falls back to title)
+    if (!user_id || !title) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: user_id, title, body" }),
+        JSON.stringify({ error: "Missing required fields: user_id, title" }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
+    const effectiveBody = body || title;
 
     // Create Supabase client with service role key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -77,7 +78,7 @@ Deno.serve(async (req: Request) => {
 
     // Send notification to each token
     const results = await Promise.allSettled(
-      tokens.map(({ token }) => sendFCMNotification(token, title, body, data))
+      tokens.map(({ token }) => sendFCMNotification(token, title, effectiveBody, data))
     );
 
     // Count successes and failures

@@ -3,11 +3,8 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/repositories/friends_repository.dart';
 import '../../../data/repositories/friends_repository_impl.dart';
-import '../../../data/repositories/feed_repository.dart';
-import '../../../data/repositories/feed_repository_impl.dart';
 import '../../../features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/core/fp/result.dart';
-import '../services/social_service.dart';
 
 // =============================================================================
 // REPOSITORY PROVIDERS - Core Data Layer
@@ -17,12 +14,6 @@ import '../services/social_service.dart';
 final friendsRepositoryProvider = Provider<FriendsRepository>((ref) {
   final supabaseService = ref.watch(supabaseServiceProvider);
   return FriendsRepositoryImpl(supabaseService);
-});
-
-/// Feed repository provider - manages social feed and posts
-final feedRepositoryProvider = Provider<FeedRepository>((ref) {
-  final supabaseService = ref.watch(supabaseServiceProvider);
-  return FeedRepositoryImpl(supabaseService);
 });
 
 // =============================================================================
@@ -179,27 +170,6 @@ final feedRefreshProvider = StateNotifierProvider<FeedRefreshNotifier, int>(
   (ref) => FeedRefreshNotifier(),
 );
 
-/// Get social feed posts
-final socialFeedProvider = FutureProvider.autoDispose((ref) async {
-  // Watch refresh trigger
-  ref.watch(feedRefreshProvider);
-
-  final repo = ref.watch(feedRepositoryProvider);
-  final result = await repo.listRecent(limit: 50);
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (feedItems) => feedItems,
-  );
-});
-
-/// Get posts by specific user
-final userPostsProvider = FutureProvider.family
-    .autoDispose<List<dynamic>, String>((ref, userId) async {
-      final socialService = SocialService();
-      return await socialService.getUserPosts(userId: userId);
-    });
-
 // =============================================================================
 // COMMUNITY STATS & ANALYTICS
 // =============================================================================
@@ -207,14 +177,11 @@ final userPostsProvider = FutureProvider.family
 /// Community engagement stats
 final communityStatsProvider = FutureProvider.autoDispose((ref) async {
   final friendships = await ref.watch(friendshipsProvider.future);
-  final feed = await ref.watch(socialFeedProvider.future);
 
   return {
     'totalFriends': friendships.length,
-    'totalPosts': feed.length,
-    'engagementRate': friendships.isEmpty
-        ? 0.0
-        : feed.length / friendships.length,
+    'totalPosts': 0, // TODO(post-rebuild): reconnect to PostRepository
+    'engagementRate': 0.0,
   };
 });
 
@@ -231,9 +198,6 @@ final activeMembersProvider = Provider.autoDispose<int>((ref) {
 extension CommunityProvidersExtension on WidgetRef {
   /// Get friends repository
   FriendsRepository get friendsRepo => read(friendsRepositoryProvider);
-
-  /// Get feed repository
-  FeedRepository get feedRepo => read(feedRepositoryProvider);
 
   /// Refresh social feed
   void refreshFeed() => read(feedRefreshProvider.notifier).refresh();

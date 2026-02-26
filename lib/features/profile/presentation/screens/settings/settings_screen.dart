@@ -807,6 +807,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   void _startPersonaFlow(PersonaAvailability availability) {
     final personaState = ref.read(personaServiceProvider);
+
+    // Re-check active profile count before navigation
+    if (personaState.isAtProfileLimit &&
+        availability.actionType == PersonaActionType.add) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(PersonaRules.profileLimitMessage),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     final primaryProfile = personaState.primaryProfile;
 
     // Initialize add persona data with shared attributes

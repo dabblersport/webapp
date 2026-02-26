@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import '../../data/notifications_repository.dart';
+import '../../data/models/notification_model.dart';
 import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/themes/app_theme.dart';
@@ -10,6 +10,7 @@ import 'package:dabbler/features/activities/presentation/providers/activity_prov
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
 import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import '../providers/notification_center_badge_providers.dart';
 
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
@@ -272,26 +273,45 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (state.error != null && state.notifications.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 40),
+            const SizedBox(height: 8),
+            Text('Error: ${state.error}', textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => ref
+                  .read(notificationsControllerProvider(userId).notifier)
+                  .refresh(),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (state.notifications.isEmpty) {
       return _buildEmptyState();
     }
 
     // Filter notifications based on selected filter
-    List<NotificationItem> filteredNotifications = state.notifications;
+    List<AppNotification> filteredNotifications = state.notifications;
     if (_selectedFilter != 'All') {
       filteredNotifications = state.notifications.where((n) {
         switch (_selectedFilter) {
           case 'Games':
-            return n.type == NotificationType.gameInvite ||
-                n.type == NotificationType.gameUpdate;
+            return n.kindKey.startsWith('game');
           case 'Bookings':
-            return n.type == NotificationType.bookingConfirmation ||
-                n.type == NotificationType.bookingReminder;
+            return n.kindKey.startsWith('booking');
           case 'Social':
-            return n.type == NotificationType.friendRequest;
+            return n.kindKey.startsWith('friend') ||
+                n.kindKey.startsWith('social');
           case 'Achievements':
-            return n.type == NotificationType.achievement ||
-                n.type == NotificationType.loyaltyPoints;
+            return n.kindKey.startsWith('achievement') ||
+                n.kindKey.startsWith('loyalty');
           default:
             return true;
         }
@@ -312,115 +332,93 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     );
   }
 
-  Widget _buildNotificationCard(String userId, NotificationItem notification) {
+  Widget _buildNotificationCard(String userId, AppNotification notification) {
     final activitiesScheme = context.getCategoryTheme('activities');
 
-    return Dismissible(
-      key: Key(notification.id),
-      background: Container(
-        color: Colors.red,
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
-      ),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        ref
-            .read(notificationsControllerProvider(userId).notifier)
-            .deleteNotification(notification.id);
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsets.all(6),
-            leading: _getNotificationIcon(
-              notification.type,
-              notification.priority,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          contentPadding: const EdgeInsets.all(6),
+          leading: _getNotificationIcon(
+            notification.kindKey,
+            notification.priority,
+          ),
+          title: Text(
+            notification.title,
+            style: context.textTheme.titleMedium?.copyWith(
+              fontWeight: notification.isRead
+                  ? FontWeight.normal
+                  : FontWeight.bold,
+              color: context.colorTokens.neutral,
             ),
-            title: Text(
-              notification.title,
-              style: context.textTheme.titleMedium?.copyWith(
-                fontWeight: notification.isRead
-                    ? FontWeight.normal
-                    : FontWeight.bold,
-                color: context.colorTokens.neutral,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (notification.body != null &&
+                  notification.body!.trim().isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  notification.message,
+                  notification.body!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: context.textTheme.bodyMedium?.copyWith(
                     color: context.colorTokens.neutralOpacity,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _formatTime(notification.createdAt),
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.colorTokens.neutralOpacity,
+              ],
+              const SizedBox(height: 4),
+              Text(
+                _formatTime(notification.createdAt),
+                style: context.textTheme.bodySmall?.copyWith(
+                  color: context.colorTokens.neutralOpacity,
+                ),
+              ),
+            ],
+          ),
+          trailing: notification.isRead
+              ? null
+              : Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: activitiesScheme.primary,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ],
-            ),
-            trailing: notification.isRead
-                ? null
-                : Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: activitiesScheme.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-            onTap: () => _handleNotificationTap(userId, notification),
-          ),
-          Divider(height: 1, thickness: 1, color: context.colorTokens.stroke),
-        ],
-      ),
+          onTap: () => _handleNotificationTap(userId, notification),
+        ),
+        Divider(height: 1, thickness: 1, color: context.colorTokens.stroke),
+      ],
     );
   }
 
-  Widget _getNotificationIcon(
-    NotificationType type,
-    NotificationPriority priority,
-  ) {
+  Widget _getNotificationIcon(String kindKey, NotifyPriority priority) {
     IconData icon;
     final activitiesScheme = context.getCategoryTheme('activities');
     final Color color = activitiesScheme.primary;
 
     final double bgAlpha = switch (priority) {
-      NotificationPriority.urgent => 0.24,
-      NotificationPriority.high => 0.18,
+      NotifyPriority.urgent => 0.24,
+      NotifyPriority.high => 0.18,
       _ => 0.12,
     };
 
-    switch (type) {
-      case NotificationType.gameInvite:
-      case NotificationType.gameUpdate:
-        icon = Iconsax.game_copy;
-        break;
-      case NotificationType.bookingConfirmation:
-      case NotificationType.bookingReminder:
-        icon = Iconsax.calendar_copy;
-        break;
-      case NotificationType.friendRequest:
-        icon = Iconsax.user_add_copy;
-        break;
-      case NotificationType.achievement:
-        icon = Iconsax.medal_copy;
-        break;
-      case NotificationType.loyaltyPoints:
-        icon = Iconsax.card_copy;
-        break;
-      case NotificationType.systemAlert:
-        icon = Iconsax.warning_2_copy;
-        break;
-      default:
-        icon = Iconsax.notification_copy;
+    if (kindKey.startsWith('game')) {
+      icon = Iconsax.game_copy;
+    } else if (kindKey.startsWith('booking')) {
+      icon = Iconsax.calendar_copy;
+    } else if (kindKey.startsWith('friend')) {
+      icon = Iconsax.user_add_copy;
+    } else if (kindKey.startsWith('achievement')) {
+      icon = Iconsax.medal_copy;
+    } else if (kindKey.startsWith('loyalty')) {
+      icon = Iconsax.card_copy;
+    } else if (kindKey.startsWith('system')) {
+      icon = Iconsax.warning_2_copy;
+    } else {
+      icon = Iconsax.notification_copy;
     }
 
     return Container(
@@ -464,14 +462,17 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   Future<void> _handleNotificationTap(
     String userId,
-    NotificationItem notification,
+    AppNotification notification,
   ) async {
-    // Mark as read
+    final controller = ref.read(
+      notificationsControllerProvider(userId).notifier,
+    );
+
+    // Mark as read + clicked (fire-and-forget, don't block navigation)
     if (!notification.isRead) {
-      await ref
-          .read(notificationsControllerProvider(userId).notifier)
-          .markAsRead(notification.id);
+      controller.markAsRead(notification.id);
     }
+    controller.markClicked(notification.id);
 
     final route = _resolveNotificationRoute(notification);
     if (route != null && mounted) {
@@ -479,52 +480,120 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     }
   }
 
-  String? _resolveNotificationRoute(NotificationItem notification) {
+  /// Resolves the deeplink for a notification.
+  ///
+  /// Priority:
+  ///   1. `actionRoute` (set by the trigger / backend)
+  ///   2. `payload['action_route']` (fallback stored in JSONB context)
+  ///   3. `kindKey` + `payload` entity ids (client-side mapping)
+  String? _resolveNotificationRoute(AppNotification notification) {
+    // 1. Explicit action route from DB
     final direct = notification.actionRoute;
     if (direct != null && direct.trim().isNotEmpty) return direct;
 
-    final data = notification.data;
-    if (data == null || data.isEmpty) return null;
+    final ctx = notification.payload;
 
-    final dataRoute = data['action_route'];
-    if (dataRoute is String && dataRoute.trim().isNotEmpty) {
-      return dataRoute;
+    // 2. Embedded action_route inside context JSONB
+    if (ctx != null && ctx.isNotEmpty) {
+      final embedded = ctx['action_route'];
+      if (embedded is String && embedded.trim().isNotEmpty) return embedded;
     }
 
-    switch (notification.type) {
-      case NotificationType.friendRequest:
-        final fromUserId = _firstStringValue(
-          data,
-          const <String>[
-            'from_user_id',
-            'fromUserId',
-            'sender_user_id',
-            'senderUserId',
-            'requester_user_id',
-            'requesterUserId',
-            'requested_by',
-            'peer_user_id',
-            'peerUserId',
-            'user_id',
-          ],
-        );
+    // 3. Kind-key + context fallback
+    return _routeFromKindKey(notification.kindKey, ctx);
+  }
 
-        if (fromUserId != null) {
-          return '/user-profile/$fromUserId';
-        }
-
+  String? _routeFromKindKey(String kindKey, Map<String, dynamic>? ctx) {
+    switch (kindKey) {
+      // ── Social: post-targeted ──────────────────────────────────
+      case 'social.post_liked':
+      case 'social.post_commented':
+      case 'social.mentioned_in_post':
+        final postId =
+            _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'post_id');
+        if (postId != null) return '${RoutePaths.socialPostDetail}/$postId';
         return null;
+
+      // ── Social: comment-targeted ───────────────────────────────
+      case 'social.comment_liked':
+      case 'social.mentioned_in_comment':
+        final postId = _ctxString(ctx, 'post_id');
+        if (postId != null) return '${RoutePaths.socialPostDetail}/$postId';
+        // Comment-level deep link not available; fall back to post
+        final entityId = _ctxString(ctx, 'entity_id');
+        if (entityId != null) return '${RoutePaths.socialPostDetail}/$entityId';
+        return null;
+
+      // ── Social: profile-targeted ───────────────────────────────
+      case 'social.followed':
+      case 'social.circle_joined':
+        final actorId =
+            _ctxString(ctx, 'actor_user_id') ??
+            _ctxFirstInList(ctx, 'follower_user_ids') ??
+            _ctxFirstInList(ctx, 'actor_user_ids');
+        if (actorId != null) return '${RoutePaths.userProfile}/$actorId';
+        return null;
+
+      // ── Friends ────────────────────────────────────────────────
+      case 'friend.requested':
+        return RoutePaths.socialFriends;
+
+      case 'friend.accepted':
+        final actorId = _ctxString(ctx, 'actor_user_id');
+        if (actorId != null) return '${RoutePaths.userProfile}/$actorId';
+        return RoutePaths.socialFriends;
+
+      // ── Games ──────────────────────────────────────────────────
+      case 'game.invited':
+      case 'game.updated':
+      case 'game.join_request':
+      case 'game.waitlist_promoted':
+      case 'game.reminder':
+        final gameId =
+            _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'game_id');
+        if (gameId != null) return '${RoutePaths.games}/$gameId';
+        return RoutePaths.games;
+
+      // ── Bookings ───────────────────────────────────────────────
+      case 'arena.payment_required':
+        final bookingId = _ctxString(ctx, 'entity_id');
+        if (bookingId != null) return '${RoutePaths.games}/$bookingId';
+        return null;
+
+      // ── Rewards ────────────────────────────────────────────────
+      case 'reward.badge_awarded':
+        return RoutePaths.profile;
+
+      // ── Meetups / Squads ───────────────────────────────────────
+      case 'meetup.invited':
+      case 'squad.invited':
+        return null; // No dedicated screen yet; mark read only
+
       default:
         return null;
     }
   }
 
-  String? _firstStringValue(Map<String, dynamic> data, List<String> keys) {
-    for (final key in keys) {
-      final value = data[key];
-      if (value is String && value.trim().isNotEmpty) {
-        return value;
-      }
+  /// Safe string extraction from a nullable context map.
+  String? _ctxString(Map<String, dynamic>? ctx, String key) {
+    if (ctx == null) return null;
+    final v = ctx[key];
+    if (v == null) return null;
+    final s = v is String ? v : v.toString();
+    return s.trim().isNotEmpty ? s : null;
+  }
+
+  /// Extract the first element from a JSON array stored in the context map.
+  /// Handles aggregated notifications where `actor_user_ids` / `follower_user_ids`
+  /// are arrays instead of a single value.
+  String? _ctxFirstInList(Map<String, dynamic>? ctx, String key) {
+    if (ctx == null) return null;
+    final v = ctx[key];
+    if (v is List && v.isNotEmpty) {
+      final first = v.first;
+      if (first == null) return null;
+      final s = first is String ? first : first.toString();
+      return s.trim().isNotEmpty ? s : null;
     }
     return null;
   }

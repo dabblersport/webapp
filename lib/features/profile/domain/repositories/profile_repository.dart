@@ -14,10 +14,14 @@ typedef UploadProgressCallback = void Function(double progress);
 abstract class ProfileRepository {
   /// Retrieves a user profile by user ID
   /// [profileType] - Optional filter by profile type ('player' or 'organiser')
+  /// [filterActive] - When false, returns profiles regardless of is_active flag
+  /// [profileId] - When provided, loads the exact profile row by PK
   /// Returns [UserProfile] on success or [Failure] on error
   Future<Either<Failure, UserProfile>> getProfile(
     String userId, {
     String? profileType,
+    bool filterActive = true,
+    String? profileId,
   });
 
   /// Updates user profile information

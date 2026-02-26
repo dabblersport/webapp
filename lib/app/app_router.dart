@@ -46,7 +46,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/register_s
 // Core screens
 import 'package:dabbler/features/error/presentation/pages/error_page.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/social_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/activities_screen_v2.dart';
 import 'package:dabbler/features/misc/presentation/screens/rewards_screen.dart';
@@ -90,16 +89,16 @@ import 'package:dabbler/features/notifications/presentation/screens/notification
 import 'package:dabbler/features/misc/presentation/screens/create_game_screen.dart';
 
 // Social screens
-import 'package:dabbler/features/social/presentation/screens/social_feed_screen.dart';
+import 'package:dabbler/features/social/presentation/screens/post_detail_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/social_feed/thread_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_welcome_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_friends_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_privacy_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_notifications_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_complete_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
+import 'package:dabbler/features/social/presentation/screens/create_post_screen.dart';
 
 // Admin screens
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
@@ -699,22 +698,11 @@ class AppRouter {
       ),
     ),
 
-    // Social/Community route (hidden for MVP)
-    // Route kept for deep links/admin access but UI entry points hidden
+    // Social/Community route — feed lives in HomeScreen now.
     GoRoute(
       path: RoutePaths.social,
       name: RouteNames.social,
-      redirect: (context, state) {
-        // Social feed hidden for MVP
-        if (!FeatureFlags.socialFeed) {
-          return RoutePaths.home;
-        }
-        return null; // Allow access if enabled
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const SocialScreen(),
-      ),
+      redirect: (context, state) => RoutePaths.home,
     ),
 
     // Sports route (hidden for MVP - not in tab list)
@@ -1130,21 +1118,22 @@ class AppRouter {
       ),
     ),
 
-    // Add Post and Social Create Post routes removed —
-    // post creation is handled exclusively via InlinePostComposer bottom sheet.
+    // ── Post Creation ──
+    GoRoute(
+      path: RoutePaths.socialCreatePost,
+      name: RouteNames.socialCreatePost,
+      pageBuilder: (context, state) => SlideTransitionPage(
+        key: state.pageKey,
+        child: const CreatePostScreen(),
+        direction: SlideDirection.fromBottom,
+      ),
+    ),
 
-    // Social Routes - hidden for MVP
+    // Social Feed route — feed lives in HomeScreen now.
     GoRoute(
       path: RoutePaths.socialFeed,
       name: RouteNames.socialFeed,
-      redirect: (context, state) {
-        if (!FeatureFlags.socialFeed) return RoutePaths.home;
-        return null;
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const SocialFeedScreen(),
-      ),
+      redirect: (context, state) => RoutePaths.home,
     ),
 
     GoRoute(
@@ -1167,7 +1156,7 @@ class AppRouter {
         final postId = state.pathParameters['postId'] ?? '';
         return ScaleTransitionPage(
           key: state.pageKey,
-          child: ThreadScreen(postId: postId),
+          child: PostDetailScreen(postId: postId),
         );
       },
     ),
@@ -1177,9 +1166,10 @@ class AppRouter {
       name: RouteNames.userProfile,
       pageBuilder: (context, state) {
         final userId = state.pathParameters['userId'] ?? '';
+        final profileId = state.uri.queryParameters['profileId'];
         return SharedAxisTransitionPage(
           key: state.pageKey,
-          child: UserProfileScreen(userId: userId),
+          child: UserProfileScreen(userId: userId, profileId: profileId),
           type: SharedAxisType.horizontal,
         );
       },

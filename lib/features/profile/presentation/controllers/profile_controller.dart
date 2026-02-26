@@ -103,12 +103,22 @@ class ProfileController extends StateNotifier<ProfileState> {
   }
 
   /// Load user profile from repository
-  Future<void> loadProfile(String userId, {String? profileType}) async {
-    // If loading a different user, clear stale data so UI shows loading skeleton
-    // instead of the previous user's profile.
+  Future<void> loadProfile(
+    String userId, {
+    String? profileType,
+    bool filterActive = true,
+    String? profileId,
+  }) async {
+    // If loading a different user OR a different profile (same user, different
+    // persona), clear stale data so UI shows loading skeleton instead of the
+    // previous profile.
     final isDifferentUser =
         state.profile != null && state.profile!.userId != userId;
-    if (isDifferentUser) {
+    final isDifferentProfile =
+        profileId != null &&
+        state.profile != null &&
+        state.profile!.id != profileId;
+    if (isDifferentUser || isDifferentProfile) {
       state = const ProfileState(isLoading: true);
     } else {
       state = state.copyWith(
@@ -122,6 +132,8 @@ class ProfileController extends StateNotifier<ProfileState> {
       final profile = await _getProfileUseCase(
         userId,
         profileType: profileType,
+        filterActive: filterActive,
+        profileId: profileId,
       );
       if (profile != null) {
         await _updateProfileCompletion(profile);
