@@ -19,9 +19,18 @@ jobs:
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
-
-      - name: Build and deploy
-        uses: bluefireteam/flutter-gh-pages@v9
         with:
-          # IMPORTANT: change this to your repo name
-          baseHref: /webapp/
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web
+        run: flutter build web --release --base-href /webapp/
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          publish_branch: gh-pages
