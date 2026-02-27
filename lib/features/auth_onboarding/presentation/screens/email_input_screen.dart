@@ -99,8 +99,14 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       );
     } catch (e) {
       if (mounted) {
+        final raw = e.toString();
+        final message = raw.startsWith('Exception: ')
+            ? raw.substring('Exception: '.length)
+            : raw;
         setState(() {
-          _errorMessage = 'An error occurred. Please try again.';
+          _errorMessage = kDebugMode
+              ? message
+              : 'An error occurred. Please try again.';
         });
       }
       return; // Don't navigate if there's an error
