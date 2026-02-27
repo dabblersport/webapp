@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - BETA
   workflow_dispatch:
 
 permissions:
@@ -24,22 +25,26 @@ jobs:
           flutter-version: 3.38.9
           cache: true
 
-      - name: Create .env file
+      - name: Create placeholder .env asset
         run: |
-          cat > .env << 'EOF'
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-          SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          APP_NAME=${{ secrets.APP_NAME }}
-          ENVIRONMENT=production
-          GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          EOF
+          # `.env` is listed under `flutter/assets` in pubspec.yaml.
+          # Web config is provided via `--dart-define`, but we still need
+          # the file to exist so the build can bundle assets.
+          : > .env
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build web
-        run: flutter build web --release --base-href /webapp/
+        run: |
+          flutter build web --release \
+            --base-href /webapp/ \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }} \
+            --dart-define=APP_NAME=${{ secrets.APP_NAME }} \
+            --dart-define=ENVIRONMENT=production \
+            --dart-define=GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
