@@ -149,11 +149,18 @@ Future<void> main() async {
     // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
 
     runApp(const ProviderScope(child: MyApp()));
-  } catch (e) {
-    // Log minimal error information without excessive debug output
-    // ignore: avoid_print
-    // ...existing code...
-    // Still try to run the app even if there's an error
+  } catch (e, st) {
+    // In debug, fail fast so configuration issues are visible (instead of
+    // crashing later when something accesses Supabase.instance).
+    if (kDebugMode) {
+      // ignore: avoid_print
+      print('App bootstrap failed: $e');
+      // ignore: avoid_print
+      print(st);
+      rethrow;
+    }
+
+    // In release, still attempt to render the app (best-effort).
     runApp(const ProviderScope(child: MyApp()));
   }
 }
