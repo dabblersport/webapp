@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -61,6 +62,25 @@ void _logFlagsOnce() {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Ensure we surface real errors in the browser console on Flutter web.
+  // This is especially important for production builds where exceptions are
+  // otherwise hard to inspect (minified stack traces, generic UI errors).
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // ignore: avoid_print
+    print('FlutterError: ${details.exceptionAsString()}');
+    // ignore: avoid_print
+    print(details.stack);
+  };
+
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    // ignore: avoid_print
+    print('Uncaught platform error: $error');
+    // ignore: avoid_print
+    print(stack);
+    return true;
+  };
+
   // Enable edge-to-edge mode for Android 15+ compatibility (SDK 35+).
   // This ensures the app draws behind system bars and handles insets properly.
   // Note: Do NOT use SystemChrome.setSystemUIOverlayStyle with color properties
@@ -74,95 +94,104 @@ Future<void> main() async {
     debugProfileBuildsEnabled = false;
   }
 
-  try {
-    await Environment.load();
+  await runZonedGuarded(() async {
+    try {
+      await Environment.load();
 
-    // Register background message handler (must be before Firebase.initializeApp)
-    if (!kIsWeb) {
-      FirebaseMessaging.onBackgroundMessage(
-        _firebaseMessagingBackgroundHandler,
+      // Register background message handler (must be before Firebase.initializeApp)
+      if (!kIsWeb) {
+        FirebaseMessaging.onBackgroundMessage(
+          _firebaseMessagingBackgroundHandler,
+        );
+      }
+
+      // Initialize theme service before running the app
+      // Location service is now initialized on-demand in sports screen
+      await ThemeService().init();
+
+      // Preload token-based color schemes and build ThemeData.
+      await AppTheme.initialize();
+
+      // Always use the JWT anon key for Supabase initialisation.
+      // The publishable-key format (sb_publishable_*) is not a JWT and
+      // is incompatible with the current supabase_flutter SDK, causing
+      // every authenticated request to fail silently.
+      final anonKey = Environment.supabaseAnonKey;
+
+      // Initialize Supabase with deep-link detection enabled for auth flows
+      // This is required so that OAuth providers (e.g. Google) can return
+      // to the app and have the session detected from the redirect URL.
+      await Supabase.initialize(
+        url: Environment.supabaseUrl,
+        anonKey: anonKey,
+        authOptions: FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+          // Must be true for Google sign-in to work correctly (PKCE flow).
+          // Referral deep links can still be controlled separately via feature flags.
+          detectSessionInUri: true,
+          autoRefreshToken: true,
+        ),
       );
-    }
 
-    // Initialize theme service before running the app
-    // Location service is now initialized on-demand in sports screen
-    await ThemeService().init();
+      // Push notification service — initialize on mobile to set up
+      // foreground handling, token refresh, and notification tap listeners.
+      // Wire the tap callback BEFORE init so getInitialMessage can use it.
+      if (!kIsWeb) {
+        push_mobile.PushNotificationService.instance.onNotificationTap = (route) {
+          // Delay slightly to ensure router/navigator is mounted on cold start
+          Future.delayed(const Duration(milliseconds: 500), () {
+            appRouter.push(route);
+          });
+        };
+        // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
+        unawaited(push_mobile.PushNotificationService.instance.init());
+      }
 
-    // Preload token-based color schemes and build ThemeData.
-    await AppTheme.initialize();
+      // Log the Supabase authorization token (JWT) after initialization and sign-in
+      final authService = Supabase.instance.client.auth;
+      final session = authService.currentSession;
+      final accessToken = session?.accessToken;
+      if (accessToken != null) {
+        // Use debugPrint for logging in development
+      } else {}
 
-    // Always use the JWT anon key for Supabase initialisation.
-    // The publishable-key format (sb_publishable_*) is not a JWT and
-    // is incompatible with the current supabase_flutter SDK, causing
-    // every authenticated request to fail silently.
-    final anonKey = Environment.supabaseAnonKey;
+      // Log feature flags snapshot once per session
+      _logFlagsOnce();
 
-    // Initialize Supabase with deep-link detection enabled for auth flows
-    // This is required so that OAuth providers (e.g. Google) can return
-    // to the app and have the session detected from the redirect URL.
-    await Supabase.initialize(
-      url: Environment.supabaseUrl,
-      anonKey: anonKey,
-      authOptions: FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-        // Must be true for Google sign-in to work correctly (PKCE flow).
-        // Referral deep links can still be controlled separately via feature flags.
-        detectSessionInUri: true,
-        autoRefreshToken: true,
-      ),
-    );
+      // Initialize app lifecycle manager
+      AppLifecycleManager().init();
 
-    // Push notification service — initialize on mobile to set up
-    // foreground handling, token refresh, and notification tap listeners.
-    // Wire the tap callback BEFORE init so getInitialMessage can use it.
-    if (!kIsWeb) {
-      push_mobile.PushNotificationService.instance.onNotificationTap = (route) {
-        // Delay slightly to ensure router/navigator is mounted on cold start
-        Future.delayed(const Duration(milliseconds: 500), () {
-          appRouter.push(route);
-        });
-      };
-      // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
-      unawaited(push_mobile.PushNotificationService.instance.init());
-    }
+      // Proactively refresh session on resume to avoid "JWT expired" loops.
+      // This is best-effort; failures will be handled by per-request retry.
+      AppLifecycleManager().onResume(() {
+        unawaited(AuthService().refreshSession());
+      });
 
-    // Log the Supabase authorization token (JWT) after initialization and sign-in
-    final authService = Supabase.instance.client.auth;
-    final session = authService.currentSession;
-    final accessToken = session?.accessToken;
-    if (accessToken != null) {
-      // Use debugPrint for logging in development
-    } else {}
+      // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
 
-    // Log feature flags snapshot once per session
-    _logFlagsOnce();
-
-    // Initialize app lifecycle manager
-    AppLifecycleManager().init();
-
-    // Proactively refresh session on resume to avoid "JWT expired" loops.
-    // This is best-effort; failures will be handled by per-request retry.
-    AppLifecycleManager().onResume(() {
-      unawaited(AuthService().refreshSession());
-    });
-
-    // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
-
-    runApp(const ProviderScope(child: MyApp()));
-  } catch (e, st) {
-    // In debug, fail fast so configuration issues are visible (instead of
-    // crashing later when something accesses Supabase.instance).
-    if (kDebugMode) {
+      runApp(const ProviderScope(child: MyApp()));
+    } catch (e, st) {
+      // Always log bootstrap errors so production web isn't a black box.
       // ignore: avoid_print
       print('App bootstrap failed: $e');
       // ignore: avoid_print
       print(st);
-      rethrow;
-    }
 
-    // In release, still attempt to render the app (best-effort).
-    runApp(const ProviderScope(child: MyApp()));
-  }
+      // In debug, fail fast so configuration issues are visible (instead of
+      // crashing later when something accesses Supabase.instance).
+      if (kDebugMode) {
+        rethrow;
+      }
+
+      // In release, still attempt to render the app (best-effort).
+      runApp(const ProviderScope(child: MyApp()));
+    }
+  }, (Object error, StackTrace stack) {
+    // ignore: avoid_print
+    print('Uncaught zoned error: $error');
+    // ignore: avoid_print
+    print(stack);
+  });
 }
 
 class MyApp extends StatelessWidget {
