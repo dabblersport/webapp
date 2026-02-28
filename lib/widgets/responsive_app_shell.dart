@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import 'app_background.dart';
 
@@ -23,7 +24,10 @@ class ResponsiveAppShell extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool clampWidth = constraints.maxWidth > maxContentWidth;
+        // On web, allow the UI to expand to the full browser width.
+        // Clamping is kept for mobile-first behavior on other platforms.
+        final bool clampWidth =
+            !kIsWeb && constraints.maxWidth > maxContentWidth;
         final double targetWidth = clampWidth
             ? maxContentWidth
             : constraints.maxWidth;

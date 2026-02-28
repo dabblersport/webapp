@@ -60,42 +60,38 @@ void _logFlagsOnce() {
 }
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Ensure we surface real errors in the browser console on Flutter web.
-  // This is especially important for production builds where exceptions are
-  // otherwise hard to inspect (minified stack traces, generic UI errors).
-  FlutterError.onError = (FlutterErrorDetails details) {
-    FlutterError.presentError(details);
-    // ignore: avoid_print
-    print('FlutterError: ${details.exceptionAsString()}');
-    // ignore: avoid_print
-    print(details.stack);
-  };
-
-  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-    // ignore: avoid_print
-    print('Uncaught platform error: $error');
-    // ignore: avoid_print
-    print(stack);
-    return true;
-  };
-
-  // Enable edge-to-edge mode for Android 15+ compatibility (SDK 35+).
-  // This ensures the app draws behind system bars and handles insets properly.
-  // Note: Do NOT use SystemChrome.setSystemUIOverlayStyle with color properties
-  // as that triggers deprecated Window.setStatusBarColor/setNavigationBarColor
-  // on Android 15 (SDK 35+). The native enableEdgeToEdge() in MainActivity
-  // handles transparent bars via the modern WindowInsetsController API.
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-  // Disable inspector features for web debugging
-  if (kIsWeb && kDebugMode) {
-    debugProfileBuildsEnabled = false;
-  }
-
+  // Everything—including WidgetsFlutterBinding.ensureInitialized()—must live
+  // inside the same zone as runApp(). Otherwise Flutter throws a
+  // "Zone mismatch" assertion on web (and potentially on mobile).
   await runZonedGuarded(
     () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      // Surface real errors in the browser console on Flutter web.
+      FlutterError.onError = (FlutterErrorDetails details) {
+        FlutterError.presentError(details);
+        // ignore: avoid_print
+        print('FlutterError: ${details.exceptionAsString()}');
+        // ignore: avoid_print
+        print(details.stack);
+      };
+
+      PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+        // ignore: avoid_print
+        print('Uncaught platform error: $error');
+        // ignore: avoid_print
+        print(stack);
+        return true;
+      };
+
+      // Enable edge-to-edge mode for Android 15+ compatibility (SDK 35+).
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+      // Disable inspector features for web debugging
+      if (kIsWeb && kDebugMode) {
+        debugProfileBuildsEnabled = false;
+      }
+
       try {
         await Environment.load();
 

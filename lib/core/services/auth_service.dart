@@ -321,9 +321,18 @@ class AuthService {
       }
 
       // Native flow for Android, iOS, and web
+      //
+      // clientId       – used by the web and iOS platforms.
+      // serverClientId – used by Android (Credential Manager) to request an
+      //                  idToken whose "aud" claim matches the Web client that
+      //                  Supabase verifies against.
+      final webClientId = Environment.googleWebClientId;
       final googleSignIn = GoogleSignIn(
         scopes: const ['email', 'profile', 'openid'],
-        clientId: kIsWeb ? Environment.googleWebClientId : null,
+        // clientId is used by the web (and iOS) plugin.
+        clientId: kIsWeb ? webClientId : null,
+        // serverClientId is used by Android only; the web plugin throws if set.
+        serverClientId: !kIsWeb && webClientId.isNotEmpty ? webClientId : null,
       );
 
       GoogleSignInAccount? account;

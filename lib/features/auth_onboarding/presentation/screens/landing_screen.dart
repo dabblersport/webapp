@@ -16,7 +16,7 @@ class LandingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
     final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
 
     return Scaffold(
@@ -55,8 +55,10 @@ class LandingPage extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.xxxl),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: AppSpacing.lg,
+                                runSpacing: AppSpacing.sm,
                                 children: [
                                   CircleAvatar(
                                     radius: AppSpacing.xxxl + AppSpacing.xs,
@@ -66,10 +68,10 @@ class LandingPage extends StatelessWidget {
                                       'assets/Avatar/female-3.png',
                                     ),
                                   ),
-                                  const SizedBox(width: AppSpacing.lg),
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       DecoratedBox(
                                         decoration: BoxDecoration(
@@ -130,7 +132,7 @@ class LandingPage extends StatelessWidget {
                               ),
                               const SizedBox(height: AppSpacing.xxl),
                               Text(
-                                'Between work and life finding a game feels harder than a 90-minute\nrun.',
+                                'Between work and life finding a game feels harder than a 90-minute run.',
                                 style: theme.textTheme.headlineMedium?.copyWith(
                                   color: tokens.main.onSecondaryContainer,
                                   fontWeight: FontWeight.w800,
