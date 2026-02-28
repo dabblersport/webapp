@@ -33,6 +33,7 @@
     "/^cat \"/Users/moatazmustapha/Library/Application Support/Code/User/workspaceStorage/852760e6bd4bda813181c6a59edab75b/GitHub\\.copilot-chat/chat-session-resources/bcbaceab-312f-4897-a68f-ac2bdcd59cae/toolu_01QjX5sdiAJXk9A2HpA5s3eb__vscode-1771788356347/content\\.json\" \\| python3 -c \"\nimport json, sys\ndata = json\\.load\\(sys\\.stdin\\)\nprint\\(type\\(data\\)\\.__name__\\)\nif isinstance\\(data, list\\):\n    print\\('len:', len\\(data\\)\\)\n    if data:\n        print\\('first item type:', type\\(data\\[0\\]\\)\\.__name__\\)\n        print\\('first item:', json\\.dumps\\(data\\[0\\]\\)\\[:500\\]\\)\nelif isinstance\\(data, dict\\):\n    print\\('keys:', list\\(data\\.keys\\(\\)\\)\\[:10\\]\\)\n    # look for arrays in the dict\n    for k, v in data\\.items\\(\\):\n        if isinstance\\(v, list\\):\n            print\\(f'  \\{k\\}: list of \\{len\\(v\\)\\}'\\)\n            if v:\n                print\\(f'    first: \\{json\\.dumps\\(v\\[0\\]\\)\\[:300\\]\\}'\\)\nelse:\n    print\\(str\\(data\\)\\[:500\\]\\)\n\" 2>&1$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "git push": true
   }
 }
