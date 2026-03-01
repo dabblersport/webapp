@@ -18,6 +18,7 @@ class Post with _$Post {
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
     @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     @JsonKey(name: 'author_username') String? authorUsername,
+    @JsonKey(name: 'author_sport_emoji') String? authorSportEmoji,
 
     /// `post_kind` enum column (NOT NULL in DB).
     @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)

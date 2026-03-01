@@ -13,6 +13,7 @@ _$PostImpl _$$PostImplFromJson(Map<String, dynamic> json) => _$PostImpl(
   authorDisplayName: json['author_display_name'] as String?,
   authorAvatarUrl: json['author_avatar_url'] as String?,
   authorUsername: json['author_username'] as String?,
+  authorSportEmoji: json['author_sport_emoji'] as String?,
   kind: _postKindFromJson(json['kind'] as String),
   postType: json['post_type'] == null
       ? PostType.dab
@@ -75,6 +76,7 @@ Map<String, dynamic> _$$PostImplToJson(
   'author_display_name': instance.authorDisplayName,
   'author_avatar_url': instance.authorAvatarUrl,
   'author_username': instance.authorUsername,
+  'author_sport_emoji': instance.authorSportEmoji,
   'kind': _postKindToJson(instance.kind),
   'post_type': _postTypeToJson(instance.postType),
   'origin_type': _originTypeToJson(instance.originType),

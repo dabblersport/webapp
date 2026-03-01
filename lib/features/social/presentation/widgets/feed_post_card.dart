@@ -1,3 +1,4 @@
+import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -113,23 +114,6 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return [];
   }
 
-  Widget _buildReactIcon(Set<String> myReactions, ColorScheme cs) {
-    if (myReactions.isNotEmpty) {
-      final vibesList = ref.watch(vibesProvider).valueOrNull ?? [];
-      for (final vId in myReactions) {
-        final match = vibesList.where((v) => v.id == vId).firstOrNull;
-        if (match != null && match.emoji != null && match.emoji!.isNotEmpty) {
-          return Text(match.emoji!, style: const TextStyle(fontSize: 18));
-        }
-      }
-    }
-    return Icon(
-      Icons.add_reaction_outlined,
-      size: 18,
-      color: cs.onSurfaceVariant,
-    );
-  }
-
   // ── Data helpers ────────────────────────────────────────────────────
 
   String _relativeTime(DateTime createdAt) {
@@ -218,10 +202,14 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return null;
   }
 
-  String _formatCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
-    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
-    return '$count';
+  Widget _dotSep(TextTheme tt, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Text(
+        '·',
+        style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+      ),
+    );
   }
 
   String? _expiryLabel(DateTime? expiresAt) {
@@ -258,363 +246,341 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
 
     return GestureDetector(
       onTap: () => context.push('${RoutePaths.socialPostDetail}/${post.id}'),
-      child: Container(
-        //margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ═══ Author row ═══
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 8, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  GestureDetector(
-                    onTap: isAnonymous
-                        ? null
-                        : () => _navigateToAuthorProfile(context, post),
-                    child: _AuthorAvatar(
-                      avatarUrl: resolveAvatarUrl(post.authorAvatarUrl),
-                      label: authorLabel,
-                      radius: 20,
-                      isAnonymous: isAnonymous,
-                      cs: cs,
-                      tt: tt,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: AppSpacing.xl,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ═══ Avatar with + button ═══
+                GestureDetector(
+                  onTap: isAnonymous
+                      ? null
+                      : () => _navigateToAuthorProfile(context, post),
+                  child: SizedBox(
+                    width: 48,
+                    height: 52,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        _AuthorAvatar(
+                          avatarUrl: resolveAvatarUrl(post.authorAvatarUrl),
+                          label: authorLabel,
+                          radius: 22,
+                          isAnonymous: isAnonymous,
+                          cs: cs,
+                          tt: tt,
+                        ),
+                        if (!isAnonymous && post.authorSportEmoji != null)
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                color: cs.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: cs.surface,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  post.authorSportEmoji!,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: isAnonymous
-                          ? null
-                          : () => _navigateToAuthorProfile(context, post),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(width: 10),
+
+                // ═══ Content column ═══
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Author name + persona badge + time ──
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  authorLabel,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: tt.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                          Flexible(
+                            flex: 0,
+                            child: GestureDetector(
+                              onTap: isAnonymous
+                                  ? null
+                                  : () =>
+                                        _navigateToAuthorProfile(context, post),
+                              child: Text(
+                                authorLabel,
+                                overflow: TextOverflow.ellipsis,
+                                style: tt.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              if (post.personaTypeSnapshot != null) ...[
-                                const SizedBox(width: 6),
-                                _MetaBadge(
-                                  label: post.personaTypeSnapshot == 'organiser'
-                                      ? '🎯 Org'
-                                      : '🎮 Player',
-                                  color: cs.tertiaryContainer,
-                                  textColor: cs.onTertiaryContainer,
-                                ),
-                              ],
-                            ],
+                            ),
                           ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              Icon(
-                                _visibilityIcon(post.visibility),
-                                size: 12,
-                                color: cs.onSurfaceVariant,
+                          if (post.personaTypeSnapshot != null) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                timeAgo,
-                                style: tt.bodySmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
+                              decoration: BoxDecoration(
+                                color: post.personaTypeSnapshot == 'organiser'
+                                    ? cs.tertiaryContainer
+                                    : cs.errorContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                post.personaTypeSnapshot == 'organiser'
+                                    ? 'Organiser'
+                                    : 'Player',
+                                style: tt.labelSmall?.copyWith(
+                                  color: post.personaTypeSnapshot == 'organiser'
+                                      ? cs.onTertiaryContainer
+                                      : cs.onErrorContainer,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 10,
                                 ),
                               ),
-                              _dotSep(tt, cs),
-                              Text(
-                                _kindLabel(post.kind),
-                                style: tt.bodySmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                              if (typeLabel != null) ...[
-                                _dotSep(tt, cs),
-                                Flexible(
-                                  child: Text(
-                                    typeLabel,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: tt.bodySmall?.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              if (post.isEdited) ...[
-                                _dotSep(tt, cs),
-                                Text(
-                                  'edited',
-                                  style: tt.bodySmall?.copyWith(
-                                    color: cs.onSurfaceVariant,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ],
+                            ),
+                          ],
+                          const Spacer(),
+                          Text(
+                            timeAgo,
+                            style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
                           ),
+                          if (post.isPinned) ...[
+                            const SizedBox(width: 4),
+                            Icon(Icons.push_pin, size: 14, color: cs.primary),
+                          ],
                         ],
                       ),
-                    ),
-                  ),
-                  if (post.isPinned)
-                    Icon(Icons.push_pin, size: 16, color: cs.primary),
-                ],
-              ),
-            ),
 
-            // ═══ Contextual metadata chips ═══
-            if (originLabel != null ||
-                post.lang != null ||
-                hasLocation ||
-                post.requiresModeration ||
-                expiryText != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    if (originLabel != null)
-                      _MetaBadge(
-                        label: '🔗 $originLabel',
-                        color: cs.secondaryContainer,
-                        textColor: cs.onSecondaryContainer,
+                      // ── Visibility + Kind + meta ──
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Icon(
+                            _visibilityIcon(post.visibility),
+                            size: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            timeAgo,
+                            style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          _dotSep(tt, cs),
+                          Text(
+                            _kindLabel(post.kind),
+                            style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          if (typeLabel != null) ...[
+                            _dotSep(tt, cs),
+                            Flexible(
+                              child: Text(
+                                typeLabel,
+                                overflow: TextOverflow.ellipsis,
+                                style: tt.bodySmall?.copyWith(
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (post.isEdited) ...[
+                            _dotSep(tt, cs),
+                            Text(
+                              'edited',
+                              style: tt.bodySmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    if (hasLocation)
-                      _MetaBadge(
-                        label: '📍 Location',
-                        color: cs.secondaryContainer,
-                        textColor: cs.onSecondaryContainer,
-                      ),
-                    if (post.lang != null && post.lang!.isNotEmpty)
-                      _MetaBadge(
-                        label: '🌐 ${post.lang!.toUpperCase()}',
-                        color: cs.surfaceContainerHigh,
-                        textColor: cs.onSurfaceVariant,
-                      ),
-                    if (post.requiresModeration)
-                      _MetaBadge(
-                        label: '⏳ Pending review',
-                        color: cs.errorContainer,
-                        textColor: cs.onErrorContainer,
-                      ),
-                    if (expiryText != null)
-                      _MetaBadge(
-                        label: '⏱ $expiryText',
-                        color: cs.errorContainer,
-                        textColor: cs.onErrorContainer,
-                      ),
-                  ],
-                ),
-              ),
 
-            // ═══ Image ═══
-            if (hasImage)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: cs.surfaceContainerHigh,
-                        child: Icon(
-                          Icons.image_not_supported_outlined,
-                          color: cs.onSurfaceVariant,
+                      // ── Contextual metadata chips ──
+                      if (originLabel != null ||
+                          hasLocation ||
+                          post.requiresModeration ||
+                          expiryText != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (originLabel != null)
+                                _MetaBadge(
+                                  label: '🔗 $originLabel',
+                                  color: cs.secondaryContainer,
+                                  textColor: cs.onSecondaryContainer,
+                                ),
+                              if (hasLocation)
+                                _MetaBadge(
+                                  label: '📍 Location',
+                                  color: cs.secondaryContainer,
+                                  textColor: cs.onSecondaryContainer,
+                                ),
+                              if (post.requiresModeration)
+                                _MetaBadge(
+                                  label: '⏳ Pending review',
+                                  color: cs.errorContainer,
+                                  textColor: cs.onErrorContainer,
+                                ),
+                              if (expiryText != null)
+                                _MetaBadge(
+                                  label: '⏱ $expiryText',
+                                  color: cs.errorContainer,
+                                  textColor: cs.onErrorContainer,
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
 
-            // ═══ Body text ═══
-            if (post.body != null && post.body!.trim().isNotEmpty)
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, hasImage ? 10 : 8, 16, 0),
-                child: Text(
-                  post.body!,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: tt.bodyMedium?.copyWith(
-                    color: cs.onSurface,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-
-            // ═══ Tags ═══
-            if (post.tags.length > 1)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: post.tags.skip(1).map((tag) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '#$tag',
-                        style: tt.labelSmall?.copyWith(color: cs.primary),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-            // ═══ Reaction breakdown chips ═══
-            if (_reactionBreakdownEntries(post).isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Builder(
-                  builder: (context) {
-                    final vibesList =
-                        ref.watch(vibesProvider).valueOrNull ?? [];
-                    final entries = _reactionBreakdownEntries(post);
-                    return Row(
-                      children: [
-                        ...entries.take(5).map((entry) {
-                          final vibeKey = entry.key.toString();
-                          final count = entry.value as int;
-                          final matchedVibe = vibesList
-                              .where((v) => v.key == vibeKey)
-                              .firstOrNull;
-                          final emoji = matchedVibe?.emoji ?? vibeKey;
-                          final isMyReaction =
-                              matchedVibe != null &&
-                              myReactions.contains(matchedVibe.id);
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: GestureDetector(
-                              onTap: () {
-                                if (matchedVibe == null) return;
-                                final actions = ref.read(
-                                  postActionsProvider.notifier,
-                                );
-                                if (isMyReaction) {
-                                  actions.removeReaction(
-                                    post.id,
-                                    matchedVibe.id,
-                                  );
-                                } else {
-                                  actions.reactToPost(post.id, matchedVibe.id);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isMyReaction
-                                      ? cs.primaryContainer
-                                      : cs.surfaceContainerHigh,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: isMyReaction
-                                      ? Border.all(
-                                          color: cs.primary,
-                                          width: 1.5,
-                                        )
-                                      : null,
-                                ),
-                                child: Text(
-                                  '$emoji $count',
-                                  style: tt.labelSmall?.copyWith(
-                                    color: isMyReaction
-                                        ? cs.onPrimaryContainer
-                                        : null,
-                                    fontWeight: isMyReaction
-                                        ? FontWeight.w700
-                                        : null,
+                      // ═══ Image ═══
+                      if (hasImage)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: Image.network(
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: cs.surfaceContainerHigh,
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: cs.onSurfaceVariant,
                                   ),
                                 ),
                               ),
                             ),
-                          );
-                        }),
-                      ],
-                    );
-                  },
-                ),
-              ),
+                          ),
+                        ),
 
-            // ═══ Bottom row: vibe chips (left) + actions (right) ═══
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 12, 12),
-              child: Row(
-                children: [
-                  // ── Vibe + sport chips ──
-                  if (post.vibes.isNotEmpty ||
-                      (post.sport != null && post.sport!.isNotEmpty))
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            if (post.sport != null && post.sport!.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: cs.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    post.sport!,
-                                    style: tt.labelSmall?.copyWith(
-                                      color: cs.onSecondaryContainer,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                      // ═══ Body text ═══
+                      if (post.body != null && post.body!.trim().isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: hasImage ? 8 : 6),
+                          child: Text(
+                            post.body!,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.bodyMedium?.copyWith(
+                              color: cs.onSurface,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+
+                      // ═══ Sport + Vibe chips ═══
+                      if (post.vibes.isNotEmpty ||
+                          (post.sport != null && post.sport!.isNotEmpty))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: [
+                              if (post.sport != null && post.sport!.isNotEmpty)
+                                Builder(
+                                  builder: (context) {
+                                    final sportsList =
+                                        ref.watch(sportsProvider).valueOrNull ??
+                                        [];
+                                    final matchedSport = sportsList
+                                        .where((s) => s.id == post.sportId)
+                                        .firstOrNull;
+                                    final sportColor = _parseHexColor(
+                                      matchedSport?.colorCode,
+                                      cs,
+                                    );
+                                    final sportText = post.sport!;
+                                    // Split emoji from label so emoji keeps native color
+                                    final emoji = matchedSport?.emoji ?? '';
+                                    final label =
+                                        emoji.isNotEmpty &&
+                                            sportText.startsWith(emoji)
+                                        ? sportText
+                                              .substring(emoji.length)
+                                              .trim()
+                                        : sportText;
+
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(
+                                          color: sportColor.withOpacity(0.4),
+                                        ),
+                                      ),
+                                      child: Text.rich(
+                                        TextSpan(
+                                          children: [
+                                            if (emoji.isNotEmpty)
+                                              TextSpan(
+                                                text: '$emoji ',
+                                                style: tt.labelSmall,
+                                              ),
+                                            TextSpan(
+                                              text: label,
+                                              style: tt.labelSmall?.copyWith(
+                                                color: sportColor,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              ),
-                            ...post.vibes.take(3).map((vibe) {
-                              final color = _parseHexColor(vibe.colorHex, cs);
-                              final emoji = vibe.emoji ?? '';
-                              final label = vibe.labelEn.isNotEmpty
-                                  ? vibe.labelEn
-                                  : vibe.key[0].toUpperCase() +
-                                        vibe.key.substring(1);
-                              final chipText = emoji.isNotEmpty
-                                  ? '$emoji $label'
-                                  : label;
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Container(
+                              ...post.vibes.take(3).map((vibe) {
+                                final color = _parseHexColor(vibe.colorHex, cs);
+                                final emoji = vibe.emoji ?? '';
+                                final label = vibe.labelEn.isNotEmpty
+                                    ? vibe.labelEn
+                                    : vibe.key[0].toUpperCase() +
+                                          vibe.key.substring(1);
+                                final chipText = emoji.isNotEmpty
+                                    ? '$emoji $label'
+                                    : label;
+                                return Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: color.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: color.withOpacity(0.4),
+                                    ),
                                   ),
                                   child: Text(
                                     chipText,
@@ -623,109 +589,356 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+
+                      // ═══ Tags ═══
+                      if (post.tags.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            children: post.tags.skip(1).map((tag) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: cs.surfaceContainerHigh,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  '#$tag',
+                                  style: tt.labelSmall?.copyWith(
+                                    color: cs.primary,
+                                  ),
                                 ),
                               );
-                            }),
-                          ],
+                            }).toList(),
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    const Spacer(),
 
-                  // ── Actions ──
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (post.viewCount > 0) ...[
-                        Icon(
-                          Icons.visibility_outlined,
-                          size: 16,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 3),
-                        Text(
-                          _formatCount(post.viewCount),
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
+                      // ═══ Reaction breakdown chips ═══
+                      if (_reactionBreakdownEntries(post).isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Builder(
+                            builder: (context) {
+                              final vibesList =
+                                  ref.watch(vibesProvider).valueOrNull ?? [];
+                              final entries = _reactionBreakdownEntries(post);
+                              return Row(
+                                children: [
+                                  ...entries.take(5).map((entry) {
+                                    final vibeKey = entry.key.toString();
+                                    final count = entry.value as int;
+                                    final matchedVibe = vibesList
+                                        .where((v) => v.key == vibeKey)
+                                        .firstOrNull;
+                                    final emoji = matchedVibe?.emoji ?? vibeKey;
+                                    final isMyReaction =
+                                        matchedVibe != null &&
+                                        myReactions.contains(matchedVibe.id);
+                                    return Padding(
+                                      padding: const EdgeInsets.only(right: 6),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          if (matchedVibe == null) return;
+                                          final actions = ref.read(
+                                            postActionsProvider.notifier,
+                                          );
+                                          if (isMyReaction) {
+                                            actions.removeReaction(
+                                              post.id,
+                                              matchedVibe.id,
+                                            );
+                                          } else {
+                                            actions.reactToPost(
+                                              post.id,
+                                              matchedVibe.id,
+                                            );
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: isMyReaction
+                                                ? cs.primaryContainer
+                                                : cs.surfaceContainerHigh,
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            border: isMyReaction
+                                                ? Border.all(
+                                                    color: cs.primary,
+                                                    width: 1.5,
+                                                  )
+                                                : null,
+                                          ),
+                                          child: Text(
+                                            '$emoji $count',
+                                            style: tt.labelSmall?.copyWith(
+                                              color: isMyReaction
+                                                  ? cs.onPrimaryContainer
+                                                  : null,
+                                              fontWeight: isMyReaction
+                                                  ? FontWeight.w700
+                                                  : null,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              );
+                            },
                           ),
                         ),
-                        const SizedBox(width: 12),
-                      ],
-                      Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        size: 18,
-                        color: cs.onSurfaceVariant,
-                      ),
-                      if (post.commentCount > 0) ...[
-                        const SizedBox(width: 3),
-                        Text(
-                          _formatCount(post.commentCount),
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _handleLikeTap(hasLiked),
+
+                      // ═══ Action bar ═══
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              hasLiked
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                              size: 18,
-                              color: hasLiked ? cs.error : cs.onSurfaceVariant,
-                            ),
-                            if (_localLikeCount > 0) ...[
-                              const SizedBox(width: 3),
-                              Text(
-                                _formatCount(_localLikeCount),
-                                style: tt.bodySmall?.copyWith(
-                                  color: hasLiked
-                                      ? cs.error
-                                      : cs.onSurfaceVariant,
-                                ),
+                            // Like
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _handleLikeTap(hasLiked),
+                              child: _ActionItem(
+                                icon: hasLiked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                count: _localLikeCount,
+                                color: hasLiked
+                                    ? cs.error
+                                    : cs.onSurfaceVariant,
+                                tt: tt,
                               ),
+                            ),
+                            const SizedBox(width: 16),
+                            // React
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _showReactionPicker(myReactions),
+                              child: _ActionItem(
+                                icon: Icons.add_reaction_outlined,
+                                count: _reactionBreakdownEntries(
+                                  post,
+                                ).fold<int>(0, (s, e) => s + (e.value as int)),
+                                color: cs.onSurfaceVariant,
+                                tt: tt,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Comment
+                            _ActionItem(
+                              icon: Icons.chat_bubble_outline_rounded,
+                              count: post.commentCount,
+                              color: cs.onSurfaceVariant,
+                              tt: tt,
+                            ),
+                            const SizedBox(width: 16),
+                            // Repost
+                            if (post.allowReposts) ...[
+                              _ActionItem(
+                                icon: Icons.repeat_rounded,
+                                count: 0,
+                                color: cs.onSurfaceVariant,
+                                tt: tt,
+                              ),
+                              const SizedBox(width: 16),
                             ],
+                            // Share / Views
+                            _ActionItem(
+                              icon: Icons.people_outline_rounded,
+                              count: post.viewCount,
+                              color: cs.onSurfaceVariant,
+                              tt: tt,
+                            ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _showReactionPicker(myReactions),
-                        child: _buildReactIcon(myReactions, cs),
-                      ),
-                      if (post.allowReposts) ...[
-                        const SizedBox(width: 12),
-                        Icon(
-                          Icons.repeat_rounded,
-                          size: 18,
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ],
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // ═══ Thread comment preview ═══
+          if (post.commentCount > 0) _ThreadCommentPreview(postId: post.id),
+        ],
       ),
     );
   }
+}
 
-  Widget _dotSep(TextTheme tt, ColorScheme cs) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 3),
-      child: Text(
-        '·',
-        style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-      ),
+// ═══════════════════════════════════════════════════════════════════════════════
+// Thread comment preview (latest comment shown below a post)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class _ThreadCommentPreview extends ConsumerWidget {
+  const _ThreadCommentPreview({required this.postId});
+
+  final String postId;
+
+  String _relativeTime(DateTime createdAt) {
+    final diff = DateTime.now().difference(createdAt);
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m';
+    if (diff.inHours < 24) return '${diff.inHours}h';
+    if (diff.inDays < 7) return '${diff.inDays}d';
+    return DateFormat.MMMd().format(createdAt);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncComment = ref.watch(latestCommentProvider(postId));
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return asyncComment.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (comment) {
+        if (comment == null) return const SizedBox.shrink();
+
+        final displayName = comment.authorDisplayName ?? 'User';
+        final avatarUrl = comment.authorAvatarUrl;
+        final timeAgo = _relativeTime(comment.createdAt);
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, 0, 16, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ═══ Thread avatar with + button ═══
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  _AuthorAvatar(
+                    avatarUrl: avatarUrl,
+                    label: displayName,
+                    radius: 14,
+                    isAnonymous: false,
+                    cs: cs,
+                    tt: tt,
+                  ),
+                  // Positioned(
+                  //   bottom: -2,
+                  //   right: -2,
+                  //   child: Container(
+                  //     width: 14,
+                  //     height: 14,
+                  //     decoration: BoxDecoration(
+                  //       color: cs.primary,
+                  //       shape: BoxShape.circle,
+                  //       border: Border.all(color: cs.surface, width: 1.5),
+                  //     ),
+                  //     child: Icon(Icons.add, size: 9, color: cs.onPrimary),
+                  //   ),
+                  // ),
+                ],
+              ),
+              const SizedBox(width: AppSpacing.xl),
+
+              // ═══ Comment content ═══
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ─── Author name + time + more ───
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: displayName,
+                                  style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurface,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '  $timeAgo',
+                                  style: tt.bodySmall?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Icon(
+                          Icons.more_horiz,
+                          size: 16,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+
+                    // ─── Body ───
+                    Text(
+                      comment.body,
+                      style: tt.bodySmall?.copyWith(color: cs.onSurface),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+
+                    // ─── Action bar ───
+                    Row(
+                      children: [
+                        _ActionItem(
+                          icon: Icons.favorite_border_rounded,
+                          count: 0,
+                          color: cs.onSurfaceVariant,
+                          tt: tt,
+                        ),
+                        const SizedBox(width: 16),
+                        _ActionItem(
+                          icon: Icons.chat_bubble_outline_rounded,
+                          count: 0,
+                          color: cs.onSurfaceVariant,
+                          tt: tt,
+                        ),
+                        const SizedBox(width: 16),
+                        _ActionItem(
+                          icon: Icons.repeat_rounded,
+                          count: 0,
+                          color: cs.onSurfaceVariant,
+                          tt: tt,
+                        ),
+                        const SizedBox(width: 16),
+                        _ActionItem(
+                          icon: Icons.people_outline_rounded,
+                          count: 0,
+                          color: cs.onSurfaceVariant,
+                          tt: tt,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -838,6 +1051,44 @@ class _MetaBadge extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
+    );
+  }
+}
+
+/// Single action item (icon + count) for the bottom action bar.
+class _ActionItem extends StatelessWidget {
+  const _ActionItem({
+    required this.icon,
+    required this.count,
+    required this.color,
+    required this.tt,
+  });
+
+  final IconData icon;
+  final int count;
+  final Color color;
+  final TextTheme tt;
+
+  String _formatCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K';
+    return '$count';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: color),
+        if (count > 0) ...[
+          const SizedBox(width: 3),
+          Text(
+            _formatCount(count),
+            style: tt.bodySmall?.copyWith(color: color),
+          ),
+        ],
+      ],
     );
   }
 }

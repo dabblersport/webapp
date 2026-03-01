@@ -36,7 +36,23 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       if (pid is String && pid.isNotEmpty) profileIds.add(pid);
     }
 
-    // Batch-fetch referenced sports.
+    // Batch-fetch author avatars, usernames, and primary_sport from profiles.
+    final Map<String, Map<String, dynamic>> profilesMap = {};
+    final primarySportKeys = <String>{};
+    if (profileIds.isNotEmpty) {
+      final profileRows = await _db
+          .from('profiles')
+          .select('id, avatar_url, username, primary_sport')
+          .inFilter('id', profileIds.toList());
+      for (final p in profileRows) {
+        profilesMap[p['id'] as String] = p;
+        // Collect primary_sport keys (text, not UUID) for a separate lookup.
+        final ps = p['primary_sport'];
+        if (ps is String && ps.isNotEmpty) primarySportKeys.add(ps);
+      }
+    }
+
+    // Batch-fetch referenced sports by UUID (post sport_id).
     final Map<String, Map<String, dynamic>> sportsMap = {};
     if (sportIds.isNotEmpty) {
       final sportRows = await _db
@@ -45,6 +61,19 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           .inFilter('id', sportIds.toList());
       for (final s in sportRows) {
         sportsMap[s['id'] as String] = s;
+      }
+    }
+
+    // Batch-fetch sports by sport_key for profile primary_sport resolution.
+    final Map<String, Map<String, dynamic>> sportKeyMap = {};
+    if (primarySportKeys.isNotEmpty) {
+      final keyRows = await _db
+          .from('sports')
+          .select('id, name_en, emoji, sport_key, category')
+          .inFilter('sport_key', primarySportKeys.toList());
+      for (final s in keyRows) {
+        final key = s['sport_key'];
+        if (key is String) sportKeyMap[key] = s;
       }
     }
 
@@ -60,20 +89,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
     }
 
-    // Batch-fetch author avatars and usernames from profiles.
-    final Map<String, Map<String, dynamic>> profilesMap = {};
-    if (profileIds.isNotEmpty) {
-      final profileRows = await _db
-          .from('profiles')
-          .select('id, avatar_url, username')
-          .inFilter('id', profileIds.toList());
-      for (final p in profileRows) {
-        profilesMap[p['id'] as String] = p;
-      }
-    }
-
     return rows
-        .map((raw) => _enrichRow(raw, sportsMap, vibesMap, profilesMap))
+        .map(
+          (raw) =>
+              _enrichRow(raw, sportsMap, vibesMap, profilesMap, sportKeyMap),
+        )
         .toList();
   }
 
@@ -83,6 +103,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     Map<String, Map<String, dynamic>> sportsMap,
     Map<String, Map<String, dynamic>> vibesMap,
     Map<String, Map<String, dynamic>> profilesMap,
+    Map<String, Map<String, dynamic>> sportKeyMap,
   ) {
     final row = Map<String, dynamic>.from(raw);
 
@@ -93,6 +114,15 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       if (authorProfile != null) {
         row['author_avatar_url'] ??= authorProfile['avatar_url'];
         row['author_username'] ??= authorProfile['username'];
+
+        // Resolve author's primary sport emoji via sport_key lookup.
+        final primarySportKey = authorProfile['primary_sport'];
+        if (primarySportKey is String && primarySportKey.isNotEmpty) {
+          final sportRef = sportKeyMap[primarySportKey];
+          if (sportRef != null) {
+            row['author_sport_emoji'] = sportRef['emoji'];
+          }
+        }
       }
     }
 

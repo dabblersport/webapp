@@ -12,6 +12,7 @@ class PostComment with _$PostComment {
     @JsonKey(name: 'author_user_id') required String authorUserId,
     @JsonKey(name: 'author_profile_id') required String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     required String body,
     @JsonKey(name: 'parent_comment_id') String? parentCommentId,
     @JsonKey(name: 'is_deleted') @Default(false) bool isDeleted,

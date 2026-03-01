@@ -32,6 +32,8 @@ mixin _$Post {
   String? get authorAvatarUrl => throw _privateConstructorUsedError;
   @JsonKey(name: 'author_username')
   String? get authorUsername => throw _privateConstructorUsedError;
+  @JsonKey(name: 'author_sport_emoji')
+  String? get authorSportEmoji => throw _privateConstructorUsedError;
 
   /// `post_kind` enum column (NOT NULL in DB).
   @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
@@ -155,6 +157,7 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
     @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     @JsonKey(name: 'author_username') String? authorUsername,
+    @JsonKey(name: 'author_sport_emoji') String? authorSportEmoji,
     @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
     PostKind kind,
     @JsonKey(
@@ -235,6 +238,7 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? authorDisplayName = freezed,
     Object? authorAvatarUrl = freezed,
     Object? authorUsername = freezed,
+    Object? authorSportEmoji = freezed,
     Object? kind = null,
     Object? postType = null,
     Object? originType = null,
@@ -298,6 +302,10 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
             authorUsername: freezed == authorUsername
                 ? _value.authorUsername
                 : authorUsername // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            authorSportEmoji: freezed == authorSportEmoji
+                ? _value.authorSportEmoji
+                : authorSportEmoji // ignore: cast_nullable_to_non_nullable
                       as String?,
             kind: null == kind
                 ? _value.kind
@@ -468,6 +476,7 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
     @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     @JsonKey(name: 'author_username') String? authorUsername,
+    @JsonKey(name: 'author_sport_emoji') String? authorSportEmoji,
     @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
     PostKind kind,
     @JsonKey(
@@ -545,6 +554,7 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? authorDisplayName = freezed,
     Object? authorAvatarUrl = freezed,
     Object? authorUsername = freezed,
+    Object? authorSportEmoji = freezed,
     Object? kind = null,
     Object? postType = null,
     Object? originType = null,
@@ -608,6 +618,10 @@ class __$$PostImplCopyWithImpl<$Res>
         authorUsername: freezed == authorUsername
             ? _value.authorUsername
             : authorUsername // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        authorSportEmoji: freezed == authorSportEmoji
+            ? _value.authorSportEmoji
+            : authorSportEmoji // ignore: cast_nullable_to_non_nullable
                   as String?,
         kind: null == kind
             ? _value.kind
@@ -772,6 +786,7 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'author_display_name') this.authorDisplayName,
     @JsonKey(name: 'author_avatar_url') this.authorAvatarUrl,
     @JsonKey(name: 'author_username') this.authorUsername,
+    @JsonKey(name: 'author_sport_emoji') this.authorSportEmoji,
     @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
     required this.kind,
     @JsonKey(
@@ -854,6 +869,9 @@ class _$PostImpl implements _Post {
   @override
   @JsonKey(name: 'author_username')
   final String? authorUsername;
+  @override
+  @JsonKey(name: 'author_sport_emoji')
+  final String? authorSportEmoji;
 
   /// `post_kind` enum column (NOT NULL in DB).
   @override
@@ -1027,7 +1045,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt)';
   }
 
   @override
@@ -1046,6 +1064,8 @@ class _$PostImpl implements _Post {
                 other.authorAvatarUrl == authorAvatarUrl) &&
             (identical(other.authorUsername, authorUsername) ||
                 other.authorUsername == authorUsername) &&
+            (identical(other.authorSportEmoji, authorSportEmoji) ||
+                other.authorSportEmoji == authorSportEmoji) &&
             (identical(other.kind, kind) || other.kind == kind) &&
             (identical(other.postType, postType) ||
                 other.postType == postType) &&
@@ -1122,6 +1142,7 @@ class _$PostImpl implements _Post {
     authorDisplayName,
     authorAvatarUrl,
     authorUsername,
+    authorSportEmoji,
     kind,
     postType,
     originType,
@@ -1183,6 +1204,7 @@ abstract class _Post implements Post {
     @JsonKey(name: 'author_display_name') final String? authorDisplayName,
     @JsonKey(name: 'author_avatar_url') final String? authorAvatarUrl,
     @JsonKey(name: 'author_username') final String? authorUsername,
+    @JsonKey(name: 'author_sport_emoji') final String? authorSportEmoji,
     @JsonKey(fromJson: _postKindFromJson, toJson: _postKindToJson)
     required final PostKind kind,
     @JsonKey(
@@ -1261,6 +1283,9 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'author_username')
   String? get authorUsername;
+  @override
+  @JsonKey(name: 'author_sport_emoji')
+  String? get authorSportEmoji;
 
   /// `post_kind` enum column (NOT NULL in DB).
   @override

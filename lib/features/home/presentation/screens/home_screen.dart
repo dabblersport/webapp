@@ -38,9 +38,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   String _selectedFilter = 'Most Recent';
   static const List<String> _filterLabels = [
     'Most Recent',
-    'Feed',
-    'News',
-    'Making Waves',
+    'Moments',
+    'Dabs',
+    'Kick-ins',
   ];
 
   @override
@@ -222,24 +222,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   Widget _buildHeader() {
     final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              'Public Feed',
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
+          // Dabbler text logo
+          SvgPicture.asset(
+            'assets/images/dabbler_text_logo.svg',
+            width: 100,
+            height: 18,
+            colorFilter: ColorFilter.mode(
+              colorScheme.onSurface,
+              BlendMode.srcIn,
             ),
           ),
+          const Spacer(),
           IconButton(
             onPressed: () => context.push(RoutePaths.socialSearch),
-            icon: const Icon(Icons.search_rounded),
+            icon: const Icon(Iconsax.search_normal_1_copy),
             style: IconButton.styleFrom(foregroundColor: colorScheme.onSurface),
           ),
           Stack(
@@ -255,13 +256,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               const Positioned(top: 4, right: 4, child: NotificationBadge()),
             ],
           ),
-
           IconButton(
             onPressed: () => context.push(RoutePaths.socialFriends),
             icon: const Icon(Iconsax.people_copy),
             style: IconButton.styleFrom(foregroundColor: colorScheme.onSurface),
           ),
-          const SizedBox(width: AppSpacing.xl),
+          const SizedBox(width: 4),
           GestureDetector(
             onTap: () => context.push(RoutePaths.profile),
             child: Container(
@@ -337,6 +337,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     final colorScheme = Theme.of(context).colorScheme;
     final feedState = ref.watch(feedNotifierProvider);
 
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: Stack(
@@ -349,15 +351,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 parent: BouncingScrollPhysics(),
               ),
               slivers: [
-                // Safe-area top spacing
+                // Safe-area top spacing (smaller on desktop)
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: MediaQuery.of(context).padding.top + 8,
+                    height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
                   ),
                 ),
 
-                // ── Header: "Public Feed" + icons + avatar ──
-                SliverToBoxAdapter(child: _buildHeader()),
+                // ── Header: only on mobile (desktop has side nav) ──
+                if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
 
                 // ── Filter chips ──
                 SliverToBoxAdapter(
@@ -511,10 +513,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     final itemCount = posts.length + (feedState.isLoadingMore ? 1 : 0);
 
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+      padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
       sliver: SliverList.separated(
         itemCount: itemCount,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          thickness: 1,
+          color: colorScheme.outlineVariant.withOpacity(0.3),
+        ),
         itemBuilder: (context, index) {
           if (index == posts.length) {
             return const Padding(

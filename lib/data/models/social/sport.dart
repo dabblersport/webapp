@@ -7,12 +7,14 @@ class Sport {
     required this.nameEn,
     this.emoji,
     this.category,
+    this.colorCode,
   });
 
   final String id;
   final String nameEn;
   final String? emoji;
   final String? category;
+  final String? colorCode;
 
   factory Sport.fromMap(Map<String, dynamic> map) {
     return Sport(
@@ -20,6 +22,7 @@ class Sport {
       nameEn: (map['name_en'] as String?) ?? '',
       emoji: map['emoji'] as String?,
       category: map['category'] as String?,
+      colorCode: map['color_code'] as String?,
     );
   }
 
@@ -28,6 +31,7 @@ class Sport {
     'name_en': nameEn,
     'emoji': emoji,
     'category': category,
+    'color_code': colorCode,
   };
 
   @override

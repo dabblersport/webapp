@@ -30,6 +30,8 @@ mixin _$PostComment {
   String get authorProfileId => throw _privateConstructorUsedError;
   @JsonKey(name: 'author_display_name')
   String? get authorDisplayName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'author_avatar_url')
+  String? get authorAvatarUrl => throw _privateConstructorUsedError;
   String get body => throw _privateConstructorUsedError;
   @JsonKey(name: 'parent_comment_id')
   String? get parentCommentId => throw _privateConstructorUsedError;
@@ -63,6 +65,7 @@ abstract class $PostCommentCopyWith<$Res> {
     @JsonKey(name: 'author_user_id') String authorUserId,
     @JsonKey(name: 'author_profile_id') String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     String body,
     @JsonKey(name: 'parent_comment_id') String? parentCommentId,
     @JsonKey(name: 'is_deleted') bool isDeleted,
@@ -91,6 +94,7 @@ class _$PostCommentCopyWithImpl<$Res, $Val extends PostComment>
     Object? authorUserId = null,
     Object? authorProfileId = null,
     Object? authorDisplayName = freezed,
+    Object? authorAvatarUrl = freezed,
     Object? body = null,
     Object? parentCommentId = freezed,
     Object? isDeleted = null,
@@ -118,6 +122,10 @@ class _$PostCommentCopyWithImpl<$Res, $Val extends PostComment>
             authorDisplayName: freezed == authorDisplayName
                 ? _value.authorDisplayName
                 : authorDisplayName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            authorAvatarUrl: freezed == authorAvatarUrl
+                ? _value.authorAvatarUrl
+                : authorAvatarUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
             body: null == body
                 ? _value.body
@@ -160,6 +168,7 @@ abstract class _$$PostCommentImplCopyWith<$Res>
     @JsonKey(name: 'author_user_id') String authorUserId,
     @JsonKey(name: 'author_profile_id') String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     String body,
     @JsonKey(name: 'parent_comment_id') String? parentCommentId,
     @JsonKey(name: 'is_deleted') bool isDeleted,
@@ -187,6 +196,7 @@ class __$$PostCommentImplCopyWithImpl<$Res>
     Object? authorUserId = null,
     Object? authorProfileId = null,
     Object? authorDisplayName = freezed,
+    Object? authorAvatarUrl = freezed,
     Object? body = null,
     Object? parentCommentId = freezed,
     Object? isDeleted = null,
@@ -214,6 +224,10 @@ class __$$PostCommentImplCopyWithImpl<$Res>
         authorDisplayName: freezed == authorDisplayName
             ? _value.authorDisplayName
             : authorDisplayName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        authorAvatarUrl: freezed == authorAvatarUrl
+            ? _value.authorAvatarUrl
+            : authorAvatarUrl // ignore: cast_nullable_to_non_nullable
                   as String?,
         body: null == body
             ? _value.body
@@ -249,6 +263,7 @@ class _$PostCommentImpl implements _PostComment {
     @JsonKey(name: 'author_user_id') required this.authorUserId,
     @JsonKey(name: 'author_profile_id') required this.authorProfileId,
     @JsonKey(name: 'author_display_name') this.authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') this.authorAvatarUrl,
     required this.body,
     @JsonKey(name: 'parent_comment_id') this.parentCommentId,
     @JsonKey(name: 'is_deleted') this.isDeleted = false,
@@ -274,6 +289,9 @@ class _$PostCommentImpl implements _PostComment {
   @JsonKey(name: 'author_display_name')
   final String? authorDisplayName;
   @override
+  @JsonKey(name: 'author_avatar_url')
+  final String? authorAvatarUrl;
+  @override
   final String body;
   @override
   @JsonKey(name: 'parent_comment_id')
@@ -290,7 +308,7 @@ class _$PostCommentImpl implements _PostComment {
 
   @override
   String toString() {
-    return 'PostComment(id: $id, postId: $postId, authorUserId: $authorUserId, authorProfileId: $authorProfileId, authorDisplayName: $authorDisplayName, body: $body, parentCommentId: $parentCommentId, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, createdAt: $createdAt)';
+    return 'PostComment(id: $id, postId: $postId, authorUserId: $authorUserId, authorProfileId: $authorProfileId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, body: $body, parentCommentId: $parentCommentId, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, createdAt: $createdAt)';
   }
 
   @override
@@ -306,6 +324,8 @@ class _$PostCommentImpl implements _PostComment {
                 other.authorProfileId == authorProfileId) &&
             (identical(other.authorDisplayName, authorDisplayName) ||
                 other.authorDisplayName == authorDisplayName) &&
+            (identical(other.authorAvatarUrl, authorAvatarUrl) ||
+                other.authorAvatarUrl == authorAvatarUrl) &&
             (identical(other.body, body) || other.body == body) &&
             (identical(other.parentCommentId, parentCommentId) ||
                 other.parentCommentId == parentCommentId) &&
@@ -326,6 +346,7 @@ class _$PostCommentImpl implements _PostComment {
     authorUserId,
     authorProfileId,
     authorDisplayName,
+    authorAvatarUrl,
     body,
     parentCommentId,
     isDeleted,
@@ -354,6 +375,7 @@ abstract class _PostComment implements PostComment {
     @JsonKey(name: 'author_user_id') required final String authorUserId,
     @JsonKey(name: 'author_profile_id') required final String authorProfileId,
     @JsonKey(name: 'author_display_name') final String? authorDisplayName,
+    @JsonKey(name: 'author_avatar_url') final String? authorAvatarUrl,
     required final String body,
     @JsonKey(name: 'parent_comment_id') final String? parentCommentId,
     @JsonKey(name: 'is_deleted') final bool isDeleted,
@@ -378,6 +400,9 @@ abstract class _PostComment implements PostComment {
   @override
   @JsonKey(name: 'author_display_name')
   String? get authorDisplayName;
+  @override
+  @JsonKey(name: 'author_avatar_url')
+  String? get authorAvatarUrl;
   @override
   String get body;
   @override

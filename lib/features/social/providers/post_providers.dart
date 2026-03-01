@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -132,6 +133,79 @@ final postCommentsProvider = FutureProvider.autoDispose
         (err) => throw Exception(err.message),
         (comments) => comments,
       );
+    });
+
+/// Thread comment preview for a post (Twitter/X style).
+/// Priority: 1) current user's own reply, 2) reply from someone we follow.
+/// Returns null if neither exists — no random comments shown.
+final latestCommentProvider = FutureProvider.autoDispose
+    .family<PostComment?, String>((ref, postId) async {
+      final db = Supabase.instance.client;
+      final currentUserId = db.auth.currentUser?.id;
+      if (currentUserId == null) return null;
+
+      // Helper: enrich a raw DB row with joined profile data → PostComment
+      PostComment _enrich(Map<String, dynamic> raw) {
+        final row = Map<String, dynamic>.from(raw);
+        final profile = row.remove('profiles');
+        if (profile is Map) {
+          if (profile['display_name'] != null) {
+            row['author_display_name'] = profile['display_name'];
+          }
+          if (profile['avatar_url'] != null) {
+            row['author_avatar_url'] = profile['avatar_url'];
+          }
+        }
+        return PostComment.fromJson(row);
+      }
+
+      const selectWithProfile =
+          '*, profiles!post_comments_author_profile_id_fkey(display_name, avatar_url)';
+
+      // ── 1. Own reply ──────────────────────────────────────────────────
+      final ownRows = await db
+          .from('post_comments')
+          .select(selectWithProfile)
+          .eq('post_id', postId)
+          .eq('author_user_id', currentUserId)
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false)
+          .order('created_at', ascending: false)
+          .limit(1);
+
+      if (ownRows.isNotEmpty) return _enrich(ownRows.first);
+
+      // ── 2. Reply from someone we follow ───────────────────────────────
+      // Get profile IDs the current user follows.
+      final myProfileId = await ref.watch(myProfileIdProvider.future);
+      if (myProfileId == null) return null;
+
+      final followRows = await db
+          .from('profile_follows')
+          .select('following_profile_id')
+          .eq('follower_profile_id', myProfileId);
+
+      final followedProfileIds = (followRows as List)
+          .map((r) => r['following_profile_id'] as String)
+          .toList();
+
+      if (followedProfileIds.isEmpty) return null;
+
+      final followedCommentRows = await db
+          .from('post_comments')
+          .select(selectWithProfile)
+          .eq('post_id', postId)
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false)
+          .inFilter('author_profile_id', followedProfileIds)
+          .order('created_at', ascending: false)
+          .limit(1);
+
+      if (followedCommentRows.isNotEmpty) {
+        return _enrich(followedCommentRows.first);
+      }
+
+      return null;
     });
 
 /// Whether the current user has reposted a post.
