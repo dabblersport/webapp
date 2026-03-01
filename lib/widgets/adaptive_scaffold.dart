@@ -156,7 +156,8 @@ class _DesktopLayout extends StatelessWidget {
     // Total max width of the three-column group, so on very wide
     // screens the extra space is pushed to the outside (left & right)
     // instead of between columns.
-    final double totalMaxWidth = railWidth +
+    final double totalMaxWidth =
+        railWidth +
         1 + // left divider
         maxContentWidth +
         (showRightPanel ? 1 + 340 : 0); // right divider + panel
@@ -230,8 +231,10 @@ class _DesktopLayout extends StatelessWidget {
                 ),
                 SizedBox(
                   width: 340,
-                  child:
-                      Material(color: colorScheme.surface, child: rightPanel),
+                  child: Material(
+                    color: colorScheme.surface,
+                    child: rightPanel,
+                  ),
                 ),
               ],
             ],

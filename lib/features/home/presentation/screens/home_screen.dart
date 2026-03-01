@@ -354,7 +354,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 // Safe-area top spacing (smaller on desktop)
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+                    height: isWide
+                        ? 16
+                        : MediaQuery.of(context).padding.top + 8,
                   ),
                 ),
 
