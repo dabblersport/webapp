@@ -117,8 +117,8 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       country: profile['country'] as String?,
       language: profile['language'] as String?,
       preferredSport: profile['preferred_sport'] as String?,
-      interestsSlugs: (profile['interests'] as List?)?.cast<String>(),
-      primarySportId: profile['primary_sport_id'] as String?,
+      interestIds: (profile['interests'] as List?)?.cast<String>(),
+      primarySportId: profile['primary_sport'] as String?,
     );
 
     // Determine resume point based on what's completed
@@ -218,7 +218,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     String? country,
     String? language,
     String? preferredSport,
-    List<String>? interestsSlugs,
+    List<String>? interestIds,
   }) {
     state = state.copyWith(
       data: state.data.copyWith(
@@ -228,7 +228,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         country: country,
         language: language,
         preferredSport: preferredSport,
-        interestsSlugs: interestsSlugs,
+        interestIds: interestIds,
       ),
     );
   }
@@ -257,7 +257,8 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       country: state.data.country,
       language: state.data.language,
       preferredSport: state.data.preferredSport,
-      interestsSlugs: state.data.interestsSlugs,
+      interestIds: state.data.interestIds,
+      primarySport: state.data.primarySportId,
     );
 
     result.fold(

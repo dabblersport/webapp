@@ -28,7 +28,7 @@ class UserProfile {
   final String? personaType; // player/organiser/hoster/socialiser
   final String? intention; // organise/play
   final String? preferredSport;
-  final String? interests;
+  final List<String>? interests; // uuid[] from DB
   final String? language;
   final bool verified; // matches DB column name
   final bool isActive;
@@ -292,7 +292,7 @@ class UserProfile {
     String? profileType,
     String? intention,
     String? preferredSport,
-    String? interests,
+    List<String>? interests,
     String? language,
     bool? verified,
     bool? isActive,
@@ -342,8 +342,8 @@ class UserProfile {
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     // Parse nested sport_profiles if included in the response
     // Note: Database uses simple schema: profile_id, sport_key, skill_level
-    // Extract primary_sport_id to mark the primary sport profile
-    final primarySportId = json['primary_sport_id'] as String?;
+    // Extract primary_sport to mark the primary sport profile
+    final primarySportId = json['primary_sport'] as String?;
 
     List<SportProfile> parsedSportsProfiles = [];
     if (json['sport_profiles'] != null && json['sport_profiles'] is List) {
@@ -380,7 +380,7 @@ class UserProfile {
       personaType: json['persona_type'] as String?,
       intention: json['intention'] as String?,
       preferredSport: json['preferred_sport'] as String?,
-      interests: json['interests'] as String?,
+      interests: (json['interests'] as List?)?.cast<String>(),
       language: json['language'] as String?,
       verified: json['verified'] as bool? ?? false,
       isActive: json['is_active'] as bool? ?? true,

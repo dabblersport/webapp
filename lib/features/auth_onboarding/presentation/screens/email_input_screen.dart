@@ -15,6 +15,7 @@ import 'package:dabbler/design_system/tokens/main_dark.dart'
 import 'package:dabbler/design_system/tokens/main_light.dart'
     as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
 class EmailInputScreen extends ConsumerStatefulWidget {
   const EmailInputScreen({super.key});
@@ -128,107 +129,97 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     // Kept for existing widget helpers that still use ColorScheme.
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
+      containerColor: tokens.main.secondaryContainer,
       resizeToAvoidBottomInset: false,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: AppSpacing.xxxl),
-                          Text(
-                            'Authenticate',
-                            style: theme.textTheme.displayMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: tokens.main.onSecondaryContainer,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xl),
-                          Text(
-                            'Enter your email to get started',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: tokens.main.onSecondaryContainer,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.lg),
-                          _buildTermsTextInline(context),
-                          const SizedBox(height: AppSpacing.xxxl * 2),
-                          Text(
-                            'Email',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: tokens.main.onSecondaryContainer,
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          _buildEmailInputPill(context),
-                          const SizedBox(height: AppSpacing.lg),
-                          _buildContinueButtonPill(context),
-                          const SizedBox(height: AppSpacing.lg),
-                          _buildKeepInLoopRow(context),
-                        ],
-                      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: AppSpacing.xxxl),
+                  Text(
+                    'Authenticate',
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: tokens.main.onSecondaryContainer,
                     ),
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Column(
-                        children: [
-                          const Spacer(),
-                          _buildGoogleButton(),
-                          if (!kIsWeb &&
-                              defaultTargetPlatform == TargetPlatform.iOS) ...[
-                            const SizedBox(height: AppSpacing.md),
-                            _buildAppleButton(context),
-                          ],
-                          const SizedBox(height: AppSpacing.lg),
-                          Center(
-                            child: TextButton(
-                              onPressed: _isLoading ? null : _goToLogin,
-                              child: Text(
-                                'Already have an account? Log in',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xxl),
-                          if (_errorMessage != null) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            _InlineMessage(
-                              message: _errorMessage!,
-                              color: colorScheme.error,
-                            ),
-                          ],
-                          if (_successMessage != null) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            _InlineMessage(
-                              message: _successMessage!,
-                              color: Colors.green,
-                            ),
-                          ],
-                        ],
-                      ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Text(
+                    'Enter your email to get started',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: tokens.main.onSecondaryContainer,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildTermsTextInline(context),
+                  const SizedBox(height: AppSpacing.xxxl * 2),
+                  Text(
+                    'Email',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: tokens.main.onSecondaryContainer,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildEmailInputPill(context),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildContinueButtonPill(context),
+                  const SizedBox(height: AppSpacing.lg),
+                  _buildKeepInLoopRow(context),
+                ],
               ),
             ),
-          ),
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Column(
+                children: [
+                  const Spacer(),
+                  _buildGoogleButton(),
+                  if (!kIsWeb &&
+                      defaultTargetPlatform == TargetPlatform.iOS) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    _buildAppleButton(context),
+                  ],
+                  const SizedBox(height: AppSpacing.lg),
+                  Center(
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _goToLogin,
+                      child: Text(
+                        'Already have an account? Log in',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _InlineMessage(
+                      message: _errorMessage!,
+                      color: colorScheme.error,
+                    ),
+                  ],
+                  if (_successMessage != null) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    _InlineMessage(
+                      message: _successMessage!,
+                      color: Colors.green,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

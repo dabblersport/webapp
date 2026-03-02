@@ -490,8 +490,8 @@ class _RandomAvatarWithFallback extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return SizedBox(
-        width: size,
-        height: size,
+        width: 90,
+        height: 90,
         child: RandomAvatar(
           seed,
           trBackground: true,

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
@@ -20,49 +19,65 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final submissionsAsync = ref.watch(myVenueSubmissionsProvider);
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return TwoSectionLayout(
-      category: 'profile',
-      onRefresh: () async {
-        ref.invalidate(myVenueSubmissionsProvider);
-        await ref.read(myVenueSubmissionsProvider.future);
-      },
-      topSection: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          children: [
-            IconButton.filledTonal(
-              onPressed: () => Navigator.of(context).maybePop(),
-              icon: const Icon(Iconsax.arrow_left_copy),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                minimumSize: const Size(48, 48),
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(myVenueSubmissionsProvider);
+          await ref.read(myVenueSubmissionsProvider.future);
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                'Venue submissions',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    IconButton.filledTonal(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Iconsax.arrow_left_copy),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        minimumSize: const Size(48, 48),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        'Venue submissions',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      onPressed: () => context.push(RoutePaths.createVenueSubmission),
+                      icon: const Icon(Iconsax.add_copy),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        minimumSize: const Size(48, 48),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton.filledTonal(
-              onPressed: () => context.push(RoutePaths.createVenueSubmission),
-              icon: const Icon(Iconsax.add_copy),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                minimumSize: const Size(48, 48),
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomSection: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-        child: submissionsAsync.when(
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                child: submissionsAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => _ErrorState(
             message: e.toString(),
@@ -177,6 +192,10 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
               },
             );
           },
+        ),
+      ),
+            ),
+          ],
         ),
       ),
     );

@@ -16,6 +16,7 @@ import 'package:dabbler/design_system/tokens/main_dark.dart'
 import 'package:dabbler/design_system/tokens/main_light.dart'
     as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'dart:async';
 
 /// Mode for set username screen - onboarding vs adding a new persona
@@ -226,7 +227,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       gender: onboardingData.gender!,
       intention: onboardingData.intention!,
       preferredSport: onboardingData.preferredSport!,
-      interests: onboardingData.interestsString,
+      interests: onboardingData.interests,
       country: country,
       city: city,
       password: null, // Phone/Google users don't set password here
@@ -412,211 +413,187 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               : 'Create Profile')
         : 'Complete';
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const SizedBox(height: AppSpacing.xxxl),
+      containerColor: tokens.main.secondaryContainer,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.xxxl),
 
-                                // Flow indicator for add persona mode
-                                if (widget.mode == SetUsernameMode.addPersona &&
-                                    addPersonaData != null)
-                                  _buildFlowIndicator(
-                                    theme,
-                                    tokens,
-                                    addPersonaData,
-                                  ),
+                        // Flow indicator for add persona mode
+                        if (widget.mode == SetUsernameMode.addPersona &&
+                            addPersonaData != null)
+                          _buildFlowIndicator(theme, tokens, addPersonaData),
 
-                                // Title
-                                Text(
-                                  title,
-                                  style: theme.textTheme.displaySmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: tokens.main.onSecondaryContainer,
-                                  ),
-                                ),
-
-                                const SizedBox(height: AppSpacing.xl),
-
-                                // Subtitle
-                                Text(
-                                  subtitle,
-                                  style: theme.textTheme.headlineSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                        color: tokens.main.onSecondaryContainer,
-                                      ),
-                                ),
-
-                                const SizedBox(height: AppSpacing.xxxl),
-
-                                // Display Name Field
-                                _buildInputField(
-                                  context,
-                                  controller: _displayNameController,
-                                  label: 'Display Name',
-                                  hintText: 'Enter your display name',
-                                  tokens: tokens,
-                                  theme: theme,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Display name is required';
-                                    }
-                                    if (value.trim().length < 2) {
-                                      return 'Display name must be at least 2 characters';
-                                    }
-                                    return null;
-                                  },
-                                ),
-
-                                const SizedBox(height: AppSpacing.lg),
-
-                                // Username Field
-                                _buildInputField(
-                                  context,
-                                  controller: _usernameController,
-                                  label: 'Username',
-                                  hintText: 'Choose a unique username',
-                                  tokens: tokens,
-                                  theme: theme,
-                                  onChanged: _checkUsernameAvailability,
-                                  validator: (value) {
-                                    if (value == null || value.trim().isEmpty) {
-                                      return 'Username is required';
-                                    }
-                                    if (value.trim().length < 3) {
-                                      return 'Username must be at least 3 characters';
-                                    }
-                                    if (!RegExp(
-                                      r'^[a-zA-Z0-9_]+$',
-                                    ).hasMatch(value)) {
-                                      return 'Username can only contain letters, numbers, and underscores';
-                                    }
-                                    return null;
-                                  },
-                                  suffixIcon: _isCheckingUsername
-                                      ? const Padding(
-                                          padding: EdgeInsets.all(12.0),
-                                          child: SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                        )
-                                      : _usernameError == null &&
-                                            _usernameController.text.isNotEmpty
-                                      ? Icon(
-                                          Iconsax.tick_circle_copy,
-                                          color: tokens.main.primary,
-                                        )
-                                      : null,
-                                ),
-
-                                if (_usernameError != null) ...[
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Padding(
-                                    padding: const EdgeInsets.only(
-                                      left: AppSpacing.md,
-                                    ),
-                                    child: Text(
-                                      _usernameError!,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(color: tokens.main.error),
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: AppSpacing.xxxl),
-                                const Spacer(),
-
-                                // Submit Button
-                                FilledButton(
-                                  onPressed: _isLoading ? null : _handleSubmit,
-                                  style: FilledButton.styleFrom(
-                                    minimumSize: const Size.fromHeight(
-                                      AppButtonSize.extraLargeHeight,
-                                    ),
-                                    padding: AppButtonSize.extraLargePadding,
-                                    shape: const StadiumBorder(),
-                                    backgroundColor: tokens.main.primary,
-                                    foregroundColor: tokens.main.onPrimary,
-                                  ),
-                                  child: _isLoading
-                                      ? SizedBox(
-                                          height: AppSpacing.xxl,
-                                          width: AppSpacing.xxl,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  tokens.main.onPrimary,
-                                                ),
-                                          ),
-                                        )
-                                      : Text(
-                                          buttonText,
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                                color: tokens.main.onPrimary,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                        ),
-                                ),
-
-                                // Back button for add persona mode
-                                if (widget.mode ==
-                                    SetUsernameMode.addPersona) ...[
-                                  const SizedBox(height: AppSpacing.lg),
-                                  Center(
-                                    child: TextButton(
-                                      onPressed: () => context.pop(),
-                                      child: Text(
-                                        'Back',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: tokens.main.primary,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-
-                                const SizedBox(height: AppSpacing.xl),
-                              ],
-                            ),
+                        // Title
+                        Text(
+                          title,
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: tokens.main.onSecondaryContainer,
                           ),
                         ),
-                      ),
+
+                        const SizedBox(height: AppSpacing.xl),
+
+                        // Subtitle
+                        Text(
+                          subtitle,
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: tokens.main.onSecondaryContainer,
+                          ),
+                        ),
+
+                        const SizedBox(height: AppSpacing.xxxl),
+
+                        // Display Name Field
+                        _buildInputField(
+                          context,
+                          controller: _displayNameController,
+                          label: 'Display Name',
+                          hintText: 'Enter your display name',
+                          tokens: tokens,
+                          theme: theme,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Display name is required';
+                            }
+                            if (value.trim().length < 2) {
+                              return 'Display name must be at least 2 characters';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Username Field
+                        _buildInputField(
+                          context,
+                          controller: _usernameController,
+                          label: 'Username',
+                          hintText: 'Choose a unique username',
+                          tokens: tokens,
+                          theme: theme,
+                          onChanged: _checkUsernameAvailability,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Username is required';
+                            }
+                            if (value.trim().length < 3) {
+                              return 'Username must be at least 3 characters';
+                            }
+                            if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                              return 'Username can only contain letters, numbers, and underscores';
+                            }
+                            return null;
+                          },
+                          suffixIcon: _isCheckingUsername
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12.0),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : _usernameError == null &&
+                                    _usernameController.text.isNotEmpty
+                              ? Icon(
+                                  Iconsax.tick_circle_copy,
+                                  color: tokens.main.primary,
+                                )
+                              : null,
+                        ),
+
+                        if (_usernameError != null) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          Padding(
+                            padding: const EdgeInsets.only(left: AppSpacing.md),
+                            child: Text(
+                              _usernameError!,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: tokens.main.error,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.xxxl),
+                        const Spacer(),
+
+                        // Submit Button
+                        FilledButton(
+                          onPressed: _isLoading ? null : _handleSubmit,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(
+                              AppButtonSize.extraLargeHeight,
+                            ),
+                            padding: AppButtonSize.extraLargePadding,
+                            shape: const StadiumBorder(),
+                            backgroundColor: tokens.main.primary,
+                            foregroundColor: tokens.main.onPrimary,
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  height: AppSpacing.xxl,
+                                  width: AppSpacing.xxl,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      tokens.main.onPrimary,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  buttonText,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: tokens.main.onPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                        ),
+
+                        // Back button for add persona mode
+                        if (widget.mode == SetUsernameMode.addPersona) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => context.pop(),
+                              child: Text(
+                                'Back',
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: tokens.main.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,6 +9,7 @@ import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/features/profile/services/image_upload_service.dart';
 import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -40,7 +40,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   // Sports & Preferences state
   Map<String, SkillLevel> _selectedSports = {}; // sportKey -> skillLevel
-  String? _primarySport;
+  String?
+  _primarySport; // UUID from sports.id (stored in profiles.preferred_sport)
+  List<Sport> _availableSports = []; // Loaded from Supabase
+  Map<String, Sport> _sportsByKey = {}; // sport_key -> Sport lookup
+  Map<String, Sport> _sportsById = {}; // UUID -> Sport lookup
   List<_TimeSlot> _weeklyAvailability = [];
 
   List<String> get _genderOptions {
@@ -68,6 +72,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Load available sports from Supabase
+      final sportsRows = await Supabase.instance.client
+          .from('sports')
+          .select()
+          .eq('is_active', true)
+          .order('name_en');
+      _availableSports = sportsRows.map((r) => Sport.fromMap(r)).toList();
+      _sportsByKey = {
+        for (final s in _availableSports)
+          if (s.sportKey != null) s.sportKey!: s,
+      };
+      _sportsById = {for (final s in _availableSports) s.id: s};
+
       final user = _authService.getCurrentUser();
       if (user?.id == null) return;
 
@@ -111,7 +128,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           }
         }
 
-        _interestsController.text = (response['interests'] as String?) ?? '';
+        _interestsController.text = (response['interests'] is List)
+            ? (response['interests'] as List).cast<String>().join(', ')
+            : '';
         _selectedGender = (response['gender'] as String?)?.toLowerCase();
         _selectedLanguage = response['language'] as String?;
         _avatarPath = response['avatar_url'] as String?;
@@ -817,7 +836,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               'country': _countryController.text.trim().isEmpty
                   ? null
                   : _countryController.text.trim(),
-              'preferred_sport': _primarySport,
+              'preferred_sport': _primarySport, // UUID
+              'primary_sport': _primarySport, // UUID
               'date_of_birth': _dateOfBirth?.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
             })
@@ -931,7 +951,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildSportsSection(BuildContext context) {
     final colorScheme = context.getCategoryTheme('profile');
-    final availableSports = FeatureFlags.enabledSports;
+    final availableSportKeys = _availableSports
+        .where((s) => s.sportKey != null)
+        .map((s) => s.sportKey!)
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -973,9 +996,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: availableSports.map((sport) {
+          children: availableSportKeys.map((sport) {
             final isSelected = _selectedSports.containsKey(sport);
-            final isPrimary = _primarySport == sport;
+            final isPrimary =
+                _primarySport != null &&
+                _sportsByKey[sport]?.id == _primarySport;
             return _buildSportChip(context, sport, isSelected, isPrimary);
           }).toList(),
         ),
@@ -1021,7 +1046,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     bool isPrimary,
   ) {
     final colorScheme = context.getCategoryTheme('profile');
-    final displayName = _formatSportName(sport);
+    final sportObj = _sportsByKey[sport];
+    final displayName = sportObj != null
+        ? '${sportObj.emoji ?? ''} ${sportObj.nameEn}'.trim()
+        : _formatSportName(sport);
 
     return FilterChip(
       label: Row(
@@ -1039,16 +1067,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         setState(() {
           if (selected) {
             _selectedSports[sport] = SkillLevel.beginner;
-            // If first sport, set as primary
+            // If first sport, set as primary (UUID)
             if (_selectedSports.length == 1) {
-              _primarySport = sport;
+              _primarySport = sportObj?.id;
             }
           } else {
             _selectedSports.remove(sport);
             // If removed sport was primary, set another as primary
-            if (_primarySport == sport) {
-              _primarySport = _selectedSports.isNotEmpty
+            if (sportObj != null && _primarySport == sportObj.id) {
+              final firstKey = _selectedSports.isNotEmpty
                   ? _selectedSports.keys.first
+                  : null;
+              _primarySport = firstKey != null
+                  ? _sportsByKey[firstKey]?.id
                   : null;
             }
           }
@@ -1080,7 +1111,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     SkillLevel currentLevel,
   ) {
     final colorScheme = context.getCategoryTheme('profile');
-    final isPrimary = _primarySport == sport;
+    final sportObj = _sportsByKey[sport];
+    final isPrimary = sportObj != null && _primarySport == sportObj.id;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1090,7 +1122,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _primarySport = sport;
+                _primarySport = sportObj?.id;
               });
             },
             child: Icon(
@@ -1104,7 +1136,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              _formatSportName(sport),
+              sportObj != null
+                  ? '${sportObj.emoji ?? ''} ${sportObj.nameEn}'.trim()
+                  : _formatSportName(sport),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
                 color: colorScheme.onSurface,

@@ -14,6 +14,7 @@ import 'package:dabbler/design_system/tokens/main_dark.dart'
 import 'package:dabbler/design_system/tokens/main_light.dart'
     as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
 class RegistrationData {
   String email;
@@ -643,103 +644,88 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       );
     }
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: AppSpacing.xxxl),
-                                // Header
-                                Text(
-                                  'Tell us a bit about you',
-                                  style: theme.textTheme.displaySmall?.copyWith(
-                                    color: tokens.main.onSecondaryContainer,
+      containerColor: tokens.main.secondaryContainer,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: AppSpacing.xxxl),
+                        // Header
+                        Text(
+                          'Tell us a bit about you',
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            color: tokens.main.onSecondaryContainer,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'Confirm your age, you have to be 16+ to use dabbler',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: tokens.main.onSecondaryContainer,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxxl),
+                        // Birth Date Picker
+                        _buildBirthDatePicker(context, theme, tokens),
+                        const SizedBox(height: AppSpacing.lg),
+                        // Gender Selection
+                        _buildGenderSelect(context, theme, tokens),
+                        const Spacer(),
+                        // Continue Button
+                        FilledButton(
+                          onPressed: (_isLoading || !_areAllFieldsValid())
+                              ? null
+                              : _handleSubmit,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: tokens.main.primary,
+                            foregroundColor: tokens.main.onPrimary,
+                            minimumSize: const Size.fromHeight(
+                              AppButtonSize.extraLargeHeight,
+                            ),
+                            padding: AppButtonSize.extraLargePadding,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: _isLoading
+                              ? SizedBox(
+                                  height: AppSpacing.xxl,
+                                  width: AppSpacing.xxl,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      tokens.main.onPrimary,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  'Continue',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    color: tokens.main.onPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(height: AppSpacing.lg),
-                                Text(
-                                  'Confirm your age, you have to be 16+ to use dabbler',
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: tokens.main.onSecondaryContainer,
-                                    height: 1.25,
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.xxxl),
-                                // Birth Date Picker
-                                _buildBirthDatePicker(context, theme, tokens),
-                                const SizedBox(height: AppSpacing.lg),
-                                // Gender Selection
-                                _buildGenderSelect(context, theme, tokens),
-                                const Spacer(),
-                                // Continue Button
-                                FilledButton(
-                                  onPressed:
-                                      (_isLoading || !_areAllFieldsValid())
-                                      ? null
-                                      : _handleSubmit,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: tokens.main.primary,
-                                    foregroundColor: tokens.main.onPrimary,
-                                    minimumSize: const Size.fromHeight(
-                                      AppButtonSize.extraLargeHeight,
-                                    ),
-                                    padding: AppButtonSize.extraLargePadding,
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  child: _isLoading
-                                      ? SizedBox(
-                                          height: AppSpacing.xxl,
-                                          width: AppSpacing.xxl,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                  tokens.main.onPrimary,
-                                                ),
-                                          ),
-                                        )
-                                      : Text(
-                                          'Continue',
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                                color: tokens.main.onPrimary,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                        ),
-                                ),
-                                const SizedBox(height: AppSpacing.xxxl),
-                              ],
-                            ),
-                          ),
                         ),
-                      ),
+                        const SizedBox(height: AppSpacing.xxxl),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

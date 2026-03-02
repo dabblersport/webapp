@@ -315,6 +315,10 @@ class PostController extends StateNotifier<AsyncValue<void>> {
     String visibility = 'public',
     PostType postType = PostType.moment,
     String? circleId,
+    String? locationTagId,
+    String? locationName,
+    double? geoLat,
+    double? geoLng,
   }) async {
     final hasBody = body != null && body.trim().isNotEmpty;
 
@@ -339,6 +343,10 @@ class PostController extends StateNotifier<AsyncValue<void>> {
       postType: postType.dbValue,
       personaType: activePersonaType,
       circleId: circleId,
+      locationTagId: locationTagId,
+      locationName: locationName,
+      geoLat: geoLat,
+      geoLng: geoLng,
     );
 
     state = const AsyncData(null);

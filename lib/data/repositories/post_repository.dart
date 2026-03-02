@@ -76,6 +76,10 @@ abstract class PostRepository {
     String postType = 'moment',
     String? personaType,
     String? circleId,
+    String? locationTagId,
+    String? locationName,
+    double? geoLat,
+    double? geoLng,
   });
 
   /// List all available vibes for the picker.

@@ -138,6 +138,7 @@ dependencies:
   # Google Sign-In (token-based) to avoid browser redirects
   google_sign_in: ^6.2.1
   random_avatar: ^0.0.8
+  mapbox_search: ^4.4.0
 
 dev_dependencies:
   flutter_test:

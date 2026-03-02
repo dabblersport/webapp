@@ -1,3 +1,4 @@
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -7,7 +8,6 @@ import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
-import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
 import '../../widgets/profile/player_sport_profile_header.dart';
@@ -16,169 +16,8 @@ import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show userPostsProvider;
+    show userPostsProvider, sportsProvider;
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
-
-class _UserActivitiesTab extends ConsumerWidget {
-  final String userId;
-  const _UserActivitiesTab({required this.userId});
-
-  static const String _emptyIllustrationAssetPath =
-      'assets/images/undraw/empty_post.svg';
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileId = ref.watch(profileControllerProvider).profile?.id;
-    final postsAsync = profileId != null
-        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-
-    return postsAsync.when(
-      data: (posts) {
-        if (posts.isEmpty) {
-          return const _ActivitiesEmptyState(
-            assetPath: _emptyIllustrationAssetPath,
-          );
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: posts.map((post) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FeedPostCard(post: post),
-            );
-          }).toList(),
-        );
-      },
-      loading: () => const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: Text('Failed to load posts.')),
-      ),
-    );
-  }
-}
-
-class _ActivitiesEmptyState extends StatelessWidget {
-  final String assetPath;
-
-  const _ActivitiesEmptyState({required this.assetPath});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _ThemeableUndrawSvg(assetPath: assetPath, height: 130),
-                const SizedBox(height: 10),
-                Text(
-                  'No activities yet',
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Posts you create will appear here.',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ThemeableUndrawSvg extends StatelessWidget {
-  final String assetPath;
-  final double height;
-
-  const _ThemeableUndrawSvg({required this.assetPath, required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return FutureBuilder<String>(
-      future: DefaultAssetBundle.of(context).loadString(assetPath),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          final themedSvg = _themeifyUndrawSvg(snapshot.data!, colorScheme);
-          return SvgPicture.string(
-            themedSvg,
-            height: height,
-            fit: BoxFit.contain,
-          );
-        }
-
-        if (snapshot.hasError) {
-          return SizedBox(
-            height: height,
-            child: Center(
-              child: Icon(
-                Icons.article_outlined,
-                size: 60,
-                color: colorScheme.primary.withValues(alpha: 0.7),
-              ),
-            ),
-          );
-        }
-
-        return SizedBox(height: height);
-      },
-    );
-  }
-
-  String _themeifyUndrawSvg(String svg, ColorScheme colorScheme) {
-    final primary = _toHexRgb(colorScheme.primary);
-    final secondary = _toHexRgb(colorScheme.tertiary);
-    final surfaceStroke = _toHexRgb(colorScheme.outlineVariant);
-    final darkInk = _toHexRgb(colorScheme.onSurfaceVariant);
-    final lightFill = _toHexRgb(colorScheme.surfaceContainerHighest);
-    final accentSoft = _toHexRgb(colorScheme.secondaryContainer);
-
-    return svg
-        .replaceAll('#6c63ff', primary)
-        .replaceAll('#6C63FF', primary)
-        .replaceAll('#ff6584', secondary)
-        .replaceAll('#FF6584', secondary)
-        .replaceAll('#3f3d56', darkInk)
-        .replaceAll('#3F3D56', darkInk)
-        .replaceAll('#2f2e41', darkInk)
-        .replaceAll('#2F2E41', darkInk)
-        .replaceAll('#e6e6e6', lightFill)
-        .replaceAll('#E6E6E6', lightFill)
-        .replaceAll('#ffb8b8', accentSoft)
-        .replaceAll('#FFB8B8', accentSoft)
-        .replaceAll('#d0cde1', surfaceStroke)
-        .replaceAll('#D0CDE1', surfaceStroke);
-  }
-
-  String _toHexRgb(Color color) {
-    final rgb = color.toARGB32() & 0x00FFFFFF;
-    return '#${rgb.toRadixString(16).padLeft(6, '0')}';
-  }
-}
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -198,6 +37,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late AnimationController _refreshController;
+  late TabController _tabController;
+  int _selectedTabIndex = 0;
   final _activitiesKey = GlobalKey();
 
   @override
@@ -212,6 +53,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       vsync: this,
     );
 
+    _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() => _selectedTabIndex = _tabController.index);
+      }
+    });
+
     _animationController.forward();
 
     // Check if viewing own profile and load data
@@ -225,6 +73,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   void dispose() {
     _animationController.dispose();
     _refreshController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -273,118 +122,282 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final theme = brightness == Brightness.dark
-        ? TokenBasedTheme.build(AppThemeMode.socialDark)
-        : TokenBasedTheme.build(AppThemeMode.socialLight);
-    return Theme(
-      data: theme,
-      child: Builder(
-        builder: (context) {
-          final profileState = ref.watch(profileControllerProvider);
-          final sportsState = ref.watch(sportsProfileControllerProvider);
-          final colorScheme = Theme.of(context).colorScheme;
-          final sportProfileHeaderAsync = ref.watch(
-            sportProfileHeaderProvider(widget.userId),
-          );
+    final profileState = ref.watch(profileControllerProvider);
+    final sportsState = ref.watch(sportsProfileControllerProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final sportProfileHeaderAsync = ref.watch(
+      sportProfileHeaderProvider(widget.userId),
+    );
 
-          // Show loading state
-          if (profileState.isLoading) {
-            return Scaffold(
-              backgroundColor: colorScheme.surface,
-              body: const Center(child: CircularProgressIndicator()),
-            );
-          }
+    // Show loading state
+    if (profileState.isLoading) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
-          // Show error state
-          if (profileState.errorMessage != null &&
-              profileState.profile == null) {
-            return Scaffold(
-              backgroundColor: colorScheme.surface,
-              body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Iconsax.danger_copy,
-                        size: 64,
-                        color: colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Profile not found',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        profileState.errorMessage ?? 'Unable to load profile',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+    // Show error state
+    if (profileState.errorMessage != null && profileState.profile == null) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Iconsax.danger_copy, size: 64, color: colorScheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  'Profile not found',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  profileState.errorMessage ?? 'Unable to load profile',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => context.pop(),
+                  icon: const Icon(Iconsax.arrow_left_copy),
+                  label: const Text('Go back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
+    if (isWide) {
+      return _buildWideLayout(
+        context,
+        colorScheme,
+        profileState,
+        sportsState,
+        sportProfileHeaderAsync,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // ── Hero section ──
+            SliverToBoxAdapter(
+              child: Container(
+                color: colorScheme.surface,
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 12,
+                  bottom: 20,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 700),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(context),
+                        const SizedBox(height: 12),
+                        _buildProfileHeroCard(
+                          context,
+                          profileState,
+                          sportsState,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: () => context.pop(),
-                        icon: const Icon(Iconsax.arrow_left_copy),
-                        label: const Text('Go back'),
-                      ),
-                    ],
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: _buildActionButtons(context),
+                        ),
+                        const SizedBox(height: 12),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: _buildSportProfileHeaderSection(
+                            context,
+                            sportProfileHeaderAsync,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            );
-          }
+            ),
 
-          return TwoSectionLayout(
-            category: 'social',
-            onRefresh: _onRefresh,
-            topPadding: const EdgeInsets.only(
-              top: 48,
-              left: 24,
-              right: 24,
-              bottom: 18,
-            ),
-            bottomPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 24,
-            ),
-            topSection: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 18),
-                _buildProfileHeroCard(context, profileState, sportsState),
-                const SizedBox(height: 12),
-                _buildActionButtons(context),
-                const SizedBox(height: 12),
-                _buildSportProfileHeaderSection(
-                  context,
-                  sportProfileHeaderAsync,
+            // ── Posts section ──
+            SliverToBoxAdapter(
+              child: Container(
+                color: colorScheme.surface,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 700),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: _buildTabbedPostsSection(context),
+                    ),
+                  ),
                 ),
-              ],
+              ),
             ),
-            bottomSection: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  key: _activitiesKey,
-                  'Posts & Activities',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Wide-screen layout ───────────────────────────────────────────────
+
+  Widget _buildWideLayout(
+    BuildContext context,
+    ColorScheme colorScheme,
+    ProfileState profileState,
+    SportsProfileState sportsState,
+    AsyncValue<SportProfileHeaderData?> sportProfileHeaderAsync,
+  ) {
+    return AdaptiveScaffold(
+      currentIndex: -1, // Viewing another user's profile — no nav item selected
+      onDestinationSelected: (i) => _onDesktopNav(context, i),
+      destinations: const [
+        AdaptiveDestination(
+          icon: Iconsax.home_2_copy,
+          selectedIcon: Iconsax.home_2,
+          label: "What's New",
+        ),
+        AdaptiveDestination(
+          icon: Iconsax.add_circle_copy,
+          selectedIcon: Iconsax.add_circle,
+          label: 'Create',
+          isAction: true,
+        ),
+        AdaptiveDestination(
+          icon: Iconsax.search_status_copy,
+          selectedIcon: Iconsax.search_status,
+          label: 'Sports',
+        ),
+        AdaptiveDestination(
+          icon: Iconsax.search_normal_1_copy,
+          selectedIcon: Iconsax.search_normal_1,
+          label: 'Search',
+        ),
+        AdaptiveDestination(
+          icon: Iconsax.notification_copy,
+          selectedIcon: Iconsax.notification,
+          label: 'Notifications',
+        ),
+        AdaptiveDestination(
+          icon: Iconsax.profile_circle_copy,
+          selectedIcon: Iconsax.profile_circle,
+          label: 'Profile',
+        ),
+      ],
+      headerWidget: SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      ),
+      body: _buildWideBody(context, colorScheme),
+      rightPanel: _buildWideRightPanel(
+        context,
+        colorScheme,
+        profileState,
+        sportsState,
+        sportProfileHeaderAsync,
+      ),
+    );
+  }
+
+  void _onDesktopNav(BuildContext context, int destIndex) {
+    switch (destIndex) {
+      case 0:
+        context.go(RoutePaths.home);
+        break;
+      case 1:
+        context.push(RoutePaths.socialCreatePost);
+        break;
+      case 2:
+        context.go(RoutePaths.sports);
+        break;
+      case 3:
+        context.push(RoutePaths.socialSearch);
+        break;
+      case 4:
+        context.push(RoutePaths.notifications);
+        break;
+      case 5:
+        context.go(RoutePaths.profile);
+        break;
+    }
+  }
+
+  /// Center column on wide screens: tabbed posts.
+  Widget _buildWideBody(BuildContext context, ColorScheme colorScheme) {
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: _buildTabbedPostsSection(context),
                 ),
-                const SizedBox(height: 12),
-                _UserActivitiesTab(userId: widget.userId),
-              ],
+              ),
             ),
-            bottomBackgroundColor: Theme.of(
-              context,
-            ).colorScheme.secondaryContainer,
-          );
-        },
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Right panel on wide screens: profile hero + action buttons + sport header.
+  Widget _buildWideRightPanel(
+    BuildContext context,
+    ColorScheme colorScheme,
+    ProfileState profileState,
+    SportsProfileState sportsState,
+    AsyncValue<SportProfileHeaderData?> sportProfileHeaderAsync,
+  ) {
+    return SizedBox.expand(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileHeroCard(context, profileState, sportsState),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildActionButtons(context),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildSportProfileHeaderSection(
+                context,
+                sportProfileHeaderAsync,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
@@ -395,53 +408,48 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final profileState = ref.watch(profileControllerProvider);
     final profile = profileState.profile;
 
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/home'),
-          icon: const Icon(Iconsax.arrow_left_copy),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categorySocial.withValues(alpha: 0.0),
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          IconButton.filledTonal(
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/home'),
+            icon: const Icon(Iconsax.arrow_left_copy),
+            style: IconButton.styleFrom(
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
+              foregroundColor: colorScheme.onSurface,
+              minimumSize: const Size(48, 48),
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Text(
-              //   'Username',
-              //   style: textTheme.headlineSmall?.copyWith(
-              //     fontWeight: FontWeight.w700,
-              //     color: colorScheme.onSurface,
-              //   ),
-              // ),
-              if (profile?.username != null &&
-                  profile!.username!.isNotEmpty) ...[
-                Text(
-                  '${profile.username}',
-                  style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (profile?.username != null && profile!.username!.isNotEmpty)
+                  Text(
+                    '${profile.username}',
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
-                ),
               ],
-            ],
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        IconButton.filledTonal(
-          onPressed: () => _showMoreOptions(context),
-          icon: const Icon(Iconsax.more_copy),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categorySocial.withValues(alpha: 0.0),
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            onPressed: () => _showMoreOptions(context),
+            icon: const Icon(Iconsax.more_copy),
+            style: IconButton.styleFrom(
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
+              foregroundColor: colorScheme.onSurface,
+              minimumSize: const Size(48, 48),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -453,53 +461,76 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final profile = profileState.profile;
+    final onTop = colorScheme.onSurface;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(0),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(28)),
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: colorScheme.onPrimaryContainer),
-        child: IconTheme.merge(
-          data: IconThemeData(color: colorScheme.onPrimaryContainer),
-          child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+
+          // ── Avatar + Name/Pills/Meta row ──
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildAvatar(context, profile),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: _buildHeroDetails(
-                      context,
-                      profileState,
-                      textTheme,
-                      colorScheme,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Name ──
+                    Text(
+                      profile?.getDisplayName().isNotEmpty == true
+                          ? profile!.getDisplayName()
+                          : 'User',
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: onTop,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              // Pills row for persona type and primary sport
-              _buildInfoPills(context, profile, colorScheme, textTheme),
-              // Bio text below the avatar row
-              if (profile?.bio?.isNotEmpty == true) ...[
-                const SizedBox(height: 12),
-                Text(
-                  profile!.bio!,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                    const SizedBox(height: 8),
+
+                    // ── Pills: persona type + primary sport ──
+                    _buildInfoPills(context, profile, colorScheme, textTheme),
+                    const SizedBox(height: 8),
+
+                    // ── Location, Age, Online indicator ──
+                    _buildUserMetaRow(context, profile, textTheme, colorScheme),
+                  ],
                 ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              _buildUnifiedStats(context, profileState, sportsState),
+              ),
+              const SizedBox(width: 6),
+              _buildAvatar(context, profile),
             ],
           ),
-        ),
+          const SizedBox(height: 8),
+
+          // ── Bio ──
+          if (profile?.bio?.isNotEmpty == true)
+            Text(
+              profile!.bio!,
+              style: textTheme.bodyMedium?.copyWith(color: onTop),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          const SizedBox(height: 12),
+
+          // ── Posts / Following / Followers counters ──
+          _buildPostsAndFollowingCounter(
+            context,
+            colorScheme,
+            textTheme,
+            onTop,
+          ),
+          const SizedBox(height: 20),
+
+          // ── Stats ──
+          _buildUnifiedStats(context, profileState, sportsState),
+          const SizedBox(height: 20),
+
+          // ── Sports section ──
+          _buildSportsChipsSection(context, profile, colorScheme, textTheme),
+        ],
       ),
     );
   }
@@ -514,75 +545,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       imageUrl: profile?.avatarUrl,
       displayName: fallbackText,
       context: AvatarContext.social,
-    );
-  }
-
-  Widget _buildHeroDetails(
-    BuildContext context,
-    ProfileState profileState,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
-    final profile = profileState.profile;
-
-    final baseOnTop = colorScheme.onPrimaryContainer;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Flexible(
-              child: Text(
-                profile?.getDisplayName().isNotEmpty == true
-                    ? profile!.getDisplayName()
-                    : 'User',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: baseOnTop,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // Profile type pill next to name
-            if (profile?.profileType != null &&
-                profile!.profileType!.isNotEmpty) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: baseOnTop.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  profile.profileType![0].toUpperCase() +
-                      profile.profileType!.substring(1),
-                  style: textTheme.labelSmall?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 6),
-        // Posts, Following, and Followers counter row
-        _buildPostsAndFollowingCounter(
-          context,
-          colorScheme,
-          textTheme,
-          baseOnTop,
-        ),
-        const SizedBox(height: 6),
-        // @username, location, age row
-        _buildUserMetaRow(
-          context,
-          profileState.profile,
-          textTheme,
-          colorScheme,
-        ),
-      ],
     );
   }
 
@@ -732,7 +694,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     TextTheme textTheme,
     ColorScheme colorScheme,
   ) {
-    final baseOnTop = colorScheme.onPrimaryContainer;
+    final baseOnTop = colorScheme.onSurface;
 
     return Wrap(
       spacing: 9,
@@ -819,26 +781,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   Widget _buildInfoPill(
     BuildContext context, {
-    required IconData icon,
     required String label,
     required ColorScheme colorScheme,
     required TextTheme textTheme,
     required Color baseOnTop,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       decoration: BoxDecoration(
-        color: colorScheme.categorySocial.withValues(alpha: 0.2),
+        color: colorScheme.primary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.categorySocial.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.4)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: colorScheme.categorySocial),
-          const SizedBox(width: 4),
           Text(
             label,
             style: textTheme.labelSmall?.copyWith(
@@ -857,12 +814,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
-    final baseOnTop = colorScheme.onPrimaryContainer;
-    final primarySport = profile?.preferredSport;
-    final primarySportProfile = profile?.sportsProfiles
-        .where((sp) => sp.isPrimarySport)
-        .firstOrNull;
-    final skillLevel = primarySportProfile?.skillLevel;
+    final baseOnTop = colorScheme.onSurface;
+    final primarySportId = profile?.preferredSport;
+
+    // Resolve UUID → Sport object to get name_en and emoji
+    final sportsAsync = ref.watch(sportsProvider);
+    final allSports = sportsAsync.valueOrNull ?? [];
+    final matchedSport = (primarySportId != null && primarySportId.isNotEmpty)
+        ? allSports.cast<dynamic>().firstWhere(
+            (s) => s.id == primarySportId,
+            orElse: () => null,
+          )
+        : null;
+    final sportName = matchedSport?.nameEn as String?;
+    final sportEmoji = matchedSport?.emoji as String?;
 
     return Wrap(
       spacing: 8,
@@ -872,13 +837,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
           _buildInfoPill(
             context,
-            icon: profile.personaType == 'organiser'
-                ? Iconsax.calendar_copy
-                : profile.personaType == 'hoster'
-                ? Iconsax.building_copy
-                : profile.personaType == 'socialiser'
-                ? Iconsax.people_copy
-                : Iconsax.profile_circle_copy,
             label:
                 profile.personaType![0].toUpperCase() +
                 profile.personaType!.substring(1),
@@ -886,44 +844,34 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             textTheme: textTheme,
             baseOnTop: baseOnTop,
           ),
-        // Primary sport pill
-        if (primarySport != null && primarySport.isNotEmpty)
-          _buildInfoPill(
-            context,
-            icon: Iconsax.medal_star_copy,
-            label: skillLevel != null
-                ? '${_formatSportName(primarySport)} · ${_getSkillLevelText(skillLevel)}'
-                : _formatSportName(primarySport),
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            baseOnTop: baseOnTop,
+        // Primary sport pill — resolved from public.sports via name_en
+        if (sportName != null && sportName.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: colorScheme.outlineVariant),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (sportEmoji != null && sportEmoji.isNotEmpty) ...[
+                  Text(sportEmoji, style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  sportName,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: baseOnTop,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
       ],
     );
-  }
-
-  String _getSkillLevelText(SkillLevel skillLevel) {
-    switch (skillLevel) {
-      case SkillLevel.beginner:
-        return 'Beginner';
-      case SkillLevel.intermediate:
-        return 'Intermediate';
-      case SkillLevel.advanced:
-        return 'Advanced';
-      case SkillLevel.expert:
-        return 'Expert';
-    }
-  }
-
-  String _formatSportName(String sportKey) {
-    if (sportKey.isEmpty) return sportKey;
-    final words = sportKey.split('_');
-    return words
-        .map((word) {
-          if (word.isEmpty) return '';
-          return word[0].toUpperCase() + word.substring(1);
-        })
-        .join(' ');
   }
 
   Widget _buildUnifiedStats(
@@ -1004,11 +952,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     ColorScheme colorScheme,
     TextTheme textTheme,
   ) {
-    final baseOnTop = colorScheme.onPrimaryContainer;
+    final baseOnTop = colorScheme.onSurface;
 
     return Card(
       elevation: 0,
-      color: colorScheme.categorySocial.withValues(alpha: 0.08),
+      color: colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide.none,
@@ -1039,6 +987,94 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     );
   }
 
+  Widget _buildSportsChipsSection(
+    BuildContext context,
+    UserProfile? profile,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
+    final onTop = colorScheme.onSurface;
+    final interestIds = profile?.interests ?? [];
+    final sportsAsync = ref.watch(sportsProvider);
+    final allSports = sportsAsync.valueOrNull ?? [];
+    final sportsById = {for (final s in allSports) s.id: s};
+    final resolvedSports = interestIds
+        .where((id) => sportsById.containsKey(id))
+        .map((id) => sportsById[id]!)
+        .toList();
+
+    if (resolvedSports.isEmpty) return const SizedBox.shrink();
+
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+    final chips = resolvedSports.map((sport) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: colorScheme.surface.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.15),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (sport.emoji != null && sport.emoji!.isNotEmpty) ...[
+              Text(sport.emoji!, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              sport.nameEn,
+              style: textTheme.labelLarge?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Sports',
+            style: textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: onTop,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (isWide)
+            Wrap(spacing: 8, runSpacing: 8, children: chips)
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: chips
+                    .map(
+                      (c) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: c,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionButtons(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final myProfileIdAsync = ref.watch(myProfileIdProvider);
@@ -1061,9 +1097,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             onPressed: () => _sendMessage(context),
             style: OutlinedButton.styleFrom(
               padding: EdgeInsets.zero,
-              foregroundColor: colorScheme.categorySocial,
+              foregroundColor: colorScheme.onSurface,
               side: BorderSide(
-                color: colorScheme.categorySocial.withValues(alpha: 0.5),
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
               ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -1088,11 +1124,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(40),
                       textStyle: buttonTextStyle,
-                      foregroundColor: colorScheme.categorySocial,
+                      foregroundColor: colorScheme.onSurface,
                       side: BorderSide(
-                        color: colorScheme.categorySocial.withValues(
-                          alpha: 0.5,
-                        ),
+                        color: colorScheme.onSurface.withValues(alpha: 0.3),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1170,10 +1204,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(40),
           textStyle: buttonTextStyle,
-          foregroundColor: colorScheme.categorySocial,
-          side: BorderSide(
-            color: colorScheme.categorySocial.withValues(alpha: 0.5),
-          ),
+          foregroundColor: colorScheme.onSurface,
+          side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1193,11 +1225,117 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(40),
         textStyle: buttonTextStyle,
-        foregroundColor: colorScheme.categorySocial,
-        side: BorderSide(
-          color: colorScheme.categorySocial.withValues(alpha: 0.5),
-        ),
+        foregroundColor: colorScheme.onSurface,
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  /// Tabbed posts section
+  Widget _buildTabbedPostsSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final profileId = ref.watch(profileControllerProvider).profile?.id;
+
+    return Column(
+      key: _activitiesKey,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TabBar(
+          controller: _tabController,
+          labelColor: colorScheme.onSurface,
+          unselectedLabelColor: colorScheme.onSurfaceVariant,
+          indicatorColor: colorScheme.primary,
+          indicatorWeight: 3,
+          labelStyle: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+          unselectedLabelStyle: textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w400,
+          ),
+          tabs: const [
+            Tab(text: 'Posts'),
+            Tab(text: 'Replies'),
+            Tab(text: 'Liked'),
+            Tab(text: 'Reposts'),
+          ],
+        ),
+        const SizedBox(height: 4),
+        _buildTabContent(context, profileId),
+      ],
+    );
+  }
+
+  Widget _buildTabContent(BuildContext context, String? profileId) {
+    switch (_selectedTabIndex) {
+      case 0:
+        return _buildPostsTabContent(context, profileId);
+      case 1:
+        return _buildEmptyTabContent(context, 'No replies yet');
+      case 2:
+        return _buildEmptyTabContent(context, 'No liked posts yet');
+      case 3:
+        return _buildEmptyTabContent(context, 'No reposts yet');
+      default:
+        return _buildPostsTabContent(context, profileId);
+    }
+  }
+
+  Widget _buildPostsTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return postsAsync.when(
+      data: (posts) {
+        if (posts.isEmpty) {
+          return _buildEmptyTabContent(context, 'No posts yet');
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: posts.map((post) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: FeedPostCard(post: post),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(48),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, __) => const Padding(
+        padding: EdgeInsets.all(48),
+        child: Center(child: Text('Failed to load posts.')),
+      ),
+    );
+  }
+
+  Widget _buildEmptyTabContent(BuildContext context, String message) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.article_outlined,
+              size: 48,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

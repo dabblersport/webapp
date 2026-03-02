@@ -640,8 +640,8 @@ class AuthService {
     required int age,
     required String gender,
     required String intention,
-    required String preferredSport,
-    String? interests,
+    required String preferredSport, // UUID from sports.id
+    List<String>? interests, // list of sport UUIDs
     String? country,
     String? city,
     String? password, // Required for email users, null for phone/Google users
@@ -685,8 +685,8 @@ class AuthService {
       // Update auth.users metadata with key profile fields
       final userMetadata = {
         'display_name': displayName,
-        'preferred_sport': preferredSport,
-        'primary_sport': preferredSport,
+        'preferred_sport': preferredSport, // UUID
+        'primary_sport': preferredSport, // UUID
         if (username.isNotEmpty) 'username': username,
       };
 
@@ -715,9 +715,9 @@ class AuthService {
               personaType, // User's chosen role: player, organiser, hoster, socialiser
           'intention':
               intention, // Original intention value (compete, organise, host, socialise)
-          'preferred_sport': preferredSport.toLowerCase(),
-          'primary_sport': preferredSport.toLowerCase(),
-          'interests': interests,
+          'preferred_sport': preferredSport, // UUID from sports.id
+          'primary_sport': preferredSport, // UUID from sports.id
+          'interests': interests, // list of sport UUIDs (uuid[])
           'country': country, // User's detected/selected country
           'city': city, // User's detected city from IP
           'is_player':
@@ -745,9 +745,9 @@ class AuthService {
               personaType, // User's chosen role: player, organiser, hoster, socialiser
           'intention':
               intention, // Original intention value (compete, organise, host, socialise)
-          'preferred_sport': preferredSport.toLowerCase(),
-          'primary_sport': preferredSport.toLowerCase(),
-          'interests': interests,
+          'preferred_sport': preferredSport, // UUID from sports.id
+          'primary_sport': preferredSport, // UUID from sports.id
+          'interests': interests, // list of sport UUIDs (uuid[])
           'country': country, // User's detected/selected country
           'city': city, // User's detected city from IP
           'is_player':
@@ -766,27 +766,28 @@ class AuthService {
         profileId = insertedProfile['id'] as String;
       }
 
-      // 1️⃣ Get sport_id UUID from sports table (required for sport_profiles)
+      // 1️⃣ Get sport record from sports table using UUID (preferredSport is already a UUID)
       final sportRecord = await _supabase
           .from('sports')
-          .select('id')
-          .eq('sport_key', preferredSport.toLowerCase())
+          .select('id, sport_key')
+          .eq('id', preferredSport)
           .maybeSingle();
 
       if (sportRecord == null) {
         throw Exception(
-          'Sport "$preferredSport" not found in sports table. Please ensure the sport exists.',
+          'Sport with ID "$preferredSport" not found in sports table. Please ensure the sport exists.',
         );
       }
 
       final sportId = sportRecord['id'] as String;
+      final sportKey = sportRecord['sport_key'] as String;
 
       // 2️⃣ Create sport_profiles for ALL personas (player, organiser, host, socialiser)
       try {
         final sportProfileData = {
           'profile_id': profileId,
-          'sport': preferredSport.toLowerCase(),
-          'sport_id': sportId,
+          'sport': sportKey, // text sport_key for legacy column
+          'sport_id': sportId, // UUID
           'skill_level': 1, // Beginner level
         };
 
@@ -795,7 +796,7 @@ class AuthService {
             .from('sport_profiles')
             .select('profile_id')
             .eq('profile_id', profileId)
-            .eq('sport', preferredSport.toLowerCase())
+            .eq('sport_id', sportId)
             .maybeSingle();
 
         if (existingSportProfile == null) {
@@ -835,7 +836,7 @@ class AuthService {
         try {
           final organiserProfileData = {
             'profile_id': profileId,
-            'sport': preferredSport.toLowerCase(),
+            'sport': sportKey, // text sport_key for organiser table
             // DB will use defaults for: organiser_level (1), commission_type ('percent'),
             // commission_value (0), is_verified (false), is_active (true)
           };
@@ -845,7 +846,7 @@ class AuthService {
               .from('organiser')
               .select('id')
               .eq('profile_id', profileId)
-              .eq('sport', preferredSport.toLowerCase())
+              .eq('sport', sportKey)
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {

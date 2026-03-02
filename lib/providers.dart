@@ -11,6 +11,7 @@ export 'features/social/block_providers.dart';
 export 'features/social/circles_providers.dart';
 export 'features/social/providers.dart';
 export 'features/social/providers/post_providers.dart';
+export 'features/places/providers/place_providers.dart';
 export 'features/home/presentation/providers/home_providers.dart';
 
 // Onboarding

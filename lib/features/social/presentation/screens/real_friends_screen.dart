@@ -103,23 +103,44 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
           child: Builder(
             builder: (context) {
               final colorScheme = Theme.of(context).colorScheme;
+              final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-              return TwoSectionLayout(
-                category: 'social',
-                topSection: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAppBar(colorScheme),
-                      _buildTabSwitcher(colorScheme),
-                      const SizedBox(height: 12),
-                      _buildSearchBar(colorScheme),
-                    ],
+              return Scaffold(
+                backgroundColor: colorScheme.surface,
+                body: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
                   ),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: isWide
+                            ? 16
+                            : MediaQuery.of(context).padding.top + 8,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildAppBar(colorScheme),
+                            _buildTabSwitcher(colorScheme),
+                            const SizedBox(height: 12),
+                            _buildSearchBar(colorScheme),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                        child: _buildBottomSection(),
+                      ),
+                    ),
+                  ],
                 ),
-                bottomPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                bottomSection: _buildBottomSection(),
               );
             },
           ),

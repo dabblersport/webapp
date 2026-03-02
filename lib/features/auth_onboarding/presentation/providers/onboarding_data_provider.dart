@@ -10,8 +10,8 @@ class OnboardingData {
   final String? gender;
   final String?
   intention; // persona_type: player, organiser, hoster, socialiser
-  final String? preferredSport; // single sport (required)
-  final List<String>? interests; // up to 3 sports (optional)
+  final String? preferredSport; // UUID from sports.id (= primary_sport)
+  final List<String>? interests; // list of sport UUIDs
   final String? username;
   final String? country; // User's country from country picker
 
@@ -106,21 +106,6 @@ class OnboardingData {
   /// Check if all onboarding data is complete (except password)
   bool get isComplete =>
       hasUserInfo && hasIntention && hasSports && hasUsername;
-
-  /// Get profile_type based on intention (DEPRECATED - use persona_type instead)
-  /// Database now uses ONLY persona_type column with values: player, organiser, hoster, socialiser
-  @Deprecated('Use intention field directly as persona_type')
-  String get profileType {
-    // Legacy mapping for backwards compatibility
-    if (intention == 'organiser') return 'organiser';
-    return 'player';
-  }
-
-  /// Get interests as comma-separated string for database
-  String? get interestsString {
-    if (interests == null || interests!.isEmpty) return null;
-    return interests!.join(',');
-  }
 }
 
 /// StateNotifier to manage onboarding data

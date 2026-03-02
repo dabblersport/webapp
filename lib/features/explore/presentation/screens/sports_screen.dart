@@ -7,7 +7,6 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/design_system/ds.dart';
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
@@ -902,24 +901,56 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   @override
   Widget build(BuildContext context) {
-    return TwoSectionLayout(
-      category: 'sports',
-      onRefresh: _handleRefresh,
-      topSection: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          // const SizedBox(height: 24),
-          _buildTabSwitcher(),
-          const SizedBox(height: 9),
-          _buildSearchRow(),
-          const SizedBox(height: 9),
-          _buildSportsChips(),
-        ],
+    final colorScheme = Theme.of(context).colorScheme;
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            // Safe-area top spacing
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+              ),
+            ),
+
+            // ── Header ──
+            SliverToBoxAdapter(child: _buildHeader()),
+
+            // ── Tab switcher ──
+            SliverToBoxAdapter(child: _buildTabSwitcher()),
+
+            // ── Search row ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 9),
+                child: _buildSearchRow(),
+              ),
+            ),
+
+            // ── Sports chips ──
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 9, bottom: 12),
+                child: _buildSportsChips(),
+              ),
+            ),
+
+            // ── Tab content (games / venues) ──
+            SliverToBoxAdapter(
+              child: _mainTabController.index == 0
+                  ? _buildGamesTabContent()
+                  : _buildVenuesTabContent(),
+            ),
+          ],
+        ),
       ),
-      bottomSection: _mainTabController.index == 0
-          ? _buildGamesTabContent()
-          : _buildVenuesTabContent(),
     );
   }
 
@@ -1781,40 +1812,54 @@ class FavoriteVenuesScreen extends ConsumerWidget {
     final favoritesAsync = ref.watch(
       venues_providers.favoriteVenuesForCurrentUserProvider,
     );
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return TwoSectionLayout(
-      category: 'sports',
-      topSection: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          children: [
-            IconButton.filledTonal(
-              onPressed: () => Navigator.of(context).maybePop(),
-              icon: const Icon(Iconsax.arrow_left_copy),
-              style: IconButton.styleFrom(
-                backgroundColor: colorScheme.categorySports.withValues(
-                  alpha: 0.0,
-                ),
-                foregroundColor: colorScheme.onSurface,
-                minimumSize: const Size(48, 48),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Icon(Iconsax.star_1_copy, size: 20, color: sportsScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Favorite venues',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: sportsScheme.primary,
-                ),
-              ),
-            ),
-          ],
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
         ),
-      ),
-      bottomSection: favoritesAsync.when(
+        slivers: [
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Iconsax.arrow_left_copy),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.categorySports.withValues(
+                        alpha: 0.0,
+                      ),
+                      foregroundColor: colorScheme.onSurface,
+                      minimumSize: const Size(48, 48),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(Iconsax.star_1_copy, size: 20, color: sportsScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Favorite venues',
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: sportsScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: favoritesAsync.when(
         loading: () => Center(
           child: CircularProgressIndicator(color: sportsScheme.primary),
         ),
@@ -1938,6 +1983,9 @@ class FavoriteVenuesScreen extends ConsumerWidget {
             },
           );
         },
+            ),
+          ),
+        ],
       ),
     );
   }

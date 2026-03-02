@@ -8,7 +8,7 @@ import 'package:dabbler/design_system/tokens/main_dark.dart'
     as main_dark_tokens;
 import 'package:dabbler/design_system/tokens/main_light.dart'
     as main_light_tokens;
-import 'package:dabbler/utils/ui_constants.dart' hide AppSpacing;
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
 class IntentSelectionScreen extends ConsumerStatefulWidget {
   const IntentSelectionScreen({super.key});
@@ -144,128 +144,112 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       );
     }
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
-      body: Padding(
-        padding: EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
+      containerColor: tokens.main.secondaryContainer,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.xxl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: AppSpacing.xxxl),
+                      // Screen Title
+                      Text(
+                        'What brings you here?',
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: tokens.main.onSecondaryContainer,
+                        ),
                       ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.xxl),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const SizedBox(height: AppSpacing.xxxl),
-                              // Screen Title
-                              Text(
-                                'What brings you here?',
-                                style: theme.textTheme.displaySmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: tokens.main.onSecondaryContainer,
+                      SizedBox(height: AppSpacing.lg),
+                      // Headline
+                      Text(
+                        'Help us tailor Dabbler',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: tokens.main.onSecondaryContainer,
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Persona Options
+                      ..._personaOptions.map((option) {
+                        final isSelected = _selectedPersona == option['value'];
+
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: AppSpacing.lg),
+                          child: _PersonaCard(
+                            persona: option['value']!,
+                            title: option['title']!,
+                            description: option['description']!,
+                            icon: option['icon']!,
+                            isSelected: isSelected,
+                            onTap: () => setState(
+                              () => _selectedPersona = option['value'],
+                            ),
+                            tokens: tokens,
+                            theme: theme,
+                          ),
+                        );
+                      }),
+                      const Spacer(),
+
+                      // Continue Button
+                      FilledButton(
+                        onPressed: (_isLoading || _selectedPersona == null)
+                            ? null
+                            : _handleSubmit,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(56),
+                          shape: const StadiumBorder(),
+                          backgroundColor: tokens.main.primary,
+                          foregroundColor: tokens.main.onPrimary,
+                          textStyle: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                              ),
-                              SizedBox(height: AppSpacing.lg),
-                              // Headline
-                              Text(
-                                'Help us tailor Dabbler',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color: tokens.main.onSecondaryContainer,
-                                ),
-                              ),
+                              )
+                            : const Text('Continue'),
+                      ),
 
-                              const SizedBox(height: 40),
+                      SizedBox(height: AppSpacing.lg),
 
-                              // Persona Options
-                              ..._personaOptions.map((option) {
-                                final isSelected =
-                                    _selectedPersona == option['value'];
-
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom: AppSpacing.lg,
-                                  ),
-                                  child: _PersonaCard(
-                                    persona: option['value']!,
-                                    title: option['title']!,
-                                    description: option['description']!,
-                                    icon: option['icon']!,
-                                    isSelected: isSelected,
-                                    onTap: () => setState(
-                                      () => _selectedPersona = option['value'],
-                                    ),
-                                    tokens: tokens,
-                                    theme: theme,
-                                  ),
-                                );
-                              }),
-                              const Spacer(),
-
-                              // Continue Button
-                              FilledButton(
-                                onPressed:
-                                    (_isLoading || _selectedPersona == null)
-                                    ? null
-                                    : _handleSubmit,
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(56),
-                                  shape: const StadiumBorder(),
-                                  backgroundColor: tokens.main.primary,
-                                  foregroundColor: tokens.main.onPrimary,
-                                  textStyle: theme.textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 22,
-                                        width: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text('Continue'),
-                              ),
-
-                              SizedBox(height: AppSpacing.lg),
-
-                              // Back Button
-                              Center(
-                                child: TextButton(
-                                  onPressed: () => context.pop(),
-                                  child: Text(
-                                    'Back',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: tokens.main.primary,
-                                        ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.xxxl),
-                            ],
+                      // Back Button
+                      Center(
+                        child: TextButton(
+                          onPressed: () => context.pop(),
+                          child: Text(
+                            'Back',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: tokens.main.primary,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                      const SizedBox(height: AppSpacing.xxxl),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

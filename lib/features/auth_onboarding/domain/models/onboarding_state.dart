@@ -51,9 +51,9 @@ class OnboardingData with _$OnboardingData {
     String? country,
     String? language,
 
-    // Sports
-    String? preferredSport, // Single preferred sport slug
-    List<String>? interestsSlugs, // List of sports.slug
+    // Sports (all UUIDs from sports.id)
+    String? preferredSport, // UUID from sports.id (= primary_sport)
+    List<String>? interestIds, // List of sport UUIDs
     String? primarySportId, // UUID from sports.id
     // DB state
     String? profileId, // Set after profile creation

@@ -8,6 +8,8 @@ import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/user_circle.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/data/models/place.dart';
+import 'package:dabbler/features/places/presentation/widgets/place_picker_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/circles/circle_picker_sheet.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
@@ -34,6 +36,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   /// The named circle selected for circle-visibility posts.
   UserCircle? _selectedCircle;
+
+  /// The place/location attached to this post (if any).
+  Place? _selectedPlace;
 
   @override
   void initState() {
@@ -162,6 +167,18 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // PLACE PICKER
+  // ═══════════════════════════════════════════════════════════════════════
+
+  Future<void> _showPlacePicker() async {
+    final place = await PlacePickerSheet.show(context);
+    if (!mounted) return;
+    if (place != null) {
+      setState(() => _selectedPlace = place);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // SUBMIT
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -181,6 +198,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           visibility: _visibility.name,
           postType: _postType,
           circleId: _selectedCircle?.id,
+          locationName: _selectedPlace?.name,
+          geoLat: _selectedPlace?.latitude,
+          geoLng: _selectedPlace?.longitude,
         );
 
     if (!mounted) return;
@@ -310,18 +330,31 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             ),
           ),
 
-          // Padding(
-          //   padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          //   child: Align(
-          //     alignment: Alignment.centerRight,
-          //     child: Text(
-          //       'Drafts',
-          //       style: tt.bodySmall?.copyWith(
-          //         color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-          //       ),
-          //     ),
-          //   ),
-          // ),
+          // ── Selected location chip ──
+          if (_selectedPlace != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: InputChip(
+                  avatar: Icon(Icons.location_on, size: 18, color: cs.primary),
+                  label: Text(
+                    _selectedPlace!.name,
+                    style: tt.bodySmall?.copyWith(
+                      color: cs.onSecondaryContainer,
+                    ),
+                  ),
+                  backgroundColor: cs.secondaryContainer,
+                  deleteIconColor: cs.onSecondaryContainer,
+                  onDeleted: () => setState(() => _selectedPlace = null),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide.none,
+                  ),
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -429,6 +462,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           // + (add media — placeholder)
           _CircleIconButton(icon: Icons.add, onTap: () {}),
+          const SizedBox(width: 4),
+
+          // Location
+          _CircleIconButton(
+            icon: Icons.location_on_outlined,
+            onTap: _showPlacePicker,
+          ),
           const SizedBox(width: 8),
 
           // Vibes

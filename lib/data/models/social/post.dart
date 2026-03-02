@@ -62,6 +62,7 @@ class Post with _$Post {
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
+    @JsonKey(name: 'location_name') String? locationName,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/venues/providers.dart';
 import 'package:dabbler/themes/app_theme.dart';
@@ -45,78 +44,119 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       orElse: () => false,
     );
     final isFavorited = _favoriteOptimistic ?? isFavoritedFromProvider;
+    final colorScheme = Theme.of(context).colorScheme;
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return venueAsync.when(
-      data: (venue) => TwoSectionLayout(
-        category: 'sports',
-        topSection: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderSection(
-                venue,
-                sportsScheme,
-                textTheme,
-                isFavorited: isFavorited,
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: venueAsync.when(
+        data: (venue) => CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
               ),
-              const SizedBox(height: 24),
-              _buildHeroSection(venue, sportsScheme, textTheme),
-            ],
-          ),
-        ),
-        bottomSection: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildQuickInfoCards(venue, textTheme, sportsScheme),
-              const SizedBox(height: 20),
-              _buildAboutSection(venue, textTheme, sportsScheme),
-              const SizedBox(height: 20),
-              _buildSportsSection(venue, textTheme, sportsScheme),
-              const SizedBox(height: 20),
-              _buildAmenitiesSection(venue, textTheme, sportsScheme),
-              const SizedBox(height: 20),
-              _buildHoursSection(venue, textTheme, sportsScheme),
-              const SizedBox(height: 20),
-              _buildBottomBar(venue, sportsScheme, textTheme),
-            ],
-          ),
-        ),
-      ),
-      loading: () => TwoSectionLayout(
-        category: 'sports',
-        topSection: _buildLoadingTop(textTheme),
-        bottomSection: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => TwoSectionLayout(
-        category: 'sports',
-        topSection: _buildLoadingTop(textTheme),
-        bottomSection: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Iconsax.danger_copy, size: 48, color: sportsScheme.error),
-                const SizedBox(height: 16),
-                Text(
-                  'Failed to load venue',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: sportsScheme.onSecondaryContainer,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton.tonal(
-                  onPressed: () =>
-                      ref.refresh(venueDetailProvider(widget.venueId)),
-                  child: const Text('Retry'),
-                ),
-              ],
             ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeaderSection(
+                      venue,
+                      sportsScheme,
+                      textTheme,
+                      isFavorited: isFavorited,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildHeroSection(venue, sportsScheme, textTheme),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildQuickInfoCards(venue, textTheme, sportsScheme),
+                    const SizedBox(height: 20),
+                    _buildAboutSection(venue, textTheme, sportsScheme),
+                    const SizedBox(height: 20),
+                    _buildSportsSection(venue, textTheme, sportsScheme),
+                    const SizedBox(height: 20),
+                    _buildAmenitiesSection(venue, textTheme, sportsScheme),
+                    const SizedBox(height: 20),
+                    _buildHoursSection(venue, textTheme, sportsScheme),
+                    const SizedBox(height: 20),
+                    _buildBottomBar(venue, sportsScheme, textTheme),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        loading: () => CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+              ),
+            ),
+            SliverToBoxAdapter(child: _buildLoadingTop(textTheme)),
+            const SliverToBoxAdapter(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+        ),
+        error: (error, stack) => CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+              ),
+            ),
+            SliverToBoxAdapter(child: _buildLoadingTop(textTheme)),
+            SliverToBoxAdapter(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Iconsax.danger_copy,
+                          size: 48, color: sportsScheme.error),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load venue',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: sportsScheme.onSecondaryContainer,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.tonal(
+                        onPressed: () =>
+                            ref.refresh(venueDetailProvider(widget.venueId)),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

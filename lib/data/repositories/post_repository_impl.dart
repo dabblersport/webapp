@@ -328,6 +328,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String postType = 'moment',
     String? personaType,
     String? circleId,
+    String? locationTagId,
+    String? locationName,
+    double? geoLat,
+    double? geoLng,
   }) async {
     // Step 1 — Verify authenticated session exists.
     final initialSession = _db.auth.currentSession;
@@ -425,6 +429,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         'is_active': true,
         if (vibeId != null) 'vibe_id': vibeId,
         if (sportId != null) 'sport_id': sportId,
+        if (locationTagId != null) 'location_tag_id': locationTagId,
+        if (locationName != null) 'location_name': locationName,
+        if (geoLat != null) 'geo_lat': geoLat,
+        if (geoLng != null) 'geo_lng': geoLng,
       };
 
       print('INSERT PAYLOAD: $data');

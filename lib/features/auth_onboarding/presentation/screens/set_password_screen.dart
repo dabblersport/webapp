@@ -242,7 +242,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               gender: onboardingData.gender!,
               intention: onboardingData.intention!,
               preferredSport: onboardingData.preferredSport!,
-              interests: onboardingData.interestsString,
+              interests: onboardingData.interests,
               country: country,
               city: city,
               password: password, // Email users set password
@@ -279,7 +279,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               gender: onboardingData.gender!,
               intention: onboardingData.intention!,
               preferredSport: onboardingData.preferredSport!,
-              interests: onboardingData.interestsString,
+              interests: onboardingData.interests,
               country: countryFallback,
               city: cityFallback,
               password:

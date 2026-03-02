@@ -138,9 +138,9 @@ class ProfileCreationService {
           'age': data.age,
           'gender': data.gender?.toLowerCase(),
           'persona_type': data.targetPersona.name,
-          'preferred_sport': data.primarySport!.toLowerCase(),
-          'primary_sport': data.primarySport!.toLowerCase(),
-          'interests': data.interests?.join(','),
+          'preferred_sport': data.primarySport!, // UUID
+          'primary_sport': data.primarySport!, // UUID
+          'interests': data.interests, // list of sport UUIDs
           'intention': intention,
           'is_player': data.targetPersona == PersonaType.player,
           'skill_level': 1,
@@ -188,9 +188,9 @@ class ProfileCreationService {
         'gender': data.gender?.toLowerCase(),
         'profile_type': profileType,
         'persona_type': data.targetPersona.name,
-        'preferred_sport': data.primarySport!.toLowerCase(),
-        'primary_sport': data.primarySport!.toLowerCase(),
-        'interests': data.interests?.join(','),
+        'preferred_sport': data.primarySport!, // UUID
+        'primary_sport': data.primarySport!, // UUID
+        'interests': data.interests, // list of sport UUIDs
         'intention': intention,
         'is_player': data.targetPersona == PersonaType.player,
         'skill_level': 1,
@@ -231,20 +231,21 @@ class ProfileCreationService {
     required String profileId,
     required AddPersonaData data,
   }) async {
-    // Get sport_id UUID from sports table
+    // Get sport record from sports table using UUID (primarySport is a UUID)
     final sportRecord = await _client
         .from('sports')
-        .select('id')
-        .eq('sport_key', data.primarySport!.toLowerCase())
+        .select('id, sport_key')
+        .eq('id', data.primarySport!)
         .maybeSingle();
 
     if (sportRecord == null) {
       throw Exception(
-        'Sport "${data.primarySport}" not found in sports table.',
+        'Sport with ID "${data.primarySport}" not found in sports table.',
       );
     }
 
     final sportId = sportRecord['id'] as String;
+    final sportKey = sportRecord['sport_key'] as String;
 
     // Check if sport_profile already exists for this profile
     // Note: sport_profiles uses composite key (profile_id, sport_id), not a separate id column
@@ -259,8 +260,8 @@ class ProfileCreationService {
       // Create sport_profiles row
       final sportProfileData = {
         'profile_id': profileId,
-        'sport': data.primarySport!.toLowerCase(),
-        'sport_id': sportId,
+        'sport': sportKey, // text sport_key for legacy column
+        'sport_id': sportId, // UUID
         'skill_level': 1, // Beginner level
       };
 

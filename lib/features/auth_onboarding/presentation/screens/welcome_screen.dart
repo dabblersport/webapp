@@ -9,6 +9,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
     show routerRefreshNotifier;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/ui_constants.dart';
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
 class WelcomeScreen extends StatelessWidget {
   final String displayName;
@@ -30,217 +31,284 @@ class WelcomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final isWide = MediaQuery.sizeOf(context).width >= 800;
 
     // Get persona-specific content
     final personaContent = _getPersonaContent(personaType);
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xxl),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const SizedBox(height: AppSpacing.xxxl),
+      containerColor: tokens.main.secondaryContainer,
+      maxCardWidth: isWide ? 960 : 520,
+      // WelcomeScreen manages its own two-column desktop layout internally.
+      splitWideLayout: false,
+      child: isWide
+          ? _buildDesktopLayout(context, theme, tokens, personaContent)
+          : _buildMobileLayout(context, theme, tokens, personaContent),
+    );
+  }
 
-                              // 2. Title
-                              Text(
-                                _getWelcomeTitle(),
-                                style: theme.textTheme.displaySmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: tokens.main.onSecondaryContainer,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
+  // ── Desktop: two-column layout ───────────────────────────────────────
 
-                              const SizedBox(height: AppSpacing.xxxl),
-
-                              Row(
-                                children: [
-                                  // 1. Avatar with initials
-                                  Center(
-                                    child: CircleAvatar(
-                                      radius: 40,
-                                      backgroundColor: tokens.main.primary,
-                                      child: Text(
-                                        InitialsGenerator.generate(displayName),
-                                        style: theme.textTheme.displaySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                              color: tokens.main.onPrimary,
-                                            ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.lg),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // 3. Display name
-                                      Text(
-                                        displayName,
-                                        style: theme.textTheme.headlineSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w500,
-                                              color: tokens
-                                                  .main
-                                                  .onSecondaryContainer,
-                                            ),
-                                        textAlign: TextAlign.left,
-                                      ),
-                                      const SizedBox(height: AppSpacing.sm),
-
-                                      // 4. Persona chip
-                                      Center(
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: AppSpacing.lg,
-                                            vertical: AppSpacing.xs,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: tokens.main.secondary,
-                                            borderRadius: BorderRadius.circular(
-                                              999,
-                                            ),
-                                            border: Border.all(
-                                              color: tokens.main.outline
-                                                  .withValues(alpha: 0.3),
-                                            ),
-                                          ),
-                                          child: Text(
-                                            personaContent.chipLabel,
-                                            style: theme.textTheme.labelLarge
-                                                ?.copyWith(
-                                                  color:
-                                                      tokens.main.onSecondary,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: AppSpacing.xxxl),
-
-                              // 5. Primary guidance text
-                              Text(
-                                personaContent.guidanceText,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  height: 1.25,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-
-                              const SizedBox(height: AppSpacing.xxl),
-
-                              // 5. Core philosophy statement
-                              Text(
-                                personaContent.philosophyStatement,
-                                style: theme.textTheme.headlineLarge?.copyWith(
-                                  color: tokens.main.primary,
-                                  fontWeight: FontWeight.w500,
-                                  height: 1.3,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-
-                              const SizedBox(height: AppSpacing.xxxl),
-                              const SizedBox(height: AppSpacing.xl),
-
-                              // 6. Reminder section
-                              Container(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Don\'t forget',
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                          ),
-                                    ),
-                                    const SizedBox(height: AppSpacing.xs),
-                                    Text(
-                                      personaContent.reminderText,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                            height: 1.7,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const Spacer(),
-
-                              // 7. Final emphasis line
-                              Text(
-                                personaContent.finalEmphasis,
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-
-                              const SizedBox(height: AppSpacing.xl),
-                              // 8. Primary CTA
-                              FilledButton(
-                                onPressed: () {
-                                  routerRefreshNotifier.clearPostLoginWelcome();
-                                  context.go(RoutePaths.home);
-                                },
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(56),
-                                  shape: const StadiumBorder(),
-                                  backgroundColor: tokens.main.primary,
-                                  foregroundColor: tokens.main.onPrimary,
-                                  textStyle: theme.textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                child: const Text('Continue'),
-                              ),
-
-                              const SizedBox(height: AppSpacing.lg),
-                            ],
-                          ),
-                        ),
-                      ),
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+    _PersonaContent personaContent,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xxl),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ── Left: text content + CTA ──
+          Expanded(
+            flex: 5,
+            child: Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.xxxl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _getWelcomeTitle(),
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: tokens.main.onSecondaryContainer,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+                  Text(
+                    personaContent.guidanceText,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: tokens.main.onSecondaryContainer,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxl),
+                  Text(
+                    personaContent.philosophyStatement,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: tokens.main.primary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxxl),
+                  _buildReminderCard(theme, tokens, personaContent),
+                  const SizedBox(height: AppSpacing.xxxl),
+                  Text(
+                    personaContent.finalEmphasis,
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: tokens.main.onSecondaryContainer,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildCTAButton(context, theme, tokens),
+                  ),
+                ],
               ),
             ),
           ),
+
+          // ── Right: avatar card ──
+          Expanded(
+            flex: 3,
+            child: Center(
+              child: _buildAvatarCard(theme, tokens, personaContent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Mobile: original single-column layout ────────────────────────────
+
+  Widget _buildMobileLayout(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+    _PersonaContent personaContent,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: AppSpacing.xxxl),
+                    Text(
+                      _getWelcomeTitle(),
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: tokens.main.onSecondaryContainer,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                    const SizedBox(height: AppSpacing.xxxl),
+                    _buildAvatarCard(theme, tokens, personaContent),
+                    const SizedBox(height: AppSpacing.xxxl),
+                    Text(
+                      personaContent.guidanceText,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: tokens.main.onSecondaryContainer,
+                        height: 1.25,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text(
+                      personaContent.philosophyStatement,
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        color: tokens.main.primary,
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                    const SizedBox(height: AppSpacing.xxxl),
+                    _buildReminderCard(theme, tokens, personaContent),
+                    const Spacer(),
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      personaContent.finalEmphasis,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: tokens.main.onSecondaryContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    _buildCTAButton(context, theme, tokens),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Shared widgets ───────────────────────────────────────────────────
+
+  Widget _buildAvatarCard(
+    ThemeData theme,
+    dynamic tokens,
+    _PersonaContent personaContent,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(
+          radius: 40,
+          backgroundColor: tokens.main.primary,
+          child: Text(
+            InitialsGenerator.generate(displayName),
+            style: theme.textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: tokens.main.onPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.lg),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              displayName,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: tokens.main.onSecondaryContainer,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: tokens.main.secondary,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: tokens.main.outline.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                personaContent.chipLabel,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: tokens.main.onSecondary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReminderCard(
+    ThemeData theme,
+    dynamic tokens,
+    _PersonaContent personaContent,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Don\'t forget',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: tokens.main.onSecondaryContainer,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          personaContent.reminderText,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: tokens.main.onSecondaryContainer,
+            height: 1.7,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCTAButton(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+  ) {
+    return FilledButton(
+      onPressed: () {
+        routerRefreshNotifier.clearPostLoginWelcome();
+        context.go(RoutePaths.home);
+      },
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(56),
+        shape: const StadiumBorder(),
+        backgroundColor: tokens.main.primary,
+        foregroundColor: tokens.main.onPrimary,
+        textStyle: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
         ),
       ),
+      child: const Text('Continue'),
     );
   }
 

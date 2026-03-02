@@ -34,6 +34,10 @@
       "approve": true,
       "matchCommandLine": true
     },
-    "git push": true
+    "git push": true,
+    "/^cat /Users/moatazmustapha/Desktop/dabbler/supabase/schema/schema\\.json \\| python3 -c \"import sys,json; d=json\\.load\\(sys\\.stdin\\); posts=\\[t for t in d\\.get\\('tables',\\[\\]\\) if t\\.get\\('name'\\)=='posts'\\]; \\[print\\(json\\.dumps\\(c,indent=2\\)\\) for p in posts for c in p\\.get\\('columns',\\[\\]\\) if 'location' in c\\.get\\('name',''\\)\\.lower\\(\\) or 'geo' in c\\.get\\('name',''\\)\\.lower\\(\\)\\]\" 2>/dev/null \\|\\| echo \"Schema parse failed, trying grep\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
   }
 }

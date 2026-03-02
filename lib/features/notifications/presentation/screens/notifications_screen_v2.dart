@@ -8,7 +8,6 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
-import 'package:dabbler/core/design_system/layouts/two_section_layout.dart';
 import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import '../providers/notification_center_badge_providers.dart';
@@ -51,93 +50,110 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     );
     final activityState = ref.watch(activityFeedControllerProvider);
 
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: TwoSectionLayout(
-        category: 'activities',
-        topSection: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: () => _selectedTab == 'Notifications'
+            ? _refresh(userId)
+            : _refreshActivity(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  IconButton.filledTonal(
-                    onPressed: () =>
-                        context.canPop() ? context.pop() : context.go('/home'),
-                    icon: const Icon(Iconsax.home_copy),
-                    style: IconButton.styleFrom(
-                      backgroundColor: context.colorScheme.categoryActivities
-                          .withValues(alpha: 0.0),
-                      foregroundColor: context.colorScheme.onSurface,
-                      minimumSize: const Size(48, 48),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
                       children: [
-                        Text(
-                          _selectedTab == 'Notifications'
-                              ? 'Notifications'
-                              : 'Activity',
-                          style: context.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: context.colorScheme.onSurface,
+                        IconButton.filledTonal(
+                          onPressed: () =>
+                              context.canPop() ? context.pop() : context.go('/home'),
+                          icon: const Icon(Iconsax.home_copy),
+                          style: IconButton.styleFrom(
+                            backgroundColor: context.colorScheme.categoryActivities
+                                .withValues(alpha: 0.0),
+                            foregroundColor: context.colorScheme.onSurface,
+                            minimumSize: const Size(48, 48),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedTab == 'Notifications'
+                                    ? 'Notifications'
+                                    : 'Activity',
+                                style: context.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: context.colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          onPressed: () {
+                            setState(() {
+                              _selectedTab = _selectedTab == 'Notifications'
+                                  ? 'Activity'
+                                  : 'Notifications';
+                              _selectedFilter = 'All';
+                            });
+
+                            if (_selectedTab == 'Activity') {
+                              ref.read(lastSeenActivityAtProvider.notifier).markNow();
+                            }
+                          },
+                          icon: Icon(
+                            _selectedTab == 'Notifications'
+                                ? Iconsax.activity_copy
+                                : Iconsax.notification_copy,
+                          ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: context.colorScheme.categoryActivities
+                                .withValues(alpha: 0.0),
+                            foregroundColor: context.colorScheme.onSurface,
+                            minimumSize: const Size(48, 48),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    onPressed: () {
-                      setState(() {
-                        _selectedTab = _selectedTab == 'Notifications'
-                            ? 'Activity'
-                            : 'Notifications';
-                        _selectedFilter = 'All'; // Reset filter when switching
-                      });
-
-                      if (_selectedTab == 'Activity') {
-                        ref.read(lastSeenActivityAtProvider.notifier).markNow();
-                      }
-                    },
-                    icon: Icon(
-                      _selectedTab == 'Notifications'
-                          ? Iconsax.activity_copy
-                          : Iconsax.notification_copy,
-                    ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: context.colorScheme.categoryActivities
-                          .withValues(alpha: 0.0),
-                      foregroundColor: context.colorScheme.onSurface,
-                      minimumSize: const Size(48, 48),
-                    ),
+                  const SizedBox(height: 12),
+                  _buildFilterSection(
+                    _selectedTab == 'Notifications' ? notificationState : null,
+                    activityState,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            _buildFilterSection(
-              _selectedTab == 'Notifications' ? notificationState : null,
-              activityState,
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  if (_selectedTab == 'Notifications')
+                    _buildStatsBar(notificationState),
+                  _selectedTab == 'Notifications'
+                      ? _buildNotificationsList(userId, notificationState)
+                      : _buildActivityList(activityState),
+                ],
+              ),
             ),
           ],
         ),
-        bottomSection: Column(
-          children: [
-            if (_selectedTab == 'Notifications')
-              _buildStatsBar(notificationState),
-            _selectedTab == 'Notifications'
-                ? _buildNotificationsList(userId, notificationState)
-                : _buildActivityList(activityState),
-          ],
-        ),
-        onRefresh: () => _selectedTab == 'Notifications'
-            ? _refresh(userId)
-            : _refreshActivity(),
       ),
     );
   }

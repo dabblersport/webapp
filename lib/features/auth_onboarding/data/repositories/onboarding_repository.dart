@@ -40,7 +40,7 @@ class OnboardingRepository {
               country,
               language,
               preferred_sport,
-              primary_sport_id,
+              primary_sport,
               interests,
               onboard,
               profile_completion
@@ -138,7 +138,8 @@ class OnboardingRepository {
     String? country,
     String? language,
     String? preferredSport,
-    List<String>? interestsSlugs,
+    String? primarySport,
+    List<String>? interestIds,
   }) async {
     return Result.guard(
       () async {
@@ -178,7 +179,8 @@ class OnboardingRepository {
           'country': country,
           'language': language ?? 'en',
           'preferred_sport': preferredSport,
-          'interests': interestsSlugs ?? [],
+          'primary_sport': primarySport,
+          'interests': interestIds ?? [],
           'onboard': false, // Not complete yet
           'profile_completion': 'started',
         };
@@ -242,8 +244,8 @@ class OnboardingRepository {
   /// STEP 6: Create Sport Profile (THIRD DB WRITE)
   /// ═══════════════════════════════════════════════════════════════
 
-  /// Create sport_profiles entry and update primary_sport_id
-  /// IDEMPOTENT: If entry exists, just updates primary_sport_id
+  /// Create sport_profiles entry and update primary_sport
+  /// IDEMPOTENT: If entry exists, just updates primary_sport
   Future<Result<void, Failure>> createSportProfile({
     required String profileId,
     required String sportId,
@@ -265,11 +267,11 @@ class OnboardingRepository {
           });
         }
 
-        // Update profile with primary_sport_id and profile_completion
+        // Update profile with primary_sport and profile_completion
         await _client
             .from('profiles')
             .update({
-              'primary_sport_id': sportId,
+              'primary_sport': sportId,
               'profile_completion': 'sport_added',
             })
             .eq('id', profileId);

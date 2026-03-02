@@ -79,6 +79,8 @@ mixin _$Post {
   String? get sportId => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_tag_id')
   String? get locationTagId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location_name')
+  String? get locationName => throw _privateConstructorUsedError;
   @JsonKey(name: 'vibe_id')
   String? get primaryVibeId => throw _privateConstructorUsedError;
   @JsonKey(name: 'origin_id')
@@ -186,6 +188,7 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
+    @JsonKey(name: 'location_name') String? locationName,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,
@@ -254,6 +257,7 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? gameId = freezed,
     Object? sportId = freezed,
     Object? locationTagId = freezed,
+    Object? locationName = freezed,
     Object? primaryVibeId = freezed,
     Object? originId = freezed,
     Object? contentClass = freezed,
@@ -366,6 +370,10 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
             locationTagId: freezed == locationTagId
                 ? _value.locationTagId
                 : locationTagId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            locationName: freezed == locationName
+                ? _value.locationName
+                : locationName // ignore: cast_nullable_to_non_nullable
                       as String?,
             primaryVibeId: freezed == primaryVibeId
                 ? _value.primaryVibeId
@@ -505,6 +513,7 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
+    @JsonKey(name: 'location_name') String? locationName,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,
@@ -570,6 +579,7 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? gameId = freezed,
     Object? sportId = freezed,
     Object? locationTagId = freezed,
+    Object? locationName = freezed,
     Object? primaryVibeId = freezed,
     Object? originId = freezed,
     Object? contentClass = freezed,
@@ -682,6 +692,10 @@ class __$$PostImplCopyWithImpl<$Res>
         locationTagId: freezed == locationTagId
             ? _value.locationTagId
             : locationTagId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        locationName: freezed == locationName
+            ? _value.locationName
+            : locationName // ignore: cast_nullable_to_non_nullable
                   as String?,
         primaryVibeId: freezed == primaryVibeId
             ? _value.primaryVibeId
@@ -815,6 +829,7 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'game_id') this.gameId,
     @JsonKey(name: 'sport_id') this.sportId,
     @JsonKey(name: 'location_tag_id') this.locationTagId,
+    @JsonKey(name: 'location_name') this.locationName,
     @JsonKey(name: 'vibe_id') this.primaryVibeId,
     @JsonKey(name: 'origin_id') this.originId,
     @JsonKey(name: 'content_class') this.contentClass,
@@ -941,6 +956,9 @@ class _$PostImpl implements _Post {
   @JsonKey(name: 'location_tag_id')
   final String? locationTagId;
   @override
+  @JsonKey(name: 'location_name')
+  final String? locationName;
+  @override
   @JsonKey(name: 'vibe_id')
   final String? primaryVibeId;
   @override
@@ -1045,7 +1063,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt)';
   }
 
   @override
@@ -1086,6 +1104,8 @@ class _$PostImpl implements _Post {
             (identical(other.sportId, sportId) || other.sportId == sportId) &&
             (identical(other.locationTagId, locationTagId) ||
                 other.locationTagId == locationTagId) &&
+            (identical(other.locationName, locationName) ||
+                other.locationName == locationName) &&
             (identical(other.primaryVibeId, primaryVibeId) ||
                 other.primaryVibeId == primaryVibeId) &&
             (identical(other.originId, originId) ||
@@ -1158,6 +1178,7 @@ class _$PostImpl implements _Post {
     gameId,
     sportId,
     locationTagId,
+    locationName,
     primaryVibeId,
     originId,
     contentClass,
@@ -1233,6 +1254,7 @@ abstract class _Post implements Post {
     @JsonKey(name: 'game_id') final String? gameId,
     @JsonKey(name: 'sport_id') final String? sportId,
     @JsonKey(name: 'location_tag_id') final String? locationTagId,
+    @JsonKey(name: 'location_name') final String? locationName,
     @JsonKey(name: 'vibe_id') final String? primaryVibeId,
     @JsonKey(name: 'origin_id') final String? originId,
     @JsonKey(name: 'content_class') final String? contentClass,
@@ -1346,6 +1368,9 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'location_tag_id')
   String? get locationTagId;
+  @override
+  @JsonKey(name: 'location_name')
+  String? get locationName;
   @override
   @JsonKey(name: 'vibe_id')
   String? get primaryVibeId;

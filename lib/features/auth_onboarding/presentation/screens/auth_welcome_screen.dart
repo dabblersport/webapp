@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
 class AuthWelcomeScreen extends ConsumerStatefulWidget {
   const AuthWelcomeScreen({super.key});
@@ -202,6 +203,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     final isDark = theme.colorScheme.brightness == Brightness.dark;
     final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
     final countryState = ref.watch(selectedCountryProvider);
+    final isWide = MediaQuery.sizeOf(context).width >= 800;
 
     // Country detection priority (via selectedCountryProvider + LocationDetector):
     //   1. IP-derived country (Supabase edge function using ipapi.co)
@@ -212,351 +214,475 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       orElse: () => 'Global',
     );
 
-    return Scaffold(
+    return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: ClipRRect(
-          borderRadius: AppRadius.extraExtraLarge,
-          child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
-            child: SafeArea(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minHeight: constraints.maxHeight,
-                      ),
-                      child: IntrinsicHeight(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xxl,
+      containerColor: tokens.main.secondaryContainer,
+      // On wide screens pass the welcome/trust branding as the left panel so the
+      // right panel can focus entirely on auth CTAs.
+      leftPanelContent: isWide
+          ? _WelcomeLeftPanel(tokens: tokens, isDark: isDark, theme: theme)
+          : null,
+      child: isWide
+          ? _buildWideCTAs(context, theme, tokens, isDark, countryName)
+          : _buildMobileContent(context, theme, tokens, isDark, countryName),
+    );
+  }
+
+  // ── Wide: right-panel CTAs only ──────────────────────────────────────
+
+  Widget _buildWideCTAs(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+    bool isDark,
+    String countryName,
+  ) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl,
+          vertical: AppSpacing.xxxl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Get started',
+              style: theme.textTheme.headlineLarge?.copyWith(
+                color: tokens.main.onSecondaryContainer,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Create an account or log in',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: tokens.main.onSecondaryContainer.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxxl),
+            ..._buildCTAButtons(context, theme, tokens, isDark),
+            const SizedBox(height: AppSpacing.xxxl),
+            Center(
+              child: Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  borderRadius: AppRadius.medium,
+                  onTap: _isLoading ? null : _openCountryPicker,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          countryName,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: tokens.main.onSecondaryContainer,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: AppSpacing.xl),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Change',
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: tokens.main.primary,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: AppIconSize.sm,
+                          color: tokens.main.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                              Row(
-                                children: [
-                                  Text(
-                                    'Welcome',
-                                    style: theme.textTheme.displayMedium
-                                        ?.copyWith(
-                                          color:
-                                              tokens.main.onSecondaryContainer,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Text(
-                                    '👋',
-                                    style: theme.textTheme.displayMedium
-                                        ?.copyWith(
-                                          color:
-                                              tokens.main.onSecondaryContainer,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Text(
-                                'We are stoked to have you join us. Create an account and start dabbing in local sports.',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  height: 1.25,
-                                ),
-                              ),
-                              // const SizedBox(height: AppSpacing.sm),
-                              // Text(
-                              //   'By signing up you agree to our Terms and Conditions, Privacy Policy and Cookies Policy.',
-                              //   style: theme.textTheme.bodyMedium?.copyWith(
-                              //     color: tokens.main.onSecondaryContainer,
-                              //     height: 1.25,
-                              //   ),
-                              // ),
-                              const SizedBox(height: AppSpacing.xxl),
-                              Text(
-                                'Built for trust',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: tokens.main.onSecondaryContainer,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: AppIconSize.sm,
-                                      color: tokens.main.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(
-                                    child: Text(
-                                      'Reviewed players, verified memberships and rated venues',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                            height: 1.25,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: AppIconSize.sm,
-                                      color: tokens.main.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(
-                                    child: Text(
-                                      'Connections and recommendations personalised to your sports',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                            height: 1.25,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    child: Icon(
-                                      Icons.check_circle,
-                                      size: AppIconSize.sm,
-                                      color: tokens.main.primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(
-                                    child: Text(
-                                      'We do not sell your data, privacy-first by design',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: tokens
-                                                .main
-                                                .onSecondaryContainer,
-                                            height: 1.25,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Spacer(),
-                              FilledButton(
-                                onPressed: _isLoading ? null : _handleGoogle,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: isDark
-                                      ? tokens.main.inverseSurface
-                                      : tokens.main.surfaceContainerLowest,
-                                  foregroundColor: isDark
-                                      ? tokens.main.inverseOnSurface
-                                      : tokens.main.onSurface,
-                                  minimumSize: const Size.fromHeight(
-                                    AppButtonSize.extraLargeHeight,
-                                  ),
-                                  padding: AppButtonSize.extraLargePadding,
-                                  shape: const StadiumBorder(),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/icons/google.svg',
-                                      width: AppIconSize.sm,
-                                      height: AppIconSize.sm,
-                                      colorFilter: ColorFilter.mode(
-                                        isDark
-                                            ? tokens.main.inverseOnSurface
-                                            : tokens.main.onSurface,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Text(
-                                      'Continue with Google',
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            color: isDark
-                                                ? tokens.main.inverseOnSurface
-                                                : tokens.main.onSurface,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              if (!kIsWeb &&
-                                  defaultTargetPlatform == TargetPlatform.iOS)
-                                FilledButton(
-                                  onPressed: _isLoading ? null : _handleApple,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: tokens.main.scrim,
-                                    foregroundColor: isDark
-                                        ? tokens.main.onBackground
-                                        : tokens.main.onPrimary,
-                                    minimumSize: const Size.fromHeight(
-                                      AppButtonSize.extraLargeHeight,
-                                    ),
-                                    padding: AppButtonSize.extraLargePadding,
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/icons/apple.svg',
-                                        width: AppIconSize.sm,
-                                        height: AppIconSize.sm,
-                                        colorFilter: ColorFilter.mode(
-                                          isDark
-                                              ? tokens.main.onBackground
-                                              : tokens.main.onPrimary,
-                                          BlendMode.srcIn,
-                                        ),
-                                      ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Text(
-                                        'Continue with Apple',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              color: isDark
-                                                  ? tokens.main.onBackground
-                                                  : tokens.main.onPrimary,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (!kIsWeb &&
-                                  defaultTargetPlatform == TargetPlatform.iOS)
-                                const SizedBox(height: AppSpacing.lg),
-                              FilledButton(
-                                onPressed: _isLoading ? null : _handleEmail,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: tokens.main.primary,
-                                  foregroundColor: tokens.main.onPrimary,
-                                  minimumSize: const Size.fromHeight(
-                                    AppButtonSize.extraLargeHeight,
-                                  ),
-                                  padding: AppButtonSize.extraLargePadding,
-                                  shape: const StadiumBorder(),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.mail_outline,
-                                      size: AppIconSize.sm,
-                                      color: tokens.main.onPrimary,
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Text(
-                                      'Continue with Email',
-                                      style: theme.textTheme.titleMedium
-                                          ?.copyWith(
-                                            color: tokens.main.onPrimary,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              Center(
-                                child: TextButton(
-                                  onPressed: _isLoading ? null : _handleLogin,
-                                  child: Text(
-                                    'Already have an account? Log in',
-                                    style: theme.textTheme.labelLarge?.copyWith(
-                                      color: tokens.main.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
+  // ── Mobile: original full-column layout ─────────────────────────────
 
-                              Center(
-                                child: Material(
-                                  type: MaterialType.transparency,
-                                  child: InkWell(
-                                    borderRadius: AppRadius.medium,
-                                    onTap: _isLoading
-                                        ? null
-                                        : _openCountryPicker,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: AppSpacing.md,
-                                        vertical: AppSpacing.lg,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            countryName,
-                                            style: theme.textTheme.labelLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                  color: tokens
-                                                      .main
-                                                      .onSecondaryContainer,
-                                                ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.sm),
-                                          Text(
-                                            'Change',
-                                            style: theme.textTheme.labelLarge
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                  color: tokens.main.primary,
-                                                ),
-                                          ),
-                                          Icon(
-                                            Icons.chevron_right_rounded,
-                                            size: AppIconSize.sm,
-                                            color: tokens.main.primary,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+  Widget _buildMobileContent(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+    bool isDark,
+    String countryName,
+  ) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: AppSpacing.xl),
+
+                    Row(
+                      children: [
+                        Text(
+                          'Welcome',
+                          style: theme.textTheme.displayMedium?.copyWith(
+                            color: tokens.main.onSecondaryContainer,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          '👋',
+                          style: theme.textTheme.displayMedium?.copyWith(
+                            color: tokens.main.onSecondaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Text(
+                      'We are stoked to have you join us. Create an account and start dabbing in local sports.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: tokens.main.onSecondaryContainer,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text(
+                      'Built for trust',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: tokens.main.onSecondaryContainer,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _TrustBullet(
+                      text:
+                          'Reviewed players, verified memberships and rated venues',
+                      tokens: tokens,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _TrustBullet(
+                      text:
+                          'Connections and recommendations personalised to your sports',
+                      tokens: tokens,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _TrustBullet(
+                      text: 'We do not sell your data, privacy-first by design',
+                      tokens: tokens,
+                    ),
+                    const Spacer(),
+                    ..._buildCTAButtons(context, theme, tokens, isDark),
+                    const Spacer(),
+                    Center(
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: InkWell(
+                          borderRadius: AppRadius.medium,
+                          onTap: _isLoading ? null : _openCountryPicker,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.lg,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  countryName,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.main.onSecondaryContainer,
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'Change',
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: tokens.main.primary,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: AppIconSize.sm,
+                                  color: tokens.main.primary,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
               ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Shared CTA buttons list ──────────────────────────────────────────
+
+  List<Widget> _buildCTAButtons(
+    BuildContext context,
+    ThemeData theme,
+    dynamic tokens,
+    bool isDark,
+  ) {
+    return [
+      FilledButton(
+        onPressed: _isLoading ? null : _handleGoogle,
+        style: FilledButton.styleFrom(
+          backgroundColor: isDark
+              ? tokens.main.inverseSurface
+              : tokens.main.surfaceContainerLowest,
+          foregroundColor: isDark
+              ? tokens.main.inverseOnSurface
+              : tokens.main.onSurface,
+          minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
+          padding: AppButtonSize.extraLargePadding,
+          shape: const StadiumBorder(),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              'assets/icons/google.svg',
+              width: AppIconSize.sm,
+              height: AppIconSize.sm,
+              colorFilter: ColorFilter.mode(
+                isDark ? tokens.main.inverseOnSurface : tokens.main.onSurface,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Continue with Google',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: isDark
+                    ? tokens.main.inverseOnSurface
+                    : tokens.main.onSurface,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
+        FilledButton(
+          onPressed: _isLoading ? null : _handleApple,
+          style: FilledButton.styleFrom(
+            backgroundColor: tokens.main.scrim,
+            foregroundColor: isDark
+                ? tokens.main.onBackground
+                : tokens.main.onPrimary,
+            minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
+            padding: AppButtonSize.extraLargePadding,
+            shape: const StadiumBorder(),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                'assets/icons/apple.svg',
+                width: AppIconSize.sm,
+                height: AppIconSize.sm,
+                colorFilter: ColorFilter.mode(
+                  isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Continue with Apple',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: isDark
+                      ? tokens.main.onBackground
+                      : tokens.main.onPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+      FilledButton(
+        onPressed: _isLoading ? null : _handleEmail,
+        style: FilledButton.styleFrom(
+          backgroundColor: tokens.main.primary,
+          foregroundColor: tokens.main.onPrimary,
+          minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
+          padding: AppButtonSize.extraLargePadding,
+          shape: const StadiumBorder(),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.mail_outline,
+              size: AppIconSize.sm,
+              color: tokens.main.onPrimary,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              'Continue with Email',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: tokens.main.onPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      Center(
+        child: TextButton(
+          onPressed: _isLoading ? null : _handleLogin,
+          child: Text(
+            'Already have an account? Log in',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: tokens.main.primary,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
       ),
+    ];
+  }
+}
+
+// ── Wide-screen left branding panel ─────────────────────────────────────────
+
+class _WelcomeLeftPanel extends StatelessWidget {
+  const _WelcomeLeftPanel({
+    required this.tokens,
+    required this.isDark,
+    required this.theme,
+  });
+
+  final dynamic tokens;
+  final bool isDark;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: tokens.main.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxxl * 1.5,
+          vertical: AppSpacing.xxxl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Welcome',
+                  style: theme.textTheme.displayMedium?.copyWith(
+                    color: tokens.main.onSecondaryContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  '👋',
+                  style: theme.textTheme.displayMedium?.copyWith(
+                    color: tokens.main.onSecondaryContainer,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'We are stoked to have you join us. Create an account and start dabbing in local sports.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: tokens.main.onSecondaryContainer.withValues(alpha: 0.75),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxxl * 1.5),
+            Text(
+              'Built for trust',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: tokens.main.onSecondaryContainer,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            _TrustBullet(
+              text: 'Reviewed players, verified memberships and rated venues',
+              tokens: tokens,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _TrustBullet(
+              text:
+                  'Connections and recommendations personalised to your sports',
+              tokens: tokens,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _TrustBullet(
+              text: 'We do not sell your data — privacy-first by design',
+              tokens: tokens,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Shared trust bullet widget ───────────────────────────────────────────────
+
+class _TrustBullet extends StatelessWidget {
+  const _TrustBullet({required this.text, required this.tokens});
+
+  final String text;
+  final dynamic tokens;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          Icons.check_circle,
+          size: AppIconSize.sm,
+          color: tokens.main.primary,
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: tokens.main.onSecondaryContainer,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
