@@ -1843,7 +1843,11 @@ class FavoriteVenuesScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(Iconsax.star_1_copy, size: 20, color: sportsScheme.primary),
+                  Icon(
+                    Iconsax.star_1_copy,
+                    size: 20,
+                    color: sportsScheme.primary,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -1860,129 +1864,133 @@ class FavoriteVenuesScreen extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: favoritesAsync.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: sportsScheme.primary),
-        ),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Iconsax.danger_copy, size: 48, color: sportsScheme.error),
-                const SizedBox(height: 12),
-                Text(
-                  'Couldn\'t load saved venues',
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () => ref.invalidate(
-                    venues_providers.favoriteVenuesForCurrentUserProvider,
-                  ),
-                  icon: const Icon(Iconsax.refresh_copy),
-                  label: const Text('Retry'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: sportsScheme.primary,
-                    foregroundColor: sportsScheme.onPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        data: (venues) {
-          if (venues.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Iconsax.heart_copy,
-                      size: 64,
-                      color: sportsScheme.primary.withValues(alpha: 0.3),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No saved venues yet',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
+              loading: () => Center(
+                child: CircularProgressIndicator(color: sportsScheme.primary),
+              ),
+              error: (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Iconsax.danger_copy,
+                        size: 48,
+                        color: sportsScheme.error,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tap the bookmark on a venue to save it here',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      const SizedBox(height: 12),
+                      Text(
+                        'Couldn\'t load saved venues',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: () => ref.invalidate(
+                          venues_providers.favoriteVenuesForCurrentUserProvider,
+                        ),
+                        icon: const Icon(Iconsax.refresh_copy),
+                        label: const Text('Retry'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: sportsScheme.primary,
+                          foregroundColor: sportsScheme.onPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            );
-          }
-
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: venues.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final venue = venues[index];
-              final venueMap = {
-                'id': venue.id,
-                'name': venue.name,
-                'location': venue.state.isNotEmpty
-                    ? '${venue.state}, ${venue.city}'
-                    : '${venue.city}, ${venue.country}',
-                'sports': venue.supportedSports,
-                'images': [],
-                'rating': venue.rating,
-                'isOpen': venue.isOpenAt(DateTime.now()),
-                'slots': [],
-                'reviews': List.generate(
-                  venue.totalRatings >= 3 ? 3 : venue.totalRatings,
-                  (_) => <String, dynamic>{},
-                ),
-                'distance': '',
-                'price': venue.pricePerHour > 0
-                    ? '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr'
-                    : 'Free',
-                'amenities': venue.amenities,
-              };
-
-              return VenueCard(
-                venue: venueMap,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          VenueDetailScreen(venueId: venue.id),
+              data: (venues) {
+                if (venues.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Iconsax.heart_copy,
+                            size: 64,
+                            color: sportsScheme.primary.withValues(alpha: 0.3),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No saved venues yet',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap the bookmark on a venue to save it here',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   );
-                },
-              );
-            },
-          );
-        },
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: venues.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final venue = venues[index];
+                    final venueMap = {
+                      'id': venue.id,
+                      'name': venue.name,
+                      'location': venue.state.isNotEmpty
+                          ? '${venue.state}, ${venue.city}'
+                          : '${venue.city}, ${venue.country}',
+                      'sports': venue.supportedSports,
+                      'images': [],
+                      'rating': venue.rating,
+                      'isOpen': venue.isOpenAt(DateTime.now()),
+                      'slots': [],
+                      'reviews': List.generate(
+                        venue.totalRatings >= 3 ? 3 : venue.totalRatings,
+                        (_) => <String, dynamic>{},
+                      ),
+                      'distance': '',
+                      'price': venue.pricePerHour > 0
+                          ? '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr'
+                          : 'Free',
+                      'amenities': venue.amenities,
+                    };
+
+                    return VenueCard(
+                      venue: venueMap,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                VenueDetailScreen(venueId: venue.id),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],

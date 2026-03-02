@@ -77,11 +77,14 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                     child: Row(
                       children: [
                         IconButton.filledTonal(
-                          onPressed: () =>
-                              context.canPop() ? context.pop() : context.go('/home'),
+                          onPressed: () => context.canPop()
+                              ? context.pop()
+                              : context.go('/home'),
                           icon: const Icon(Iconsax.home_copy),
                           style: IconButton.styleFrom(
-                            backgroundColor: context.colorScheme.categoryActivities
+                            backgroundColor: context
+                                .colorScheme
+                                .categoryActivities
                                 .withValues(alpha: 0.0),
                             foregroundColor: context.colorScheme.onSurface,
                             minimumSize: const Size(48, 48),
@@ -115,7 +118,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                             });
 
                             if (_selectedTab == 'Activity') {
-                              ref.read(lastSeenActivityAtProvider.notifier).markNow();
+                              ref
+                                  .read(lastSeenActivityAtProvider.notifier)
+                                  .markNow();
                             }
                           },
                           icon: Icon(
@@ -124,7 +129,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                                 : Iconsax.notification_copy,
                           ),
                           style: IconButton.styleFrom(
-                            backgroundColor: context.colorScheme.categoryActivities
+                            backgroundColor: context
+                                .colorScheme
+                                .categoryActivities
                                 .withValues(alpha: 0.0),
                             foregroundColor: context.colorScheme.onSurface,
                             minimumSize: const Size(48, 48),

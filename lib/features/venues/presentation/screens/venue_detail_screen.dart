@@ -135,8 +135,11 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Iconsax.danger_copy,
-                          size: 48, color: sportsScheme.error),
+                      Icon(
+                        Iconsax.danger_copy,
+                        size: 48,
+                        color: sportsScheme.error,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'Failed to load venue',

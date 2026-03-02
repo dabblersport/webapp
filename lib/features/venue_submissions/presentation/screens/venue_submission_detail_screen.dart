@@ -19,7 +19,9 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final submissionAsync = ref.watch(venueSubmissionByIdProvider(submissionId));
+    final submissionAsync = ref.watch(
+      venueSubmissionByIdProvider(submissionId),
+    );
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
@@ -58,7 +60,9 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         'Submission details',
-                        style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ],
@@ -69,124 +73,196 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                 child: submissionAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => _ErrorState(
-            message: e.toString(),
-            onRetry: () => ref.invalidate(venueSubmissionByIdProvider(submissionId)),
-          ),
-          data: (Result<VenueSubmissionModel> result) => result.match(
-            (failure) => _ErrorState(
-              message: failure.message,
-              onRetry: () => ref.invalidate(venueSubmissionByIdProvider(submissionId)),
-            ),
-            (submission) {
-              final title = (submission.nameEn ?? submission.nameAr ?? 'Untitled venue').trim();
-              final canEdit = submission.isEditable;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Card.filled(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  style: textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                VenueSubmissionStatusBadge(status: submission.status),
-                                const SizedBox(height: 12),
-                                _kv(
-                                  context,
-                                  label: 'Location',
-                                  value: <String?>[
-                                    submission.city,
-                                    submission.district,
-                                    submission.area,
-                                  ].where((v) => (v ?? '').trim().isNotEmpty).join(', '),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (canEdit)
-                            IconButton.filledTonal(
-                              onPressed: () => context.push(
-                                RoutePaths.createVenueSubmission,
-                                extra: submission,
-                              ),
-                              icon: const Icon(Iconsax.edit_2_copy),
-                            ),
-                        ],
-                      ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => _ErrorState(
+                    message: e.toString(),
+                    onRetry: () => ref.invalidate(
+                      venueSubmissionByIdProvider(submissionId),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  if (submission.shouldShowAdminNote && (submission.adminNote ?? '').trim().isNotEmpty)
-                    Card.filled(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Admin note',
-                              style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(submission.adminNote!, style: textTheme.bodyMedium),
-                          ],
-                        ),
+                  data: (Result<VenueSubmissionModel> result) => result.match(
+                    (failure) => _ErrorState(
+                      message: failure.message,
+                      onRetry: () => ref.invalidate(
+                        venueSubmissionByIdProvider(submissionId),
                       ),
                     ),
-                  if (submission.shouldShowAdminNote && (submission.adminNote ?? '').trim().isNotEmpty)
-                    const SizedBox(height: 12),
-                  Card.filled(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    (submission) {
+                      final title =
+                          (submission.nameEn ??
+                                  submission.nameAr ??
+                                  'Untitled venue')
+                              .trim();
+                      final canEdit = submission.isEditable;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            'Details',
-                            style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                          Card.filled(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          title,
+                                          style: textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        VenueSubmissionStatusBadge(
+                                          status: submission.status,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        _kv(
+                                          context,
+                                          label: 'Location',
+                                          value:
+                                              <String?>[
+                                                    submission.city,
+                                                    submission.district,
+                                                    submission.area,
+                                                  ]
+                                                  .where(
+                                                    (v) => (v ?? '')
+                                                        .trim()
+                                                        .isNotEmpty,
+                                                  )
+                                                  .join(', '),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (canEdit)
+                                    IconButton.filledTonal(
+                                      onPressed: () => context.push(
+                                        RoutePaths.createVenueSubmission,
+                                        extra: submission,
+                                      ),
+                                      icon: const Icon(Iconsax.edit_2_copy),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 12),
-                          _kv(context, label: 'Name (EN)', value: submission.nameEn),
-                          _kv(context, label: 'Name (AR)', value: submission.nameAr),
-                          _kv(context, label: 'Description (EN)', value: submission.descriptionEn),
-                          _kv(context, label: 'Description (AR)', value: submission.descriptionAr),
-                          _kv(context, label: 'Address', value: submission.addressLine1),
-                          _kv(context, label: 'Phone', value: submission.phone),
-                          _kv(context, label: 'Website', value: submission.website),
-                          _kv(context, label: 'Instagram', value: submission.instagram),
-                          _kv(context, label: 'Indoor', value: submission.isIndoor == null ? null : (submission.isIndoor! ? 'Yes' : 'No')),
-                          _kv(context, label: 'Surface type', value: submission.surfaceType),
-                          _kv(
-                            context,
-                            label: 'Amenities',
-                            value: submission.amenities.isEmpty ? null : submission.amenities.join(', '),
+                          if (submission.shouldShowAdminNote &&
+                              (submission.adminNote ?? '').trim().isNotEmpty)
+                            Card.filled(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Admin note',
+                                      style: textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      submission.adminNote!,
+                                      style: textTheme.bodyMedium,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          if (submission.shouldShowAdminNote &&
+                              (submission.adminNote ?? '').trim().isNotEmpty)
+                            const SizedBox(height: 12),
+                          Card.filled(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Details',
+                                    style: textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _kv(
+                                    context,
+                                    label: 'Name (EN)',
+                                    value: submission.nameEn,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Name (AR)',
+                                    value: submission.nameAr,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Description (EN)',
+                                    value: submission.descriptionEn,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Description (AR)',
+                                    value: submission.descriptionAr,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Address',
+                                    value: submission.addressLine1,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Phone',
+                                    value: submission.phone,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Website',
+                                    value: submission.website,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Instagram',
+                                    value: submission.instagram,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Indoor',
+                                    value: submission.isIndoor == null
+                                        ? null
+                                        : (submission.isIndoor! ? 'Yes' : 'No'),
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Surface type',
+                                    value: submission.surfaceType,
+                                  ),
+                                  _kv(
+                                    context,
+                                    label: 'Amenities',
+                                    value: submission.amenities.isEmpty
+                                        ? null
+                                        : submission.amenities.join(', '),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 12),
+                          _ActionBar(submission: submission),
                         ],
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  _ActionBar(submission: submission),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
+                ),
+              ),
             ),
           ],
         ),
@@ -204,7 +280,10 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 4),
           Text(v, style: textTheme.bodyMedium),
         ],
@@ -255,9 +334,13 @@ class _ActionBar extends ConsumerWidget {
                         },
                         (_) {
                           ref.invalidate(myVenueSubmissionsProvider);
-                          ref.invalidate(venueSubmissionByIdProvider(submission.id));
+                          ref.invalidate(
+                            venueSubmissionByIdProvider(submission.id),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Submitted for review.')),
+                            const SnackBar(
+                              content: Text('Submitted for review.'),
+                            ),
                           );
                         },
                       );
@@ -292,11 +375,17 @@ class _ErrorState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Couldn\'t load submission',
-              style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            Text(message, style: textTheme.bodyMedium, textAlign: TextAlign.center),
+            Text(
+              message,
+              style: textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: const Text('Retry')),
           ],
