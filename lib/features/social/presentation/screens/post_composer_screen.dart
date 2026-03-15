@@ -72,7 +72,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final sel = _bodyController.selection;
     final offset = sel.isValid ? sel.baseOffset : text.length;
     // Add a space before # if the previous character isn't whitespace/empty
-    final needsSpace = offset > 0 && text[offset - 1] != ' ' && text[offset - 1] != '\n';
+    final needsSpace =
+        offset > 0 && text[offset - 1] != ' ' && text[offset - 1] != '\n';
     final insert = '${needsSpace ? ' ' : ''}#';
     final newText = text.replaceRange(offset, offset, insert);
     _bodyController.value = TextEditingValue(
@@ -833,7 +834,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             height: 220,
             width: double.infinity,
           )
-
         // ── Two items → side-by-side ──
         else if (mediaItems.length == 2)
           Row(
@@ -853,7 +853,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               ],
             ],
           )
-
         // ── Three+ items → compact grid ──
         else
           GridView.builder(
@@ -880,8 +879,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           onTap: _showMediaInput,
           child: Row(
             children: [
-              Icon(Icons.add_photo_alternate_outlined,
-                  size: 20, color: cs.primary),
+              Icon(
+                Icons.add_photo_alternate_outlined,
+                size: 20,
+                color: cs.primary,
+              ),
               const SizedBox(width: 4),
               Text(
                 'Add more',
@@ -1511,14 +1513,15 @@ class _MediaPreviewTile extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.broken_image,
-                            size: 32, color: cs.onSurfaceVariant),
+                        Icon(
+                          Icons.broken_image,
+                          size: 32,
+                          color: cs.onSurfaceVariant,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           _isGif ? 'GIF' : 'Image',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelSmall
+                          style: Theme.of(context).textTheme.labelSmall
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),
                       ],
@@ -1531,7 +1534,7 @@ class _MediaPreviewTile extends StatelessWidget {
                         strokeWidth: 2,
                         value: progress.expectedTotalBytes != null
                             ? progress.cumulativeBytesLoaded /
-                                progress.expectedTotalBytes!
+                                  progress.expectedTotalBytes!
                             : null,
                       ),
                     );
@@ -1547,8 +1550,7 @@ class _MediaPreviewTile extends StatelessWidget {
               left: 8,
               bottom: 8,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: cs.inverseSurface.withValues(alpha: 0.7),
                   borderRadius: BorderRadius.circular(4),
@@ -1556,9 +1558,9 @@ class _MediaPreviewTile extends StatelessWidget {
                 child: Text(
                   'GIF',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onInverseSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: cs.onInverseSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -2832,28 +2834,26 @@ class _HashtagTextEditingController extends TextEditingController {
     for (final match in _hashtagRegex.allMatches(txt)) {
       // Text before the hashtag.
       if (match.start > lastEnd) {
-        spans.add(TextSpan(
-          text: txt.substring(lastEnd, match.start),
-          style: style,
-        ));
+        spans.add(
+          TextSpan(text: txt.substring(lastEnd, match.start), style: style),
+        );
       }
       // The hashtag itself.
-      spans.add(TextSpan(
-        text: match.group(0),
-        style: style?.copyWith(
-          color: hashtagColor,
-          fontWeight: FontWeight.w600,
+      spans.add(
+        TextSpan(
+          text: match.group(0),
+          style: style?.copyWith(
+            color: hashtagColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      ));
+      );
       lastEnd = match.end;
     }
 
     // Remaining text after the last hashtag.
     if (lastEnd < txt.length) {
-      spans.add(TextSpan(
-        text: txt.substring(lastEnd),
-        style: style,
-      ));
+      spans.add(TextSpan(text: txt.substring(lastEnd), style: style));
     }
 
     return TextSpan(children: spans, style: style);

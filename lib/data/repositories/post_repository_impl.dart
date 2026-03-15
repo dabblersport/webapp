@@ -600,17 +600,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (existing != null) {
           hashtagId = existing['id'] as String;
           // Bump usage_count.
-          await _db.rpc('increment_field', params: {
-            'row_id': hashtagId,
-            'table_name': 'hashtags',
-            'field_name': 'usage_count',
-          }).catchError((_) async {
-            // Fallback: direct update if RPC doesn't exist.
-            await _db
-                .from('hashtags')
-                .update({'last_used_at': DateTime.now().toIso8601String()})
-                .eq('id', hashtagId);
-          });
+          await _db
+              .rpc(
+                'increment_field',
+                params: {
+                  'row_id': hashtagId,
+                  'table_name': 'hashtags',
+                  'field_name': 'usage_count',
+                },
+              )
+              .catchError((_) async {
+                // Fallback: direct update if RPC doesn't exist.
+                await _db
+                    .from('hashtags')
+                    .update({'last_used_at': DateTime.now().toIso8601String()})
+                    .eq('id', hashtagId);
+              });
         } else {
           // Insert new hashtag row.
           final row = await _db
@@ -630,15 +635,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
         // Insert junction row (composite PK will silently conflict
         // if the same post+hashtag is linked twice).
-        await _db.from('post_hashtags').upsert(
-          {
-            'post_id': postId,
-            'hashtag_id': hashtagId,
-            if (sportId != null) 'sport_id': sportId,
-            if (authorUserId != null) 'created_by': authorUserId,
-          },
-          onConflict: 'post_id,hashtag_id',
-        );
+        await _db.from('post_hashtags').upsert({
+          'post_id': postId,
+          'hashtag_id': hashtagId,
+          if (sportId != null) 'sport_id': sportId,
+          if (authorUserId != null) 'created_by': authorUserId,
+        }, onConflict: 'post_id,hashtag_id');
       }
     } catch (e) {
       // Best-effort — don't let hashtag linking break post creation.
