@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:intl/intl.dart';
 
 class AvailabilityCalendar extends StatefulWidget {
@@ -575,7 +576,7 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
     DateTime date,
     AvailabilityStatus current,
   ) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),

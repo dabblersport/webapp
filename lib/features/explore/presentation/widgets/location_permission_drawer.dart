@@ -35,13 +35,13 @@ class LocationPermissionDrawer extends StatelessWidget {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: colorScheme.categorySports.withValues(alpha: 0.1),
+                color: colorScheme.categoryMain.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
                 Iconsax.location_copy,
                 size: 28,
-                color: colorScheme.categorySports,
+                color: colorScheme.categoryMain,
               ),
             ),
             const SizedBox(height: 20),
@@ -70,7 +70,7 @@ class LocationPermissionDrawer extends StatelessWidget {
               icon: const Icon(Iconsax.gps_copy),
               label: const Text('Allow Location'),
               style: FilledButton.styleFrom(
-                backgroundColor: colorScheme.categorySports,
+                backgroundColor: colorScheme.categoryMain,
                 foregroundColor: colorScheme.onPrimary,
                 minimumSize: const Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(

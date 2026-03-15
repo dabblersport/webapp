@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -833,10 +834,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
     BuildContext context,
     Map<String, dynamic> transaction,
   ) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: false,
       builder: (context) => TransactionDetailsSheet(transaction: transaction),
     );
   }

@@ -58,19 +58,19 @@ class AvatarColorPalette {
 
       case AvatarContext.social:
         return (
-          background: colorScheme.categorySocialContainer,
-          foreground: colorScheme.categorySocial,
+          background: colorScheme.categoryMainContainer,
+          foreground: colorScheme.categoryMain,
         );
 
       case AvatarContext.sports:
         return (
-          background: colorScheme.categorySportsContainer,
-          foreground: colorScheme.categorySports,
+          background: colorScheme.categoryMainContainer,
+          foreground: colorScheme.categoryMain,
         );
 
       case AvatarContext.activity:
         // Activity doesn't have container in extensions, use primary with opacity
-        final activityColor = colorScheme.categoryActivities;
+        final activityColor = colorScheme.categoryMain;
         return (
           background: activityColor.withValues(alpha: 0.12),
           foreground: activityColor,
@@ -78,7 +78,7 @@ class AvatarColorPalette {
 
       case AvatarContext.profile:
         // Profile doesn't have container in extensions, use primary with opacity
-        final profileColor = colorScheme.categoryProfile;
+        final profileColor = colorScheme.categoryMain;
         return (
           background: profileColor.withValues(alpha: 0.12),
           foreground: profileColor,

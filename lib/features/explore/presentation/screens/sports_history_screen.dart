@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
-import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Provider for past games (games that have already ended)
 final pastGamesProvider = FutureProvider.autoDispose<List>((ref) async {
@@ -80,179 +82,202 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
     final textTheme = Theme.of(context).textTheme;
     final pastGamesAsync = ref.watch(pastGamesProvider);
 
-    return SingleSectionLayout(
-      category: 'sports',
-      scrollable: false,
-      child: Column(
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-            child: Row(
-              children: [
-                IconButton.filledTonal(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Iconsax.arrow_left_copy),
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.categorySports.withValues(
-                      alpha: 0.0,
-                    ),
-                    foregroundColor: colorScheme.onSurface,
-                    minimumSize: const Size(48, 48),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Game History',
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+    final logoWidget = SvgPicture.asset(
+      'assets/images/dabbler_text_logo.svg',
+      width: 100,
+      height: 18,
+      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+    );
 
-          // Sport filter chips
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: _sports.length,
-              itemBuilder: (context, index) {
-                final sport = _sports[index];
-                final isSelected =
-                    _selectedSport == sport ||
-                    (_selectedSport == null && sport == 'All');
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(sport),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedSport = sport == 'All' ? null : sport;
-                      });
+    final content = Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Iconsax.arrow_left_copy),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.categoryMain.withValues(
+                        alpha: 0.0,
+                      ),
+                      foregroundColor: colorScheme.onSurface,
+                      minimumSize: const Size(48, 48),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Game History',
+                      style: textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sport filter chips
+            Container(
+              height: 60,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: _sports.length,
+                itemBuilder: (context, index) {
+                  final sport = _sports[index];
+                  final isSelected =
+                      _selectedSport == sport ||
+                      (_selectedSport == null && sport == 'All');
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(sport),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          _selectedSport = sport == 'All' ? null : sport;
+                        });
+                      },
+                      backgroundColor: colorScheme.surfaceContainerHigh,
+                      selectedColor: colorScheme.categoryMain.withValues(
+                        alpha: 0.2,
+                      ),
+                      checkmarkColor: colorScheme.categoryMain,
+                      labelStyle: TextStyle(
+                        color: isSelected
+                            ? colorScheme.categoryMain
+                            : colorScheme.onSurface,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // Games list
+            Expanded(
+              child: pastGamesAsync.when(
+                data: (allGames) {
+                  // Filter by sport if selected
+                  final filteredGames = _selectedSport == null
+                      ? allGames
+                      : allGames
+                            .where(
+                              (game) =>
+                                  game.sport.toLowerCase() ==
+                                  _selectedSport!.toLowerCase(),
+                            )
+                            .toList();
+
+                  if (filteredGames.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Iconsax.clock_copy,
+                            size: 64,
+                            color: colorScheme.categoryMain.withValues(
+                              alpha: 0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No past games',
+                            style: textTheme.titleLarge?.copyWith(
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Your game history will appear here',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(24),
+                    itemCount: filteredGames.length,
+                    itemBuilder: (context, index) {
+                      final game = filteredGames[index];
+                      return _buildPastGameCard(context, game);
                     },
-                    backgroundColor: colorScheme.surfaceContainerHigh,
-                    selectedColor: colorScheme.categorySports.withValues(
-                      alpha: 0.2,
-                    ),
-                    checkmarkColor: colorScheme.categorySports,
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? colorScheme.categorySports
-                          : colorScheme.onSurface,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Games list
-          Expanded(
-            child: pastGamesAsync.when(
-              data: (allGames) {
-                // Filter by sport if selected
-                final filteredGames = _selectedSport == null
-                    ? allGames
-                    : allGames
-                          .where(
-                            (game) =>
-                                game.sport.toLowerCase() ==
-                                _selectedSport!.toLowerCase(),
-                          )
-                          .toList();
-
-                if (filteredGames.isEmpty) {
-                  return Center(
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Iconsax.clock_copy,
-                          size: 64,
-                          color: colorScheme.categorySports.withValues(
-                            alpha: 0.3,
-                          ),
+                          Iconsax.danger_copy,
+                          size: 48,
+                          color: colorScheme.error,
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No past games',
-                          style: textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
+                          'Failed to load game history',
+                          style: textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Your game history will appear here',
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
+                          error.toString(),
+                          textAlign: TextAlign.center,
+                          style: textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () => ref.refresh(pastGamesProvider),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: colorScheme.categoryMain,
+                            foregroundColor: Colors.white,
                           ),
+                          child: const Text('Retry'),
                         ),
                       ],
                     ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(24),
-                  itemCount: filteredGames.length,
-                  itemBuilder: (context, index) {
-                    final game = filteredGames[index];
-                    return _buildPastGameCard(context, game);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Iconsax.danger_copy,
-                        size: 48,
-                        color: colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load game history',
-                        style: textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        textAlign: TextAlign.center,
-                        style: textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: () => ref.refresh(pastGamesProvider),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: colorScheme.categorySports,
-                          foregroundColor: Colors.white,
-                        ),
-                        child: const Text('Retry'),
-                      ),
-                    ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildPastGameCard(BuildContext context, game) {
@@ -287,7 +312,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: colorScheme.categorySports.withValues(
+                          color: colorScheme.categoryMain.withValues(
                             alpha: 0.15,
                           ),
                           borderRadius: BorderRadius.circular(10),
@@ -295,7 +320,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                         child: Icon(
                           _sportIconFor(game.sport),
                           size: 18,
-                          color: colorScheme.categorySports,
+                          color: colorScheme.categoryMain,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -312,7 +337,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: colorScheme.categorySports.withValues(
+                          color: colorScheme.categoryMain.withValues(
                             alpha: 0.15,
                           ),
                           borderRadius: BorderRadius.circular(6),
@@ -320,7 +345,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                         child: Text(
                           'Completed',
                           style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.categorySports,
+                            color: colorScheme.categoryMain,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -392,7 +417,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
                   Icon(
                     Iconsax.people_copy,
                     size: 18,
-                    color: colorScheme.categorySports,
+                    color: colorScheme.categoryMain,
                   ),
                   const SizedBox(width: 6),
                   Text(

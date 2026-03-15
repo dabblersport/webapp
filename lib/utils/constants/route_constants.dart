@@ -97,6 +97,7 @@ class RoutePaths {
   static const String socialCreatePost = '/social-create-post';
   static const String socialEditPost = '/social-edit-post';
   static const String socialAnalytics = '/social-analytics';
+  static const String postComposer = '/post-composer';
 
   // Social Onboarding Routes
   static const String socialOnboardingWelcome = '/social-onboarding-welcome';
@@ -217,6 +218,7 @@ class RouteNames {
   static const String socialCreatePost = 'social-create-post';
   static const String socialEditPost = 'social-edit-post';
   static const String socialAnalytics = 'social-analytics';
+  static const String postComposer = 'post-composer';
 
   // Main Navigation Routes
   static const String sports = 'sports';

@@ -37,7 +37,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   Widget build(BuildContext context) {
     final venueAsync = ref.watch(venueDetailProvider(widget.venueId));
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
     final favoriteIdsAsync = ref.watch(favoriteVenueIdsForCurrentUserProvider);
     final isFavoritedFromProvider = favoriteIdsAsync.maybeWhen(
       data: (ids) => ids.contains(widget.venueId),

@@ -32,6 +32,14 @@ class Environment {
     'MAPBOX_ACCESS_TOKEN',
     defaultValue: '',
   );
+  static const String _tenorApiKeyDefine = String.fromEnvironment(
+    'TENOR_API_KEY',
+    defaultValue: '',
+  );
+  static const String _giphyApiKeyDefine = String.fromEnvironment(
+    'GIPHY_API_KEY',
+    defaultValue: '',
+  );
 
   static Future<void> load() async {
     // Web deployments should prefer `--dart-define`.
@@ -76,6 +84,16 @@ class Environment {
   static String get mapboxAccessToken => _mapboxAccessTokenDefine.isNotEmpty
       ? _mapboxAccessTokenDefine
       : (dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '');
+
+  /// Tenor GIF API key (Google Cloud) — deprecated, Tenor shut down Jan 2026.
+  static String get tenorApiKey => _tenorApiKeyDefine.isNotEmpty
+      ? _tenorApiKeyDefine
+      : (dotenv.env['TENOR_API_KEY'] ?? '');
+
+  /// GIPHY API key — used for GIF search in the post composer.
+  static String get giphyApiKey => _giphyApiKeyDefine.isNotEmpty
+      ? _giphyApiKeyDefine
+      : (dotenv.env['GIPHY_API_KEY'] ?? '');
 
   static void _validate() {
     final missing = <String>[];

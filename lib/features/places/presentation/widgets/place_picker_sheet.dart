@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dabbler/data/models/place.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/features/places/providers/place_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,16 +20,9 @@ class PlacePickerSheet extends ConsumerStatefulWidget {
 
   /// Show the picker and return the selected [Place], or `null` if dismissed.
   static Future<Place?> show(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    return showModalBottomSheet<Place>(
+    return showAdaptiveSheet<Place>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (_) => const PlacePickerSheet(),
     );
   }

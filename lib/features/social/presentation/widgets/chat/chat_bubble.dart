@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
@@ -120,11 +121,8 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
   }
 
   void _showMessageOptions() {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => _buildMessageOptionsSheet(),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Community screen with Following, Followers, and People (discover) tabs.
 /// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
@@ -89,7 +92,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       future: AppTheme.getColorScheme('social', brightness),
       builder: (context, snapshot) {
         final socialScheme =
-            snapshot.data ?? context.getCategoryTheme('social');
+            snapshot.data ?? context.getCategoryTheme('main');
         final baseTheme = Theme.of(context);
         final themed = baseTheme.copyWith(
           colorScheme: socialScheme,
@@ -105,6 +108,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
               final colorScheme = Theme.of(context).colorScheme;
               final isWide = MediaQuery.sizeOf(context).width >= 600;
 
+              if (isWide) {
+                return _buildWideLayout(context, colorScheme);
+              }
+
               return Scaffold(
                 backgroundColor: colorScheme.surface,
                 body: CustomScrollView(
@@ -114,9 +121,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
                   slivers: [
                     SliverToBoxAdapter(
                       child: SizedBox(
-                        height: isWide
-                            ? 16
-                            : MediaQuery.of(context).padding.top + 8,
+                        height: MediaQuery.of(context).padding.top + 8,
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -147,6 +152,254 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
         );
       },
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // WIDE LAYOUT
+  // ---------------------------------------------------------------------------
+
+  Widget _buildWideLayout(BuildContext context, ColorScheme colorScheme) {
+    return AdaptiveScaffold(
+      currentIndex: 4, // Community
+      onDestinationSelected: (i) =>
+          onAdaptiveDestinationSelected(context, i, activeIndex: 4),
+      destinations: kAdaptiveDestinations,
+      headerWidget: SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      ),
+      body: _buildWideCommunityBody(colorScheme),
+      rightPanel: _buildWidePeoplePanel(colorScheme),
+    );
+  }
+
+  /// Center column on wide screens: Community header + Following/Followers.
+  Widget _buildWideCommunityBody(ColorScheme colorScheme) {
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        slivers: [
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Community',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Following / Followers only (People is in right panel)
+                  _buildWideTabSwitcher(colorScheme),
+                  const SizedBox(height: 12),
+                  _buildSearchBar(colorScheme),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: _buildWideBottomSection(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Right panel on wide screens: People (discover) tab.
+  Widget _buildWidePeoplePanel(ColorScheme colorScheme) {
+    final profileId = _resolvedProfileId;
+    final socialScheme = context.getCategoryTheme('main');
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
+        slivers: [
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  Icon(
+                    Iconsax.search_normal_1_copy,
+                    color: socialScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Discover People',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildPeopleSearchBar(colorScheme),
+            ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: profileId == null
+                  ? _buildSkeleton(4)
+                  : _buildPeopleTab(profileId),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tab switcher for wide mode — only Following / Followers (no People).
+  Widget _buildWideTabSwitcher(ColorScheme colorScheme) {
+    final textTheme = Theme.of(context).textTheme;
+    final socialScheme = context.getCategoryTheme('main');
+    // Clamp index: wide mode only has 2 segments.
+    final idx = _tabController.index.clamp(0, 1);
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<int>(
+        segments: const [
+          ButtonSegment(
+            value: 0,
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Text('Following')],
+            ),
+          ),
+          ButtonSegment(
+            value: 1,
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [Text('Followers')],
+            ),
+          ),
+        ],
+        selected: <int>{idx},
+        onSelectionChanged: (Set<int> s) {
+          final newIdx = s.first;
+          if (_tabController.index != newIdx) {
+            setState(() => _tabController.index = newIdx);
+          }
+        },
+        style: ButtonStyle(
+          side: WidgetStateProperty.all(
+            const BorderSide(color: Colors.transparent),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return socialScheme.primary;
+            }
+            return socialScheme.primary.withValues(alpha: 0.08);
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+            if (states.contains(WidgetState.selected)) {
+              return socialScheme.onPrimary;
+            }
+            return socialScheme.onSurfaceVariant;
+          }),
+          textStyle: WidgetStateProperty.all(
+            textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          padding: WidgetStateProperty.all(
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        showSelectedIcon: false,
+      ),
+    );
+  }
+
+  /// People search bar (separate controller for the right panel).
+  Widget _buildPeopleSearchBar(ColorScheme colorScheme) {
+    return SizedBox(
+      height: 48,
+      child: TextField(
+        controller: _searchController,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontSize: 15,
+          color: colorScheme.onSurface,
+        ),
+        decoration: InputDecoration(
+          filled: true,
+          fillColor: colorScheme.primary.withValues(alpha: 0.12),
+          hintText: 'Search people by name or username',
+          hintStyle: TextStyle(
+            fontSize: 15,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          prefixIcon: const Icon(Iconsax.search_normal_copy),
+          suffixIcon: _searchController.text.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Iconsax.close_circle_copy),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        onChanged: (v) => setState(() => _searchQuery = v.trim()),
+      ),
+    );
+  }
+
+  /// Bottom section for wide mode: only Following/Followers (no People).
+  Widget _buildWideBottomSection() {
+    final profileId = _resolvedProfileId;
+    if (profileId == null) return _buildSkeleton(6);
+    if (_searchQuery.length >= 2) return _buildSearchResults(profileId);
+    switch (_tabController.index.clamp(0, 1)) {
+      case 0:
+        return _buildFollowingTab(profileId);
+      case 1:
+        return _buildFollowersTab(profileId);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -187,7 +440,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
 
   Widget _buildTabSwitcher(ColorScheme colorScheme) {
     final textTheme = Theme.of(context).textTheme;
-    final socialScheme = context.getCategoryTheme('social');
+    final socialScheme = context.getCategoryTheme('main');
 
     return Padding(
       padding: const EdgeInsets.only(top: 12),

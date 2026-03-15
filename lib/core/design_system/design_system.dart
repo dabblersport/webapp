@@ -33,10 +33,6 @@ export 'typography/app_typography.dart';
 // Spacing
 export 'spacing/app_spacing.dart';
 
-// Layouts
-export 'layouts/two_section_layout.dart';
-export 'layouts/single_section_layout.dart';
-
 // Specialized Widgets (not directly replaced by Material 3)
 export 'widgets/app_sport_icon.dart';
 export 'widgets/ds_avatar.dart'; // Unified avatar component

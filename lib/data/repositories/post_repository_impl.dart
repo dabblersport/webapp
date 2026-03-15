@@ -1,9 +1,13 @@
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import '../models/social/comment.dart';
 import '../models/social/post.dart';
+import '../models/social/post_create_request.dart';
 import 'base_repository.dart';
 import 'post_repository.dart';
 
@@ -452,6 +456,224 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         return rows.cast<Map<String, dynamic>>();
       });
 
+  // ── Full Post Creation ─────────────────────────────────────────────
+
+  @override
+  Future<Result<Post, Failure>> createFullPost(
+    PostCreateRequest request,
+  ) async {
+    final session = _db.auth.currentSession;
+    if (session == null) {
+      return const Err(UnauthenticatedFailure());
+    }
+
+    // Proactively refresh token if near expiry.
+    var activeSession = session;
+    final expiresAt = activeSession.expiresAt;
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    if (expiresAt != null && expiresAt - nowSec < 30) {
+      try {
+        final refreshed = await _db.auth.refreshSession();
+        if (refreshed.session != null) {
+          activeSession = refreshed.session!;
+        }
+      } catch (_) {}
+    }
+
+    return guard(() async {
+      // Resolve author profile and user IDs (RLS-safe).
+      final authorProfileId = await _profileId();
+      final authorUserId = activeSession.user.id;
+
+      final payload = request.toInsertPayload(
+        authorProfileId: authorProfileId,
+        authorUserId: authorUserId,
+      );
+
+      // Circle-visibility requires the create_post RPC for atomic linking.
+      if (request.visibility.name == 'circle' && request.circleId != null) {
+        // Ensure membership first.
+        await _db.from('circle_members').upsert({
+          'circle_id': request.circleId,
+          'member_profile_id': authorProfileId,
+        }, onConflict: 'circle_id,member_profile_id');
+
+        // Resolve sport_key from sport_id for RPC compatibility.
+        String? sportKey;
+        if (request.sportId != null) {
+          final sportRow = await _db
+              .from('sports')
+              .select('sport_key')
+              .eq('id', request.sportId!)
+              .maybeSingle();
+          sportKey = sportRow?['sport_key'] as String?;
+        }
+
+        final res = await _db.rpc(
+          'create_post',
+          params: {
+            'p_kind': request.kind.name,
+            'p_visibility': 'circle',
+            'p_post_type': request.kind.defaultPostType.dbValue,
+            'p_origin_type': request.originType.name,
+            if (request.body != null) 'p_body': request.body,
+            if (sportKey != null) 'p_sport': sportKey,
+            'p_media': request.media ?? <dynamic>[],
+            'p_tags': request.tags ?? <String>[],
+            if (request.vibeId != null) 'p_primary_vibe_id': request.vibeId,
+            'p_vibe_ids': request.vibeId != null
+                ? [request.vibeId!]
+                : <String>[],
+            'p_circle_ids': [request.circleId!],
+          },
+        );
+        final post = Post.fromJson(res as Map<String, dynamic>);
+        // Link hashtags to public.hashtags / post_hashtags tables.
+        await _linkHashtags(
+          postId: post.id,
+          tags: request.tags,
+          sportId: request.sportId,
+          authorUserId: authorUserId,
+        );
+        return post;
+      }
+
+      // Squad-visibility: insert post + link to post_squads junction.
+      if (request.visibility.name == 'squad' && request.squadId != null) {
+        final row = await _db.from('posts').insert(payload).select().single();
+        // Link to squad junction table.
+        await _db.from('post_squads').insert({
+          'post_id': row['id'],
+          'squad_id': request.squadId,
+        });
+        final post = Post.fromJson(row);
+        await _linkHashtags(
+          postId: post.id,
+          tags: request.tags,
+          sportId: request.sportId,
+          authorUserId: authorUserId,
+        );
+        return post;
+      }
+
+      // Standard insert path.
+      final row = await _db.from('posts').insert(payload).select().single();
+      final post = Post.fromJson(row);
+      await _linkHashtags(
+        postId: post.id,
+        tags: request.tags,
+        sportId: request.sportId,
+        authorUserId: authorUserId,
+      );
+      return post;
+    });
+  }
+
+  // ── Hashtag linking ────────────────────────────────────────────────
+
+  /// Upsert each tag into `public.hashtags` and create junction rows
+  /// in `public.post_hashtags`.
+  ///
+  /// Runs best-effort — hashtag linking failures do not fail the post.
+  Future<void> _linkHashtags({
+    required String postId,
+    List<String>? tags,
+    String? sportId,
+    String? authorUserId,
+  }) async {
+    if (tags == null || tags.isEmpty) return;
+
+    try {
+      for (final tag in tags) {
+        final normalised = tag.toLowerCase().trim();
+        if (normalised.isEmpty) continue;
+
+        // Upsert into public.hashtags (unique on `tag`).
+        // On conflict just select the existing row to get the id.
+        final existing = await _db
+            .from('hashtags')
+            .select('id')
+            .eq('tag', normalised)
+            .maybeSingle();
+
+        String hashtagId;
+        if (existing != null) {
+          hashtagId = existing['id'] as String;
+          // Bump usage_count.
+          await _db.rpc('increment_field', params: {
+            'row_id': hashtagId,
+            'table_name': 'hashtags',
+            'field_name': 'usage_count',
+          }).catchError((_) async {
+            // Fallback: direct update if RPC doesn't exist.
+            await _db
+                .from('hashtags')
+                .update({'last_used_at': DateTime.now().toIso8601String()})
+                .eq('id', hashtagId);
+          });
+        } else {
+          // Insert new hashtag row.
+          final row = await _db
+              .from('hashtags')
+              .insert({
+                'tag': normalised,
+                'slug': normalised,
+                'display_tag': '#$normalised',
+                'usage_count': 1,
+                'first_used_at': DateTime.now().toIso8601String(),
+                'last_used_at': DateTime.now().toIso8601String(),
+              })
+              .select('id')
+              .single();
+          hashtagId = row['id'] as String;
+        }
+
+        // Insert junction row (composite PK will silently conflict
+        // if the same post+hashtag is linked twice).
+        await _db.from('post_hashtags').upsert(
+          {
+            'post_id': postId,
+            'hashtag_id': hashtagId,
+            if (sportId != null) 'sport_id': sportId,
+            if (authorUserId != null) 'created_by': authorUserId,
+          },
+          onConflict: 'post_id,hashtag_id',
+        );
+      }
+    } catch (e) {
+      // Best-effort — don't let hashtag linking break post creation.
+      // ignore: avoid_print
+      print('[PostRepo] _linkHashtags warning: $e');
+    }
+  }
+
+  @override
+  Future<Result<List<Map<String, dynamic>>, Failure>> searchVenues(
+    String query,
+  ) => guard(() async {
+    final rows = await _db
+        .from('venues')
+        .select('id, name_en, city, latitude, longitude')
+        .ilike('name_en', '%$query%')
+        .limit(20)
+        .order('name_en');
+    return rows.cast<Map<String, dynamic>>();
+  });
+
+  @override
+  Future<Result<List<Map<String, dynamic>>, Failure>> searchGames(
+    String query,
+  ) => guard(() async {
+    final rows = await _db
+        .from('games')
+        .select('id, title, sport, game_type, start_at, end_at')
+        .ilike('title', '%$query%')
+        .eq('is_cancelled', false)
+        .limit(20)
+        .order('start_at', ascending: false);
+    return rows.cast<Map<String, dynamic>>();
+  });
+
   @override
   Future<Result<Unit, Failure>> deletePost(String postId) => guard(() async {
     await _db.from('posts').update({'is_deleted': true}).eq('id', postId);
@@ -642,4 +864,41 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     });
     return const Unit();
   });
+
+  // ── Media Upload ────────────────────────────────────────────────────
+
+  @override
+  Future<Result<String, Failure>> uploadPostMedia(XFile file) =>
+      guard(() async {
+        final uid = svc.authUserId()!;
+        final ext = p.extension(file.path).toLowerCase();
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final filePath = '$uid/${timestamp}_media$ext';
+        final bytes = await file.readAsBytes();
+
+        // Determine content type from extension
+        final contentType = switch (ext) {
+          '.jpg' || '.jpeg' => 'image/jpeg',
+          '.png' => 'image/png',
+          '.webp' => 'image/webp',
+          '.gif' => 'image/gif',
+          '.mp4' => 'video/mp4',
+          '.mov' => 'video/quicktime',
+          _ => 'application/octet-stream',
+        };
+
+        await _db.storage
+            .from(SupabaseConfig.postMediaBucket)
+            .uploadBinary(
+              filePath,
+              bytes,
+              fileOptions: FileOptions(contentType: contentType, upsert: true),
+            );
+
+        final publicUrl = _db.storage
+            .from(SupabaseConfig.postMediaBucket)
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+      });
 }

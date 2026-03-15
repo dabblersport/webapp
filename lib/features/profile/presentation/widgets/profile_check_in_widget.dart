@@ -112,7 +112,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.categoryProfile.withValues(alpha: 0.08),
+        color: theme.colorScheme.categoryMain.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -156,7 +156,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.categoryProfile.withValues(
+                      color: theme.colorScheme.categoryMain.withValues(
                         alpha: 0.15,
                       ),
                       borderRadius: BorderRadius.circular(8),
@@ -170,7 +170,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
                           '${status.streakCount}',
                           style: theme.textTheme.labelMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.categoryProfile,
+                            color: theme.colorScheme.categoryMain,
                           ),
                         ),
                       ],
@@ -185,7 +185,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
           CompactCheckInProgressIndicator(
             completedDays: status.totalDaysCompleted,
             totalDays: 14,
-            segmentColor: theme.colorScheme.categoryProfile,
+            segmentColor: theme.colorScheme.categoryMain,
           ),
 
           const SizedBox(height: 10),
@@ -196,11 +196,11 @@ class ProfileCheckInWidget extends ConsumerWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 4,
-              backgroundColor: theme.colorScheme.categoryProfile.withValues(
+              backgroundColor: theme.colorScheme.categoryMain.withValues(
                 alpha: 0.12,
               ),
               valueColor: AlwaysStoppedAnimation<Color>(
-                theme.colorScheme.categoryProfile,
+                theme.colorScheme.categoryMain,
               ),
             ),
           ),

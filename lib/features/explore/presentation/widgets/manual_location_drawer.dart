@@ -142,14 +142,14 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: colorScheme.categorySports,
+                              color: colorScheme.categoryMain,
                             ),
                           )
                         : const Icon(Iconsax.gps_copy, size: 20),
                     label: const Text('Use Current Location'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.categorySports,
-                      side: BorderSide(color: colorScheme.categorySports),
+                      foregroundColor: colorScheme.categoryMain,
+                      side: BorderSide(color: colorScheme.categoryMain),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -163,7 +163,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                     children: [
                       Expanded(
                         child: Divider(
-                          color: colorScheme.categorySports.withValues(
+                          color: colorScheme.categoryMain.withValues(
                             alpha: 0.3,
                           ),
                         ),
@@ -173,7 +173,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                         child: Text(
                           'or choose from list',
                           style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.categorySports.withValues(
+                            color: colorScheme.categoryMain.withValues(
                               alpha: 0.8,
                             ),
                           ),
@@ -181,7 +181,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                       ),
                       Expanded(
                         child: Divider(
-                          color: colorScheme.categorySports.withValues(
+                          color: colorScheme.categoryMain.withValues(
                             alpha: 0.3,
                           ),
                         ),
@@ -248,7 +248,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
               child: _isLoading
                   ? Center(
                       child: CircularProgressIndicator(
-                        color: colorScheme.categorySports,
+                        color: colorScheme.categoryMain,
                       ),
                     )
                   : _filteredLocations.isEmpty
@@ -259,7 +259,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
                           Icon(
                             Iconsax.location_slash_copy,
                             size: 64,
-                            color: colorScheme.categorySports.withValues(
+                            color: colorScheme.categoryMain.withValues(
                               alpha: 0.5,
                             ),
                           ),
@@ -329,13 +329,13 @@ class _LocationTile extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: colorScheme.categorySports.withValues(alpha: 0.2),
+          color: colorScheme.categoryMain.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           Iconsax.location_copy,
           size: 20,
-          color: colorScheme.categorySports,
+          color: colorScheme.categoryMain,
         ),
       ),
       title: Text(
@@ -355,7 +355,7 @@ class _LocationTile extends StatelessWidget {
       trailing: Icon(
         Iconsax.arrow_right_3_copy,
         size: 20,
-        color: colorScheme.categorySports,
+        color: colorScheme.categoryMain,
       ),
     );
   }

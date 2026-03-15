@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -65,14 +66,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   void _showVibesPicker() {
     final cs = Theme.of(context).colorScheme;
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       isScrollControlled: true,
-      useSafeArea: true,
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 1.0,
         minChildSize: 0.5,
@@ -87,14 +84,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   void _showSportsPicker() {
     final cs = Theme.of(context).colorScheme;
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       isScrollControlled: true,
-      useSafeArea: true,
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 1.0,
         minChildSize: 0.5,
@@ -112,12 +105,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   void _showVisibilityPicker() {
     final cs = Theme.of(context).colorScheme;
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -532,12 +522,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   void _showPostTypePicker() {
     final cs = Theme.of(context).colorScheme;
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: cs.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,

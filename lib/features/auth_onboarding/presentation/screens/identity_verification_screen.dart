@@ -7,7 +7,6 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/design_system/widgets/app_input_field.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
@@ -238,133 +237,138 @@ class _IdentityVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
-    return SingleSectionLayout(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight:
-                MediaQuery.of(context).size.height -
-                MediaQuery.of(context).padding.top -
-                MediaQuery.of(context).padding.bottom -
-                48,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              // Header Container: Logo, Title
-              Column(
-                children: [
-                  SizedBox(height: 24.0),
-                  // Dabbler logo
-                  Center(
-                    child: SvgPicture.asset(
-                      'assets/images/dabbler_logo.svg',
-                      width: 72,
-                      height: 72,
-                      colorFilter: ColorFilter.mode(
-                        Theme.of(context).colorScheme.onSurface,
-                        BlendMode.srcIn,
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight:
+                  MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom -
+                  48,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Header Container: Logo, Title
+                Column(
+                  children: [
+                    SizedBox(height: 24.0),
+                    // Dabbler logo
+                    Center(
+                      child: SvgPicture.asset(
+                        'assets/images/dabbler_logo.svg',
+                        width: 72,
+                        height: 72,
+                        colorFilter: ColorFilter.mode(
+                          Theme.of(context).colorScheme.onSurface,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 12.0),
-                  // Dabbler text logo
-                  Center(
-                    child: SvgPicture.asset(
-                      'assets/images/dabbler_text_logo.svg',
-                      width: 110,
-                      height: 21,
-                      colorFilter: ColorFilter.mode(
-                        Theme.of(context).colorScheme.onSurface,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 24.0),
-                  // Title
-                  Text(
-                    'Identity verification',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 8.0),
-                  // Subtitle
-                  // Text(
-                  //   'Enter your email address to get started',
-                  //   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  //     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  //   ),
-                  //   textAlign: TextAlign.center,
-                  // ),
-                ],
-              ),
-
-              const SizedBox(height: 40),
-
-              // Form Container: Inputs and CTA
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Phone input field
-                  _buildPhoneInput(),
-                  SizedBox(height: 12.0),
-
-                  // Continue button
-                  FilledButton(
-                    onPressed: _isLoading || !_isValidEmail()
-                        ? null
-                        : _handleSubmit,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 56),
-                    ),
-                    child: Text(_isLoading ? 'Sending...' : 'Continue'),
-                  ),
-
-                  SizedBox(height: 16.0),
-
-                  // Divider with "or"
-                  _buildDivider(),
-
-                  SizedBox(height: 16.0),
-
-                  // Continue with Google button
-                  OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _handleGoogleSignIn,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 56),
-                    ),
-                    icon: const Text(
-                      'G',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    label: const Text('Continue with Google'),
-                  ),
-
-                  // Error/Success messages
-                  if (_errorMessage != null) ...[
                     SizedBox(height: 12.0),
-                    _buildErrorMessage(),
+                    // Dabbler text logo
+                    Center(
+                      child: SvgPicture.asset(
+                        'assets/images/dabbler_text_logo.svg',
+                        width: 110,
+                        height: 21,
+                        colorFilter: ColorFilter.mode(
+                          Theme.of(context).colorScheme.onSurface,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 24.0),
+                    // Title
+                    Text(
+                      'Identity verification',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w700,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8.0),
+                    // Subtitle
+                    // Text(
+                    //   'Enter your email address to get started',
+                    //   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    //     color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    //   ),
+                    //   textAlign: TextAlign.center,
+                    // ),
                   ],
+                ),
 
-                  if (_successMessage != null) ...[
+                const SizedBox(height: 40),
+
+                // Form Container: Inputs and CTA
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Phone input field
+                    _buildPhoneInput(),
                     SizedBox(height: 12.0),
-                    _buildSuccessMessage(),
+
+                    // Continue button
+                    FilledButton(
+                      onPressed: _isLoading || !_isValidEmail()
+                          ? null
+                          : _handleSubmit,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 56),
+                      ),
+                      child: Text(_isLoading ? 'Sending...' : 'Continue'),
+                    ),
+
+                    SizedBox(height: 16.0),
+
+                    // Divider with "or"
+                    _buildDivider(),
+
+                    SizedBox(height: 16.0),
+
+                    // Continue with Google button
+                    OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleGoogleSignIn,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 56),
+                      ),
+                      icon: const Text(
+                        'G',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      label: const Text('Continue with Google'),
+                    ),
+
+                    // Error/Success messages
+                    if (_errorMessage != null) ...[
+                      SizedBox(height: 12.0),
+                      _buildErrorMessage(),
+                    ],
+
+                    if (_successMessage != null) ...[
+                      SizedBox(height: 12.0),
+                      _buildSuccessMessage(),
+                    ],
+
+                    SizedBox(height: 24.0),
+
+                    // Terms text at bottom
+                    _buildTermsText(),
                   ],
-
-                  SizedBox(height: 24.0),
-
-                  // Terms text at bottom
-                  _buildTermsText(),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

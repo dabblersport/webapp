@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -10,6 +12,8 @@ import 'package:dabbler/features/profile/services/image_upload_service.dart';
 import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -316,7 +320,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _buildGenderSelect(BuildContext context) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final selected = _selectedGender ?? '';
 
     return Column(
@@ -361,7 +365,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _buildGenderOption(BuildContext context, String gender) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final isSelected = _selectedGender == gender;
 
     return GestureDetector(
@@ -413,7 +417,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     String? helperText,
   }) {
     final theme = Theme.of(context);
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final borderRadius = BorderRadius.circular(maxLines > 1 ? 20 : 999);
 
     return Column(
@@ -487,7 +491,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildLanguageSelect(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final borderRadius = BorderRadius.circular(999);
     final languageNames = {
       'en': 'English',
@@ -555,239 +559,268 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
 
-    return SingleSectionLayout(
-      category: 'profile',
-      scrollable: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: colorScheme.primary),
-              )
-            : Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: () => context.pop(),
-                          icon: const Icon(Iconsax.arrow_left_copy),
-                          style: IconButton.styleFrom(
-                            backgroundColor: colorScheme.primary.withValues(
-                              alpha: 0.0,
-                            ),
-                            foregroundColor: colorScheme.onSurface,
-                            minimumSize: const Size(48, 48),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Edit Profile',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.onSurface,
-                                ),
-                          ),
-                        ),
-                      ],
+    final logoWidget = SvgPicture.asset(
+      'assets/images/dabbler_text_logo.svg',
+      width: 100,
+      height: 18,
+      colorFilter: ColorFilter.mode(
+        Theme.of(context).colorScheme.onSurface,
+        BlendMode.srcIn,
+      ),
+    );
+
+    final content = Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: _isLoading
+              ? SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.primary,
                     ),
-
-                    const SizedBox(height: 20),
-
-                    Center(
-                      child: Stack(
+                  ),
+                )
+              : Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          DSAvatar(
-                            size: AvatarSize.large,
-                            imageUrl: _avatarUrl,
-                            displayName:
-                                _displayNameController.text.trim().isNotEmpty
-                                ? _displayNameController.text
-                                : 'User',
-                            context: AvatarContext.profile,
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: InkWell(
-                              onTap: _isUploadingAvatar
-                                  ? null
-                                  : _pickAndUploadAvatar,
-                              customBorder: const CircleBorder(),
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: colorScheme.surfaceContainerLowest,
-                                    width: 3,
-                                  ),
-                                ),
-                                child: _isUploadingAvatar
-                                    ? SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: colorScheme.onPrimary,
-                                        ),
-                                      )
-                                    : Icon(
-                                        Icons.camera_alt,
-                                        color: colorScheme.onPrimary,
-                                        size: 16,
-                                      ),
+                          IconButton.filledTonal(
+                            onPressed: () => context.pop(),
+                            icon: const Icon(Iconsax.arrow_left_copy),
+                            style: IconButton.styleFrom(
+                              backgroundColor: colorScheme.primary.withValues(
+                                alpha: 0.0,
                               ),
+                              foregroundColor: colorScheme.onSurface,
+                              minimumSize: const Size(48, 48),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Edit Profile',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurface,
+                                  ),
                             ),
                           ),
                         ],
                       ),
-                    ),
 
-                    const SizedBox(height: 30),
+                      const SizedBox(height: 20),
 
-                    // Display Name
-                    _buildTextField(
-                      context,
-                      label: 'Display Name',
-                      controller: _displayNameController,
-                      hintText: 'Choose a name',
-                      validator: AppValidators.validateName,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Username (read-only)
-                    _buildTextField(
-                      context,
-                      label: 'Username',
-                      controller: _usernameController,
-                      hintText: 'Your username',
-                      readOnly: true,
-                      helperText: 'Username cannot be changed',
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Bio
-                    _buildTextField(
-                      context,
-                      label: 'Bio',
-                      controller: _bioController,
-                      hintText: 'Tell us about yourself',
-                      maxLines: 3,
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Date of Birth
-                    _buildDatePickerField(context),
-
-                    const SizedBox(height: 16),
-
-                    // Age (auto-calculated, read-only)
-                    _buildTextField(
-                      context,
-                      label: 'Age',
-                      controller: _ageController,
-                      hintText: 'Your age',
-                      keyboardType: TextInputType.number,
-                      readOnly: true,
-                      helperText: _dateOfBirth != null
-                          ? 'Calculated from date of birth'
-                          : 'Select date of birth to auto-fill',
-                      validator: (value) {
-                        if (value == null || value.isEmpty) return null;
-                        final age = int.tryParse(value);
-                        if (age == null || age < 13 || age > 120) {
-                          return 'Enter a valid age (13-120)';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    _buildGenderSelect(context),
-
-                    const SizedBox(height: 16),
-
-                    // City
-                    _buildTextField(
-                      context,
-                      label: 'City',
-                      controller: _cityController,
-                      hintText: 'Your city',
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Country
-                    _buildTextField(
-                      context,
-                      label: 'Country',
-                      controller: _countryController,
-                      hintText: 'Your country',
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Language
-                    _buildLanguageSelect(context),
-
-                    const SizedBox(height: 16),
-
-                    // Interests
-                    _buildTextField(
-                      context,
-                      label: 'Interests',
-                      controller: _interestsController,
-                      hintText: 'Your interests (comma-separated)',
-                      maxLines: 2,
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Sports Section
-                    _buildSportsSection(context),
-
-                    const SizedBox(height: 24),
-
-                    // Weekly Availability Section
-                    _buildAvailabilitySection(context),
-
-                    const SizedBox(height: 30),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: _isLoading ? null : _saveProfile,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 56),
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          disabledBackgroundColor: colorScheme.primary
-                              .withValues(alpha: 0.4),
-                          disabledForegroundColor: colorScheme.onPrimary
-                              .withValues(alpha: 0.75),
+                      Center(
+                        child: Stack(
+                          children: [
+                            DSAvatar(
+                              size: AvatarSize.large,
+                              imageUrl: _avatarUrl,
+                              displayName:
+                                  _displayNameController.text.trim().isNotEmpty
+                                  ? _displayNameController.text
+                                  : 'User',
+                              context: AvatarContext.profile,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: InkWell(
+                                onTap: _isUploadingAvatar
+                                    ? null
+                                    : _pickAndUploadAvatar,
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: colorScheme.surfaceContainerLowest,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: _isUploadingAvatar
+                                      ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: colorScheme.onPrimary,
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.camera_alt,
+                                          color: colorScheme.onPrimary,
+                                          size: 16,
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Text('Save changes'),
                       ),
-                    ),
 
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 30),
+
+                      // Display Name
+                      _buildTextField(
+                        context,
+                        label: 'Display Name',
+                        controller: _displayNameController,
+                        hintText: 'Choose a name',
+                        validator: AppValidators.validateName,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Username (read-only)
+                      _buildTextField(
+                        context,
+                        label: 'Username',
+                        controller: _usernameController,
+                        hintText: 'Your username',
+                        readOnly: true,
+                        helperText: 'Username cannot be changed',
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Bio
+                      _buildTextField(
+                        context,
+                        label: 'Bio',
+                        controller: _bioController,
+                        hintText: 'Tell us about yourself',
+                        maxLines: 3,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Date of Birth
+                      _buildDatePickerField(context),
+
+                      const SizedBox(height: 16),
+
+                      // Age (auto-calculated, read-only)
+                      _buildTextField(
+                        context,
+                        label: 'Age',
+                        controller: _ageController,
+                        hintText: 'Your age',
+                        keyboardType: TextInputType.number,
+                        readOnly: true,
+                        helperText: _dateOfBirth != null
+                            ? 'Calculated from date of birth'
+                            : 'Select date of birth to auto-fill',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return null;
+                          final age = int.tryParse(value);
+                          if (age == null || age < 13 || age > 120) {
+                            return 'Enter a valid age (13-120)';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _buildGenderSelect(context),
+
+                      const SizedBox(height: 16),
+
+                      // City
+                      _buildTextField(
+                        context,
+                        label: 'City',
+                        controller: _cityController,
+                        hintText: 'Your city',
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Country
+                      _buildTextField(
+                        context,
+                        label: 'Country',
+                        controller: _countryController,
+                        hintText: 'Your country',
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Language
+                      _buildLanguageSelect(context),
+
+                      const SizedBox(height: 16),
+
+                      // Interests
+                      _buildTextField(
+                        context,
+                        label: 'Interests',
+                        controller: _interestsController,
+                        hintText: 'Your interests (comma-separated)',
+                        maxLines: 2,
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Sports Section
+                      _buildSportsSection(context),
+
+                      const SizedBox(height: 24),
+
+                      // Weekly Availability Section
+                      _buildAvailabilitySection(context),
+
+                      const SizedBox(height: 30),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: _isLoading ? null : _saveProfile,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 56),
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
+                            disabledBackgroundColor: colorScheme.primary
+                                .withValues(alpha: 0.4),
+                            disabledForegroundColor: colorScheme.onPrimary
+                                .withValues(alpha: 0.75),
+                          ),
+                          child: const Text('Save changes'),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   void _saveProfile() async {
@@ -950,7 +983,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   // ============================================================================
 
   Widget _buildSportsSection(BuildContext context) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final availableSportKeys = _availableSports
         .where((s) => s.sportKey != null)
         .map((s) => s.sportKey!)
@@ -963,7 +996,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           children: [
             Icon(
               Iconsax.medal_star_copy,
-              color: colorScheme.categorySports,
+              color: colorScheme.categoryMain,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -1045,7 +1078,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     bool isSelected,
     bool isPrimary,
   ) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final sportObj = _sportsByKey[sport];
     final displayName = sportObj != null
         ? '${sportObj.emoji ?? ''} ${sportObj.nameEn}'.trim()
@@ -1086,20 +1119,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         });
       },
       selectedColor: isPrimary
-          ? colorScheme.categorySports
-          : colorScheme.categorySports.withValues(alpha: 0.3),
+          ? colorScheme.categoryMain
+          : colorScheme.categoryMain.withValues(alpha: 0.3),
       checkmarkColor: isPrimary
           ? colorScheme.onPrimary
-          : colorScheme.categorySports,
+          : colorScheme.categoryMain,
       labelStyle: TextStyle(
         color: isSelected
-            ? (isPrimary ? colorScheme.onPrimary : colorScheme.categorySports)
+            ? (isPrimary ? colorScheme.onPrimary : colorScheme.categoryMain)
             : colorScheme.onSurfaceVariant,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       side: BorderSide(
         color: isSelected
-            ? colorScheme.categorySports
+            ? colorScheme.categoryMain
             : colorScheme.outlineVariant,
       ),
     );
@@ -1110,7 +1143,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     String sport,
     SkillLevel currentLevel,
   ) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final sportObj = _sportsByKey[sport];
     final isPrimary = sportObj != null && _primarySport == sportObj.id;
 
@@ -1129,7 +1162,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               isPrimary ? Iconsax.star_1_copy : Iconsax.star_copy,
               size: 20,
               color: isPrimary
-                  ? colorScheme.categorySports
+                  ? colorScheme.categoryMain
                   : colorScheme.onSurfaceVariant,
             ),
           ),
@@ -1205,7 +1238,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   // ============================================================================
 
   Widget _buildAvailabilitySection(BuildContext context) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1214,7 +1247,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           children: [
             Icon(
               Iconsax.calendar_1_copy,
-              color: colorScheme.categoryActivities,
+              color: colorScheme.categoryMain,
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -1231,7 +1264,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               icon: const Icon(Iconsax.add_copy, size: 18),
               label: const Text('Add'),
               style: TextButton.styleFrom(
-                foregroundColor: colorScheme.categoryActivities,
+                foregroundColor: colorScheme.categoryMain,
               ),
             ),
           ],
@@ -1300,7 +1333,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _TimeSlot slot,
     int index,
   ) {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final dayName = _getDayName(slot.dayOfWeek);
     final timeRange =
         '${_formatHour(slot.startHour)} - ${_formatHour(slot.endHour)}';
@@ -1322,7 +1355,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: colorScheme.categoryActivities.withValues(alpha: 0.15),
+              color: colorScheme.categoryMain.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -1330,7 +1363,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 dayName.substring(0, 2),
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: colorScheme.categoryActivities,
+                  color: colorScheme.categoryMain,
                 ),
               ),
             ),
@@ -1375,17 +1408,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     int startHour = 9;
     int endHour = 17;
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.getCategoryTheme('profile').surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: context.getCategoryTheme('main').surface,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            final colorScheme = context.getCategoryTheme('profile');
+            final colorScheme = context.getCategoryTheme('main');
 
             return Padding(
               padding: EdgeInsets.only(
@@ -1427,7 +1457,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             setModalState(() => selectedDay = day);
                           }
                         },
-                        selectedColor: colorScheme.categoryActivities,
+                        selectedColor: colorScheme.categoryMain,
                         labelStyle: TextStyle(
                           color: isSelected
                               ? colorScheme.onPrimary
@@ -1556,7 +1586,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         Navigator.of(context).pop();
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: colorScheme.categoryActivities,
+                        backgroundColor: colorScheme.categoryMain,
                         foregroundColor: colorScheme.onPrimary,
                       ),
                       child: const Text('Add Availability'),
@@ -1593,7 +1623,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildDatePickerField(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final borderRadius = BorderRadius.circular(999);
 
     return Column(
@@ -1669,7 +1699,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Future<void> _showDatePicker(BuildContext context) async {
-    final colorScheme = context.getCategoryTheme('profile');
+    final colorScheme = context.getCategoryTheme('main');
     final now = DateTime.now();
     final initialDate =
         _dateOfBirth ?? DateTime(now.year - 25, now.month, now.day);

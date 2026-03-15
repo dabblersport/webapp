@@ -1,4 +1,5 @@
 import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -93,10 +94,11 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
   }
 
   void _showReactionPicker(Set<String> myReactions) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: false,
       builder: (_) =>
           ReactionPickerSheet(postId: post.id, myReactions: myReactions),
     );
@@ -817,7 +819,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
         final timeAgo = _relativeTime(comment.createdAt);
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.xxl, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, 16, 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -828,7 +830,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
                   _AuthorAvatar(
                     avatarUrl: avatarUrl,
                     label: displayName,
-                    radius: 14,
+                    radius: 18,
                     isAnonymous: false,
                     cs: cs,
                     tt: tt,
@@ -849,7 +851,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
                   // ),
                 ],
               ),
-              const SizedBox(width: AppSpacing.xl),
+              const SizedBox(width: AppSpacing.lg),
 
               // ═══ Comment content ═══
               Expanded(
@@ -865,7 +867,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
                               children: [
                                 TextSpan(
                                   text: displayName,
-                                  style: tt.bodySmall?.copyWith(
+                                  style: tt.titleSmall?.copyWith(
                                     color: cs.onSurface,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -894,7 +896,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
                     // ─── Body ───
                     Text(
                       comment.body,
-                      style: tt.bodySmall?.copyWith(color: cs.onSurface),
+                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

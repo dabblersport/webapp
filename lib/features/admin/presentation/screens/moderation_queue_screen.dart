@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:dabbler/services/moderation_service.dart';
@@ -312,7 +313,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     BuildContext context,
     ModerationReportSummary report,
   ) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => DraggableScrollableSheet(

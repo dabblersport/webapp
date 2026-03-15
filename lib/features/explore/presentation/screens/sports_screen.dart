@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -111,7 +112,7 @@ class VenueCard extends StatelessWidget {
 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Card.filled(
       color: sportsScheme.primary.withValues(alpha: 0.08),
@@ -189,13 +190,13 @@ class VenueCard extends StatelessWidget {
                           Icon(
                             Iconsax.routing_copy,
                             size: 14,
-                            color: colorScheme.categorySports,
+                            color: colorScheme.categoryMain,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             distance,
                             style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.categorySports,
+                              color: colorScheme.categoryMain,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -268,13 +269,13 @@ class VenueCard extends StatelessWidget {
                               Icon(
                                 Iconsax.star_copy,
                                 size: 14,
-                                color: colorScheme.categorySports,
+                                color: colorScheme.categoryMain,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 rating.toStringAsFixed(1),
                                 style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.categorySports,
+                                  color: colorScheme.categoryMain,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -299,7 +300,7 @@ class VenueCard extends StatelessWidget {
   }
 
   Widget _buildSkeletonCard(BuildContext context) {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -507,37 +508,27 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   void _showLocationDrawer() {
     final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      showDragHandle: true,
+      colorSchemeOverride: sportsScheme,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (context) {
-        return Theme(
-          data: Theme.of(context).copyWith(colorScheme: sportsScheme),
-          child: LocationPermissionDrawer(
-            onAllowLocation: () async {
-              Navigator.pop(context);
-              await _locationService.saveLocationPreference('allow');
-              await _locationService.fetchLocation();
-            },
-            onRemindLater: () async {
-              Navigator.pop(context);
-              await _locationService.saveLocationPreference('remind_later');
-            },
-            onNoThanks: () async {
-              Navigator.pop(context);
-              await _locationService.saveLocationPreference('never');
-            },
-          ),
+        return LocationPermissionDrawer(
+          onAllowLocation: () async {
+            Navigator.pop(context);
+            await _locationService.saveLocationPreference('allow');
+            await _locationService.fetchLocation();
+          },
+          onRemindLater: () async {
+            Navigator.pop(context);
+            await _locationService.saveLocationPreference('remind_later');
+          },
+          onNoThanks: () async {
+            Navigator.pop(context);
+            await _locationService.saveLocationPreference('never');
+          },
         );
       },
     );
@@ -598,27 +589,19 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   void _showFilterModal() {
     final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
-    showModalBottomSheet<void>(
+    showAdaptiveSheet<void>(
       context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      showDragHandle: true,
+      colorSchemeOverride: sportsScheme,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Theme(
-        data: Theme.of(context).copyWith(colorScheme: sportsScheme),
-        child: _buildFiltersBottomSheetContent(),
-      ),
+      builder: (context) => _buildFiltersBottomSheetContent(),
     );
   }
 
   Widget _buildFiltersBottomSheetContent() {
     final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
     final sports = _sportsForChips();
     final selectedIndex = _safeSelectedSportIndex(sports.length);
 
@@ -1084,7 +1067,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Widget _buildGameCard(game) {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return GestureDetector(
       onTap: () {
@@ -1286,7 +1269,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                         decoration: ShapeDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.categorySports.withValues(alpha: 0.9),
+                          ).colorScheme.categoryMain.withValues(alpha: 0.9),
                           shape: RoundedRectangleBorder(
                             side: BorderSide(
                               width: 1,
@@ -1364,7 +1347,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   Widget _buildHeader() {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
@@ -1409,27 +1392,13 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                     GestureDetector(
                       onTap: () {
                         final colorScheme = Theme.of(context).colorScheme;
-                        final sportsScheme = context.getCategoryTheme('sports');
+                        final sportsScheme = context.getCategoryTheme('main');
 
-                        showModalBottomSheet<void>(
+                        showAdaptiveSheet<void>(
                           context: context,
-                          useSafeArea: true,
-                          isScrollControlled: true,
-                          isDismissible: true,
-                          enableDrag: true,
-                          showDragHandle: true,
+                          colorSchemeOverride: sportsScheme,
                           backgroundColor: colorScheme.surface,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(24),
-                            ),
-                          ),
-                          builder: (context) => Theme(
-                            data: Theme.of(
-                              context,
-                            ).copyWith(colorScheme: sportsScheme),
-                            child: const ManualLocationDrawer(),
-                          ),
+                          builder: (context) => const ManualLocationDrawer(),
                         );
                       },
                       child: Icon(
@@ -1450,7 +1419,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               icon: const Icon(Iconsax.add_copy),
               tooltip: 'Add venue',
               style: IconButton.styleFrom(
-                backgroundColor: colorScheme.categorySports.withValues(
+                backgroundColor: colorScheme.categoryMain.withValues(
                   alpha: 0.0,
                 ),
                 foregroundColor: colorScheme.onSurface,
@@ -1471,10 +1440,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             icon: const Icon(Iconsax.archive_copy),
             tooltip: 'Library',
             style: IconButton.styleFrom(
-              backgroundColor: colorScheme.categorySports.withValues(
+              backgroundColor: colorScheme.categoryMain.withValues(
                 alpha: 0.0,
               ),
-              foregroundColor: colorScheme.categorySports,
+              foregroundColor: colorScheme.categoryMain,
               minimumSize: const Size(48, 48),
             ),
           ),
@@ -1485,7 +1454,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   Widget _buildTabSwitcher() {
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -1562,7 +1531,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   Widget _buildSearchRow() {
     final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1653,7 +1622,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   Widget _buildSportsChips() {
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
     final isVenuesTab = _mainTabController.index == 1;
     final sports = _sportsForChips();
     final selectedIndex = _safeSelectedSportIndex(sports.length);
@@ -1807,7 +1776,7 @@ class FavoriteVenuesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     final favoritesAsync = ref.watch(
       venues_providers.favoriteVenuesForCurrentUserProvider,
@@ -1835,7 +1804,7 @@ class FavoriteVenuesScreen extends ConsumerWidget {
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Iconsax.arrow_left_copy),
                     style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.categorySports.withValues(
+                      backgroundColor: colorScheme.categoryMain.withValues(
                         alpha: 0.0,
                       ),
                       foregroundColor: colorScheme.onSurface,
@@ -2195,7 +2164,7 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
   }
 
   Widget _buildErrorState() {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Center(
       child: Padding(
@@ -2247,7 +2216,7 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
   }
 
   Widget _buildEmptyState() {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     return Center(
       child: Padding(

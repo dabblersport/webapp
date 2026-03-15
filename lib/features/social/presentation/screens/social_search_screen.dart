@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/data/models/profile.dart';
 import 'package:dabbler/data/models/venue.dart';
 import 'package:dabbler/data/models/games/game_model.dart';
@@ -136,6 +139,141 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
       _maybeAutoSwitchTab(next);
     });
 
+    final isWide =
+        MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.compact;
+
+    if (isWide) {
+      return _buildWideLayout(theme, searchState);
+    }
+
+    return _buildMobileLayout(theme, searchState);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Wide-screen layout (AdaptiveScaffold)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildWideLayout(ThemeData theme, SearchState searchState) {
+    final colorScheme = theme.colorScheme;
+    return AdaptiveScaffold(
+      currentIndex: 3, // Search
+      onDestinationSelected: (i) =>
+          onAdaptiveDestinationSelected(context, i, activeIndex: 3),
+      destinations: kAdaptiveDestinations,
+      headerWidget: SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      ),
+      body: _buildWideBody(theme, searchState),
+      rightPanel: _buildWideRightPanel(theme),
+    );
+  }
+
+  /// Center column on wide screens: search bar + tabs + results.
+  Widget _buildWideBody(ThemeData theme, SearchState searchState) {
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: Column(
+        children: [
+          const SizedBox(height: 16),
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocus,
+                onChanged: _onSearchChanged,
+                onSubmitted: _triggerSearch,
+                decoration: InputDecoration(
+                  hintText: _buildHintText(),
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  suffixIcon: searchState.query.isNotEmpty
+                      ? IconButton(
+                          onPressed: _clearSearch,
+                          icon: const Icon(Icons.close, size: 18),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                style: theme.textTheme.bodyMedium,
+              ),
+            ),
+          ),
+          // Tab bar
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            tabs: _searchTabs
+                .map(
+                  (tab) => Tab(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(tab.icon, size: 16),
+                        const SizedBox(width: 6),
+                        Text(tab.label),
+                      ],
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          // Content
+          Expanded(
+            child: searchState.query.isEmpty
+                ? const Center(child: Text('Type to search across Dabbler'))
+                : _buildSearchResults(searchState),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Right panel on wide screens: suggestions, grammar help & quick filters.
+  Widget _buildWideRightPanel(ThemeData theme) {
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            _buildSection('Suggestions', [
+              _buildSuggestionItem('People nearby', Icons.group),
+              _buildSuggestionItem('Popular games today', Icons.sports_esports),
+              _buildSuggestionItem('Trending posts', Icons.trending_up),
+            ]),
+            const SizedBox(height: 24),
+            _buildPrefixHelp(),
+            const SizedBox(height: 24),
+            _buildQuickFilters(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Mobile layout (existing AppBar + tabs)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildMobileLayout(ThemeData theme, SearchState searchState) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,

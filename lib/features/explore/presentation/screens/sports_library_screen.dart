@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_history_screen.dart'
     show pastGamesProvider;
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
@@ -10,6 +10,8 @@ import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen
 import 'package:dabbler/features/venues/providers.dart' as venues_providers;
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 class SportsLibraryScreen extends StatefulWidget {
   const SportsLibraryScreen({super.key, this.initialTabIndex = 0});
@@ -34,129 +36,150 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
-    return SingleSectionLayout(
-      category: 'sports',
-      scrollable: false,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                IconButton.filledTonal(
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  icon: const Icon(Iconsax.arrow_left_copy),
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.categorySports.withValues(
-                      alpha: 0.0,
-                    ),
-                    foregroundColor: colorScheme.onSurface,
-                    minimumSize: const Size(48, 48),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'My Sports',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
+    final logoWidget = SvgPicture.asset(
+      'assets/images/dabbler_text_logo.svg',
+      width: 100,
+      height: 18,
+      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+    );
+
+    final content = Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  IconButton.filledTonal(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Iconsax.arrow_left_copy),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.categoryMain.withValues(
+                        alpha: 0.0,
+                      ),
+                      foregroundColor: colorScheme.onSurface,
+                      minimumSize: const Size(48, 48),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(
-                    value: 0,
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Iconsax.clock_copy, size: 18),
-                        SizedBox(width: 8, height: 30),
-                        Text('History'),
-                      ],
-                    ),
-                  ),
-                  ButtonSegment(
-                    value: 1,
-                    label: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Iconsax.bookmark_copy, size: 18),
-                        SizedBox(width: 8, height: 30),
-                        Text('Bookmarks'),
-                      ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'My Sports',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ],
-                selected: <int>{_selectedIndex},
-                onSelectionChanged: (Set<int> newSelection) {
-                  final newIndex = newSelection.first;
-                  if (_selectedIndex != newIndex) {
-                    setState(() {
-                      _selectedIndex = newIndex;
-                    });
-                  }
-                },
-                style: ButtonStyle(
-                  side: WidgetStateProperty.all(
-                    const BorderSide(color: Colors.transparent),
-                  ),
-                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((
-                    states,
-                  ) {
-                    if (states.contains(WidgetState.selected)) {
-                      return sportsScheme.primary.withValues(alpha: 1);
-                    }
-                    return sportsScheme.primary.withValues(alpha: 0.1);
-                  }),
-                  foregroundColor: WidgetStateProperty.resolveWith<Color?>((
-                    states,
-                  ) {
-                    if (states.contains(WidgetState.selected)) {
-                      return sportsScheme.onPrimary;
-                    }
-                    return sportsScheme.onSurface;
-                  }),
-                  textStyle: WidgetStateProperty.all(
-                    textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  ),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                showSelectedIcon: false,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: const [_SportsHistoryTab(), _VenueBookmarksTab()],
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                child: SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 0,
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Iconsax.clock_copy, size: 18),
+                          SizedBox(width: 8, height: 30),
+                          Text('History'),
+                        ],
+                      ),
+                    ),
+                    ButtonSegment(
+                      value: 1,
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Iconsax.bookmark_copy, size: 18),
+                          SizedBox(width: 8, height: 30),
+                          Text('Bookmarks'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  selected: <int>{_selectedIndex},
+                  onSelectionChanged: (Set<int> newSelection) {
+                    final newIndex = newSelection.first;
+                    if (_selectedIndex != newIndex) {
+                      setState(() {
+                        _selectedIndex = newIndex;
+                      });
+                    }
+                  },
+                  style: ButtonStyle(
+                    side: WidgetStateProperty.all(
+                      const BorderSide(color: Colors.transparent),
+                    ),
+                    backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.selected)) {
+                        return sportsScheme.primary.withValues(alpha: 1);
+                      }
+                      return sportsScheme.primary.withValues(alpha: 0.1);
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color?>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.selected)) {
+                        return sportsScheme.onPrimary;
+                      }
+                      return sportsScheme.onSurface;
+                    }),
+                    textStyle: WidgetStateProperty.all(
+                      textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    ),
+                    shape: WidgetStateProperty.all(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  showSelectedIcon: false,
+                ),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Expanded(
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: const [_SportsHistoryTab(), _VenueBookmarksTab()],
+              ),
+            ),
+          ],
+        ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 }
 
@@ -211,13 +234,13 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                     });
                   },
                   backgroundColor: colorScheme.surfaceContainerHigh,
-                  selectedColor: colorScheme.categorySports.withValues(
+                  selectedColor: colorScheme.categoryMain.withValues(
                     alpha: 0.2,
                   ),
-                  checkmarkColor: colorScheme.categorySports,
+                  checkmarkColor: colorScheme.categoryMain,
                   labelStyle: TextStyle(
                     color: isSelected
-                        ? colorScheme.categorySports
+                        ? colorScheme.categoryMain
                         : colorScheme.onSurface,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   ),
@@ -263,7 +286,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                       icon: const Icon(Iconsax.refresh_copy),
                       label: const Text('Retry'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: colorScheme.categorySports,
+                        backgroundColor: colorScheme.categoryMain,
                         foregroundColor: Colors.white,
                       ),
                     ),
@@ -292,7 +315,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                         Icon(
                           Iconsax.clock_copy,
                           size: 64,
-                          color: colorScheme.categorySports.withValues(
+                          color: colorScheme.categoryMain.withValues(
                             alpha: 0.3,
                           ),
                         ),
@@ -326,7 +349,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                   final game = filteredGames[index];
 
                   return Card.filled(
-                    color: colorScheme.categorySports.withValues(alpha: 0.08),
+                    color: colorScheme.categoryMain.withValues(alpha: 0.08),
                     child: InkWell(
                       onTap: () {
                         Navigator.of(context).push(
@@ -359,14 +382,14 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: colorScheme.categorySports
+                                    color: colorScheme.categoryMain
                                         .withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
                                     (game.sport as String),
                                     style: textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.categorySports,
+                                      color: colorScheme.categoryMain,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -421,7 +444,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                                 Icon(
                                   Iconsax.people_copy,
                                   size: 16,
-                                  color: colorScheme.categorySports,
+                                  color: colorScheme.categoryMain,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
@@ -454,7 +477,7 @@ class _VenueBookmarksTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
 
     final favoritesAsync = ref.watch(
       venues_providers.favoriteVenuesForCurrentUserProvider,

@@ -8,6 +8,3 @@ export 'theme/app_theme.dart';
 export 'theme/material3_extensions.dart';
 export 'theme/color_token_extensions.dart';
 export 'theme/dynamic_color_scheme_loader.dart';
-
-export 'layouts/two_section_layout.dart';
-export 'layouts/single_section_layout.dart';

@@ -1,5 +1,6 @@
 // import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +25,7 @@ import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart
 // If you re-enable them, ensure the import paths match actual file locations.
 
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -217,10 +219,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   void _showManageProfiles() {
-    showModalBottomSheet<String>(
+    showAdaptiveSheet<String>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: false,
       builder: (context) => const ManageProfilesSheet(),
     ).then((selectedProfileType) {
       if (selectedProfileType != null &&
@@ -342,41 +345,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     SportsProfileState sportsState,
   ) {
     return AdaptiveScaffold(
-      currentIndex: 5, // Profile is index 5
-      onDestinationSelected: (i) => _onDesktopNav(context, i),
-      destinations: const [
-        AdaptiveDestination(
-          icon: Iconsax.home_2_copy,
-          selectedIcon: Iconsax.home_2,
-          label: "What's New",
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.add_circle_copy,
-          selectedIcon: Iconsax.add_circle,
-          label: 'Create',
-          isAction: true,
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_status_copy,
-          selectedIcon: Iconsax.search_status,
-          label: 'Sports',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_normal_1_copy,
-          selectedIcon: Iconsax.search_normal_1,
-          label: 'Search',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.notification_copy,
-          selectedIcon: Iconsax.notification,
-          label: 'Notifications',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.profile_circle_copy,
-          selectedIcon: Iconsax.profile_circle,
-          label: 'Profile',
-        ),
-      ],
+      currentIndex: 6, // Profile is index 6
+      onDestinationSelected: (i) =>
+          onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+      destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',
         width: 100,
@@ -391,29 +363,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         sportsState,
       ),
     );
-  }
-
-  void _onDesktopNav(BuildContext context, int destIndex) {
-    switch (destIndex) {
-      case 0:
-        context.go(RoutePaths.home);
-        break;
-      case 1:
-        context.push(RoutePaths.socialCreatePost);
-        break;
-      case 2:
-        context.go(RoutePaths.sports);
-        break;
-      case 3:
-        context.push(RoutePaths.socialSearch);
-        break;
-      case 4:
-        context.push(RoutePaths.notifications);
-        break;
-      case 5:
-        // Already on Profile — no-op
-        break;
-    }
   }
 
   /// Center column on wide screens: tabbed posts + refresh.

@@ -97,12 +97,12 @@ class MaterialComponentsExample extends StatelessWidget {
 
           // Card with custom color (using category token)
           Card.filled(
-            color: colorScheme.categorySocial.withValues(alpha: 0.1),
+            color: colorScheme.categoryMain.withValues(alpha: 0.1),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  Icon(Icons.people, color: colorScheme.categorySocial),
+                  Icon(Icons.people, color: colorScheme.categoryMain),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -111,7 +111,7 @@ class MaterialComponentsExample extends StatelessWidget {
                         Text(
                           'Social Card',
                           style: textTheme.titleMedium?.copyWith(
-                            color: colorScheme.categorySocial,
+                            color: colorScheme.categoryMain,
                           ),
                         ),
                         Text(
@@ -213,14 +213,14 @@ class MaterialComponentsExample extends StatelessWidget {
               FilterChip(
                 label: const Text('Sports'),
                 selected: true,
-                backgroundColor: colorScheme.categorySports.withValues(
+                backgroundColor: colorScheme.categoryMain.withValues(
                   alpha: 0.1,
                 ),
-                selectedColor: colorScheme.categorySports.withValues(
+                selectedColor: colorScheme.categoryMain.withValues(
                   alpha: 0.2,
                 ),
-                checkmarkColor: colorScheme.categorySports,
-                labelStyle: TextStyle(color: colorScheme.categorySports),
+                checkmarkColor: colorScheme.categoryMain,
+                labelStyle: TextStyle(color: colorScheme.categoryMain),
                 onSelected: (value) {},
               ),
             ],

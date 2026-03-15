@@ -1,4 +1,5 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/design_system/tokens/main_dark.dart'
     as main_dark_tokens;
 import 'package:dabbler/design_system/tokens/main_light.dart'
@@ -40,10 +41,8 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   Future<void> _openCountryPicker() async {
     final selected = ref.read(selectedCountryProvider).valueOrNull;
 
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showAdaptiveSheet<String>(
       context: context,
-      showDragHandle: true,
-      useSafeArea: true,
       builder: (context) {
         final theme = Theme.of(context);
         final isDark = theme.colorScheme.brightness == Brightness.dark;

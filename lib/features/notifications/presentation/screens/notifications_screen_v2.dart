@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import '../../data/models/notification_model.dart';
 import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -52,6 +55,144 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
+    if (isWide) {
+      return _buildWideLayout(
+        context,
+        userId,
+        notificationState,
+        activityState,
+      );
+    }
+
+    return _buildMobileLayout(
+      context,
+      userId,
+      notificationState,
+      activityState,
+    );
+  }
+
+  // ── Wide-screen layout (AdaptiveScaffold) ───────────────────────────────
+
+  Widget _buildWideLayout(
+    BuildContext context,
+    String userId,
+    dynamic notificationState,
+    dynamic activityState,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AdaptiveScaffold(
+      currentIndex: 5, // Notifications
+      onDestinationSelected: (i) =>
+          onAdaptiveDestinationSelected(context, i, activeIndex: 5),
+      destinations: kAdaptiveDestinations,
+      headerWidget: SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      ),
+      body: _buildWideNotificationsBody(userId, notificationState),
+      rightPanel: _buildWideActivityPanel(activityState),
+    );
+  }
+
+  /// Center column on wide screens: notifications only.
+  Widget _buildWideNotificationsBody(String userId, dynamic notificationState) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: () => _refresh(userId),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      'Notifications',
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFilterSection(notificationState, null),
+                ],
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  _buildStatsBar(notificationState),
+                  _buildNotificationsList(userId, notificationState),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Right panel on wide screens: activity feed.
+  Widget _buildWideActivityPanel(dynamic activityState) {
+    final activitiesScheme = context.getCategoryTheme('main');
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: RefreshIndicator(
+        onRefresh: _refreshActivity,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          slivers: [
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Icon(
+                      Iconsax.activity_copy,
+                      color: activitiesScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Activity',
+                      style: context.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: context.colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 12)),
+            SliverToBoxAdapter(child: _buildActivityList(activityState)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Mobile layout (existing bottom-sheet toggleable tabs) ───────────────
+
+  Widget _buildMobileLayout(
+    BuildContext context,
+    String userId,
+    dynamic notificationState,
+    dynamic activityState,
+  ) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: RefreshIndicator(
@@ -64,9 +205,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           ),
           slivers: [
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-              ),
+              child: SizedBox(height: MediaQuery.of(context).padding.top + 8),
             ),
             SliverToBoxAdapter(
               child: Column(
@@ -166,7 +305,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   }
 
   Widget _buildFilterSection(notificationState, activityState) {
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
 
     final filters = _selectedTab == 'Notifications'
         ? [
@@ -256,7 +395,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   }
 
   Widget _buildStatsBar(state) {
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -356,7 +495,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   }
 
   Widget _buildNotificationCard(String userId, AppNotification notification) {
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -419,7 +558,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   Widget _getNotificationIcon(String kindKey, NotifyPriority priority) {
     IconData icon;
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
     final Color color = activitiesScheme.primary;
 
     final double bgAlpha = switch (priority) {
@@ -722,7 +861,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   Widget _getActivityIcon(String subjectType) {
     IconData icon;
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
     final color = activitiesScheme.primary;
 
     switch (subjectType) {
@@ -798,7 +937,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   }
 
   Color _getTimeBucketColor(String timeBucket) {
-    final activitiesScheme = context.getCategoryTheme('activities');
+    final activitiesScheme = context.getCategoryTheme('main');
     switch (timeBucket) {
       case 'present':
       case 'upcoming':

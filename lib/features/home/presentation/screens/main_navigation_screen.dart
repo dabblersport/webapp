@@ -17,6 +17,7 @@ import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
 import 'package:dabbler/features/rewards/presentation/widgets/early_bird_check_in_modal.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Main navigation screen with bottom nav bar
 class MainNavigationScreen extends ConsumerStatefulWidget {
@@ -306,7 +307,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       case 0: // Home - Main category
         return colorScheme.categoryMainContainer;
       case 2: // Sports - Sports category
-        return colorScheme.categorySportsContainer;
+        return colorScheme.categoryMainContainer;
       default: // Default to main
         return colorScheme.categoryMainContainer;
     }
@@ -334,7 +335,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       targetPrimaryColor = colorScheme.categoryMain;
     } else if (_currentIndex == 2) {
       // Sports screen - Sports category
-      targetPrimaryColor = colorScheme.categorySports;
+      targetPrimaryColor = colorScheme.categoryMain;
     } else {
       // Default to main
       targetPrimaryColor = colorScheme.categoryMain;
@@ -381,39 +382,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     return AdaptiveScaffold(
       currentIndex: destIndex,
       onDestinationSelected: _onDesktopDestinationSelected,
-      destinations: const [
-        AdaptiveDestination(
-          icon: Iconsax.home_2_copy,
-          selectedIcon: Iconsax.home_2,
-          label: "What's New",
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.add_circle_copy,
-          selectedIcon: Iconsax.add_circle,
-          label: 'Create',
-          isAction: true,
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_status_copy,
-          selectedIcon: Iconsax.search_status,
-          label: 'Sports',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_normal_1_copy,
-          selectedIcon: Iconsax.search_normal_1,
-          label: 'Search',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.notification_copy,
-          selectedIcon: Iconsax.notification,
-          label: 'Notifications',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.profile_circle_copy,
-          selectedIcon: Iconsax.profile_circle,
-          label: 'Profile',
-        ),
-      ],
+      destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',
         width: 100,
@@ -442,10 +411,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       case 3: // Search
         context.push(RoutePaths.socialSearch);
         break;
-      case 4: // Notifications
+      case 4: // Community
+        context.push(RoutePaths.socialFriends);
+        break;
+      case 5: // Notifications
         context.push(RoutePaths.notifications);
         break;
-      case 5: // Profile
+      case 6: // Profile
         context.push(RoutePaths.profile);
         break;
     }

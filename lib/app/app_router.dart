@@ -98,7 +98,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenari
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_notifications_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_complete_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/create_post_screen.dart';
+import 'package:dabbler/features/social/presentation/screens/post_composer_screen.dart';
 
 // Admin screens
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
@@ -1124,7 +1124,18 @@ class AppRouter {
       name: RouteNames.socialCreatePost,
       pageBuilder: (context, state) => SlideTransitionPage(
         key: state.pageKey,
-        child: const CreatePostScreen(),
+        child: const PostComposerScreen(),
+        direction: SlideDirection.fromBottom,
+      ),
+    ),
+
+    // ── Post Composer (full-featured) ──
+    GoRoute(
+      path: RoutePaths.postComposer,
+      name: RouteNames.postComposer,
+      pageBuilder: (context, state) => SlideTransitionPage(
+        key: state.pageKey,
+        child: const PostComposerScreen(),
         direction: SlideDirection.fromBottom,
       ),
     ),

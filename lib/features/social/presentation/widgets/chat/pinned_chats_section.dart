@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/data/models/social/conversation_model.dart';
 import 'conversation_tile.dart';
 
@@ -78,7 +79,7 @@ class PinnedChatsSection extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       builder: (context) => Container(
         padding: const EdgeInsets.all(16),

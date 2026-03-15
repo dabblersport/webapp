@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/core/game_creation_model.dart';
 import 'package:dabbler/core/viewmodels/game_creation_viewmodel.dart';
@@ -263,15 +264,10 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
                   ),
                 ),
                 onPressed: () {
-                  showModalBottomSheet(
+                  showAdaptiveSheet(
                     context: context,
                     isScrollControlled: true,
                     backgroundColor: context.colors.surface,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(24),
-                      ),
-                    ),
                     builder: (context) => Padding(
                       padding: EdgeInsets.only(
                         bottom: MediaQuery.of(context).viewInsets.bottom,

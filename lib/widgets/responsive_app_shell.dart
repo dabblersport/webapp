@@ -1,82 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 
 import 'app_background.dart';
 
-/// Wraps the entire app with a centered, fixed-width viewport on large screens
-/// so that the experience stays mobile-first while still working on web.
+/// Wraps the entire app with a full-bleed layout and an [AppBackground] behind
+/// the content.  Width clamping has been removed so that the adaptive scaffold
+/// system can kick in at its own breakpoints (≥ 600 dp).
 class ResponsiveAppShell extends StatelessWidget {
-  const ResponsiveAppShell({
-    super.key,
-    required this.child,
-    this.maxContentWidth = 500,
-  });
+  const ResponsiveAppShell({super.key, required this.child});
 
   /// Content rendered by the router.
   final Widget child;
 
-  /// Maximum width before we clamp the layout to preserve a mobile feel.
-  final double maxContentWidth;
-
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // On web, allow the UI to expand to the full browser width.
-        // Clamping is kept for mobile-first behavior on other platforms.
-        final bool clampWidth =
-            !kIsWeb && constraints.maxWidth > maxContentWidth;
-        final double targetWidth = clampWidth
-            ? maxContentWidth
-            : constraints.maxWidth;
-
-        Widget content;
-
-        if (clampWidth) {
-          // On wide/web screens render the app in a centered mobile shell and
-          // override MediaQuery so children still think they're on a phone.
-          content = Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-              child: Container(
-                constraints: BoxConstraints(maxWidth: targetWidth),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(38),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 60,
-                      spreadRadius: 4,
-                      offset: const Offset(0, 30),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(38),
-                  child: MediaQuery(
-                    data: mediaQuery.copyWith(
-                      size: Size(targetWidth, mediaQuery.size.height),
-                    ),
-                    child: child,
-                  ),
-                ),
-              ),
-            ),
-          );
-        } else {
-          content = SizedBox.expand(child: child);
-        }
-
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            const Positioned.fill(child: AppBackground()),
-            content,
-          ],
-        );
-      },
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        const Positioned.fill(child: AppBackground()),
+        SizedBox.expand(child: child),
+      ],
     );
   }
 }

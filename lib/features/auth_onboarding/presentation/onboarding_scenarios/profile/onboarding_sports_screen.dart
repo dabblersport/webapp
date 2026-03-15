@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'onboarding_welcome_screen.dart';
@@ -868,11 +869,8 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
   }
 
   void _showSportDetails(Sport sport) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(

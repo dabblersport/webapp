@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../providers/games_providers.dart';
@@ -1141,7 +1142,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
   }
 
   void _showMoreOptions() {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,

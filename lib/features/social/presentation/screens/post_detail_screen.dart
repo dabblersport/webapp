@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -287,10 +288,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _showReactionPicker(String postId, Set<String> myReactions) {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      showDragHandle: false,
       builder: (_) =>
           ReactionPickerSheet(postId: postId, myReactions: myReactions),
     );

@@ -6,7 +6,7 @@ import '../../themes/app_theme.dart';
 extension CategoryThemeExtension on BuildContext {
   /// Get ColorScheme for a specific category (sync, static only)
   /// Usage:
-  ///   final socialTheme = context.getCategoryTheme('social');
+  ///   final socialTheme = context.getCategoryTheme('main');
   ///   Container(color: socialTheme.primary);
   ColorScheme getCategoryTheme(String category) {
     final brightness = Theme.of(this).brightness;

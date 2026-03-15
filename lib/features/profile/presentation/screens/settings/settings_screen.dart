@@ -1,6 +1,7 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,8 @@ import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -187,33 +190,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return SingleSectionLayout(
-      category: 'profile',
-      scrollable: true,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context),
-                const SizedBox(height: 24),
-                _buildHeroCard(context),
-                _buildSearchBar(context),
-                _buildProfileSection(context),
-                ..._buildFilteredSectionsList(context),
-                _buildSignOutSection(context),
-                _buildVersionInfo(context),
-                const SizedBox(height: 20),
-              ],
+    final colorScheme = Theme.of(context).colorScheme;
+    final logoWidget = SvgPicture.asset(
+      'assets/images/dabbler_text_logo.svg',
+      width: 100,
+      height: 18,
+      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+    );
+
+    final content = Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 24),
+                  _buildHeroCard(context),
+                  _buildSearchBar(context),
+                  _buildProfileSection(context),
+                  ..._buildFilteredSectionsList(context),
+                  _buildSignOutSection(context),
+                  _buildVersionInfo(context),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -226,7 +251,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           onPressed: () => context.pop(),
           icon: const Icon(Iconsax.arrow_left_copy),
           style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryProfile.withValues(alpha: 0.0),
+            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
             foregroundColor: colorScheme.onSurface,
             minimumSize: const Size(48, 48),
           ),
@@ -251,7 +276,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           onPressed: () => context.push('/help/center'),
           icon: const Icon(Iconsax.info_circle_copy),
           style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryProfile.withValues(alpha: 0.0),
+            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
             foregroundColor: colorScheme.onSurface,
             minimumSize: const Size(48, 48),
           ),
@@ -265,7 +290,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final profileAccent = colorScheme.categoryProfile;
+    final profileAccent = colorScheme.categoryMain;
 
     return Container(
       width: double.infinity,
@@ -321,7 +346,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         decoration: InputDecoration(
           hintText: 'Search settings',
           prefixIcon: const Icon(Iconsax.search_normal_copy),
-          prefixIconColor: colorScheme.categoryProfile,
+          prefixIconColor: colorScheme.categoryMain,
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   onPressed: () {
@@ -334,7 +359,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 )
               : null,
           filled: true,
-          fillColor: colorScheme.categoryProfile.withValues(
+          fillColor: colorScheme.categoryMain.withValues(
             alpha: isDarkMode ? 0.14 : 0.10,
           ),
           border: OutlineInputBorder(
@@ -344,7 +369,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(28),
             borderSide: BorderSide(
-              color: colorScheme.categoryProfile,
+              color: colorScheme.categoryMain,
               width: 2,
             ),
           ),
@@ -408,7 +433,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         ),
         Card(
           elevation: 0,
-          color: colorScheme.categoryProfile.withValues(
+          color: colorScheme.categoryMain.withValues(
             alpha: isDarkMode ? 0.08 : 0.06,
           ),
           shape: RoundedRectangleBorder(
@@ -444,10 +469,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: colorScheme.categoryProfile.withValues(alpha: 0.12),
+              color: colorScheme.categoryMain.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(item.icon, color: colorScheme.categoryProfile),
+            child: Icon(item.icon, color: colorScheme.categoryMain),
           ),
           title: Text(
             item.title,
@@ -561,7 +586,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             if (showLimitMessage) const SizedBox(height: 12),
             Card(
               elevation: 0,
-              color: colorScheme.categoryProfile.withValues(
+              color: colorScheme.categoryMain.withValues(
                 alpha: isDarkMode ? 0.08 : 0.06,
               ),
               shape: RoundedRectangleBorder(
@@ -602,7 +627,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
         return Card(
           elevation: 0,
-          color: colorScheme.categoryProfile.withValues(
+          color: colorScheme.categoryMain.withValues(
             alpha: isDarkMode ? 0.08 : 0.06,
           ),
           shape: RoundedRectangleBorder(
@@ -656,7 +681,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     trailing: isActive
                         ? Icon(
                             Iconsax.tick_circle_copy,
-                            color: colorScheme.categoryProfile,
+                            color: colorScheme.categoryMain,
                           )
                         : Icon(
                             Iconsax.arrow_right_3_copy,
@@ -737,14 +762,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             decoration: BoxDecoration(
               color: isConversion
                   ? colorScheme.tertiary.withValues(alpha: 0.12)
-                  : colorScheme.categoryProfile.withValues(alpha: 0.12),
+                  : colorScheme.categoryMain.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               icon,
               color: isConversion
                   ? colorScheme.tertiary
-                  : colorScheme.categoryProfile,
+                  : colorScheme.categoryMain,
             ),
           ),
           title: Text(
@@ -891,7 +916,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       padding: const EdgeInsets.all(0),
       child: Card(
         elevation: 0,
-        color: colorScheme.categoryProfile.withValues(
+        color: colorScheme.categoryMain.withValues(
           alpha: isDarkMode ? 0.08 : 0.06,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),

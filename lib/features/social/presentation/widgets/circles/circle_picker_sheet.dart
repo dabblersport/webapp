@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/user_circle.dart';
@@ -16,15 +17,8 @@ export 'circle_management_sheet.dart';
 /// Returns the selected [UserCircle], or null if the user dismissed without
 /// selecting.  Opens [CircleManagementSheet] for create / edit.
 Future<UserCircle?> showCirclePickerSheet(BuildContext context) {
-  final cs = Theme.of(context).colorScheme;
-  return showModalBottomSheet<UserCircle>(
+  return showAdaptiveSheet<UserCircle>(
     context: context,
-    backgroundColor: cs.surfaceContainerHigh,
-    isScrollControlled: true,
-    useSafeArea: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
     builder: (_) => const CirclePickerSheet(),
   );
 }
@@ -132,14 +126,8 @@ class CirclePickerSheet extends ConsumerWidget {
     UserCircle? circle,
   ) async {
     final cs = Theme.of(context).colorScheme;
-    await showModalBottomSheet<void>(
+    await showAdaptiveSheet<void>(
       context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
       builder: (_) => CircleManagementSheet(circle: circle),
     );
     // Refresh circles list after management sheet closes.

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
@@ -103,17 +104,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Future<void> _showNotificationDrawer() async {
-    final didTakeAction = await showModalBottomSheet<bool>(
+    final didTakeAction = await showAdaptiveSheet<bool>(
       context: context,
-      isScrollControlled: true,
-      isDismissible: true,
-      enableDrag: true,
-      showDragHandle: true,
-      useSafeArea: true,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
       builder: (context) {
         return NotificationPermissionDrawer(
           onEnableNotifications: () async {

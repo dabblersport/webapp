@@ -14,7 +14,7 @@ abstract class SportSpecificFilters extends StatelessWidget {
   });
 
   Widget buildSectionTitle(BuildContext context, String title) {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
@@ -32,7 +32,7 @@ abstract class SportSpecificFilters extends StatelessWidget {
     List<String> options,
     String filterKey,
   ) {
-    final sportsScheme = context.getCategoryTheme('sports');
+    final sportsScheme = context.getCategoryTheme('main');
     final selectedValue = selectedFilters[filterKey];
 
     return Wrap(

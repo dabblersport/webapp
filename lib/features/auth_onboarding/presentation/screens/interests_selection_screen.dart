@@ -13,7 +13,6 @@ import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Mode for the interests selection screen
 enum InterestsSelectionMode {

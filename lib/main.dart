@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -216,7 +215,7 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();
-            return ResponsiveAppShell(maxContentWidth: 500, child: child);
+            return ResponsiveAppShell(child: child);
           },
         );
       },

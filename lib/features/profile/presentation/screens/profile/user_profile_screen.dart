@@ -1,4 +1,6 @@
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -268,40 +270,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   ) {
     return AdaptiveScaffold(
       currentIndex: -1, // Viewing another user's profile — no nav item selected
-      onDestinationSelected: (i) => _onDesktopNav(context, i),
-      destinations: const [
-        AdaptiveDestination(
-          icon: Iconsax.home_2_copy,
-          selectedIcon: Iconsax.home_2,
-          label: "What's New",
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.add_circle_copy,
-          selectedIcon: Iconsax.add_circle,
-          label: 'Create',
-          isAction: true,
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_status_copy,
-          selectedIcon: Iconsax.search_status,
-          label: 'Sports',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.search_normal_1_copy,
-          selectedIcon: Iconsax.search_normal_1,
-          label: 'Search',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.notification_copy,
-          selectedIcon: Iconsax.notification,
-          label: 'Notifications',
-        ),
-        AdaptiveDestination(
-          icon: Iconsax.profile_circle_copy,
-          selectedIcon: Iconsax.profile_circle,
-          label: 'Profile',
-        ),
-      ],
+      onDestinationSelected: (i) => onAdaptiveDestinationSelected(context, i),
+      destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',
         width: 100,
@@ -317,29 +287,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         sportProfileHeaderAsync,
       ),
     );
-  }
-
-  void _onDesktopNav(BuildContext context, int destIndex) {
-    switch (destIndex) {
-      case 0:
-        context.go(RoutePaths.home);
-        break;
-      case 1:
-        context.push(RoutePaths.socialCreatePost);
-        break;
-      case 2:
-        context.go(RoutePaths.sports);
-        break;
-      case 3:
-        context.push(RoutePaths.socialSearch);
-        break;
-      case 4:
-        context.push(RoutePaths.notifications);
-        break;
-      case 5:
-        context.go(RoutePaths.profile);
-        break;
-    }
   }
 
   /// Center column on wide screens: tabbed posts.
@@ -1562,9 +1509,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final isBlocked = ref.read(isUserBlockedProvider(targetUserId));
     final blocked = isBlocked.valueOrNull ?? false;
 
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       backgroundColor: colorScheme.surface,
+      showDragHandle: false,
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(

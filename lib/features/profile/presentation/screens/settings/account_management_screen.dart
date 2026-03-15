@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/core/design_system/layouts/single_section_layout.dart';
 import 'package:dabbler/core/design_system/colors/profile_colors.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart';
 import '../../../../../features/profile/data/datasources/supabase_profile_datasource.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Screen for managing account settings like email, password, and security
 class AccountManagementScreen extends ConsumerStatefulWidget {
@@ -112,75 +114,98 @@ class _AccountManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    return SingleSectionLayout(
-      category: 'profile',
-      scrollable: true,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_errorMessage != null &&
-                          !_errorMessage!.contains('password') &&
-                          !_errorMessage!.contains('email'))
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.errorContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  _errorMessage!,
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onErrorContainer,
+    final colorScheme = Theme.of(context).colorScheme;
+    final logoWidget = SvgPicture.asset(
+      'assets/images/dabbler_text_logo.svg',
+      width: 100,
+      height: 18,
+      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+    );
+
+    final content = Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 200,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_errorMessage != null &&
+                            !_errorMessage!.contains('password') &&
+                            !_errorMessage!.contains('email'))
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: colorScheme.error,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: TextStyle(
+                                      color: colorScheme.onErrorContainer,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () {
-                                  setState(() {
-                                    _errorMessage = null;
-                                  });
-                                },
-                              ),
-                            ],
+                                IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () {
+                                    setState(() {
+                                      _errorMessage = null;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      _buildHeader(context),
-                      const SizedBox(height: 12),
-                      _buildHeroCard(context),
-                      const SizedBox(height: 12),
-                      _buildEmailSection(),
-                      const SizedBox(height: 12),
-                      _buildPasswordSection(),
-                      // Release 2: Security Settings
-                      // const SizedBox(height: 12),
-                      // _buildSecuritySection(),
-                      const SizedBox(height: 12),
-                      _buildDangerZone(),
-                    ],
-                  ),
-                ),
+                        _buildHeader(context),
+                        const SizedBox(height: 12),
+                        _buildHeroCard(context),
+                        const SizedBox(height: 12),
+                        _buildEmailSection(),
+                        const SizedBox(height: 12),
+                        _buildPasswordSection(),
+                        // Release 2: Security Settings
+                        // const SizedBox(height: 12),
+                        // _buildSecuritySection(),
+                        const SizedBox(height: 12),
+                        _buildDangerZone(),
+                      ],
+                    ),
+            ),
+          ),
         ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -193,7 +218,7 @@ class _AccountManagementScreenState
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back),
           style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryProfile.withValues(alpha: 0.0),
+            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
             foregroundColor: colorScheme.onSurface,
             minimumSize: const Size(48, 48),
           ),

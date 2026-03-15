@@ -1,7 +1,9 @@
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import '../models/social/post.dart';
+import '../models/social/post_create_request.dart';
 import '../models/social/comment.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Abstract contract for all post & feed operations.
 ///
@@ -85,8 +87,27 @@ abstract class PostRepository {
   /// List all available vibes for the picker.
   Future<Result<List<Map<String, dynamic>>, Failure>> listVibes();
 
+  /// Create a full post using all DB capabilities.
+  ///
+  /// Resolves `author_profile_id` and `author_user_id` server-side.
+  /// Handles circle/squad junction tables when visibility requires it.
+  Future<Result<Post, Failure>> createFullPost(PostCreateRequest request);
+
+  /// Search venues by name for the location picker.
+  Future<Result<List<Map<String, dynamic>>, Failure>> searchVenues(
+    String query,
+  );
+
+  /// Search games by title for the game picker.
+  Future<Result<List<Map<String, dynamic>>, Failure>> searchGames(String query);
+
   /// Soft-delete a post (sets `is_deleted = true`).
   Future<Result<Unit, Failure>> deletePost(String postId);
+
+  /// Upload a media file to the `post-media` storage bucket.
+  ///
+  /// Returns the public URL of the uploaded file.
+  Future<Result<String, Failure>> uploadPostMedia(XFile file);
 
   // ── Likes ──────────────────────────────────────────────────────────
 
