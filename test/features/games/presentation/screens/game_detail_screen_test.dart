@@ -1,11 +1,39 @@
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:dabbler/features/profile/domain/usecases/get_profile_usecase.dart';
+import 'package:dabbler/features/profile/domain/repositories/profile_repository.dart';
+import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_detail_controller.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/data/models/games/player.dart';
+import 'package:dabbler/core/utils/either.dart';
+import 'package:dabbler/core/fp/failure.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+
+class MockProfileRepository extends Mock implements ProfileRepository {
+  @override
+  Future<Either<Failure, UserProfile>> getProfile(
+    String userId, {
+    String? profileType,
+    bool filterActive = true,
+    String? profileId,
+  }) async {
+    return Right(UserProfile(
+      id: 'profile-123',
+      userId: userId,
+      displayName: 'Test User',
+      profileType: 'player',
+      personaType: 'player',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ));
+  }
+}
 
 Player _buildPlayer({required String id, required String userId}) {
   final now = DateTime(2024, 1, 1);
@@ -89,9 +117,25 @@ void main() {
     final initialState = _buildState(game: game, players: const []);
     final stateProvider = StateProvider<GameDetailState>((ref) => initialState);
 
+    final mockProfile = UserProfile(
+      id: 'profile-123',
+      userId: userId,
+      displayName: 'Test User',
+      profileType: 'player',
+      personaType: 'player',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    final mockRepo = MockProfileRepository();
+    final getProfileUseCase = GetProfileUseCase(mockRepo);
+
     final container = ProviderContainer(
       overrides: [
         currentUserIdProvider.overrideWithValue(userId),
+        profileControllerProvider.overrideWith((ref) => ProfileController(
+              getProfileUseCase: getProfileUseCase,
+            )..state = ProfileState(profile: mockProfile)),
         gameDetailStateProvider(
           params,
         ).overrideWith((ref) => ref.watch(stateProvider)),
