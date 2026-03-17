@@ -3,9 +3,23 @@ import 'package:dabbler/features/games/presentation/screens/join_game/game_detai
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/data/models/games/player.dart';
+import 'package:dabbler/data/models/profile/user_profile.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
+import 'package:dabbler/features/profile/domain/usecases/get_profile_usecase.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+
+class MockGetProfileUseCase extends Mock implements GetProfileUseCase {}
+
+class MockProfileController extends ProfileController {
+  MockProfileController(ProfileState initialState)
+      : super(getProfileUseCase: MockGetProfileUseCase()) {
+    state = initialState;
+  }
+}
 
 Player _buildPlayer({required String id, required String userId}) {
   final now = DateTime(2024, 1, 1);
@@ -89,12 +103,25 @@ void main() {
     final initialState = _buildState(game: game, players: const []);
     final stateProvider = StateProvider<GameDetailState>((ref) => initialState);
 
+    final profileState = ProfileState(
+      profile: UserProfile(
+        id: 'profile-123',
+        userId: userId,
+        email: 'test@example.com',
+        displayName: 'Test User',
+        profileType: 'player',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+
     final container = ProviderContainer(
       overrides: [
         currentUserIdProvider.overrideWithValue(userId),
         gameDetailStateProvider(
           params,
         ).overrideWith((ref) => ref.watch(stateProvider)),
+        profileControllerProvider.overrideWith((ref) => MockProfileController(profileState)),
       ],
     );
     addTearDown(container.dispose);
