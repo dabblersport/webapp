@@ -118,8 +118,7 @@ bool hasNonHashtagWord(String text) {
   bool containsWordRune(String token) {
     for (final c in token.runes) {
       final isDigit = c >= 0x30 && c <= 0x39;
-      if (
-          isDigit ||
+      if (isDigit ||
           _isArabic(c) ||
           _isLatin(c) ||
           _isCJK(c) ||

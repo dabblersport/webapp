@@ -129,9 +129,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
         : '${_posts.length} posts';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('#${widget.hashtagSlug}'),
-      ),
+      appBar: AppBar(title: Text('#${widget.hashtagSlug}')),
       body: _isInitialLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildBody(theme, totalLabel),
@@ -230,7 +228,10 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
           children: [
             CircleAvatar(
               backgroundColor: theme.colorScheme.tertiaryContainer,
-              child: Icon(Icons.tag, color: theme.colorScheme.onTertiaryContainer),
+              child: Icon(
+                Icons.tag,
+                color: theme.colorScheme.onTertiaryContainer,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(

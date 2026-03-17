@@ -482,7 +482,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
-    final normalised = hashtag.trim().replaceFirst(RegExp(r'^#+'), '')
+    final normalised = hashtag
+        .trim()
+        .replaceFirst(RegExp(r'^#+'), '')
         .toLowerCase();
     if (normalised.isEmpty) return const <Post>[];
 
@@ -855,10 +857,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     for (final tag in tags) {
       try {
-        final normalised = tag
-            .toLowerCase()
-            .trim()
-            .replaceFirst(RegExp(r'^#+'), '');
+        final normalised = tag.toLowerCase().trim().replaceFirst(
+          RegExp(r'^#+'),
+          '',
+        );
         if (normalised.isEmpty) continue;
 
         Map<String, dynamic>? existing;

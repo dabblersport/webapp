@@ -195,14 +195,17 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
     if (!mounted) return;
 
-    result.fold((failure) {
-      setState(() => _errorMessage = failure.message);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(failure.message)),
-      );
-    }, (_) {
-      if (mounted) context.pop(true);
-    });
+    result.fold(
+      (failure) {
+        setState(() => _errorMessage = failure.message);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure.message)));
+      },
+      (_) {
+        if (mounted) context.pop(true);
+      },
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
