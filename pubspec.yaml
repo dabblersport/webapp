@@ -28,6 +28,7 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  cupertino_icons: ^1.0.8
   path_provider: ^2.1.2
   flutter:
     sdk: flutter
@@ -141,6 +142,7 @@ dependencies:
   mapbox_search: ^4.4.0
 
 dev_dependencies:
+  cupertino_icons: ^1.0.8
   flutter_test:
     sdk: flutter
   integration_test:
