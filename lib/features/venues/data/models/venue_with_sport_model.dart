@@ -7,6 +7,7 @@ part 'venue_with_sport_model.g.dart';
 /// Each row contains venue data + one supported sport
 @freezed
 class VenueWithSportModel with _$VenueWithSportModel {
+  // ignore_for_file: invalid_annotation_target
   const factory VenueWithSportModel({
     required String id,
     @JsonKey(name: 'sport_id') required String sportId,
