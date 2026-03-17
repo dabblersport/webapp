@@ -83,8 +83,7 @@ Dabbler is a feature-rich Flutter application with a modern reactive architectur
 ### Production Blockers
 1. **Analytics Implementation**: `AnalyticsService` must be fully wired to a provider (Amplitude/Mixpanel) to track user retention.
 2. **Production Logging**: Integration with Sentry or Firebase Crashlytics to monitor runtime errors.
-3. **Asset Validation**: Fix `pubspec.yaml` errors regarding missing directories (`/assets/icons/`) and the `.env` placeholder.
-4. **Security Audit**: Verify all Supabase RLS policies are active and restrictive.
+3. **Security Audit**: Verify all Supabase RLS policies are active and restrictive.
 
 ### Improvements Before Launch
 1. **Cleanup**: Remove "Legacy" methods and commented-out code in `AuthService`.
@@ -92,7 +91,7 @@ Dabbler is a feature-rich Flutter application with a modern reactive architectur
 3. **Tests**: Add smoke tests for the Auth and Game Joining flows.
 
 ### Prioritized Action Plan
-1. **Week 1 (Security & Reliability)**: Audit RLS, integrate Sentry, fix asset bundle errors.
+1. **Week 1 (Security & Reliability)**: Audit RLS, integrate Sentry. (Note: Asset bundle errors have been resolved in the latest commit).
 2. **Week 2 (Observability)**: Complete `AnalyticsService` and `trackEvent` calls.
 3. **Week 3 (Feature Polish)**: Address `TODO`s in Social and Profile features.
 4. **Week 4 (Testing)**: Implement 5-10 core integration tests and perform Load Testing on Edge Functions.

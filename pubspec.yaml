@@ -177,7 +177,6 @@ flutter:
     - assets/images/
     - assets/images/undraw/
     - assets/Avatar/
-    - assets/icons/
     - assets/elements/
     - assets/logos/
     - lib/design_system/tokens/
