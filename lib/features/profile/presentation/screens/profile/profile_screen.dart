@@ -8,6 +8,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
+import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
 import '../../../../../app/app_router.dart';
 import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
@@ -15,11 +16,17 @@ import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 
 import '../../../../../utils/constants/route_constants.dart';
+import '../../models/sport_profile_route_args.dart';
 
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show sportsProvider, userPostsProvider;
+    show
+        sportsProvider,
+        userPostsProvider,
+        userLikedPostsProvider,
+        userCommentedPostsProvider,
+        userRepostedPostsProvider;
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 // Extracted widgets for hero and basics live alongside this screen for now.
 // If you re-enable them, ensure the import paths match actual file locations.
@@ -932,7 +939,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 0,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
@@ -941,29 +951,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                'Sports',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: onTop,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Row(
+              children: [
+                Text(
+                  'Sports',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: onTop,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              InkWell(
-                onTap: () {
-                  final profileType =
-                      profile?.personaType ?? profile?.profileType ?? 'player';
-                  context.push(
-                    '/profile/sports-preferences',
-                    extra: {'profileType': profileType},
-                  );
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Icon(Iconsax.add_copy, size: 24, color: onTop),
-              ),
-            ],
+                const Spacer(),
+                InkWell(
+                  onTap: () {
+                    showAdaptiveSheet(
+                      context: context,
+                      builder: (_) => const ManageSportsSheet(),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Icon(Iconsax.edit_copy, size: 24, color: onTop),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Builder(
@@ -984,36 +995,77 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               if (resolvedSports.isNotEmpty) {
                 final isWide = MediaQuery.sizeOf(context).width >= 600;
                 final chips = resolvedSports.map((sport) {
+                  final profileId = profile?.id;
+                  final userId = profile?.userId;
+                  final personaType =
+                      profile?.personaType ?? profile?.profileType ?? 'player';
+
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface.withValues(alpha: 0.9),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: colorScheme.outline.withValues(alpha: 0.15),
-                      ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (sport.emoji != null && sport.emoji!.isNotEmpty) ...[
-                          Text(
-                            sport.emoji!,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(
-                          sport.nameEn,
-                          style: textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap:
+                          profileId == null ||
+                              userId == null ||
+                              (personaType != 'player' &&
+                                  personaType != 'organiser')
+                          ? null
+                          : () {
+                              context.push(
+                                RoutePaths.sportProfile,
+                                extra: SportProfileRouteArgs(
+                                  profileId: profileId,
+                                  userId: userId,
+                                  displayName: profile?.displayName ?? '',
+                                  personaType: personaType,
+                                  sportId: sport.id,
+                                  sportKey:
+                                      sport.sportKey ??
+                                      sport.nameEn.toLowerCase().replaceAll(
+                                        ' ',
+                                        '_',
+                                      ),
+                                  sportName: sport.nameEn,
+                                  avatarUrl: profile?.avatarUrl,
+                                  sportEmoji: sport.emoji,
+                                ),
+                              );
+                            },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.15),
                           ),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (sport.emoji != null &&
+                                sport.emoji!.isNotEmpty) ...[
+                              Text(
+                                sport.emoji!,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(
+                              sport.nameEn,
+                              style: textTheme.labelLarge?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   );
                 }).toList();
@@ -1024,14 +1076,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: chips
-                        .map(
-                          (c) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: c,
-                          ),
-                        )
-                        .toList(),
+                    children: [
+                      const SizedBox(width: AppSpacing.lg),
+                      ...chips.map(
+                        (c) => Padding(
+                          padding: const EdgeInsets.only(right: AppSpacing.md),
+                          child: c,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -1081,7 +1134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         const SizedBox(height: 4),
         // Tab content
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 0),
           child: _buildTabContent(context, profileId),
         ),
       ],
@@ -1094,11 +1147,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       case 0:
         return _buildPostsTabContent(context, profileId);
       case 1:
-        return _buildEmptyTabContent(context, 'No replies yet');
+        return _buildRepliesTabContent(context, profileId);
       case 2:
-        return _buildEmptyTabContent(context, 'No liked posts yet');
+        return _buildLikedTabContent(context, profileId);
       case 3:
-        return _buildEmptyTabContent(context, 'No reposts yet');
+        return _buildRepostsTabContent(context, profileId);
       default:
         return _buildPostsTabContent(context, profileId);
     }
@@ -1109,10 +1162,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
+    return _buildPostsList(postsAsync, 'No posts yet');
+  }
+
+  Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No replies yet');
+  }
+
+  Widget _buildLikedTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No liked posts yet');
+  }
+
+  Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No reposts yet');
+  }
+
+  Widget _buildPostsList(
+    AsyncValue<List<Post>> postsAsync,
+    String emptyMessage,
+  ) {
     return postsAsync.when(
       data: (posts) {
         if (posts.isEmpty) {
-          return _buildEmptyTabContent(context, 'No posts yet');
+          return _buildEmptyTabContent(context, emptyMessage);
         }
         return Column(
           mainAxisSize: MainAxisSize.min,

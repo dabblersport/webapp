@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/language_detector.dart';
 import '../models/social/comment.dart';
 import '../models/social/post.dart';
 import '../models/social/post_create_request.dart';
@@ -163,6 +164,37 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     return row;
   }
 
+  Future<List<Post>> _fetchPostsByIds(
+    List<String> postIds, {
+    String? sportId,
+  }) async {
+    if (postIds.isEmpty) {
+      return const <Post>[];
+    }
+
+    var query = _db
+        .from('posts')
+        .select()
+        .inFilter('id', postIds)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false);
+
+    if (sportId != null && sportId.isNotEmpty) {
+      query = query.eq('sport_id', sportId);
+    }
+
+    final rows = await query;
+    final enriched = await _enrichRows(rows);
+    final postsById = {
+      for (final row in enriched) (row['id'] as String): Post.fromJson(row),
+    };
+
+    return postIds
+        .where(postsById.containsKey)
+        .map((postId) => postsById[postId]!)
+        .toList();
+  }
+
   /// Resolve the `profiles.id` for the currently authenticated user.
   ///
   /// Mirrors [AuthService.getUserProfile] selection rules:
@@ -270,6 +302,224 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   });
 
   @override
+  Future<Result<List<Post>, Failure>> getUserPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('posts')
+        .select()
+        .eq('author_profile_id', profileId)
+        .eq('sport_id', sportId)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+    final enriched = await _enrichRows(rows);
+    return enriched.map((r) => Post.fromJson(r)).toList();
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getCommentedPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('post_comments')
+        .select('post_id, created_at')
+        .eq('author_profile_id', profileId)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+
+    for (final row in rows) {
+      final postId = row['post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
+        continue;
+      }
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds, sportId: sportId);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getReactedPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('post_reactions')
+        .select('post_id, created_at')
+        .eq('actor_profile_id', profileId)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+
+    for (final row in rows) {
+      final postId = row['post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
+        continue;
+      }
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds, sportId: sportId);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getUserLikedPosts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('post_likes')
+        .select('post_id, created_at')
+        .eq('profile_id', profileId)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+    for (final row in rows) {
+      final postId = row['post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId))
+        continue;
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getUserCommentedPosts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('post_comments')
+        .select('post_id, created_at')
+        .eq('author_profile_id', profileId)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+    for (final row in rows) {
+      final postId = row['post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId))
+        continue;
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getUserReposts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('post_reposts')
+        .select('original_post_id, created_at')
+        .eq('reposter_profile_id', profileId)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+    for (final row in rows) {
+      final postId = row['original_post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId))
+        continue;
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getHashtagFeed({
+    required String hashtag,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final normalised = hashtag.trim().replaceFirst(RegExp(r'^#+'), '')
+        .toLowerCase();
+    if (normalised.isEmpty) return const <Post>[];
+
+    final hashtagRows = await _db
+        .from('hashtags')
+        .select('id')
+        .eq('tag', normalised)
+        .limit(1);
+
+    if (hashtagRows.isEmpty) return const <Post>[];
+    final hashtagId = hashtagRows.first['id'] as String;
+
+    final rows = await _db
+        .from('post_hashtags')
+        .select('post_id, created_at')
+        .eq('hashtag_id', hashtagId)
+        .order('created_at', ascending: false)
+        .range(0, (limit + offset) * 3);
+
+    final orderedIds = <String>[];
+    final seen = <String>{};
+    for (final row in rows) {
+      final postId = row['post_id'];
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
+        continue;
+      }
+      seen.add(postId);
+      orderedIds.add(postId);
+    }
+
+    final posts = await _fetchPostsByIds(orderedIds);
+    final start = offset.clamp(0, posts.length);
+    final end = (start + limit).clamp(0, posts.length);
+    return posts.sublist(start, end);
+  });
+
+  @override
   Future<Result<Post, Failure>> getPost(String postId) => guard(() async {
     final row = await _db.from('posts').select().eq('id', postId).single();
     final enriched = await _enrichRows([row]);
@@ -367,6 +617,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     print('CURRENT TIME: ${DateTime.now()}');
 
     final isCircleVisibility = visibility == 'circle';
+    final extractedTags = body != null ? extractHashtags(body) : <String>[];
+    final authorUserId = activeSession.user.id;
     if (isCircleVisibility && (circleId == null || circleId.isEmpty)) {
       return const Err(
         Failure(
@@ -414,13 +666,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
             if (body != null) 'p_body': body,
             if (sportKey != null) 'p_sport': sportKey,
             'p_media': <dynamic>[],
-            'p_tags': <String>[],
+            'p_tags': extractedTags,
             if (vibeId != null) 'p_primary_vibe_id': vibeId,
             'p_vibe_ids': vibeId != null ? <String>[vibeId] : <String>[],
             'p_circle_ids': <String>[circleId!],
           },
         );
-        return Post.fromJson(res as Map<String, dynamic>);
+        final post = Post.fromJson(res as Map<String, dynamic>);
+        if (extractedTags.isNotEmpty) {
+          await _linkHashtags(
+            postId: post.id,
+            tags: extractedTags,
+            sportId: sportId,
+            authorUserId: authorUserId,
+          );
+        }
+        return post;
       }
 
       final data = <String, dynamic>{
@@ -442,7 +703,16 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       print('INSERT PAYLOAD: $data');
 
       final row = await _db.from('posts').insert(data).select().single();
-      return Post.fromJson(row);
+      final post = Post.fromJson(row);
+      if (extractedTags.isNotEmpty) {
+        await _linkHashtags(
+          postId: post.id,
+          tags: extractedTags,
+          sportId: sportId,
+          authorUserId: authorUserId,
+        );
+      }
+      return post;
     });
   }
 
@@ -583,69 +853,90 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   }) async {
     if (tags == null || tags.isEmpty) return;
 
-    try {
-      for (final tag in tags) {
-        final normalised = tag.toLowerCase().trim();
+    for (final tag in tags) {
+      try {
+        final normalised = tag
+            .toLowerCase()
+            .trim()
+            .replaceFirst(RegExp(r'^#+'), '');
         if (normalised.isEmpty) continue;
 
-        // Upsert into public.hashtags (unique on `tag`).
-        // On conflict just select the existing row to get the id.
-        final existing = await _db
-            .from('hashtags')
-            .select('id')
-            .eq('tag', normalised)
-            .maybeSingle();
+        Map<String, dynamic>? existing;
+        try {
+          existing = await _db
+              .from('hashtags')
+              .select('id')
+              .eq('tag', normalised)
+              .maybeSingle();
+        } catch (_) {
+          existing = null;
+        }
+
+        if (existing == null) {
+          try {
+            existing = await _db
+                .from('hashtags')
+                .select('id')
+                .eq('slug', normalised)
+                .maybeSingle();
+          } catch (_) {
+            existing = null;
+          }
+        }
 
         String hashtagId;
         if (existing != null) {
           hashtagId = existing['id'] as String;
-          // Bump usage_count.
-          await _db
-              .rpc(
-                'increment_field',
-                params: {
-                  'row_id': hashtagId,
-                  'table_name': 'hashtags',
-                  'field_name': 'usage_count',
-                },
-              )
-              .catchError((_) async {
-                // Fallback: direct update if RPC doesn't exist.
-                await _db
-                    .from('hashtags')
-                    .update({'last_used_at': DateTime.now().toIso8601String()})
-                    .eq('id', hashtagId);
-              });
         } else {
-          // Insert new hashtag row.
-          final row = await _db
-              .from('hashtags')
-              .insert({
-                'tag': normalised,
-                'slug': normalised,
-                'display_tag': '#$normalised',
-                'usage_count': 1,
-                'first_used_at': DateTime.now().toIso8601String(),
-                'last_used_at': DateTime.now().toIso8601String(),
-              })
-              .select('id')
-              .single();
+          Map<String, dynamic>? row;
+
+          // Try minimal insert first (most schema-compatible).
+          try {
+            row = await _db
+                .from('hashtags')
+                .insert({'tag': normalised})
+                .select('id')
+                .single();
+          } catch (_) {}
+
+          // Fallback: schemas that rely on slug.
+          if (row == null) {
+            try {
+              row = await _db
+                  .from('hashtags')
+                  .insert({'slug': normalised})
+                  .select('id')
+                  .single();
+            } catch (_) {}
+          }
+
+          // Fallback: schemas that expect both.
+          if (row == null) {
+            row = await _db
+                .from('hashtags')
+                .insert({'tag': normalised, 'slug': normalised})
+                .select('id')
+                .single();
+          }
+
           hashtagId = row['id'] as String;
         }
 
-        // Insert junction row (composite PK will silently conflict
-        // if the same post+hashtag is linked twice).
+        // Insert junction row (composite PK prevents duplicates).
         await _db.from('post_hashtags').upsert({
           'post_id': postId,
           'hashtag_id': hashtagId,
           if (sportId != null) 'sport_id': sportId,
           if (authorUserId != null) 'created_by': authorUserId,
         }, onConflict: 'post_id,hashtag_id');
+      } catch (e) {
+        if (e is PostgrestException && e.code == '42703') {
+          rethrow;
+        }
+        // Best-effort per tag — don't fail post creation.
+        // ignore: avoid_print
+        print('[PostRepo] _linkHashtags warning for "$tag": $e');
       }
-    } catch (e) {
-      // Best-effort — don't let hashtag linking break post creation.
-      // ignore: avoid_print
-      print('[PostRepo] _linkHashtags warning: $e');
     }
   }
 

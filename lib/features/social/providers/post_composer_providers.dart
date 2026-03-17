@@ -537,6 +537,14 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
     // 2. Detect language
     final body = s.body.trim().isEmpty ? null : s.body.trim();
+    if (body != null && !hasNonHashtagWord(body)) {
+      final err = const Failure(
+        category: FailureCode.validation,
+        message: 'Add at least one non-hashtag word to your post body.',
+      );
+      state = s.copyWith(isSubmitting: false, error: err.message);
+      return Err(err);
+    }
     final lang = body != null ? detectLanguage(body) : null;
 
     // 3. Merge manual tags + auto-extracted hashtags (deduplicated)

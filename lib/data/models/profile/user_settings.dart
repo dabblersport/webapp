@@ -13,6 +13,7 @@ enum NotificationSound { standard, subtle, off }
 class UserSettings {
   // Display preferences
   final ThemeMode themeMode;
+  final String themeCategory;
   final bool enableAnimations;
   final double textScale;
   final bool highContrastMode;
@@ -65,6 +66,7 @@ class UserSettings {
 
   const UserSettings({
     this.themeMode = ThemeMode.system,
+    this.themeCategory = 'main',
     this.enableAnimations = true,
     this.textScale = 1.0,
     this.highContrastMode = false,
@@ -205,6 +207,7 @@ class UserSettings {
   /// Creates a copy with updated fields
   UserSettings copyWith({
     ThemeMode? themeMode,
+    String? themeCategory,
     bool? enableAnimations,
     double? textScale,
     bool? highContrastMode,
@@ -245,6 +248,7 @@ class UserSettings {
   }) {
     return UserSettings(
       themeMode: themeMode ?? this.themeMode,
+      themeCategory: themeCategory ?? this.themeCategory,
       enableAnimations: enableAnimations ?? this.enableAnimations,
       textScale: textScale ?? this.textScale,
       highContrastMode: highContrastMode ?? this.highContrastMode,
@@ -299,6 +303,7 @@ class UserSettings {
         (e) => e.toString().split('.').last == json['themeMode'],
         orElse: () => ThemeMode.system,
       ),
+      themeCategory: json['themeCategory'] as String? ?? 'main',
       enableAnimations: json['enableAnimations'] as bool? ?? true,
       textScale: (json['textScale'] as num?)?.toDouble() ?? 1.0,
       highContrastMode: json['highContrastMode'] as bool? ?? false,
@@ -360,6 +365,7 @@ class UserSettings {
   Map<String, dynamic> toJson() {
     return {
       'themeMode': themeMode.toString().split('.').last,
+      'themeCategory': themeCategory,
       'enableAnimations': enableAnimations,
       'textScale': textScale,
       'highContrastMode': highContrastMode,
@@ -405,6 +411,7 @@ class UserSettings {
     if (identical(this, other)) return true;
     return other is UserSettings &&
         other.themeMode == themeMode &&
+        other.themeCategory == themeCategory &&
         other.enableAnimations == enableAnimations &&
         other.textScale == textScale &&
         other.highContrastMode == highContrastMode &&
@@ -448,6 +455,7 @@ class UserSettings {
   int get hashCode {
     return Object.hashAll([
       themeMode,
+      themeCategory,
       enableAnimations,
       textScale,
       highContrastMode,

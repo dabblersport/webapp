@@ -91,6 +91,30 @@ class SupabaseErrorMapper {
     final lowerMessage = message.toLowerCase();
     final lowerDetails = (exception.details ?? '').toString().toLowerCase();
 
+    if (lowerMessage.contains('posts_body_has_non_hashtag_word')) {
+      return SupabaseValidationFailure(
+        message:
+            'Body cannot be only hashtags. Add at least one regular word, or allow hashtag-only posts in DB.',
+        details: details,
+        code: code,
+        cause: exception,
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (code == '42703' &&
+        lowerMessage.contains('updated_at') &&
+        lowerMessage.contains('hashtags')) {
+      return SupabaseValidationFailure(
+        message:
+            'Database schema mismatch: hashtags.updated_at is missing. Apply the hashtags schema migration, then retry.',
+        details: details,
+        code: code,
+        cause: exception,
+        stackTrace: stackTrace,
+      );
+    }
+
     // Expired/invalid JWT should be treated as an auth/session problem.
     // PostgREST commonly uses PGRST303 with "Unauthorized" details.
     if (lowerMessage.contains('jwt expired') ||

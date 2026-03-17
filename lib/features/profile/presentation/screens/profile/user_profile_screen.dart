@@ -13,12 +13,18 @@ import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
 import '../../widgets/profile/player_sport_profile_header.dart';
+import '../../models/sport_profile_route_args.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show userPostsProvider, sportsProvider;
+    show
+        userPostsProvider,
+        sportsProvider,
+        userLikedPostsProvider,
+        userCommentedPostsProvider,
+        userRepostedPostsProvider;
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -954,30 +960,63 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     final isWide = MediaQuery.sizeOf(context).width >= 600;
     final chips = resolvedSports.map((sport) {
+      final profileId = profile?.id;
+      final userId = profile?.userId;
+      final personaType = profile?.personaType ?? profile?.profileType ?? '';
+
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: colorScheme.surface.withValues(alpha: 0.9),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
+        child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.15),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (sport.emoji != null && sport.emoji!.isNotEmpty) ...[
-              Text(sport.emoji!, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              sport.nameEn,
-              style: textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
+          onTap:
+              profileId == null ||
+                  userId == null ||
+                  (personaType != 'player' && personaType != 'organiser')
+              ? null
+              : () {
+                  context.push(
+                    RoutePaths.sportProfile,
+                    extra: SportProfileRouteArgs(
+                      profileId: profileId,
+                      userId: userId,
+                      displayName: profile?.displayName ?? '',
+                      personaType: personaType,
+                      sportId: sport.id,
+                      sportKey:
+                          sport.sportKey ??
+                          sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+                      sportName: sport.nameEn,
+                      avatarUrl: profile?.avatarUrl,
+                      sportEmoji: sport.emoji,
+                    ),
+                  );
+                },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: colorScheme.surface.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.15),
               ),
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (sport.emoji != null && sport.emoji!.isNotEmpty) ...[
+                  Text(sport.emoji!, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 6),
+                ],
+                Text(
+                  sport.nameEn,
+                  style: textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }).toList();
@@ -1219,11 +1258,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       case 0:
         return _buildPostsTabContent(context, profileId);
       case 1:
-        return _buildEmptyTabContent(context, 'No replies yet');
+        return _buildRepliesTabContent(context, profileId);
       case 2:
-        return _buildEmptyTabContent(context, 'No liked posts yet');
+        return _buildLikedTabContent(context, profileId);
       case 3:
-        return _buildEmptyTabContent(context, 'No reposts yet');
+        return _buildRepostsTabContent(context, profileId);
       default:
         return _buildPostsTabContent(context, profileId);
     }
@@ -1234,10 +1273,41 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
+    return _buildPostsList(postsAsync, 'No posts yet');
+  }
+
+  Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No replies yet');
+  }
+
+  Widget _buildLikedTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No liked posts yet');
+  }
+
+  Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
+    final postsAsync = profileId != null
+        ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
+        : const AsyncData<List<Post>>([]);
+
+    return _buildPostsList(postsAsync, 'No reposts yet');
+  }
+
+  Widget _buildPostsList(
+    AsyncValue<List<Post>> postsAsync,
+    String emptyMessage,
+  ) {
     return postsAsync.when(
       data: (posts) {
         if (posts.isEmpty) {
-          return _buildEmptyTabContent(context, 'No posts yet');
+          return _buildEmptyTabContent(context, emptyMessage);
         }
         return Column(
           mainAxisSize: MainAxisSize.min,

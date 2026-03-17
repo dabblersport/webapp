@@ -52,6 +52,7 @@ import 'package:dabbler/features/misc/presentation/screens/rewards_screen.dart';
 
 // Profile screens
 import 'package:dabbler/features/profile/presentation/screens/profile/profile_screen.dart';
+import 'package:dabbler/features/profile/presentation/screens/profile/sport_profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/profile_avatar_screen.dart';
@@ -90,8 +91,10 @@ import 'package:dabbler/features/misc/presentation/screens/create_game_screen.da
 
 // Social screens
 import 'package:dabbler/features/social/presentation/screens/post_detail_screen.dart';
+import 'package:dabbler/features/social/presentation/screens/hashtag_feed_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_screen.dart';
+import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_welcome_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_friends_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/social/social_onboarding_privacy_screen.dart';
@@ -761,6 +764,27 @@ class AppRouter {
       ),
     ),
 
+    GoRoute(
+      path: RoutePaths.sportProfile,
+      name: RouteNames.sportProfile,
+      pageBuilder: (context, state) {
+        final args = state.extra;
+        if (args is! SportProfileRouteArgs) {
+          return SharedAxisTransitionPage(
+            key: state.pageKey,
+            child: const ErrorPage(message: 'Missing sport profile context.'),
+            type: SharedAxisType.horizontal,
+          );
+        }
+
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: SportProfileScreen(args: args),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
     // Organiser Venue Submissions
     GoRoute(
       path: RoutePaths.myVenueSubmissions,
@@ -1158,6 +1182,24 @@ class AppRouter {
         key: state.pageKey,
         child: const SocialSearchScreen(),
       ),
+    ),
+
+    GoRoute(
+      path: '${RoutePaths.hashtagFeed}/:slug',
+      name: RouteNames.hashtagFeed,
+      pageBuilder: (context, state) {
+        final slug = state.pathParameters['slug'] ?? '';
+        final initialPostCount = int.tryParse(
+          state.uri.queryParameters['postCount'] ?? '',
+        );
+        return FadeThroughTransitionPage(
+          key: state.pageKey,
+          child: HashtagFeedScreen(
+            hashtagSlug: Uri.decodeComponent(slug),
+            initialPostCount: initialPostCount,
+          ),
+        );
+      },
     ),
 
     GoRoute(

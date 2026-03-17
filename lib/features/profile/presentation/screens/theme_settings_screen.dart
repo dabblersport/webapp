@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/design_system/theme/app_theme.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
@@ -43,6 +44,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                     child: Column(
                       children: [
                         _buildCurrentThemeStatus(),
+                        const SizedBox(height: 20),
+                        _buildThemeCategorySection(),
                         const SizedBox(height: 20),
                         _buildThemeModeSection(),
                         const SizedBox(height: 20),
@@ -98,30 +101,31 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final isDark = _themeService.currentBrightness == Brightness.dark;
+    final previewScheme = _previewSchemeFor(_themeService.themeCategory);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF4A148C) : const Color(0xFFE0C7FF),
+        color: previewScheme.primaryContainer,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            isDark ? Icons.nightlight_round : Icons.wb_sunny,
+            _themeService.currentBrightness == Brightness.dark
+                ? Icons.nightlight_round
+                : Icons.wb_sunny,
             size: 48,
-            color: isDark ? Colors.white : Colors.black87,
+            color: previewScheme.primary,
           ),
           const SizedBox(height: 16),
           Text(
             'Customize your theme',
             style: textTheme.headlineSmall?.copyWith(
-              color: isDark ? Colors.white : Colors.black87,
+              color: previewScheme.onPrimaryContainer,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -129,13 +133,21 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           Text(
             'Choose how the app should look and when themes should automatically switch.',
             style: textTheme.bodyMedium?.copyWith(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : Colors.black.withValues(alpha: 0.7),
+              color: previewScheme.onPrimaryContainer.withValues(alpha: 0.8),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildThemeCategorySection() {
+    return _buildSettingsCard(
+      'Color Theme',
+      'Apply one token set across the entire app',
+      AppTheme.supportedCategories
+          .map((category) => _buildThemeCategoryOption(category))
+          .toList(growable: false),
     );
   }
 
@@ -217,6 +229,91 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           ThemeMode.system,
         ),
       ],
+    );
+  }
+
+  Widget _buildThemeCategoryOption(String category) {
+    final normalized = AppTheme.normalizeCategory(category);
+    final isSelected = _themeService.themeCategory == normalized;
+    final previewScheme = _previewSchemeFor(normalized);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: () {
+        _themeService.setThemeCategory(normalized);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.05)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary.withValues(alpha: 0.3)
+                : colorScheme.outline,
+          ),
+        ),
+        child: Row(
+          children: [
+            _buildThemePreviewSwatches(previewScheme),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    ThemeService.getThemeCategoryDisplayName(normalized),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? colorScheme.primary : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Use ${ThemeService.getThemeCategoryDisplayName(normalized)} tokens app-wide',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check, size: 16, color: colorScheme.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemePreviewSwatches(ColorScheme previewScheme) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildThemePreviewDot(previewScheme.primary),
+        const SizedBox(width: 6),
+        _buildThemePreviewDot(previewScheme.secondary),
+        const SizedBox(width: 6),
+        _buildThemePreviewDot(previewScheme.tertiary),
+      ],
+    );
+  }
+
+  Widget _buildThemePreviewDot(Color color) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+
+  ColorScheme _previewSchemeFor(String category) {
+    return AppTheme.getColorSchemeSync(
+      category,
+      _themeService.currentBrightness,
     );
   }
 

@@ -761,8 +761,6 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   }
 
   /// Hashtag result tile.
-  ///
-  /// TODO(router): add /hashtag/:slug route when ready.
   Widget _buildHashtagTile(HashtagSearchResult hashtag) {
     return ListTile(
       leading: CircleAvatar(
@@ -772,14 +770,11 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
       title: Text('#${hashtag.slug}'),
       subtitle: Text('${hashtag.postCount} posts'),
       trailing: const Icon(Icons.chevron_right, size: 18),
-      onTap: () {
-        // TODO(router): context.push('/hashtag/${hashtag.slug}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('#${hashtag.slug} — hashtag feed coming soon'),
-          ),
-        );
-      },
+      onTap: () => context.pushNamed(
+        RouteNames.hashtagFeed,
+        pathParameters: {'slug': hashtag.slug},
+        queryParameters: {'postCount': '${hashtag.postCount}'},
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
     );
   }

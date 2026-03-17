@@ -39,6 +39,58 @@ abstract class PostRepository {
     int offset = 0,
   });
 
+  /// All posts authored by a specific profile and scoped to a sport.
+  Future<Result<List<Post>, Failure>> getUserPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts in a sport that the target profile has commented on.
+  Future<Result<List<Post>, Failure>> getCommentedPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts in a sport that the target profile has reacted to.
+  Future<Result<List<Post>, Failure>> getReactedPostsBySport({
+    required String profileId,
+    required String sportId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts that a specific profile has liked.
+  Future<Result<List<Post>, Failure>> getUserLikedPosts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts that a specific profile has commented on.
+  Future<Result<List<Post>, Failure>> getUserCommentedPosts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts that a specific profile has reposted.
+  Future<Result<List<Post>, Failure>> getUserReposts({
+    required String profileId,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts containing a specific hashtag.
+  Future<Result<List<Post>, Failure>> getHashtagFeed({
+    required String hashtag,
+    int limit = 20,
+    int offset = 0,
+  });
+
   /// Single post by ID.
   Future<Result<Post, Failure>> getPost(String postId);
 

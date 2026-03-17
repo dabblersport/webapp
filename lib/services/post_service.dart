@@ -1,5 +1,6 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
@@ -56,6 +57,15 @@ class PostService {
         Failure(
           category: FailureCode.validation,
           message: 'Post must have body text or media.',
+        ),
+      );
+    }
+
+    if (hasBody && !hasNonHashtagWord(body)) {
+      return const Err(
+        Failure(
+          category: FailureCode.validation,
+          message: 'Add at least one non-hashtag word to your post body.',
         ),
       );
     }

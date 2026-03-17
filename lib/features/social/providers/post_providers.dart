@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/comment.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
@@ -90,6 +91,54 @@ final userPostsProvider = FutureProvider.autoDispose
       const pageSize = 20;
       final repo = ref.watch(postRepositoryProvider);
       final result = await repo.getUserPosts(
+        profileId: params.profileId,
+        limit: pageSize,
+        offset: params.page * pageSize,
+      );
+      return result.fold(
+        (err) => throw Exception(err.message),
+        (posts) => posts,
+      );
+    });
+
+/// Posts that a specific user profile has liked.
+final userLikedPostsProvider = FutureProvider.autoDispose
+    .family<List<Post>, ({String profileId, int page})>((ref, params) async {
+      const pageSize = 20;
+      final repo = ref.watch(postRepositoryProvider);
+      final result = await repo.getUserLikedPosts(
+        profileId: params.profileId,
+        limit: pageSize,
+        offset: params.page * pageSize,
+      );
+      return result.fold(
+        (err) => throw Exception(err.message),
+        (posts) => posts,
+      );
+    });
+
+/// Posts that a specific user profile has commented on (replies).
+final userCommentedPostsProvider = FutureProvider.autoDispose
+    .family<List<Post>, ({String profileId, int page})>((ref, params) async {
+      const pageSize = 20;
+      final repo = ref.watch(postRepositoryProvider);
+      final result = await repo.getUserCommentedPosts(
+        profileId: params.profileId,
+        limit: pageSize,
+        offset: params.page * pageSize,
+      );
+      return result.fold(
+        (err) => throw Exception(err.message),
+        (posts) => posts,
+      );
+    });
+
+/// Posts that a specific user profile has reposted.
+final userRepostedPostsProvider = FutureProvider.autoDispose
+    .family<List<Post>, ({String profileId, int page})>((ref, params) async {
+      const pageSize = 20;
+      final repo = ref.watch(postRepositoryProvider);
+      final result = await repo.getUserReposts(
         profileId: params.profileId,
         limit: pageSize,
         offset: params.page * pageSize,
@@ -327,6 +376,15 @@ class PostController extends StateNotifier<AsyncValue<void>> {
         Failure(
           category: FailureCode.validation,
           message: 'Add some text, a vibe, or a sport to post.',
+        ),
+      );
+    }
+
+    if (hasBody && !hasNonHashtagWord(body)) {
+      return const Err(
+        Failure(
+          category: FailureCode.validation,
+          message: 'Add at least one non-hashtag word to your post body.',
         ),
       );
     }

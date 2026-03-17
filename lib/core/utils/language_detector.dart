@@ -107,6 +107,42 @@ List<String> extractHashtags(String text) {
   return regex.allMatches(text).map((m) => m.group(1)!).toSet().toList();
 }
 
+/// Returns true when [text] contains at least one word token that is not a
+/// hashtag token.
+///
+/// This mirrors DB constraint `posts_body_has_non_hashtag_word` so the app can
+/// validate before insert and provide a friendly error message.
+bool hasNonHashtagWord(String text) {
+  final tokens = text.trim().split(RegExp(r'\s+'));
+
+  bool containsWordRune(String token) {
+    for (final c in token.runes) {
+      final isDigit = c >= 0x30 && c <= 0x39;
+      if (
+          isDigit ||
+          _isArabic(c) ||
+          _isLatin(c) ||
+          _isCJK(c) ||
+          _isDevanagari(c) ||
+          _isCyrillic(c) ||
+          _isHangul(c) ||
+          _isThai(c)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  for (final raw in tokens) {
+    final token = raw.trim();
+    if (token.isEmpty) continue;
+    if (token.startsWith('#')) continue;
+    if (containsWordRune(token)) return true;
+  }
+
+  return false;
+}
+
 // ── Unicode range checkers ───────────────────────────────────────────
 
 bool _isWhitespace(int c) => c == 0x20 || c == 0x09 || c == 0x0A || c == 0x0D;

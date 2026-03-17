@@ -1,89 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:dabbler/core/design_system/colors/profile_colors.dart';
 
 /// Material 3 ColorScheme extension for app-specific category colors
 ///
 /// This extension adds category colors (main, social, sports, activities, profile)
 /// to the Material 3 ColorScheme, allowing them to be accessed via theme.
 extension AppColorSchemeExtension on ColorScheme {
-  // Category colors for dark theme - from token files
-  static const Color _mainDark = Color(0xFFC18FFF); // Main dark primary
-  static const Color _socialDark = Color(0xFFA6DCFF); // Social dark primary
-  static const Color _sportsDark = Color(0xFF79FFC3); // Sports dark primary
-  static const Color _activitiesDark = Color(
-    0xFFFCDEE8,
-  ); // Activity dark primary
-  static const Color _profileDark = ProfileColors.primaryDark;
+  /// Main category color is the runtime source of truth for all screens.
+  Color get categoryMain => primary;
 
-  // Category container colors for dark theme - from token files
-  static const Color _mainDarkContainer = Color(0xFF7328CE);
-  static const Color _socialDarkContainer = Color(0xFF3473D7);
-  static const Color _sportsDarkContainer = Color(0xFF348638);
+  /// Main category container color is the runtime source of truth for all screens.
+  Color get categoryMainContainer => primaryContainer;
 
-  // Category colors for light theme - from token files
-  static const Color _mainLight = Color(0xFF7328CE); // Main light primary
-  static const Color _socialLight = Color(0xFF3473D7); // Social light primary
-  static const Color _sportsLight = Color(0xFF348638); // Sports light primary
-  static const Color _activitiesLight = Color(
-    0xFFCF3989,
-  ); // Activity light primary
-  static const Color _profileLight = ProfileColors.primaryLight;
+  /// Legacy category aliases intentionally resolve to main tokens.
+  Color get categorySocial => categoryMain;
 
-  // Category container colors for light theme - from token files
-  static const Color _mainLightContainer = Color(0xFFEADDFF);
-  static const Color _socialLightContainer = Color(0xFFA6DCFF);
-  static const Color _sportsLightContainer = Color(0xFF79FFC3);
+  /// Legacy category aliases intentionally resolve to main container tokens.
+  Color get categorySocialContainer => categoryMainContainer;
 
-  /// Main category color (purple)
-  Color get categoryMain =>
-      brightness == Brightness.dark ? _mainDark : _mainLight;
+  /// Legacy category aliases intentionally resolve to main tokens.
+  Color get categorySports => categoryMain;
 
-  /// Main category container color
-  Color get categoryMainContainer =>
-      brightness == Brightness.dark ? _mainDarkContainer : _mainLightContainer;
+  /// Legacy category aliases intentionally resolve to main container tokens.
+  Color get categorySportsContainer => categoryMainContainer;
 
-  /// Social category color (blue)
-  Color get categorySocial =>
-      brightness == Brightness.dark ? _socialDark : _socialLight;
+  /// Legacy category aliases intentionally resolve to main tokens.
+  Color get categoryActivities => categoryMain;
 
-  /// Social category container color
-  Color get categorySocialContainer => brightness == Brightness.dark
-      ? _socialDarkContainer
-      : _socialLightContainer;
-
-  /// Sports category color (green)
-  Color get categorySports =>
-      brightness == Brightness.dark ? _sportsDark : _sportsLight;
-
-  /// Sports category container color
-  Color get categorySportsContainer => brightness == Brightness.dark
-      ? _sportsDarkContainer
-      : _sportsLightContainer;
-
-  /// Activities category color (pink)
-  Color get categoryActivities =>
-      brightness == Brightness.dark ? _activitiesDark : _activitiesLight;
-
-  /// Profile category color (orange)
-  Color get categoryProfile =>
-      brightness == Brightness.dark ? _profileDark : _profileLight;
+  /// Legacy category aliases intentionally resolve to main tokens.
+  Color get categoryProfile => categoryMain;
 
   /// Get category color by name
   Color getCategoryColor(String category) {
-    switch (category.toLowerCase()) {
-      case 'main':
-        return categoryMain;
-      case 'social':
-        return categorySocial;
-      case 'sports':
-        return categorySports;
-      case 'activities':
-        return categoryActivities;
-      case 'profile':
-        return categoryProfile;
-      default:
-        return primary;
-    }
+    return categoryMain;
   }
 }
 

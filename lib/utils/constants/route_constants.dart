@@ -44,6 +44,7 @@ class RoutePaths {
   // Main App
   static const String home = '/home';
   static const String profile = '/profile';
+  static const String sportProfile = '/profile/sport';
   static const String games = '/games';
   static const String social = '/social';
   static const String sports = '/sports';
@@ -94,6 +95,7 @@ class RoutePaths {
   static const String userFriendsList = '/user-friends';
   static const String socialNotifications = '/social-notifications';
   static const String socialSearch = '/social-search';
+  static const String hashtagFeed = '/hashtag';
   static const String socialCreatePost = '/social-create-post';
   static const String socialEditPost = '/social-edit-post';
   static const String socialAnalytics = '/social-analytics';
@@ -153,6 +155,7 @@ class RouteNames {
 
   // Feature Routes
   static const String profile = 'profile';
+  static const String sportProfile = 'sport-profile';
   static const String profileUser = 'profile-user';
   static const String profileEdit = 'profile-edit';
   static const String profileAvatar = 'profile-avatar';
@@ -215,6 +218,7 @@ class RouteNames {
   static const String userFriendsList = 'user-friends-list';
   static const String socialNotifications = 'social-notifications';
   static const String socialSearch = 'social-search';
+  static const String hashtagFeed = 'hashtag-feed';
   static const String socialCreatePost = 'social-create-post';
   static const String socialEditPost = 'social-edit-post';
   static const String socialAnalytics = 'social-analytics';
@@ -250,6 +254,7 @@ class RouteParams {
   static const String userId = 'userId';
   static const String itemId = 'itemId';
   static const String postId = 'postId';
+  static const String hashtagSlug = 'slug';
   static const String conversationId = 'conversationId';
   static const String searchQuery = 'q';
   static const String searchType = 'type';

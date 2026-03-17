@@ -15,15 +15,20 @@ class AppTheme {
     'main',
     'social',
     'sports',
-    'activities',
+    'activity',
     'profile',
   ];
+  static String _activeCategory = defaultCategory;
 
   static final Map<String, Map<Brightness, ColorScheme>> _schemeCache =
       <String, Map<Brightness, ColorScheme>>{};
 
   static bool _initialized = false;
   static bool get isInitialized => _initialized;
+  static String get activeCategory => _activeCategory;
+
+  static String normalizeCategory(String category) =>
+      _normalizeCategory(category);
 
   /// Returns a cached ColorScheme for a category/brightness if available.
   ///
@@ -86,20 +91,30 @@ class AppTheme {
       }
     }
 
-    // Rebuild global themes from token-based main scheme (fallback to static).
-    final mainLight =
-        _schemeCache[defaultCategory]?[Brightness.light] ??
-        _mainLightColorScheme;
-    final mainDark =
-        _schemeCache[defaultCategory]?[Brightness.dark] ?? _mainDarkColorScheme;
-
-    lightTheme = _buildTheme(
-      brightness: Brightness.light,
-      colorScheme: mainLight,
-    );
-    darkTheme = _buildTheme(brightness: Brightness.dark, colorScheme: mainDark);
+    _rebuildActiveThemes();
 
     _initialized = true;
+  }
+
+  static void setActiveCategory(String category) {
+    _activeCategory = _normalizeCategory(category);
+    _rebuildActiveThemes();
+  }
+
+  static ThemeData themeForCategory(String category, Brightness brightness) {
+    return _buildTheme(
+      brightness: brightness,
+      colorScheme: getColorSchemeSync(category, brightness),
+    );
+  }
+
+  static ColorScheme getColorSchemeSync(
+    String category,
+    Brightness brightness,
+  ) {
+    final normalized = _normalizeCategory(category);
+    return _schemeCache[normalized]?[brightness] ??
+        _getStaticColorScheme(normalized, brightness);
   }
 
   /// Light Material Design 3 Theme - Main category
@@ -647,33 +662,55 @@ class AppTheme {
       entry[brightness] = loaded;
       return loaded;
     } catch (_) {
-      // Fallback to static
-      final isDark = brightness == Brightness.dark;
-      switch (category.toLowerCase()) {
-        case 'social':
-          return isDark ? _socialDarkColorScheme : _socialLightColorScheme;
-        case 'sports':
-          return isDark ? _sportsDarkColorScheme : _sportsLightColorScheme;
-        case 'activities':
-        case 'activity':
-          return isDark
-              ? _activitiesDarkColorScheme
-              : _activitiesLightColorScheme;
-        case 'profile':
-          return isDark ? _profileDarkColorScheme : _profileLightColorScheme;
-        case 'main':
-        default:
-          return isDark ? _mainDarkColorScheme : _mainLightColorScheme;
-      }
+      return _getStaticColorScheme(_normalizeCategory(category), brightness);
     }
   }
 
   static String _normalizeCategory(String category) {
     switch (category.toLowerCase()) {
+      case 'activity':
       case 'activities':
         return 'activity';
-      default:
+      case 'main':
+      case 'social':
+      case 'sports':
+      case 'profile':
         return category.toLowerCase();
+      default:
+        return defaultCategory;
+    }
+  }
+
+  static void _rebuildActiveThemes() {
+    lightTheme = _buildTheme(
+      brightness: Brightness.light,
+      colorScheme: getColorSchemeSync(_activeCategory, Brightness.light),
+    );
+    darkTheme = _buildTheme(
+      brightness: Brightness.dark,
+      colorScheme: getColorSchemeSync(_activeCategory, Brightness.dark),
+    );
+  }
+
+  static ColorScheme _getStaticColorScheme(
+    String category,
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
+    switch (category) {
+      case 'social':
+        return isDark ? _socialDarkColorScheme : _socialLightColorScheme;
+      case 'sports':
+        return isDark ? _sportsDarkColorScheme : _sportsLightColorScheme;
+      case 'activity':
+        return isDark
+            ? _activitiesDarkColorScheme
+            : _activitiesLightColorScheme;
+      case 'profile':
+        return isDark ? _profileDarkColorScheme : _profileLightColorScheme;
+      case 'main':
+      default:
+        return isDark ? _mainDarkColorScheme : _mainLightColorScheme;
     }
   }
 

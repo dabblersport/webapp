@@ -89,10 +89,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     }
 
     return FutureBuilder<ColorScheme>(
-      future: AppTheme.getColorScheme('social', brightness),
+      future: AppTheme.getColorScheme(AppTheme.activeCategory, brightness),
       builder: (context, snapshot) {
         final socialScheme =
-            snapshot.data ?? context.getCategoryTheme('main');
+            snapshot.data ?? context.getCategoryTheme(AppTheme.activeCategory);
         final baseTheme = Theme.of(context);
         final themed = baseTheme.copyWith(
           colorScheme: socialScheme,

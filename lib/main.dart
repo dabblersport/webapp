@@ -129,6 +129,9 @@ Future<void> main() async {
           ),
         );
 
+        ThemeService().attachAccountSyncListener();
+        await ThemeService().hydrateFromAccount();
+
         // Push notification service — initialize on mobile to set up
         // foreground handling, token refresh, and notification tap listeners.
         // Wire the tap callback BEFORE init so getInitialMessage can use it.

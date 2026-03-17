@@ -3,6 +3,7 @@ import 'package:dabbler/data/models/profile/user_settings.dart';
 class UserSettingsModel extends UserSettings {
   const UserSettingsModel({
     super.themeMode,
+    super.themeCategory,
     super.enableAnimations,
     super.textScale,
     super.highContrastMode,
@@ -46,6 +47,7 @@ class UserSettingsModel extends UserSettings {
   factory UserSettingsModel.fromEntity(UserSettings entity) {
     return UserSettingsModel(
       themeMode: entity.themeMode,
+      themeCategory: entity.themeCategory,
       enableAnimations: entity.enableAnimations,
       textScale: entity.textScale,
       highContrastMode: entity.highContrastMode,
@@ -90,6 +92,7 @@ class UserSettingsModel extends UserSettings {
   factory UserSettingsModel.fromJson(Map<String, dynamic> json) {
     return UserSettingsModel(
       themeMode: _parseThemeMode(json['theme_mode']),
+      themeCategory: json['theme_category'] as String? ?? 'main',
       enableAnimations: _parseBoolWithDefault(json['enable_animations'], true),
       textScale: _parseDoubleWithDefault(json['text_scale'], 1.0),
       highContrastMode: _parseBoolWithDefault(
@@ -223,6 +226,7 @@ class UserSettingsModel extends UserSettings {
   Map<String, dynamic> toJson() {
     return {
       'theme_mode': themeMode.name,
+      'theme_category': themeCategory,
       'enable_animations': enableAnimations,
       'text_scale': textScale,
       'high_contrast_mode': highContrastMode,
@@ -267,6 +271,7 @@ class UserSettingsModel extends UserSettings {
   Map<String, dynamic> toExternalJson() {
     return {
       'theme_mode': themeMode.name,
+      'theme_category': themeCategory,
       'enable_animations': enableAnimations,
       'text_scale': textScale,
       'high_contrast_mode': highContrastMode,
@@ -311,6 +316,7 @@ class UserSettingsModel extends UserSettings {
   Map<String, dynamic> toUpdateJson() {
     return {
       'theme_mode': themeMode.name,
+      'theme_category': themeCategory,
       'enable_animations': enableAnimations,
       'text_scale': textScale,
       'high_contrast_mode': highContrastMode,
@@ -357,6 +363,7 @@ class UserSettingsModel extends UserSettings {
     return {
       'Appearance': {
         'theme_mode': themeMode.name,
+        'theme_category': themeCategory,
         'text_scale': textScale,
         'high_contrast_mode': highContrastMode,
         'large_text_enabled': largeTextEnabled,
@@ -549,6 +556,7 @@ class UserSettingsModel extends UserSettings {
   @override
   UserSettingsModel copyWith({
     ThemeMode? themeMode,
+    String? themeCategory,
     bool? enableAnimations,
     double? textScale,
     bool? highContrastMode,
@@ -589,6 +597,7 @@ class UserSettingsModel extends UserSettings {
   }) {
     return UserSettingsModel(
       themeMode: themeMode ?? this.themeMode,
+      themeCategory: themeCategory ?? this.themeCategory,
       enableAnimations: enableAnimations ?? this.enableAnimations,
       textScale: textScale ?? this.textScale,
       highContrastMode: highContrastMode ?? this.highContrastMode,
@@ -640,6 +649,7 @@ class UserSettingsModel extends UserSettings {
   UserSettings toEntity() {
     return UserSettings(
       themeMode: themeMode,
+      themeCategory: themeCategory,
       enableAnimations: enableAnimations,
       textScale: textScale,
       highContrastMode: highContrastMode,
