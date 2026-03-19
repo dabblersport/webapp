@@ -150,7 +150,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final user = _authService.getCurrentUser();
       if (user?.id == null) return;
 
-        final response = await _fetchPreferredProfileRow(user!.id);
+      final response = await _fetchPreferredProfileRow(user!.id);
 
       if (!mounted) return;
 

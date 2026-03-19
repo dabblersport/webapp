@@ -124,8 +124,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .inFilter('id', profileIds.toList());
 
     for (final profileRow in profileRows) {
-      profilesMap[profileRow['id'] as String] =
-          Map<String, dynamic>.from(profileRow);
+      profilesMap[profileRow['id'] as String] = Map<String, dynamic>.from(
+        profileRow,
+      );
     }
 
     return rows.map((raw) {
@@ -355,8 +356,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .order('created_at', ascending: false, referencedTable: 'posts')
         .range(offset, offset + limit - 1);
     final postRows = rows
-      .map((r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>))
-      .toList();
+        .map(
+          (r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>),
+        )
+        .toList();
     final enriched = await _enrichRows(postRows);
     final hydrated = await _attachOriginalPosts(enriched);
     return hydrated.map((r) => Post.fromJson(r)).toList();
@@ -375,8 +378,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .order('created_at', ascending: false, referencedTable: 'posts')
         .range(offset, offset + limit - 1);
     final postRows = rows
-      .map((r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>))
-      .toList();
+        .map(
+          (r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>),
+        )
+        .toList();
     final enriched = await _enrichRows(postRows);
     final hydrated = await _attachOriginalPosts(enriched);
     return hydrated.map((r) => Post.fromJson(r)).toList();
