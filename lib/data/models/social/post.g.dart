@@ -66,6 +66,8 @@ _$PostImpl _$$PostImplFromJson(Map<String, dynamic> json) => _$PostImpl(
   editedAt: json['edited_at'] == null
       ? null
       : DateTime.parse(json['edited_at'] as String),
+  repostCount: (json['repost_count'] as num?)?.toInt() ?? 0,
+  originalPost: _originalPostFromJson(json['original_post']),
 );
 
 Map<String, dynamic> _$$PostImplToJson(
@@ -116,4 +118,6 @@ Map<String, dynamic> _$$PostImplToJson(
   'updated_at': instance.updatedAt.toIso8601String(),
   'expires_at': instance.expiresAt?.toIso8601String(),
   'edited_at': instance.editedAt?.toIso8601String(),
+  'repost_count': instance.repostCount,
+  'original_post': _originalPostToJson(instance.originalPost),
 };

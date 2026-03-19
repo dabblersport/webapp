@@ -202,13 +202,17 @@ class FeedNotifier extends StateNotifier<FeedState> {
     if (!mounted) return;
 
     result.fold(
-      (err) => state = state.copyWith(isLoading: false, error: err.message),
-      (posts) => state = state.copyWith(
-        posts: posts,
-        isLoading: false,
-        hasMore: posts.length >= _pageSize,
-        hasNewPosts: false,
-      ),
+      (err) {
+        state = state.copyWith(isLoading: false, error: err.message);
+      },
+      (posts) {
+        state = state.copyWith(
+          posts: posts,
+          isLoading: false,
+          hasMore: posts.length >= _pageSize,
+          hasNewPosts: false,
+        );
+      },
     );
   }
 

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/data/models/rewards/leaderboard_entry.dart';
 
 class PodiumWidget extends StatefulWidget {
@@ -433,19 +436,12 @@ class _PodiumWidgetState extends State<PodiumWidget>
                     // User avatar
                     Hero(
                       tag: 'podium_avatar_${entry.userId}',
-                      child: CircleAvatar(
-                        radius: position == 0 ? 28 : 24,
-                        backgroundColor: Colors.grey[200],
-                        backgroundImage: entry.avatarUrl != null
-                            ? NetworkImage(entry.avatarUrl!)
-                            : null,
-                        child: entry.avatarUrl == null
-                            ? Icon(
-                                Icons.person,
-                                size: position == 0 ? 28 : 24,
-                                color: Colors.grey[600],
-                              )
-                            : null,
+                      child: DSAvatar(
+                        size: AvatarSize.medium,
+                        customDimension: position == 0 ? 56.0 : 48.0,
+                        imageUrl: entry.avatarUrl,
+                        displayName: entry.username,
+                        context: AvatarContext.sports,
                       ),
                     ),
 

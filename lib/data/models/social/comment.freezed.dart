@@ -35,6 +35,16 @@ mixin _$PostComment {
   String get body => throw _privateConstructorUsedError;
   @JsonKey(name: 'parent_comment_id')
   String? get parentCommentId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'image_url')
+  String? get imageUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'gif_url')
+  String? get gifUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location_name')
+  String? get locationName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location_lat')
+  double? get locationLat => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location_lng')
+  double? get locationLng => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_deleted')
   bool get isDeleted => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_hidden_admin')
@@ -68,6 +78,11 @@ abstract class $PostCommentCopyWith<$Res> {
     @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     String body,
     @JsonKey(name: 'parent_comment_id') String? parentCommentId,
+    @JsonKey(name: 'image_url') String? imageUrl,
+    @JsonKey(name: 'gif_url') String? gifUrl,
+    @JsonKey(name: 'location_name') String? locationName,
+    @JsonKey(name: 'location_lat') double? locationLat,
+    @JsonKey(name: 'location_lng') double? locationLng,
     @JsonKey(name: 'is_deleted') bool isDeleted,
     @JsonKey(name: 'is_hidden_admin') bool isHiddenAdmin,
     @JsonKey(name: 'created_at') DateTime createdAt,
@@ -97,6 +112,11 @@ class _$PostCommentCopyWithImpl<$Res, $Val extends PostComment>
     Object? authorAvatarUrl = freezed,
     Object? body = null,
     Object? parentCommentId = freezed,
+    Object? imageUrl = freezed,
+    Object? gifUrl = freezed,
+    Object? locationName = freezed,
+    Object? locationLat = freezed,
+    Object? locationLng = freezed,
     Object? isDeleted = null,
     Object? isHiddenAdmin = null,
     Object? createdAt = null,
@@ -135,6 +155,26 @@ class _$PostCommentCopyWithImpl<$Res, $Val extends PostComment>
                 ? _value.parentCommentId
                 : parentCommentId // ignore: cast_nullable_to_non_nullable
                       as String?,
+            imageUrl: freezed == imageUrl
+                ? _value.imageUrl
+                : imageUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            gifUrl: freezed == gifUrl
+                ? _value.gifUrl
+                : gifUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            locationName: freezed == locationName
+                ? _value.locationName
+                : locationName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            locationLat: freezed == locationLat
+                ? _value.locationLat
+                : locationLat // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            locationLng: freezed == locationLng
+                ? _value.locationLng
+                : locationLng // ignore: cast_nullable_to_non_nullable
+                      as double?,
             isDeleted: null == isDeleted
                 ? _value.isDeleted
                 : isDeleted // ignore: cast_nullable_to_non_nullable
@@ -171,6 +211,11 @@ abstract class _$$PostCommentImplCopyWith<$Res>
     @JsonKey(name: 'author_avatar_url') String? authorAvatarUrl,
     String body,
     @JsonKey(name: 'parent_comment_id') String? parentCommentId,
+    @JsonKey(name: 'image_url') String? imageUrl,
+    @JsonKey(name: 'gif_url') String? gifUrl,
+    @JsonKey(name: 'location_name') String? locationName,
+    @JsonKey(name: 'location_lat') double? locationLat,
+    @JsonKey(name: 'location_lng') double? locationLng,
     @JsonKey(name: 'is_deleted') bool isDeleted,
     @JsonKey(name: 'is_hidden_admin') bool isHiddenAdmin,
     @JsonKey(name: 'created_at') DateTime createdAt,
@@ -199,6 +244,11 @@ class __$$PostCommentImplCopyWithImpl<$Res>
     Object? authorAvatarUrl = freezed,
     Object? body = null,
     Object? parentCommentId = freezed,
+    Object? imageUrl = freezed,
+    Object? gifUrl = freezed,
+    Object? locationName = freezed,
+    Object? locationLat = freezed,
+    Object? locationLng = freezed,
     Object? isDeleted = null,
     Object? isHiddenAdmin = null,
     Object? createdAt = null,
@@ -237,6 +287,26 @@ class __$$PostCommentImplCopyWithImpl<$Res>
             ? _value.parentCommentId
             : parentCommentId // ignore: cast_nullable_to_non_nullable
                   as String?,
+        imageUrl: freezed == imageUrl
+            ? _value.imageUrl
+            : imageUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        gifUrl: freezed == gifUrl
+            ? _value.gifUrl
+            : gifUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        locationName: freezed == locationName
+            ? _value.locationName
+            : locationName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        locationLat: freezed == locationLat
+            ? _value.locationLat
+            : locationLat // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        locationLng: freezed == locationLng
+            ? _value.locationLng
+            : locationLng // ignore: cast_nullable_to_non_nullable
+                  as double?,
         isDeleted: null == isDeleted
             ? _value.isDeleted
             : isDeleted // ignore: cast_nullable_to_non_nullable
@@ -266,6 +336,11 @@ class _$PostCommentImpl implements _PostComment {
     @JsonKey(name: 'author_avatar_url') this.authorAvatarUrl,
     required this.body,
     @JsonKey(name: 'parent_comment_id') this.parentCommentId,
+    @JsonKey(name: 'image_url') this.imageUrl,
+    @JsonKey(name: 'gif_url') this.gifUrl,
+    @JsonKey(name: 'location_name') this.locationName,
+    @JsonKey(name: 'location_lat') this.locationLat,
+    @JsonKey(name: 'location_lng') this.locationLng,
     @JsonKey(name: 'is_deleted') this.isDeleted = false,
     @JsonKey(name: 'is_hidden_admin') this.isHiddenAdmin = false,
     @JsonKey(name: 'created_at') required this.createdAt,
@@ -297,6 +372,21 @@ class _$PostCommentImpl implements _PostComment {
   @JsonKey(name: 'parent_comment_id')
   final String? parentCommentId;
   @override
+  @JsonKey(name: 'image_url')
+  final String? imageUrl;
+  @override
+  @JsonKey(name: 'gif_url')
+  final String? gifUrl;
+  @override
+  @JsonKey(name: 'location_name')
+  final String? locationName;
+  @override
+  @JsonKey(name: 'location_lat')
+  final double? locationLat;
+  @override
+  @JsonKey(name: 'location_lng')
+  final double? locationLng;
+  @override
   @JsonKey(name: 'is_deleted')
   final bool isDeleted;
   @override
@@ -308,7 +398,7 @@ class _$PostCommentImpl implements _PostComment {
 
   @override
   String toString() {
-    return 'PostComment(id: $id, postId: $postId, authorUserId: $authorUserId, authorProfileId: $authorProfileId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, body: $body, parentCommentId: $parentCommentId, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, createdAt: $createdAt)';
+    return 'PostComment(id: $id, postId: $postId, authorUserId: $authorUserId, authorProfileId: $authorProfileId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, body: $body, parentCommentId: $parentCommentId, imageUrl: $imageUrl, gifUrl: $gifUrl, locationName: $locationName, locationLat: $locationLat, locationLng: $locationLng, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, createdAt: $createdAt)';
   }
 
   @override
@@ -329,6 +419,15 @@ class _$PostCommentImpl implements _PostComment {
             (identical(other.body, body) || other.body == body) &&
             (identical(other.parentCommentId, parentCommentId) ||
                 other.parentCommentId == parentCommentId) &&
+            (identical(other.imageUrl, imageUrl) ||
+                other.imageUrl == imageUrl) &&
+            (identical(other.gifUrl, gifUrl) || other.gifUrl == gifUrl) &&
+            (identical(other.locationName, locationName) ||
+                other.locationName == locationName) &&
+            (identical(other.locationLat, locationLat) ||
+                other.locationLat == locationLat) &&
+            (identical(other.locationLng, locationLng) ||
+                other.locationLng == locationLng) &&
             (identical(other.isDeleted, isDeleted) ||
                 other.isDeleted == isDeleted) &&
             (identical(other.isHiddenAdmin, isHiddenAdmin) ||
@@ -349,6 +448,11 @@ class _$PostCommentImpl implements _PostComment {
     authorAvatarUrl,
     body,
     parentCommentId,
+    imageUrl,
+    gifUrl,
+    locationName,
+    locationLat,
+    locationLng,
     isDeleted,
     isHiddenAdmin,
     createdAt,
@@ -378,6 +482,11 @@ abstract class _PostComment implements PostComment {
     @JsonKey(name: 'author_avatar_url') final String? authorAvatarUrl,
     required final String body,
     @JsonKey(name: 'parent_comment_id') final String? parentCommentId,
+    @JsonKey(name: 'image_url') final String? imageUrl,
+    @JsonKey(name: 'gif_url') final String? gifUrl,
+    @JsonKey(name: 'location_name') final String? locationName,
+    @JsonKey(name: 'location_lat') final double? locationLat,
+    @JsonKey(name: 'location_lng') final double? locationLng,
     @JsonKey(name: 'is_deleted') final bool isDeleted,
     @JsonKey(name: 'is_hidden_admin') final bool isHiddenAdmin,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
@@ -408,6 +517,21 @@ abstract class _PostComment implements PostComment {
   @override
   @JsonKey(name: 'parent_comment_id')
   String? get parentCommentId;
+  @override
+  @JsonKey(name: 'image_url')
+  String? get imageUrl;
+  @override
+  @JsonKey(name: 'gif_url')
+  String? get gifUrl;
+  @override
+  @JsonKey(name: 'location_name')
+  String? get locationName;
+  @override
+  @JsonKey(name: 'location_lat')
+  double? get locationLat;
+  @override
+  @JsonKey(name: 'location_lng')
+  double? get locationLng;
   @override
   @JsonKey(name: 'is_deleted')
   bool get isDeleted;

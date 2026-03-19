@@ -1,5 +1,4 @@
 import 'package:dabbler/data/models/social/chat_message.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import '../../../../utils/enums/social_enums.dart'; // For MessageType enum
 
 /// Data model for chat messages with real-time support
@@ -147,10 +146,8 @@ class ChatMessageModel extends ChatMessage {
           senderData['username'] ??
           'Unknown User',
       senderAvatar:
-          resolveAvatarUrl(
-            (senderData['avatar_url'] ?? senderData['profile_picture'])
-                ?.toString(),
-          ) ??
+          (senderData['avatar_url'] ?? senderData['profile_picture'])
+              ?.toString() ??
           '',
       senderIsVerified:
           senderData['verified'] == true || senderData['is_verified'] == true,

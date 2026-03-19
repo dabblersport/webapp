@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/default_avatar_service.dart';
 
 /// Repository for onboarding-related database operations
 ///
@@ -190,6 +191,13 @@ class OnboardingRepository {
             .insert(profileData)
             .select()
             .single();
+
+        final avatarService = DefaultAvatarService(client: _client);
+        response['avatar_url'] = await avatarService.ensureProfileAvatar(
+          userId: userId,
+          profileId: response['id'] as String,
+          currentAvatarUrl: response['avatar_url'] as String?,
+        );
 
         return response;
       },

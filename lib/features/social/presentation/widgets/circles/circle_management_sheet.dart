@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/data/models/user_circle.dart';
 import 'package:dabbler/features/social/providers/user_circles_providers.dart';
 
@@ -541,7 +540,7 @@ class _MemberTile extends StatelessWidget {
     child: Row(
       children: [
         DSAvatar.small(
-          imageUrl: resolveAvatarUrl(member.avatarUrl),
+          imageUrl: member.avatarUrl,
           displayName: member.displayName,
           context: AvatarContext.social,
         ),
@@ -597,7 +596,7 @@ class _FollowerTile extends StatelessWidget {
       child: Row(
         children: [
           DSAvatar.small(
-            imageUrl: resolveAvatarUrl(avatarUrl),
+            imageUrl: avatarUrl,
             displayName: displayName,
             context: AvatarContext.social,
           ),

@@ -1,5 +1,4 @@
 import 'package:dabbler/data/models/social/friend.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 
 /// Data model for friendships with comprehensive profile data
 class FriendModel extends Friend {
@@ -168,10 +167,8 @@ class FriendModel extends Friend {
           ? _parseDateTime(json['friend_request_accepted_at'])
           : null,
       profilePicture:
-          resolveAvatarUrl(
-            (profileData['avatar_url'] ?? profileData['profile_picture'])
-                ?.toString(),
-          ) ??
+          (profileData['avatar_url'] ?? profileData['profile_picture'])
+              ?.toString() ??
           '',
       bio: profileData['bio'] ?? profileData['description'] ?? '',
       isVerified:

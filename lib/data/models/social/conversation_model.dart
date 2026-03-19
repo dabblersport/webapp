@@ -1,6 +1,5 @@
 import 'package:dabbler/data/models/social/conversation.dart';
 import 'package:dabbler/data/models/social/conversation_type.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'chat_message_model.dart';
 
 /// Data model for conversations with participant and message information
@@ -116,9 +115,7 @@ class ConversationModel extends Conversation {
       updatedAt: _parseDateTime(json['updated_at'] ?? json['last_activity']),
       name: json['name'] ?? json['title'],
       description: json['description'],
-      avatarUrl: resolveAvatarUrl(
-        (json['avatar_url'] ?? json['image_url'])?.toString(),
-      ),
+      avatarUrl: (json['avatar_url'] ?? json['image_url'])?.toString(),
       isActive: json['is_active'] ?? json['active'] ?? true,
       participants: participants,
       lastMessage: lastMessage,

@@ -523,11 +523,21 @@ class PostActionsNotifier extends StateNotifier<AsyncValue<void>> {
     required String postId,
     required String body,
     String? parentCommentId,
+    String? imageUrl,
+    String? gifUrl,
+    String? locationName,
+    double? locationLat,
+    double? locationLng,
   }) async {
     final result = await _repo.addComment(
       postId: postId,
       body: body,
       parentCommentId: parentCommentId,
+      imageUrl: imageUrl,
+      gifUrl: gifUrl,
+      locationName: locationName,
+      locationLat: locationLat,
+      locationLng: locationLng,
     );
     _ref.invalidate(postCommentsProvider(postId));
     _ref.invalidate(postDetailProvider(postId));
@@ -552,10 +562,11 @@ class PostActionsNotifier extends StateNotifier<AsyncValue<void>> {
     _ref.invalidate(homeFeedProvider);
   }
 
-  Future<void> undoRepost(String repostId, String postId) async {
-    await _repo.undoRepost(repostId);
+  Future<void> undoRepost(String postId) async {
+    await _repo.undoRepost(postId);
     _ref.invalidate(hasRepostedProvider(postId));
     _ref.invalidate(postDetailProvider(postId));
+    _ref.invalidate(homeFeedProvider);
   }
 
   /// Record that the current user viewed a post. Fire-and-forget.

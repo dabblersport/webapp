@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'default_avatar_service.dart';
 import '../config/environment.dart';
 import '../config/supabase_config.dart';
 import '../../utils/constants/route_constants.dart';
@@ -124,6 +125,10 @@ class AuthService {
       final primarySport =
           (insertedProfile['preferred_sport'] ?? preferredSport.toLowerCase())
               as String;
+
+      await DefaultAvatarService(
+        client: _supabase,
+      ).ensureProfileAvatar(userId: userId, profileId: profileId);
 
       // Create child profile based on profile_type
       if (insertedProfileType == 'player') {
@@ -623,7 +628,16 @@ class AuthService {
         'skill_level': 1, // Default skill level
       };
 
-      await _supabase.from(SupabaseConfig.usersTable).insert(stubProfileData);
+      final insertedProfile = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .insert(stubProfileData)
+          .select('id')
+          .single();
+
+      await DefaultAvatarService(client: _supabase).ensureProfileAvatar(
+        userId: user.id,
+        profileId: insertedProfile['id'] as String,
+      );
     } catch (e) {
       // Don't throw - this is called after auth, we don't want to break the flow
       // The profile will be created during onboarding completion if needed
@@ -695,7 +709,7 @@ class AuthService {
       // Check if profile exists (shouldn't exist since we removed stub creation)
       final existingProfile = await _supabase
           .from(SupabaseConfig.usersTable)
-          .select('id, profile_type, persona_type')
+          .select('id, profile_type, persona_type, avatar_url')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -730,6 +744,12 @@ class AuthService {
             .from(SupabaseConfig.usersTable)
             .update(updateData)
             .eq('user_id', user.id);
+
+        await DefaultAvatarService(client: _supabase).ensureProfileAvatar(
+          userId: user.id,
+          profileId: profileId,
+          currentAvatarUrl: existingProfile['avatar_url'] as String?,
+        );
       } else {
         // Create new profile (fallback if stub wasn't created)
 
@@ -764,6 +784,10 @@ class AuthService {
             .single();
 
         profileId = insertedProfile['id'] as String;
+
+        await DefaultAvatarService(
+          client: _supabase,
+        ).ensureProfileAvatar(userId: user.id, profileId: profileId);
       }
 
       // 1️⃣ Get sport record from sports table using UUID (preferredSport is already a UUID)
@@ -984,6 +1008,40 @@ class AuthService {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
 
+      final hasNonAvatarChanges =
+          displayName != null ||
+          username != null ||
+          bio != null ||
+          phone != null ||
+          dateOfBirth != null ||
+          age != null ||
+          gender != null ||
+          nationality != null ||
+          skillLevel != null ||
+          sports != null ||
+          interests != null ||
+          intent != null ||
+          location != null ||
+          timezone != null ||
+          language != null;
+
+      if (!hasNonAvatarChanges && avatarUrl != null) {
+        final trimmed = avatarUrl.trim();
+        var avatarQuery = _supabase
+            .from(SupabaseConfig.usersTable)
+            .update({
+              'avatar_url': trimmed.isEmpty ? null : trimmed,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('user_id', user.id);
+        if (profileId != null) {
+          avatarQuery = avatarQuery.eq('id', profileId);
+        }
+        await avatarQuery;
+
+        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+      }
+
       // Prefer server-side RPC if available for consistent authorization/validation.
       // Note: We intentionally do NOT pass avatarUrl to the RPC since older
       // deployments may not accept that parameter.
@@ -1106,24 +1164,20 @@ class AuthService {
         }
 
         if (updates.length <= 1) {
-          // Only updated_at
-          final current = await _supabase
-              .from(SupabaseConfig.usersTable)
-              .select()
-              .eq('user_id', user.id) // Match by user_id FK
-              .single();
-          return current;
+          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
         }
 
         try {
-          final updated = await _supabase
+          var updateQuery = _supabase
               .from(SupabaseConfig.usersTable)
               .update(updates)
-              .eq('user_id', user.id) // Match by user_id FK
-              .select()
-              .single();
+              .eq('user_id', user.id);
+          if (profileId != null) {
+            updateQuery = updateQuery.eq('id', profileId);
+          }
+          await updateQuery;
 
-          return updated;
+          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
         } on PostgrestException catch (e2) {
           // Handle schema differences gracefully (e.g., full_name vs name, preferred_sports vs sports)
           final isMissingColumn =
@@ -1176,19 +1230,51 @@ class AuthService {
 
           if (altUpdates.isEmpty) rethrow;
 
-          final updatedAlt = await _supabase
+          var altUpdateQuery = _supabase
               .from(SupabaseConfig.usersTable)
               .update(altUpdates)
-              .eq('user_id', user.id)
-              .select()
-              .single();
+              .eq('user_id', user.id);
+          if (profileId != null) {
+            altUpdateQuery = altUpdateQuery.eq('id', profileId);
+          }
+          await altUpdateQuery;
 
-          return updatedAlt;
+          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
         }
       }
     } catch (e) {
       throw Exception('Profile update failed: $e');
     }
+  }
+
+  Future<Map<String, dynamic>> _fetchSingleProfileRow({
+    required String userId,
+    String? profileId,
+  }) async {
+    if (profileId != null) {
+      final row = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select()
+          .eq('user_id', userId)
+          .eq('id', profileId)
+          .maybeSingle();
+      if (row != null) {
+        return row;
+      }
+    }
+
+    final rows = await _supabase
+        .from(SupabaseConfig.usersTable)
+        .select()
+        .eq('user_id', userId)
+        .order('updated_at', ascending: false)
+        .limit(1);
+
+    if (rows.isEmpty) {
+      throw Exception('No profile found for user');
+    }
+
+    return rows.first;
   }
 
   // =====================================================

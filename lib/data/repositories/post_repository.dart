@@ -156,10 +156,15 @@ abstract class PostRepository {
   /// Soft-delete a post (sets `is_deleted = true`).
   Future<Result<Unit, Failure>> deletePost(String postId);
 
-  /// Upload a media file to the `post-media` storage bucket.
+  /// Upload a media file to the `post-media` storage bucket under `posts/`.
   ///
   /// Returns the public URL of the uploaded file.
   Future<Result<String, Failure>> uploadPostMedia(XFile file);
+
+  /// Upload a comment media file to the `post-media` storage bucket under `comments/`.
+  ///
+  /// Returns the public URL of the uploaded file.
+  Future<Result<String, Failure>> uploadCommentMedia(XFile file);
 
   // ── Likes ──────────────────────────────────────────────────────────
 
@@ -181,6 +186,11 @@ abstract class PostRepository {
     required String postId,
     required String body,
     String? parentCommentId,
+    String? imageUrl,
+    String? gifUrl,
+    String? locationName,
+    double? locationLat,
+    double? locationLng,
   });
 
   Future<Result<Unit, Failure>> deleteComment(String commentId);

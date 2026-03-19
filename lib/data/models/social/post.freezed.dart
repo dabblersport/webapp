@@ -137,6 +137,17 @@ mixin _$Post {
   DateTime? get expiresAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'edited_at')
   DateTime? get editedAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'repost_count')
+  int get repostCount => throw _privateConstructorUsedError;
+
+  /// Nested original post for reposts. Populated from the `feed_posts`
+  /// view's `original_post` jsonb column.
+  @JsonKey(
+    name: 'original_post',
+    fromJson: _originalPostFromJson,
+    toJson: _originalPostToJson,
+  )
+  Post? get originalPost => throw _privateConstructorUsedError;
 
   /// Serializes this Post to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -217,7 +228,16 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'updated_at') DateTime updatedAt,
     @JsonKey(name: 'expires_at') DateTime? expiresAt,
     @JsonKey(name: 'edited_at') DateTime? editedAt,
+    @JsonKey(name: 'repost_count') int repostCount,
+    @JsonKey(
+      name: 'original_post',
+      fromJson: _originalPostFromJson,
+      toJson: _originalPostToJson,
+    )
+    Post? originalPost,
   });
+
+  $PostCopyWith<$Res>? get originalPost;
 }
 
 /// @nodoc
@@ -280,6 +300,8 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? updatedAt = null,
     Object? expiresAt = freezed,
     Object? editedAt = freezed,
+    Object? repostCount = null,
+    Object? originalPost = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -463,9 +485,31 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
                 ? _value.editedAt
                 : editedAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            repostCount: null == repostCount
+                ? _value.repostCount
+                : repostCount // ignore: cast_nullable_to_non_nullable
+                      as int,
+            originalPost: freezed == originalPost
+                ? _value.originalPost
+                : originalPost // ignore: cast_nullable_to_non_nullable
+                      as Post?,
           )
           as $Val,
     );
+  }
+
+  /// Create a copy of Post
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $PostCopyWith<$Res>? get originalPost {
+    if (_value.originalPost == null) {
+      return null;
+    }
+
+    return $PostCopyWith<$Res>(_value.originalPost!, (value) {
+      return _then(_value.copyWith(originalPost: value) as $Val);
+    });
   }
 }
 
@@ -542,7 +586,17 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'updated_at') DateTime updatedAt,
     @JsonKey(name: 'expires_at') DateTime? expiresAt,
     @JsonKey(name: 'edited_at') DateTime? editedAt,
+    @JsonKey(name: 'repost_count') int repostCount,
+    @JsonKey(
+      name: 'original_post',
+      fromJson: _originalPostFromJson,
+      toJson: _originalPostToJson,
+    )
+    Post? originalPost,
   });
+
+  @override
+  $PostCopyWith<$Res>? get originalPost;
 }
 
 /// @nodoc
@@ -602,6 +656,8 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? updatedAt = null,
     Object? expiresAt = freezed,
     Object? editedAt = freezed,
+    Object? repostCount = null,
+    Object? originalPost = freezed,
   }) {
     return _then(
       _$PostImpl(
@@ -785,6 +841,14 @@ class __$$PostImplCopyWithImpl<$Res>
             ? _value.editedAt
             : editedAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        repostCount: null == repostCount
+            ? _value.repostCount
+            : repostCount // ignore: cast_nullable_to_non_nullable
+                  as int,
+        originalPost: freezed == originalPost
+            ? _value.originalPost
+            : originalPost // ignore: cast_nullable_to_non_nullable
+                  as Post?,
       ),
     );
   }
@@ -859,6 +923,13 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'updated_at') required this.updatedAt,
     @JsonKey(name: 'expires_at') this.expiresAt,
     @JsonKey(name: 'edited_at') this.editedAt,
+    @JsonKey(name: 'repost_count') this.repostCount = 0,
+    @JsonKey(
+      name: 'original_post',
+      fromJson: _originalPostFromJson,
+      toJson: _originalPostToJson,
+    )
+    this.originalPost,
   }) : _media = media,
        _tags = tags,
        _reactionBreakdown = reactionBreakdown,
@@ -1060,10 +1131,23 @@ class _$PostImpl implements _Post {
   @override
   @JsonKey(name: 'edited_at')
   final DateTime? editedAt;
+  @override
+  @JsonKey(name: 'repost_count')
+  final int repostCount;
+
+  /// Nested original post for reposts. Populated from the `feed_posts`
+  /// view's `original_post` jsonb column.
+  @override
+  @JsonKey(
+    name: 'original_post',
+    fromJson: _originalPostFromJson,
+    toJson: _originalPostToJson,
+  )
+  final Post? originalPost;
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, originalPost: $originalPost)';
   }
 
   @override
@@ -1149,7 +1233,11 @@ class _$PostImpl implements _Post {
             (identical(other.expiresAt, expiresAt) ||
                 other.expiresAt == expiresAt) &&
             (identical(other.editedAt, editedAt) ||
-                other.editedAt == editedAt));
+                other.editedAt == editedAt) &&
+            (identical(other.repostCount, repostCount) ||
+                other.repostCount == repostCount) &&
+            (identical(other.originalPost, originalPost) ||
+                other.originalPost == originalPost));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1201,6 +1289,8 @@ class _$PostImpl implements _Post {
     updatedAt,
     expiresAt,
     editedAt,
+    repostCount,
+    originalPost,
   ]);
 
   /// Create a copy of Post
@@ -1284,6 +1374,13 @@ abstract class _Post implements Post {
     @JsonKey(name: 'updated_at') required final DateTime updatedAt,
     @JsonKey(name: 'expires_at') final DateTime? expiresAt,
     @JsonKey(name: 'edited_at') final DateTime? editedAt,
+    @JsonKey(name: 'repost_count') final int repostCount,
+    @JsonKey(
+      name: 'original_post',
+      fromJson: _originalPostFromJson,
+      toJson: _originalPostToJson,
+    )
+    final Post? originalPost,
   }) = _$PostImpl;
 
   factory _Post.fromJson(Map<String, dynamic> json) = _$PostImpl.fromJson;
@@ -1448,6 +1545,19 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'edited_at')
   DateTime? get editedAt;
+  @override
+  @JsonKey(name: 'repost_count')
+  int get repostCount;
+
+  /// Nested original post for reposts. Populated from the `feed_posts`
+  /// view's `original_post` jsonb column.
+  @override
+  @JsonKey(
+    name: 'original_post',
+    fromJson: _originalPostFromJson,
+    toJson: _originalPostToJson,
+  )
+  Post? get originalPost;
 
   /// Create a copy of Post
   /// with the given fields replaced by the non-null parameter values.

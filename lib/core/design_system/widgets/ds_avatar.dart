@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:random_avatar/random_avatar.dart';
 import '../tokens/avatar_tokens.dart';
 import '../tokens/avatar_color_palette.dart';
+import '../../../core/utils/avatar_url_resolver.dart';
 import '../../../core/utils/initials_generator.dart';
 import '../../../themes/material3_extensions.dart';
 
@@ -34,6 +35,9 @@ class DSAvatar extends StatefulWidget {
 
   /// Image URL (network image)
   final String? imageUrl;
+
+  /// Optional size override while still deriving token metrics from [size]
+  final double? customDimension;
 
   /// Display name for generating initials
   final String? displayName;
@@ -78,6 +82,7 @@ class DSAvatar extends StatefulWidget {
     super.key,
     required this.size,
     this.imageUrl,
+    this.customDimension,
     this.displayName,
     this.initials,
     this.context = AvatarContext.main,
@@ -114,6 +119,7 @@ class DSAvatar extends StatefulWidget {
          key: key,
          size: AvatarSize.small,
          imageUrl: imageUrl,
+         customDimension: null,
          displayName: displayName,
          initials: initials,
          context: context,
@@ -150,6 +156,7 @@ class DSAvatar extends StatefulWidget {
          key: key,
          size: AvatarSize.medium,
          imageUrl: imageUrl,
+         customDimension: null,
          displayName: displayName,
          initials: initials,
          context: context,
@@ -186,6 +193,7 @@ class DSAvatar extends StatefulWidget {
          key: key,
          size: AvatarSize.large,
          imageUrl: imageUrl,
+         customDimension: null,
          displayName: displayName,
          initials: initials,
          context: context,
@@ -237,7 +245,19 @@ class _DSAvatarState extends State<DSAvatar>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final hasImage = widget.imageUrl != null && widget.imageUrl!.isNotEmpty;
+    final dsAvatarSeed = extractDsAvatarSeed(widget.imageUrl);
+    final resolvedImageUrl = resolveAvatarUrl(widget.imageUrl);
+    final hasImage =
+        dsAvatarSeed == null &&
+        resolvedImageUrl != null &&
+        resolvedImageUrl.isNotEmpty;
+    final dimension = widget.customDimension ?? widget.size.dimension;
+    final scale = dimension / widget.size.dimension;
+    final cornerRadius = widget.size.cornerRadius * scale;
+    final borderWidth = widget.size.borderWidth * scale;
+    final fontSize = widget.size.fontSize * scale;
+    final badgeSize = widget.size.badgeSize * scale;
+    final iconSize = widget.size.iconSize * scale;
 
     // Get category colors
     final categoryColors = AvatarColorPalette.getColors(
@@ -254,7 +274,9 @@ class _DSAvatarState extends State<DSAvatar>
 
     // Seed for RandomAvatar - deterministic per user
     final avatarSeed =
-        widget.displayName?.trim().toLowerCase() ?? displayInitials;
+        dsAvatarSeed ??
+        widget.displayName?.trim().toLowerCase() ??
+        displayInitials;
 
     // Build the inner content: uploaded photo > RandomAvatar > initials fallback
     Widget innerContent;
@@ -264,13 +286,13 @@ class _DSAvatarState extends State<DSAvatar>
       // RandomAvatar with initials fallback
       innerContent = Center(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(widget.size.cornerRadius),
+          borderRadius: BorderRadius.circular(cornerRadius),
           child: _RandomAvatarWithFallback(
             seed: avatarSeed,
-            size: widget.size.dimension,
+            size: dimension,
             fallbackInitials: displayInitials,
             fallbackColor: fgColor,
-            fallbackFontSize: widget.size.fontSize,
+            fallbackFontSize: fontSize,
           ),
         ),
       );
@@ -278,23 +300,23 @@ class _DSAvatarState extends State<DSAvatar>
 
     // Avatar content
     Widget avatarContent = Container(
-      width: widget.size.dimension,
-      height: widget.size.dimension,
+      width: dimension,
+      height: dimension,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: hasImage ? null : bgColor,
-        borderRadius: BorderRadius.circular(widget.size.cornerRadius),
+        borderRadius: BorderRadius.circular(cornerRadius),
         border: widget.hasBorder
             ? Border.all(
                 color: widget.hasError
                     ? AvatarColorPalette.getErrorBorderColor(colorScheme)
                     : AvatarColorPalette.getBorderColor(colorScheme),
-                width: widget.size.borderWidth,
+                width: borderWidth,
               )
             : null,
         image: hasImage
             ? DecorationImage(
-                image: NetworkImage(widget.imageUrl!),
+                image: NetworkImage(resolvedImageUrl),
                 fit: BoxFit.cover,
               )
             : null,
@@ -308,13 +330,14 @@ class _DSAvatarState extends State<DSAvatar>
       children: [
         avatarContent,
         // Sport badge overlay
-        if (widget.sportEmoji != null) _buildSportBadge(colorScheme),
+        if (widget.sportEmoji != null) _buildSportBadge(colorScheme, badgeSize),
         // Upload progress overlay
-        if (widget.uploadProgress != null) _buildUploadProgress(),
+        if (widget.uploadProgress != null)
+          _buildUploadProgress(dimension, cornerRadius),
         // Edit overlay
-        if (widget.isEditable) _buildEditOverlay(colorScheme),
+        if (widget.isEditable) _buildEditOverlay(colorScheme, iconSize),
         // Error indicator
-        if (widget.hasError) _buildErrorIndicator(),
+        if (widget.hasError) _buildErrorIndicator(dimension),
       ],
     );
 
@@ -342,9 +365,7 @@ class _DSAvatarState extends State<DSAvatar>
     return avatarContent;
   }
 
-  Widget _buildSportBadge(ColorScheme colorScheme) {
-    final badgeSize = widget.size.badgeSize;
-
+  Widget _buildSportBadge(ColorScheme colorScheme, double badgeSize) {
     return Positioned(
       bottom: AvatarTokens.badgeOffset,
       right: AvatarTokens.badgeOffset,
@@ -369,7 +390,7 @@ class _DSAvatarState extends State<DSAvatar>
     );
   }
 
-  Widget _buildUploadProgress() {
+  Widget _buildUploadProgress(double dimension, double cornerRadius) {
     final progress = widget.uploadProgress!;
 
     return Positioned.fill(
@@ -378,15 +399,15 @@ class _DSAvatarState extends State<DSAvatar>
           color: AvatarColorPalette.getEditOverlayColor(
             Theme.of(context).colorScheme,
           ),
-          borderRadius: BorderRadius.circular(widget.size.cornerRadius),
+          borderRadius: BorderRadius.circular(cornerRadius),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                width: widget.size.dimension * 0.4,
-                height: widget.size.dimension * 0.4,
+                width: dimension * 0.4,
+                height: dimension * 0.4,
                 child: CircularProgressIndicator(
                   value: progress,
                   strokeWidth: AvatarTokens.progressStrokeWidth,
@@ -394,12 +415,12 @@ class _DSAvatarState extends State<DSAvatar>
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              SizedBox(height: widget.size.dimension * 0.05),
+              SizedBox(height: dimension * 0.05),
               Text(
                 '${(progress * 100).round()}%',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: widget.size.dimension * 0.1,
+                  fontSize: dimension * 0.1,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -410,9 +431,9 @@ class _DSAvatarState extends State<DSAvatar>
     );
   }
 
-  Widget _buildEditOverlay(ColorScheme colorScheme) {
-    final iconSize = widget.size.iconSize * 0.6;
-    final overlaySize = widget.size.iconSize;
+  Widget _buildEditOverlay(ColorScheme colorScheme, double baseIconSize) {
+    final iconSize = baseIconSize * 0.6;
+    final overlaySize = baseIconSize;
 
     return Positioned(
       bottom: 0,
@@ -445,8 +466,8 @@ class _DSAvatarState extends State<DSAvatar>
     );
   }
 
-  Widget _buildErrorIndicator() {
-    final indicatorSize = widget.size.dimension * 0.25;
+  Widget _buildErrorIndicator(double dimension) {
+    final indicatorSize = dimension * 0.25;
 
     return Positioned(
       top: 0,

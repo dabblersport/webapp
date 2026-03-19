@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/profile/profile_statistics.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
@@ -64,29 +67,13 @@ class _Avatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.35),
-          width: 3,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty
-          ? Image.network(profile!.avatarUrl!, fit: BoxFit.cover)
-          : Container(
-              color: colorScheme.primaryContainer.withValues(alpha: 0.6),
-              child: Icon(
-                Icons.person_outline,
-                size: 42,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
+    return DSAvatar(
+      size: AvatarSize.large,
+      customDimension: 96,
+      imageUrl: profile?.avatarUrl,
+      displayName: profile?.displayName,
+      context: AvatarContext.profile,
+      hasBorder: true,
     );
   }
 }

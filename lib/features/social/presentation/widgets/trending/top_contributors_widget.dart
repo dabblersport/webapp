@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 
 /// Widget for displaying top contributors
 class TopContributorsWidget extends StatelessWidget {
@@ -45,13 +47,10 @@ class TopContributorsWidget extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundImage: contributor.avatarUrl != null
-                  ? NetworkImage(contributor.avatarUrl!)
-                  : null,
-              child: contributor.avatarUrl == null
-                  ? Text(contributor.displayName.substring(0, 1).toUpperCase())
-                  : null,
+            leading: DSAvatar.small(
+              imageUrl: contributor.avatarUrl,
+              displayName: contributor.displayName,
+              context: AvatarContext.social,
             ),
             title: Row(
               children: [

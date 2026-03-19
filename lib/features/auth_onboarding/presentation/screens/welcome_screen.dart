@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/utils/initials_generator.dart';
+import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/design_system/tokens/main_dark.dart'
     as main_dark_tokens;
 import 'package:dabbler/design_system/tokens/main_light.dart'
@@ -11,7 +14,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   final String displayName;
   final String personaType; // player, organiser, hoster, socialiser
   final bool
@@ -27,6 +30,22 @@ class WelcomeScreen extends StatelessWidget {
   });
 
   @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  late final Future<Map<String, dynamic>?> _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = AuthService().getUserProfile(
+      fields: const ['avatar_url', 'display_name'],
+      personaType: widget.personaType,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -34,7 +53,7 @@ class WelcomeScreen extends StatelessWidget {
     final isWide = MediaQuery.sizeOf(context).width >= 800;
 
     // Get persona-specific content
-    final personaContent = _getPersonaContent(personaType);
+    final personaContent = _getPersonaContent(widget.personaType);
 
     return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
@@ -212,16 +231,25 @@ class WelcomeScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
-          radius: 40,
-          backgroundColor: tokens.main.primary,
-          child: Text(
-            InitialsGenerator.generate(displayName),
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: tokens.main.onPrimary,
-            ),
-          ),
+        FutureBuilder<Map<String, dynamic>?>(
+          future: _profileFuture,
+          builder: (context, snapshot) {
+            final profile = snapshot.data;
+            final avatarUrl = profile?['avatar_url'] as String?;
+            final avatarDisplayName =
+                (profile?['display_name'] as String?) ?? widget.displayName;
+
+            return DSAvatar(
+              size: AvatarSize.large,
+              customDimension: 80,
+              imageUrl: avatarUrl,
+              displayName: avatarDisplayName,
+              context: AvatarContext.main,
+              backgroundColor: tokens.main.primary,
+              foregroundColor: tokens.main.onPrimary,
+              hasBorder: false,
+            );
+          },
         ),
         const SizedBox(width: AppSpacing.lg),
         Column(
@@ -229,7 +257,7 @@ class WelcomeScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              displayName,
+              widget.displayName,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w500,
                 color: tokens.main.onSecondaryContainer,
@@ -313,9 +341,9 @@ class WelcomeScreen extends StatelessWidget {
   }
 
   String _getWelcomeTitle() {
-    if (isConversion) {
+    if (widget.isConversion) {
       return 'Conversion Complete! 🎉';
-    } else if (isFirstTime) {
+    } else if (widget.isFirstTime) {
       return 'Welcome to Dabbler 😉';
     } else {
       return 'Welcome Back! 👋';

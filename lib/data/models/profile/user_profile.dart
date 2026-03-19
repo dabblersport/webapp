@@ -1,5 +1,4 @@
 import 'package:dabbler/data/models/authentication/user.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'sports_profile.dart';
 import 'profile_statistics.dart';
 import 'privacy_settings.dart';
@@ -358,14 +357,13 @@ class UserProfile {
     }
 
     final displayName = (json['display_name'] as String?) ?? '';
-    final resolvedAvatarUrl = resolveAvatarUrl(json['avatar_url'] as String?);
 
     return UserProfile(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       username: json['username'] as String?,
       displayName: displayName,
-      avatarUrl: resolvedAvatarUrl,
+      avatarUrl: json['avatar_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       bio: json['bio'] as String?,

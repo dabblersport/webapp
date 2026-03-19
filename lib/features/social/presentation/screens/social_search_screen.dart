@@ -14,7 +14,8 @@ import 'package:dabbler/data/models/search/comment_search_result.dart';
 import 'package:dabbler/data/models/search/hashtag_search_result.dart';
 import 'package:dabbler/data/models/search/meetup_search_result.dart';
 import 'package:dabbler/data/models/search/post_search_result.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -643,19 +644,11 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildProfileTile(Profile profile) {
-    final resolvedAvatar = resolveAvatarUrl(profile.avatarUrl);
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage: resolvedAvatar != null
-            ? NetworkImage(resolvedAvatar)
-            : null,
-        child: resolvedAvatar == null
-            ? Text(
-                profile.displayName.isNotEmpty
-                    ? profile.displayName[0].toUpperCase()
-                    : '?',
-              )
-            : null,
+      leading: DSAvatar.small(
+        imageUrl: profile.avatarUrl,
+        displayName: profile.displayName,
+        context: AvatarContext.social,
       ),
       title: Text(profile.displayName),
       subtitle: Text('@${profile.username}'),

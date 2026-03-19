@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/themes/app_theme.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
+import 'package:dabbler/core/design_system/design_system.dart';
 
 import 'package:dabbler/widgets/app_card.dart';
 
@@ -117,6 +116,7 @@ class FriendsListWidget extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _FriendAvatarItem extends StatelessWidget {
   final Map<String, dynamic> friend;
 
@@ -126,7 +126,7 @@ class _FriendAvatarItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final userId = friend['user_id'] as String? ?? friend['id'] as String?;
     final displayName = friend['display_name'] as String? ?? 'User';
-    final avatarUrl = resolveAvatarUrl(friend['avatar_url'] as String?);
+    final avatarUrl = friend['avatar_url'] as String?;
     final verified = friend['verified'] as bool? ?? false;
 
     return GestureDetector(
@@ -152,19 +152,13 @@ class _FriendAvatarItem extends StatelessWidget {
                       width: 2,
                     ),
                   ),
-                  child: CircleAvatar(
-                    radius: 28,
-                    backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                        ? NetworkImage(avatarUrl)
-                        : null,
-                    child: avatarUrl == null || avatarUrl.isEmpty
-                        ? Text(
-                            displayName.substring(0, 1).toUpperCase(),
-                            style: context.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          )
-                        : null,
+                  child: DSAvatar(
+                    size: AvatarSize.medium,
+                    customDimension: 56,
+                    imageUrl: avatarUrl,
+                    displayName: displayName,
+                    context: AvatarContext.profile,
+                    hasBorder: false,
                   ),
                 ),
                 if (verified)

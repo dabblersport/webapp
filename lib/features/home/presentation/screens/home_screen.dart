@@ -14,7 +14,6 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -22,7 +21,9 @@ import 'package:dabbler/features/home/presentation/widgets/notification_permissi
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
+import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/features/social/presentation/widgets/repost_card.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -263,9 +264,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
               padding: const EdgeInsets.all(2),
               child: DSAvatar.small(
-                imageUrl: resolveAvatarUrl(
-                  _userProfile?['avatar_url'] as String?,
-                ),
+                imageUrl: _userProfile?['avatar_url'] as String?,
                 displayName: _resolveDisplayName(_userProfile),
                 context: AvatarContext.main,
               ),
@@ -522,7 +521,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return FeedPostCard(post: posts[index]);
+          final post = posts[index];
+          if (post.originType == OriginType.repost) {
+            return RepostCard(post: post);
+          }
+          return FeedPostCard(post: post);
         },
       ),
     );

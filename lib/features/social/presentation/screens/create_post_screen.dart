@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/user_circle.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -363,7 +362,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         children: [
           // Author avatar
           DSAvatar.small(
-            imageUrl: resolveAvatarUrl(_userProfile?['avatar_url'] as String?),
+            imageUrl: _userProfile?['avatar_url'] as String?,
             displayName: _userProfile?['display_name'] as String?,
             context: AvatarContext.main,
           ),

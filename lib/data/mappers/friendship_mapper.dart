@@ -3,7 +3,6 @@ import 'package:dabbler/data/models/friend_edge.dart';
 import 'package:dabbler/data/models/social/friend.dart';
 import 'package:dabbler/data/models/social/friend_model.dart';
 import 'package:dabbler/data/models/social/friend_request.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 
 /// Mapper for converting between database models and domain models
 class FriendshipMapper {
@@ -75,8 +74,7 @@ class FriendshipMapper {
       friendRequestAcceptedAt: friendship.status == 'accepted'
           ? friendship.updatedAt
           : null,
-      profilePicture:
-          resolveAvatarUrl(profileData['avatar_url'] as String?) ?? '',
+      profilePicture: profileData['avatar_url'] as String? ?? '',
       bio: profileData['bio'] as String? ?? '',
       isVerified: profileData['is_verified'] as bool? ?? false,
       isOnline: false, // Will be updated by presence tracking

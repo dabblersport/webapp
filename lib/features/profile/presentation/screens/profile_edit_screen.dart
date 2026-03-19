@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,6 +11,7 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/features/profile/services/image_upload_service.dart';
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
@@ -48,7 +51,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   _primarySport; // UUID from sports.id (stored in profiles.preferred_sport)
   List<Sport> _availableSports = []; // Loaded from Supabase
   Map<String, Sport> _sportsByKey = {}; // sport_key -> Sport lookup
-  Map<String, Sport> _sportsById = {}; // UUID -> Sport lookup
   List<_TimeSlot> _weeklyAvailability = [];
 
   List<String> get _genderOptions {
@@ -62,8 +64,65 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   List<String> get _languageOptions => ['en', 'ar', 'fr', 'es', 'de'];
 
+  String get _currentAvatarDisplayName {
+    final displayName = _displayNameController.text.trim();
+    return displayName.isNotEmpty ? displayName : 'User';
+  }
+
+  bool get _supportsCamera =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
   bool _isLoading = false;
   late AuthService _authService;
+
+  bool _isMissingTableError(Object error, String tableName) {
+    return error is PostgrestException &&
+        (error.code == 'PGRST205' ||
+            error.message.toLowerCase().contains(
+              "could not find the table '$tableName'",
+            ));
+  }
+
+  Future<Map<String, dynamic>?> _fetchPreferredProfileRow(String userId) async {
+    final activeRows = await Supabase.instance.client
+        .from(SupabaseConfig.usersTable)
+        .select()
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('updated_at', ascending: false)
+        .limit(1);
+
+    if (activeRows.isNotEmpty) {
+      return activeRows.first;
+    }
+
+    final playerRows = await Supabase.instance.client
+        .from(SupabaseConfig.usersTable)
+        .select()
+        .eq('user_id', userId)
+        .eq('persona_type', 'player')
+        .order('updated_at', ascending: false)
+        .limit(1);
+
+    if (playerRows.isNotEmpty) {
+      return playerRows.first;
+    }
+
+    final fallbackRows = await Supabase.instance.client
+        .from(SupabaseConfig.usersTable)
+        .select()
+        .eq('user_id', userId)
+        .order('updated_at', ascending: false)
+        .limit(1);
+
+    if (fallbackRows.isEmpty) {
+      return null;
+    }
+
+    return fallbackRows.first;
+  }
 
   @override
   void initState() {
@@ -87,26 +146,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         for (final s in _availableSports)
           if (s.sportKey != null) s.sportKey!: s,
       };
-      _sportsById = {for (final s in _availableSports) s.id: s};
 
       final user = _authService.getCurrentUser();
       if (user?.id == null) return;
 
-      // Prefer player persona, fall back to most recently updated row
-      var response = await Supabase.instance.client
-          .from(SupabaseConfig.usersTable)
-          .select()
-          .eq('user_id', user!.id)
-          .eq('persona_type', 'player')
-          .maybeSingle();
-
-      response ??= await Supabase.instance.client
-          .from(SupabaseConfig.usersTable)
-          .select()
-          .eq('user_id', user.id)
-          .order('updated_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+        final response = await _fetchPreferredProfileRow(user!.id);
 
       if (!mounted) return;
 
@@ -138,11 +182,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _selectedGender = (response['gender'] as String?)?.toLowerCase();
         _selectedLanguage = response['language'] as String?;
         _avatarPath = response['avatar_url'] as String?;
-        _avatarUrl = _avatarPath == null
-            ? null
-            : Supabase.instance.client.storage
-                  .from(SupabaseConfig.avatarsBucket)
-                  .getPublicUrl(_avatarPath!);
+        _avatarUrl = resolveAvatarUrl(_avatarPath) ?? _avatarPath;
 
         // Load primary sport
         _primarySport = response['preferred_sport'] as String?;
@@ -231,6 +271,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         }
       }
     } catch (e) {
+      if (_isMissingTableError(e, 'public.user_preferences')) {
+        debugPrint('user_preferences table missing; skipping preference load');
+        return;
+      }
+
       // Preferences loading failed - not critical
       debugPrint('Error loading preferences: $e');
     }
@@ -256,7 +301,327 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
-  Future<void> _pickAndUploadAvatar() async {
+  List<String> _buildAvatarChoices(String userId) {
+    final profileSeed = _profileId ?? 'draft';
+    return List.generate(
+      12,
+      (index) => buildDsAvatarReference(
+        'profile:$profileSeed:user:$userId:option:${index + 1}',
+      ),
+    );
+  }
+
+  Future<void> _showAvatarOptionsDrawer() async {
+    final user = _authService.getCurrentUser();
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to update your avatar')),
+        );
+      }
+      return;
+    }
+
+    final avatarChoices = _buildAvatarChoices(user.id);
+
+    await showAdaptiveSheet<void>(
+      context: context,
+      backgroundColor: context.getCategoryTheme('main').surface,
+      builder: (sheetContext) {
+        final colorScheme = sheetContext.getCategoryTheme('main');
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Choose your avatar',
+                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Pick one of 12 generated avatars or upload your own photo.',
+                style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 20),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: avatarChoices.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1,
+                ),
+                itemBuilder: (gridContext, index) {
+                  final avatarReference = avatarChoices[index];
+                  final isSelected = _avatarPath == avatarReference;
+
+                  return InkWell(
+                    onTap: _isUploadingAvatar
+                        ? null
+                        : () async {
+                            Navigator.of(sheetContext).pop();
+                            await _selectDsAvatar(avatarReference);
+                          },
+                    borderRadius: BorderRadius.circular(20),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colorScheme.primary.withValues(alpha: 0.12)
+                            : colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? colorScheme.primary
+                              : colorScheme.outlineVariant,
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: DSAvatar(
+                        size: AvatarSize.large,
+                        customDimension: 58,
+                        imageUrl: avatarReference,
+                        displayName: _currentAvatarDisplayName,
+                        context: AvatarContext.profile,
+                        hasBorder: false,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Upload options',
+                style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildAvatarActionTile(
+                sheetContext,
+                icon: Iconsax.folder_open_copy,
+                title: 'From file',
+                subtitle: 'Choose an image file from your device',
+                onTap: _isUploadingAvatar
+                    ? null
+                    : () async {
+                        Navigator.of(sheetContext).pop();
+                        await _pickAndUploadAvatarFromFile();
+                      },
+              ),
+              const SizedBox(height: 12),
+              _buildAvatarActionTile(
+                sheetContext,
+                icon: Iconsax.gallery_copy,
+                title: 'From gallery',
+                subtitle: 'Pick a photo from your gallery',
+                onTap: _isUploadingAvatar
+                    ? null
+                    : () async {
+                        Navigator.of(sheetContext).pop();
+                        await _pickAndUploadAvatarFromSource(
+                          ImageSource.gallery,
+                        );
+                      },
+              ),
+              if (_supportsCamera) ...[
+                const SizedBox(height: 12),
+                _buildAvatarActionTile(
+                  sheetContext,
+                  icon: Iconsax.camera_copy,
+                  title: 'Take a photo',
+                  subtitle: 'Open the camera and capture a new avatar',
+                  onTap: _isUploadingAvatar
+                      ? null
+                      : () async {
+                          Navigator.of(sheetContext).pop();
+                          await _pickAndUploadAvatarFromSource(
+                            ImageSource.camera,
+                          );
+                        },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAvatarActionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Future<void> Function()? onTap,
+  }) {
+    final colorScheme = context.getCategoryTheme('main');
+
+    return Material(
+      color: colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap == null ? null : () => onTap(),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: colorScheme.primary),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Iconsax.arrow_right_3_copy,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _selectDsAvatar(String avatarReference) async {
+    if (_isUploadingAvatar) return;
+
+    final user = _authService.getCurrentUser();
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to update your avatar')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isUploadingAvatar = true);
+
+    try {
+      await _authService.updateUserProfile(
+        avatarUrl: avatarReference,
+        profileId: _profileId,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _avatarPath = avatarReference;
+        _avatarUrl = avatarReference;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Avatar updated successfully')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating avatar: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadAvatarFromFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      Uint8List? bytes = file.bytes;
+      if (bytes == null && file.path != null) {
+        bytes = await XFile(file.path!).readAsBytes();
+      }
+      if (bytes == null) {
+        throw Exception('Could not read the selected file');
+      }
+
+      await _uploadAvatarBytes(bytes: bytes, originalFileName: file.name);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error selecting avatar: $e')));
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadAvatarFromSource(ImageSource source) async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      await _uploadAvatarBytes(bytes: bytes, originalFileName: picked.name);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error selecting avatar: $e')));
+      }
+    }
+  }
+
+  Future<void> _uploadAvatarBytes({
+    required Uint8List bytes,
+    required String originalFileName,
+  }) async {
     if (_isUploadingAvatar) return;
 
     final user = _authService.getCurrentUser();
@@ -270,20 +635,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
 
     try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (picked == null) return;
-
       setState(() => _isUploadingAvatar = true);
 
       final uploadService = ImageUploadService();
-      final bytes = await picked.readAsBytes();
       final uploadResult = await uploadService.uploadProfileImageBytes(
         userId: user.id,
         bytes: bytes,
-        originalFileName: picked.name,
+        originalFileName: originalFileName,
       );
 
-      await _authService.updateUserProfile(avatarUrl: uploadResult.path);
+      await _authService.updateUserProfile(
+        avatarUrl: uploadResult.path,
+        profileId: _profileId,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -625,11 +989,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                             DSAvatar(
                               size: AvatarSize.large,
                               imageUrl: _avatarUrl,
-                              displayName:
-                                  _displayNameController.text.trim().isNotEmpty
-                                  ? _displayNameController.text
-                                  : 'User',
+                              displayName: _currentAvatarDisplayName,
                               context: AvatarContext.profile,
+                              onTap: _isUploadingAvatar
+                                  ? null
+                                  : _showAvatarOptionsDrawer,
                             ),
                             Positioned(
                               bottom: 0,
@@ -637,7 +1001,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               child: InkWell(
                                 onTap: _isUploadingAvatar
                                     ? null
-                                    : _pickAndUploadAvatar,
+                                    : _showAvatarOptionsDrawer,
                                 customBorder: const CircleBorder(),
                                 child: Container(
                                   padding: const EdgeInsets.all(8),
@@ -849,6 +1213,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         bio: _bioController.text.trim().isEmpty
             ? null
             : _bioController.text.trim(),
+        profileId: _profileId,
         age: age,
         gender: _selectedGender,
         language: _selectedLanguage,
@@ -974,6 +1339,11 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         });
       }
     } catch (e) {
+      if (_isMissingTableError(e, 'public.user_preferences')) {
+        debugPrint('user_preferences table missing; skipping preference save');
+        return;
+      }
+
       debugPrint('Error saving user preferences: $e');
     }
   }

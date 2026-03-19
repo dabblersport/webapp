@@ -102,6 +102,48 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .toList();
   }
 
+  Future<List<Map<String, dynamic>>> _enrichCommentRows(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final profileIds = <String>{};
+    for (final row in rows) {
+      final profileId = row['author_profile_id'];
+      if (profileId is String && profileId.isNotEmpty) {
+        profileIds.add(profileId);
+      }
+    }
+
+    if (profileIds.isEmpty) {
+      return rows;
+    }
+
+    final profilesMap = <String, Map<String, dynamic>>{};
+    final profileRows = await _db
+        .from('profiles')
+        .select('id, display_name, avatar_url')
+        .inFilter('id', profileIds.toList());
+
+    for (final profileRow in profileRows) {
+      profilesMap[profileRow['id'] as String] =
+          Map<String, dynamic>.from(profileRow);
+    }
+
+    return rows.map((raw) {
+      final row = Map<String, dynamic>.from(raw);
+      final authorProfileId = row['author_profile_id'];
+      if (authorProfileId is String && authorProfileId.isNotEmpty) {
+        final authorProfile = profilesMap[authorProfileId];
+        if (authorProfile != null) {
+          row['author_display_name'] =
+              authorProfile['display_name'] ?? row['author_display_name'];
+          row['author_avatar_url'] =
+              authorProfile['avatar_url'] ?? row['author_avatar_url'];
+        }
+      }
+      return row;
+    }).toList();
+  }
+
   /// Enrich a single row using pre-fetched lookup maps.
   static Map<String, dynamic> _enrichRow(
     Map<String, dynamic> raw,
@@ -162,6 +204,56 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     }
 
     return row;
+  }
+
+  Future<List<Map<String, dynamic>>> _attachOriginalPosts(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    for (final row in rows) {
+      if (row['origin_type'] != 'repost' || row['origin_id'] == null) {
+        row['original_post'] = null;
+      }
+    }
+
+    final repostRows = rows
+        .where(
+          (row) => row['origin_type'] == 'repost' && row['origin_id'] != null,
+        )
+        .toList();
+
+    if (repostRows.isEmpty) {
+      return rows;
+    }
+
+    final originIds = repostRows
+        .map((row) => row['origin_id'] as String)
+        .toSet()
+        .toList();
+
+    final originalRows = await _db
+        .from('posts')
+        .select()
+        .inFilter('id', originIds)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false);
+
+    if (originalRows.isEmpty) {
+      return rows;
+    }
+
+    final enrichedOriginalRows = await _enrichRows(originalRows);
+    final originalById = {
+      for (final row in enrichedOriginalRows) row['id'] as String: row,
+    };
+
+    for (final repostRow in repostRows) {
+      final original = originalById[repostRow['origin_id'] as String];
+      if (original != null) {
+        repostRow['original_post'] = original;
+      }
+    }
+
+    return rows;
   }
 
   Future<List<Post>> _fetchPostsByIds(
@@ -245,7 +337,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .order('id', ascending: false)
         .range(offset, offset + limit - 1);
     final enriched = await _enrichRows(rows);
-    return enriched.map((r) => Post.fromJson(r)).toList();
+    final hydrated = await _attachOriginalPosts(enriched);
+    return hydrated.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -261,9 +354,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .eq('circle_id', circleId)
         .order('created_at', ascending: false, referencedTable: 'posts')
         .range(offset, offset + limit - 1);
-    return rows
-        .map((r) => Post.fromJson(r['posts'] as Map<String, dynamic>))
-        .toList();
+    final postRows = rows
+      .map((r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>))
+      .toList();
+    final enriched = await _enrichRows(postRows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    return hydrated.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -278,9 +374,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .eq('squad_id', squadId)
         .order('created_at', ascending: false, referencedTable: 'posts')
         .range(offset, offset + limit - 1);
-    return rows
-        .map((r) => Post.fromJson(r['posts'] as Map<String, dynamic>))
-        .toList();
+    final postRows = rows
+      .map((r) => Map<String, dynamic>.from(r['posts'] as Map<String, dynamic>))
+      .toList();
+    final enriched = await _enrichRows(postRows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    return hydrated.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -404,8 +503,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final seen = <String>{};
     for (final row in rows) {
       final postId = row['post_id'];
-      if (postId is! String || postId.isEmpty || seen.contains(postId))
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
+      }
       seen.add(postId);
       orderedIds.add(postId);
     }
@@ -435,8 +535,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final seen = <String>{};
     for (final row in rows) {
       final postId = row['post_id'];
-      if (postId is! String || postId.isEmpty || seen.contains(postId))
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
+      }
       seen.add(postId);
       orderedIds.add(postId);
     }
@@ -464,8 +565,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final seen = <String>{};
     for (final row in rows) {
       final postId = row['original_post_id'];
-      if (postId is! String || postId.isEmpty || seen.contains(postId))
+      if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
+      }
       seen.add(postId);
       orderedIds.add(postId);
     }
@@ -525,7 +627,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Post, Failure>> getPost(String postId) => guard(() async {
     final row = await _db.from('posts').select().eq('id', postId).single();
     final enriched = await _enrichRows([row]);
-    return Post.fromJson(enriched.first);
+    final hydrated = await _attachOriginalPosts(enriched);
+
+    return Post.fromJson(hydrated.first);
   });
 
   // ── Write ──────────────────────────────────────────────────────────
@@ -913,13 +1017,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           }
 
           // Fallback: schemas that expect both.
-          if (row == null) {
-            row = await _db
-                .from('hashtags')
-                .insert({'tag': normalised, 'slug': normalised})
-                .select('id')
-                .single();
-          }
+          row ??= await _db
+              .from('hashtags')
+              .insert({'tag': normalised, 'slug': normalised})
+              .select('id')
+              .single();
 
           hashtagId = row['id'] as String;
         }
@@ -1031,7 +1133,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .order('created_at')
         .range(offset, offset + limit - 1);
     // Flatten the joined profile into author_display_name.
-    final enriched = rows.map((r) {
+    final flattened = rows.map((r) {
       final row = Map<String, dynamic>.from(r);
       final profile = row.remove('profiles');
       if (profile is Map && profile['display_name'] != null) {
@@ -1039,6 +1141,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
       return row;
     }).toList();
+    final enriched = await _enrichCommentRows(flattened);
     return enriched.map((r) => PostComment.fromJson(r)).toList();
   });
 
@@ -1047,6 +1150,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     required String postId,
     required String body,
     String? parentCommentId,
+    String? imageUrl,
+    String? gifUrl,
+    String? locationName,
+    double? locationLat,
+    double? locationLng,
   }) => guard(() async {
     final uid = svc.authUserId()!;
     final pid = await _profileId();
@@ -1056,6 +1164,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       'author_profile_id': pid,
       'body': body,
       if (parentCommentId != null) 'parent_comment_id': parentCommentId,
+      if (imageUrl != null) 'image_url': imageUrl,
+      if (gifUrl != null) 'gif_url': gifUrl,
+      if (locationName != null) 'location_name': locationName,
+      if (locationLat != null) 'location_lat': locationLat,
+      if (locationLng != null) 'location_lng': locationLng,
     };
     final row = await _db.from('post_comments').insert(data).select().single();
     return PostComment.fromJson(row);
@@ -1078,22 +1191,33 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String postId, {
     String? commentary,
   }) => guard(() async {
-    final uid = svc.authUserId()!;
-    final pid = await _profileId();
-    await _db.from('post_reposts').insert({
-      'original_post_id': postId,
-      'reposter_user_id': uid,
-      'reposter_profile_id': pid,
-      if (commentary != null) 'commentary': commentary,
-    });
+    await _db.rpc(
+      'rpc_repost_post',
+      params: {'p_original_post_id': postId, 'p_quote_text': commentary},
+    );
     return const Unit();
   });
 
   @override
-  Future<Result<Unit, Failure>> undoRepost(String repostId) => guard(() async {
-    await _db.from('post_reposts').delete().eq('id', repostId);
-    return const Unit();
-  });
+  Future<Result<Unit, Failure>> undoRepost(String originalPostId) =>
+      guard(() async {
+        final uid = svc.authUserId()!;
+
+        await _db
+            .from('posts')
+            .delete()
+            .eq('origin_type', 'repost')
+            .eq('origin_id', originalPostId)
+            .eq('author_user_id', uid);
+
+        await _db
+            .from('post_reposts')
+            .delete()
+            .eq('original_post_id', originalPostId)
+            .eq('reposter_user_id', uid);
+
+        return const Unit();
+      });
 
   @override
   Future<Result<bool, Failure>> hasReposted(String postId) => guard(() async {
@@ -1164,36 +1288,66 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
   @override
   Future<Result<String, Failure>> uploadPostMedia(XFile file) =>
-      guard(() async {
-        final uid = svc.authUserId()!;
-        final ext = p.extension(file.path).toLowerCase();
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final filePath = '$uid/${timestamp}_media$ext';
-        final bytes = await file.readAsBytes();
+      _uploadToBucket(file, folder: 'posts');
 
-        // Determine content type from extension
-        final contentType = switch (ext) {
-          '.jpg' || '.jpeg' => 'image/jpeg',
-          '.png' => 'image/png',
-          '.webp' => 'image/webp',
-          '.gif' => 'image/gif',
-          '.mp4' => 'video/mp4',
-          '.mov' => 'video/quicktime',
-          _ => 'application/octet-stream',
-        };
+  @override
+  Future<Result<String, Failure>> uploadCommentMedia(XFile file) =>
+      _uploadToBucket(file, folder: 'comments');
 
-        await _db.storage
-            .from(SupabaseConfig.postMediaBucket)
-            .uploadBinary(
-              filePath,
-              bytes,
-              fileOptions: FileOptions(contentType: contentType, upsert: true),
-            );
+  Future<Result<String, Failure>> _uploadToBucket(
+    XFile file, {
+    required String folder,
+  }) => guard(() async {
+    final uid = svc.authUserId()!;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-        final publicUrl = _db.storage
-            .from(SupabaseConfig.postMediaBucket)
-            .getPublicUrl(filePath);
+    // On Flutter web, file.path is a blob URL so p.extension returns ''.
+    // Prefer file.mimeType, then fall back to extension-based detection.
+    final mimeFromType = file.mimeType;
+    final ext = p.extension(file.path).toLowerCase();
 
-        return publicUrl;
-      });
+    final contentType = mimeFromType?.isNotEmpty == true
+        ? mimeFromType!
+        : switch (ext) {
+            '.jpg' || '.jpeg' => 'image/jpeg',
+            '.png' => 'image/png',
+            '.webp' => 'image/webp',
+            '.gif' => 'image/gif',
+            '.mp4' => 'video/mp4',
+            '.mov' => 'video/quicktime',
+            _ => 'image/jpeg', // safe default for images from picker
+          };
+
+    // Derive a stable extension for the file path from the resolved content type.
+    final resolvedExt = ext.isNotEmpty
+        ? ext
+        : switch (contentType) {
+            'image/jpeg' => '.jpg',
+            'image/png' => '.png',
+            'image/webp' => '.webp',
+            'image/gif' => '.gif',
+            'video/mp4' => '.mp4',
+            'video/quicktime' => '.mov',
+            _ => '.jpg',
+          };
+
+    // uid MUST be the first path segment so Storage RLS policies (which check
+    // foldername(name)[1] = auth.uid()) continue to work.
+    final filePath = '$uid/$folder/${timestamp}_media$resolvedExt';
+    final bytes = await file.readAsBytes();
+
+    await _db.storage
+        .from(SupabaseConfig.postMediaBucket)
+        .uploadBinary(
+          filePath,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
+        );
+
+    final publicUrl = _db.storage
+        .from(SupabaseConfig.postMediaBucket)
+        .getPublicUrl(filePath);
+
+    return publicUrl;
+  });
 }

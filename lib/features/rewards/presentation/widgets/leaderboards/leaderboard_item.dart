@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/data/models/rewards/achievement.dart';
 import 'package:dabbler/data/models/rewards/badge_tier.dart';
 
@@ -502,29 +505,13 @@ class _LeaderboardItemState extends State<LeaderboardItem>
   Widget _buildAvatarSection() {
     return Stack(
       children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: widget.user.isCurrentUser
-                  ? _getTierColor(widget.user.tier)
-                  : Colors.grey[300]!,
-              width: widget.user.isCurrentUser ? 2 : 1,
-            ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(25),
-            child: widget.user.avatarUrl != null
-                ? Image.network(
-                    widget.user.avatarUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        _buildDefaultAvatar(),
-                  )
-                : _buildDefaultAvatar(),
-          ),
+        DSAvatar(
+          size: AvatarSize.medium,
+          customDimension: 50,
+          imageUrl: widget.user.avatarUrl,
+          displayName: widget.user.displayName,
+          context: AvatarContext.sports,
+          hasBorder: widget.user.isCurrentUser,
         ),
         if (widget.showFriendIndicator && widget.user.isFriend)
           Positioned(
@@ -541,34 +528,6 @@ class _LeaderboardItemState extends State<LeaderboardItem>
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildDefaultAvatar() {
-    final tierColor = _getTierColor(widget.user.tier);
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            tierColor.withValues(alpha: 0.3),
-            tierColor.withValues(alpha: 0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          widget.user.displayName.isNotEmpty
-              ? widget.user.displayName[0].toUpperCase()
-              : widget.user.username[0].toUpperCase(),
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: tierColor,
-          ),
-        ),
-      ),
     );
   }
 

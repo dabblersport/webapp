@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/data/models/social/conversation_model.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
 
@@ -55,23 +58,11 @@ class ConversationTile extends StatelessWidget {
   Widget _buildAvatar(ThemeData theme) {
     return Stack(
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: theme.colorScheme.primaryContainer,
-          backgroundImage:
-              conversation.avatarUrl != null &&
-                  conversation.avatarUrl!.isNotEmpty
-              ? NetworkImage(conversation.avatarUrl!)
-              : null,
-          child:
-              conversation.avatarUrl == null || conversation.avatarUrl!.isEmpty
-              ? Text(
-                  conversation.name?.substring(0, 1).toUpperCase() ?? 'C',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                )
-              : null,
+        DSAvatar(
+          size: AvatarSize.medium,
+          imageUrl: conversation.avatarUrl,
+          displayName: conversation.name,
+          context: AvatarContext.social,
         ),
         if (isPinned)
           Positioned(

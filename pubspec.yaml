@@ -89,6 +89,7 @@ dependencies:
 
   # Image picker for avatar uploads
   image_picker: ^1.0.7
+  file_picker: ^8.1.2
 
   # Image processing and manipulation
   image: ^4.5.4

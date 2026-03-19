@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
@@ -282,24 +285,12 @@ class _HeaderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                radius: 28,
-                backgroundColor: colorScheme.primaryContainer,
-                backgroundImage:
-                    args.avatarUrl != null && args.avatarUrl!.isNotEmpty
-                    ? NetworkImage(args.avatarUrl!)
-                    : null,
-                child: args.avatarUrl == null || args.avatarUrl!.isEmpty
-                    ? Text(
-                        args.displayName.isEmpty
-                            ? '?'
-                            : args.displayName.characters.first.toUpperCase(),
-                        style: textTheme.titleLarge?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      )
-                    : null,
+              DSAvatar(
+                size: AvatarSize.medium,
+                customDimension: 56,
+                imageUrl: args.avatarUrl,
+                displayName: args.displayName,
+                context: AvatarContext.sports,
               ),
               const SizedBox(width: 16),
               Expanded(

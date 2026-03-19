@@ -3,16 +3,16 @@ import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Shared post card used in Feed, ProfileScreen, and UserProfileScreen.
@@ -20,9 +20,10 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 /// This is a 1:1 extraction of `_HomePostCard` so that all surfaces render
 /// posts with exactly the same visual style and interactive behaviour.
 class FeedPostCard extends ConsumerStatefulWidget {
-  const FeedPostCard({super.key, required this.post});
+  const FeedPostCard({super.key, required this.post, this.isEmbedded = false});
 
   final Post post;
+  final bool isEmbedded;
 
   @override
   ConsumerState<FeedPostCard> createState() => _FeedPostCardState();
@@ -104,6 +105,45 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     );
   }
 
+  void _showRepostMenu() {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showAdaptiveSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Iconsax.refresh_copy, color: cs.onSurface),
+              title: Text('Repost', style: tt.bodyLarge),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                ref.read(postActionsProvider.notifier).repostPost(post.id);
+              },
+            ),
+            ListTile(
+              leading: Icon(Iconsax.edit_2_copy, color: cs.onSurface),
+              title: Text('Quote Repost', style: tt.bodyLarge),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                showAdaptiveSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  showDragHandle: false,
+                  builder: (_) => QuoteRepostSheet(originalPost: post),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Reaction helpers ────────────────────────────────────────────────
 
   List<MapEntry<dynamic, dynamic>> _reactionBreakdownEntries(Post post) {
@@ -152,17 +192,17 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
   IconData _visibilityIcon(PostVisibility v) {
     switch (v) {
       case PostVisibility.public:
-        return Icons.public;
+        return Iconsax.global_copy;
       case PostVisibility.followers:
-        return Icons.people_outline;
+        return Iconsax.people_copy;
       case PostVisibility.circle:
-        return Icons.group_outlined;
+        return Iconsax.people_copy;
       case PostVisibility.squad:
-        return Icons.groups_outlined;
+        return Iconsax.profile_2user_copy;
       case PostVisibility.private:
-        return Icons.lock_outline;
+        return Iconsax.lock_copy;
       case PostVisibility.link:
-        return Icons.link;
+        return Iconsax.share_copy;
     }
   }
 
@@ -230,6 +270,8 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
   Widget build(BuildContext context) {
     final hasLikedAsync = ref.watch(hasLikedProvider(post.id));
     final hasLiked = _optimisticLiked ?? hasLikedAsync.valueOrNull ?? false;
+    final hasRepostedAsync = ref.watch(hasRepostedProvider(post.id));
+    final hasReposted = hasRepostedAsync.valueOrNull ?? false;
     final myReactionsAsync = ref.watch(myReactionsProvider(post.id));
     final myReactions = myReactionsAsync.valueOrNull ?? <String>{};
     final cs = Theme.of(context).colorScheme;
@@ -245,67 +287,73 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     final hasImage = imageUrl != null;
     final expiryText = _expiryLabel(post.expiresAt);
     final hasLocation = post.geoLat != null && post.geoLng != null;
+    final canRepost = post.allowReposts && post.originType != OriginType.repost;
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => context.push('${RoutePaths.socialPostDetail}/${post.id}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: AppSpacing.xl,
-            ),
+            padding: widget.isEmbedded
+                ? const EdgeInsets.only(top: AppSpacing.sm)
+                : const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: AppSpacing.lg,
+                  ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ═══ Avatar with + button ═══
-                GestureDetector(
-                  onTap: isAnonymous
-                      ? null
-                      : () => _navigateToAuthorProfile(context, post),
-                  child: SizedBox(
-                    width: 48,
-                    height: 52,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        _AuthorAvatar(
-                          avatarUrl: resolveAvatarUrl(post.authorAvatarUrl),
-                          label: authorLabel,
-                          radius: 22,
-                          isAnonymous: isAnonymous,
-                          cs: cs,
-                          tt: tt,
-                        ),
-                        if (!isAnonymous && post.authorSportEmoji != null)
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: cs.surface,
-                                shape: BoxShape.circle,
-                                border: Border.all(
+                if (!widget.isEmbedded) ...[
+                  GestureDetector(
+                    onTap: isAnonymous
+                        ? null
+                        : () => _navigateToAuthorProfile(context, post),
+                    child: SizedBox(
+                      width: 48,
+                      height: 52,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          _AuthorAvatar(
+                            avatarUrl: post.authorAvatarUrl,
+                            label: authorLabel,
+                            radius: 22,
+                            isAnonymous: isAnonymous,
+                            cs: cs,
+                            tt: tt,
+                          ),
+                          if (!isAnonymous && post.authorSportEmoji != null)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
                                   color: cs.surface,
-                                  width: 1.5,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: cs.surface,
+                                    width: 1.5,
+                                  ),
                                 ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  post.authorSportEmoji!,
-                                  style: const TextStyle(fontSize: 12),
+                                child: Center(
+                                  child: Text(
+                                    post.authorSportEmoji!,
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
+                ],
 
                 // ═══ Content column ═══
                 Expanded(
@@ -359,15 +407,13 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             ),
                           ],
                           const Spacer(),
-                          Text(
-                            timeAgo,
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
                           if (post.isPinned) ...[
                             const SizedBox(width: 4),
-                            Icon(Icons.push_pin, size: 14, color: cs.primary),
+                            Icon(
+                              Iconsax.location_copy,
+                              size: 14,
+                              color: cs.primary,
+                            ),
                           ],
                         ],
                       ),
@@ -473,7 +519,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                 errorBuilder: (_, __, ___) => Container(
                                   color: cs.surfaceContainerHigh,
                                   child: Icon(
-                                    Icons.image_not_supported_outlined,
+                                    Iconsax.gallery_slash_copy,
                                     color: cs.onSurfaceVariant,
                                   ),
                                 ),
@@ -717,8 +763,8 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               onTap: () => _handleLikeTap(hasLiked),
                               child: _ActionItem(
                                 icon: hasLiked
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
+                                    ? Iconsax.heart
+                                    : Iconsax.heart_copy,
                                 count: _localLikeCount,
                                 color: hasLiked
                                     ? cs.error
@@ -732,7 +778,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               behavior: HitTestBehavior.opaque,
                               onTap: () => _showReactionPicker(myReactions),
                               child: _ActionItem(
-                                icon: Icons.add_reaction_outlined,
+                                icon: Iconsax.add_circle_copy,
                                 count: _reactionBreakdownEntries(
                                   post,
                                 ).fold<int>(0, (s, e) => s + (e.value as int)),
@@ -743,25 +789,41 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             const SizedBox(width: 16),
                             // Comment
                             _ActionItem(
-                              icon: Icons.chat_bubble_outline_rounded,
+                              icon: Iconsax.message_copy,
                               count: post.commentCount,
                               color: cs.onSurfaceVariant,
                               tt: tt,
                             ),
                             const SizedBox(width: 16),
                             // Repost
-                            if (post.allowReposts) ...[
-                              _ActionItem(
-                                icon: Icons.repeat_rounded,
-                                count: 0,
-                                color: cs.onSurfaceVariant,
-                                tt: tt,
+                            if (canRepost) ...[
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  if (hasReposted) {
+                                    ref
+                                        .read(postActionsProvider.notifier)
+                                        .undoRepost(post.id);
+                                    return;
+                                  }
+                                  _showRepostMenu();
+                                },
+                                child: _ActionItem(
+                                  icon: hasReposted
+                                      ? Iconsax.refresh
+                                      : Iconsax.refresh_copy,
+                                  count: post.repostCount,
+                                  color: hasReposted
+                                      ? cs.tertiary
+                                      : cs.onSurfaceVariant,
+                                  tt: tt,
+                                ),
                               ),
                               const SizedBox(width: 16),
                             ],
                             // Share / Views
                             _ActionItem(
-                              icon: Icons.people_outline_rounded,
+                              icon: Iconsax.eye_copy,
                               count: post.viewCount,
                               color: cs.onSurfaceVariant,
                               tt: tt,
@@ -777,7 +839,11 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
           ),
 
           // ═══ Thread comment preview ═══
-          if (post.commentCount > 0) _ThreadCommentPreview(postId: post.id),
+          if (post.commentCount > 0)
+            _ThreadCommentPreview(
+              postId: post.id,
+              isEmbedded: widget.isEmbedded,
+            ),
         ],
       ),
     );
@@ -789,9 +855,10 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 class _ThreadCommentPreview extends ConsumerWidget {
-  const _ThreadCommentPreview({required this.postId});
+  const _ThreadCommentPreview({required this.postId, required this.isEmbedded});
 
   final String postId;
+  final bool isEmbedded;
 
   String _relativeTime(DateTime createdAt) {
     final diff = DateTime.now().difference(createdAt);
@@ -817,9 +884,20 @@ class _ThreadCommentPreview extends ConsumerWidget {
         final displayName = comment.authorDisplayName ?? 'User';
         final avatarUrl = comment.authorAvatarUrl;
         final timeAgo = _relativeTime(comment.createdAt);
+        final hasBody = comment.body.trim().isNotEmpty;
+        final hasImage =
+            comment.imageUrl != null && comment.imageUrl!.isNotEmpty;
+        final hasGif = comment.gifUrl != null && comment.gifUrl!.isNotEmpty;
+        final hasLocation =
+            comment.locationName != null && comment.locationName!.isNotEmpty;
 
         return Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, 16, 12),
+          padding: EdgeInsets.fromLTRB(
+            isEmbedded ? 0 : AppSpacing.xl,
+            AppSpacing.lg,
+            16,
+            12,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -884,50 +962,159 @@ class _ThreadCommentPreview extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Icon(
-                          Icons.more_horiz,
-                          size: 16,
-                          color: cs.onSurfaceVariant,
-                        ),
+                        // Icon(
+                        //   Icons.more_horiz,
+                        //   size: 16,
+                        //   color: cs.onSurfaceVariant,
+                        // ),
                       ],
                     ),
                     const SizedBox(height: 2),
 
-                    // ─── Body ───
-                    Text(
-                      comment.body,
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    // ─── Body / attachments ───
+                    if (hasBody)
+                      Text(
+                        comment.body,
+                        style: tt.bodyMedium?.copyWith(color: cs.onSurface),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    if (hasImage)
+                      Padding(
+                        padding: EdgeInsets.only(top: hasBody ? 8 : 4),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 200),
+                            child: Image.network(
+                              comment.imageUrl!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (_, __, ___) => Container(
+                                height: 100,
+                                color: cs.surfaceContainerHighest,
+                                child: Center(
+                                  child: Icon(
+                                    Iconsax.gallery_slash_copy,
+                                    color: cs.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (hasGif)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: hasBody || hasImage ? 8 : 4,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            children: [
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxHeight: 200,
+                                ),
+                                child: Image.network(
+                                  comment.gifUrl!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    height: 100,
+                                    color: cs.surfaceContainerHighest,
+                                    child: Center(
+                                      child: Icon(
+                                        Iconsax.gallery_slash_copy,
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                left: 8,
+                                bottom: 8,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black54,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'GIF',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (hasLocation)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          top: hasBody || hasImage || hasGif ? 6 : 4,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Iconsax.location_copy,
+                              size: 14,
+                              color: cs.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                comment.locationName!,
+                                style: tt.bodySmall?.copyWith(
+                                  color: cs.primary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 6),
 
                     // ─── Action bar ───
                     Row(
                       children: [
                         _ActionItem(
-                          icon: Icons.favorite_border_rounded,
+                          icon: Iconsax.heart_copy,
                           count: 0,
                           color: cs.onSurfaceVariant,
                           tt: tt,
                         ),
                         const SizedBox(width: 16),
                         _ActionItem(
-                          icon: Icons.chat_bubble_outline_rounded,
+                          icon: Iconsax.message_copy,
                           count: 0,
                           color: cs.onSurfaceVariant,
                           tt: tt,
                         ),
                         const SizedBox(width: 16),
                         _ActionItem(
-                          icon: Icons.repeat_rounded,
+                          icon: Iconsax.refresh_copy,
                           count: 0,
                           color: cs.onSurfaceVariant,
                           tt: tt,
                         ),
                         const SizedBox(width: 16),
                         _ActionItem(
-                          icon: Icons.people_outline_rounded,
+                          icon: Iconsax.eye_copy,
                           count: 0,
                           color: cs.onSurfaceVariant,
                           tt: tt,
@@ -973,37 +1160,24 @@ class _AuthorAvatar extends StatelessWidget {
       return CircleAvatar(
         radius: radius,
         backgroundColor: cs.errorContainer,
-        child: Icon(Icons.person_off, size: radius, color: cs.error),
+        child: Icon(Iconsax.slash_copy, size: radius, color: cs.error),
       );
     }
 
-    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: cs.primaryContainer,
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: avatarUrl!,
-            width: radius * 2,
-            height: radius * 2,
-            fit: BoxFit.cover,
-            placeholder: (_, __) =>
-                _Initials(label: label, radius: radius, cs: cs),
-            errorWidget: (_, __, ___) =>
-                _Initials(label: label, radius: radius, cs: cs),
-          ),
-        ),
-      );
-    }
-
-    return CircleAvatar(
-      radius: radius,
+    return DSAvatar(
+      size: AvatarSize.medium,
+      customDimension: radius * 2,
+      imageUrl: avatarUrl,
+      displayName: label,
+      context: AvatarContext.social,
       backgroundColor: cs.primaryContainer,
-      child: _Initials(label: label, radius: radius, cs: cs),
+      foregroundColor: cs.onPrimaryContainer,
+      hasBorder: false,
     );
   }
 }
 
+// ignore: unused_element
 class _Initials extends StatelessWidget {
   const _Initials({
     required this.label,

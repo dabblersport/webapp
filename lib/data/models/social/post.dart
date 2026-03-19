@@ -108,6 +108,17 @@ class Post with _$Post {
     @JsonKey(name: 'updated_at') required DateTime updatedAt,
     @JsonKey(name: 'expires_at') DateTime? expiresAt,
     @JsonKey(name: 'edited_at') DateTime? editedAt,
+
+    @JsonKey(name: 'repost_count') @Default(0) int repostCount,
+
+    /// Nested original post for reposts. Populated from the `feed_posts`
+    /// view's `original_post` jsonb column.
+    @JsonKey(
+      name: 'original_post',
+      fromJson: _originalPostFromJson,
+      toJson: _originalPostToJson,
+    )
+    Post? originalPost,
   }) = _Post;
 
   factory Post.fromJson(Map<String, dynamic> json) => _$PostFromJson(json);
@@ -184,6 +195,24 @@ List<Vibe> _vibesFromJson(dynamic value) {
 
 List<Map<String, dynamic>> _vibesToJson(List<Vibe> vibes) =>
     vibes.map((v) => {'vibe': v.toMap()}).toList();
+
+// ── Original post (repost) helpers ────────────────────────────────
+
+Post? _originalPostFromJson(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) return Post.fromJson(value);
+  if (value is String && value.trim().isNotEmpty) {
+    try {
+      final decoded = jsonDecode(value);
+      if (decoded is Map<String, dynamic>) return Post.fromJson(decoded);
+    } catch (_) {
+      return null;
+    }
+  }
+  return null;
+}
+
+Map<String, dynamic>? _originalPostToJson(Post? post) => post?.toJson();
 
 List<dynamic> _toDynamicList(dynamic value) {
   if (value is List) return value;

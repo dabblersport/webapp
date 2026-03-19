@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:dabbler/core/utils/avatar_url_resolver.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 
 class FriendProfileHeader extends StatelessWidget {
   final dynamic friend;
@@ -17,8 +19,6 @@ class FriendProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final name = (friend.name ?? 'User').toString();
-    final resolvedAvatarUrl = resolveAvatarUrl(friend.avatarUrl?.toString());
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
     return Container(
       decoration: BoxDecoration(
@@ -37,22 +37,12 @@ class FriendProfileHeader extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Profile Avatar
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-              backgroundImage:
-                  resolvedAvatarUrl != null && resolvedAvatarUrl.isNotEmpty
-                  ? NetworkImage(resolvedAvatarUrl)
-                  : null,
-              child: resolvedAvatarUrl == null || resolvedAvatarUrl.isEmpty
-                  ? Text(
-                      initial,
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.primary,
-                      ),
-                    )
-                  : null,
+            DSAvatar(
+              size: AvatarSize.large,
+              customDimension: 100,
+              imageUrl: friend.avatarUrl?.toString(),
+              displayName: name,
+              context: AvatarContext.social,
             ),
 
             const SizedBox(height: 16),

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/services/default_avatar_service.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 
@@ -155,6 +156,10 @@ class ProfileCreationService {
             .eq('id', existingId)
             .eq('user_id', user.id);
 
+        await DefaultAvatarService(
+          client: _client,
+        ).ensureProfileAvatar(userId: user.id, profileId: existingId);
+
         // Use existing profile ID for subsequent operations
         final profileId = existingId;
 
@@ -205,6 +210,10 @@ class ProfileCreationService {
           .single();
 
       final profileId = insertedProfile['id'] as String;
+
+      await DefaultAvatarService(
+        client: _client,
+      ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
       // 5️⃣ Set up sport profiles, persona tables, and tier
       return await _setupProfileExtras(profileId: profileId, data: data);
