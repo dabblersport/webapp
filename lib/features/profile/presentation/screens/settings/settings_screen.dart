@@ -368,10 +368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide(
-              color: colorScheme.categoryMain,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: colorScheme.categoryMain, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -658,9 +655,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                             final errorMsg =
                                 ref.read(personaServiceProvider).errorMessage ??
                                 'Failed to switch profile';
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(errorMsg)),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(errorMsg)));
                           }
                           return;
                         }
@@ -673,7 +670,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                         // Clear cached profile so the profile screen loads fresh data
                         final userId = AuthService().getCurrentUser()?.id;
                         if (userId != null) {
-                          final localDS = ref.read(profileLocalDataSourceProvider);
+                          final localDS = ref.read(
+                            profileLocalDataSourceProvider,
+                          );
                           await localDS.clearUserCache(userId);
                         }
 
