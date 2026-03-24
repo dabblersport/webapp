@@ -399,6 +399,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
+        .neq('origin_type', 'repost')
         .order('created_at', ascending: false)
         .range(offset, offset + limit - 1);
     final enriched = await _enrichRows(rows);
