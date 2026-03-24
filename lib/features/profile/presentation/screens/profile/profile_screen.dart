@@ -202,16 +202,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Future<void> _switchProfileType(String profileType) async {
     if (_selectedProfileType == profileType) return;
 
+    final previousProfileType = _selectedProfileType;
+
     setState(() {
       _selectedProfileType = profileType;
     });
 
     // Update is_active in the database: deactivate old, activate new
-    await ref
+    final switched = await ref
         .read(personaServiceProvider.notifier)
         .switchActiveProfile(profileType);
 
+    if (!switched) {
+      // Revert optimistic state on failure
+      setState(() {
+        _selectedProfileType = previousProfileType;
+      });
+      if (mounted) {
+        final errorMsg =
+            ref.read(personaServiceProvider).errorMessage ??
+            'Failed to switch profile';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+      }
+      return;
+    }
+
+    // Clear profile cache to force fresh fetch for the new profile type
+    final user = ref.read(currentUserProvider);
+    if (user != null) {
+      await clearProfileCache(ref, user.id);
+    }
+
     await _loadProfileData(profileType: profileType);
+
+    // Persist the active profile type for app restarts
+    persistActiveProfileType(profileType);
   }
 
   Future<void> _loadAverageRating() async {
@@ -624,6 +651,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
+  Widget _buildSportPill({
+    required String label,
+    String? emoji,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
+    required Color baseOnTop,
+    bool outlined = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: outlined
+            ? Colors.transparent
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (emoji != null && emoji.isNotEmpty) ...[
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: textTheme.labelMedium?.copyWith(
+              color: baseOnTop,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoPills(
     BuildContext context,
     UserProfile? profile,
@@ -631,20 +694,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     TextTheme textTheme,
   ) {
     final baseOnTop = colorScheme.onSurface;
-    final primarySportId = profile?.preferredSport;
 
-    // Look up the Sport object from sportsProvider using the UUID
+    // Resolve preferred & primary sport UUIDs to Sport objects
     final sportsAsync = ref.watch(sportsProvider);
     final allSports = sportsAsync.valueOrNull ?? [];
-    final matchedSport = (primarySportId != null && primarySportId.isNotEmpty)
-        ? allSports.cast<dynamic>().firstWhere(
-            (s) => s.id == primarySportId,
-            orElse: () => null,
-          )
-        : null;
 
-    final sportName = matchedSport?.nameEn as String?;
-    final sportEmoji = matchedSport?.emoji as String?;
+    dynamic findSport(String? id) {
+      if (id == null || id.isEmpty) return null;
+      return allSports.cast<dynamic>().firstWhere(
+        (s) => s.id == id,
+        orElse: () => null,
+      );
+    }
+
+    final preferredSport = findSport(profile?.preferredSport);
+    final primarySport = findSport(profile?.primarySport);
 
     return Wrap(
       spacing: 8,
@@ -662,31 +726,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             textTheme: textTheme,
             baseOnTop: baseOnTop,
           ),
-        // Primary sport pill with emoji (resolved from public.sports)
-        if (sportName != null && sportName.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (sportEmoji != null && sportEmoji.isNotEmpty) ...[
-                  Text(sportEmoji, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  sportName,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+        // Primary sport pill
+        if (primarySport != null)
+          _buildSportPill(
+            label: primarySport.nameEn as String,
+            emoji: primarySport.emoji as String?,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+            baseOnTop: baseOnTop,
+          ),
+        // Preferred sport pill (only if different from primary)
+        if (preferredSport != null &&
+            (primarySport == null ||
+                (preferredSport.id as String) != (primarySport.id as String)))
+          _buildSportPill(
+            label: preferredSport.nameEn as String,
+            emoji: preferredSport.emoji as String?,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+            baseOnTop: baseOnTop,
+            outlined: true,
           ),
       ],
     );

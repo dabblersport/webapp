@@ -34,7 +34,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   final _cityController = TextEditingController();
   final _countryController = TextEditingController();
   final _ageController = TextEditingController();
-  final _interestsController = TextEditingController();
 
   String? _profileId;
   String? _avatarPath;
@@ -46,11 +45,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   DateTime? _dateOfBirth;
 
   // Sports & Preferences state
+  Set<String> _selectedInterests = {}; // sport UUIDs (profiles.interests)
   Map<String, SkillLevel> _selectedSports = {}; // sportKey -> skillLevel
-  String?
-  _primarySport; // UUID from sports.id (stored in profiles.preferred_sport)
+  String? _preferredSport; // UUID from sports.id (profiles.preferred_sport)
+  String? _primarySport; // UUID from sports.id (profiles.primary_sport)
   List<Sport> _availableSports = []; // Loaded from Supabase
   Map<String, Sport> _sportsByKey = {}; // sport_key -> Sport lookup
+  Map<String, Sport> _sportsById = {}; // sports.id -> Sport lookup
   List<_TimeSlot> _weeklyAvailability = [];
 
   List<String> get _genderOptions {
@@ -76,14 +77,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   bool _isLoading = false;
   late AuthService _authService;
-
-  bool _isMissingTableError(Object error, String tableName) {
-    return error is PostgrestException &&
-        (error.code == 'PGRST205' ||
-            error.message.toLowerCase().contains(
-              "could not find the table '$tableName'",
-            ));
-  }
 
   Future<Map<String, dynamic>?> _fetchPreferredProfileRow(String userId) async {
     final activeRows = await Supabase.instance.client
@@ -146,6 +139,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         for (final s in _availableSports)
           if (s.sportKey != null) s.sportKey!: s,
       };
+      _sportsById = {for (final s in _availableSports) s.id: s};
 
       final user = _authService.getCurrentUser();
       if (user?.id == null) return;
@@ -166,26 +160,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ? response['age'].toString()
             : '';
 
-        // Load date of birth if stored
-        final dobString = response['date_of_birth'] as String?;
-        if (dobString != null) {
-          try {
-            _dateOfBirth = DateTime.parse(dobString);
-          } catch (e) {
-            debugPrint('Error parsing date of birth: $e');
-          }
+        // Load interests (uuid[])
+        final rawInterests = response['interests'];
+        if (rawInterests is List) {
+          _selectedInterests = rawInterests.cast<String>().toSet();
         }
-
-        _interestsController.text = (response['interests'] is List)
-            ? (response['interests'] as List).cast<String>().join(', ')
-            : '';
         _selectedGender = (response['gender'] as String?)?.toLowerCase();
         _selectedLanguage = response['language'] as String?;
         _avatarPath = response['avatar_url'] as String?;
         _avatarUrl = resolveAvatarUrl(_avatarPath) ?? _avatarPath;
 
-        // Load primary sport
-        _primarySport = response['preferred_sport'] as String?;
+        // Load preferred & primary sport
+        _preferredSport = response['preferred_sport'] as String?;
+        _primarySport = response['primary_sport'] as String?;
 
         // Load sports profiles
         if (_profileId != null) {
@@ -215,12 +202,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
       final sportsMap = <String, SkillLevel>{};
       for (final sport in sportsResponse) {
-        final sportKey = sport['sport_key'] as String?;
+        final sportKey = sport['sport'] as String?;
         final skillLevelInt = sport['skill_level'] as int?;
         if (sportKey != null && skillLevelInt != null) {
-          // Map 1-10 skill level to SkillLevel enum (1-3: beginner, 4-5: intermediate, 6-8: advanced, 9-10: expert)
           final skillLevel = _intToSkillLevel(skillLevelInt);
-          sportsMap[sportKey] = skillLevel;
+          // sport column is a text key; use _sportsByKey to resolve
+          final resolvedSport = _sportsByKey[sportKey];
+          final normalizedSportKey = resolvedSport?.sportKey ?? sportKey;
+          sportsMap[normalizedSportKey] = skillLevel;
         }
       }
       if (mounted) {
@@ -270,14 +259,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           }
         }
       }
-    } catch (e) {
-      if (_isMissingTableError(e, 'public.user_preferences')) {
-        debugPrint('user_preferences table missing; skipping preference load');
-        return;
-      }
-
-      // Preferences loading failed - not critical
-      debugPrint('Error loading preferences: $e');
+    } catch (_) {
+      // user_preferences table does not exist in this environment — non-critical
+      debugPrint('[profile] user_preferences unavailable, skipping load');
     }
   }
 
@@ -299,6 +283,261 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       case SkillLevel.expert:
         return 9;
     }
+  }
+
+  Sport? _resolveSport(String sportReference) {
+    return _sportsByKey[sportReference] ?? _sportsById[sportReference];
+  }
+
+  String _sportDisplayName(String sportReference) {
+    final sport = _resolveSport(sportReference);
+    if (sport == null) {
+      return _formatSportName(sportReference);
+    }
+
+    return '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
+  }
+
+  List<Sport> _sortSportsByCategory(Iterable<Sport> sports) {
+    final sortedSports = sports.toList();
+    sortedSports.sort((a, b) {
+      final categoryCompare = _sportCategoryLabel(
+        a.category,
+      ).compareTo(_sportCategoryLabel(b.category));
+      if (categoryCompare != 0) {
+        return categoryCompare;
+      }
+
+      return a.nameEn.compareTo(b.nameEn);
+    });
+    return sortedSports;
+  }
+
+  Map<String, List<Sport>> _groupSportsByCategory(Iterable<Sport> sports) {
+    final groupedSports = <String, List<Sport>>{};
+
+    for (final sport in _sortSportsByCategory(sports)) {
+      final category = _sportCategoryLabel(sport.category);
+      groupedSports.putIfAbsent(category, () => <Sport>[]).add(sport);
+    }
+
+    return groupedSports;
+  }
+
+  String _sportCategoryLabel(String? category) {
+    final normalized = category?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return 'Other Sports';
+    }
+
+    return normalized
+        .split(RegExp(r'[_\s]+'))
+        .where((part) => part.isNotEmpty)
+        .map((part) => part[0].toUpperCase() + part.substring(1))
+        .join(' ');
+  }
+
+  int _selectedSportsCountForCategory(List<Sport> sports) {
+    return sports
+        .where((sport) => _selectedInterests.contains(sport.id))
+        .length;
+  }
+
+  void _toggleInterestSportSelection(Sport sport, bool selected) {
+    if (selected) {
+      _selectedInterests.add(sport.id);
+      final key =
+          sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
+      if (!_selectedSports.containsKey(key)) {
+        _selectedSports[key] = SkillLevel.beginner;
+      }
+      if (_selectedInterests.length == 1) {
+        _preferredSport ??= sport.id;
+        _primarySport ??= sport.id;
+      }
+      return;
+    }
+
+    _selectedInterests.remove(sport.id);
+    final key =
+        sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
+    _selectedSports.remove(key);
+    if (_preferredSport == sport.id) {
+      _preferredSport = _selectedInterests.isNotEmpty
+          ? _selectedInterests.first
+          : null;
+    }
+    if (_primarySport == sport.id) {
+      _primarySport = _selectedInterests.isNotEmpty
+          ? _selectedInterests.first
+          : null;
+    }
+  }
+
+  Future<void> _showCategorySportsDrawer(
+    BuildContext context, {
+    required String category,
+    required List<Sport> sports,
+  }) async {
+    final colorScheme = context.getCategoryTheme('main');
+
+    await showAdaptiveSheet<void>(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      maxDialogWidth: 460,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final sheetTheme = Theme.of(sheetContext);
+
+            void handleToggle(Sport sport, bool selected) {
+              setState(() {
+                _toggleInterestSportSelection(sport, selected);
+              });
+              setSheetState(() {});
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                category,
+                                style: sheetTheme.textTheme.titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colorScheme.onSurface,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_selectedSportsCountForCategory(sports)} of ${sports.length} selected',
+                                style: sheetTheme.textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Select sports you want to add to your interests in this category.',
+                      style: sheetTheme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 420),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: sports.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (itemContext, index) {
+                          final sport = sports[index];
+                          final isSelected = _selectedInterests.contains(
+                            sport.id,
+                          );
+                          final isPrimary = _primarySport == sport.id;
+                          final isPreferred = _preferredSport == sport.id;
+                          final displayName =
+                              '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
+
+                          return Material(
+                            color: isSelected
+                                ? colorScheme.primary.withValues(alpha: 0.1)
+                                : colorScheme.surfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(20),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(20),
+                              onTap: () => handleToggle(sport, !isSelected),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            displayName,
+                                            style: sheetTheme
+                                                .textTheme
+                                                .titleMedium
+                                                ?.copyWith(
+                                                  color: colorScheme.onSurface,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                          if (isPrimary || isPreferred)
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4,
+                                              ),
+                                              child: Text(
+                                                isPrimary
+                                                    ? 'Primary sport'
+                                                    : 'Preferred sport',
+                                                style: sheetTheme
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color:
+                                                          colorScheme.primary,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Icon(
+                                      isSelected
+                                          ? Iconsax.tick_circle_copy
+                                          : Iconsax.add_circle_copy,
+                                      color: isSelected
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurfaceVariant,
+                                      size: 22,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   List<String> _buildAvatarChoices(String userId) {
@@ -679,7 +918,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     _cityController.dispose();
     _countryController.dispose();
     _ageController.dispose();
-    _interestsController.dispose();
     super.dispose();
   }
 
@@ -855,8 +1093,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildLanguageSelect(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = context.getCategoryTheme('main');
-    final borderRadius = BorderRadius.circular(999);
     final languageNames = {
       'en': 'English',
       'ar': 'Arabic',
@@ -872,49 +1108,232 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           'Language',
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
+            color: context.getCategoryTheme('main').onSurface,
           ),
         ),
         const SizedBox(height: 6),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedLanguage,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Select language',
-            hintStyle: theme.textTheme.titleMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
+        _buildAdaptiveSelectField<String>(
+          context,
+          title: 'Language',
+          hintText: 'Select language',
+          value: _selectedLanguage,
+          options: _languageOptions
+              .map(
+                (lang) => _AdaptiveSelectOption<String>(
+                  value: lang,
+                  label: languageNames[lang] ?? lang,
+                ),
+              )
+              .toList(),
+          onSelected: (value) {
+            setState(() => _selectedLanguage = value);
+          },
+        ),
+      ],
+    );
+  }
+
+  // ============================================================================
+  // INTERESTS SECTION (sport UUID chips)
+  // ============================================================================
+
+  Widget _buildInterestsSection(BuildContext context) {
+    final colorScheme = context.getCategoryTheme('main');
+    final sportsByCategory = _groupSportsByCategory(_availableSports);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Iconsax.heart_copy, color: colorScheme.categoryMain, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Interests',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
             ),
-            filled: true,
-            fillColor: colorScheme.surface,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 22,
-              vertical: 16,
+            const Spacer(),
+            Text(
+              '${_selectedInterests.length} selected',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-            border: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: colorScheme.outlineVariant),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-            ),
-          ),
-          items: _languageOptions.map((lang) {
-            return DropdownMenuItem<String>(
-              value: lang,
-              child: Text(languageNames[lang] ?? lang),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Select sports you\'re interested in. Adding a sport here also creates a sport profile for it.',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: sportsByCategory.entries.map((entry) {
+            final category = entry.key;
+            final sports = entry.value;
+            final selectedCount = _selectedSportsCountForCategory(sports);
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => _showCategorySportsDrawer(
+                    context,
+                    category: category,
+                    sports: sports,
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selectedCount > 0
+                            ? colorScheme.primary.withValues(alpha: 0.45)
+                            : colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                category,
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colorScheme.onSurface,
+                                    ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '$selectedCount of ${sports.length} selected',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: selectedCount > 0
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurfaceVariant,
+                                      fontWeight: selectedCount > 0
+                                          ? FontWeight.w600
+                                          : FontWeight.w500,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Iconsax.arrow_right_3_copy,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             );
           }).toList(),
-          onChanged: (value) {
-            setState(() => _selectedLanguage = value);
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPreferredSportDropdown(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Only show sports that are in interests
+    final interestSports = _sortSportsByCategory(
+      _availableSports.where((s) => _selectedInterests.contains(s.id)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Preferred Sport',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: context.getCategoryTheme('main').onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        _buildAdaptiveSelectField<String>(
+          context,
+          title: 'Preferred Sport',
+          hintText: 'Select preferred sport',
+          value: interestSports.any((s) => s.id == _preferredSport)
+              ? _preferredSport
+              : null,
+          enabled: interestSports.isNotEmpty,
+          emptyMessage: 'Select at least one interest first.',
+          options: interestSports
+              .map(
+                (sport) => _AdaptiveSelectOption<String>(
+                  value: sport.id,
+                  label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+                  group: _sportCategoryLabel(sport.category),
+                ),
+              )
+              .toList(),
+          onSelected: (value) {
+            setState(() => _preferredSport = value);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrimarySportDropdown(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Only show sports that are in interests
+    final interestSports = _sortSportsByCategory(
+      _availableSports.where((s) => _selectedInterests.contains(s.id)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Primary Sport',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: context.getCategoryTheme('main').onSurface,
+          ),
+        ),
+        const SizedBox(height: 6),
+        _buildAdaptiveSelectField<String>(
+          context,
+          title: 'Primary Sport',
+          hintText: 'Select primary sport',
+          value: interestSports.any((s) => s.id == _primarySport)
+              ? _primarySport
+              : null,
+          enabled: interestSports.isNotEmpty,
+          emptyMessage: 'Select at least one interest first.',
+          options: interestSports
+              .map(
+                (sport) => _AdaptiveSelectOption<String>(
+                  value: sport.id,
+                  label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+                  group: _sportCategoryLabel(sport.category),
+                ),
+              )
+              .toList(),
+          onSelected: (value) {
+            setState(() => _primarySport = value);
           },
         ),
       ],
@@ -1127,18 +1546,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Interests
-                      _buildTextField(
-                        context,
-                        label: 'Interests',
-                        controller: _interestsController,
-                        hintText: 'Your interests (comma-separated)',
-                        maxLines: 2,
-                      ),
+                      // Interests (sport chips)
+                      _buildInterestsSection(context),
 
                       const SizedBox(height: 24),
 
-                      // Sports Section
+                      // Preferred & Primary Sport dropdowns
+                      _buildPreferredSportDropdown(context),
+                      const SizedBox(height: 16),
+                      _buildPrimarySportDropdown(context),
+
+                      const SizedBox(height: 24),
+
+                      // Sports Section (skill levels)
                       _buildSportsSection(context),
 
                       const SizedBox(height: 24),
@@ -1217,12 +1637,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         age: age,
         gender: _selectedGender,
         language: _selectedLanguage,
-        interests: _interestsController.text.trim().isEmpty
-            ? null
-            : _interestsController.text.trim(),
       );
 
-      // Update city, country, and preferred_sport directly (not in AuthService yet)
+      // Update city, country, preferred_sport, primary_sport, interests directly
       final user = _authService.getCurrentUser();
       if (user != null && _profileId != null) {
         await Supabase.instance.client
@@ -1234,9 +1651,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               'country': _countryController.text.trim().isEmpty
                   ? null
                   : _countryController.text.trim(),
-              'preferred_sport': _primarySport, // UUID
-              'primary_sport': _primarySport, // UUID
-              'date_of_birth': _dateOfBirth?.toIso8601String(),
+              'preferred_sport': _preferredSport,
+              'primary_sport': _primarySport,
+              'interests': _selectedInterests.toList(),
               'updated_at': DateTime.now().toIso8601String(),
             })
             .eq('id', _profileId!);
@@ -1272,25 +1689,62 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _saveSportsProfiles(String profileId) async {
     try {
-      // Delete existing sports
-      await Supabase.instance.client
+      // Build desired sport key -> skill level map
+      // The trigger trgfn_set_sport_profile_sport_id expects `sport` to be a
+      // text key (e.g. "football") and auto-resolves sport_id from the sports table.
+      final desiredKeys = <String>{};
+      final sportsData = <Map<String, dynamic>>[];
+      for (final sportId in _selectedInterests) {
+        final sport = _sportsById[sportId];
+        if (sport == null) continue;
+        final key =
+            sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
+        final skillLevel = _selectedSports[key] ?? SkillLevel.beginner;
+        desiredKeys.add(key);
+        sportsData.add({
+          'profile_id': profileId,
+          'sport': key,
+          'skill_level': _skillLevelToInt(skillLevel),
+        });
+      }
+
+      // Fetch existing rows — sport column stores the text key
+      final existing = await Supabase.instance.client
           .from('sport_profiles')
-          .delete()
+          .select('sport')
           .eq('profile_id', profileId);
 
-      // Insert new sports
-      if (_selectedSports.isNotEmpty) {
-        final sportsData = _selectedSports.entries.map((entry) {
-          return {
-            'profile_id': profileId,
-            'sport_key': entry.key,
-            'skill_level': _skillLevelToInt(entry.value),
-          };
-        }).toList();
+      final existingKeys = existing
+          .map<String>((r) => r['sport'] as String)
+          .toSet();
 
+      // Delete removed sports
+      final toDelete = existingKeys.difference(desiredKeys);
+      if (toDelete.isNotEmpty) {
         await Supabase.instance.client
             .from('sport_profiles')
-            .insert(sportsData);
+            .delete()
+            .eq('profile_id', profileId)
+            .inFilter('sport', toDelete.toList());
+      }
+
+      // Insert only newly added sports
+      final toInsert = sportsData
+          .where((r) => !existingKeys.contains(r['sport']))
+          .toList();
+      if (toInsert.isNotEmpty) {
+        await Supabase.instance.client.from('sport_profiles').insert(toInsert);
+      }
+
+      // Update skill level for sports that already existed
+      for (final row in sportsData) {
+        if (existingKeys.contains(row['sport'])) {
+          await Supabase.instance.client
+              .from('sport_profiles')
+              .update({'skill_level': row['skill_level']})
+              .eq('sport', row['sport'] as String)
+              .eq('profile_id', profileId);
+        }
       }
     } catch (e) {
       debugPrint('Error saving sports profiles: $e');
@@ -1338,13 +1792,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           'updated_at': DateTime.now().toIso8601String(),
         });
       }
-    } catch (e) {
-      if (_isMissingTableError(e, 'public.user_preferences')) {
-        debugPrint('user_preferences table missing; skipping preference save');
-        return;
-      }
-
-      debugPrint('Error saving user preferences: $e');
+    } catch (_) {
+      // user_preferences table does not exist in this environment — non-critical
+      debugPrint('[profile] user_preferences unavailable, skipping save');
     }
   }
 
@@ -1354,10 +1804,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildSportsSection(BuildContext context) {
     final colorScheme = context.getCategoryTheme('main');
-    final availableSportKeys = _availableSports
-        .where((s) => s.sportKey != null)
-        .map((s) => s.sportKey!)
-        .toList();
+
+    // Only show skill levels for sports in interests
+    final interestSportEntries = <String, SkillLevel>{};
+    for (final sport in _availableSports) {
+      if (!_selectedInterests.contains(sport.id)) continue;
+      final key =
+          sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
+      interestSportEntries[key] = _selectedSports[key] ?? SkillLevel.beginner;
+    }
+
+    if (interestSportEntries.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1371,140 +1830,41 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Your Sports',
+              'Skill Levels',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurface,
-              ),
-            ),
-            const Spacer(),
-            Text(
-              '${_selectedSports.length} selected',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Text(
-          'Select sports you play and set your skill level. Choose one as your primary sport.',
+          'Set your skill level for each sport in your interests.',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 12),
-
-        // Sports chips
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: availableSportKeys.map((sport) {
-            final isSelected = _selectedSports.containsKey(sport);
-            final isPrimary =
-                _primarySport != null &&
-                _sportsByKey[sport]?.id == _primarySport;
-            return _buildSportChip(context, sport, isSelected, isPrimary);
-          }).toList(),
-        ),
-
-        // Selected sports with skill levels
-        if (_selectedSports.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Set Skill Levels',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ..._selectedSports.entries.map((entry) {
-                  return _buildSportSkillRow(context, entry.key, entry.value);
-                }),
-              ],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.5),
             ),
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...interestSportEntries.entries.map((entry) {
+                return _buildSportSkillRow(context, entry.key, entry.value);
+              }),
+            ],
+          ),
+        ),
       ],
-    );
-  }
-
-  Widget _buildSportChip(
-    BuildContext context,
-    String sport,
-    bool isSelected,
-    bool isPrimary,
-  ) {
-    final colorScheme = context.getCategoryTheme('main');
-    final sportObj = _sportsByKey[sport];
-    final displayName = sportObj != null
-        ? '${sportObj.emoji ?? ''} ${sportObj.nameEn}'.trim()
-        : _formatSportName(sport);
-
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(displayName),
-          if (isPrimary) ...[
-            const SizedBox(width: 4),
-            Icon(Iconsax.star_1_copy, size: 14, color: colorScheme.onPrimary),
-          ],
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          if (selected) {
-            _selectedSports[sport] = SkillLevel.beginner;
-            // If first sport, set as primary (UUID)
-            if (_selectedSports.length == 1) {
-              _primarySport = sportObj?.id;
-            }
-          } else {
-            _selectedSports.remove(sport);
-            // If removed sport was primary, set another as primary
-            if (sportObj != null && _primarySport == sportObj.id) {
-              final firstKey = _selectedSports.isNotEmpty
-                  ? _selectedSports.keys.first
-                  : null;
-              _primarySport = firstKey != null
-                  ? _sportsByKey[firstKey]?.id
-                  : null;
-            }
-          }
-        });
-      },
-      selectedColor: isPrimary
-          ? colorScheme.categoryMain
-          : colorScheme.categoryMain.withValues(alpha: 0.3),
-      checkmarkColor: isPrimary
-          ? colorScheme.onPrimary
-          : colorScheme.categoryMain,
-      labelStyle: TextStyle(
-        color: isSelected
-            ? (isPrimary ? colorScheme.onPrimary : colorScheme.categoryMain)
-            : colorScheme.onSurfaceVariant,
-        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-      ),
-      side: BorderSide(
-        color: isSelected
-            ? colorScheme.categoryMain
-            : colorScheme.outlineVariant,
-      ),
     );
   }
 
@@ -1514,69 +1874,37 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     SkillLevel currentLevel,
   ) {
     final colorScheme = context.getCategoryTheme('main');
-    final sportObj = _sportsByKey[sport];
-    final isPrimary = sportObj != null && _primarySport == sportObj.id;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          // Primary star button
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _primarySport = sportObj?.id;
-              });
-            },
-            child: Icon(
-              isPrimary ? Iconsax.star_1_copy : Iconsax.star_copy,
-              size: 20,
-              color: isPrimary
-                  ? colorScheme.categoryMain
-                  : colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              sportObj != null
-                  ? '${sportObj.emoji ?? ''} ${sportObj.nameEn}'.trim()
-                  : _formatSportName(sport),
+              _sportDisplayName(sport),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: isPrimary ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface,
               ),
             ),
           ),
-          // Skill level dropdown
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: DropdownButton<SkillLevel>(
-              value: currentLevel,
-              underline: const SizedBox(),
-              isDense: true,
-              items: SkillLevel.values.map((level) {
-                return DropdownMenuItem(
-                  value: level,
-                  child: Text(
-                    _formatSkillLevel(level),
-                    style: Theme.of(context).textTheme.bodySmall,
+          _buildCompactAdaptiveSelect<SkillLevel>(
+            context,
+            title: '${_sportDisplayName(sport)} skill level',
+            value: currentLevel,
+            options: SkillLevel.values
+                .map(
+                  (level) => _AdaptiveSelectOption<SkillLevel>(
+                    value: level,
+                    label: _formatSkillLevel(level),
                   ),
-                );
-              }).toList(),
-              onChanged: (newLevel) {
-                if (newLevel != null) {
-                  setState(() {
-                    _selectedSports[sport] = newLevel;
-                  });
-                }
-              },
-            ),
+                )
+                .toList(),
+            onSelected: (newLevel) {
+              setState(() {
+                _selectedSports[sport] = newLevel;
+              });
+            },
           ),
         ],
       ),
@@ -1851,29 +2179,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: colorScheme.outline),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<int>(
+                            SizedBox(
+                              width: double.infinity,
+                              child: _buildCompactAdaptiveSelect<int>(
+                                context,
+                                title: 'Start Time',
                                 value: startHour,
-                                underline: const SizedBox(),
-                                isExpanded: true,
-                                items: List.generate(24, (h) {
-                                  return DropdownMenuItem(
+                                options: List.generate(
+                                  24,
+                                  (h) => _AdaptiveSelectOption<int>(
                                     value: h,
-                                    child: Text(_formatHour(h)),
-                                  );
-                                }),
-                                onChanged: (h) {
-                                  if (h != null) {
-                                    setModalState(() => startHour = h);
-                                  }
+                                    label: _formatHour(h),
+                                  ),
+                                ),
+                                onSelected: (hour) {
+                                  setModalState(() => startHour = hour);
                                 },
                               ),
                             ),
@@ -1891,29 +2211,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                                   ?.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: colorScheme.outline),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: DropdownButton<int>(
+                            SizedBox(
+                              width: double.infinity,
+                              child: _buildCompactAdaptiveSelect<int>(
+                                context,
+                                title: 'End Time',
                                 value: endHour,
-                                underline: const SizedBox(),
-                                isExpanded: true,
-                                items: List.generate(24, (h) {
-                                  return DropdownMenuItem(
+                                options: List.generate(
+                                  24,
+                                  (h) => _AdaptiveSelectOption<int>(
                                     value: h,
-                                    child: Text(_formatHour(h)),
-                                  );
-                                }),
-                                onChanged: (h) {
-                                  if (h != null) {
-                                    setModalState(() => endHour = h);
-                                  }
+                                    label: _formatHour(h),
+                                  ),
+                                ),
+                                onSelected: (hour) {
+                                  setModalState(() => endHour = hour);
                                 },
                               ),
                             ),
@@ -1989,6 +2301,417 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (hour == 12) return '12:00 PM';
     if (hour < 12) return '$hour:00 AM';
     return '${hour - 12}:00 PM';
+  }
+
+  Future<T?> _showAdaptivePicker<T>(
+    BuildContext context, {
+    required String title,
+    required List<_AdaptiveSelectOption<T>> options,
+    T? currentValue,
+    String? emptyMessage,
+  }) {
+    final colorScheme = context.getCategoryTheme('main');
+    final groupedOptions = <String, List<_AdaptiveSelectOption<T>>>{};
+    var hasGroups = false;
+
+    for (final option in options) {
+      final group = option.group?.trim();
+      if (group != null && group.isNotEmpty) {
+        hasGroups = true;
+        groupedOptions
+            .putIfAbsent(group, () => <_AdaptiveSelectOption<T>>[])
+            .add(option);
+      }
+    }
+
+    final initialExpandedGroups = <String>{
+      if (currentValue != null)
+        for (final entry in groupedOptions.entries)
+          if (entry.value.any((option) => option.value == currentValue))
+            entry.key,
+    };
+
+    return showAdaptiveSheet<T>(
+      context: context,
+      backgroundColor: colorScheme.surface,
+      maxDialogWidth: 420,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+
+        Widget buildOptionTile(_AdaptiveSelectOption<T> option) {
+          final isSelected = option.value == currentValue;
+
+          return Material(
+            color: isSelected
+                ? colorScheme.primary.withValues(alpha: 0.12)
+                : colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () {
+                Navigator.of(sheetContext).pop(option.value);
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(
+                        Iconsax.tick_circle_copy,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        final expandedGroups = <String>{...initialExpandedGroups};
+
+        Widget buildGroupedOptions() {
+          return StatefulBuilder(
+            builder: (groupContext, setGroupState) {
+              return ListView.separated(
+                shrinkWrap: true,
+                itemCount: groupedOptions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (groupContext, index) {
+                  final groupEntry = groupedOptions.entries.elementAt(index);
+                  final groupName = groupEntry.key;
+                  final groupItems = groupEntry.value;
+                  final isExpanded = expandedGroups.contains(groupName);
+                  final selectedInGroup = groupItems.any(
+                    (option) => option.value == currentValue,
+                  );
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selectedInGroup
+                            ? colorScheme.primary.withValues(alpha: 0.5)
+                            : colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            setGroupState(() {
+                              if (isExpanded) {
+                                expandedGroups.remove(groupName);
+                              } else {
+                                expandedGroups.add(groupName);
+                              }
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    groupName,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          color: colorScheme.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                                if (selectedInGroup)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Icon(
+                                      Iconsax.tick_circle_copy,
+                                      color: colorScheme.primary,
+                                      size: 18,
+                                    ),
+                                  ),
+                                Icon(
+                                  isExpanded
+                                      ? Iconsax.arrow_up_2_copy
+                                      : Iconsax.arrow_down_1_copy,
+                                  color: colorScheme.onSurfaceVariant,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (isExpanded)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: Column(
+                              children: groupItems.map((option) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: buildOptionTile(option),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const Icon(Icons.close),
+                      style: IconButton.styleFrom(
+                        foregroundColor: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (options.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 12),
+                    child: Text(
+                      emptyMessage ?? 'No options available yet.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 360),
+                    child: hasGroups
+                        ? buildGroupedOptions()
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: options.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (_, index) {
+                              return buildOptionTile(options[index]);
+                            },
+                          ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  _AdaptiveSelectOption<T>? _findSelectedOption<T>(
+    List<_AdaptiveSelectOption<T>> options,
+    T? value,
+  ) {
+    if (value == null) {
+      return null;
+    }
+
+    for (final option in options) {
+      if (option.value == value) {
+        return option;
+      }
+    }
+
+    return null;
+  }
+
+  Widget _buildAdaptiveSelectField<T>(
+    BuildContext context, {
+    required String title,
+    required String hintText,
+    required List<_AdaptiveSelectOption<T>> options,
+    required T? value,
+    required ValueChanged<T> onSelected,
+    bool enabled = true,
+    String? emptyMessage,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = context.getCategoryTheme('main');
+    final borderRadius = BorderRadius.circular(999);
+    final selectedOption = _findSelectedOption(options, value);
+
+    Future<void> handleTap() async {
+      if (!enabled) {
+        return;
+      }
+
+      final selectedValue = await _showAdaptivePicker<T>(
+        context,
+        title: title,
+        options: options,
+        currentValue: value,
+        emptyMessage: emptyMessage,
+      );
+
+      if (selectedValue != null) {
+        onSelected(selectedValue);
+      }
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? handleTap : null,
+        borderRadius: borderRadius,
+        child: InputDecorator(
+          isEmpty: selectedOption == null,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: theme.textTheme.titleMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+            filled: true,
+            fillColor: enabled
+                ? colorScheme.surface
+                : colorScheme.surfaceContainerLow,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 22,
+              vertical: 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  selectedOption?.label ?? hintText,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: selectedOption != null
+                        ? colorScheme.onSurface
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Icon(
+                Iconsax.arrow_down_1_copy,
+                size: 18,
+                color: enabled
+                    ? colorScheme.onSurfaceVariant
+                    : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompactAdaptiveSelect<T>(
+    BuildContext context, {
+    required String title,
+    required T value,
+    required List<_AdaptiveSelectOption<T>> options,
+    required ValueChanged<T> onSelected,
+  }) {
+    final colorScheme = context.getCategoryTheme('main');
+    final selectedOption = _findSelectedOption(options, value);
+
+    Future<void> handleTap() async {
+      final selectedValue = await _showAdaptivePicker<T>(
+        context,
+        title: title,
+        options: options,
+        currentValue: value,
+      );
+
+      if (selectedValue != null) {
+        onSelected(selectedValue);
+      }
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: handleTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                selectedOption?.label ?? '',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Iconsax.arrow_down_1_copy,
+                size: 16,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildDatePickerField(BuildContext context) {
@@ -2125,4 +2848,16 @@ class _TimeSlot {
     required this.startHour,
     required this.endHour,
   });
+}
+
+class _AdaptiveSelectOption<T> {
+  const _AdaptiveSelectOption({
+    required this.value,
+    required this.label,
+    this.group,
+  });
+
+  final T value;
+  final String label;
+  final String? group;
 }

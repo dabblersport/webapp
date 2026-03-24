@@ -156,7 +156,17 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
   Future<bool> switchActiveProfile(String targetPersonaType) async {
     try {
       final userId = _client.auth.currentUser?.id;
-      if (userId == null) return false;
+      if (userId == null) {
+        state = state.copyWith(
+          errorMessage: 'Not authenticated. Please sign in again.',
+        );
+        return false;
+      }
+
+      // Ensure profiles are loaded before attempting to switch
+      if (state.activeProfiles.isEmpty) {
+        await fetchUserPersonas();
+      }
 
       // Find the profile matching the target persona type
       final targetProfile = state.activeProfiles
@@ -166,7 +176,13 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
                 targetPersonaType.toLowerCase(),
           )
           .firstOrNull;
-      if (targetProfile == null) return false;
+      if (targetProfile == null) {
+        state = state.copyWith(
+          errorMessage:
+              'Profile "$targetPersonaType" not found. Please try again.',
+        );
+        return false;
+      }
 
       final now = DateTime.now().toIso8601String();
 

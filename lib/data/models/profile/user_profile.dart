@@ -27,6 +27,7 @@ class UserProfile {
   final String? personaType; // player/organiser/hoster/socialiser
   final String? intention; // organise/play
   final String? preferredSport;
+  final String? primarySport;
   final List<String>? interests; // uuid[] from DB
   final String? language;
   final bool verified; // matches DB column name
@@ -61,6 +62,7 @@ class UserProfile {
     this.personaType,
     this.intention,
     this.preferredSport,
+    this.primarySport,
     this.interests,
     this.language,
     this.verified = false,
@@ -291,6 +293,7 @@ class UserProfile {
     String? profileType,
     String? intention,
     String? preferredSport,
+    String? primarySport,
     List<String>? interests,
     String? language,
     bool? verified,
@@ -322,6 +325,7 @@ class UserProfile {
       profileType: profileType ?? this.profileType,
       intention: intention ?? this.intention,
       preferredSport: preferredSport ?? this.preferredSport,
+      primarySport: primarySport ?? this.primarySport,
       interests: interests ?? this.interests,
       language: language ?? this.language,
       verified: verified ?? this.verified,
@@ -378,6 +382,7 @@ class UserProfile {
       personaType: json['persona_type'] as String?,
       intention: json['intention'] as String?,
       preferredSport: json['preferred_sport'] as String?,
+      primarySport: primarySportId,
       interests: (json['interests'] as List?)?.cast<String>(),
       language: json['language'] as String?,
       verified: json['verified'] as bool? ?? false,
@@ -418,6 +423,7 @@ class UserProfile {
       'profile_type': profileType,
       'intention': intention,
       'preferred_sport': preferredSport,
+      'primary_sport': primarySport,
       'interests': interests,
       'language': language,
       'verified': verified,

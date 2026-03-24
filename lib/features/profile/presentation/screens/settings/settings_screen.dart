@@ -646,13 +646,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               return Column(
                 children: [
                   ListTile(
-                    onTap: () {
-                      if (!isActive) {
-                        // Switch profile and navigate back to profile screen
+                    onTap: () async {
+                      if (!isActive && effectiveType != null) {
+                        // Switch active profile in the database
+                        final switched = await ref
+                            .read(personaServiceProvider.notifier)
+                            .switchActiveProfile(effectiveType);
+
+                        if (!switched) {
+                          if (context.mounted) {
+                            final errorMsg =
+                                ref.read(personaServiceProvider).errorMessage ??
+                                'Failed to switch profile';
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(errorMsg)),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Update local state and persist
                         ref.read(activeProfileTypeProvider.notifier).state =
                             effectiveType;
                         persistActiveProfileType(effectiveType);
-                        context.go('/profile');
+
+                        // Clear cached profile so the profile screen loads fresh data
+                        final userId = AuthService().getCurrentUser()?.id;
+                        if (userId != null) {
+                          final localDS = ref.read(profileLocalDataSourceProvider);
+                          await localDS.clearUserCache(userId);
+                        }
+
+                        if (context.mounted) {
+                          context.go('/profile');
+                        }
                       }
                     },
                     leading: DSAvatar.small(

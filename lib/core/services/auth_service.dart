@@ -14,6 +14,7 @@ class AuthService {
   AuthService._internal();
 
   final SupabaseClient _supabase = Supabase.instance.client;
+  bool _isUpdateUserProfileRpcUnavailable = false;
 
   // =====================================================
   // AUTHENTICATION METHODS
@@ -538,7 +539,8 @@ class AuthService {
 
   /// Get user profile from database.
   /// For multi-profile users (player + organiser), returns the profile
-  /// matching [personaType] if provided, otherwise the oldest active profile.
+  /// matching [personaType] if provided, otherwise the most recently updated
+  /// active profile.
   Future<Map<String, dynamic>?> getUserProfile({
     List<String>? fields,
     String? personaType,
@@ -566,7 +568,7 @@ class AuthService {
       // Use .limit(1) instead of .maybeSingle() to avoid crashes when
       // a user has multiple active profiles (player + organiser).
       final response = await query
-          .order('created_at', ascending: true)
+          .order('updated_at', ascending: false)
           .limit(1);
 
       if ((response as List).isEmpty) {
@@ -1008,6 +1010,19 @@ class AuthService {
       final user = _supabase.auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
 
+      bool isMissingUpdateProfileRpc(Object error) {
+        if (error is! PostgrestException) {
+          final message = error.toString().toLowerCase();
+          return message.contains('pgrst202') &&
+              message.contains('update_user_profile');
+        }
+
+        final message = error.message.toLowerCase();
+        return error.code == 'PGRST202' ||
+            (message.contains('could not find the function') &&
+                message.contains('update_user_profile'));
+      }
+
       final hasNonAvatarChanges =
           displayName != null ||
           username != null ||
@@ -1042,205 +1057,181 @@ class AuthService {
         return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
       }
 
-      // Prefer server-side RPC if available for consistent authorization/validation.
-      // Note: We intentionally do NOT pass avatarUrl to the RPC since older
-      // deployments may not accept that parameter.
+      if (!_isUpdateUserProfileRpcUnavailable) {
+        try {
+          final response = await _supabase.rpc(
+            'update_user_profile',
+            params: {
+              'user_display_name': displayName,
+              'user_username': username,
+              'user_bio': bio,
+              'user_phone': phone,
+              'user_date_of_birth': dateOfBirth?.toIso8601String(),
+              'user_age': age,
+              'user_gender': gender,
+              'user_nationality': nationality,
+              'user_skill_level': skillLevel,
+              'user_sports': sports,
+              'user_interests': interests,
+              'user_intent': intent,
+              'user_location': location,
+              'user_timezone': timezone,
+              'user_language': language,
+            },
+          );
+
+          if (avatarUrl != null) {
+            final trimmed = avatarUrl.trim();
+            var avatarQuery = _supabase
+                .from(SupabaseConfig.usersTable)
+                .update({
+                  'avatar_url': trimmed.isEmpty ? null : trimmed,
+                  'updated_at': DateTime.now().toIso8601String(),
+                })
+                .eq('user_id', user.id);
+            if (profileId != null) {
+              avatarQuery = avatarQuery.eq('id', profileId);
+            }
+            await avatarQuery;
+          }
+
+          return response;
+        } catch (e) {
+          if (!isMissingUpdateProfileRpc(e)) {
+            rethrow;
+          }
+
+          _isUpdateUserProfileRpcUnavailable = true;
+        }
+      }
+
+      final Map<String, dynamic> updates = {
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (displayName != null) {
+        final trimmedName = displayName.trim();
+        if (trimmedName.isEmpty) {
+          throw Exception(
+            'Display name cannot be empty - database constraint will fail',
+          );
+        }
+        if (trimmedName.length < 2) {
+          throw Exception('Display name must be at least 2 characters long');
+        }
+        if (trimmedName.length > 50) {
+          throw Exception('Display name must be 50 characters or less');
+        }
+        updates['display_name'] = trimmedName;
+      }
+
+      if (bio != null) {
+        updates['bio'] = bio.trim().isEmpty ? null : bio.trim();
+      }
+      if (avatarUrl != null) {
+        updates['avatar_url'] = avatarUrl.trim().isEmpty
+            ? null
+            : avatarUrl.trim();
+      }
+      if (phone != null) {
+        updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
+      }
+      if (age != null) updates['age'] = age;
+      if (gender != null && gender.trim().isNotEmpty) {
+        updates['gender'] = gender.trim();
+      }
+      if (skillLevel != null) {
+        updates['skill_level'] = skillLevel.trim().isEmpty
+            ? null
+            : skillLevel.trim();
+      }
+      if (sports != null) updates['sports'] = sports;
+      if (interests != null) {
+        updates['interests'] = interests.trim().isEmpty
+            ? null
+            : interests.trim();
+      }
+      if (intent != null && intent.trim().isNotEmpty) {
+        updates['intent'] = intent.trim();
+      }
+      if (timezone != null) {
+        updates['timezone'] = timezone.trim().isEmpty ? null : timezone.trim();
+      }
+      if (language != null) {
+        updates['language'] = language.trim().isEmpty ? null : language.trim();
+      }
+
+      if (updates.length <= 1) {
+        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+      }
+
       try {
-        final response = await _supabase.rpc(
-          'update_user_profile',
-          params: {
-            'user_display_name': displayName,
-            'user_username': username,
-            'user_bio': bio,
-            'user_phone': phone,
-            'user_date_of_birth': dateOfBirth?.toIso8601String(),
-            'user_age': age,
-            'user_gender': gender,
-            'user_nationality': nationality,
-            'user_skill_level': skillLevel,
-            'user_sports': sports,
-            'user_interests': interests,
-            'user_intent': intent,
-            'user_location': location,
-            'user_timezone': timezone,
-            'user_language': language,
-          },
-        );
+        var updateQuery = _supabase
+            .from(SupabaseConfig.usersTable)
+            .update(updates)
+            .eq('user_id', user.id);
+        if (profileId != null) {
+          updateQuery = updateQuery.eq('id', profileId);
+        }
+        await updateQuery;
 
-        // If avatarUrl is requested, apply it via a separate table update to
-        // keep compatibility with older RPC definitions.
-        // Scope to a specific profile via profileId to avoid updating all
-        // profiles for multi-profile users.
-        if (avatarUrl != null) {
-          final trimmed = avatarUrl.trim();
-          var avatarQuery = _supabase
-              .from(SupabaseConfig.usersTable)
-              .update({
-                'avatar_url': trimmed.isEmpty ? null : trimmed,
-                'updated_at': DateTime.now().toIso8601String(),
-              })
-              .eq('user_id', user.id);
-          if (profileId != null) {
-            avatarQuery = avatarQuery.eq('id', profileId);
-          }
-          await avatarQuery;
-        }
+        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+      } on PostgrestException catch (e2) {
+        final isMissingColumn =
+            e2.code == '42703' ||
+            e2.message.toLowerCase().contains('column') &&
+                e2.message.toLowerCase().contains('does not exist');
+        if (!isMissingColumn) rethrow;
 
-        return response;
-      } on PostgrestException catch (e) {
-        // If RPC is missing (PGRST202) or not yet deployed, fallback to direct table update
-        final isMissingRpc =
-            e.code == 'PGRST202' ||
-            (e.message.toLowerCase().contains('could not find the function') &&
-                e.message.toLowerCase().contains('update_user_profile'));
-
-        if (!isMissingRpc) {
-          rethrow;
+        final Map<String, dynamic> altUpdates = {};
+        if (updates.containsKey('name')) {
+          altUpdates['full_name'] = updates['name'];
         }
-
-        // Build updates map with only non-null values to avoid wiping existing data
-        final Map<String, dynamic> updates = {
-          'updated_at': DateTime.now().toIso8601String(),
-        };
-
-        // CRITICAL: display_name is NOT NULL in database - validate before updating
-        if (displayName != null) {
-          final trimmedName = displayName.trim();
-          if (trimmedName.isEmpty) {
-            throw Exception(
-              'Display name cannot be empty - database constraint will fail',
-            );
-          }
-          if (trimmedName.length < 2) {
-            throw Exception('Display name must be at least 2 characters long');
-          }
-          if (trimmedName.length > 50) {
-            throw Exception('Display name must be 50 characters or less');
-          }
-          updates['display_name'] = trimmedName;
+        if (updates.containsKey('sports')) {
+          altUpdates['preferred_sports'] = updates['sports'];
         }
-
-        if (bio != null) {
-          updates['bio'] = bio.trim().isEmpty ? null : bio.trim();
+        if (updates.containsKey('age')) altUpdates['age'] = updates['age'];
+        if (updates.containsKey('gender')) {
+          altUpdates['gender'] = updates['gender'];
         }
-        if (avatarUrl != null) {
-          updates['avatar_url'] = avatarUrl.trim().isEmpty
-              ? null
-              : avatarUrl.trim();
+        if (updates.containsKey('intent')) {
+          altUpdates['intent'] = updates['intent'];
         }
-        if (phone != null) {
-          updates['phone'] = phone.trim().isEmpty ? null : phone.trim();
-        }
-        // Note: dateOfBirth not supported, we use age instead
-        if (age != null) updates['age'] = age;
-        if (gender != null && gender.trim().isNotEmpty) {
-          updates['gender'] = gender.trim();
-        }
-        // Note: nationality not supported in current schema
-        if (skillLevel != null) {
-          updates['skill_level'] = skillLevel.trim().isEmpty
-              ? null
-              : skillLevel.trim();
-        }
-        if (sports != null) updates['sports'] = sports;
-        if (interests != null) {
-          updates['interests'] = interests.trim().isEmpty
-              ? null
-              : interests.trim();
-        }
-        if (intent != null && intent.trim().isNotEmpty) {
-          updates['intent'] = intent.trim();
-        }
-        // Note: location not supported in current schema
-        if (timezone != null) {
-          updates['timezone'] = timezone.trim().isEmpty
-              ? null
-              : timezone.trim();
-        }
-        if (language != null) {
-          updates['language'] = language.trim().isEmpty
-              ? null
-              : language.trim();
-        }
-
-        if (updates.length <= 1) {
-          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        if (updates.containsKey('avatar_url')) {
+          altUpdates['avatar_url'] = updates['avatar_url'];
         }
 
         try {
-          var updateQuery = _supabase
-              .from(SupabaseConfig.usersTable)
-              .update(updates)
-              .eq('user_id', user.id);
-          if (profileId != null) {
-            updateQuery = updateQuery.eq('id', profileId);
+          final lower = e2.message.toLowerCase();
+          final startIdx = lower.indexOf('column ');
+          final endIdx = lower.indexOf(' does not exist');
+          if (startIdx != -1 && endIdx != -1 && endIdx > startIdx + 7) {
+            final rawCol = e2.message.substring(startIdx + 7, endIdx).trim();
+            final missingCol = rawCol
+                .replaceAll('u.', '')
+                .replaceAll('public.', '')
+                .replaceAll('profiles.', '')
+                .trim();
+            altUpdates.remove(missingCol);
+            if (missingCol == 'name') altUpdates.remove('name');
+            if (missingCol == 'sports') altUpdates.remove('sports');
           }
-          await updateQuery;
-
-          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
-        } on PostgrestException catch (e2) {
-          // Handle schema differences gracefully (e.g., full_name vs name, preferred_sports vs sports)
-          final isMissingColumn =
-              e2.code == '42703' ||
-              e2.message.toLowerCase().contains('column') &&
-                  e2.message.toLowerCase().contains('does not exist');
-          if (!isMissingColumn) rethrow;
-
-          final Map<String, dynamic> altUpdates = {};
-          // Map name -> full_name if present
-          if (updates.containsKey('name')) {
-            altUpdates['full_name'] = updates['name'];
-          }
-          // Map sports -> preferred_sports if present
-          if (updates.containsKey('sports')) {
-            altUpdates['preferred_sports'] = updates['sports'];
-          }
-          // Pass-through others
-          if (updates.containsKey('age')) altUpdates['age'] = updates['age'];
-          if (updates.containsKey('gender')) {
-            altUpdates['gender'] = updates['gender'];
-          }
-          if (updates.containsKey('intent')) {
-            altUpdates['intent'] = updates['intent'];
-          }
-          if (updates.containsKey('avatar_url')) {
-            altUpdates['avatar_url'] = updates['avatar_url'];
-          }
-
-          // If error reveals a specific missing column, drop it from the retry payload
-          try {
-            final lower = e2.message.toLowerCase();
-            final startIdx = lower.indexOf('column ');
-            final endIdx = lower.indexOf(' does not exist');
-            if (startIdx != -1 && endIdx != -1 && endIdx > startIdx + 7) {
-              final rawCol = e2.message.substring(startIdx + 7, endIdx).trim();
-              final missingCol = rawCol
-                  .replaceAll('u.', '')
-                  .replaceAll('public.', '')
-                  .replaceAll('profiles.', '')
-                  .trim();
-              altUpdates.remove(missingCol);
-              // Also remove counterparts if applicable
-              if (missingCol == 'name') altUpdates.remove('name');
-              if (missingCol == 'sports') altUpdates.remove('sports');
-            }
-          } catch (_) {
-            /* ignore parsing issues */
-          }
-
-          if (altUpdates.isEmpty) rethrow;
-
-          var altUpdateQuery = _supabase
-              .from(SupabaseConfig.usersTable)
-              .update(altUpdates)
-              .eq('user_id', user.id);
-          if (profileId != null) {
-            altUpdateQuery = altUpdateQuery.eq('id', profileId);
-          }
-          await altUpdateQuery;
-
-          return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        } catch (_) {
+          /* ignore parsing issues */
         }
+
+        if (altUpdates.isEmpty) rethrow;
+
+        var altUpdateQuery = _supabase
+            .from(SupabaseConfig.usersTable)
+            .update(altUpdates)
+            .eq('user_id', user.id);
+        if (profileId != null) {
+          altUpdateQuery = altUpdateQuery.eq('id', profileId);
+        }
+        await altUpdateQuery;
+
+        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
       }
     } catch (e) {
       throw Exception('Profile update failed: $e');

@@ -28,8 +28,8 @@ enum AvatarSize {
   /// Large avatar - 64dp
   /// Used in: profile headers, detail views, prominent displays
   large(
-    dimension: 64.0,
-    cornerRadius: 24.0,
+    dimension: 90.0,
+    cornerRadius: 30.0,
     borderWidth: 1.5,
     fontSize: 26.0,
     badgeSize: 30.0,

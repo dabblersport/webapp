@@ -52,6 +52,19 @@ class DataExportService {
   DataExportService({SupabaseClient? supabase})
     : _supabase = supabase ?? Supabase.instance.client;
 
+  bool _isMissingTableError(Object error, String tableName) {
+    if (error is! PostgrestException) {
+      return false;
+    }
+
+    final lowerMessage = error.message.toLowerCase();
+    final normalizedName = tableName.replaceFirst('public.', '').toLowerCase();
+
+    return error.code == 'PGRST205' ||
+        lowerMessage.contains("could not find the table '$tableName'") ||
+        lowerMessage.contains("could not find the table '$normalizedName'");
+  }
+
   /// Request a new comprehensive data export for GDPR compliance
   Future<DataExportRequest> requestGDPRDataExport({
     required String userId,
@@ -469,6 +482,31 @@ class DataExportService {
         'retention_period': 'Until account deletion or consent withdrawal',
       };
     } catch (e) {
+      if (_isMissingTableError(e, 'public.user_preferences')) {
+        Logger.info(
+          '$_logTag: user_preferences table missing; exporting settings only',
+        );
+
+        try {
+          final settingsResponse = await _supabase
+              .from('user_settings')
+              .select()
+              .eq('user_id', userId);
+
+          return {
+            'settings': settingsResponse,
+            'preferences': const [],
+            'data_source': 'user_settings table',
+            'purpose': 'Personalization and user experience optimization',
+            'legal_basis': 'User consent and legitimate interest',
+            'retention_period': 'Until account deletion or consent withdrawal',
+          };
+        } catch (settingsError) {
+          Logger.warning('Could not fetch settings data', settingsError);
+          return null;
+        }
+      }
+
       Logger.warning('Could not fetch preferences data', e);
       return null;
     }

@@ -41,7 +41,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.initState();
     _profileFuture = AuthService().getUserProfile(
       fields: const ['avatar_url', 'display_name'],
-      personaType: widget.personaType,
     );
   }
 
