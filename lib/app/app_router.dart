@@ -1146,10 +1146,9 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.socialCreatePost,
       name: RouteNames.socialCreatePost,
-      pageBuilder: (context, state) => SlideTransitionPage(
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
         child: const PostComposerScreen(),
-        direction: SlideDirection.fromBottom,
       ),
     ),
 
@@ -1157,10 +1156,9 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.postComposer,
       name: RouteNames.postComposer,
-      pageBuilder: (context, state) => SlideTransitionPage(
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
         child: const PostComposerScreen(),
-        direction: SlideDirection.fromBottom,
       ),
     ),
 

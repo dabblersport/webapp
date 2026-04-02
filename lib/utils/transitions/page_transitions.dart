@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+
 /// Professional Page Transitions
 ///
 /// Provides smooth, Material Design 3 compliant transitions
@@ -230,6 +232,137 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
          },
          transitionDuration: duration,
        );
+}
+
+/// Adaptive modal route.
+///
+/// On compact screens it behaves like a bottom drawer sheet.
+/// On wide screens it renders as a centered modal dialog.
+class AdaptiveModalPage extends CustomTransitionPage<void> {
+  AdaptiveModalPage({
+    required Widget child,
+    super.key,
+    Duration duration = const Duration(milliseconds: 320),
+    this.maxDialogWidth = 720,
+    this.maxDialogHeightFraction = 0.88,
+    this.mobileHeightFactor = 0.94,
+    this.barrierColorValue = const Color(0x66000000),
+  }) : super(
+         opaque: false,
+         barrierDismissible: true,
+         barrierColor: barrierColorValue,
+         child: _AdaptiveModalFrame(
+           maxDialogWidth: maxDialogWidth,
+           maxDialogHeightFraction: maxDialogHeightFraction,
+           mobileHeightFactor: mobileHeightFactor,
+           child: child,
+         ),
+         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+           final isWide =
+               MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.compact;
+
+           if (isWide) {
+             return FadeTransition(
+               opacity: animation.drive(
+                 Tween<double>(
+                   begin: 0.0,
+                   end: 1.0,
+                 ).chain(CurveTween(curve: Curves.easeOutCubic)),
+               ),
+               child: ScaleTransition(
+                 scale: animation.drive(
+                   Tween<double>(
+                     begin: 0.96,
+                     end: 1.0,
+                   ).chain(CurveTween(curve: Curves.easeOutCubic)),
+                 ),
+                 child: child,
+               ),
+             );
+           }
+
+           return SlideTransition(
+             position: animation.drive(
+               Tween<Offset>(
+                 begin: const Offset(0.0, 1.0),
+                 end: Offset.zero,
+               ).chain(CurveTween(curve: Curves.easeOutCubic)),
+             ),
+             child: child,
+           );
+         },
+         transitionDuration: duration,
+       );
+
+  final double maxDialogWidth;
+  final double maxDialogHeightFraction;
+  final double mobileHeightFactor;
+  final Color barrierColorValue;
+}
+
+class _AdaptiveModalFrame extends StatelessWidget {
+  const _AdaptiveModalFrame({
+    required this.child,
+    required this.maxDialogWidth,
+    required this.maxDialogHeightFraction,
+    required this.mobileHeightFactor,
+  });
+
+  final Widget child;
+  final double maxDialogWidth;
+  final double maxDialogHeightFraction;
+  final double mobileHeightFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isWide = size.width >= AdaptiveBreakpoints.compact;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (isWide) {
+      return Material(
+        type: MaterialType.transparency,
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxDialogWidth,
+                maxHeight: size.height * maxDialogHeightFraction,
+              ),
+              child: Material(
+                color: colorScheme.surface,
+                elevation: 12,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: child,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: FractionallySizedBox(
+          widthFactor: 1,
+          heightFactor: mobileHeightFactor,
+          child: Material(
+            color: colorScheme.surface,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Hero-style Transition - Expands from a point
