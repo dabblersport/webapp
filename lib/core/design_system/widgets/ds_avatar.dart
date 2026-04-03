@@ -72,6 +72,9 @@ class DSAvatar extends StatefulWidget {
   /// Show border (default: true)
   final bool hasBorder;
 
+  /// Custom border color (overrides default border color when provided)
+  final Color? borderColor;
+
   /// Custom background color (overrides context color)
   final Color? backgroundColor;
 
@@ -94,6 +97,7 @@ class DSAvatar extends StatefulWidget {
     this.heroTag,
     this.hasError = false,
     this.hasBorder = true,
+    this.borderColor,
     this.backgroundColor,
     this.foregroundColor,
   });
@@ -113,6 +117,7 @@ class DSAvatar extends StatefulWidget {
     String? heroTag,
     bool hasError = false,
     bool hasBorder = true,
+    Color? borderColor,
     Color? backgroundColor,
     Color? foregroundColor,
   }) : this(
@@ -131,6 +136,7 @@ class DSAvatar extends StatefulWidget {
          heroTag: heroTag,
          hasError: hasError,
          hasBorder: hasBorder,
+         borderColor: borderColor,
          backgroundColor: backgroundColor,
          foregroundColor: foregroundColor,
        );
@@ -150,6 +156,7 @@ class DSAvatar extends StatefulWidget {
     String? heroTag,
     bool hasError = false,
     bool hasBorder = true,
+    Color? borderColor,
     Color? backgroundColor,
     Color? foregroundColor,
   }) : this(
@@ -168,6 +175,7 @@ class DSAvatar extends StatefulWidget {
          heroTag: heroTag,
          hasError: hasError,
          hasBorder: hasBorder,
+         borderColor: borderColor,
          backgroundColor: backgroundColor,
          foregroundColor: foregroundColor,
        );
@@ -187,6 +195,7 @@ class DSAvatar extends StatefulWidget {
     String? heroTag,
     bool hasError = false,
     bool hasBorder = true,
+    Color? borderColor,
     Color? backgroundColor,
     Color? foregroundColor,
   }) : this(
@@ -205,6 +214,7 @@ class DSAvatar extends StatefulWidget {
          heroTag: heroTag,
          hasError: hasError,
          hasBorder: hasBorder,
+         borderColor: borderColor,
          backgroundColor: backgroundColor,
          foregroundColor: foregroundColor,
        );
@@ -308,9 +318,11 @@ class _DSAvatarState extends State<DSAvatar>
         borderRadius: BorderRadius.circular(cornerRadius),
         border: widget.hasBorder
             ? Border.all(
-                color: widget.hasError
-                    ? AvatarColorPalette.getErrorBorderColor(colorScheme)
-                    : AvatarColorPalette.getBorderColor(colorScheme),
+                color:
+                    widget.borderColor ??
+                    (widget.hasError
+                        ? AvatarColorPalette.getErrorBorderColor(colorScheme)
+                        : AvatarColorPalette.getBorderColor(colorScheme)),
                 width: borderWidth,
               )
             : null,
@@ -511,8 +523,8 @@ class _RandomAvatarWithFallback extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       return SizedBox(
-        width: 90,
-        height: 90,
+        width: size,
+        height: size,
         child: RandomAvatar(
           seed,
           trBackground: true,

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import 'post_enums.dart';
+import 'post_theme.dart';
 import 'vibe.dart';
 
 part 'post.freezed.dart';
@@ -111,6 +112,17 @@ class Post with _$Post {
 
     @JsonKey(name: 'repost_count') @Default(0) int repostCount,
 
+    /// FK to `post_themes` table. Nullable — only present on themed posts.
+    @JsonKey(name: 'post_theme_id') String? postThemeId,
+
+    /// Resolved theme object, injected by the repository from batch lookup.
+    @JsonKey(
+      name: 'post_theme',
+      fromJson: _postThemeFromJson,
+      toJson: _postThemeToJson,
+    )
+    PostTheme? postTheme,
+
     /// Nested original post for reposts. Populated from the `feed_posts`
     /// view's `original_post` jsonb column.
     @JsonKey(
@@ -213,6 +225,16 @@ Post? _originalPostFromJson(dynamic value) {
 }
 
 Map<String, dynamic>? _originalPostToJson(Post? post) => post?.toJson();
+
+// ── Post theme helpers ────────────────────────────────────────────────
+
+PostTheme? _postThemeFromJson(dynamic value) {
+  if (value == null) return null;
+  if (value is Map<String, dynamic>) return PostTheme.fromMap(value);
+  return null;
+}
+
+Map<String, dynamic>? _postThemeToJson(PostTheme? theme) => theme?.toMap();
 
 List<dynamic> _toDynamicList(dynamic value) {
   if (value is List) return value;

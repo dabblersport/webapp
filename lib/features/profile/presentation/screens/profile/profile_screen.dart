@@ -273,6 +273,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final sportsState = ref.watch(sportsProfileControllerProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final profileId = profileState.profile?.id;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWide = screenWidth >= AdaptiveBreakpoints.compact;
+    final showWideRightPanel = screenWidth >= AdaptiveBreakpoints.medium;
 
     // Watch the takedown provider once per profileId
     final takedownAsync = profileId != null
@@ -303,10 +306,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       );
     }
 
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-
     if (isWide) {
-      return _buildWideLayout(context, colorScheme, profileState, sportsState);
+      return _buildWideLayout(
+        context,
+        colorScheme,
+        profileState,
+        sportsState,
+        showRightPanel: showWideRightPanel,
+      );
     }
 
     return Scaffold(
@@ -376,8 +383,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     BuildContext context,
     ColorScheme colorScheme,
     ProfileState profileState,
-    SportsProfileState sportsState,
-  ) {
+    SportsProfileState sportsState, {
+    required bool showRightPanel,
+  }) {
     return AdaptiveScaffold(
       currentIndex: 6, // Profile is index 6
       onDestinationSelected: (i) =>
@@ -389,18 +397,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         height: 18,
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       ),
-      body: _buildWideBody(context, colorScheme),
-      rightPanel: _buildWideRightPanel(
+      body: _buildWideBody(
         context,
         colorScheme,
         profileState,
         sportsState,
+        showHeroInBody: !showRightPanel,
       ),
+      rightPanel: showRightPanel
+          ? _buildWideRightPanel(
+              context,
+              colorScheme,
+              profileState,
+              sportsState,
+            )
+          : null,
     );
   }
 
   /// Center column on wide screens: tabbed posts + refresh.
-  Widget _buildWideBody(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildWideBody(
+    BuildContext context,
+    ColorScheme colorScheme,
+    ProfileState profileState,
+    SportsProfileState sportsState, {
+    required bool showHeroInBody,
+  }) {
     final profileId = ref.watch(profileControllerProvider).profile?.id;
 
     return Scaffold(
@@ -412,6 +434,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
+            if (showHeroInBody)
+              SliverToBoxAdapter(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 600),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 16, bottom: 20),
+                      child: _buildProfileHeroCard(
+                        context,
+                        profileState,
+                        sportsState,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(
@@ -566,7 +604,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 16),
               _buildAvatar(context, profile),
             ],
           ),

@@ -257,6 +257,39 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     return rows;
   }
 
+  /// Batch-fetch post themes for rows that have a non-null `post_theme_id`
+  /// and inject the resolved theme map into the `post_theme` key so
+  /// [Post.fromJson] can parse it via [_postThemeFromJson].
+  Future<List<Map<String, dynamic>>> _attachPostThemes(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final themeIds = <String>{};
+    for (final row in rows) {
+      final tid = row['post_theme_id'];
+      if (tid is String && tid.isNotEmpty) themeIds.add(tid);
+    }
+
+    if (themeIds.isEmpty) return rows;
+
+    final themeRows = await _db
+        .from('post_themes')
+        .select()
+        .inFilter('id', themeIds.toList());
+
+    final themesById = <String, Map<String, dynamic>>{
+      for (final t in themeRows) t['id'] as String: t,
+    };
+
+    for (final row in rows) {
+      final tid = row['post_theme_id'];
+      if (tid is String && tid.isNotEmpty) {
+        row['post_theme'] = themesById[tid];
+      }
+    }
+
+    return rows;
+  }
+
   Future<List<Post>> _fetchPostsByIds(
     List<String> postIds, {
     String? sportId,
@@ -339,7 +372,26 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .range(offset, offset + limit - 1);
     final enriched = await _enrichRows(rows);
     final hydrated = await _attachOriginalPosts(enriched);
-    return hydrated.map((r) => Post.fromJson(r)).toList();
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getRpcFeed({
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final response = await _db.rpc(
+      'get_feed',
+      params: {'p_limit': limit, 'p_offset': offset},
+    );
+    final rows = (response as List<dynamic>)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    final enriched = await _enrichRows(rows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -362,7 +414,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .toList();
     final enriched = await _enrichRows(postRows);
     final hydrated = await _attachOriginalPosts(enriched);
-    return hydrated.map((r) => Post.fromJson(r)).toList();
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -384,7 +437,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .toList();
     final enriched = await _enrichRows(postRows);
     final hydrated = await _attachOriginalPosts(enriched);
-    return hydrated.map((r) => Post.fromJson(r)).toList();
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
   });
 
   @override
@@ -634,8 +688,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final row = await _db.from('posts').select().eq('id', postId).single();
     final enriched = await _enrichRows([row]);
     final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
 
-    return Post.fromJson(hydrated.first);
+    return Post.fromJson(themed.first);
   });
 
   // ── Write ──────────────────────────────────────────────────────────

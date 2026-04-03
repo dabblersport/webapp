@@ -586,6 +586,13 @@ class AppRouter {
     // Welcome route
     GoRoute(
       path: RoutePaths.welcome,
+      redirect: (context, state) {
+        // Prevent returning to welcome after it has been dismissed
+        if (!routerRefreshNotifier.needsPostLoginWelcome) {
+          return RoutePaths.home;
+        }
+        return null;
+      },
       pageBuilder: (context, state) {
         final extra = state.extra;
         final displayName = extra is Map
