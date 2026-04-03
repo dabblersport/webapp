@@ -198,7 +198,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
     state = state.copyWith(isLoading: true, error: null);
     _activePage = 0;
 
-    final result = await _repo.getHomeFeed(limit: _pageSize, offset: 0);
+    final result = await _repo.getRpcFeed(limit: _pageSize, offset: 0);
     if (!mounted) return;
 
     result.fold(
@@ -223,7 +223,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
     state = state.copyWith(isLoadingMore: true);
     final nextPage = _activePage + 1;
 
-    final result = await _repo.getHomeFeed(
+    final result = await _repo.getRpcFeed(
       limit: _pageSize,
       offset: nextPage * _pageSize,
     );

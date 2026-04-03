@@ -540,12 +540,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
   }
 
-  List<String> _buildAvatarChoices(String userId) {
+  List<String> _buildAvatarChoices(String userId, {int generation = 0}) {
     final profileSeed = _profileId ?? 'draft';
     return List.generate(
       12,
       (index) => buildDsAvatarReference(
-        'profile:$profileSeed:user:$userId:option:${index + 1}',
+        'profile:$profileSeed:user:$userId:gen:$generation:option:${index + 1}',
       ),
     );
   }
@@ -561,139 +561,157 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return;
     }
 
-    final avatarChoices = _buildAvatarChoices(user.id);
-
     await showAdaptiveSheet<void>(
       context: context,
       backgroundColor: context.getCategoryTheme('main').surface,
       builder: (sheetContext) {
         final colorScheme = sheetContext.getCategoryTheme('main');
+        var generation = 0;
 
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Choose your avatar',
-                style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Pick one of 12 generated avatars or upload your own photo.',
-                style: Theme.of(sheetContext).textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 20),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: avatarChoices.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1,
-                ),
-                itemBuilder: (gridContext, index) {
-                  final avatarReference = avatarChoices[index];
-                  final isSelected = _avatarPath == avatarReference;
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            final avatarChoices = _buildAvatarChoices(
+              user.id,
+              generation: generation,
+            );
 
-                  return InkWell(
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Choose your avatar',
+                    style: Theme.of(sheetContext).textTheme.titleLarge
+                        ?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pick one of 12 generated avatars or upload your own photo.',
+                    style: Theme.of(sheetContext).textTheme.bodyMedium
+                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 20),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: avatarChoices.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 6,
+                          childAspectRatio: 1,
+                        ),
+                    itemBuilder: (gridContext, index) {
+                      final avatarReference = avatarChoices[index];
+                      final isSelected = _avatarPath == avatarReference;
+
+                      return InkWell(
+                        onTap: _isUploadingAvatar
+                            ? null
+                            : () async {
+                                Navigator.of(sheetContext).pop();
+                                await _selectDsAvatar(avatarReference);
+                              },
+                        borderRadius: BorderRadius.circular(32),
+                        child: Center(
+                          child: DSAvatar(
+                            size: AvatarSize.large,
+                            //customDimension: 74,
+                            imageUrl: avatarReference,
+                            displayName: _currentAvatarDisplayName,
+                            context: AvatarContext.profile,
+                            hasBorder: isSelected,
+                            borderColor: isSelected
+                                ? colorScheme.primary
+                                : null,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        setSheetState(() => generation++);
+                      },
+                      icon: const Icon(Iconsax.refresh_copy),
+                      label: const Text('Shuffle avatars'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                        side: BorderSide(color: colorScheme.outline),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Upload options',
+                    style: Theme.of(sheetContext).textTheme.titleMedium
+                        ?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildAvatarActionTile(
+                    sheetContext,
+                    icon: Iconsax.folder_open_copy,
+                    title: 'From file',
+                    subtitle: 'Choose an image file from your device',
                     onTap: _isUploadingAvatar
                         ? null
                         : () async {
                             Navigator.of(sheetContext).pop();
-                            await _selectDsAvatar(avatarReference);
+                            await _pickAndUploadAvatarFromFile();
                           },
-                    borderRadius: BorderRadius.circular(20),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.primary.withValues(alpha: 0.12)
-                            : colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.outlineVariant,
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: DSAvatar(
-                        size: AvatarSize.large,
-                        customDimension: 58,
-                        imageUrl: avatarReference,
-                        displayName: _currentAvatarDisplayName,
-                        context: AvatarContext.profile,
-                        hasBorder: false,
-                      ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildAvatarActionTile(
+                    sheetContext,
+                    icon: Iconsax.gallery_copy,
+                    title: 'From gallery',
+                    subtitle: 'Pick a photo from your gallery',
+                    onTap: _isUploadingAvatar
+                        ? null
+                        : () async {
+                            Navigator.of(sheetContext).pop();
+                            await _pickAndUploadAvatarFromSource(
+                              ImageSource.gallery,
+                            );
+                          },
+                  ),
+                  if (_supportsCamera) ...[
+                    const SizedBox(height: 12),
+                    _buildAvatarActionTile(
+                      sheetContext,
+                      icon: Iconsax.camera_copy,
+                      title: 'Take a photo',
+                      subtitle: 'Open the camera and capture a new avatar',
+                      onTap: _isUploadingAvatar
+                          ? null
+                          : () async {
+                              Navigator.of(sheetContext).pop();
+                              await _pickAndUploadAvatarFromSource(
+                                ImageSource.camera,
+                              );
+                            },
                     ),
-                  );
-                },
+                  ],
+                ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Upload options',
-                style: Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildAvatarActionTile(
-                sheetContext,
-                icon: Iconsax.folder_open_copy,
-                title: 'From file',
-                subtitle: 'Choose an image file from your device',
-                onTap: _isUploadingAvatar
-                    ? null
-                    : () async {
-                        Navigator.of(sheetContext).pop();
-                        await _pickAndUploadAvatarFromFile();
-                      },
-              ),
-              const SizedBox(height: 12),
-              _buildAvatarActionTile(
-                sheetContext,
-                icon: Iconsax.gallery_copy,
-                title: 'From gallery',
-                subtitle: 'Pick a photo from your gallery',
-                onTap: _isUploadingAvatar
-                    ? null
-                    : () async {
-                        Navigator.of(sheetContext).pop();
-                        await _pickAndUploadAvatarFromSource(
-                          ImageSource.gallery,
-                        );
-                      },
-              ),
-              if (_supportsCamera) ...[
-                const SizedBox(height: 12),
-                _buildAvatarActionTile(
-                  sheetContext,
-                  icon: Iconsax.camera_copy,
-                  title: 'Take a photo',
-                  subtitle: 'Open the camera and capture a new avatar',
-                  onTap: _isUploadingAvatar
-                      ? null
-                      : () async {
-                          Navigator.of(sheetContext).pop();
-                          await _pickAndUploadAvatarFromSource(
-                            ImageSource.camera,
-                          );
-                        },
-                ),
-              ],
-            ],
-          ),
+            );
+          },
         );
       },
     );

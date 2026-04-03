@@ -81,13 +81,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           route: '/settings/theme',
           searchTerms: ['theme', 'dark', 'light', 'appearance'],
         ),
-        SettingsItem(
-          title: 'Design System Showcase',
-          subtitle: 'View all design components',
-          icon: Iconsax.element_3_copy,
-          route: '/showcase',
-          searchTerms: ['design', 'system', 'showcase', 'components', 'theme'],
-        ),
         // Release 2: Language
         // SettingsItem(
         //   title: 'Language',

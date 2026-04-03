@@ -24,6 +24,8 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   bool _isSaving = false;
   String? _profileId;
   String? _profileType;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -36,6 +38,12 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     _selectedIds = Set<String>.from(profile?.interests ?? []);
     _profileId = profile?.id;
     _profileType = profile?.personaType ?? profile?.profileType ?? 'player';
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   bool get _isOrganiserType =>
@@ -197,39 +205,105 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
               ),
             ),
             const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchController,
+                enabled: !_isSaving,
+                onChanged: (value) {
+                  setState(() => _searchQuery = value.trim().toLowerCase());
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search sports',
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                          icon: Icon(
+                            Icons.close,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             // Sports list
             Expanded(
               child: sportsAsync.when(
-                data: (sports) => ListView.separated(
-                  controller: scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sports.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final sport = sports[index];
-                    final isSelected = _selectedIds.contains(sport.id);
-                    return ListTile(
-                      leading: Text(
-                        sport.emoji ?? '🏅',
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                      title: Text(
-                        sport.nameEn,
-                        style: textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface,
+                data: (sports) {
+                  final filteredSports = _searchQuery.isEmpty
+                      ? sports
+                      : sports
+                            .where(
+                              (sport) =>
+                                  sport.nameEn.toLowerCase().contains(
+                                    _searchQuery,
+                                  ) ||
+                                  (sport.emoji?.contains(_searchQuery) ??
+                                      false),
+                            )
+                            .toList();
+
+                  if (filteredSports.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'No sports match your search',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      trailing: isSelected
-                          ? Icon(Icons.check_circle, color: colorScheme.primary)
-                          : Icon(
-                              Icons.circle_outlined,
-                              color: colorScheme.outlineVariant,
-                            ),
-                      onTap: _isSaving ? null : () => _toggle(sport),
                     );
-                  },
-                ),
+                  }
+
+                  return ListView.separated(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: filteredSports.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final sport = filteredSports[index];
+                      final isSelected = _selectedIds.contains(sport.id);
+                      return ListTile(
+                        leading: Text(
+                          sport.emoji ?? '🏅',
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        title: Text(
+                          sport.nameEn,
+                          style: textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? Icon(
+                                Icons.check_circle,
+                                color: colorScheme.primary,
+                              )
+                            : Icon(
+                                Icons.circle_outlined,
+                                color: colorScheme.outlineVariant,
+                              ),
+                        onTap: _isSaving ? null : () => _toggle(sport),
+                      );
+                    },
+                  );
+                },
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(
                   child: Text(

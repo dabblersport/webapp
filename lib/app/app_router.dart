@@ -586,6 +586,13 @@ class AppRouter {
     // Welcome route
     GoRoute(
       path: RoutePaths.welcome,
+      redirect: (context, state) {
+        // Prevent returning to welcome after it has been dismissed
+        if (!routerRefreshNotifier.needsPostLoginWelcome) {
+          return RoutePaths.home;
+        }
+        return null;
+      },
       pageBuilder: (context, state) {
         final extra = state.extra;
         final displayName = extra is Map
@@ -1146,10 +1153,9 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.socialCreatePost,
       name: RouteNames.socialCreatePost,
-      pageBuilder: (context, state) => SlideTransitionPage(
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
         child: const PostComposerScreen(),
-        direction: SlideDirection.fromBottom,
       ),
     ),
 
@@ -1157,10 +1163,9 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.postComposer,
       name: RouteNames.postComposer,
-      pageBuilder: (context, state) => SlideTransitionPage(
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
         child: const PostComposerScreen(),
-        direction: SlideDirection.fromBottom,
       ),
     ),
 

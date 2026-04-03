@@ -24,6 +24,7 @@ import 'package:dabbler/features/notifications/presentation/widgets/notification
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 import 'package:dabbler/features/social/presentation/widgets/repost_card.dart';
+import 'package:dabbler/features/social/presentation/widgets/system_post_card.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -509,11 +510,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
       sliver: SliverList.separated(
         itemCount: itemCount,
-        separatorBuilder: (_, __) => Divider(
-          height: 1,
-          thickness: 1,
-          color: colorScheme.outlineVariant.withOpacity(0.3),
-        ),
+        separatorBuilder: (_, index) {
+          if (index < posts.length &&
+              posts[index].originType == OriginType.system) {
+            return const SizedBox.shrink();
+          }
+          return Divider(
+            height: 1,
+            thickness: 1,
+            color: colorScheme.outlineVariant.withOpacity(0.3),
+          );
+        },
         itemBuilder: (context, index) {
           if (index == posts.length) {
             return const Padding(
@@ -522,6 +529,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             );
           }
           final post = posts[index];
+          if (post.originType == OriginType.system) {
+            return SystemPostCard(post: post);
+          }
           if (post.originType == OriginType.repost) {
             return RepostCard(post: post);
           }

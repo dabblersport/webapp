@@ -67,6 +67,8 @@ _$PostImpl _$$PostImplFromJson(Map<String, dynamic> json) => _$PostImpl(
       ? null
       : DateTime.parse(json['edited_at'] as String),
   repostCount: (json['repost_count'] as num?)?.toInt() ?? 0,
+  postThemeId: json['post_theme_id'] as String?,
+  postTheme: _postThemeFromJson(json['post_theme']),
   originalPost: _originalPostFromJson(json['original_post']),
 );
 
@@ -119,5 +121,7 @@ Map<String, dynamic> _$$PostImplToJson(
   'expires_at': instance.expiresAt?.toIso8601String(),
   'edited_at': instance.editedAt?.toIso8601String(),
   'repost_count': instance.repostCount,
+  'post_theme_id': instance.postThemeId,
+  'post_theme': _postThemeToJson(instance.postTheme),
   'original_post': _originalPostToJson(instance.originalPost),
 };

@@ -5,12 +5,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:dabbler/core/config/environment.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/places/presentation/widgets/place_picker_sheet.dart';
+import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
@@ -63,24 +67,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     _bodyController.dispose();
     _bodyFocusNode.dispose();
     super.dispose();
-  }
-
-  /// Insert a `#` at the current cursor position in the body field
-  /// and focus it, so the user can type a hashtag inline.
-  void _insertHashtag() {
-    final text = _bodyController.text;
-    final sel = _bodyController.selection;
-    final offset = sel.isValid ? sel.baseOffset : text.length;
-    // Add a space before # if the previous character isn't whitespace/empty
-    final needsSpace =
-        offset > 0 && text[offset - 1] != ' ' && text[offset - 1] != '\n';
-    final insert = '${needsSpace ? ' ' : ''}#';
-    final newText = text.replaceRange(offset, offset, insert);
-    _bodyController.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: offset + insert.length),
-    );
-    _bodyFocusNode.requestFocus();
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -568,6 +554,116 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
+  Future<void> _showProfileSwitchPicker() async {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final profiles = await ref.read(availableProfilesProvider.future);
+
+    if (!mounted || profiles.isEmpty) {
+      return;
+    }
+
+    final activeType = ref.read(activeProfileTypeProvider);
+
+    showAdaptiveSheet(
+      context: context,
+      backgroundColor: cs.surfaceContainerHigh,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _SheetHandle(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Text(
+                'Post As',
+                style: tt.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+            ),
+            for (final profile in profiles)
+              Builder(
+                builder: (_) {
+                  final effectiveType =
+                      (profile.personaType ?? profile.profileType ?? '')
+                          .toLowerCase();
+                  final isActive =
+                      effectiveType.isNotEmpty &&
+                      effectiveType == activeType?.toLowerCase();
+
+                  return ListTile(
+                    leading: DSAvatar.small(
+                      imageUrl: profile.avatarUrl,
+                      displayName: profile.displayName,
+                      context: AvatarContext.main,
+                    ),
+                    title: Text(
+                      profile.displayName,
+                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
+                    ),
+                    subtitle: effectiveType.isNotEmpty
+                        ? Text(
+                            _prettifyLabel(effectiveType),
+                            style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          )
+                        : null,
+                    trailing: isActive
+                        ? Icon(Icons.check_circle, color: cs.primary)
+                        : null,
+                    onTap: () async {
+                      if (isActive || effectiveType.isEmpty) {
+                        Navigator.pop(ctx);
+                        return;
+                      }
+
+                      final switched = await ref
+                          .read(personaServiceProvider.notifier)
+                          .switchActiveProfile(effectiveType);
+
+                      if (!switched) {
+                        if (context.mounted) {
+                          final errorMsg =
+                              ref.read(personaServiceProvider).errorMessage ??
+                              'Failed to switch profile';
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(errorMsg)));
+                        }
+                        return;
+                      }
+
+                      ref.read(activeProfileTypeProvider.notifier).state =
+                          effectiveType;
+                      unawaited(persistActiveProfileType(effectiveType));
+                      ref
+                          .read(postComposerProvider.notifier)
+                          .setPersonaTypeSnapshot(effectiveType);
+
+                      final userId = _authService.getCurrentUser()?.id;
+                      if (userId != null) {
+                        await clearProfileCache(ref, userId);
+                      }
+
+                      await _loadUserProfile();
+
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                      }
+                    },
+                  );
+                },
+              ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // BUILD
   // ═══════════════════════════════════════════════════════════════════════
@@ -631,9 +727,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               ),
             ),
           ),
-
-          // Bottom action bar
-          _buildBottomBar(cs, tt, composerState),
         ],
       ),
     );
@@ -715,13 +808,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     return Row(
       children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+        DSAvatar.small(
+          imageUrl: avatarUrl,
+          displayName: displayName,
+          context: AvatarContext.main,
           backgroundColor: cs.primaryContainer,
-          child: avatarUrl == null
-              ? Icon(Icons.person, color: cs.onPrimaryContainer, size: 20)
-              : null,
+          foregroundColor: cs.onPrimaryContainer,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -748,19 +840,27 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             ],
           ),
         ),
+        if (activePersona != null && activePersona.isNotEmpty)
+          IconButton(
+            onPressed: _showProfileSwitchPicker,
+            icon: Icon(Iconsax.convert_copy, color: cs.primary),
+            tooltip: 'Switch profile',
+          ),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // KIND + VISIBILITY ROW
+  // KIND + VISIBILITY + ORIGIN ROW
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildKindVisibilityRow(
     ColorScheme cs,
     PostComposerState composerState,
   ) {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
         // Kind pill
         _ComposerPill(
@@ -770,7 +870,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           color: cs.tertiaryContainer,
           textColor: cs.onTertiaryContainer,
         ),
-        const SizedBox(width: 8),
         // Visibility pill
         _ComposerPill(
           icon: _visibilityIcon(composerState.visibility),
@@ -778,6 +877,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           onTap: _showVisibilityPicker,
           color: cs.secondaryContainer,
           textColor: cs.onSecondaryContainer,
+        ),
+        // Origin pill
+        _ComposerPill(
+          icon: _originTypeIcon(composerState.originType),
+          label: _originTypeLabel(composerState.originType),
+          onTap: _showOriginTypePicker,
+          color: cs.primaryContainer,
+          textColor: cs.onPrimaryContainer,
         ),
       ],
     );
@@ -1001,6 +1108,15 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             onTap: _showMediaInput,
             cs: cs,
           ),
+
+        // GIF chip
+        if (!state.hasMedia)
+          _AddChip(
+            icon: Icons.gif_box_outlined,
+            label: 'GIF',
+            onTap: _showGifPicker,
+            cs: cs,
+          ),
       ],
     );
   }
@@ -1028,36 +1144,24 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         ),
         const SizedBox(height: 8),
         // Allow reposts toggle
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            'Allow reposts',
-            style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-          ),
-          subtitle: Text(
-            'Others can share this post',
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
+        _buildOptionToggleTile(
+          cs: cs,
+          tt: tt,
+          title: 'Allow reposts',
+          subtitle: 'Others can share this post',
           value: state.allowReposts,
           onChanged: (_) =>
               ref.read(postComposerProvider.notifier).toggleAllowReposts(),
-          activeThumbColor: cs.primary,
         ),
         // Pin toggle
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            'Pin to profile',
-            style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-          ),
-          subtitle: Text(
-            'Keep this post at the top of your profile',
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
+        _buildOptionToggleTile(
+          cs: cs,
+          tt: tt,
+          title: 'Pin to profile',
+          subtitle: 'Keep this post at the top of your profile',
           value: state.isPinned,
           onChanged: (_) =>
               ref.read(postComposerProvider.notifier).togglePinned(),
-          activeThumbColor: cs.primary,
         ),
         // Expiry
         ListTile(
@@ -1123,134 +1227,47 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // BOTTOM BAR
-  // ═══════════════════════════════════════════════════════════════════════
+  Widget _buildOptionToggleTile({
+    required ColorScheme cs,
+    required TextTheme tt,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    final tileColor = cs.surfaceContainerLow;
+    final titleColor = value ? cs.onPrimaryContainer : cs.onSurface;
+    final subtitleColor = value
+        ? cs.onPrimaryContainer.withValues(alpha: 0.8)
+        : cs.onSurfaceVariant;
 
-  Widget _buildBottomBar(
-    ColorScheme cs,
-    TextTheme tt,
-    PostComposerState state,
-  ) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        0,
-        8,
-        16,
-        8 + MediaQuery.of(context).padding.bottom,
-      ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        border: Border(
-          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.2)),
+        color: tileColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: value
+              ? cs.primary.withValues(alpha: 0.32)
+              : cs.outlineVariant.withValues(alpha: 0.24),
         ),
       ),
-      child: Row(
-        children: [
-          // Scrollable icon strip so all actions are accessible on small screens
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.only(left: 4),
-              child: Row(
-                children: [
-                  _BottomBarIcon(
-                    icon: Icons.mood,
-                    label: 'Vibe',
-                    active: state.hasVibe,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showVibesPicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.sports,
-                    label: 'Sport',
-                    active: state.hasSport,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showSportsPicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.location_on_outlined,
-                    label: 'Location',
-                    active: state.hasLocation,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showLocationPicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.stadium_outlined,
-                    label: 'Venue',
-                    active: state.hasVenue,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showVenuePicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.sports_esports_outlined,
-                    label: 'Game',
-                    active: state.hasGame,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showGamePicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.image_outlined,
-                    label: 'Media',
-                    active: state.hasMedia,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showMediaInput,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.gif_box_outlined,
-                    label: 'GIF',
-                    active: false,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showGifPicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.tag,
-                    label: 'Tag',
-                    active: state.hasTags,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _insertHashtag,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.category_outlined,
-                    label: 'Class',
-                    active: state.contentClass != 'social',
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showContentClassPicker,
-                  ),
-                  _BottomBarIcon(
-                    icon: Icons.link,
-                    label: 'Origin',
-                    active: state.originType != OriginType.manual,
-                    cs: cs,
-                    tt: tt,
-                    onTap: _showOriginTypePicker,
-                  ),
-                ],
-              ),
-            ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        title: Text(
+          title,
+          style: tt.bodyMedium?.copyWith(
+            color: titleColor,
+            fontWeight: value ? FontWeight.w700 : FontWeight.w500,
           ),
-          // Character count pinned to the right
-          Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: Text(
-              '${state.body.length}/2000',
-              style: tt.labelSmall?.copyWith(
-                color: state.body.length > 1800
-                    ? cs.error
-                    : cs.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
+        ),
+        subtitle: Text(
+          subtitle,
+          style: tt.bodySmall?.copyWith(color: subtitleColor),
+        ),
+        value: value,
+        onChanged: onChanged,
       ),
     );
   }
@@ -2727,77 +2744,6 @@ class _ComposerFilterChip extends StatelessWidget {
             color: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// BOTTOM BAR ICON BUTTON (icon + label column, with active state dot)
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _BottomBarIcon extends StatelessWidget {
-  const _BottomBarIcon({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.cs,
-    required this.tt,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool active;
-  final ColorScheme cs;
-  final TextTheme tt;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = active ? cs.primary : cs.onSurfaceVariant;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, size: 22, color: color),
-                if (active)
-                  Positioned(
-                    right: -3,
-                    top: -3,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: cs.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: cs.surfaceContainerLow,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: tt.labelSmall?.copyWith(
-                fontSize: 10,
-                color: color,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
-              ),
-            ),
-          ],
         ),
       ),
     );

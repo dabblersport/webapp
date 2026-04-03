@@ -140,6 +140,18 @@ mixin _$Post {
   @JsonKey(name: 'repost_count')
   int get repostCount => throw _privateConstructorUsedError;
 
+  /// FK to `post_themes` table. Nullable — only present on themed posts.
+  @JsonKey(name: 'post_theme_id')
+  String? get postThemeId => throw _privateConstructorUsedError;
+
+  /// Resolved theme object, injected by the repository from batch lookup.
+  @JsonKey(
+    name: 'post_theme',
+    fromJson: _postThemeFromJson,
+    toJson: _postThemeToJson,
+  )
+  PostTheme? get postTheme => throw _privateConstructorUsedError;
+
   /// Nested original post for reposts. Populated from the `feed_posts`
   /// view's `original_post` jsonb column.
   @JsonKey(
@@ -229,6 +241,13 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'expires_at') DateTime? expiresAt,
     @JsonKey(name: 'edited_at') DateTime? editedAt,
     @JsonKey(name: 'repost_count') int repostCount,
+    @JsonKey(name: 'post_theme_id') String? postThemeId,
+    @JsonKey(
+      name: 'post_theme',
+      fromJson: _postThemeFromJson,
+      toJson: _postThemeToJson,
+    )
+    PostTheme? postTheme,
     @JsonKey(
       name: 'original_post',
       fromJson: _originalPostFromJson,
@@ -301,6 +320,8 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? expiresAt = freezed,
     Object? editedAt = freezed,
     Object? repostCount = null,
+    Object? postThemeId = freezed,
+    Object? postTheme = freezed,
     Object? originalPost = freezed,
   }) {
     return _then(
@@ -489,6 +510,14 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
                 ? _value.repostCount
                 : repostCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            postThemeId: freezed == postThemeId
+                ? _value.postThemeId
+                : postThemeId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            postTheme: freezed == postTheme
+                ? _value.postTheme
+                : postTheme // ignore: cast_nullable_to_non_nullable
+                      as PostTheme?,
             originalPost: freezed == originalPost
                 ? _value.originalPost
                 : originalPost // ignore: cast_nullable_to_non_nullable
@@ -587,6 +616,13 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'expires_at') DateTime? expiresAt,
     @JsonKey(name: 'edited_at') DateTime? editedAt,
     @JsonKey(name: 'repost_count') int repostCount,
+    @JsonKey(name: 'post_theme_id') String? postThemeId,
+    @JsonKey(
+      name: 'post_theme',
+      fromJson: _postThemeFromJson,
+      toJson: _postThemeToJson,
+    )
+    PostTheme? postTheme,
     @JsonKey(
       name: 'original_post',
       fromJson: _originalPostFromJson,
@@ -657,6 +693,8 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? expiresAt = freezed,
     Object? editedAt = freezed,
     Object? repostCount = null,
+    Object? postThemeId = freezed,
+    Object? postTheme = freezed,
     Object? originalPost = freezed,
   }) {
     return _then(
@@ -845,6 +883,14 @@ class __$$PostImplCopyWithImpl<$Res>
             ? _value.repostCount
             : repostCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        postThemeId: freezed == postThemeId
+            ? _value.postThemeId
+            : postThemeId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        postTheme: freezed == postTheme
+            ? _value.postTheme
+            : postTheme // ignore: cast_nullable_to_non_nullable
+                  as PostTheme?,
         originalPost: freezed == originalPost
             ? _value.originalPost
             : originalPost // ignore: cast_nullable_to_non_nullable
@@ -924,6 +970,13 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'expires_at') this.expiresAt,
     @JsonKey(name: 'edited_at') this.editedAt,
     @JsonKey(name: 'repost_count') this.repostCount = 0,
+    @JsonKey(name: 'post_theme_id') this.postThemeId,
+    @JsonKey(
+      name: 'post_theme',
+      fromJson: _postThemeFromJson,
+      toJson: _postThemeToJson,
+    )
+    this.postTheme,
     @JsonKey(
       name: 'original_post',
       fromJson: _originalPostFromJson,
@@ -1135,6 +1188,20 @@ class _$PostImpl implements _Post {
   @JsonKey(name: 'repost_count')
   final int repostCount;
 
+  /// FK to `post_themes` table. Nullable — only present on themed posts.
+  @override
+  @JsonKey(name: 'post_theme_id')
+  final String? postThemeId;
+
+  /// Resolved theme object, injected by the repository from batch lookup.
+  @override
+  @JsonKey(
+    name: 'post_theme',
+    fromJson: _postThemeFromJson,
+    toJson: _postThemeToJson,
+  )
+  final PostTheme? postTheme;
+
   /// Nested original post for reposts. Populated from the `feed_posts`
   /// view's `original_post` jsonb column.
   @override
@@ -1147,7 +1214,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, originalPost: $originalPost)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, postThemeId: $postThemeId, postTheme: $postTheme, originalPost: $originalPost)';
   }
 
   @override
@@ -1236,6 +1303,10 @@ class _$PostImpl implements _Post {
                 other.editedAt == editedAt) &&
             (identical(other.repostCount, repostCount) ||
                 other.repostCount == repostCount) &&
+            (identical(other.postThemeId, postThemeId) ||
+                other.postThemeId == postThemeId) &&
+            (identical(other.postTheme, postTheme) ||
+                other.postTheme == postTheme) &&
             (identical(other.originalPost, originalPost) ||
                 other.originalPost == originalPost));
   }
@@ -1290,6 +1361,8 @@ class _$PostImpl implements _Post {
     expiresAt,
     editedAt,
     repostCount,
+    postThemeId,
+    postTheme,
     originalPost,
   ]);
 
@@ -1375,6 +1448,13 @@ abstract class _Post implements Post {
     @JsonKey(name: 'expires_at') final DateTime? expiresAt,
     @JsonKey(name: 'edited_at') final DateTime? editedAt,
     @JsonKey(name: 'repost_count') final int repostCount,
+    @JsonKey(name: 'post_theme_id') final String? postThemeId,
+    @JsonKey(
+      name: 'post_theme',
+      fromJson: _postThemeFromJson,
+      toJson: _postThemeToJson,
+    )
+    final PostTheme? postTheme,
     @JsonKey(
       name: 'original_post',
       fromJson: _originalPostFromJson,
@@ -1548,6 +1628,20 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'repost_count')
   int get repostCount;
+
+  /// FK to `post_themes` table. Nullable — only present on themed posts.
+  @override
+  @JsonKey(name: 'post_theme_id')
+  String? get postThemeId;
+
+  /// Resolved theme object, injected by the repository from batch lookup.
+  @override
+  @JsonKey(
+    name: 'post_theme',
+    fromJson: _postThemeFromJson,
+    toJson: _postThemeToJson,
+  )
+  PostTheme? get postTheme;
 
   /// Nested original post for reposts. Populated from the `feed_posts`
   /// view's `original_post` jsonb column.

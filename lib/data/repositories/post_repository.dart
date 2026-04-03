@@ -18,6 +18,12 @@ abstract class PostRepository {
     int offset = 0,
   });
 
+  /// Home feed via the `get_feed` RPC (server-side ranking/filtering).
+  Future<Result<List<Post>, Failure>> getRpcFeed({
+    int limit = 20,
+    int offset = 0,
+  });
+
   /// Posts visible through the caller's circles.
   Future<Result<List<Post>, Failure>> getCircleFeed({
     required String circleId,
