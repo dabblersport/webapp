@@ -715,14 +715,49 @@ class AppTheme {
   }
 
   /// Build Material 3 theme with comprehensive tokens
+  /// Applies Tajawal as the Arabic-script fallback font to every [TextStyle]
+  /// in [base]. When a glyph is not found in the primary font (e.g. an Arabic
+  /// character), Flutter will automatically use this fallback instead.
+  static TextTheme _applyArabicFallback(TextTheme base) {
+    final arabicFamily = GoogleFonts.tajawal().fontFamily!;
+    TextStyle _withFallback(TextStyle? style) {
+      if (style == null) {
+        return TextStyle(fontFamilyFallback: [arabicFamily]);
+      }
+      return style.copyWith(
+        fontFamilyFallback: [arabicFamily, ...?style.fontFamilyFallback],
+      );
+    }
+
+    return base.copyWith(
+      displayLarge: _withFallback(base.displayLarge),
+      displayMedium: _withFallback(base.displayMedium),
+      displaySmall: _withFallback(base.displaySmall),
+      headlineLarge: _withFallback(base.headlineLarge),
+      headlineMedium: _withFallback(base.headlineMedium),
+      headlineSmall: _withFallback(base.headlineSmall),
+      titleLarge: _withFallback(base.titleLarge),
+      titleMedium: _withFallback(base.titleMedium),
+      titleSmall: _withFallback(base.titleSmall),
+      bodyLarge: _withFallback(base.bodyLarge),
+      bodyMedium: _withFallback(base.bodyMedium),
+      bodySmall: _withFallback(base.bodySmall),
+      labelLarge: _withFallback(base.labelLarge),
+      labelMedium: _withFallback(base.labelMedium),
+      labelSmall: _withFallback(base.labelSmall),
+    );
+  }
+
   static ThemeData _buildTheme({
     required Brightness brightness,
     required ColorScheme colorScheme,
   }) {
-    final textTheme = GoogleFonts.robotoTextTheme(
-      brightness == Brightness.light
-          ? ThemeData.light().textTheme
-          : ThemeData.dark().textTheme,
+    final textTheme = _applyArabicFallback(
+      GoogleFonts.robotoTextTheme(
+        brightness == Brightness.light
+            ? ThemeData.light().textTheme
+            : ThemeData.dark().textTheme,
+      ),
     );
 
     // Material 3 shape system - using rounded corners

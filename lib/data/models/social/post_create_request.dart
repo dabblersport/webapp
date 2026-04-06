@@ -7,8 +7,9 @@ import 'package:dabbler/data/models/social/post_enums.dart';
 /// so they are intentionally excluded from this request class.
 class PostCreateRequest {
   const PostCreateRequest({
-    required this.kind,
+    this.kind = PostKind.original,
     required this.visibility,
+    this.postType = PostType.dab,
     this.body,
     this.lang,
     this.media,
@@ -33,8 +34,11 @@ class PostCreateRequest {
     this.isPinned = false,
   });
 
-  /// Required — the kind of post (moment, dab, kickin).
+  /// Required — the kind of post (original, news, announcement, etc.).
   final PostKind kind;
+
+  /// Layout/behavior type — defaults to dab.
+  final PostType postType;
 
   /// Required — visibility level.
   final PostVisibility visibility;
@@ -117,7 +121,7 @@ class PostCreateRequest {
       'author_user_id': authorUserId,
       'kind': kind.name,
       'visibility': visibility.name,
-      'post_type': kind.defaultPostType.dbValue,
+      'post_type': postType.dbValue,
       'origin_type': originType.name,
       'content_class': contentClass,
       'is_active': true,

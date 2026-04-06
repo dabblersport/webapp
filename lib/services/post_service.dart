@@ -82,7 +82,7 @@ class PostService {
 
     // ── Resolve system-decided fields ────────────────────────────────
 
-    final resolvedPostType = postType ?? kind.defaultPostType;
+    final resolvedPostType = postType ?? PostType.dab;
 
     // ── Delegate to repository (RPC handles RLS, triggers, junctions) ─
 

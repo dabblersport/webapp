@@ -533,7 +533,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: PostType.values.map((t) {
+          children: PostType.values.where((t) => t.isUserSelectable).map((t) {
             final isSelected = t == _postType;
             return ListTile(
               leading: Icon(
@@ -570,6 +570,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         return Icons.front_hand;
       case PostType.kickIn:
         return Icons.sports;
+      case PostType.allocated:
+        return Icons.grid_view_rounded;
     }
   }
 
@@ -581,6 +583,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         return 'Dab';
       case PostType.kickIn:
         return 'Kick In';
+      case PostType.allocated:
+        return 'Allocated';
     }
   }
 
@@ -592,6 +596,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         return 'Express yourself';
       case PostType.kickIn:
         return 'Start a sports conversation';
+      case PostType.allocated:
+        return 'Reserved layout type';
     }
   }
 }

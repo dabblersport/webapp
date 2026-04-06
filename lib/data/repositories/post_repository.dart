@@ -24,6 +24,28 @@ abstract class PostRepository {
     int offset = 0,
   });
 
+  /// Posts from users the caller follows.
+  /// Includes only origin_type IN ('manual', 'repost') — no system/venue posts.
+  Future<Result<List<Post>, Failure>> getFollowingFeed({
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Posts with geo coordinates, sorted by distance from [lat]/[lng].
+  /// Falls back to recency when no geo data is available.
+  Future<Result<List<Post>, Failure>> getNearbyFeed({
+    double? lat,
+    double? lng,
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Editorial/system posts: post_type = 'allocated', origin_type = 'system'.
+  Future<Result<List<Post>, Failure>> getNewsFeed({
+    int limit = 20,
+    int offset = 0,
+  });
+
   /// Posts visible through the caller's circles.
   Future<Result<List<Post>, Failure>> getCircleFeed({
     required String circleId,

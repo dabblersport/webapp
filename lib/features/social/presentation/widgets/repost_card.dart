@@ -264,12 +264,20 @@ String _relativeTime(DateTime createdAt) {
 
 String _kindLabel(PostKind kind) {
   switch (kind) {
-    case PostKind.moment:
-      return 'Moment';
-    case PostKind.dab:
-      return 'Dab';
-    case PostKind.kickin:
-      return 'Kick-In';
+    case PostKind.original:
+      return 'Original';
+    case PostKind.news:
+      return 'News';
+    case PostKind.announcement:
+      return 'Announcement';
+    case PostKind.alert:
+      return 'Alert';
+    case PostKind.highlight:
+      return 'Highlight';
+    case PostKind.general:
+      return 'General';
+    case PostKind.feature:
+      return 'Feature';
   }
 }
 
@@ -281,6 +289,8 @@ String? _postTypeLabel(PostType type) {
       return null;
     case PostType.kickIn:
       return 'Kick-In';
+    case PostType.allocated:
+      return 'Allocated';
   }
 }
 

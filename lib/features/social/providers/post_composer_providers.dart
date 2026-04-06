@@ -21,8 +21,8 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 /// Holds all composer field values. Managed by [PostComposerNotifier].
 class PostComposerState {
   const PostComposerState({
-    this.kind = PostKind.moment,
     this.visibility = PostVisibility.public,
+    this.postType = PostType.dab,
     this.body = '',
     this.vibeId,
     this.vibeName,
@@ -53,8 +53,8 @@ class PostComposerState {
     this.error,
   });
 
-  final PostKind kind;
   final PostVisibility visibility;
+  final PostType postType;
   final String body;
 
   // Vibe selection
@@ -124,8 +124,8 @@ class PostComposerState {
   bool get canSubmit => hasBody || hasVibe || hasSport || hasMedia;
 
   PostComposerState copyWith({
-    PostKind? kind,
     PostVisibility? visibility,
+    PostType? postType,
     String? body,
     String? vibeId,
     String? vibeName,
@@ -156,8 +156,8 @@ class PostComposerState {
     String? error,
   }) {
     return PostComposerState(
-      kind: kind ?? this.kind,
       visibility: visibility ?? this.visibility,
+      postType: postType ?? this.postType,
       body: body ?? this.body,
       vibeId: vibeId ?? this.vibeId,
       vibeName: vibeName ?? this.vibeName,
@@ -202,8 +202,6 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
   // ── Field Setters ───────────────────────────────────────────────────
 
-  void setKind(PostKind kind) => state = state.copyWith(kind: kind);
-
   void setVisibility(PostVisibility v) => state = state.copyWith(visibility: v);
 
   void setBody(String body) => state = state.copyWith(body: body);
@@ -216,8 +214,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     // Rebuild without vibe fields — use copyWith-like manual construction
     // to null out the three vibe fields while preserving everything else.
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       sportId: state.sportId,
       sportName: state.sportName,
@@ -250,8 +248,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
   void clearSport() {
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       vibeId: state.vibeId,
       vibeName: state.vibeName,
@@ -296,8 +294,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   void setRawLocation({required String name, double? lat, double? lng}) {
     // Clear venue-specific fields but set location_name/geo.
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       vibeId: state.vibeId,
       vibeName: state.vibeName,
@@ -326,8 +324,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
   void clearLocation() {
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       vibeId: state.vibeId,
       vibeName: state.vibeName,
@@ -354,8 +352,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   /// Clears only the DB venue link, preserving any Mapbox location.
   void clearVenue() {
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       vibeId: state.vibeId,
       vibeName: state.vibeName,
@@ -398,8 +396,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
   void clearGame() {
     state = PostComposerState(
-      kind: state.kind,
       visibility: state.visibility,
+      postType: state.postType,
       body: state.body,
       vibeId: state.vibeId,
       vibeName: state.vibeName,
@@ -442,12 +440,12 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
   void setContentClass(String cc) => state = state.copyWith(contentClass: cc);
 
-  void setOriginType(OriginType ot) => state = state.copyWith(originType: ot);
-
   void setOriginId(String? id) => state = state.copyWith(originId: id);
 
   void setPersonaTypeSnapshot(String? persona) =>
       state = state.copyWith(personaTypeSnapshot: persona);
+
+  void setPostType(PostType t) => state = state.copyWith(postType: t);
 
   void togglePinned() => state = state.copyWith(isPinned: !state.isPinned);
 
@@ -578,8 +576,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 
     // 7. Construct request
     final request = PostCreateRequest(
-      kind: s.kind,
       visibility: s.visibility,
+      postType: s.postType,
       body: body,
       lang: lang,
       media: s.media.isNotEmpty ? s.media : null,

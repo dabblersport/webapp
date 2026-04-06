@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -388,6 +389,134 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final rows = (response as List<dynamic>)
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
+    final enriched = await _enrichRows(rows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getFollowingFeed({
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final userId = _db.auth.currentUser?.id;
+    if (userId == null) return const <Post>[];
+
+    // Resolve the caller's profile ID.
+    final profileRows = await _db
+        .from('profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+    if (profileRows.isEmpty) return const <Post>[];
+    final myProfileId = profileRows.first['id'] as String;
+
+    // Fetch followed profile IDs from the profile_follows table.
+    final followRows = await _db
+        .from('profile_follows')
+        .select('following_profile_id')
+        .eq('follower_profile_id', myProfileId);
+
+    final followedIds = followRows
+        .map((r) => r['following_profile_id'] as String)
+        .toList();
+
+    if (followedIds.isEmpty) return const <Post>[];
+
+    // Posts from followed users — manual posts and reposts only.
+    final rows = await _db
+        .from('posts')
+        .select()
+        .inFilter('author_profile_id', followedIds)
+        .inFilter('origin_type', ['manual', 'repost'])
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+
+    final enriched = await _enrichRows(rows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getNearbyFeed({
+    double? lat,
+    double? lng,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    List<Map<String, dynamic>> rows;
+
+    if (lat != null && lng != null) {
+      // Fetch posts with geo coordinates — client-side haversine sort.
+      // A bounding box of ~111 km per degree keeps the result set manageable.
+      const deltaDeg = 1.0; // ~111 km
+      final latMin = lat - deltaDeg;
+      final latMax = lat + deltaDeg;
+      final lngMin = lng - deltaDeg;
+      final lngMax = lng + deltaDeg;
+
+      rows = await _db
+          .from('posts')
+          .select()
+          .gte('geo_lat', latMin)
+          .lte('geo_lat', latMax)
+          .gte('geo_lng', lngMin)
+          .lte('geo_lng', lngMax)
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false)
+          .order('created_at', ascending: false)
+          .limit(limit * 3); // over-fetch for client sort + page slice
+
+      // Sort by Haversine distance ascending.
+      rows.sort((a, b) {
+        final aLat = (a['geo_lat'] as num?)?.toDouble() ?? 0.0;
+        final aLng = (a['geo_lng'] as num?)?.toDouble() ?? 0.0;
+        final bLat = (b['geo_lat'] as num?)?.toDouble() ?? 0.0;
+        final bLng = (b['geo_lng'] as num?)?.toDouble() ?? 0.0;
+        final dA = _haversineMeters(lat, lng, aLat, aLng);
+        final dB = _haversineMeters(lat, lng, bLat, bLng);
+        return dA.compareTo(dB);
+      });
+
+      // Apply offset + limit after sort.
+      rows = rows.skip(offset).take(limit).toList();
+    } else {
+      // Fallback: most recent posts with any location tag.
+      rows = await _db
+          .from('posts')
+          .select()
+          .not('location_name', 'is', null)
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false)
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+    }
+
+    final enriched = await _enrichRows(rows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
+  });
+
+  @override
+  Future<Result<List<Post>, Failure>> getNewsFeed({
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('posts')
+        .select()
+        .eq('post_type', 'allocated')
+        .eq('origin_type', 'system')
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+
     final enriched = await _enrichRows(rows);
     final hydrated = await _attachOriginalPosts(enriched);
     final themed = await _attachPostThemes(hydrated);
@@ -951,7 +1080,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           params: {
             'p_kind': request.kind.name,
             'p_visibility': 'circle',
-            'p_post_type': request.kind.defaultPostType.dbValue,
+            'p_post_type': request.postType.dbValue,
             'p_origin_type': request.originType.name,
             if (request.body != null) 'p_body': request.body,
             if (sportKey != null) 'p_sport': sportKey,
@@ -1411,4 +1540,25 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     return publicUrl;
   });
+
+  // ── Geo helpers ─────────────────────────────────────────────────────────────
+
+  static double _haversineMeters(
+    double lat1,
+    double lng1,
+    double lat2,
+    double lng2,
+  ) {
+    const r = 6371000.0; // Earth radius in metres
+    final dLat = _toRad(lat2 - lat1);
+    final dLng = _toRad(lng2 - lng1);
+    final a =
+        math.pow(math.sin(dLat / 2), 2) +
+        math.cos(_toRad(lat1)) *
+            math.cos(_toRad(lat2)) *
+            math.pow(math.sin(dLng / 2), 2);
+    return 2 * r * math.asin(math.sqrt(a));
+  }
+
+  static double _toRad(double deg) => deg * math.pi / 180.0;
 }

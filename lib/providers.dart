@@ -12,6 +12,8 @@ export 'features/social/circles_providers.dart';
 export 'features/social/providers.dart';
 export 'features/social/providers/post_providers.dart';
 export 'features/social/providers/post_composer_providers.dart';
+export 'features/social/providers/tab_feed_notifier.dart';
+export 'features/social/providers/active_feed_notifier.dart';
 export 'features/places/providers/place_providers.dart';
 export 'features/home/presentation/providers/home_providers.dart';
 

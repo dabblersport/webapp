@@ -167,25 +167,29 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return DateFormat.MMMd().format(createdAt);
   }
 
-  String _kindLabel(PostKind kind) {
-    switch (kind) {
-      case PostKind.moment:
-        return 'Moment';
-      case PostKind.dab:
-        return 'Dab';
-      case PostKind.kickin:
-        return 'Kick-In';
-    }
-  }
-
   String? _postTypeLabel(PostType type) {
     switch (type) {
       case PostType.moment:
-        return 'My Story';
+        return 'Moment';
       case PostType.dab:
-        return null;
+        return 'Dab';
       case PostType.kickIn:
-        return 'Kick-In';
+        return 'Kick-in';
+      case PostType.allocated:
+        return null;
+    }
+  }
+
+  IconData _postTypeIcon(PostType type) {
+    switch (type) {
+      case PostType.moment:
+        return Icons.flash_on_rounded;
+      case PostType.dab:
+        return Icons.thumb_up_rounded;
+      case PostType.kickIn:
+        return Icons.people_alt_rounded;
+      default:
+        return Icons.article_outlined;
     }
   }
 
@@ -422,6 +426,15 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                       const SizedBox(height: AppSpacing.xs),
                       Row(
                         children: [
+                          if (typeLabel != null)
+                            _PostTypeBadge(
+                              label: typeLabel,
+                              icon: _postTypeIcon(post.postType),
+                              cs: cs,
+                              tt: tt,
+                              type: post.postType,
+                            ),
+                          const SizedBox(width: AppSpacing.md),
                           Icon(
                             _visibilityIcon(post.visibility),
                             size: 12,
@@ -434,25 +447,6 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               color: cs.onSurfaceVariant,
                             ),
                           ),
-                          _dotSep(tt, cs),
-                          Text(
-                            _kindLabel(post.kind),
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          if (typeLabel != null) ...[
-                            _dotSep(tt, cs),
-                            Flexible(
-                              child: Text(
-                                typeLabel,
-                                overflow: TextOverflow.ellipsis,
-                                style: tt.bodySmall?.copyWith(
-                                  color: cs.onSurfaceVariant,
-                                ),
-                              ),
-                            ),
-                          ],
                           if (post.isEdited) ...[
                             _dotSep(tt, cs),
                             Text(
@@ -1226,6 +1220,74 @@ class _MetaBadge extends StatelessWidget {
           color: textColor,
           fontWeight: FontWeight.w500,
         ),
+      ),
+    );
+  }
+}
+
+/// Compact pill badge that shows the post type with an icon.
+///
+/// Color is context-aware: Moment → tertiary, Kick-in → secondary,
+/// Dab → primary container.
+class _PostTypeBadge extends StatelessWidget {
+  const _PostTypeBadge({
+    required this.label,
+    required this.icon,
+    required this.cs,
+    required this.tt,
+    required this.type,
+  });
+
+  final String label;
+  final IconData icon;
+  final ColorScheme cs;
+  final TextTheme tt;
+  final PostType type;
+
+  Color get _bgColor {
+    switch (type) {
+      case PostType.moment:
+        return cs.tertiaryContainer;
+      case PostType.kickIn:
+        return cs.secondaryContainer;
+      default:
+        return cs.primaryContainer;
+    }
+  }
+
+  Color get _fgColor {
+    switch (type) {
+      case PostType.moment:
+        return cs.onTertiaryContainer;
+      case PostType.kickIn:
+        return cs.onSecondaryContainer;
+      default:
+        return cs.onPrimaryContainer;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: _bgColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Icon(icon, size: 11, color: _fgColor),
+          // const SizedBox(width: 3),
+          Text(
+            label,
+            style: tt.labelSmall?.copyWith(
+              color: _fgColor,
+              fontWeight: FontWeight.w600,
+              fontSize: 10,
+            ),
+          ),
+        ],
       ),
     );
   }

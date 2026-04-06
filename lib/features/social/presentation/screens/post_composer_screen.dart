@@ -153,62 +153,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showKindPicker() {
-    final cs = Theme.of(context).colorScheme;
-    final state = ref.read(postComposerProvider);
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Post Type',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-            for (final k in PostKind.values)
-              ListTile(
-                leading: Icon(
-                  _kindIcon(k),
-                  color: state.kind == k ? cs.primary : cs.onSurface,
-                ),
-                title: Text(
-                  _kindLabel(k),
-                  style: TextStyle(
-                    fontWeight: state.kind == k
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                    color: state.kind == k ? cs.primary : cs.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  _kindDescription(k),
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-                ),
-                trailing: state.kind == k
-                    ? Icon(Icons.check_circle, color: cs.primary)
-                    : null,
-                onTap: () {
-                  ref.read(postComposerProvider.notifier).setKind(k);
-                  Navigator.pop(ctx);
-                },
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showVibesPicker() {
     final cs = Theme.of(context).colorScheme;
 
@@ -308,6 +252,65 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
+  void _showPostTypePicker() {
+    final cs = Theme.of(context).colorScheme;
+    final state = ref.read(postComposerProvider);
+    final selectableTypes = PostType.values
+        .where((t) => t.isUserSelectable)
+        .toList(growable: false);
+
+    showAdaptiveSheet(
+      context: context,
+      backgroundColor: cs.surfaceContainerHigh,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _SheetHandle(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Text(
+                'Post Type',
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+            ),
+            for (final t in selectableTypes)
+              ListTile(
+                leading: Icon(
+                  _postTypeIcon(t),
+                  color: state.postType == t ? cs.primary : cs.onSurface,
+                ),
+                title: Text(
+                  _postTypeLabel(t),
+                  style: TextStyle(
+                    fontWeight: state.postType == t
+                        ? FontWeight.w600
+                        : FontWeight.w400,
+                    color: state.postType == t ? cs.primary : cs.onSurface,
+                  ),
+                ),
+                subtitle: Text(
+                  _postTypeDescription(t),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                ),
+                trailing: state.postType == t
+                    ? Icon(Icons.check_circle, color: cs.primary)
+                    : null,
+                onTap: () {
+                  ref.read(postComposerProvider.notifier).setPostType(t);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showContentClassPicker() {
     final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
@@ -357,69 +360,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                     : null,
                 onTap: () {
                   ref.read(postComposerProvider.notifier).setContentClass(cc);
-                  Navigator.pop(ctx);
-                },
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showOriginTypePicker() {
-    final cs = Theme.of(context).colorScheme;
-    final state = ref.read(postComposerProvider);
-    // Only show user-selectable origin types
-    const userOriginTypes = [
-      OriginType.manual,
-      OriginType.game,
-      OriginType.venue,
-      OriginType.achievement,
-    ];
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Origin Type',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-            for (final ot in userOriginTypes)
-              ListTile(
-                leading: Icon(
-                  _originTypeIcon(ot),
-                  color: state.originType == ot ? cs.primary : cs.onSurface,
-                ),
-                title: Text(
-                  _originTypeLabel(ot),
-                  style: TextStyle(
-                    fontWeight: state.originType == ot
-                        ? FontWeight.w600
-                        : FontWeight.w400,
-                    color: state.originType == ot ? cs.primary : cs.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  _originTypeDescription(ot),
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-                ),
-                trailing: state.originType == ot
-                    ? Icon(Icons.check_circle, color: cs.primary)
-                    : null,
-                onTap: () {
-                  ref.read(postComposerProvider.notifier).setOriginType(ot);
                   Navigator.pop(ctx);
                 },
               ),
@@ -862,13 +802,13 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       spacing: 8,
       runSpacing: 8,
       children: [
-        // Kind pill
+        // Post type pill
         _ComposerPill(
-          icon: _kindIcon(composerState.kind),
-          label: _kindLabel(composerState.kind),
-          onTap: _showKindPicker,
-          color: cs.tertiaryContainer,
-          textColor: cs.onTertiaryContainer,
+          icon: _postTypeIcon(composerState.postType),
+          label: _postTypeLabel(composerState.postType),
+          onTap: _showPostTypePicker,
+          color: cs.primaryContainer,
+          textColor: cs.onPrimaryContainer,
         ),
         // Visibility pill
         _ComposerPill(
@@ -877,14 +817,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           onTap: _showVisibilityPicker,
           color: cs.secondaryContainer,
           textColor: cs.onSecondaryContainer,
-        ),
-        // Origin pill
-        _ComposerPill(
-          icon: _originTypeIcon(composerState.originType),
-          label: _originTypeLabel(composerState.originType),
-          onTap: _showOriginTypePicker,
-          color: cs.primaryContainer,
-          textColor: cs.onPrimaryContainer,
         ),
       ],
     );
@@ -1205,24 +1137,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
           onTap: _showContentClassPicker,
         ),
-        // Origin type
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(
-            _originTypeIcon(state.originType),
-            color: cs.onSurfaceVariant,
-          ),
-          title: Text(
-            'Origin: ${_originTypeLabel(state.originType)}',
-            style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-          ),
-          subtitle: Text(
-            _originTypeDescription(state.originType),
-            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-          ),
-          trailing: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-          onTap: _showOriginTypePicker,
-        ),
       ],
     );
   }
@@ -1327,97 +1241,46 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     }
   }
 
-  IconData _kindIcon(PostKind k) {
-    switch (k) {
-      case PostKind.moment:
-        return Icons.flash_on;
-      case PostKind.dab:
-        return Icons.front_hand;
-      case PostKind.kickin:
-        return Icons.sports;
-    }
-  }
-
-  String _kindLabel(PostKind k) {
-    switch (k) {
-      case PostKind.moment:
-        return 'Moment';
-      case PostKind.dab:
-        return 'Dab';
-      case PostKind.kickin:
-        return 'Kick In';
-    }
-  }
-
-  String _kindDescription(PostKind k) {
-    switch (k) {
-      case PostKind.moment:
-        return 'Share a quick update or thought';
-      case PostKind.dab:
-        return 'Express yourself with style';
-      case PostKind.kickin:
-        return 'Start a sports conversation';
-    }
-  }
-
   String _formatDate(DateTime dt) {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
-  IconData _originTypeIcon(OriginType ot) {
-    switch (ot) {
-      case OriginType.manual:
-        return Icons.edit;
-      case OriginType.game:
-        return Icons.sports_esports;
-      case OriginType.achievement:
-        return Icons.emoji_events;
-      case OriginType.venue:
-        return Icons.location_on;
-      case OriginType.admin:
-        return Icons.admin_panel_settings;
-      case OriginType.system:
-        return Icons.settings;
-      case OriginType.repost:
-        return Icons.repeat;
+  IconData _postTypeIcon(PostType t) {
+    switch (t) {
+      case PostType.moment:
+        return Icons.flash_on_rounded;
+      case PostType.dab:
+        return Icons.thumb_up_rounded;
+      case PostType.kickIn:
+        return Icons.people_alt_rounded;
+      default:
+        return Icons.article_outlined;
     }
   }
 
-  String _originTypeLabel(OriginType ot) {
-    switch (ot) {
-      case OriginType.manual:
-        return 'Manual';
-      case OriginType.game:
-        return 'Game';
-      case OriginType.achievement:
-        return 'Achievement';
-      case OriginType.venue:
-        return 'Venue';
-      case OriginType.admin:
-        return 'Admin';
-      case OriginType.system:
-        return 'System';
-      case OriginType.repost:
-        return 'Repost';
+  String _postTypeLabel(PostType t) {
+    switch (t) {
+      case PostType.moment:
+        return 'Moment';
+      case PostType.dab:
+        return 'Dab';
+      case PostType.kickIn:
+        return 'Kick-in';
+      default:
+        return t.name;
     }
   }
 
-  String _originTypeDescription(OriginType ot) {
-    switch (ot) {
-      case OriginType.manual:
-        return 'Created directly by you';
-      case OriginType.game:
-        return 'Linked to a game session';
-      case OriginType.achievement:
-        return 'Triggered by an unlock or milestone';
-      case OriginType.venue:
-        return 'Originated from a venue check-in';
-      case OriginType.admin:
-        return 'Created by an administrator';
-      case OriginType.system:
-        return 'Auto-generated by the system';
-      case OriginType.repost:
-        return 'Shared from another post';
+  String _postTypeDescription(PostType t) {
+    switch (t) {
+      case PostType.moment:
+        return 'A quick snapshot of right now';
+      case PostType.dab:
+        return 'Share what you\'re vibing with';
+      case PostType.kickIn:
+        return 'Invite others to join in';
+      default:
+        return '';
     }
   }
 }

@@ -13,18 +13,19 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
+import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
+import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
+import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
+import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
-import 'package:dabbler/data/models/social/post_enums.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
-import 'package:dabbler/features/social/presentation/widgets/repost_card.dart';
-import 'package:dabbler/features/social/presentation/widgets/system_post_card.dart';
+import 'package:dabbler/core/feed/post_layout_resolver.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -34,24 +35,43 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with RouteAware, TickerProviderStateMixin {
   final AuthService _authService = AuthService();
-  final ScrollController _feedScrollController = ScrollController();
   Map<String, dynamic>? _userProfile;
-  String _selectedFilter = 'Most Recent';
-  static const List<String> _filterLabels = [
-    'Most Recent',
-    'Moments',
-    'Dabs',
-    'Kick-ins',
-  ];
+
+  // ── Tab controller ──────────────────────────────────────────────────────────
+  late final TabController _tabController;
+  static const List<FeedTab> _tabs = FeedTab.values;
+
+  // One scroll controller per tab for independent pagination.
+  late final List<ScrollController> _scrollControllers;
+
+  FeedTab get _activeTab => _tabs[_tabController.index];
 
   @override
   void initState() {
     super.initState();
-    _feedScrollController.addListener(_onFeedScroll);
+    _tabController = TabController(length: _tabs.length, vsync: this);
+    _scrollControllers = List.generate(_tabs.length, (_) => ScrollController());
+
+    // Attach pagination listeners to each scroll controller.
+    for (var i = 0; i < _tabs.length; i++) {
+      final tab = _tabs[i];
+      final sc = _scrollControllers[i];
+      sc.addListener(() => _onScroll(tab, sc));
+    }
+
+    // Tab switch → ensure the newly visible tab is loaded (lazy load).
+    _tabController.addListener(_onTabChanged);
+
     _loadUserProfile();
     _checkNotificationPermission();
+
+    // For You is the default tab — pre-load it.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(feedNotifierProvider.notifier).load();
+    });
   }
 
   @override
@@ -65,8 +85,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   @override
   void dispose() {
-    _feedScrollController
-      ..removeListener(_onFeedScroll)
+    for (final sc in _scrollControllers) {
+      sc.dispose();
+    }
+    _tabController
+      ..removeListener(_onTabChanged)
       ..dispose();
     AppRouter.routeObserver.unsubscribe(this);
     super.dispose();
@@ -195,23 +218,77 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     return 'User';
   }
 
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    final tab = _activeTab;
+    // Lazily load each tab the first time it is shown.
+    switch (tab) {
+      case FeedTab.forYou:
+        // Already loaded in initState; re-load only if empty.
+        final s = ref.read(feedNotifierProvider);
+        if (s.posts.isEmpty && !s.isLoading) {
+          ref.read(feedNotifierProvider.notifier).load();
+        }
+      case FeedTab.following:
+        ref.read(followingFeedProvider.notifier).ensureLoaded();
+      case FeedTab.nearby:
+        ref.read(nearbyFeedProvider.notifier).ensureLoaded();
+      case FeedTab.active:
+        ref.read(activeFeedProvider.notifier).ensureLoaded();
+      case FeedTab.news:
+        ref.read(newsFeedProvider.notifier).ensureLoaded();
+    }
+  }
+
+  void _onScroll(FeedTab tab, ScrollController sc) {
+    if (!sc.hasClients) return;
+    if (sc.position.extentAfter > 500) return;
+
+    switch (tab) {
+      case FeedTab.forYou:
+        final s = ref.read(feedNotifierProvider);
+        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+          ref.read(feedNotifierProvider.notifier).loadMore();
+        }
+      case FeedTab.following:
+        final s = ref.read(followingFeedProvider);
+        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+          ref.read(followingFeedProvider.notifier).loadMore();
+        }
+      case FeedTab.nearby:
+        final s = ref.read(nearbyFeedProvider);
+        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+          ref.read(nearbyFeedProvider.notifier).loadMore();
+        }
+      case FeedTab.active:
+        final s = ref.read(activeFeedProvider);
+        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+          ref.read(activeFeedProvider.notifier).loadMore();
+        }
+      case FeedTab.news:
+        final s = ref.read(newsFeedProvider);
+        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+          ref.read(newsFeedProvider.notifier).loadMore();
+        }
+    }
+  }
+
   Future<void> _handleRefresh() async {
     await _loadUserProfile();
     ref.invalidate(profileControllerProvider);
-    await ref.read(feedNotifierProvider.notifier).load();
+    switch (_activeTab) {
+      case FeedTab.forYou:
+        await ref.read(feedNotifierProvider.notifier).load();
+      case FeedTab.following:
+        await ref.read(followingFeedProvider.notifier).load();
+      case FeedTab.nearby:
+        await ref.read(nearbyFeedProvider.notifier).load();
+      case FeedTab.active:
+        await ref.read(activeFeedProvider.notifier).load();
+      case FeedTab.news:
+        await ref.read(newsFeedProvider.notifier).load();
+    }
     await Future.delayed(const Duration(milliseconds: 300));
-  }
-
-  void _onFeedScroll() {
-    if (!_feedScrollController.hasClients) return;
-    final feedState = ref.read(feedNotifierProvider);
-    if (feedState.isLoading || feedState.isLoadingMore || !feedState.hasMore) {
-      return;
-    }
-    final position = _feedScrollController.position;
-    if (position.extentAfter <= 500) {
-      ref.read(feedNotifierProvider.notifier).loadMore();
-    }
   }
 
   Widget _buildHeader() {
@@ -276,267 +353,506 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
   }
 
-  Widget _buildFilterChips() {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildTabBar() {
+    final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: _filterLabels.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final label = _filterLabels[index];
-          final isSelected = label == _selectedFilter;
+    return AnimatedBuilder(
+      animation: _tabController,
+      builder: (context, _) {
+        return SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            itemCount: _tabs.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              final tab = _tabs[index];
+              final isSelected = _tabController.index == index;
 
-          return GestureDetector(
-            onTap: () {
-              setState(() => _selectedFilter = label);
-              // TODO: wire filter to feed query
+              return GestureDetector(
+                onTap: () => _tabController.animateTo(index),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected ? cs.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected ? cs.primary : cs.outlineVariant,
+                    ),
+                  ),
+                  child: Text(
+                    tab.label,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: isSelected ? cs.onPrimary : cs.onSurface,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
             },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected ? colorScheme.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.outlineVariant,
-                ),
-              ),
-              child: Text(
-                label,
-                style: textTheme.labelLarge?.copyWith(
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final feedState = ref.watch(feedNotifierProvider);
-
+    final cs = Theme.of(context).colorScheme;
+    final forYouState = ref.watch(feedNotifierProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: CustomScrollView(
-              controller: _feedScrollController,
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                // Safe-area top spacing (smaller on desktop)
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: isWide
-                        ? 16
-                        : MediaQuery.of(context).padding.top + 8,
-                  ),
-                ),
-
-                // ── Header: only on mobile (desktop has side nav) ──
-                if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
-
-                // ── Filter chips ──
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 12),
-                    child: _buildFilterChips(),
-                  ),
-                ),
-
-                // ── Feed content ──
-                _buildFeedSliver(feedState),
-              ],
+      backgroundColor: cs.surface,
+      body: NestedScrollView(
+        // Each tab has its own controller; NestedScrollView uses the header
+        // region for the app-bar + tab bar.
+        headerSliverBuilder: (_, innerBoxIsScrolled) => [
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
             ),
           ),
-
-          // ── New-posts indicator ──────────────────────────────────────────
-          if (feedState.hasNewPosts)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 60,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    ref
-                        .read(feedNotifierProvider.notifier)
-                        .clearNewPostsBadge();
-                    _feedScrollController.animateTo(
-                      0,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOut,
-                    );
-                  },
-                  child: AnimatedOpacity(
-                    opacity: feedState.hasNewPosts ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 250),
-                    child: Material(
-                      elevation: 4,
-                      borderRadius: BorderRadius.circular(24),
-                      color: colorScheme.primary,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
+          if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
+          ),
+        ],
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _ForYouTabBody(
+              state: forYouState,
+              scrollController: _scrollControllers[0],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
+              onClearBadge: () =>
+                  ref.read(feedNotifierProvider.notifier).clearNewPostsBadge(),
+            ),
+            _PostFeedTabBody(
+              state: ref.watch(followingFeedProvider),
+              scrollController: _scrollControllers[1],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.read(followingFeedProvider.notifier).load(),
+              emptyMessage: 'No posts from people you follow yet.',
+              emptyHint: 'Follow more people to see their posts here.',
+            ),
+            _PostFeedTabBody(
+              state: ref.watch(nearbyFeedProvider),
+              scrollController: _scrollControllers[2],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+              emptyMessage: 'Nothing nearby yet.',
+              emptyHint: 'Check back when more activity pops up near you.',
+            ),
+            _ActiveFeedTabBody(
+              state: ref.watch(activeFeedProvider),
+              scrollController: _scrollControllers[3],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.read(activeFeedProvider.notifier).load(),
+            ),
+            _PostFeedTabBody(
+              state: ref.watch(newsFeedProvider),
+              scrollController: _scrollControllers[4],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.read(newsFeedProvider.notifier).load(),
+              emptyMessage: 'No news right now.',
+              emptyHint: 'Check back later for updates from the Dabbler team.',
+            ),
+          ],
+        ),
+      ),
+      // New-posts indicator floats over the For You tab.
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerTop,
+      floatingActionButton: forYouState.hasNewPosts && _tabController.index == 0
+          ? SafeArea(
+              child: GestureDetector(
+                onTap: () {
+                  ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
+                  _scrollControllers[0].animateTo(
+                    0,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOut,
+                  );
+                },
+                child: Material(
+                  elevation: 4,
+                  borderRadius: BorderRadius.circular(24),
+                  color: cs.primary,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.arrow_upward_rounded,
+                          size: 16,
+                          color: Colors.white,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.arrow_upward_rounded,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'New posts',
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(color: Colors.white),
-                            ),
-                          ],
+                        const SizedBox(width: 6),
+                        Text(
+                          'New posts',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelLarge?.copyWith(color: Colors.white),
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
+            )
+          : null,
+    );
+  }
+} // end _HomeScreenState
+
+// ────────────────────────────────────────────────────────────────────────────
+// SliverPersistentHeaderDelegate for the sticky TabBar
+// ────────────────────────────────────────────────────────────────────────────
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _TabBarDelegate({required this.tabBar, required this.cs});
+
+  final Widget tabBar;
+  final ColorScheme cs;
+
+  @override
+  double get minExtent => 56;
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: cs.surface,
+      child: Column(
+        children: [
+          const SizedBox(height: 9),
+          Expanded(child: tabBar),
+          const SizedBox(height: 6),
+          Divider(
+            height: 1,
+            thickness: 0,
+            color: cs.outlineVariant.withValues(alpha: 0.3),
+          ),
         ],
       ),
     );
   }
 
-  /// Builds the feed as a sliver for seamless scroll integration.
-  Widget _buildFeedSliver(FeedState feedState) {
-    final colorScheme = Theme.of(context).colorScheme;
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) =>
+      oldDelegate.cs != cs || oldDelegate.tabBar != tabBar;
+}
 
-    if (feedState.isLoading) {
-      return const SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(child: CircularProgressIndicator()),
+// ────────────────────────────────────────────────────────────────────────────
+// For You tab — wraps existing FeedState (PostFeed + badge)
+// ────────────────────────────────────────────────────────────────────────────
+class _ForYouTabBody extends StatelessWidget {
+  const _ForYouTabBody({
+    required this.state,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+    required this.onClearBadge,
+  });
+
+  final FeedState state;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+  final VoidCallback onClearBadge;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (state.isLoading && state.posts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.posts.isEmpty) {
+      return _ErrorView(message: 'Could not load feed', onRetry: onRetry);
+    }
+
+    if (state.posts.isEmpty) {
+      return _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: 'No posts yet',
+        hint: 'Share moments, dabs, and kick-ins with your community.',
       );
     }
 
-    if (feedState.error != null && feedState.posts.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Could not load feed',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                FilledButton.tonal(
-                  onPressed: () =>
-                      ref.read(feedNotifierProvider.notifier).load(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
+    final posts = state.posts;
+    final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
 
-    if (feedState.posts.isEmpty) {
-      return SliverFillRemaining(
-        hasScrollBody: false,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/document-text.svg',
-                width: 48,
-                height: 48,
-                colorFilter: ColorFilter.mode(
-                  colorScheme.outline,
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No posts yet',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Share moments, dabs, and kick-ins with your community.',
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: colorScheme.outline),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Posts + optional loading indicator at the bottom.
-    final posts = feedState.posts;
-    final itemCount = posts.length + (feedState.isLoadingMore ? 1 : 0);
-
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 24),
-      sliver: SliverList.separated(
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
         itemCount: itemCount,
         separatorBuilder: (_, index) {
-          if (index < posts.length &&
-              posts[index].originType == OriginType.system) {
+          if (index < posts.length && _nativeSeparator(posts[index])) {
             return const SizedBox.shrink();
           }
           return Divider(
             height: 1,
             thickness: 1,
-            color: colorScheme.outlineVariant.withOpacity(0.3),
+            color: cs.outlineVariant.withValues(alpha: 0.3),
           );
         },
-        itemBuilder: (context, index) {
+        itemBuilder: (_, index) {
           if (index == posts.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          final post = posts[index];
-          if (post.originType == OriginType.system) {
-            return SystemPostCard(post: post);
-          }
-          if (post.originType == OriginType.repost) {
-            return RepostCard(post: post);
-          }
-          return FeedPostCard(post: post);
+          return resolvePostLayout(posts[index]);
         },
+      ),
+    );
+  }
+
+  static bool _nativeSeparator(dynamic post) => false;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Generic post-list tab (Following / Nearby / News)
+// ────────────────────────────────────────────────────────────────────────────
+class _PostFeedTabBody extends StatelessWidget {
+  const _PostFeedTabBody({
+    required this.state,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+    required this.emptyMessage,
+    required this.emptyHint,
+  });
+
+  final TabFeedState state;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+  final String emptyMessage;
+  final String emptyHint;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (state.isLoading && state.posts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.posts.isEmpty) {
+      return _ErrorView(message: state.error!, onRetry: onRetry);
+    }
+
+    if (state.posts.isEmpty) {
+      return _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: emptyMessage,
+        hint: emptyHint,
+      );
+    }
+
+    final posts = state.posts;
+    final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          thickness: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+        itemBuilder: (_, index) {
+          if (index == posts.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return resolvePostLayout(posts[index]);
+        },
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Active feed tab — event-type-routed cards
+// ────────────────────────────────────────────────────────────────────────────
+class _ActiveFeedTabBody extends StatelessWidget {
+  const _ActiveFeedTabBody({
+    required this.state,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+  });
+
+  final ActiveFeedState state;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading && state.events.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.error != null && state.events.isEmpty) {
+      return _ErrorView(message: state.error!, onRetry: onRetry);
+    }
+
+    if (state.events.isEmpty) {
+      return const _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: 'Nothing active right now.',
+        hint: 'Check back when games or events kick off near you.',
+      );
+    }
+
+    final cs = Theme.of(context).colorScheme;
+    final events = state.events;
+    final itemCount = events.length + (state.isLoadingMore ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        itemCount: itemCount,
+        separatorBuilder: (_, index) {
+          if (index < events.length &&
+              events[index].eventType == 'post_created') {
+            return Divider(
+              height: 1,
+              thickness: 1,
+              color: cs.outlineVariant.withValues(alpha: 0.3),
+            );
+          }
+          return const SizedBox(height: 6);
+        },
+        itemBuilder: (_, index) {
+          if (index == events.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return ActiveEventCard(event: events[index]);
+        },
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shared empty / error helpers
+// ────────────────────────────────────────────────────────────────────────────
+class _EmptyView extends StatelessWidget {
+  const _EmptyView({
+    required this.iconAsset,
+    required this.message,
+    required this.hint,
+  });
+
+  final String iconAsset;
+  final String message;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SvgPicture.asset(
+              iconAsset,
+              width: 48,
+              height: 48,
+              colorFilter: ColorFilter.mode(cs.outline, BlendMode.srcIn),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: cs.outline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
       ),
     );
   }
