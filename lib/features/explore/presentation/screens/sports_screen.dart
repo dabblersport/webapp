@@ -25,6 +25,8 @@ import 'package:dabbler/features/venues/providers.dart' as venues_providers;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/core/utils/sport_id_mapping.dart';
+import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart'
+    show sportsSubTabProvider;
 
 IconData _sportIconFor(String sport) {
   switch (sport.toLowerCase()) {
@@ -466,9 +468,16 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     _locationService = LocationService();
     _locationService.addListener(_onLocationChanged);
     _mainTabController = TabController(length: 2, vsync: this);
+    // If games are hidden, default to venues tab
+    if (!FeatureFlags.enableGameBrowsing) {
+      _mainTabController.index = 1;
+    }
     _mainTabController.addListener(() {
       if (_mainTabController.indexIsChanging) {
         setState(() {});
+        // Sync tab controller changes back to the shared provider
+        ref.read(sportsSubTabProvider.notifier).state =
+            _mainTabController.index;
       }
     });
     _initLocation();
@@ -549,7 +558,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   void _handleSortTap() {
-    if (_mainTabController.index == 0) {
+    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
       setState(() {
         _isSortAscending = !_isSortAscending;
       });
@@ -576,7 +585,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   String _sortTooltip(WidgetRef ref) {
-    if (_mainTabController.index == 0) {
+    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
       return _isSortAscending ? 'Sort: Soonest first' : 'Sort: Latest first';
     }
 
@@ -875,7 +884,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Future<void> _handleRefresh() async {
-    if (_mainTabController.index == 0) {
+    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
       final _ = await ref.refresh(publicGamesProvider.future);
     } else {
       await ref.read(venuesControllerProvider.notifier).refresh();
@@ -886,6 +895,18 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
+
+    // Sync shared sub-tab provider → local tab controller (driven by nav bar)
+    final externalSubTab = ref.watch(sportsSubTabProvider);
+    if (_mainTabController.index != externalSubTab) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _mainTabController.index != externalSubTab) {
+          setState(() {
+            _mainTabController.index = externalSubTab;
+          });
+        }
+      });
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -906,9 +927,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             // ── Header ──
             SliverToBoxAdapter(child: _buildHeader()),
 
-            // ── Tab switcher ──
-            SliverToBoxAdapter(child: _buildTabSwitcher()),
-
             // ── Search row ──
             SliverToBoxAdapter(
               child: Padding(
@@ -927,7 +945,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
             // ── Tab content (games / venues) ──
             SliverToBoxAdapter(
-              child: _mainTabController.index == 0
+              child:
+                  (_mainTabController.index == 0 &&
+                      FeatureFlags.enableGameBrowsing)
                   ? _buildGamesTabContent()
                   : _buildVenuesTabContent(),
             ),
@@ -1440,91 +1460,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
             icon: const Icon(Iconsax.archive_copy),
             tooltip: 'Library',
             style: IconButton.styleFrom(
-              backgroundColor: colorScheme.categoryMain.withValues(
-                alpha: 0.0,
-              ),
+              backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
               foregroundColor: colorScheme.categoryMain,
               minimumSize: const Size(48, 48),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTabSwitcher() {
-    final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('main');
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<int>(
-          segments: const [
-            ButtonSegment(
-              value: 0,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Iconsax.game_copy, size: 18),
-                  SizedBox(width: 8, height: 30),
-                  Text('Games'),
-                ],
-              ),
-            ),
-            ButtonSegment(
-              value: 1,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Iconsax.building_copy, size: 18),
-                  SizedBox(width: 8),
-                  Text('Venues'),
-                ],
-              ),
-            ),
-          ],
-          selected: <int>{_mainTabController.index},
-          onSelectionChanged: (Set<int> newSelection) {
-            final newIndex = newSelection.first;
-            if (_mainTabController.index != newIndex) {
-              setState(() {
-                _mainTabController.index = newIndex;
-              });
-            }
-          },
-          style: ButtonStyle(
-            side: WidgetStateProperty.all(
-              const BorderSide(color: Colors.transparent),
-            ),
-            backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return sportsScheme.primary.withValues(alpha: 1);
-              }
-              return sportsScheme.primary.withValues(alpha: 0.1);
-            }),
-            foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return sportsScheme.onPrimary;
-              }
-              return sportsScheme.onSurface;
-            }),
-            textStyle: WidgetStateProperty.all(
-              textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            padding: WidgetStateProperty.all(
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-          showSelectedIcon: false,
-        ),
       ),
     );
   }
@@ -1564,7 +1505,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                       width: 2,
                     ),
                   ),
-                  hintText: 'Search games and venues',
+                  hintText: FeatureFlags.enableGameBrowsing
+                      ? 'Search games and venues'
+                      : 'Search venues',
                   hintStyle: TextStyle(
                     fontSize: 15,
                     color: colorScheme.onSurface,
@@ -1635,10 +1578,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
         });
       });
     }
-
-    final selectedSportKey = sports.isEmpty
-        ? 'football'
-        : (sports[selectedIndex]['name'] as String).trim().toLowerCase();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),

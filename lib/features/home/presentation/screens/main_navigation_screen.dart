@@ -10,6 +10,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart'
     show ExploreScreen;
+import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -18,6 +19,10 @@ import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
 import 'package:dabbler/features/rewards/presentation/widgets/early_bird_check_in_modal.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+
+/// Tracks the active sub-tab inside ExploreScreen (0=Games, 1=Venues).
+/// Shared between MainNavigationScreen (nav bar) and ExploreScreen (tab controller).
+final sportsSubTabProvider = StateProvider<int>((ref) => 1); // default Venues
 
 /// Main navigation screen with bottom nav bar
 class MainNavigationScreen extends ConsumerStatefulWidget {
@@ -37,10 +42,30 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   DateTime? _lastBackPressAt;
   bool _exitDialogShowing = false;
 
-  // Only swipeable screens (Home and Sports, excluding Create)
+  bool _isCompactNavWidth(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < 390;
+
+  double _navLabelHorizontalPadding(BuildContext context) =>
+      _isCompactNavWidth(context) ? 12 : 16;
+
+  double _navLabelVerticalPadding(BuildContext context) =>
+      _isCompactNavWidth(context) ? 8 : 9;
+
+  double _navLabelFontSize(BuildContext context) =>
+      _isCompactNavWidth(context) ? 14 : 16;
+
+  double _navIconSize(BuildContext context) =>
+      _isCompactNavWidth(context) ? 24 : 26;
+
+  double _navItemGap(BuildContext context) =>
+      _isCompactNavWidth(context) ? 2 : 4;
+
+  // Screens matching PageView pages: 0=Home, 1=Community, 2=Sports
+  // Nav indices: 0=Feeds, 1=Community, 2=Sports, 3=Create(action)
   final List<Widget> _swipeableScreens = [
     const HomeScreen(),
-    const ExploreScreen(), // Sports screen
+    const RealFriendsScreen(), // Community
+    const ExploreScreen(), // Sports/Venues screen
   ];
 
   @override
@@ -181,42 +206,70 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
+  /// Whether the Sports/Explore page is currently visible.
+  bool get _isOnSportsPage => _currentIndex == 2;
+
   void _onItemTapped(int index) {
-    if (index == 1) {
-      // Show create post modal (index 1 is Create button)
-      _showCreatePostModal();
-      return;
-    }
-
-    setState(() {
-      _currentIndex = index;
-    });
-
-    // Map nav index to page index: 0->0 (Home), 2->1 (Sports)
-    int pageIndex;
-    if (index == 0) {
-      pageIndex = 0; // Home
+    if (_isOnSportsPage) {
+      // Sports-mode nav: [Home(0), Venues(1), Games(2), Create(3)]
+      switch (index) {
+        case 0: // Home icon → go back to feeds
+          setState(() => _currentIndex = 0);
+          _pageController.animateToPage(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        case 1: // Venues text → switch ExploreScreen to Venues tab
+          ref.read(sportsSubTabProvider.notifier).state = 1;
+          return;
+        case 2: // Games text → switch ExploreScreen to Games tab
+          ref.read(sportsSubTabProvider.notifier).state = 0;
+          return;
+        case 3: // Create
+          _showCreatePostModal();
+          return;
+      }
     } else {
-      pageIndex = 1; // Sports
+      // Home-mode nav: [Feeds(0), Community(1), Games icon(2), Create(3)]
+      switch (index) {
+        case 0: // Feeds → go to home page
+          setState(() => _currentIndex = 0);
+          _pageController.animateToPage(
+            0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        case 1: // Community → go to community page
+          setState(() => _currentIndex = 1);
+          _pageController.animateToPage(
+            1,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        case 2: // Games icon → switch to Sports page (Venues by default)
+          ref.read(sportsSubTabProvider.notifier).state = 1;
+          setState(() => _currentIndex = 2);
+          _pageController.animateToPage(
+            2,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          return;
+        case 3: // Create
+          _showCreatePostModal();
+          return;
+      }
     }
-
-    _pageController.animateToPage(
-      pageIndex,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
   void _onPageChanged(int pageIndex) {
-    // Map page index back to nav index: 0->0 (Home), 1->2 (Sports)
-    int navIndex;
-    if (pageIndex == 0) {
-      navIndex = 0; // Home
-    } else {
-      navIndex = 2; // Sports
-    }
+    // Map page index to nav state: page 0→Home(0), page 1→Community(1), page 2→Sports(2)
     setState(() {
-      _currentIndex = navIndex;
+      _currentIndex = pageIndex;
     });
   }
 
@@ -298,21 +351,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     _attemptExitApp();
   }
 
-  /// Get bottom nav color based on current screen
-  Color _getBottomNavColor(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Map index to category colors
-    switch (_currentIndex) {
-      case 0: // Home - Main category
-        return colorScheme.categoryMainContainer;
-      case 2: // Sports - Sports category
-        return colorScheme.categoryMainContainer;
-      default: // Default to main
-        return colorScheme.categoryMainContainer;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Ensure profile data is bootstrapped once per session so
@@ -365,12 +403,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget _buildDesktopLayout(BuildContext context, Color targetPrimaryColor) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Map _currentIndex (0=Home, 2=Sports) → sequential destination index.
+    // Map _currentIndex (0=Home, 1=Community, 2=Sports) → sequential destination index.
     // Destinations: 0 Home, 1 Create, 2 Sports, 3 Search, 4 Notifications, 5 Profile
     int destIndex;
     switch (_currentIndex) {
       case 0:
         destIndex = 0;
+        break;
+      case 1:
+        destIndex = 4; // Community maps to Community destination
         break;
       case 2:
         destIndex = 2;
@@ -390,7 +431,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       ),
       body: IndexedStack(
-        index: _currentIndex == 0 ? 0 : 1,
+        index: _currentIndex < _swipeableScreens.length ? _currentIndex : 0,
         children: _swipeableScreens,
       ),
       rightPanel: const _DesktopRightPanel(),
@@ -412,7 +453,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         context.push(RoutePaths.socialSearch);
         break;
       case 4: // Community
-        context.push(RoutePaths.socialFriends);
+        _onItemTapped(1); // navigate to community page
         break;
       case 5: // Notifications
         context.push(RoutePaths.notifications);
@@ -442,93 +483,47 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             final foregroundColorInactive = foregroundColor.withValues(
               alpha: 0.8,
             );
-            final borderColor = foregroundColor;
 
             return LayoutBuilder(
               builder: (context, constraints) {
-                final targetWidth = (constraints.maxWidth * 0.82)
-                    .clamp(0.0, 300.0)
-                    .toDouble();
+                final isCompactNav = constraints.maxWidth < 390;
+                final targetWidth =
+                    (constraints.maxWidth * (isCompactNav ? 0.97 : 0.92))
+                        .clamp(0.0, 420.0)
+                        .toDouble();
 
                 return Align(
                   alignment: Alignment.bottomCenter,
-                  child: SizedBox(
-                    width: targetWidth,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: targetWidth),
                     child: Material(
-                      elevation: 6,
+                      color: Colors.transparent,
+                      elevation: 0,
                       borderRadius: BorderRadius.circular(24),
                       clipBehavior: Clip.antiAlias,
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
                         decoration: BoxDecoration(
-                          color: _getBottomNavColor(context),
+                          color: Colors.transparent,
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
+                            horizontal: 16,
                             vertical: 8,
                           ),
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildNavItem(
-                                index: 0,
-                                outlineIcon: Iconsax.home_2_copy,
-                                bulkIcon: Iconsax.home_2,
-                                label: "What's New",
-                                foregroundColor: foregroundColor,
-                                foregroundColorInactive:
+                            mainAxisSize: MainAxisSize.min,
+                            children: _isOnSportsPage
+                                ? _buildSportsNavItems(
+                                    foregroundColor,
                                     foregroundColorInactive,
-                              ),
-                              const SizedBox(width: 24),
-                              GestureDetector(
-                                onTap: () => _onItemTapped(1),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: borderColor,
-                                      width: 1.5,
-                                    ),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Iconsax.add_circle_copy,
-                                        color: foregroundColor,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Create',
-                                        style: TextStyle(
-                                          color: foregroundColor,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 24),
-                              _buildNavItem(
-                                index: 2,
-                                outlineIcon: Iconsax.search_status_copy,
-                                bulkIcon: Iconsax.search_status,
-                                label: 'Sports',
-                                foregroundColor: foregroundColor,
-                                foregroundColorInactive:
+                                  )
+                                : _buildHomeNavItems(
+                                    foregroundColor,
                                     foregroundColorInactive,
-                              ),
-                            ],
+                                  ),
                           ),
                         ),
                       ),
@@ -543,31 +538,214 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
-  Widget _buildNavItem({
+  /// Home-mode nav items: [Feeds (pill)] [Community (text)]  ...  [🎮 icon] [⊕ icon]
+  List<Widget> _buildHomeNavItems(
+    Color foregroundColor,
+    Color foregroundColorInactive,
+  ) {
+    return [
+      _buildSegmentedNavGroup(
+        foregroundColor: foregroundColor,
+        children: [
+          _buildTextNavItem(
+            index: 0,
+            label: 'Feeds',
+            foregroundColor: foregroundColor,
+            foregroundColorInactive: foregroundColorInactive,
+            inSegmentedGroup: true,
+          ),
+          _buildTextNavItem(
+            index: 1,
+            label: 'Community',
+            foregroundColor: foregroundColor,
+            foregroundColorInactive: foregroundColorInactive,
+            inSegmentedGroup: true,
+          ),
+        ],
+      ),
+      SizedBox(width: _navItemGap(context) * 2),
+      _buildIconNavItem(
+        index: 2,
+        outlineIcon: Iconsax.game_copy,
+        bulkIcon: Iconsax.game,
+        foregroundColor: foregroundColor,
+        foregroundColorInactive: foregroundColorInactive,
+      ),
+      SizedBox(width: _navItemGap(context) * 2),
+      _buildIconNavItem(
+        index: 3,
+        outlineIcon: Iconsax.add_circle_copy,
+        bulkIcon: Iconsax.add_circle,
+        foregroundColor: foregroundColor,
+        foregroundColorInactive: foregroundColorInactive,
+      ),
+    ];
+  }
+
+  /// Sports-mode nav items: [🏠 icon] [Venues (pill)]  ...  [Games (text)] [⊕ icon]
+  List<Widget> _buildSportsNavItems(
+    Color foregroundColor,
+    Color foregroundColorInactive,
+  ) {
+    final sportsSubTab = ref.watch(sportsSubTabProvider);
+
+    return [
+      _buildIconNavItem(
+        index: 0,
+        outlineIcon: Iconsax.home_2_copy,
+        bulkIcon: Iconsax.home_2,
+        foregroundColor: foregroundColor,
+        foregroundColorInactive: foregroundColorInactive,
+        forceUnselected: true,
+      ),
+      SizedBox(width: _navItemGap(context) * 2),
+      _buildSegmentedNavGroup(
+        foregroundColor: foregroundColor,
+        children: [
+          _buildSportsTextNavItem(
+            index: 1,
+            label: 'Venues',
+            isSelected: sportsSubTab == 1,
+            foregroundColor: foregroundColor,
+            foregroundColorInactive: foregroundColorInactive,
+            inSegmentedGroup: true,
+          ),
+          _buildSportsTextNavItem(
+            index: 2,
+            label: 'Games',
+            isSelected: sportsSubTab == 0,
+            foregroundColor: foregroundColor,
+            foregroundColorInactive: foregroundColorInactive,
+            inSegmentedGroup: true,
+          ),
+        ],
+      ),
+
+      SizedBox(width: _navItemGap(context) * 2),
+      _buildIconNavItem(
+        index: 3,
+        outlineIcon: Iconsax.add_circle_copy,
+        bulkIcon: Iconsax.add_circle,
+        foregroundColor: foregroundColor,
+        foregroundColorInactive: foregroundColorInactive,
+      ),
+    ];
+  }
+
+  /// Text nav item for sports mode — uses explicit [isSelected] instead of _currentIndex.
+  Widget _buildSportsTextNavItem({
     required int index,
-    required IconData outlineIcon,
-    required IconData bulkIcon,
+    required String label,
+    required bool isSelected,
+    required Color foregroundColor,
+    required Color foregroundColorInactive,
+    bool inSegmentedGroup = false,
+  }) {
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: _navLabelHorizontalPadding(context),
+          vertical: _navLabelVerticalPadding(context),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? foregroundColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : foregroundColor,
+            fontSize: _navLabelFontSize(context),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Text-based nav item with pill background when selected (Feeds, Community)
+  Widget _buildTextNavItem({
+    required int index,
     required String label,
     required Color foregroundColor,
     required Color foregroundColorInactive,
+    bool inSegmentedGroup = false,
   }) {
     final isSelected = _currentIndex == index;
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? bulkIcon : outlineIcon,
-              color: isSelected ? foregroundColor : foregroundColorInactive,
-              size: 28,
-            ),
-          ],
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(
+          horizontal: _navLabelHorizontalPadding(context),
+          vertical: _navLabelVerticalPadding(context),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? foregroundColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : foregroundColor,
+            fontSize: _navLabelFontSize(context),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
+    );
+  }
+
+  /// Icon-only nav item (Games, Create, Home)
+  Widget _buildIconNavItem({
+    required int index,
+    required IconData outlineIcon,
+    required IconData bulkIcon,
+    required Color foregroundColor,
+    required Color foregroundColorInactive,
+    bool forceUnselected = false,
+  }) {
+    final isSelected = forceUnselected ? false : _currentIndex == index;
+    final buttonSize = _isCompactNavWidth(context) ? 48.0 : 52.0;
+
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      child: Container(
+        width: buttonSize,
+        height: buttonSize,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          isSelected ? bulkIcon : outlineIcon,
+          color: foregroundColor,
+          size: _navIconSize(context),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegmentedNavGroup({
+    required Color foregroundColor,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

@@ -20,3 +20,7 @@ export 'features/home/presentation/providers/home_providers.dart';
 // Onboarding
 export 'features/auth_onboarding/presentation/controllers/onboarding_controller.dart';
 export 'features/auth_onboarding/data/repositories/onboarding_repository.dart';
+
+// Explore / Nearby
+export 'features/explore/providers/nearby_games_providers.dart';
+export 'features/explore/providers/feed_providers.dart';

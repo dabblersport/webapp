@@ -720,7 +720,7 @@ class AppTheme {
   /// character), Flutter will automatically use this fallback instead.
   static TextTheme _applyArabicFallback(TextTheme base) {
     final arabicFamily = GoogleFonts.tajawal().fontFamily!;
-    TextStyle _withFallback(TextStyle? style) {
+    TextStyle withFallback(TextStyle? style) {
       if (style == null) {
         return TextStyle(fontFamilyFallback: [arabicFamily]);
       }
@@ -730,21 +730,21 @@ class AppTheme {
     }
 
     return base.copyWith(
-      displayLarge: _withFallback(base.displayLarge),
-      displayMedium: _withFallback(base.displayMedium),
-      displaySmall: _withFallback(base.displaySmall),
-      headlineLarge: _withFallback(base.headlineLarge),
-      headlineMedium: _withFallback(base.headlineMedium),
-      headlineSmall: _withFallback(base.headlineSmall),
-      titleLarge: _withFallback(base.titleLarge),
-      titleMedium: _withFallback(base.titleMedium),
-      titleSmall: _withFallback(base.titleSmall),
-      bodyLarge: _withFallback(base.bodyLarge),
-      bodyMedium: _withFallback(base.bodyMedium),
-      bodySmall: _withFallback(base.bodySmall),
-      labelLarge: _withFallback(base.labelLarge),
-      labelMedium: _withFallback(base.labelMedium),
-      labelSmall: _withFallback(base.labelSmall),
+      displayLarge: withFallback(base.displayLarge),
+      displayMedium: withFallback(base.displayMedium),
+      displaySmall: withFallback(base.displaySmall),
+      headlineLarge: withFallback(base.headlineLarge),
+      headlineMedium: withFallback(base.headlineMedium),
+      headlineSmall: withFallback(base.headlineSmall),
+      titleLarge: withFallback(base.titleLarge),
+      titleMedium: withFallback(base.titleMedium),
+      titleSmall: withFallback(base.titleSmall),
+      bodyLarge: withFallback(base.bodyLarge),
+      bodyMedium: withFallback(base.bodyMedium),
+      bodySmall: withFallback(base.bodySmall),
+      labelLarge: withFallback(base.labelLarge),
+      labelMedium: withFallback(base.labelMedium),
+      labelSmall: withFallback(base.labelSmall),
     );
   }
 

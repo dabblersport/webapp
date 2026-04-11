@@ -77,4 +77,16 @@ class NumberFormatter {
       return '${duration.inSeconds}s';
     }
   }
+
+  /// Formats a distance in metres into a human-readable string.
+  ///
+  /// Returns metres for distances under 1 km (e.g. "450 m") and
+  /// kilometres with one decimal for longer distances (e.g. "2.3 km").
+  static String formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.round()} m';
+    }
+    final km = meters / 1000;
+    return '${km.toStringAsFixed(1)} km';
+  }
 }

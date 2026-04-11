@@ -26,6 +26,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
+import 'package:dabbler/core/widgets/shimmer_loading.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -446,13 +447,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               emptyMessage: 'No posts from people you follow yet.',
               emptyHint: 'Follow more people to see their posts here.',
             ),
-            _PostFeedTabBody(
+            _NearbyFeedTabBody(
               state: ref.watch(nearbyFeedProvider),
               scrollController: _scrollControllers[2],
               onRefresh: _handleRefresh,
               onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
-              emptyMessage: 'Nothing nearby yet.',
-              emptyHint: 'Check back when more activity pops up near you.',
             ),
             _ActiveFeedTabBody(
               state: ref.watch(activeFeedProvider),
@@ -585,7 +584,7 @@ class _ForYouTabBody extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (state.isLoading && state.posts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _FeedSkeletonList();
     }
 
     if (state.error != null && state.posts.isEmpty) {
@@ -661,7 +660,7 @@ class _PostFeedTabBody extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     if (state.isLoading && state.posts.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _FeedSkeletonList();
     }
 
     if (state.error != null && state.posts.isEmpty) {
@@ -724,7 +723,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.isLoading && state.events.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const _FeedSkeletonList();
     }
 
     if (state.error != null && state.events.isEmpty) {
@@ -771,6 +770,119 @@ class _ActiveFeedTabBody extends StatelessWidget {
           return ActiveEventCard(event: events[index]);
         },
       ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Nearby feed tab — original post cards with "Near you" chip
+// ────────────────────────────────────────────────────────────────────────────
+class _NearbyFeedTabBody extends StatelessWidget {
+  const _NearbyFeedTabBody({
+    required this.state,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+  });
+
+  final TabFeedState state;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    if (state.isLoading && state.posts.isEmpty) {
+      return const _FeedSkeletonList();
+    }
+
+    if (state.error != null && state.posts.isEmpty) {
+      return _ErrorView(message: state.error!, onRetry: onRetry);
+    }
+
+    if (state.posts.isEmpty) {
+      return const _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: 'Nothing nearby yet.',
+        hint: 'Check back when more activity pops up near you.',
+      );
+    }
+
+    final posts = state.posts;
+    final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          thickness: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+        itemBuilder: (_, index) {
+          if (index == posts.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return _NearbyPostWrapper(child: resolvePostLayout(posts[index]));
+        },
+      ),
+    );
+  }
+}
+
+/// Wraps a standard post card with a small "Near you" chip at the top.
+class _NearbyPostWrapper extends StatelessWidget {
+  const _NearbyPostWrapper({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 8, bottom: 4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Iconsax.location_copy,
+                  size: 12,
+                  color: cs.onPrimaryContainer,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Near you',
+                  style: tt.labelSmall?.copyWith(
+                    color: cs.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        child,
+      ],
     );
   }
 }
@@ -854,6 +966,101 @@ class _ErrorView extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Skeleton loader — shown while the initial feed page is fetching
+// ────────────────────────────────────────────────────────────────────────────
+
+/// Single shimmer card that matches the approximate layout of a [FeedPostCard].
+class _PostCardSkeleton extends StatelessWidget {
+  const _PostCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar
+          ShimmerLoading(
+            width: 44,
+            height: 44,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Author name + time
+                Row(
+                  children: [
+                    const ShimmerLoading(width: 120, height: 13),
+                    const Spacer(),
+                    const ShimmerLoading(width: 48, height: 11),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Body text lines
+                const ShimmerLoading(height: 13),
+                const SizedBox(height: 6),
+                const ShimmerLoading(height: 13),
+                const SizedBox(height: 6),
+                const ShimmerLoading(width: 160, height: 13),
+                const SizedBox(height: 14),
+                // Action bar placeholder
+                Row(
+                  children: [
+                    ShimmerLoading(
+                      width: 52,
+                      height: 22,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    const SizedBox(width: 16),
+                    ShimmerLoading(
+                      width: 52,
+                      height: 22,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    const SizedBox(width: 16),
+                    ShimmerLoading(
+                      width: 52,
+                      height: 22,
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders a fixed list of [_PostCardSkeleton] items separated by dividers.
+/// Used as the initial loading state for all feed tabs.
+class _FeedSkeletonList extends StatelessWidget {
+  const _FeedSkeletonList();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return ListView.separated(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
+      itemCount: 6,
+      separatorBuilder: (_, __) => Divider(
+        height: 1,
+        thickness: 1,
+        color: cs.outlineVariant.withValues(alpha: 0.3),
+      ),
+      itemBuilder: (_, __) => const _PostCardSkeleton(),
     );
   }
 }
