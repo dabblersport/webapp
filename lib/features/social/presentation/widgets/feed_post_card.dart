@@ -20,10 +20,16 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 /// This is a 1:1 extraction of `_HomePostCard` so that all surfaces render
 /// posts with exactly the same visual style and interactive behaviour.
 class FeedPostCard extends ConsumerStatefulWidget {
-  const FeedPostCard({super.key, required this.post, this.isEmbedded = false});
+  const FeedPostCard({
+    super.key,
+    required this.post,
+    this.isEmbedded = false,
+    this.showNearbyChipInHeader = false,
+  });
 
   final Post post;
   final bool isEmbedded;
+  final bool showNearbyChipInHeader;
 
   @override
   ConsumerState<FeedPostCard> createState() => _FeedPostCardState();
@@ -410,7 +416,38 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               ),
                             ),
                           ],
-                          const Spacer(),
+                          if (widget.showNearbyChipInHeader) ...[
+                            Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: cs.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Iconsax.location_copy,
+                                    size: 12,
+                                    color: cs.onPrimaryContainer,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Near you',
+                                    style: tt.labelSmall?.copyWith(
+                                      color: cs.onPrimaryContainer,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
                           if (post.isPinned) ...[
                             const SizedBox(width: 4),
                             Icon(

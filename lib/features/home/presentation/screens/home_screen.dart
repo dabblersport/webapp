@@ -328,11 +328,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               const Positioned(top: 4, right: 4, child: NotificationBadge()),
             ],
           ),
-          IconButton(
-            onPressed: () => context.push(RoutePaths.socialFriends),
-            icon: const Icon(Iconsax.people_copy),
-            style: IconButton.styleFrom(foregroundColor: colorScheme.onSurface),
-          ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: () => context.push(RoutePaths.profile),
@@ -362,7 +357,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       animation: _tabController,
       builder: (context, _) {
         return SizedBox(
-          height: 40,
+          height: 48,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
@@ -378,7 +373,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: 8,
+                    vertical: 10,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected ? cs.primary : Colors.transparent,
@@ -832,57 +827,9 @@ class _NearbyFeedTabBody extends StatelessWidget {
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return _NearbyPostWrapper(child: resolvePostLayout(posts[index]));
+          return resolvePostLayout(posts[index], showNearbyChipInHeader: true);
         },
       ),
-    );
-  }
-}
-
-/// Wraps a standard post card with a small "Near you" chip at the top.
-class _NearbyPostWrapper extends StatelessWidget {
-  const _NearbyPostWrapper({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 16, top: 8, bottom: 4),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Iconsax.location_copy,
-                  size: 12,
-                  color: cs.onPrimaryContainer,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Near you',
-                  style: tt.labelSmall?.copyWith(
-                    color: cs.onPrimaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        child,
-      ],
     );
   }
 }

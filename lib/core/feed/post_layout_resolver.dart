@@ -20,7 +20,7 @@ import 'package:dabbler/features/social/presentation/widgets/kind_cards/news_kin
 ///
 /// Callers must not branch on [Post.originType] or [Post.postType] directly;
 /// all layout decisions live here.
-Widget resolvePostLayout(Post post) {
+Widget resolvePostLayout(Post post, {bool showNearbyChipInHeader = false}) {
   if (post.originType == OriginType.repost) {
     return RepostCard(post: post);
   }
@@ -32,7 +32,10 @@ Widget resolvePostLayout(Post post) {
     case PostType.moment:
     case PostType.dab:
     case PostType.kickIn:
-      return FeedPostCard(post: post);
+      return FeedPostCard(
+        post: post,
+        showNearbyChipInHeader: showNearbyChipInHeader,
+      );
   }
 }
 

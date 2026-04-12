@@ -73,7 +73,7 @@ dependencies:
   flutter_riverpod: ^2.5.0
   
   # Geolocator for location services
-  geolocator: ^10.0.0
+  geolocator: ^12.0.0
   geocoding: ^2.1.0
 
   # Supabase - Backend as a Service

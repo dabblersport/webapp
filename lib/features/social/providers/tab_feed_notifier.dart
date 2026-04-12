@@ -158,8 +158,9 @@ final followingFeedProvider =
 // NEARBY FEED PROVIDER
 // =============================================================================
 
-/// Feed of posts sorted by distance from the user's current location.
-/// Falls back to recency when location is unavailable.
+/// Feed of nearby original, non-system posts sorted by distance from the
+/// user's current location. Falls back to recency when location is
+/// unavailable.
 /// NOT autoDispose — caches across tab switches.
 final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
   (ref) {

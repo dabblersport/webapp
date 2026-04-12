@@ -31,8 +31,9 @@ abstract class PostRepository {
     int offset = 0,
   });
 
-  /// Posts with geo coordinates, sorted by distance from [lat]/[lng].
-  /// Falls back to recency when no geo data is available.
+  /// Original posts with geo coordinates, sorted by distance from [lat]/[lng].
+  /// Excludes system-origin and non-original-kind posts, and falls back to
+  /// recency when no geo data is available.
   Future<Result<List<Post>, Failure>> getNearbyFeed({
     double? lat,
     double? lng,

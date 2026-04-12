@@ -479,7 +479,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           duration: const Duration(milliseconds: 300),
           tween: ColorTween(end: targetPrimaryColor),
           builder: (context, animatedColor, child) {
-            final foregroundColor = animatedColor ?? targetPrimaryColor;
+            final foregroundColor = Theme.of(
+              context,
+            ).colorScheme.onPrimaryContainer;
             final foregroundColorInactive = foregroundColor.withValues(
               alpha: 0.8,
             );
@@ -650,7 +652,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected ? foregroundColor : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
         ),
         child: Text(
@@ -658,7 +662,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected
-                ? Theme.of(context).colorScheme.onPrimaryContainer
+                ? Theme.of(context).colorScheme.onPrimary
                 : foregroundColor,
             fontSize: _navLabelFontSize(context),
             fontWeight: FontWeight.w600,
@@ -687,7 +691,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected ? foregroundColor : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
         ),
         child: Text(
@@ -695,7 +701,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected
-                ? Theme.of(context).colorScheme.onPrimaryContainer
+                ? Theme.of(context).colorScheme.onPrimary
                 : foregroundColor,
             fontSize: _navLabelFontSize(context),
             fontWeight: FontWeight.w600,
@@ -725,6 +731,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.primaryContainer,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.shadow.withValues(alpha: 0.10),
+              blurRadius: 5,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Icon(
           isSelected ? bulkIcon : outlineIcon,
@@ -740,10 +755,17 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required List<Widget> children,
   }) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.10),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
