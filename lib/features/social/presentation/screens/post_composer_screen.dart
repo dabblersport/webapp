@@ -12,15 +12,13 @@ import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/core/services/gps_service.dart';
-import 'package:dabbler/data/models/profile_location.dart';
+
 import 'package:dabbler/data/models/social/post_enums.dart';
-import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
-import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_location_chip.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
@@ -188,153 +186,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         expand: false,
         builder: (ctx, scrollController) =>
             _ComposerSportsPickerSheet(scrollController: scrollController),
-      ),
-    );
-  }
-
-  /// Opens a 3-option location picker:
-  /// 1. Use my location (GPS → SaveLocationSheet with onUseOnce)
-  /// 2. Tag a venue (DB venue picker)
-  /// 3. Saved locations (profile_locations list)
-  void _showLocationPicker() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Add Location',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.my_location_outlined, color: cs.primary),
-              title: const Text('Use my location'),
-              subtitle: const Text('Detect current GPS position'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _useGpsLocation();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.stadium_outlined, color: cs.primary),
-              title: const Text('Tag a venue'),
-              subtitle: const Text('Search from the venues database'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showVenuePicker();
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.bookmarks_outlined, color: cs.primary),
-              title: const Text('Saved locations'),
-              subtitle: const Text('Pick from your saved places'),
-              onTap: () {
-                Navigator.pop(ctx);
-                _showSavedLocationsPicker();
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Fires device GPS then opens [SaveLocationSheet] with an onUseOnce
-  /// callback that attaches coordinates to the post without saving to DB.
-  Future<void> _useGpsLocation() async {
-    final gps = ref.read(gpsServiceProvider);
-    final result = await gps.getCurrentLocation();
-
-    if (!mounted) return;
-
-    switch (result) {
-      case LocationDenied():
-      case LocationDeniedForever():
-      case LocationServiceOff():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied')),
-        );
-        return;
-      case LocationTimeout():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get location — try again')),
-        );
-        return;
-      case LocationError(:final message):
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Location error: $message')));
-        return;
-      case LocationSuccess(:final lat, :final lng, :final accuracyMeters):
-        final area = await ref.read(
-          resolvedNearestAreaProvider((lat: lat, lng: lng)).future,
-        );
-        if (!mounted) return;
-        await SaveLocationSheet.show(
-          context,
-          lat: lat,
-          lng: lng,
-          areaId: area?.id ?? '',
-          areaName: area?.name ?? 'Unknown area',
-          accuracyMeters: accuracyMeters,
-          onUseOnce: (lat, lng, areaId) {
-            ref
-                .read(postComposerProvider.notifier)
-                .setRawLocation(
-                  name: area?.name ?? 'My location',
-                  lat: lat,
-                  lng: lng,
-                );
-          },
-        );
-    }
-  }
-
-  /// Shows a scrollable list of the user's saved [ProfileLocation]s.
-  void _showSavedLocationsPicker() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _SavedLocationsPickerSheet(scrollController: scrollController),
-      ),
-    );
-  }
-
-  /// Opens the DB venue picker (searches public.venues).
-  void _showVenuePicker() {
-    final cs = Theme.of(context).colorScheme;
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 1.0,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _VenuePickerSheet(scrollController: scrollController),
       ),
     );
   }
@@ -1097,41 +948,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             cs: cs,
           ),
 
-        // Location chip (Mapbox)
-        if (state.hasLocation)
-          _AttachmentChip(
-            emoji: '📍',
-            label: state.locationName ?? 'Location',
-            onRemove: () =>
-                ref.read(postComposerProvider.notifier).clearLocation(),
-            color: cs.primaryContainer,
-            textColor: cs.onPrimaryContainer,
-          )
-        else
-          _AddChip(
-            icon: Icons.location_on_outlined,
-            label: 'Location',
-            onTap: _showLocationPicker,
-            cs: cs,
-          ),
-
-        // Venue chip (DB venues)
-        if (state.hasVenue)
-          _AttachmentChip(
-            emoji: '🏟️',
-            label: state.venueName ?? 'Venue',
-            onRemove: () =>
-                ref.read(postComposerProvider.notifier).clearVenue(),
-            color: cs.primaryContainer,
-            textColor: cs.onPrimaryContainer,
-          )
-        else
-          _AddChip(
-            icon: Icons.stadium_outlined,
-            label: 'Venue',
-            onTap: _showVenuePicker,
-            cs: cs,
-          ),
+        // Location chip (unified picker)
+        const ComposerLocationChip(),
 
         // Game chip
         if (state.hasGame)
@@ -3177,97 +2995,6 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
                 style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// =============================================================================
-// SAVED LOCATIONS PICKER (inside composer)
-// =============================================================================
-
-class _SavedLocationsPickerSheet extends ConsumerWidget {
-  const _SavedLocationsPickerSheet({required this.scrollController});
-  final ScrollController scrollController;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final asyncLocations = ref.watch(profileLocationNotifierProvider);
-
-    return Column(
-      children: [
-        _SheetHandle(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-          child: Text(
-            'Saved Locations',
-            style: tt.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
-          ),
-        ),
-        Expanded(
-          child: asyncLocations.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => Center(
-              child: Text(
-                'Could not load saved locations',
-                style: tt.bodyMedium?.copyWith(color: cs.error),
-              ),
-            ),
-            data: (locations) {
-              if (locations.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      'No saved locations yet.\nGo to Profile → Settings to add some.',
-                      textAlign: TextAlign.center,
-                      style: tt.bodyMedium?.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                );
-              }
-              // Primary first
-              final sorted = [
-                ...locations.where((l) => l.isPrimary),
-                ...locations.where((l) => !l.isPrimary),
-              ];
-              return ListView.builder(
-                controller: scrollController,
-                itemCount: sorted.length,
-                itemBuilder: (_, i) {
-                  final loc = sorted[i];
-                  return ListTile(
-                    leading: Icon(
-                      loc.isPrimary ? Icons.star_rounded : Icons.place_outlined,
-                      color: loc.isPrimary ? cs.primary : cs.onSurface,
-                    ),
-                    title: Text(loc.effectiveLabel),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () {
-                      if (loc.lat != null && loc.lng != null) {
-                        ref
-                            .read(postComposerProvider.notifier)
-                            .setRawLocation(
-                              name: loc.effectiveLabel,
-                              lat: loc.lat,
-                              lng: loc.lng,
-                            );
-                      }
-                      Navigator.of(context).pop();
-                    },
-                  );
-                },
-              );
-            },
           ),
         ),
       ],

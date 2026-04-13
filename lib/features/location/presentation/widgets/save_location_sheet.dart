@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:dabbler/data/models/profile_location.dart';
+import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -89,7 +90,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
   // Mutable location state — updated when user picks a Mapbox place.
   late double _lat = widget.lat;
   late double _lng = widget.lng;
-  late final String _areaId = widget.areaId;
+  late String _areaId = widget.areaId;
   late String _areaName = widget.areaName;
 
   @override
@@ -190,11 +191,18 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             LocationSearchField(
               hintText: 'Search for a place\u2026',
               proximity: _activeProximity,
-              onSelected: (place) {
+              onSelected: (place) async {
+                final repo = ref.read(areaRepositoryV2Provider);
+                final resolved = await repo.resolveNearest(
+                  place.lat,
+                  place.lng,
+                );
+                if (!mounted) return;
                 setState(() {
                   _lat = place.lat;
                   _lng = place.lng;
                   _areaName = place.name;
+                  if (resolved != null) _areaId = resolved.id;
                 });
                 _mapController.move(LatLng(place.lat, place.lng), 15);
               },

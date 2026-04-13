@@ -123,13 +123,6 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    // Rebuild the overlay whenever _query changes so the provider updates.
-    if (_overlayEntry != null && _query.length >= 2) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _overlayEntry?.markNeedsBuild();
-      });
-    }
-
     return CompositedTransformTarget(
       link: _layerLink,
       child: TextField(

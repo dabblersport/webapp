@@ -10,6 +10,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -621,6 +622,29 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     );
 
     return result;
+  }
+
+  /// Applies a [LocationPickerResult] to the composer state.
+  void setLocationFromPickerResult(LocationPickerResult result) {
+    switch (result.type) {
+      case LocationPickerType.venue:
+        setVenue(
+          id: result.venueId!,
+          name: result.displayName ?? 'Venue',
+          lat: result.lat,
+          lng: result.lng,
+        );
+      case LocationPickerType.area:
+        setLocationTagId(result.areaId);
+        setRawLocation(name: result.displayName ?? 'Area');
+      case LocationPickerType.currentLocation:
+      case LocationPickerType.mapboxPlace:
+        setRawLocation(
+          name: result.displayName ?? 'Location',
+          lat: result.lat,
+          lng: result.lng,
+        );
+    }
   }
 }
 
