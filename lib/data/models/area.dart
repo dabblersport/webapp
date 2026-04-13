@@ -12,7 +12,7 @@ class Area with _$Area {
   const factory Area({
     required String id,
     required String name,
-    @Default('') String district,
+    required String district,
     required String city,
     required String country,
     @JsonKey(name: 'center_lat') required double centerLat,

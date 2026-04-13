@@ -13,6 +13,7 @@ class ActiveLocation {
     required this.lng,
     required this.area,
     this.nearbyRadiusMeters = 10000,
+    this.defaultRadiusMeters = 10000,
     required this.source,
     this.savedLocationId,
     this.savedLocationLabel,
@@ -25,6 +26,11 @@ class ActiveLocation {
   /// Default radius from the saved location row, or 10 km. Individual screens
   /// can override via [ActiveLocationNotifier.setRadiusOverride].
   final int nearbyRadiusMeters;
+
+  /// The source's original radius, never overridden. Used to restore
+  /// [nearbyRadiusMeters] when [ActiveLocationNotifier.clearRadiusOverride]
+  /// is called.
+  final int defaultRadiusMeters;
 
   final ActiveLocationSource source;
 
@@ -39,6 +45,7 @@ class ActiveLocation {
     double? lng,
     Area? area,
     int? nearbyRadiusMeters,
+    int? defaultRadiusMeters,
     ActiveLocationSource? source,
     String? savedLocationId,
     String? savedLocationLabel,
@@ -48,6 +55,7 @@ class ActiveLocation {
       lng: lng ?? this.lng,
       area: area ?? this.area,
       nearbyRadiusMeters: nearbyRadiusMeters ?? this.nearbyRadiusMeters,
+      defaultRadiusMeters: defaultRadiusMeters ?? this.defaultRadiusMeters,
       source: source ?? this.source,
       savedLocationId: savedLocationId ?? this.savedLocationId,
       savedLocationLabel: savedLocationLabel ?? this.savedLocationLabel,

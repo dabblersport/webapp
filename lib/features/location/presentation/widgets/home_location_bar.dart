@@ -85,18 +85,7 @@ class _ReadyBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    // area.district is available after running `dart run build_runner build -d`
-    // to regenerate the Freezed model. Falls back to city in the meantime.
-    final district = (() {
-      try {
-        // ignore: invalid_use_of_protected_member
-        final d = (location.area as dynamic).district as String? ?? '';
-        return d.isNotEmpty ? d : location.area.city;
-      } catch (_) {
-        return location.area.city;
-      }
-    })();
-    final subtitle = '$district · ${location.area.city}';
+    final subtitle = '${location.area.district} · ${location.area.city}';
 
     return GestureDetector(
       onTap: onTap,
@@ -261,7 +250,7 @@ class _DeniedBar extends StatelessWidget {
           minChildSize: 0.5,
           maxChildSize: 1.0,
           expand: false,
-          builder: (ctx, sc) => LocationPickerSheet(scrollController: sc),
+          builder: (ctx, sc) => HomeLocationPickerSheet(scrollController: sc),
         ),
       ),
       child: Padding(

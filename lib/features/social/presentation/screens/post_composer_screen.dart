@@ -16,7 +16,6 @@ import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
-import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -262,6 +261,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     switch (result) {
       case LocationDenied():
+      case LocationDeniedForever():
+      case LocationServiceOff():
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Location permission denied')),
         );

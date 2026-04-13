@@ -90,6 +90,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           lng: primary.lng!,
           area: area,
           nearbyRadiusMeters: primary.nearbyRadiusMeters,
+          defaultRadiusMeters: primary.nearbyRadiusMeters,
           source: ActiveLocationSource.saved,
           savedLocationId: primary.id,
           savedLocationLabel: primary.effectiveLabel,
@@ -187,6 +188,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           lng: location.lng!,
           area: area,
           nearbyRadiusMeters: _radiusOverride ?? location.nearbyRadiusMeters,
+          defaultRadiusMeters: location.nearbyRadiusMeters,
           source: ActiveLocationSource.saved,
           savedLocationId: location.id,
           savedLocationLabel: location.effectiveLabel,
@@ -233,12 +235,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     _radiusOverride = null;
     final current = state.valueOrNull;
     if (current is ActiveLocationReady) {
-      final defaultRadius = current.location.source == ActiveLocationSource.saved
-          ? 10000
-          : 10000;
       state = AsyncData(
         ActiveLocationReady(
-          current.location.copyWith(nearbyRadiusMeters: defaultRadius),
+          current.location.copyWith(
+            nearbyRadiusMeters: current.location.defaultRadiusMeters,
+          ),
         ),
       );
     }

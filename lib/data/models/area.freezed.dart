@@ -23,6 +23,7 @@ Area _$AreaFromJson(Map<String, dynamic> json) {
 mixin _$Area {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
+  String get district => throw _privateConstructorUsedError;
   String get city => throw _privateConstructorUsedError;
   String get country => throw _privateConstructorUsedError;
   @JsonKey(name: 'center_lat')
@@ -33,6 +34,10 @@ mixin _$Area {
   bool get isActive => throw _privateConstructorUsedError;
   @JsonKey(name: 'is_verified')
   bool get isVerified => throw _privateConstructorUsedError;
+
+  /// Only populated in nearby-query results (from resolve_nearest_area RPC).
+  @JsonKey(name: 'distance_m')
+  double? get distanceM => throw _privateConstructorUsedError;
 
   /// Serializes this Area to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -51,12 +56,14 @@ abstract class $AreaCopyWith<$Res> {
   $Res call({
     String id,
     String name,
+    String district,
     String city,
     String country,
     @JsonKey(name: 'center_lat') double centerLat,
     @JsonKey(name: 'center_lng') double centerLng,
     @JsonKey(name: 'is_active') bool isActive,
     @JsonKey(name: 'is_verified') bool isVerified,
+    @JsonKey(name: 'distance_m') double? distanceM,
   });
 }
 
@@ -77,12 +84,14 @@ class _$AreaCopyWithImpl<$Res, $Val extends Area>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? district = null,
     Object? city = null,
     Object? country = null,
     Object? centerLat = null,
     Object? centerLng = null,
     Object? isActive = null,
     Object? isVerified = null,
+    Object? distanceM = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -93,6 +102,10 @@ class _$AreaCopyWithImpl<$Res, $Val extends Area>
             name: null == name
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
+                      as String,
+            district: null == district
+                ? _value.district
+                : district // ignore: cast_nullable_to_non_nullable
                       as String,
             city: null == city
                 ? _value.city
@@ -118,6 +131,10 @@ class _$AreaCopyWithImpl<$Res, $Val extends Area>
                 ? _value.isVerified
                 : isVerified // ignore: cast_nullable_to_non_nullable
                       as bool,
+            distanceM: freezed == distanceM
+                ? _value.distanceM
+                : distanceM // ignore: cast_nullable_to_non_nullable
+                      as double?,
           )
           as $Val,
     );
@@ -135,12 +152,14 @@ abstract class _$$AreaImplCopyWith<$Res> implements $AreaCopyWith<$Res> {
   $Res call({
     String id,
     String name,
+    String district,
     String city,
     String country,
     @JsonKey(name: 'center_lat') double centerLat,
     @JsonKey(name: 'center_lng') double centerLng,
     @JsonKey(name: 'is_active') bool isActive,
     @JsonKey(name: 'is_verified') bool isVerified,
+    @JsonKey(name: 'distance_m') double? distanceM,
   });
 }
 
@@ -158,12 +177,14 @@ class __$$AreaImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? district = null,
     Object? city = null,
     Object? country = null,
     Object? centerLat = null,
     Object? centerLng = null,
     Object? isActive = null,
     Object? isVerified = null,
+    Object? distanceM = freezed,
   }) {
     return _then(
       _$AreaImpl(
@@ -174,6 +195,10 @@ class __$$AreaImplCopyWithImpl<$Res>
         name: null == name
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
+                  as String,
+        district: null == district
+            ? _value.district
+            : district // ignore: cast_nullable_to_non_nullable
                   as String,
         city: null == city
             ? _value.city
@@ -199,6 +224,10 @@ class __$$AreaImplCopyWithImpl<$Res>
             ? _value.isVerified
             : isVerified // ignore: cast_nullable_to_non_nullable
                   as bool,
+        distanceM: freezed == distanceM
+            ? _value.distanceM
+            : distanceM // ignore: cast_nullable_to_non_nullable
+                  as double?,
       ),
     );
   }
@@ -210,12 +239,14 @@ class _$AreaImpl implements _Area {
   const _$AreaImpl({
     required this.id,
     required this.name,
+    required this.district,
     required this.city,
     required this.country,
     @JsonKey(name: 'center_lat') required this.centerLat,
     @JsonKey(name: 'center_lng') required this.centerLng,
     @JsonKey(name: 'is_active') this.isActive = true,
     @JsonKey(name: 'is_verified') this.isVerified = false,
+    @JsonKey(name: 'distance_m') this.distanceM,
   });
 
   factory _$AreaImpl.fromJson(Map<String, dynamic> json) =>
@@ -225,6 +256,8 @@ class _$AreaImpl implements _Area {
   final String id;
   @override
   final String name;
+  @override
+  final String district;
   @override
   final String city;
   @override
@@ -242,9 +275,14 @@ class _$AreaImpl implements _Area {
   @JsonKey(name: 'is_verified')
   final bool isVerified;
 
+  /// Only populated in nearby-query results (from resolve_nearest_area RPC).
+  @override
+  @JsonKey(name: 'distance_m')
+  final double? distanceM;
+
   @override
   String toString() {
-    return 'Area(id: $id, name: $name, city: $city, country: $country, centerLat: $centerLat, centerLng: $centerLng, isActive: $isActive, isVerified: $isVerified)';
+    return 'Area(id: $id, name: $name, district: $district, city: $city, country: $country, centerLat: $centerLat, centerLng: $centerLng, isActive: $isActive, isVerified: $isVerified, distanceM: $distanceM)';
   }
 
   @override
@@ -254,6 +292,8 @@ class _$AreaImpl implements _Area {
             other is _$AreaImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.district, district) ||
+                other.district == district) &&
             (identical(other.city, city) || other.city == city) &&
             (identical(other.country, country) || other.country == country) &&
             (identical(other.centerLat, centerLat) ||
@@ -263,7 +303,9 @@ class _$AreaImpl implements _Area {
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
             (identical(other.isVerified, isVerified) ||
-                other.isVerified == isVerified));
+                other.isVerified == isVerified) &&
+            (identical(other.distanceM, distanceM) ||
+                other.distanceM == distanceM));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -272,12 +314,14 @@ class _$AreaImpl implements _Area {
     runtimeType,
     id,
     name,
+    district,
     city,
     country,
     centerLat,
     centerLng,
     isActive,
     isVerified,
+    distanceM,
   );
 
   /// Create a copy of Area
@@ -298,12 +342,14 @@ abstract class _Area implements Area {
   const factory _Area({
     required final String id,
     required final String name,
+    required final String district,
     required final String city,
     required final String country,
     @JsonKey(name: 'center_lat') required final double centerLat,
     @JsonKey(name: 'center_lng') required final double centerLng,
     @JsonKey(name: 'is_active') final bool isActive,
     @JsonKey(name: 'is_verified') final bool isVerified,
+    @JsonKey(name: 'distance_m') final double? distanceM,
   }) = _$AreaImpl;
 
   factory _Area.fromJson(Map<String, dynamic> json) = _$AreaImpl.fromJson;
@@ -312,6 +358,8 @@ abstract class _Area implements Area {
   String get id;
   @override
   String get name;
+  @override
+  String get district;
   @override
   String get city;
   @override
@@ -328,6 +376,11 @@ abstract class _Area implements Area {
   @override
   @JsonKey(name: 'is_verified')
   bool get isVerified;
+
+  /// Only populated in nearby-query results (from resolve_nearest_area RPC).
+  @override
+  @JsonKey(name: 'distance_m')
+  double? get distanceM;
 
   /// Create a copy of Area
   /// with the given fields replaced by the non-null parameter values.

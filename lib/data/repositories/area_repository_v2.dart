@@ -11,18 +11,11 @@ import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_sour
 /// Loads all active areas once per session and caches them in memory.
 /// Individual screens never refetch — they call [loadAll()] which returns
 /// the cache on subsequent calls.
-///
-/// Note: run `dart run build_runner build -d` after adding `district` to
-/// the Area Freezed model so the generated code includes the field.
 class AreaRepository {
   AreaRepository(this._ref);
 
   final Ref _ref;
   List<Area>? _cache;
-
-  // Raw rows are also cached so we can access `district` before build_runner
-  // regenerates the Freezed model.
-  List<Map<String, dynamic>>? _rawCache;
 
   SupabaseClient get _db => _ref.read(supabaseServiceProvider).client;
 
@@ -37,9 +30,7 @@ class AreaRepository {
           .select()
           .eq('is_active', true)
           .order('name');
-      _rawCache =
-          rows.map((r) => Map<String, dynamic>.from(r as Map)).toList();
-      _cache = _rawCache!.map(Area.fromJson).toList();
+      _cache = rows.map((r) => Area.fromJson(Map<String, dynamic>.from(r as Map))).toList();
       return _cache!;
     } catch (_) {
       return [];
@@ -88,25 +79,22 @@ class AreaRepository {
 
   // ── Grouped ───────────────────────────────────────────────────────────────
 
-  /// Returns areas keyed by district (falling back to city), sorted
-  /// alphabetically within each group.
-  ///
-  /// Uses the raw JSON cache so `district` is readable even before
-  /// build_runner regenerates the Freezed model.
+  /// Returns all active areas grouped by district, sorted by district name
+  /// then area name within each group.
   Future<Map<String, List<Area>>> areasByDistrict() async {
     final areas = await loadAll();
-    final raw = _rawCache ?? [];
 
     final map = <String, List<Area>>{};
-    for (var i = 0; i < areas.length; i++) {
-      final area = areas[i];
-      final rawRow = i < raw.length ? raw[i] : <String, dynamic>{};
-      final district = (rawRow['district'] as String?)?.trim() ?? '';
-      final key = district.isNotEmpty ? district : area.city;
-      map.putIfAbsent(key, () => []).add(area);
+    for (final area in areas) {
+      map.putIfAbsent(area.district, () => []).add(area);
     }
 
-    // Sort district keys alphabetically.
+    // Sort each group by name.
+    for (final list in map.values) {
+      list.sort((a, b) => a.name.compareTo(b.name));
+    }
+
+    // Return sorted by district name.
     return Map.fromEntries(
       map.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
     );
