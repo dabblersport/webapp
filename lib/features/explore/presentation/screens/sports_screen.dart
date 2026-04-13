@@ -18,6 +18,7 @@ import 'package:dabbler/core/config/sport_filters_config.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
 import 'package:dabbler/core/services/location_service.dart';
+import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dabbler/features/explore/presentation/widgets/location_permission_drawer.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
@@ -709,16 +710,39 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                     vertical: 8,
                   ),
                 ),
-                items:
-                    const [
-                      'Downtown',
-                      'Jumeirah',
-                      'Marina',
-                      'Business Bay',
-                      'Other',
-                    ].map((area) {
-                      return DropdownMenuItem(value: area, child: Text(area));
-                    }).toList(),
+                items: () {
+                      final allAreas =
+                          ref.watch(activeAreasProvider).valueOrNull ?? [];
+
+                      // Determine the user's country from the nearest area.
+                      final position = _locationService.currentPosition;
+                      String? userCountry;
+                      if (position != null) {
+                        userCountry = ref
+                            .watch(
+                              nearestAreaProvider((
+                                lat: position.latitude,
+                                lng: position.longitude,
+                              )),
+                            )
+                            .valueOrNull
+                            ?.country;
+                      }
+
+                      // Filter by country when known; otherwise show all.
+                      final filtered = userCountry != null
+                          ? allAreas
+                              .where((a) => a.country == userCountry)
+                              .toList()
+                          : allAreas;
+
+                      return filtered.map((area) {
+                        return DropdownMenuItem(
+                          value: area.name,
+                          child: Text(area.name),
+                        );
+                      }).toList();
+                    }(),
                 onChanged: (value) =>
                     setModalState(() => _selectedArea = value),
               ),
@@ -1399,13 +1423,30 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                     ),
                     const SizedBox(width: 4),
                     Flexible(
-                      child: Text(
-                        _locationService.currentArea ??
-                            'Location not available',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: sportsScheme.primary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                      child: Builder(
+                        builder: (context) {
+                          // Prefer GPS-reverse-geocoded area; fall back to the
+                          // nearest area from the DB when that is unavailable
+                          // (e.g. web where geocoding is unsupported).
+                          final position = _locationService.currentPosition;
+                          String? areaLabel = _locationService.currentArea;
+                          if (areaLabel == null && position != null) {
+                            final nearest = ref.watch(
+                              nearestAreaProvider((
+                                lat: position.latitude,
+                                lng: position.longitude,
+                              )),
+                            );
+                            areaLabel = nearest.valueOrNull?.name;
+                          }
+                          return Text(
+                            areaLabel ?? 'Location not available',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: sportsScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 4),

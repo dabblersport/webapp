@@ -511,21 +511,27 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                           borderRadius: BorderRadius.circular(24),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isCompactNav ? 10 : 16,
+                            vertical: isCompactNav ? 6 : 8,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: _isOnSportsPage
-                                ? _buildSportsNavItems(
-                                    foregroundColor,
-                                    foregroundColorInactive,
-                                  )
-                                : _buildHomeNavItems(
-                                    foregroundColor,
-                                    foregroundColorInactive,
-                                  ),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: _isOnSportsPage
+                                    ? _buildSportsNavItems(
+                                        foregroundColor,
+                                        foregroundColorInactive,
+                                      )
+                                    : _buildHomeNavItems(
+                                        foregroundColor,
+                                        foregroundColorInactive,
+                                      ),
+                              ),
+                            ),
                           ),
                         ),
                       ),

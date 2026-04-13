@@ -9,7 +9,7 @@ import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/user_circle.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/place.dart';
-import 'package:dabbler/features/places/presentation/widgets/place_picker_sheet.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/circles/circle_picker_sheet.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
@@ -39,6 +39,9 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   /// The place/location attached to this post (if any).
   Place? _selectedPlace;
+
+  /// Location result from LocationPickerSheet (if any).
+  LocationPickerResult? _locationResult;
 
   @override
   void initState() {
@@ -160,10 +163,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Future<void> _showPlacePicker() async {
-    final place = await PlacePickerSheet.show(context);
+    final result = await LocationPickerSheet.show(context);
     if (!mounted) return;
-    if (place != null) {
-      setState(() => _selectedPlace = place);
+    if (result != null) {
+      setState(() {
+        _locationResult = result;
+        // Clear legacy Place if a new location is picked.
+        _selectedPlace = null;
+      });
     }
   }
 
@@ -178,6 +185,23 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     final vibeId = ref.read(selectedVibeProvider);
     final sportId = ref.read(selectedSportProvider);
 
+    // Resolve location parameters from either the new picker or legacy Place.
+    String? locationName;
+    double? geoLat;
+    double? geoLng;
+    String? venueId;
+
+    if (_locationResult != null) {
+      locationName = _locationResult!.displayName;
+      geoLat = _locationResult!.lat;
+      geoLng = _locationResult!.lng;
+      venueId = _locationResult!.venueId;
+    } else if (_selectedPlace != null) {
+      locationName = _selectedPlace!.name;
+      geoLat = _selectedPlace!.latitude;
+      geoLng = _selectedPlace!.longitude;
+    }
+
     final result = await ref
         .read(postControllerProvider.notifier)
         .createPost(
@@ -187,9 +211,10 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           visibility: _visibility.name,
           postType: _postType,
           circleId: _selectedCircle?.id,
-          locationName: _selectedPlace?.name,
-          geoLat: _selectedPlace?.latitude,
-          geoLng: _selectedPlace?.longitude,
+          locationName: locationName,
+          geoLat: geoLat,
+          geoLng: geoLng,
+          venueId: venueId,
         );
 
     if (!mounted) return;
@@ -326,7 +351,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
           ),
 
           // ── Selected location chip ──
-          if (_selectedPlace != null)
+          if (_selectedPlace != null || _locationResult != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Align(
@@ -334,14 +359,19 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 child: InputChip(
                   avatar: Icon(Icons.location_on, size: 18, color: cs.primary),
                   label: Text(
-                    _selectedPlace!.name,
+                    _locationResult?.displayName ??
+                        _selectedPlace?.name ??
+                        'Location',
                     style: tt.bodySmall?.copyWith(
                       color: cs.onSecondaryContainer,
                     ),
                   ),
                   backgroundColor: cs.secondaryContainer,
                   deleteIconColor: cs.onSecondaryContainer,
-                  onDeleted: () => setState(() => _selectedPlace = null),
+                  onDeleted: () => setState(() {
+                    _selectedPlace = null;
+                    _locationResult = null;
+                  }),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                     side: BorderSide.none,

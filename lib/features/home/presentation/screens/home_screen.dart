@@ -27,6 +27,7 @@ import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -295,9 +296,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Widget _buildHeader() {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
         children: [
           // Dabbler text logo
           SvgPicture.asset(
@@ -345,7 +349,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
           ),
         ],
-      ),
+          ),
+        ),
+        const HomeLocationBar(),
+      ],
     );
   }
 

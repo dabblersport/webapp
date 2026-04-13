@@ -123,6 +123,13 @@ abstract class PostRepository {
   /// Single post by ID.
   Future<Result<Post, Failure>> getPost(String postId);
 
+  /// Posts filtered by area_id. Used for location-aware feed filtering.
+  Future<Result<List<Post>, Failure>> getAreaFeed({
+    required String areaId,
+    int limit = 20,
+    int offset = 0,
+  });
+
   // ── Write ──────────────────────────────────────────────────────────
 
   /// Create a new post. Returns the inserted row.
@@ -163,6 +170,8 @@ abstract class PostRepository {
     String? locationName,
     double? geoLat,
     double? geoLng,
+    String? venueId,
+    String? gameId,
   });
 
   /// List all available vibes for the picker.

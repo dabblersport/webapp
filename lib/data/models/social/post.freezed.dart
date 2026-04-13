@@ -73,6 +73,10 @@ mixin _$Post {
   double? get geoLat => throw _privateConstructorUsedError;
   @JsonKey(name: 'geo_lng')
   double? get geoLng => throw _privateConstructorUsedError;
+  @JsonKey(name: 'geo_location_id')
+  String? get geoLocationId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'area_id')
+  String? get areaId => throw _privateConstructorUsedError;
   @JsonKey(name: 'game_id')
   String? get gameId => throw _privateConstructorUsedError;
   @JsonKey(name: 'sport_id')
@@ -208,6 +212,8 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'venue_id') String? venueId,
     @JsonKey(name: 'geo_lat') double? geoLat,
     @JsonKey(name: 'geo_lng') double? geoLng,
+    @JsonKey(name: 'geo_location_id') String? geoLocationId,
+    @JsonKey(name: 'area_id') String? areaId,
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
@@ -293,6 +299,8 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? venueId = freezed,
     Object? geoLat = freezed,
     Object? geoLng = freezed,
+    Object? geoLocationId = freezed,
+    Object? areaId = freezed,
     Object? gameId = freezed,
     Object? sportId = freezed,
     Object? locationTagId = freezed,
@@ -402,6 +410,14 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
                 ? _value.geoLng
                 : geoLng // ignore: cast_nullable_to_non_nullable
                       as double?,
+            geoLocationId: freezed == geoLocationId
+                ? _value.geoLocationId
+                : geoLocationId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            areaId: freezed == areaId
+                ? _value.areaId
+                : areaId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             gameId: freezed == gameId
                 ? _value.gameId
                 : gameId // ignore: cast_nullable_to_non_nullable
@@ -583,6 +599,8 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'venue_id') String? venueId,
     @JsonKey(name: 'geo_lat') double? geoLat,
     @JsonKey(name: 'geo_lng') double? geoLng,
+    @JsonKey(name: 'geo_location_id') String? geoLocationId,
+    @JsonKey(name: 'area_id') String? areaId,
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
@@ -666,6 +684,8 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? venueId = freezed,
     Object? geoLat = freezed,
     Object? geoLng = freezed,
+    Object? geoLocationId = freezed,
+    Object? areaId = freezed,
     Object? gameId = freezed,
     Object? sportId = freezed,
     Object? locationTagId = freezed,
@@ -775,6 +795,14 @@ class __$$PostImplCopyWithImpl<$Res>
             ? _value.geoLng
             : geoLng // ignore: cast_nullable_to_non_nullable
                   as double?,
+        geoLocationId: freezed == geoLocationId
+            ? _value.geoLocationId
+            : geoLocationId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        areaId: freezed == areaId
+            ? _value.areaId
+            : areaId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         gameId: freezed == gameId
             ? _value.gameId
             : gameId // ignore: cast_nullable_to_non_nullable
@@ -936,6 +964,8 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'venue_id') this.venueId,
     @JsonKey(name: 'geo_lat') this.geoLat,
     @JsonKey(name: 'geo_lng') this.geoLng,
+    @JsonKey(name: 'geo_location_id') this.geoLocationId,
+    @JsonKey(name: 'area_id') this.areaId,
     @JsonKey(name: 'game_id') this.gameId,
     @JsonKey(name: 'sport_id') this.sportId,
     @JsonKey(name: 'location_tag_id') this.locationTagId,
@@ -1070,6 +1100,12 @@ class _$PostImpl implements _Post {
   @override
   @JsonKey(name: 'geo_lng')
   final double? geoLng;
+  @override
+  @JsonKey(name: 'geo_location_id')
+  final String? geoLocationId;
+  @override
+  @JsonKey(name: 'area_id')
+  final String? areaId;
   @override
   @JsonKey(name: 'game_id')
   final String? gameId;
@@ -1214,7 +1250,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, postThemeId: $postThemeId, postTheme: $postTheme, originalPost: $originalPost)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, geoLocationId: $geoLocationId, areaId: $areaId, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, postThemeId: $postThemeId, postTheme: $postTheme, originalPost: $originalPost)';
   }
 
   @override
@@ -1251,6 +1287,9 @@ class _$PostImpl implements _Post {
             (identical(other.venueId, venueId) || other.venueId == venueId) &&
             (identical(other.geoLat, geoLat) || other.geoLat == geoLat) &&
             (identical(other.geoLng, geoLng) || other.geoLng == geoLng) &&
+            (identical(other.geoLocationId, geoLocationId) ||
+                other.geoLocationId == geoLocationId) &&
+            (identical(other.areaId, areaId) || other.areaId == areaId) &&
             (identical(other.gameId, gameId) || other.gameId == gameId) &&
             (identical(other.sportId, sportId) || other.sportId == sportId) &&
             (identical(other.locationTagId, locationTagId) ||
@@ -1334,6 +1373,8 @@ class _$PostImpl implements _Post {
     venueId,
     geoLat,
     geoLng,
+    geoLocationId,
+    areaId,
     gameId,
     sportId,
     locationTagId,
@@ -1414,6 +1455,8 @@ abstract class _Post implements Post {
     @JsonKey(name: 'venue_id') final String? venueId,
     @JsonKey(name: 'geo_lat') final double? geoLat,
     @JsonKey(name: 'geo_lng') final double? geoLng,
+    @JsonKey(name: 'geo_location_id') final String? geoLocationId,
+    @JsonKey(name: 'area_id') final String? areaId,
     @JsonKey(name: 'game_id') final String? gameId,
     @JsonKey(name: 'sport_id') final String? sportId,
     @JsonKey(name: 'location_tag_id') final String? locationTagId,
@@ -1536,6 +1579,12 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'geo_lng')
   double? get geoLng;
+  @override
+  @JsonKey(name: 'geo_location_id')
+  String? get geoLocationId;
+  @override
+  @JsonKey(name: 'area_id')
+  String? get areaId;
   @override
   @JsonKey(name: 'game_id')
   String? get gameId;

@@ -368,6 +368,8 @@ class PostController extends StateNotifier<AsyncValue<void>> {
     String? locationName,
     double? geoLat,
     double? geoLng,
+    String? venueId,
+    String? gameId,
   }) async {
     final hasBody = body != null && body.trim().isNotEmpty;
 
@@ -405,6 +407,8 @@ class PostController extends StateNotifier<AsyncValue<void>> {
       locationName: locationName,
       geoLat: geoLat,
       geoLng: geoLng,
+      venueId: venueId,
+      gameId: gameId,
     );
 
     state = const AsyncData(null);

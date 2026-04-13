@@ -826,6 +826,26 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     return Post.fromJson(themed.first);
   });
 
+  @override
+  Future<Result<List<Post>, Failure>> getAreaFeed({
+    required String areaId,
+    int limit = 20,
+    int offset = 0,
+  }) => guard(() async {
+    final rows = await _db
+        .from('posts')
+        .select()
+        .eq('area_id', areaId)
+        .eq('is_deleted', false)
+        .eq('is_hidden_admin', false)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1);
+    final enriched = await _enrichRows(rows.cast<Map<String, dynamic>>());
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
+    return themed.map((r) => Post.fromJson(r)).toList();
+  });
+
   // ── Write ──────────────────────────────────────────────────────────
 
   @override
@@ -886,6 +906,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String? locationName,
     double? geoLat,
     double? geoLng,
+    String? venueId,
+    String? gameId,
   }) async {
     // Step 1 — Verify authenticated session exists.
     final initialSession = _db.auth.currentSession;
@@ -998,6 +1020,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (locationName != null) 'location_name': locationName,
         if (geoLat != null) 'geo_lat': geoLat,
         if (geoLng != null) 'geo_lng': geoLng,
+        if (venueId != null) 'venue_id': venueId,
+        if (gameId != null) 'game_id': gameId,
       };
 
       print('INSERT PAYLOAD: $data');

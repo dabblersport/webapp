@@ -60,6 +60,8 @@ class Post with _$Post {
     @JsonKey(name: 'venue_id') String? venueId,
     @JsonKey(name: 'geo_lat') double? geoLat,
     @JsonKey(name: 'geo_lng') double? geoLng,
+    @JsonKey(name: 'geo_location_id') String? geoLocationId,
+    @JsonKey(name: 'area_id') String? areaId,
     @JsonKey(name: 'game_id') String? gameId,
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,

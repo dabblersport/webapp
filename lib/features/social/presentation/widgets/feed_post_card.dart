@@ -13,6 +13,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
+import 'package:dabbler/features/location/presentation/widgets/post_location_chip.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Shared post card used in Feed, ProfileScreen, and UserProfileScreen.
@@ -296,7 +297,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     final imageUrl = _firstImageUrl(post.media);
     final hasImage = imageUrl != null;
     final expiryText = _expiryLabel(post.expiresAt);
-    final hasLocation = post.geoLat != null && post.geoLng != null;
+    final hasLocation = post.areaId != null;
     final canRepost = post.allowReposts && post.originType != OriginType.repost;
 
     return GestureDetector(
@@ -515,10 +516,9 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                   textColor: cs.onSecondaryContainer,
                                 ),
                               if (hasLocation)
-                                _MetaBadge(
-                                  label: '📍 Location',
-                                  color: cs.secondaryContainer,
-                                  textColor: cs.onSecondaryContainer,
+                                PostLocationChip(
+                                  areaId: post.areaId!,
+                                  locationName: post.locationName,
                                 ),
                               if (post.requiresModeration)
                                 _MetaBadge(

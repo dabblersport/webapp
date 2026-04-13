@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class LocationService extends ChangeNotifier {
@@ -90,6 +91,12 @@ class LocationService extends ChangeNotifier {
   }
 
   Future<void> _reverseGeocode(Position position) async {
+    // geocoding package does not support web — keep any cached area name and
+    // leave _currentArea null so the UI falls back to the nearest-area DB
+    // lookup rather than displaying raw coordinates.
+    if (kIsWeb) {
+      return;
+    }
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
