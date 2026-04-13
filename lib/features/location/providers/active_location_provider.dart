@@ -70,9 +70,9 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
 
   Future<ActiveLocationReady?> _trySavedPrimary() async {
     try {
-      final locations =
-          await ref.read(profileLocationNotifierProvider.future);
-      final primary = locations.where((l) => l.isPrimary).firstOrNull ??
+      final locations = await ref.read(profileLocationNotifierProvider.future);
+      final primary =
+          locations.where((l) => l.isPrimary).firstOrNull ??
           locations.firstOrNull;
       if (primary == null) return null;
       if (primary.lat == null || primary.lng == null) return null;
@@ -127,9 +127,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     });
   }
 
-  Future<ActiveLocationState> _stateFromGpsResult(
-    LocationResult result,
-  ) async {
+  Future<ActiveLocationState> _stateFromGpsResult(LocationResult result) async {
     switch (result) {
       case LocationSuccess(:final lat, :final lng):
         final area = await _resolveArea(lat, lng);
@@ -219,9 +217,9 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     final result = await _gps.getCurrentLocation();
     final next = await _stateFromGpsResult(result);
     // If refresh fails, restore previous state rather than showing error.
-    state = AsyncData(next is ActiveLocationError && current != null
-        ? current
-        : next);
+    state = AsyncData(
+      next is ActiveLocationError && current != null ? current : next,
+    );
   }
 
   /// Called by individual screens that need a temporary radius.
@@ -279,5 +277,5 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
 
 final activeLocationProvider =
     AsyncNotifierProvider<ActiveLocationNotifier, ActiveLocationState>(
-  ActiveLocationNotifier.new,
-);
+      ActiveLocationNotifier.new,
+    );

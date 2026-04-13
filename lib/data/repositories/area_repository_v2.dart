@@ -30,7 +30,9 @@ class AreaRepository {
           .select()
           .eq('is_active', true)
           .order('name');
-      _cache = rows.map((r) => Area.fromJson(Map<String, dynamic>.from(r as Map))).toList();
+      _cache = rows
+          .map((r) => Area.fromJson(Map<String, dynamic>.from(r as Map)))
+          .toList();
       return _cache!;
     } catch (_) {
       return [];
@@ -111,7 +113,8 @@ class AreaRepository {
     const r = 6371000.0;
     final dLat = _rad(lat2 - lat1);
     final dLng = _rad(lng2 - lng1);
-    final a = math.pow(math.sin(dLat / 2), 2) +
+    final a =
+        math.pow(math.sin(dLat / 2), 2) +
         math.cos(_rad(lat1)) *
             math.cos(_rad(lat2)) *
             math.pow(math.sin(dLng / 2), 2);

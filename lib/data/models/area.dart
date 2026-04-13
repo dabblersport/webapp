@@ -19,6 +19,7 @@ class Area with _$Area {
     @JsonKey(name: 'center_lng') required double centerLng,
     @JsonKey(name: 'is_active') @Default(true) bool isActive,
     @JsonKey(name: 'is_verified') @Default(false) bool isVerified,
+
     /// Only populated in nearby-query results (from resolve_nearest_area RPC).
     @JsonKey(name: 'distance_m') double? distanceM,
   }) = _Area;

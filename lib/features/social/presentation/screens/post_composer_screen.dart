@@ -273,9 +273,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         );
         return;
       case LocationError(:final message):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Location error: $message')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Location error: $message')));
         return;
       case LocationSuccess(:final lat, :final lng, :final accuracyMeters):
         final area = await ref.read(
@@ -290,7 +290,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           areaName: area?.name ?? 'Unknown area',
           accuracyMeters: accuracyMeters,
           onUseOnce: (lat, lng, areaId) {
-            ref.read(postComposerProvider.notifier).setRawLocation(
+            ref
+                .read(postComposerProvider.notifier)
+                .setRawLocation(
                   name: area?.name ?? 'My location',
                   lat: lat,
                   lng: lng,
@@ -3211,8 +3213,7 @@ class _SavedLocationsPickerSheet extends ConsumerWidget {
         ),
         Expanded(
           child: asyncLocations.when(
-            loading: () =>
-                const Center(child: CircularProgressIndicator()),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => Center(
               child: Text(
                 'Could not load saved locations',
@@ -3246,9 +3247,7 @@ class _SavedLocationsPickerSheet extends ConsumerWidget {
                   final loc = sorted[i];
                   return ListTile(
                     leading: Icon(
-                      loc.isPrimary
-                          ? Icons.star_rounded
-                          : Icons.place_outlined,
+                      loc.isPrimary ? Icons.star_rounded : Icons.place_outlined,
                       color: loc.isPrimary ? cs.primary : cs.onSurface,
                     ),
                     title: Text(loc.effectiveLabel),

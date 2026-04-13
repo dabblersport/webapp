@@ -35,12 +35,11 @@ class HomeLocationBar extends ConsumerWidget {
         ActiveLocationDenied() => _DeniedBar(cs: cs),
         ActiveLocationError() => _DeniedBar(cs: cs),
         ActiveLocationReady(:final location) => _ReadyBar(
-            location: location,
-            cs: cs,
-            onTap: () => _openPicker(context),
-            onRefresh: () =>
-                ref.read(activeLocationProvider.notifier).refresh(),
-          ),
+          location: location,
+          cs: cs,
+          onTap: () => _openPicker(context),
+          onRefresh: () => ref.read(activeLocationProvider.notifier).refresh(),
+        ),
       },
     );
   }
@@ -123,9 +122,7 @@ class _ReadyBar extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: tt.bodySmall?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
