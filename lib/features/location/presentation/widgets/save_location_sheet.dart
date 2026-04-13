@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:dabbler/data/models/profile_location.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 
 /// Bottom sheet for saving or using a GPS-resolved location.
@@ -80,16 +82,33 @@ class SaveLocationSheet extends ConsumerStatefulWidget {
 class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
   ProfileLocationLabel? _selectedLabel;
   final _customNameController = TextEditingController();
+  final _mapController = MapController();
   bool _isPrimary = false;
   bool _isSaving = false;
+
+  // Mutable location state — updated when user picks a Mapbox place.
+  late double _lat = widget.lat;
+  late double _lng = widget.lng;
+  late final String _areaId = widget.areaId;
+  late String _areaName = widget.areaName;
 
   @override
   void dispose() {
     _customNameController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
   bool get _canSave => _selectedLabel != null;
+
+  LatLng? get _activeProximity {
+    final locState = ref.read(activeLocationProvider).valueOrNull;
+    if (locState is ActiveLocationReady) {
+      final loc = locState.location;
+      return LatLng(loc.lat, loc.lng);
+    }
+    return null;
+  }
 
   Color _accuracyColor(ColorScheme cs) {
     final m = widget.accuracyMeters;
@@ -109,10 +128,12 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     if (!_canSave) return;
     setState(() => _isSaving = true);
 
-    await ref.read(profileLocationNotifierProvider.notifier).saveLocation(
-          lat: widget.lat,
-          lng: widget.lng,
-          areaId: widget.areaId,
+    await ref
+        .read(profileLocationNotifierProvider.notifier)
+        .saveLocation(
+          lat: _lat,
+          lng: _lng,
+          areaId: _areaId,
           label: _selectedLabel!,
           labelCustom: _selectedLabel == ProfileLocationLabel.custom
               ? _customNameController.text.trim()
@@ -127,7 +148,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
   }
 
   void _useOnce() {
-    widget.onUseOnce?.call(widget.lat, widget.lng, widget.areaId);
+    widget.onUseOnce?.call(_lat, _lng, _areaId);
     Navigator.of(context).pop();
   }
 
@@ -165,14 +186,30 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             ),
             const SizedBox(height: 16),
 
+            // Mapbox place search
+            LocationSearchField(
+              hintText: 'Search for a place\u2026',
+              proximity: _activeProximity,
+              onSelected: (place) {
+                setState(() {
+                  _lat = place.lat;
+                  _lng = place.lng;
+                  _areaName = place.name;
+                });
+                _mapController.move(LatLng(place.lat, place.lng), 15);
+              },
+            ),
+            const SizedBox(height: 12),
+
             // Map thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: SizedBox(
                 height: 180,
                 child: FlutterMap(
+                  mapController: _mapController,
                   options: MapOptions(
-                    initialCenter: LatLng(widget.lat, widget.lng),
+                    initialCenter: LatLng(_lat, _lng),
                     initialZoom: 15,
                     interactionOptions: const InteractionOptions(
                       flags: InteractiveFlag.none,
@@ -187,7 +224,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                     MarkerLayer(
                       markers: [
                         Marker(
-                          point: LatLng(widget.lat, widget.lng),
+                          point: LatLng(_lat, _lng),
                           width: 32,
                           height: 32,
                           child: Icon(
@@ -211,7 +248,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    widget.areaName,
+                    _areaName,
                     style: tt.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: cs.onSurface,
@@ -256,13 +293,11 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 return ChoiceChip(
                   label: Text(label.displayName),
                   selected: selected,
-                  onSelected: (_) =>
-                      setState(() => _selectedLabel = label),
+                  onSelected: (_) => setState(() => _selectedLabel = label),
                   selectedColor: cs.primaryContainer,
                   labelStyle: TextStyle(
                     color: selected ? cs.onPrimaryContainer : cs.onSurface,
-                    fontWeight:
-                        selected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 );
               }).toList(),
@@ -292,10 +327,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             SwitchListTile.adaptive(
               value: _isPrimary,
               onChanged: (v) => setState(() => _isPrimary = v),
-              title: Text(
-                'Set as primary location',
-                style: tt.bodyMedium,
-              ),
+              title: Text('Set as primary location', style: tt.bodyMedium),
               contentPadding: EdgeInsets.zero,
               activeThumbColor: cs.onPrimary,
               activeTrackColor: cs.primary,

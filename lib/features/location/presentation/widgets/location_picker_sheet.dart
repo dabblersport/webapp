@@ -7,7 +7,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/data/models/mapbox_place.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 
@@ -61,9 +62,17 @@ class LocationPickerResult {
     areaId: id,
     displayName: name,
   );
+
+  factory LocationPickerResult.mapboxPlace(MapboxPlace place) =>
+      LocationPickerResult._(
+        type: LocationPickerType.mapboxPlace,
+        displayName: place.name,
+        lat: place.lat,
+        lng: place.lng,
+      );
 }
 
-enum LocationPickerType { currentLocation, venue, area }
+enum LocationPickerType { currentLocation, venue, area, mapboxPlace }
 
 /// Bottom sheet for picking a location to attach to a post.
 ///
@@ -218,6 +227,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
                   scrollController,
                 ),
                 _PickerMode.area => _buildAreaList(cs, tt, scrollController),
+                _PickerMode.placeSearch => _buildPlaceSearch(cs, tt),
               },
             ),
           ],
@@ -230,6 +240,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
     _PickerMode.menu => 'Add Location',
     _PickerMode.venue => 'Tag a Venue',
     _PickerMode.area => 'Pick an Area',
+    _PickerMode.placeSearch => 'Search a Place',
   };
 
   // ── Menu ───────────────────────────────────────────────────────────
@@ -267,6 +278,15 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
           label: 'Pick an area',
           subtitle: 'Select a neighborhood or city',
           onTap: () => setState(() => _mode = _PickerMode.area),
+          cs: cs,
+          tt: tt,
+        ),
+        const SizedBox(height: 8),
+        _MenuTile(
+          icon: Iconsax.search_normal,
+          label: 'Search a place',
+          subtitle: 'Find an address or point of interest',
+          onTap: () => setState(() => _mode = _PickerMode.placeSearch),
           cs: cs,
           tt: tt,
         ),
@@ -417,11 +437,26 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       ),
     );
   }
+
+  // ── Mapbox Place Search ────────────────────────────────────────────
+
+  Widget _buildPlaceSearch(ColorScheme cs, TextTheme tt) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: LocationSearchField(
+        autofocus: true,
+        hintText: 'Search for an address or place\u2026',
+        onSelected: (place) {
+          Navigator.of(context).pop(LocationPickerResult.mapboxPlace(place));
+        },
+      ),
+    );
+  }
 }
 
 // ── Picker mode ──────────────────────────────────────────────────────
 
-enum _PickerMode { menu, venue, area }
+enum _PickerMode { menu, venue, area, placeSearch }
 
 // ── Menu tile ────────────────────────────────────────────────────────
 
