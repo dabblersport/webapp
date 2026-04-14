@@ -29,6 +29,14 @@ import 'package:dabbler/utils/adaptive_sheet.dart';
 /// Before insert it auto-detects language, extracts hashtags, resolves
 /// the author profile via RLS-safe lookup, and generates link_token
 /// when visibility == link.
+String _prettifyLabel(String raw) {
+  return raw
+      .replaceAll('_', ' ')
+      .split(' ')
+      .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
+      .join(' ');
+}
+
 class PostComposerScreen extends ConsumerStatefulWidget {
   const PostComposerScreen({super.key});
 
@@ -440,13 +448,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _showGifPicker() {
-    showModalBottomSheet(
+    showAdaptiveSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.75,
         minChildSize: 0.4,
@@ -1500,14 +1505,6 @@ class _AddChip extends StatelessWidget {
 // ═════════════════════════════════════════════════════════════════════════════
 // VIBES PICKER SHEET (for composer)
 // ═════════════════════════════════════════════════════════════════════════════
-
-String _prettifyLabel(String raw) {
-  return raw
-      .replaceAll('_', ' ')
-      .split(' ')
-      .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
-      .join(' ');
-}
 
 class _ComposerVibesPickerSheet extends ConsumerStatefulWidget {
   const _ComposerVibesPickerSheet({required this.scrollController});
