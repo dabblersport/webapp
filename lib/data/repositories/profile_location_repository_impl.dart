@@ -128,6 +128,17 @@ class ProfileLocationRepositoryImpl extends BaseRepository
         }).eq('id', locationId);
       });
 
+  @override
+  Future<Result<void, Failure>> updateRadius(
+    String locationId,
+    int meters,
+  ) =>
+      guard(() async {
+        await svc.client
+            .from('profile_locations')
+            .update({'nearby_radius_meters': meters}).eq('id', locationId);
+      });
+
   // ── Geohash helper ────────────────────────────────────────────────────────
   //
   // Simple base32 geohash encoding (precision 9, ~5 m accuracy).

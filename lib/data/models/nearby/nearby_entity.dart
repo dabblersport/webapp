@@ -16,6 +16,5 @@ abstract class NearbyEntity {
   final double distanceMeters;
 
   @override
-  String toString() =>
-      '${runtimeType}(id: $id, distanceMeters: $distanceMeters)';
+  String toString() => '$runtimeType(id: $id, distanceMeters: $distanceMeters)';
 }

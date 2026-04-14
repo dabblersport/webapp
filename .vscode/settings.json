@@ -39,5 +39,6 @@
       "approve": true,
       "matchCommandLine": true
     }
-  }
+  },
+  "github.copilot.chat.claudeAgent.enabled": false
 }

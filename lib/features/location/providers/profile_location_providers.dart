@@ -4,6 +4,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/profile_location_repository.dart';
 import 'package:dabbler/data/repositories/profile_location_repository_impl.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -136,6 +137,35 @@ class ProfileLocationNotifier
             .toList(),
       );
     });
+  }
+
+  // ── Update radius ─────────────────────────────────────────────────────────
+
+  Future<void> updateRadius(String locationId, int meters) async {
+    final result = await _repo.updateRadius(locationId, meters);
+    result.fold((_) => null, (_) {
+      final current = state.valueOrNull ?? [];
+      state = AsyncData(
+        current
+            .map(
+              (l) => l.id == locationId
+                  ? l.copyWith(nearbyRadiusMeters: meters)
+                  : l,
+            )
+            .toList(),
+      );
+    });
+  }
+
+  /// Update the primary location's radius and propagate to ActiveLocation.
+  Future<void> updatePrimaryRadius(int meters) async {
+    final locations = state.valueOrNull ?? [];
+    final primary =
+        locations.where((l) => l.isPrimary).firstOrNull ??
+        locations.firstOrNull;
+    if (primary == null) return;
+    await updateRadius(primary.id, meters);
+    ref.read(activeLocationProvider.notifier).setRadiusOverride(meters);
   }
 }
 

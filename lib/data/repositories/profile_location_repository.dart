@@ -45,4 +45,7 @@ abstract class ProfileLocationRepository {
     ProfileLocationLabel label, {
     String? customName,
   });
+
+  /// Persist a new nearby_radius_meters value for a saved location.
+  Future<Result<void, Failure>> updateRadius(String locationId, int meters);
 }

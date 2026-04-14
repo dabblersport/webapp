@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:dabbler/data/models/active_location.dart';
-import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 
 /// Tappable location bar shown at the top of the home screen.
 ///
@@ -37,6 +37,7 @@ class HomeLocationBar extends ConsumerWidget {
         ActiveLocationReady(:final location) => _ReadyBar(
           location: location,
           cs: cs,
+          radius: ref.watch(nearbyRadiusProvider),
           onTap: () => _openPicker(context),
           onRefresh: () => ref.read(activeLocationProvider.notifier).refresh(),
         ),
@@ -72,19 +73,23 @@ class _ReadyBar extends StatelessWidget {
   const _ReadyBar({
     required this.location,
     required this.cs,
+    required this.radius,
     required this.onTap,
     required this.onRefresh,
   });
 
   final ActiveLocation location;
   final ColorScheme cs;
+  final int radius;
   final VoidCallback onTap;
   final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    final subtitle = '${location.area.district} · ${location.area.city}';
+    final radiusKm = (radius / 1000).round();
+    final subtitle =
+        '${location.area.district} · ${location.area.city}  ·  $radiusKm km';
 
     return GestureDetector(
       onTap: onTap,

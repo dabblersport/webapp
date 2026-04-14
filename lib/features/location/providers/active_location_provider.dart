@@ -279,3 +279,17 @@ final activeLocationProvider =
     AsyncNotifierProvider<ActiveLocationNotifier, ActiveLocationState>(
       ActiveLocationNotifier.new,
     );
+
+// =============================================================================
+// DERIVED PROVIDERS
+// =============================================================================
+
+/// Derives the active nearby radius from the current ActiveLocation.
+/// Falls back to 10 000 m when location is not yet ready.
+final nearbyRadiusProvider = Provider<int>((ref) {
+  final locState = ref.watch(activeLocationProvider).valueOrNull;
+  if (locState is ActiveLocationReady) {
+    return locState.location.nearbyRadiusMeters;
+  }
+  return 10000;
+});

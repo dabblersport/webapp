@@ -8,8 +8,8 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
-import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart'
-    show ExploreScreen;
+import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
+import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
@@ -65,7 +65,20 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   final List<Widget> _swipeableScreens = [
     const HomeScreen(),
     const RealFriendsScreen(), // Community
-    const ExploreScreen(), // Sports/Venues screen
+    // Sports section: IndexedStack keeps both screens alive,
+    // sportsSubTabProvider drives which one is visible.
+    Consumer(
+      builder: (context, ref, _) {
+        final subTab = ref.watch(sportsSubTabProvider);
+        return IndexedStack(
+          index: subTab == 0 ? 1 : 0, // 0=Venues(default), 1=Games
+          children: const [
+            VenuesScreen(),
+            GamesScreen(),
+          ],
+        );
+      },
+    ),
   ];
 
   @override

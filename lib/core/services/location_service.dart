@@ -3,7 +3,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 class LocationService extends ChangeNotifier {
   static final LocationService _instance = LocationService._internal();
