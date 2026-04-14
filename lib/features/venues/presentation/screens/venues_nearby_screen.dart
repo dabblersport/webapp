@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
+import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_sheet.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';

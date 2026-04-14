@@ -1,7 +1,6 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/features/location/presentation/widgets/nearby_filter_sheet.dart'
-    show NearbySortOrder;
+import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/games/data/datasources/nearby_games_datasource.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 

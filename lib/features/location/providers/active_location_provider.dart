@@ -116,7 +116,9 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         lat: result.lat,
         lng: result.lng,
         area: area,
-        nearbyRadiusMeters: _radiusOverride ?? 10000,
+        nearbyRadiusMeters:
+            _radiusOverride ?? currentSaved?.nearbyRadiusMeters ?? 10000,
+        defaultRadiusMeters: currentSaved?.nearbyRadiusMeters ?? 10000,
         source: ActiveLocationSource.gps,
       );
 
@@ -140,6 +142,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
             lng: lng,
             area: area,
             nearbyRadiusMeters: _radiusOverride ?? 10000,
+            defaultRadiusMeters: 10000,
             source: ActiveLocationSource.gps,
           ),
         );
