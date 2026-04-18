@@ -1,0 +1,11 @@
+appId: com.onebrain.dabbler
+---
+# Note: manually test this one — requires waiting for OTP to expire
+# Steps: enter phone → get OTP → wait 60s → enter old OTP → expect "expired" message
+- launchApp:
+    clearState: true
+- tapOn: "Mobile"
+- inputText: "+971501234567"
+- tapOn:
+    text: "Continue"
+- assertVisible: "OTP"

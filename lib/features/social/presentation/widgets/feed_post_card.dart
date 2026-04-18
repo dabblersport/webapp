@@ -259,8 +259,8 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Text(
-        '·',
-        style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        '•',
+        style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
       ),
     );
   }
@@ -287,6 +287,9 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     final myReactions = myReactionsAsync.valueOrNull ?? <String>{};
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+
+    final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
+    final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
     final author = (post.authorDisplayName ?? '').trim();
     final authorLabel = author.isEmpty ? 'Anonymous' : author;
@@ -391,29 +394,17 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             ),
                           ),
                           if (post.personaTypeSnapshot != null) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
+                            _dotSep(tt, cs),
+                            Text(
+                              post.personaTypeSnapshot == 'organiser'
+                                  ? 'Organiser'
+                                  : 'Player',
+                              style: tt.labelSmall?.copyWith(
                                 color: post.personaTypeSnapshot == 'organiser'
-                                    ? cs.tertiaryContainer
-                                    : cs.errorContainer,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                post.personaTypeSnapshot == 'organiser'
-                                    ? 'Organiser'
-                                    : 'Player',
-                                style: tt.labelSmall?.copyWith(
-                                  color: post.personaTypeSnapshot == 'organiser'
-                                      ? cs.onTertiaryContainer
-                                      : cs.onErrorContainer,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 10,
-                                ),
+                                    ? cs.tertiary
+                                    : cs.error,
+                                fontWeight: FontWeight.w600,
+                                // fontSize: 12,
                               ),
                             ),
                           ],
@@ -457,14 +448,8 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               color: cs.primary,
                             ),
                           ],
-                        ],
-                      ),
-
-                      // ── Visibility + Kind + meta ──
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          if (typeLabel != null)
+                          if (typeLabel != null) ...[
+                            const Spacer(),
                             _PostTypeBadge(
                               label: typeLabel,
                               icon: _postTypeIcon(post.postType),
@@ -472,7 +457,14 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               tt: tt,
                               type: post.postType,
                             ),
-                          const SizedBox(width: AppSpacing.md),
+                          ],
+                        ],
+                      ),
+
+                      // ── Visibility + Kind + meta ──
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
                           Icon(
                             _visibilityIcon(post.visibility),
                             size: 12,
@@ -495,46 +487,39 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                               ),
                             ),
                           ],
+                          if (originLabel != null) ...[
+                            const SizedBox(width: 6),
+                            _MetaBadge(
+                              label: '🔗 $originLabel',
+                              color: cs.secondaryContainer,
+                              textColor: cs.onSecondaryContainer,
+                            ),
+                          ],
+                          if (hasLocation) ...[
+                            const SizedBox(width: 6),
+                            PostLocationChip(
+                              areaId: post.areaId!,
+                              locationName: post.locationName,
+                            ),
+                          ],
+                          if (post.requiresModeration) ...[
+                            const SizedBox(width: 6),
+                            _MetaBadge(
+                              label: '⏳ Pending review',
+                              color: cs.errorContainer,
+                              textColor: cs.onErrorContainer,
+                            ),
+                          ],
+                          if (expiryText != null) ...[
+                            const SizedBox(width: 6),
+                            _MetaBadge(
+                              label: '⏱ $expiryText',
+                              color: cs.errorContainer,
+                              textColor: cs.onErrorContainer,
+                            ),
+                          ],
                         ],
                       ),
-
-                      // ── Contextual metadata chips ──
-                      if (originLabel != null ||
-                          hasLocation ||
-                          post.requiresModeration ||
-                          expiryText != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              if (originLabel != null)
-                                _MetaBadge(
-                                  label: '🔗 $originLabel',
-                                  color: cs.secondaryContainer,
-                                  textColor: cs.onSecondaryContainer,
-                                ),
-                              if (hasLocation)
-                                PostLocationChip(
-                                  areaId: post.areaId!,
-                                  locationName: post.locationName,
-                                ),
-                              if (post.requiresModeration)
-                                _MetaBadge(
-                                  label: '⏳ Pending review',
-                                  color: cs.errorContainer,
-                                  textColor: cs.onErrorContainer,
-                                ),
-                              if (expiryText != null)
-                                _MetaBadge(
-                                  label: '⏱ $expiryText',
-                                  color: cs.errorContainer,
-                                  textColor: cs.onErrorContainer,
-                                ),
-                            ],
-                          ),
-                        ),
 
                       // ═══ Image ═══
                       if (hasImage)
@@ -702,6 +687,87 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                           ),
                         ),
 
+                      // ═══ Action bar ═══
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: Row(
+                          children: [
+                            // Like
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _handleLikeTap(hasLiked),
+                              child: _ActionItem(
+                                icon: hasLiked
+                                    ? Iconsax.heart
+                                    : Iconsax.heart_copy,
+                                count: _localLikeCount,
+                                color: hasLiked
+                                    ? cs.error
+                                    : cs.onSurfaceVariant,
+                                tt: tt,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // React
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _showReactionPicker(myReactions),
+                              child: _ActionItem(
+                                icon: Iconsax.add_circle_copy,
+                                count: _reactionBreakdownEntries(
+                                  post,
+                                ).fold<int>(0, (s, e) => s + (e.value as int)),
+                                color: cs.onSurfaceVariant,
+                                tt: tt,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Comment
+                            _ActionItem(
+                              icon: Iconsax.message_copy,
+                              count: post.commentCount,
+                              color: cs.onSurfaceVariant,
+                              tt: tt,
+                            ),
+                            const SizedBox(width: 16),
+                            // Repost
+                            if (canRepost) ...[
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  if (hasReposted) {
+                                    ref
+                                        .read(postActionsProvider.notifier)
+                                        .undoRepost(post.id);
+                                    return;
+                                  }
+                                  _showRepostMenu();
+                                },
+                                child: _ActionItem(
+                                  icon: hasReposted
+                                      ? Iconsax.refresh
+                                      : Iconsax.refresh_copy,
+                                  count: post.repostCount,
+                                  color: hasReposted
+                                      ? cs.tertiary
+                                      : cs.onSurfaceVariant,
+                                  tt: tt,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                            ],
+                            // Views (author only)
+                            if (isAuthor)
+                              _ActionItem(
+                                icon: Iconsax.eye_copy,
+                                count: post.viewCount,
+                                color: cs.onSurfaceVariant,
+                                tt: tt,
+                              ),
+                          ],
+                        ),
+                      ),
+
                       // ═══ Reaction breakdown chips ═══
                       if (_reactionBreakdownEntries(post).isNotEmpty)
                         Padding(
@@ -782,86 +848,6 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             },
                           ),
                         ),
-
-                      // ═══ Action bar ═══
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10),
-                        child: Row(
-                          children: [
-                            // Like
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => _handleLikeTap(hasLiked),
-                              child: _ActionItem(
-                                icon: hasLiked
-                                    ? Iconsax.heart
-                                    : Iconsax.heart_copy,
-                                count: _localLikeCount,
-                                color: hasLiked
-                                    ? cs.error
-                                    : cs.onSurfaceVariant,
-                                tt: tt,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // React
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () => _showReactionPicker(myReactions),
-                              child: _ActionItem(
-                                icon: Iconsax.add_circle_copy,
-                                count: _reactionBreakdownEntries(
-                                  post,
-                                ).fold<int>(0, (s, e) => s + (e.value as int)),
-                                color: cs.onSurfaceVariant,
-                                tt: tt,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // Comment
-                            _ActionItem(
-                              icon: Iconsax.message_copy,
-                              count: post.commentCount,
-                              color: cs.onSurfaceVariant,
-                              tt: tt,
-                            ),
-                            const SizedBox(width: 16),
-                            // Repost
-                            if (canRepost) ...[
-                              GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () {
-                                  if (hasReposted) {
-                                    ref
-                                        .read(postActionsProvider.notifier)
-                                        .undoRepost(post.id);
-                                    return;
-                                  }
-                                  _showRepostMenu();
-                                },
-                                child: _ActionItem(
-                                  icon: hasReposted
-                                      ? Iconsax.refresh
-                                      : Iconsax.refresh_copy,
-                                  count: post.repostCount,
-                                  color: hasReposted
-                                      ? cs.tertiary
-                                      : cs.onSurfaceVariant,
-                                  tt: tt,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                            ],
-                            // Share / Views
-                            _ActionItem(
-                              icon: Iconsax.eye_copy,
-                              count: post.viewCount,
-                              color: cs.onSurfaceVariant,
-                              tt: tt,
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -1143,13 +1129,13 @@ class _ThreadCommentPreview extends ConsumerWidget {
                           color: cs.onSurfaceVariant,
                           tt: tt,
                         ),
-                        const SizedBox(width: 16),
-                        _ActionItem(
-                          icon: Iconsax.eye_copy,
-                          count: 0,
-                          color: cs.onSurfaceVariant,
-                          tt: tt,
-                        ),
+                        // const SizedBox(width: 16),
+                        // _ActionItem(
+                        //   icon: Iconsax.eye_copy,
+                        //   count: 0,
+                        //   color: cs.onSurfaceVariant,
+                        //   tt: tt,
+                        // ),
                       ],
                     ),
                   ],

@@ -1,0 +1,216 @@
+# feature: find_nearby_venue
+# version: 1
+# status: draft
+# owner: qa
+# priority: high
+appId: com.example.dabbler
+area: location_and_nearby
+depends_on:
+  - active_location_system
+  - mapbox_autocomplete
+  - nearby_radius_filter
+  - venues_nearby_screen
+objective: >-
+  Verify that a user can open the Venues nearby experience and successfully
+  discover venues near the active location using the configured radius,
+  filters, and sort order.
+preconditions:
+  - User is authenticated.
+  - User has network access.
+  - App build includes prompts A, B, C, and D.
+  - At least one venue exists within test radius of the chosen test location.
+  - At least one venue exists outside a smaller radius to validate filtering.
+  - Device location permission can be toggled during testing.
+  - A saved profile location with valid lat/lng exists for fallback validation.
+test_data:
+  active_area_label: Dubai Marina
+  latitude: 25.0800
+  longitude: 55.1400
+  initial_radius_meters: 10000
+  smaller_radius_meters: 3000
+  larger_radius_meters: 25000
+  sport_filter: null
+  expected_distance_format_examples:
+    - 850 m
+    - 1.2 km
+acceptance_criteria:
+  - Venues tab loads without crash.
+  - Screen shows loading skeleton before data appears.
+  - Active area label is visible.
+  - Active radius is visible in kilometers.
+  - Nearby venues list is populated when matching venues exist.
+  - Every venue card shows a distance badge.
+  - Distance badge format is meters below 1 km and kilometers at or above 1 km.
+  - Tapping Filter opens the shared NearbyFilterSheet.
+  - Changing radius updates results.
+  - Nearest sort returns venues ordered by ascending distance.
+  - Tapping a venue opens the existing venue detail screen.
+scenarios:
+  - id: FNV-001
+    title: Load nearby venues using active location
+    type: happy_path
+    steps:
+      - Launch the app.
+      - Sign in with a valid test user.
+      - Ensure active location is available through GPS or saved location.
+      - Open Sports.
+      - Open the Venues tab.
+    expected:
+      - Skeleton cards appear while loading.
+      - Header shows active area label.
+      - Header shows current search radius in km.
+      - A list of nearby venues appears.
+
+  - id: FNV-002
+    title: Verify each nearby venue card content
+    type: ui_validation
+    steps:
+      - Open Sports > Venues with nearby results loaded.
+      - Inspect the first three venue cards.
+    expected:
+      - Each card shows venue name.
+      - Each card shows location line.
+      - Each card shows at least one contextual chip if data exists.
+      - Each card shows a distance badge.
+      - Distance badge uses m for values below 1000 meters.
+      - Distance badge uses km for values at or above 1000 meters.
+
+  - id: FNV-003
+    title: Open filter sheet from Venues nearby
+    type: interaction
+    steps:
+      - Open Sports > Venues.
+      - Tap the Filter button.
+    expected:
+      - NearbyFilterSheet opens.
+      - Radius control is visible.
+      - Sort options are visible.
+      - Existing values are preselected.
+
+  - id: FNV-004
+    title: Change radius to smaller value
+    type: filtering
+    steps:
+      - Open Sports > Venues.
+      - Open Filter.
+      - Set radius to 3 km.
+      - Apply or dismiss the sheet according to implemented UX.
+    expected:
+      - Header updates to 3 km.
+      - Venue list refreshes.
+      - Venues outside 3 km are excluded.
+      - Empty state appears if no venues fall inside 3 km.
+
+  - id: FNV-005
+    title: Change radius to larger value
+    type: filtering
+    steps:
+      - Open Sports > Venues.
+      - Open Filter.
+      - Set radius to 25 km.
+    expected:
+      - Header updates to 25 km.
+      - More or equal venues appear compared with smaller radius.
+      - No duplicate venue cards appear.
+
+  - id: FNV-006
+    title: Sort venues by nearest
+    type: sorting
+    steps:
+      - Open Sports > Venues.
+      - Open Filter.
+      - Select sort: nearest.
+      - Return to the list.
+    expected:
+      - Header indicates nearest sort is active.
+      - Visible venue cards are ordered by ascending distance.
+      - First card is the closest venue among the returned set.
+
+  - id: FNV-007
+    title: Navigate to venue detail from nearby list
+    type: navigation
+    steps:
+      - Open Sports > Venues.
+      - Tap the first venue card.
+    expected:
+      - Existing venue detail screen opens.
+      - Opened venue matches tapped card.
+      - Returning back returns user to the nearby venues list.
+
+  - id: FNV-008
+    title: Denied location fallback state
+    type: permissions
+    steps:
+      - Deny location permission for the app.
+      - Ensure no live GPS position is available.
+      - Open Sports > Venues.
+    expected:
+      - Location unavailable state appears, or saved-location fallback is used if configured.
+      - If denied state is shown, enable GPS action is visible.
+      - App does not crash.
+
+  - id: FNV-009
+    title: Use saved location fallback
+    type: fallback
+    steps:
+      - Deny location permission.
+      - Ensure test user has a saved primary location with valid coordinates.
+      - Open Sports > Venues.
+    expected:
+      - Nearby venues load using saved location.
+      - Header shows saved area context.
+      - Venue results reflect the saved location radius.
+
+  - id: FNV-010
+    title: Empty state when no venues are nearby
+    type: empty_state
+    steps:
+      - Set active location to a sparse test area or reduce radius enough to exclude all venues.
+      - Open Sports > Venues.
+    expected:
+      - Empty state message appears.
+      - Message includes current radius in km.
+      - Adjust filters action is visible.
+
+  - id: FNV-011
+    title: Retry after transient fetch error
+    type: resilience
+    steps:
+      - Simulate temporary network failure.
+      - Open Sports > Venues.
+      - Restore network.
+      - Tap Retry.
+    expected:
+      - Error state is shown without crash.
+      - Retry triggers a new fetch.
+      - Venue list loads successfully once network is restored.
+
+  - id: FNV-012
+    title: Sport filter integration if mounted above Venues tab
+    type: integration
+    steps:
+      - Open Sports > Venues.
+      - Select a sport chip from the parent sports filter, if available.
+    expected:
+      - Venues list refreshes for the selected sport.
+      - Returned venues are relevant to the selected sport.
+      - Clearing sport filter restores broader results.
+checks:
+  ui:
+    - No overflow on small screens.
+    - Distance badge styling matches design.
+    - Cards remain tappable after filter changes.
+  data:
+    - No duplicate venue ids in a single response set.
+    - Returned distances are non-negative.
+    - Results respect selected radius.
+  analytics_optional:
+    - Nearby venues screen viewed event fires, if analytics exist.
+    - Filter changed event fires, if analytics exist.
+out_of_scope:
+  - Games nearby flow.
+  - Post composer location flow.
+  - Venue submission flow.
+notes:
+  - Run this test first before end-to-end location regression.
+  - Reuse the same structure for games_nearby as test_02.

@@ -1,0 +1,12 @@
+appId: com.onebrain.dabbler
+---
+- launchApp:
+    clearState: false
+- tapOn: "Email"
+- inputText: "test@onebrain.app"
+- tapOn:
+    text: "Password"
+- inputText: "Test@12345"
+- tapOn:
+    text: "Log In"
+- assertVisible: "Home"

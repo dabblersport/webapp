@@ -1,0 +1,13 @@
+appId: com.onebrain.dabbler
+---
+- launchApp:
+    clearState: false
+- tapOn: "Mobile"
+- inputText: "+971501234567"
+- tapOn:
+    text: "Continue"
+- assertVisible: "OTP"
+- inputText: "123456"
+- tapOn:
+    text: "Verify"
+- assertVisible: "Home"

@@ -1,0 +1,9 @@
+appId: com.onebrain.dabbler
+---
+- launchApp:
+    clearState: false
+- assertVisible: "Home"
+- stopApp
+- launchApp:
+    clearState: false
+- assertVisible: "Home"

@@ -1,0 +1,17 @@
+appId: com.onebrain.dabbler
+---
+- launchApp:
+    clearState: true
+- tapOn: "Mobile"
+- inputText: "+971501234567"
+- tapOn:
+    text: "Continue"
+- assertVisible: "OTP"
+- tapOn:
+    text: "Resend"
+- assertNotVisible:
+    text: "Resend"
+    enabled: true
+- wait:
+    timeout: 31000
+- assertVisible: "Resend"

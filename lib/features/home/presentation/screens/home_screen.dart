@@ -302,53 +302,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
-        children: [
-          // Dabbler text logo
-          SvgPicture.asset(
-            'assets/images/dabbler_text_logo.svg',
-            width: 100,
-            height: 18,
-            colorFilter: ColorFilter.mode(
-              colorScheme.onSurface,
-              BlendMode.srcIn,
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            onPressed: () => context.push(RoutePaths.socialSearch),
-            icon: const Icon(Iconsax.search_normal_1_copy),
-            style: IconButton.styleFrom(foregroundColor: colorScheme.onSurface),
-          ),
-          Stack(
-            clipBehavior: Clip.none,
             children: [
+              // Dabbler text logo
+              SvgPicture.asset(
+                'assets/images/dabbler_text_logo.svg',
+                width: 100,
+                height: 18,
+                colorFilter: ColorFilter.mode(
+                  colorScheme.onSurface,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const Spacer(),
               IconButton(
-                onPressed: () => context.push(RoutePaths.notifications),
-                icon: const Icon(Iconsax.notification_copy),
+                onPressed: () => context.push(RoutePaths.socialSearch),
+                icon: const Icon(Iconsax.search_normal_1_copy),
                 style: IconButton.styleFrom(
                   foregroundColor: colorScheme.onSurface,
                 ),
               ),
-              const Positioned(top: 4, right: 4, child: NotificationBadge()),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    onPressed: () => context.push(RoutePaths.notifications),
+                    icon: const Icon(Iconsax.notification_copy),
+                    style: IconButton.styleFrom(
+                      foregroundColor: colorScheme.onSurface,
+                    ),
+                  ),
+                  const Positioned(
+                    top: 4,
+                    right: 4,
+                    child: NotificationBadge(),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.profile),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colorScheme.primary, width: 2),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: DSAvatar.small(
+                    imageUrl: _userProfile?['avatar_url'] as String?,
+                    displayName: _resolveDisplayName(_userProfile),
+                    context: AvatarContext.main,
+                  ),
+                ),
+              ),
             ],
-          ),
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: () => context.push(RoutePaths.profile),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: colorScheme.primary, width: 2),
-              ),
-              padding: const EdgeInsets.all(2),
-              child: DSAvatar.small(
-                imageUrl: _userProfile?['avatar_url'] as String?,
-                displayName: _resolveDisplayName(_userProfile),
-                context: AvatarContext.main,
-              ),
-            ),
-          ),
-        ],
           ),
         ),
         const HomeLocationBar(),
@@ -379,8 +385,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
+                    horizontal: 18,
+                    vertical: 9,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected ? cs.primary : Colors.transparent,

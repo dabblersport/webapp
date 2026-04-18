@@ -1,0 +1,7 @@
+appId: com.onebrain.dabbler
+---
+# Simulates session expiry — run after manually clearing Supabase session token
+- launchApp:
+    clearState: false
+- assertVisible:
+    text: "Login"

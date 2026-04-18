@@ -877,6 +877,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildTimestampRow(Post post, ColorScheme cs, TextTheme tt) {
+    final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
+    final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
@@ -906,7 +908,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               ),
             ],
           ),
-          if (post.viewCount > 0)
+          if (isAuthor && post.viewCount > 0)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(
