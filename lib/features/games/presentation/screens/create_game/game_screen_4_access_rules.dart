@@ -37,7 +37,7 @@ class _GameScreen4AccessRulesState
   ];
 
   static const _joinOptions = [
-    ('open', 'Open', Icons.door_open_rounded, 'Anyone can join instantly'),
+    ('open', 'Open', Icons.lock_open_rounded, 'Anyone can join instantly'),
     ('request', 'Request', Icons.pending_rounded,
         'You approve each player'),
     ('invite', 'Invite only', Icons.mail_rounded, 'By invitation only'),
@@ -181,7 +181,7 @@ class _GameScreen4AccessRulesState
               _skillRange.end.round().toString(),
             ),
             activeColor: colorScheme.primary,
-            inactiveColor: colorScheme.primary.withOpacity(0.2),
+            inactiveColor: colorScheme.primary.withValues(alpha: 0.2),
             onChanged: (v) => setState(() => _skillRange = v),
           ),
           const SizedBox(height: 20),
@@ -321,7 +321,7 @@ class _SelectionCard extends StatelessWidget {
               description,
               style: textTheme.bodySmall?.copyWith(
                 color: selected
-                    ? colorScheme.onPrimaryContainer.withOpacity(0.8)
+                    ? colorScheme.onPrimaryContainer.withValues(alpha: 0.8)
                     : colorScheme.onSurfaceVariant,
               ),
               maxLines: 2,
