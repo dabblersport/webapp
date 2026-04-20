@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -41,6 +42,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   DateTime? _lastBackPressAt;
   bool _exitDialogShowing = false;
+  bool _createMenuOpen = false;
 
   bool _isCompactNavWidth(BuildContext context) =>
       MediaQuery.sizeOf(context).width < 390;
@@ -241,7 +243,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           ref.read(sportsSubTabProvider.notifier).state = 0;
           return;
         case 3: // Create
-          _showCreatePostModal();
+          _showCreateMenu();
           return;
       }
     } else {
@@ -273,7 +275,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           );
           return;
         case 3: // Create
-          _showCreatePostModal();
+          _showCreateMenu();
           return;
       }
     }
@@ -286,13 +288,37 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     });
   }
 
-  Future<void> _showCreatePostModal() async {
-    final result = await context.push<bool>(RoutePaths.socialCreatePost);
-    if (result == true && mounted) {
-      // Realtime subscription will prepend the new post automatically.
-      // Clear the badge so it doesn't flash unnecessarily for own posts.
-      ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
-    }
+  Future<void> _showCreateMenu() async {
+    setState(() => _createMenuOpen = true);
+    await showModalBottomSheet<_CreateAction>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.35),
+      useRootNavigator: true,
+      builder: (ctx) => const _CreateActionSheet(),
+    ).then((action) async {
+      if (!mounted) return;
+      setState(() => _createMenuOpen = false);
+      switch (action) {
+        case _CreateAction.post:
+          final result = await context.push<bool>(RoutePaths.socialCreatePost);
+          if (result == true && mounted) {
+            ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
+          }
+        case _CreateAction.game:
+          context.push(RoutePaths.createGame);
+        case _CreateAction.meetup:
+          // TODO: navigate to create meetup when route is added
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Meetups coming soon!'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        case null:
+          break;
+      }
+    });
   }
 
   bool get _isAndroid =>
@@ -457,7 +483,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _onItemTapped(0);
         break;
       case 1: // Create
-        _showCreatePostModal();
+        _showCreateMenu();
         break;
       case 2: // Sports
         _onItemTapped(2);
@@ -488,70 +514,87 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: TweenAnimationBuilder<Color?>(
-          duration: const Duration(milliseconds: 300),
-          tween: ColorTween(end: targetPrimaryColor),
-          builder: (context, animatedColor, child) {
-            final foregroundColor = Theme.of(
-              context,
-            ).colorScheme.onPrimaryContainer;
-            final foregroundColorInactive = foregroundColor.withValues(
-              alpha: 0.8,
-            );
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompactNav = constraints.maxWidth < 390;
+            final targetWidth =
+                (constraints.maxWidth * (isCompactNav ? 0.97 : 0.92))
+                    .clamp(0.0, 420.0)
+                    .toDouble();
+            final isDark =
+                Theme.of(context).brightness == Brightness.dark;
+            final glassBase = isDark
+                ? Colors.black.withValues(alpha: 0.35)
+                : Colors.white.withValues(alpha: 0.55);
+            final glassBorder = isDark
+                ? Colors.white.withValues(alpha: 0.12)
+                : Colors.white.withValues(alpha: 0.70);
 
-            return LayoutBuilder(
-              builder: (context, constraints) {
-                final isCompactNav = constraints.maxWidth < 390;
-                final targetWidth =
-                    (constraints.maxWidth * (isCompactNav ? 0.97 : 0.92))
-                        .clamp(0.0, 420.0)
-                        .toDouble();
+            final foregroundColor =
+                Theme.of(context).colorScheme.onPrimaryContainer;
+            final foregroundColorInactive =
+                foregroundColor.withValues(alpha: 0.65);
 
-                return Align(
-                  alignment: Alignment.bottomCenter,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: targetWidth),
-                    child: Material(
-                      color: Colors.transparent,
-                      elevation: 0,
-                      borderRadius: BorderRadius.circular(24),
-                      clipBehavior: Clip.antiAlias,
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(24),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: targetWidth),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      // decoration: BoxDecoration(
+                      //   color: glassBase,
+                      //   borderRadius: BorderRadius.circular(28),
+                      //   border: Border.all(
+                      //     color: glassBorder,
+                      //     width: 1.0,
+                      //   ),
+                      //   boxShadow: [
+                      //     // BoxShadow(
+                      //     //   color: Colors.black.withValues(alpha: 0.12),
+                      //     //   blurRadius: 24,
+                      //     //   spreadRadius: -4,
+                      //     //   offset: const Offset(0, 8),
+                      //     // ),
+                      //     // BoxShadow(
+                      //     //   color: Colors.black.withValues(alpha: 0.06),
+                      //     //   blurRadius: 6,
+                      //     //   offset: const Offset(0, 2),
+                      //     // ),
+                      //   ],
+                      // ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isCompactNav ? 10 : 14,
+                          vertical: isCompactNav ? 8 : 10,
                         ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isCompactNav ? 10 : 16,
-                            vertical: isCompactNav ? 6 : 8,
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: _isOnSportsPage
-                                    ? _buildSportsNavItems(
-                                        foregroundColor,
-                                        foregroundColorInactive,
-                                      )
-                                    : _buildHomeNavItems(
-                                        foregroundColor,
-                                        foregroundColorInactive,
-                                      ),
-                              ),
+                        child: SizedBox(
+                          // width: double.infinity,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: _isOnSportsPage
+                                  ? _buildSportsNavItems(
+                                      foregroundColor,
+                                      foregroundColorInactive,
+                                    )
+                                  : _buildHomeNavItems(
+                                      foregroundColor,
+                                      foregroundColorInactive,
+                                    ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+              ),
             );
           },
         ),
@@ -599,6 +642,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         bulkIcon: Iconsax.add_circle,
         foregroundColor: foregroundColor,
         foregroundColorInactive: foregroundColorInactive,
+        isMenuOpen: _createMenuOpen,
       ),
     ];
   }
@@ -649,6 +693,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         bulkIcon: Iconsax.add_circle,
         foregroundColor: foregroundColor,
         foregroundColorInactive: foregroundColorInactive,
+        isMenuOpen: _createMenuOpen,
       ),
     ];
   }
@@ -662,29 +707,38 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required Color foregroundColorInactive,
     bool inSegmentedGroup = false,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
         padding: EdgeInsets.symmetric(
           horizontal: _navLabelHorizontalPadding(context),
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
+          color: isSelected ? colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.30),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimary
-                : foregroundColor,
+            color: isSelected ? colorScheme.onPrimary : foregroundColorInactive,
             fontSize: _navLabelFontSize(context),
-            fontWeight: FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            letterSpacing: isSelected ? -0.2 : 0,
           ),
         ),
       ),
@@ -700,30 +754,40 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     bool inSegmentedGroup = false,
   }) {
     final isSelected = _currentIndex == index;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
         padding: EdgeInsets.symmetric(
           horizontal: _navLabelHorizontalPadding(context),
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? Theme.of(context).colorScheme.primary
+              ? colorScheme.primary
               : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.30),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimary
-                : foregroundColor,
+            color: isSelected ? colorScheme.onPrimary : foregroundColorInactive,
             fontSize: _navLabelFontSize(context),
-            fontWeight: FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            letterSpacing: isSelected ? -0.2 : 0,
           ),
         ),
       ),
@@ -738,32 +802,46 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required Color foregroundColor,
     required Color foregroundColorInactive,
     bool forceUnselected = false,
+    bool isMenuOpen = false,
   }) {
     final isSelected = forceUnselected ? false : _currentIndex == index;
-    final buttonSize = _isCompactNavWidth(context) ? 48.0 : 52.0;
+    final buttonSize = _isCompactNavWidth(context) ? 46.0 : 50.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final circleBg = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.black.withValues(alpha: 0.07);
+    final circleBorder = isDark
+        ? Colors.white.withValues(alpha: 0.18)
+        : Colors.white.withValues(alpha: 0.80);
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
         width: buttonSize,
         height: buttonSize,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primaryContainer,
+          color: circleBg,
           shape: BoxShape.circle,
+          border: Border.all(color: circleBorder, width: 0.8),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.10),
-              blurRadius: 5,
-              offset: const Offset(0, 3),
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(
-          isSelected ? bulkIcon : outlineIcon,
-          color: foregroundColor,
-          size: _navIconSize(context),
+        child: AnimatedRotation(
+          turns: isMenuOpen ? 0.125 : 0,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: Icon(
+            isSelected ? bulkIcon : outlineIcon,
+            color: isSelected ? foregroundColor : foregroundColorInactive,
+            size: _navIconSize(context),
+          ),
         ),
       ),
     );
@@ -773,18 +851,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required Color foregroundColor,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final pillBg = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.black.withValues(alpha: 0.06);
+
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: pillBg,
         borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.10),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
@@ -976,6 +1052,191 @@ class _QuickActionTile extends StatelessWidget {
       title: Text(label),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+enum _CreateAction { post, game, meetup }
+
+class _CreateActionSheet extends StatefulWidget {
+  const _CreateActionSheet();
+
+  @override
+  State<_CreateActionSheet> createState() => _CreateActionSheetState();
+}
+
+class _CreateActionSheetState extends State<_CreateActionSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnim;
+
+  static const _actions = [
+    (icon: Iconsax.edit_2_copy, label: 'Create Post', action: _CreateAction.post),
+    (icon: Iconsax.game_copy, label: 'Create Game', action: _CreateAction.game),
+    (icon: Iconsax.people_copy, label: 'Create Meetup', action: _CreateAction.meetup),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
+    );
+    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _select(_CreateAction action) {
+    Navigator.of(context).pop(action);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final glassBase = isDark
+        ? Colors.black.withValues(alpha: 0.55)
+        : Colors.white.withValues(alpha: 0.72);
+    final glassBorder = isDark
+        ? Colors.white.withValues(alpha: 0.12)
+        : Colors.white.withValues(alpha: 0.80);
+
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          0,
+          20,
+          MediaQuery.of(context).padding.bottom + 100,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            child: Container(
+              decoration: BoxDecoration(
+                color: glassBase,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: glassBorder, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 32,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(_actions.length, (i) {
+                  final item = _actions[i];
+                  final delay = i * 0.12;
+                  return SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.4),
+                      end: Offset.zero,
+                    ).animate(CurvedAnimation(
+                      parent: _controller,
+                      curve: Interval(delay, 1.0, curve: Curves.easeOutCubic),
+                    )),
+                    child: FadeTransition(
+                      opacity: CurvedAnimation(
+                        parent: _controller,
+                        curve: Interval(delay, 1.0, curve: Curves.easeOut),
+                      ),
+                      child: _ActionTile(
+                        icon: item.icon,
+                        label: item.label,
+                        onTap: () => _select(item.action),
+                        showDivider: i < _actions.length - 1,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.showDivider,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? colorScheme.primary.withValues(alpha: 0.20)
+                        : colorScheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: colorScheme.primary, size: 22),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: colorScheme.onSurfaceVariant,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06),
+          ),
+      ],
     );
   }
 }

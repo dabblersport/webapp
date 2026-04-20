@@ -29,13 +29,12 @@ final nearbyGameSortProvider = StateProvider<NearbySortOrder>(
 // PARAMS
 // =============================================================================
 
-/// Parameters that drive a nearby-games query.
-///
-/// Using a record so FutureProvider.family equality works correctly.
+/// Parameters that drive a games query.
+/// lat/lng/radiusMeters are null when no location filter is active.
 typedef NearbyGamesParams = ({
-  double lat,
-  double lng,
-  int radiusMeters,
+  double? lat,
+  double? lng,
+  int? radiusMeters,
   String? sportId,
   NearbySortOrder sortOrder,
 });
@@ -44,33 +43,12 @@ typedef NearbyGamesParams = ({
 // MAIN PROVIDER
 // =============================================================================
 
-/// Fetches nearby games from the PostGIS RPC.
-///
-/// Usage:
-/// ```dart
-/// final locState = ref.watch(activeLocationProvider).valueOrNull;
-/// if (locState is! ActiveLocationReady) { /* show denied state */ }
-/// final params = (
-///   lat: locState.location.lat,
-///   lng: locState.location.lng,
-///   radiusMeters: locState.location.nearbyRadiusMeters,
-///   sportId: selectedSportId,
-///   sortOrder: ref.watch(nearbyGameSortProvider),
-/// );
-/// final gamesAsync = ref.watch(nearbyGamesProvider(params));
-/// ```
+/// Fetches games. When lat/lng are null, returns all public upcoming games.
+/// When lat/lng are provided, uses the PostGIS RPC for proximity filtering.
 final nearbyGamesProvider = FutureProvider.autoDispose
     .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) async {
-  final result = await ref.read(nearbyGamesRepositoryProvider).getNearbyGames(
-        lat: params.lat,
-        lng: params.lng,
-        radiusMeters: params.radiusMeters,
-        sportId: params.sportId,
-        sortOrder: params.sortOrder,
-      );
+  final repo = ref.read(nearbyGamesRepositoryProvider);
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (games) => games,
-  );
+  final result = await repo.getAllGames(sportId: params.sportId);
+  return result.fold((f) => throw Exception(f.message), (g) => g);
 });

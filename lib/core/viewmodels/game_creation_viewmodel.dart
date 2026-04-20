@@ -1,32 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/core/game_creation_model.dart';
 import '../services/storage_service.dart';
 import '../../services/moderation_service.dart';
-import '../../features/games/domain/repositories/games_repository.dart';
-import '../../features/games/data/repositories/games_repository_impl.dart';
-import '../../features/games/data/datasources/supabase_games_datasource.dart';
 import '../../routes/route_arguments.dart';
-import '../utils/game_creation_mapper.dart';
-import 'package:intl/intl.dart';
 
 class GameCreationViewModel extends ChangeNotifier {
   GameCreationModel _state = GameCreationModel.initial();
   final StorageService _storageService = StorageService();
-  late final GamesRepository _gamesRepository;
 
-  // Available venues for demo - in real app this would come from API
+  // DB-loaded sports and variants
+  List<Map<String, dynamic>> _dbSports = [];
+  List<Map<String, dynamic>> _dbVariants = [];
+  bool _sportsLoading = false;
+
+  // Available venues loaded from venue_spaces
   List<VenueSlot> _availableVenues = [];
   List<String> _recentTeammates = [];
 
   GameCreationViewModel() {
-    // Initialize the repository
-    final supabase = Supabase.instance.client;
-    final dataSource = SupabaseGamesDataSource(supabase);
-    _gamesRepository = GamesRepositoryImpl(remoteDataSource: dataSource);
+    loadDbSports();
   }
 
   GameCreationModel get state => _state;
+  List<Map<String, dynamic>> get dbSports => List.unmodifiable(_dbSports);
+  List<Map<String, dynamic>> get dbVariants => List.unmodifiable(_dbVariants);
+  bool get sportsLoading => _sportsLoading;
   List<VenueSlot> get availableVenues => List.unmodifiable(_availableVenues);
   List<String> get recentTeammates => List.unmodifiable(_recentTeammates);
 
@@ -332,17 +332,88 @@ class GameCreationViewModel extends ChangeNotifier {
     return 'draft_${DateTime.now().millisecondsSinceEpoch}';
   }
 
+  // ── DB loaders ────────────────────────────────────────────────────────────
+
+  Future<void> loadDbSports() async {
+    _sportsLoading = true;
+    notifyListeners();
+    try {
+      final response = await Supabase.instance.client
+          .from('sports')
+          .select('id, sport_key, name_en, emoji')
+          .eq('is_active', true)
+          .eq('is_challenge_sport', true)
+          .order('name_en');
+      _dbSports = List<Map<String, dynamic>>.from(response as List);
+    } catch (_) {
+      _dbSports = [];
+    }
+    _sportsLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> loadDbVariants(String sportId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('sport_variants')
+          .select('id, name_en, required_players, players_per_side')
+          .eq('sport_id', sportId)
+          .eq('is_active', true)
+          .order('name_en');
+      _dbVariants = List<Map<String, dynamic>>.from(response as List);
+    } catch (_) {
+      _dbVariants = [];
+    }
+    notifyListeners();
+  }
+
+  // ── Sport / Variant selection ──────────────────────────────────────────────
+
+  void selectDbSport(String sportId, String nameEn, String emoji) {
+    _state = _state.clearVariant().copyWith(
+      selectedSport: nameEn,
+      selectedSportId: sportId,
+    );
+    _dbVariants = [];
+    notifyListeners();
+    loadDbVariants(sportId);
+    autoSaveDraft();
+  }
+
+  void selectDbVariant(Map<String, dynamic> variant) {
+    final required = variant['required_players'] as int;
+    final perSide = variant['players_per_side'] as int;
+    _state = _state.copyWith(
+      selectedVariantId: variant['id'] as String,
+      requiredPlayers: required,
+      playersPerSide: perSide,
+      maxPlayers: required,
+      gameDuration: 60,
+      // Clear venue when variant changes
+      selectedVenueSlot: null,
+      venueSpaceId: null,
+    );
+    notifyListeners();
+    autoSaveDraft();
+  }
+
+  void updatePreciseStartTime(TimeOfDay time) {
+    _state = _state.copyWith(selectedStartTime: time);
+    notifyListeners();
+    autoSaveDraft();
+  }
+
+  // ── Legacy helpers (kept for draft restore compat) ─────────────────────────
+
   // Step 1: Sport & Format Selection
   void selectSport(String sport) {
     _state = _state.copyWith(
       selectedSport: sport,
-      selectedFormat: null, // Don't pre-select format
-      maxPlayers: null, // Reset to null until format is selected
-      gameDuration: null, // Reset to null until format is selected
+      selectedFormat: null,
+      maxPlayers: null,
+      gameDuration: null,
     );
     notifyListeners();
-
-    // Auto-save after sport selection
     autoSaveDraft();
   }
 
@@ -353,8 +424,6 @@ class GameCreationViewModel extends ChangeNotifier {
       gameDuration: format.defaultDuration.inMinutes,
     );
     notifyListeners();
-
-    // Auto-save after format selection
     autoSaveDraft();
   }
 
@@ -367,10 +436,19 @@ class GameCreationViewModel extends ChangeNotifier {
   }
 
   void selectSkillLevel(String skillLevel) {
-    _state = _state.copyWith(skillLevel: skillLevel);
+    final (minS, maxS) = switch (skillLevel.toLowerCase()) {
+      'beginner'     => (1, 3),
+      'intermediate' => (4, 6),
+      'advanced'     => (7, 8),
+      'professional' => (9, 10),
+      _              => (1, 10),
+    };
+    _state = _state.copyWith(
+      skillLevel: skillLevel,
+      minSkill: minS,
+      maxSkill: maxS,
+    );
     notifyListeners();
-
-    // Auto-save after skill level selection
     autoSaveDraft();
   }
 
@@ -393,105 +471,57 @@ class GameCreationViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Build select columns
-      String selectColumns =
-          'id,name_en,address_line1,city,amenities,is_active,lat,lng,is_indoor,surface_type,min_price_per_hour,max_price_per_hour,rating,rating_count';
-
-      // Add venue_spaces join if sport filter is needed
-      if (_state.selectedSport != null) {
-        selectColumns += ',venue_spaces(sport,is_active)';
+      final variantId = _state.selectedVariantId;
+      if (variantId == null) {
+        _availableVenues = [];
+        _state = _state.copyWith(isLoading: false);
+        notifyListeners();
+        return;
       }
 
-      // Build query with filters
-      var query = Supabase.instance.client
-          .from('venues')
-          .select(selectColumns)
+      final response = await Supabase.instance.client
+          .from('venue_spaces')
+          .select(
+            'id, name_en, joining_rule, price_per_hour, venue:venues(id, name_en, address_en, area, rating, lat, lng)',
+          )
+          .eq('sport_variant_id', variantId)
           .eq('is_active', true);
 
-      // Apply amenity filters if set
-      if (_state.amenityFilters != null && _state.amenityFilters!.isNotEmpty) {
-        query = query.overlaps('amenities', _state.amenityFilters!);
-      }
+      final date =
+          _state.selectedDate ?? DateTime.now().add(const Duration(days: 1));
+      final startHour = _state.selectedStartTime?.hour ?? 18;
+      final startMinute = _state.selectedStartTime?.minute ?? 0;
 
-      final response = await query.order('name_en');
+      _availableVenues = (response as List).map((raw) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        final venue = row['venue'] as Map<String, dynamic>? ?? {};
+        final startAt = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          startHour,
+          startMinute,
+        );
+        final location =
+            (venue['address_en'] as String?)?.trim() ??
+            (venue['area'] as String?)?.trim() ??
+            '';
 
-      if (response.isNotEmpty) {
-        _availableVenues = response
-            .map((raw) {
-              final venueData = Map<String, dynamic>.from(raw as Map);
-
-              // Filter by sport if selected (client-side filter on venue_spaces)
-              if (_state.selectedSport != null) {
-                final spaces = venueData['venue_spaces'];
-                if (spaces is List) {
-                  final hasSportSpace = spaces.any((space) {
-                    if (space is Map<String, dynamic>) {
-                      return space['sport'] ==
-                              _state.selectedSport?.toLowerCase() &&
-                          (space['is_active'] ?? true);
-                    }
-                    return false;
-                  });
-                  if (!hasSportSpace) return null;
-                } else if (spaces == null) {
-                  // No spaces data, skip this venue
-                  return null;
-                }
-              }
-
-              // Create VenueSlot from database data
-              final tomorrow =
-                  _state.selectedDate ??
-                  DateTime.now().add(const Duration(days: 1));
-              final startAt = DateTime(
-                tomorrow.year,
-                tomorrow.month,
-                tomorrow.day,
-                18,
-                0,
-              );
-              final address = (venueData['address_line1'] as String?)?.trim();
-              final city = (venueData['city'] as String?)?.trim();
-              final location = [address, city]
-                  .where((e) => e != null && e.isNotEmpty)
-                  .cast<String>()
-                  .join(', ');
-
-              // Extract amenities
-              Map<String, dynamic>? amenitiesMap;
-              if (venueData['amenities'] != null) {
-                final amenitiesList = venueData['amenities'];
-                if (amenitiesList is List) {
-                  amenitiesMap = {'list': amenitiesList};
-                }
-              }
-
-              return VenueSlot(
-                venueId: venueData['id'].toString(),
-                venueName:
-                    (venueData['name_en'] as String?)?.trim() ??
-                    'Unknown Venue',
-                location: location,
-                rating: (venueData['rating'] as num?)?.toDouble() ?? 0.0,
-                timeSlot: TimeSlot(
-                  startTime: startAt,
-                  duration: Duration(minutes: _state.gameDuration ?? 90),
-                  price:
-                      (venueData['min_price_per_hour'] as num?)?.toDouble() ??
-                      0.0,
-                ),
-                amenities: amenitiesMap,
-              );
-            })
-            .whereType<VenueSlot>()
-            .toList(growable: false);
-      } else {
-        _availableVenues = const [];
-      }
+        return VenueSlot(
+          venueId: (venue['id'] as String?) ?? '',
+          venueSpaceId: row['id'] as String?,
+          venueName: (venue['name_en'] as String?)?.trim() ?? 'Unknown Venue',
+          location: location,
+          rating: (venue['rating'] as num?)?.toDouble() ?? 0.0,
+          timeSlot: TimeSlot(
+            startTime: startAt,
+            duration: Duration(minutes: _state.gameDuration ?? 60),
+            price: (row['price_per_hour'] as num?)?.toDouble() ?? 0.0,
+          ),
+        );
+      }).toList(growable: false);
 
       _state = _state.copyWith(isLoading: false, error: null);
-      // Debug: log count to help diagnose empty lists
-      // ignore: avoid_print
     } catch (e) {
       _state = _state.copyWith(
         isLoading: false,
@@ -505,6 +535,7 @@ class GameCreationViewModel extends ChangeNotifier {
   void selectVenueSlot(VenueSlot venueSlot) {
     _state = _state.copyWith(
       selectedVenueSlot: venueSlot,
+      venueSpaceId: venueSlot.venueSpaceId,
       totalCost: venueSlot.timeSlot.price,
     );
     notifyListeners();
@@ -651,95 +682,88 @@ class GameCreationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Final game creation
+  // Final game creation — calls rpc_create_game
   Future<bool> createGame() async {
     _state = _state.copyWith(isLoading: true, error: null);
     notifyListeners();
 
     try {
-      // Get current user ID
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        throw Exception('User not authenticated');
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) throw Exception('User not authenticated');
+
+      // Validate required fields
+      if (_state.selectedSportId == null) {
+        throw Exception('Please select a sport');
+      }
+      if (_state.selectedVariantId == null) {
+        throw Exception('Please select a match format');
+      }
+      if (_state.selectedDate == null || _state.selectedStartTime == null) {
+        throw Exception('Please select a date and start time');
       }
 
-      // Check cooldown before allowing game creation
+      // Rate-limit check
       final moderationService = ModerationService();
       final cooldownResult = await moderationService.checkAndBumpCooldown(
         'game.create',
-        windowSeconds: 86400, // 24 hour window
-        limitCount: 5, // 5 games per day
+        windowSeconds: 86400,
+        limitCount: 5,
       );
-
       if (!cooldownResult.allowed) {
-        final resetTime = DateFormat(
-          'MMM d, HH:mm',
-        ).format(cooldownResult.resetAt);
+        final resetTime = DateFormat('MMM d, HH:mm').format(cooldownResult.resetAt);
         throw Exception(
-          'You\'ve reached the game creation limit. You can create another game at $resetTime. '
-          'Remaining: ${cooldownResult.remaining} games.',
+          'Daily game creation limit reached. Try again at $resetTime.',
         );
       }
 
-      // Validate required fields
-      if (_state.gameTitle == null || _state.gameTitle!.isEmpty) {
-        throw Exception('Game title is required');
-      }
-      if (_state.selectedSport == null) {
-        throw Exception('Sport selection is required');
-      }
-      // Validate date and time selection
-      if (_state.selectedDate == null ||
-          _state.selectedVenueSlot?.timeSlot.startTime == null) {
-        throw Exception('Please select a valid date and time');
-      }
-      // Enforce start time at least 2 hours in the future
-      final selectedDate = _state.selectedDate!;
-      final selectedStart = _state.selectedVenueSlot!.timeSlot.startTime;
-      final startAt = DateTime(
-        selectedDate.year,
-        selectedDate.month,
-        selectedDate.day,
-        selectedStart.hour,
-        selectedStart.minute,
-      );
-      final minStart = DateTime.now().add(const Duration(hours: 2));
-      if (!startAt.isAfter(minStart)) {
-        throw Exception('Start time must be at least 2 hours from now');
-      }
-      // Get profile_id from user_id
-      final supabase = Supabase.instance.client;
-      final profileResponse = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('is_active', true)
-          .limit(1)
-          .maybeSingle();
+      const actorType = 'player';
 
-      if (profileResponse == null) {
-        throw Exception(
-          'No active profile found. Please create a profile first.',
-        );
+      // Build timestamps
+      final date = _state.selectedDate!;
+      final t = _state.selectedStartTime!;
+      final startAt = DateTime(date.year, date.month, date.day, t.hour, t.minute);
+      final endAt = startAt.add(const Duration(hours: 1));
+
+      if (!endAt.isAfter(startAt)) {
+        throw Exception('End time must be after start time.');
       }
 
-      final profileId = profileResponse['id'] as String;
+      // Build optional rules jsonb
+      final rules = <String, dynamic>{};
+      if (_state.gameDuration != null) {
+        rules['duration_minutes'] = _state.gameDuration;
+      }
+      if (_state.gameDescription != null && _state.gameDescription!.isNotEmpty) {
+        rules['notes'] = _state.gameDescription;
+      }
 
-      // Use mapper to create database payload
-      final gameData = GameCreationMapper.toDatabasePayload(
-        model: _state,
-        hostUserId: user.id,
-        hostProfileId: profileId,
-      );
+      // Call RPC
+      final params = <String, dynamic>{
+        'p_actor_type': actorType,
+        'p_sport_id': _state.selectedSportId!,
+        'p_sport_variant_id': _state.selectedVariantId!,
+        'p_start_at': startAt.toIso8601String(),
+        'p_end_at': endAt.toIso8601String(),
+        'p_bench_slots': 0,
+        'p_listing_visibility': _state.listingVisibility ?? 'public',
+        'p_join_policy': _state.joinPolicy ?? 'open',
+        'p_allow_spectators': _state.allowSpectators ?? false,
+        'p_allows_waitlist': _state.allowWaitlist ?? false,
+      };
+      if (_state.gameTitle != null && _state.gameTitle!.isNotEmpty) {
+        params['p_title'] = _state.gameTitle;
+      }
+      if (_state.venueSpaceId != null) {
+        params['p_venue_space_id'] = _state.venueSpaceId;
+      }
+      if (_state.minSkill != null) params['p_min_skill'] = _state.minSkill;
+      if (_state.maxSkill != null) params['p_max_skill'] = _state.maxSkill;
+      if (rules.isNotEmpty) params['p_rules'] = rules;
 
-      // Create game via repository
-      final result = await _gamesRepository.createGame(gameData);
+      await supabase.rpc('rpc_create_game', params: params);
 
-      result.fold((failure) {
-        throw Exception(failure.message);
-      }, (game) {});
-
-      // If this was a draft, delete it after successful creation
+      // Delete draft on success
       if (_state.isDraft && _state.draftId != null) {
         await deleteDraft(_state.draftId!);
       }
@@ -747,10 +771,30 @@ class GameCreationViewModel extends ChangeNotifier {
       _state = _state.copyWith(isLoading: false);
       notifyListeners();
       return true;
+    } on PostgrestException catch (e) {
+      String message;
+      if (e.code == 'P0001') {
+        message = switch (e.message) {
+          'sport_not_challenge_eligible' =>
+            'This sport is not available for challenge games.',
+          'invalid_sport_variant' =>
+            'Invalid match format for this sport.',
+          'invalid_time_range' => 'End time must be after start time.',
+          'invalid_bench_slots' => 'Invalid bench slots for this format.',
+          'creator_profile_not_found' =>
+            'Profile not found. Please complete your profile first.',
+          _ => e.message,
+        };
+      } else {
+        message = 'Database error: ${e.message}';
+      }
+      _state = _state.copyWith(isLoading: false, error: message);
+      notifyListeners();
+      return false;
     } catch (e) {
       _state = _state.copyWith(
         isLoading: false,
-        error: 'Failed to create game: $e',
+        error: e.toString().replaceFirst('Exception: ', ''),
       );
       notifyListeners();
       return false;

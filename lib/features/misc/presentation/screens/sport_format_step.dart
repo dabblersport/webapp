@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dabbler/data/models/core/game_creation_model.dart';
 import 'package:dabbler/core/viewmodels/game_creation_viewmodel.dart';
-import 'package:dabbler/core/utils/sports_config.dart';
 import 'package:dabbler/themes/app_theme.dart';
 
 class SportFormatStep extends StatefulWidget {
@@ -22,9 +21,8 @@ class _SportFormatStepState extends State<SportFormatStep> {
   final GlobalKey _skillLevelSelectionKey = GlobalKey();
   final GlobalKey _durationSelectionKey = GlobalKey();
 
-  // Date and time selection state
+  // Date selection state
   DateTime? _selectedDate;
-  String? _selectedTimeSlot;
 
   @override
   void initState() {
@@ -36,38 +34,20 @@ class _SportFormatStepState extends State<SportFormatStep> {
 
   void _restoreLocalState() {
     final state = widget.viewModel.state;
-
-    // Restore date and time slot from saved draft
     _selectedDate = state.selectedDate;
-    _selectedTimeSlot = state.selectedTimeSlot;
-
-    // Restore any additional local state
     if (state.stepLocalState != null) {
       final localState = state.stepLocalState!;
       if (localState['selectedDate'] != null) {
-        _selectedDate = DateTime.parse(localState['selectedDate']);
-      }
-      if (localState['selectedTimeSlot'] != null) {
-        _selectedTimeSlot = localState['selectedTimeSlot'];
+        _selectedDate = DateTime.parse(localState['selectedDate'] as String);
       }
     }
   }
 
   void _saveLocalState() {
-    // Save current local state to the view model
-    final localState = {
-      'selectedDate': _selectedDate?.toIso8601String(),
-      'selectedTimeSlot': _selectedTimeSlot,
-    };
-
+    final localState = {'selectedDate': _selectedDate?.toIso8601String()};
     widget.viewModel.updateStepLocalState(localState);
-
-    // Also update the main state
     if (_selectedDate != null) {
       widget.viewModel.updateSelectedDate(_selectedDate!);
-    }
-    if (_selectedTimeSlot != null) {
-      widget.viewModel.updateSelectedTimeSlot(_selectedTimeSlot!);
     }
   }
 
@@ -103,20 +83,14 @@ class _SportFormatStepState extends State<SportFormatStep> {
   void _scrollToRequiredSection() {
     final state = widget.viewModel.state;
 
-    // Add longer delay to ensure widgets are fully rendered
     Future.delayed(const Duration(milliseconds: 100), () {
-      // Determine next required action based on current state
-      if (state.selectedSport == null) {
-        // No scroll needed, sport selection is at top
+      if (state.selectedSportId == null) {
         return;
-      } else if (state.selectedFormat == null) {
+      } else if (state.selectedVariantId == null) {
         _scrollToNextSection(_formatSectionKey);
-      } else if (state.gameType == null) {
-        // Game type selection is after format
-        return; // Will scroll when game type section is visible
       } else if (_selectedDate == null) {
         _scrollToNextSection(_dateSelectionKey);
-      } else if (_selectedTimeSlot == null) {
+      } else if (state.selectedStartTime == null) {
         _scrollToNextSection(_timeSlotSelectionKey);
       } else if (state.skillLevel == null) {
         _scrollToNextSection(_skillLevelSelectionKey);
@@ -152,7 +126,6 @@ class _SportFormatStepState extends State<SportFormatStep> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _selectedTimeSlot = null; // Reset time slot when date changes
       });
 
       // Save local state for draft
@@ -173,8 +146,9 @@ class _SportFormatStepState extends State<SportFormatStep> {
         final state = widget.viewModel.state;
         final selectedFormat = state.selectedFormat;
         final selectedSport = state.selectedSport;
+        final selectedVariantId = state.selectedVariantId;
         final skillLevel = state.skillLevel;
-        final maxPlayers = state.maxPlayers;
+        final maxPlayers = state.requiredPlayers ?? state.maxPlayers;
         final gameDuration = state.gameDuration;
 
         return SingleChildScrollView(
@@ -218,13 +192,13 @@ class _SportFormatStepState extends State<SportFormatStep> {
               ],
 
               // Game Type Selection
-              if (selectedSport != null && selectedFormat != null) ...[
+              if (selectedSport != null && selectedVariantId != null) ...[
                 _buildGameTypeSelection(context, state.gameType),
                 const SizedBox(height: 32),
               ],
 
               // Game Settings
-              if (selectedSport != null && selectedFormat != null) ...[
+              if (selectedSport != null && selectedVariantId != null) ...[
                 Container(
                   key: _gameSettingsKey,
                   child: _buildGameSettings(
@@ -243,6 +217,9 @@ class _SportFormatStepState extends State<SportFormatStep> {
   }
 
   Widget _buildSportSelection(BuildContext context, String? selectedSport) {
+    final dbSports = widget.viewModel.dbSports;
+    final isLoading = widget.viewModel.sportsLoading;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -254,44 +231,56 @@ class _SportFormatStepState extends State<SportFormatStep> {
           ),
         ),
         const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: SportsConfig.allSports.map((sport) {
-                final isSelected = selectedSport == sport.displayName;
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: _buildSportCard(
-                    context,
-                    sport: sport,
-                    isSelected: isSelected,
-                    onTap: () {
-                      widget.viewModel.selectSport(sport.displayName);
-                      // Always scroll to format section after sport selection with increased delay
-                      Future.delayed(const Duration(milliseconds: 200), () {
-                        _scrollToFormatSection();
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: dbSports.map((sport) {
+                  final isSelected =
+                      selectedSport == sport['name_en'] as String?;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _buildDbSportCard(
+                      context,
+                      sport: sport,
+                      isSelected: isSelected,
+                      onTap: () {
+                        widget.viewModel.selectDbSport(
+                          sport['id'] as String,
+                          sport['name_en'] as String,
+                          (sport['emoji'] as String?) ?? '',
+                        );
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          _scrollToFormatSection();
+                        });
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildSportCard(
+  Widget _buildDbSportCard(
     BuildContext context, {
-    required Sport sport,
+    required Map<String, dynamic> sport,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final emoji = (sport['emoji'] as String?) ?? '🏅';
+    final name = sport['name_en'] as String? ?? '';
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -317,18 +306,17 @@ class _SportFormatStepState extends State<SportFormatStep> {
               decoration: BoxDecoration(
                 color: isSelected
                     ? context.colors.primary.withValues(alpha: 0.1)
-                    : sport.secondaryColor,
+                    : context.colors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                sport.icon,
-                size: 24,
-                color: isSelected ? context.colors.primary : sport.primaryColor,
+              child: Text(
+                emoji,
+                style: const TextStyle(fontSize: 22),
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              sport.displayName,
+              name,
               style: context.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isSelected
@@ -347,7 +335,8 @@ class _SportFormatStepState extends State<SportFormatStep> {
     String selectedSport,
     GameFormat? selectedFormat,
   ) {
-    final availableFormats = SportsConfig.getFormatsForSport(selectedSport);
+    final variants = widget.viewModel.dbVariants;
+    final selectedVariantId = widget.viewModel.state.selectedVariantId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -367,105 +356,115 @@ class _SportFormatStepState extends State<SportFormatStep> {
           ),
         ),
         const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: availableFormats.map((format) {
-                final isSelected = selectedFormat?.name == format.name;
+        if (variants.isEmpty)
+          Text(
+            'No formats available for this sport.',
+            style: context.textTheme.bodySmall?.copyWith(
+              color: context.colors.onSurfaceVariant,
+            ),
+          )
+        else
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: variants.map((variant) {
+                  final isSelected = selectedVariantId == variant['id'];
+                  final totalPlayers = variant['required_players'] as int? ?? 0;
+                  final perSide = variant['players_per_side'] as int? ?? 0;
+                  final description = perSide > 0 ? '${perSide}v$perSide' : '';
 
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: _buildFormatChip(
-                    context,
-                    format: format,
-                    isSelected: isSelected,
-                    onTap: () {
-                      widget.viewModel.selectGameFormat(format);
-                      // Scroll to next required section after format selection with increased delay
-                      Future.delayed(const Duration(milliseconds: 200), () {
-                        _scrollToRequiredSection();
-                      });
-                    },
-                  ),
-                );
-              }).toList(),
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        widget.viewModel.selectDbVariant(variant);
+                        Future.delayed(const Duration(milliseconds: 200), () {
+                          _scrollToRequiredSection();
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? context.colors.primary.withValues(alpha: 0.1)
+                              : context.violetWidgetBg,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: isSelected
+                                ? context.colors.primary
+                                : context.colors.outline.withValues(alpha: 0.1),
+                            width: isSelected ? 2 : 1,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              variant['name_en'] as String? ?? '',
+                              style: context.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? context.colors.primary
+                                    : context.colors.onSurface,
+                              ),
+                            ),
+                            if (description.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                description,
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: isSelected
+                                      ? context.colors.primary.withValues(
+                                          alpha: 0.8,
+                                        )
+                                      : context.colors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? context.colors.primary.withValues(
+                                        alpha: 0.2,
+                                      )
+                                    : context.colors.outline.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '$totalPlayers players',
+                                style: context.textTheme.bodySmall?.copyWith(
+                                  color: isSelected
+                                      ? context.colors.primary
+                                      : context.colors.onSurfaceVariant,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
           ),
-        ),
       ],
-    );
-  }
-
-  Widget _buildFormatChip(
-    BuildContext context, {
-    required GameFormat format,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? context.colors.primary.withValues(alpha: 0.1)
-              : context.violetWidgetBg,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected
-                ? context.colors.primary
-                : context.colors.outline.withValues(alpha: 0.1),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              format.name,
-              style: context.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isSelected
-                    ? context.colors.primary
-                    : context.colors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              format.description,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: isSelected
-                    ? context.colors.primary.withValues(alpha: 0.8)
-                    : context.colors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? context.colors.primary.withValues(alpha: 0.2)
-                    : context.colors.outline.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${format.totalPlayers} players',
-                style: context.textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? context.colors.primary
-                      : context.colors.onSurfaceVariant,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -497,9 +496,9 @@ class _SportFormatStepState extends State<SportFormatStep> {
           child: _buildSkillLevelSelection(context, skillLevel),
         ),
 
-        // Duration Selection - moved before player count
+        // Duration Selection
         if (_selectedDate != null &&
-            _selectedTimeSlot != null &&
+            widget.viewModel.state.selectedStartTime != null &&
             maxPlayers != null) ...[
           const SizedBox(height: 24),
           Container(
@@ -508,7 +507,7 @@ class _SportFormatStepState extends State<SportFormatStep> {
           ),
         ],
 
-        // Player Count (read-only, set by format) - only show when format is selected
+        // Player Count (read-only, locked from variant.required_players)
         if (maxPlayers != null) ...[
           const SizedBox(height: 24),
           _buildPlayerCountDisplay(context, maxPlayers),
@@ -622,7 +621,6 @@ class _SportFormatStepState extends State<SportFormatStep> {
       onTap: () {
         setState(() {
           _selectedDate = date;
-          _selectedTimeSlot = null; // Reset time slot when date changes
         });
 
         // Save local state for draft
@@ -738,122 +736,103 @@ class _SportFormatStepState extends State<SportFormatStep> {
   }
 
   Widget _buildTimeSlotSelection(BuildContext context) {
-    final timeSlots = [
-      {
-        'id': 'morning',
-        'label': 'Morning',
-        'time': '9:00 - 12:00',
-        'icon': Icons.wb_twilight,
-      },
-      {
-        'id': 'day',
-        'label': 'Day',
-        'time': '13:00 - 16:00',
-        'icon': Icons.wb_sunny,
-      },
-      {
-        'id': 'evening',
-        'label': 'Evening',
-        'time': '17:00 - 20:00',
-        'icon': Icons.wb_twilight,
-      },
-      {
-        'id': 'night',
-        'label': 'Night',
-        'time': '21:00 - 00:00',
-        'icon': Icons.nightlight_round,
-      },
-    ];
+    final selectedTime = widget.viewModel.state.selectedStartTime;
+
+    String timeLabel = 'Pick a start time';
+    String endLabel = '';
+    if (selectedTime != null) {
+      final startStr =
+          '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+      final endHour = (selectedTime.hour + 1) % 24;
+      final endStr =
+          '${endHour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}';
+      timeLabel = startStr;
+      endLabel = '→ $endStr (+1 h)';
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Select Time Slot',
+          'Start Time',
           style: context.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
             color: context.colors.onSurface,
           ),
         ),
         const SizedBox(height: 12),
-
-        Align(
-          alignment: Alignment.centerLeft,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+        GestureDetector(
+          onTap: () async {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: selectedTime ?? const TimeOfDay(hour: 18, minute: 0),
+              builder: (context, child) => Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: Theme.of(context).colorScheme.copyWith(
+                    primary: context.colors.primary,
+                    onPrimary: context.colors.onPrimary,
+                  ),
+                ),
+                child: child!,
+              ),
+            );
+            if (picked != null) {
+              widget.viewModel.updatePreciseStartTime(picked);
+              _saveLocalState();
+              Future.delayed(const Duration(milliseconds: 200), () {
+                _scrollToRequiredSection();
+              });
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: selectedTime != null
+                  ? context.colors.primary.withValues(alpha: 0.1)
+                  : context.violetWidgetBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selectedTime != null
+                    ? context.colors.primary
+                    : context.colors.outline.withValues(alpha: 0.1),
+                width: selectedTime != null ? 2 : 1,
+              ),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: timeSlots.map((slot) {
-                final isSelected = _selectedTimeSlot == slot['id'];
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedTimeSlot = slot['id'] as String;
-                      });
-
-                      // Save local state for draft
-                      _saveLocalState();
-
-                      // Scroll to next required section after time slot selection with increased delay
-                      Future.delayed(const Duration(milliseconds: 200), () {
-                        _scrollToRequiredSection();
-                      });
-                    },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? context.colors.primary.withValues(alpha: 0.1)
-                            : context.violetWidgetBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected
-                              ? context.colors.primary
-                              : context.colors.outline.withValues(alpha: 0.1),
-                          width: isSelected ? 2 : 1,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            slot['icon'] as IconData,
-                            size: 24,
-                            color: isSelected
-                                ? context.colors.primary
-                                : context.colors.onSurface,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            slot['label'] as String,
-                            style: context.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? context.colors.primary
-                                  : context.colors.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            slot['time'] as String,
-                            style: context.textTheme.bodySmall?.copyWith(
-                              color: isSelected
-                                  ? context.colors.primary.withValues(
-                                      alpha: 0.8,
-                                    )
-                                  : context.colors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.access_time,
+                  size: 22,
+                  color: selectedTime != null
+                      ? context.colors.primary
+                      : context.colors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      timeLabel,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: selectedTime != null
+                            ? context.colors.primary
+                            : context.colors.onSurface,
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
+                    if (endLabel.isNotEmpty)
+                      Text(
+                        endLabel,
+                        style: context.textTheme.bodySmall?.copyWith(
+                          color: context.colors.primary.withValues(alpha: 0.8),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

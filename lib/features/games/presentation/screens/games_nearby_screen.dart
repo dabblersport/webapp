@@ -10,19 +10,16 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/themes/app_theme.dart';
 
 // =============================================================================
 // SCREEN
 // =============================================================================
 
-/// Renders the Games Nearby list inside the Sports → Games tab.
-///
-/// Accepts [sportId] (nullable) forwarded from the sport-chip selection above.
 class GamesNearbyScreen extends ConsumerStatefulWidget {
   const GamesNearbyScreen({super.key, this.sportId});
 
-  /// UUID of the selected sport filter, or null for "all sports".
   final String? sportId;
 
   @override
@@ -53,7 +50,6 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
     final result = await NearbyFilterSheet.show(context);
     if (result == null || !mounted) return;
     ref.read(nearbyGameSortProvider.notifier).state = result.sortOrder;
-    // Radius update is handled by NearbyRadiusSlider inside the sheet.
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -61,27 +57,19 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
   @override
   Widget build(BuildContext context) {
     final locAsync = ref.watch(activeLocationProvider);
-
-    return locAsync.when(
-      loading: () => _buildSkeletons(),
-      error: (_, __) => _buildDeniedState(),
-      data: (locState) => switch (locState) {
-        ActiveLocationLoading() => _buildSkeletons(),
-        ActiveLocationDenied() => _buildDeniedState(),
-        ActiveLocationError() => _buildDeniedState(),
-        ActiveLocationReady(:final location) => _buildReady(location),
-      },
-    );
+    final locState = locAsync.valueOrNull;
+    final location =
+        locState is ActiveLocationReady ? locState.location : null;
+    return _buildContent(location);
   }
 
-  Widget _buildReady(ActiveLocation location) {
+  Widget _buildContent(ActiveLocation? location) {
     final sortOrder = ref.watch(nearbyGameSortProvider);
-    final radiusMeters = location.nearbyRadiusMeters;
 
     final params = (
-      lat: location.lat,
-      lng: location.lng,
-      radiusMeters: radiusMeters,
+      lat: location?.lat,
+      lng: location?.lng,
+      radiusMeters: location?.nearbyRadiusMeters,
       sportId: widget.sportId,
       sortOrder: sortOrder,
     );
@@ -91,20 +79,30 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Filter bar ───────────────────────────────────────────────────
-        _FilterBar(
-          areaName: location.area.name,
-          radiusMeters: radiusMeters,
-          sortOrder: sortOrder,
-          onFilterTap: _openFilterSheet,
-        ),
+        // ── Location selector (only when location available) ─────────────
+        if (location != null) const HomeLocationBar(),
+
+        // ── Filter / location bar ─────────────────────────────────────────
+        if (location != null)
+          _FilterBar(
+            areaName: location.area.name,
+            radiusMeters: location.nearbyRadiusMeters,
+            sortOrder: sortOrder,
+            onFilterTap: _openFilterSheet,
+          )
+        else
+          _NoLocationBanner(
+            onEnableGps: () =>
+                ref.read(activeLocationProvider.notifier).useGpsLocation(),
+            onFilterTap: _openFilterSheet,
+          ),
 
         // ── List ─────────────────────────────────────────────────────────
         gamesAsync.when(
           loading: () => _buildSkeletons(),
           error: (e, _) => _buildErrorState(e, params),
           data: (games) => games.isEmpty
-              ? _buildEmptyState(radiusMeters)
+              ? _buildEmptyState(location)
               : _NearbyGameList(games: games),
         ),
       ],
@@ -125,10 +123,16 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
     );
   }
 
-  Widget _buildEmptyState(int radiusMeters) {
+  Widget _buildEmptyState(ActiveLocation? location) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final km = (radiusMeters / 1000).round();
+
+    final message = location != null
+        ? 'No games within ${(location.nearbyRadiusMeters / 1000).round()} km'
+        : 'No upcoming games found';
+    final hint = location != null
+        ? 'Try expanding your search radius in the filter.'
+        : 'Be the first to create a game!';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
@@ -143,61 +147,24 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No games within $km km',
+              message,
               style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try expanding your search radius in the filter.',
+              hint,
               style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _openFilterSheet,
-              icon: const Icon(Iconsax.setting_4_copy, size: 18),
-              label: const Text('Adjust filters'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeniedState() {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Iconsax.location_slash_copy,
-              size: 56,
-              color: cs.error.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Location unavailable',
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Enable location or set a saved location to see games nearby.',
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: () =>
-                  ref.read(activeLocationProvider.notifier).useGpsLocation(),
-              icon: const Icon(Iconsax.gps_copy, size: 18),
-              label: const Text('Enable GPS'),
-            ),
+            if (location != null) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _openFilterSheet,
+                icon: const Icon(Iconsax.setting_4_copy, size: 18),
+                label: const Text('Adjust filters'),
+              ),
+            ],
           ],
         ),
       ),
@@ -234,6 +201,74 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// NO-LOCATION BANNER
+// =============================================================================
+
+class _NoLocationBanner extends StatelessWidget {
+  const _NoLocationBanner({
+    required this.onEnableGps,
+    required this.onFilterTap,
+  });
+
+  final VoidCallback onEnableGps;
+  final VoidCallback onFilterTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final sportsScheme = context.getCategoryTheme('main');
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          Icon(Iconsax.location_slash_copy, size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Expanded(
+            child: GestureDetector(
+              onTap: onEnableGps,
+              child: Text(
+                'Enable location to filter by distance',
+                style: tt.bodySmall?.copyWith(
+                  color: cs.primary,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onFilterTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: sportsScheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Iconsax.setting_4_copy, size: 14, color: sportsScheme.primary),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Filter',
+                    style: tt.labelSmall?.copyWith(
+                      color: sportsScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -374,7 +409,7 @@ class _NearbyGameCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Title row with distance badge ──────────────────
+                    // ── Title row with optional distance badge ─────────────
                     Row(
                       children: [
                         Expanded(
@@ -387,16 +422,18 @@ class _NearbyGameCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _DistanceBadge(
-                          label: game.distanceLabel,
-                          cs: cs,
-                        ),
+                        if (game.distanceMeters > 0) ...[
+                          const SizedBox(width: 8),
+                          _DistanceBadge(
+                            label: game.distanceLabel,
+                            cs: cs,
+                          ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 6),
 
-                    // ── Sport + Status row ─────────────────────────────
+                    // ── Sport + Status row ─────────────────────────────────
                     Row(
                       children: [
                         if (game.sportName?.isNotEmpty == true) ...[
@@ -412,7 +449,7 @@ class _NearbyGameCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
 
-                    // ── Scheduled time ─────────────────────────────────
+                    // ── Scheduled time ─────────────────────────────────────
                     if (game.scheduledAt != null)
                       Row(
                         children: [
@@ -430,7 +467,7 @@ class _NearbyGameCard extends StatelessWidget {
                         ],
                       ),
 
-                    // ── Venue ──────────────────────────────────────────
+                    // ── Venue ──────────────────────────────────────────────
                     if (game.venueName?.isNotEmpty == true) ...[
                       const SizedBox(height: 4),
                       Row(
@@ -454,7 +491,7 @@ class _NearbyGameCard extends StatelessWidget {
                       ),
                     ],
 
-                    // ── Spots remaining ────────────────────────────────
+                    // ── Spots remaining ────────────────────────────────────
                     if (game.spotsRemaining != null) ...[
                       const SizedBox(height: 8),
                       _SmallChip(
@@ -481,7 +518,6 @@ class _NearbyGameCard extends StatelessWidget {
     );
   }
 
-  /// "Today 6 PM" / "Tomorrow 10 AM" / "14 Apr  3 PM"
   static String _formatScheduledTime(DateTime dt) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);

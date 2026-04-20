@@ -239,6 +239,7 @@ class TimeSlot {
 
 class VenueSlot {
   final String venueId;
+  final String? venueSpaceId; // uuid from venue_spaces table
   final String venueName;
   final String location;
   final TimeSlot timeSlot;
@@ -248,6 +249,7 @@ class VenueSlot {
 
   const VenueSlot({
     required this.venueId,
+    this.venueSpaceId,
     required this.venueName,
     required this.location,
     required this.timeSlot,
@@ -259,6 +261,7 @@ class VenueSlot {
   Map<String, dynamic> toJson() {
     return {
       'venueId': venueId,
+      'venueSpaceId': venueSpaceId,
       'venueName': venueName,
       'location': location,
       'timeSlot': {
@@ -281,17 +284,29 @@ class GameCreationModel {
 
   // Sport & Format Selection
   final String? selectedSport;
+  final String? selectedSportId;    // uuid from public.sports
+  final String? selectedVariantId;  // uuid from public.sport_variants
+  final int? requiredPlayers;       // locked from variant.required_players
+  final int? playersPerSide;        // from variant.players_per_side
   final GameFormat? selectedFormat;
   final String? skillLevel;
+  final int? minSkill;              // derived from skill level label
+  final int? maxSkill;
   final int? maxPlayers;
   final int? gameDuration; // in minutes
   final String? gameType; // pickup, training, league
+  final TimeOfDay? selectedStartTime; // precise start time
 
   // Venue & Slot Selection
   final VenueSlot? selectedVenueSlot;
+  final String? venueSpaceId;       // uuid from public.venue_spaces
   final List<String>? amenityFilters;
   final List<String>? venueFilters;
   final double? maxDistance;
+
+  // Access control
+  final String? listingVisibility; // public | friends | private | link
+  final String? joinPolicy;        // open | request | invite | link
 
   // Participation & Payment
   final ParticipationMode? participationMode;
@@ -336,17 +351,29 @@ class GameCreationModel {
 
     // Sport & Format Selection
     this.selectedSport,
+    this.selectedSportId,
+    this.selectedVariantId,
+    this.requiredPlayers,
+    this.playersPerSide,
     this.selectedFormat,
     this.skillLevel,
+    this.minSkill,
+    this.maxSkill,
     this.maxPlayers,
     this.gameDuration,
     this.gameType,
+    this.selectedStartTime,
 
     // Venue & Slot Selection
     this.selectedVenueSlot,
+    this.venueSpaceId,
     this.amenityFilters,
     this.venueFilters,
     this.maxDistance,
+
+    // Access control
+    this.listingVisibility,
+    this.joinPolicy,
 
     // Participation & Payment
     this.participationMode,
@@ -396,17 +423,29 @@ class GameCreationModel {
 
     // Sport & Format Selection
     String? selectedSport,
+    String? selectedSportId,
+    String? selectedVariantId,
+    int? requiredPlayers,
+    int? playersPerSide,
     GameFormat? selectedFormat,
     String? skillLevel,
+    int? minSkill,
+    int? maxSkill,
     int? maxPlayers,
     int? gameDuration,
     String? gameType,
+    TimeOfDay? selectedStartTime,
 
     // Venue & Slot Selection
     VenueSlot? selectedVenueSlot,
+    String? venueSpaceId,
     List<String>? amenityFilters,
     List<String>? venueFilters,
     double? maxDistance,
+
+    // Access control
+    String? listingVisibility,
+    String? joinPolicy,
 
     // Participation & Payment
     ParticipationMode? participationMode,
@@ -451,17 +490,29 @@ class GameCreationModel {
 
       // Sport & Format Selection
       selectedSport: selectedSport ?? this.selectedSport,
+      selectedSportId: selectedSportId ?? this.selectedSportId,
+      selectedVariantId: selectedVariantId ?? this.selectedVariantId,
+      requiredPlayers: requiredPlayers ?? this.requiredPlayers,
+      playersPerSide: playersPerSide ?? this.playersPerSide,
       selectedFormat: selectedFormat ?? this.selectedFormat,
       skillLevel: skillLevel ?? this.skillLevel,
+      minSkill: minSkill ?? this.minSkill,
+      maxSkill: maxSkill ?? this.maxSkill,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       gameDuration: gameDuration ?? this.gameDuration,
       gameType: gameType ?? this.gameType,
+      selectedStartTime: selectedStartTime ?? this.selectedStartTime,
 
       // Venue & Slot Selection
       selectedVenueSlot: selectedVenueSlot ?? this.selectedVenueSlot,
+      venueSpaceId: venueSpaceId ?? this.venueSpaceId,
       amenityFilters: amenityFilters ?? this.amenityFilters,
       venueFilters: venueFilters ?? this.venueFilters,
       maxDistance: maxDistance ?? this.maxDistance,
+
+      // Access control
+      listingVisibility: listingVisibility ?? this.listingVisibility,
+      joinPolicy: joinPolicy ?? this.joinPolicy,
 
       // Participation & Payment
       participationMode: participationMode ?? this.participationMode,
@@ -499,6 +550,56 @@ class GameCreationModel {
       // Computed properties
       isLoading: isLoading ?? this.isLoading,
       error: error,
+    );
+  }
+
+  GameCreationModel clearVariant() {
+    return GameCreationModel(
+      currentStep: currentStep,
+      selectedSport: selectedSport,
+      selectedSportId: selectedSportId,
+      selectedVariantId: null,
+      requiredPlayers: null,
+      playersPerSide: null,
+      selectedFormat: null,
+      skillLevel: skillLevel,
+      minSkill: minSkill,
+      maxSkill: maxSkill,
+      maxPlayers: null,
+      gameDuration: null,
+      gameType: gameType,
+      selectedStartTime: selectedStartTime,
+      selectedVenueSlot: null,
+      venueSpaceId: null,
+      amenityFilters: amenityFilters,
+      venueFilters: venueFilters,
+      maxDistance: maxDistance,
+      listingVisibility: listingVisibility,
+      joinPolicy: joinPolicy,
+      participationMode: participationMode,
+      paymentSplit: paymentSplit,
+      totalCost: totalCost,
+      customPaymentSplit: customPaymentSplit,
+      gameDescription: gameDescription,
+      allowWaitlist: allowWaitlist,
+      maxWaitlistSize: maxWaitlistSize,
+      allowSpectators: allowSpectators,
+      invitedPlayerIds: invitedPlayerIds,
+      invitedPlayerEmails: invitedPlayerEmails,
+      allowFriendsToInvite: allowFriendsToInvite,
+      invitationMessage: invitationMessage,
+      gameTitle: gameTitle,
+      agreeToTerms: agreeToTerms,
+      sendReminders: sendReminders,
+      reminderTime: reminderTime,
+      draftId: draftId,
+      lastSaved: lastSaved,
+      isDraft: isDraft,
+      selectedDate: selectedDate,
+      selectedTimeSlot: selectedTimeSlot,
+      selectedPlayers: selectedPlayers,
+      stepLocalState: stepLocalState,
+      isLoading: isLoading,
     );
   }
 
@@ -571,15 +672,12 @@ class GameCreationModel {
 
   // Validation helpers
   bool get isStep1Valid =>
-      selectedSport != null &&
-      selectedFormat != null &&
-      gameType != null &&
+      selectedSportId != null &&
+      selectedVariantId != null &&
       skillLevel != null &&
-      maxPlayers != null &&
       selectedDate != null &&
-      selectedTimeSlot != null &&
-      gameDuration != null;
-  bool get isStep2Valid => selectedVenueSlot != null;
+      selectedStartTime != null;
+  bool get isStep2Valid => true; // venue is optional — RPC accepts null venue_space_id
   bool get isStep3Valid => true; // Player invitation is optional
   bool get isStep4Valid => participationMode != null && paymentSplit != null;
   bool get isStep5Valid =>
@@ -605,18 +703,14 @@ class GameCreationModel {
     switch (currentStep) {
       case GameCreationStep.sportAndFormat:
         final missing = <String>[];
-        if (selectedSport == null) missing.add('Sport');
-        if (selectedFormat == null) missing.add('Match Format');
-        if (gameType == null) missing.add('Game Type');
+        if (selectedSportId == null) missing.add('Sport');
+        if (selectedVariantId == null) missing.add('Match Format');
         if (skillLevel == null) missing.add('Skill Level');
-        if (maxPlayers == null) missing.add('Player Count');
         if (selectedDate == null) missing.add('Date');
-        if (selectedTimeSlot == null) missing.add('Time Slot');
-        if (gameDuration == null) missing.add('Game Duration');
+        if (selectedStartTime == null) missing.add('Start Time');
         return missing;
       case GameCreationStep.venueAndSlot:
-        if (selectedVenueSlot == null) return ['Venue'];
-        return [];
+        return []; // venue is optional
       case GameCreationStep.playerInvitation:
         return []; // Optional step
       case GameCreationStep.participationAndPayment:

@@ -9,6 +9,7 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/themes/app_theme.dart';
 
 // =============================================================================
@@ -91,6 +92,9 @@ class _VenuesNearbyScreenState extends ConsumerState<VenuesNearbyScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ── Location selector ────────────────────────────────────────────
+        const HomeLocationBar(),
+
         // ── Filter bar ───────────────────────────────────────────────────
         _FilterBar(
           areaName: location.area.name,

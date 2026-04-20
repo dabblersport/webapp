@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
@@ -27,7 +28,8 @@ import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -294,70 +296,192 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildHeader() {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
+    final topPadding = MediaQuery.of(context).padding.top + 12;
+    final deepColor =
+        HSLColor.fromColor(cs.primary).withLightness(0.15).toColor();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+        // Gradient background container
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(20, topPadding, 20, 18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [deepColor, cs.primary.withValues(alpha: 0.9)],
+            ),
+          ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Dabbler text logo
-              SvgPicture.asset(
-                'assets/images/dabbler_text_logo.svg',
-                width: 100,
-                height: 18,
-                colorFilter: ColorFilter.mode(
-                  colorScheme.onSurface,
-                  BlendMode.srcIn,
+              // Left: wordmark + location row
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/images/dabbler_text_logo.svg',
+                      width: 100,
+                      height: 18,
+                      colorFilter: const ColorFilter.mode(
+                        Colors.white,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Location row — inline Consumer, tappable to open picker
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final locAsync = ref.watch(activeLocationProvider);
+                        final locState = locAsync.valueOrNull;
+                        final locationName = locState is ActiveLocationReady
+                            ? locState.location.area.name
+                            : 'Set location';
+                        return GestureDetector(
+                          onTap: () => showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.surface,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(20),
+                              ),
+                            ),
+                            builder: (_) => DraggableScrollableSheet(
+                              initialChildSize: 0.85,
+                              minChildSize: 0.5,
+                              maxChildSize: 1.0,
+                              expand: false,
+                              builder: (ctx, sc) =>
+                                  HomeLocationPickerSheet(scrollController: sc),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Iconsax.location_copy,
+                                size: 12,
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                locationName,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Iconsax.arrow_down_1_copy,
+                                size: 10,
+                                color: Colors.white.withValues(alpha: 0.6),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => context.push(RoutePaths.socialSearch),
-                icon: const Icon(Iconsax.search_normal_1_copy),
-                style: IconButton.styleFrom(
-                  foregroundColor: colorScheme.onSurface,
-                ),
-              ),
-              Stack(
-                clipBehavior: Clip.none,
+              // Right: glassy action buttons + avatar
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  IconButton(
-                    onPressed: () => context.push(RoutePaths.notifications),
-                    icon: const Icon(Iconsax.notification_copy),
-                    style: IconButton.styleFrom(
-                      foregroundColor: colorScheme.onSurface,
+                  // Search button
+                  GestureDetector(
+                    onTap: () => context.push(RoutePaths.socialSearch),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Iconsax.search_normal_1_copy,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        size: 18,
+                      ),
                     ),
                   ),
-                  const Positioned(
-                    top: 4,
-                    right: 4,
-                    child: NotificationBadge(),
+                  const SizedBox(width: 6),
+                  // Notification button with badge
+                  GestureDetector(
+                    onTap: () => context.push(RoutePaths.notifications),
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Iconsax.notification_copy,
+                            color: Colors.white.withValues(alpha: 0.9),
+                            size: 18,
+                          ),
+                        ),
+                        const Positioned(
+                          top: -2,
+                          right: -2,
+                          child: NotificationBadge(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Avatar
+                  GestureDetector(
+                    onTap: () => context.push(RoutePaths.profile),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: DSAvatar.small(
+                        imageUrl: _userProfile?['avatar_url'] as String?,
+                        displayName: _resolveDisplayName(_userProfile),
+                        context: AvatarContext.main,
+                      ),
+                    ),
                   ),
                 ],
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.profile),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: colorScheme.primary, width: 2),
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: DSAvatar.small(
-                    imageUrl: _userProfile?['avatar_url'] as String?,
-                    displayName: _resolveDisplayName(_userProfile),
-                    context: AvatarContext.main,
-                  ),
-                ),
               ),
             ],
           ),
         ),
-        const HomeLocationBar(),
+        // Decorative blurred blob — top-right
+        Positioned(
+          top: -20,
+          right: -30,
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                color: Colors.pink.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -385,22 +509,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 9,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? cs.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? cs.primary : cs.outlineVariant,
-                    ),
+                    color: isSelected
+                        ? cs.primary
+                        : cs.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     tab.label,
                     style: textTheme.labelLarge?.copyWith(
                       color: isSelected ? cs.onPrimary : cs.onSurface,
                       fontWeight: isSelected
-                          ? FontWeight.w600
+                          ? FontWeight.w700
                           : FontWeight.w500,
                     ),
                   ),
@@ -419,17 +542,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final forYouState = ref.watch(feedNotifierProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
+    final lavenderBg = Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.04),
+      cs.surface,
+    );
+
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: lavenderBg,
       body: NestedScrollView(
         // Each tab has its own controller; NestedScrollView uses the header
         // region for the app-bar + tab bar.
         headerSliverBuilder: (_, innerBoxIsScrolled) => [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-            ),
-          ),
           if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
           SliverPersistentHeader(
             pinned: true,
@@ -504,7 +627,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(
-                          Icons.arrow_upward_rounded,
+                          Iconsax.arrow_up_1_copy,
                           size: 16,
                           color: Colors.white,
                         ),
@@ -547,8 +670,12 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    final lavender = Color.alphaBlend(
+      cs.primary.withValues(alpha: 0.04),
+      cs.surface,
+    );
     return ColoredBox(
-      color: cs.surface,
+      color: lavender,
       child: Column(
         children: [
           const SizedBox(height: 9),

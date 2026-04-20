@@ -165,16 +165,30 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
   }) async {
     try {
       final rows = await _db
-          .from('v_active_feed')
-          .select()
-          .order('score', ascending: false)
+          .from('v_game_card')
+          .select(
+            'id, title, sport_name_en, start_at, venue_name, area_name, '
+            'roster_count, capacity, creator_display_name, creator_avatar_url, created_at',
+          )
+          .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
-      final events =
-          (rows as List<dynamic>)
-              .map((r) => ActiveEvent(Map<String, dynamic>.from(r as Map)))
-              .toList()
-            ..sort((a, b) => (b.score ?? 0).compareTo(a.score ?? 0));
+      final events = (rows as List<dynamic>).map((r) {
+        final row = Map<String, dynamic>.from(r as Map);
+        return ActiveEvent({
+          'id': row['id'],
+          'event_type': 'game_created',
+          'created_at': row['created_at'],
+          'game_id': row['id'],
+          'game_title': row['title'],
+          'sport': row['sport_name_en'],
+          'venue_name': row['venue_name'] ?? row['area_name'],
+          'join_count': row['roster_count'] ?? 0,
+          'display_name': row['creator_display_name'],
+          'avatar_url': row['creator_avatar_url'],
+          'score': 0.0,
+        });
+      }).toList();
 
       return Ok(events);
     } catch (e) {

@@ -7,7 +7,7 @@ enum FeedTab {
   news;
 
   String get label => switch (this) {
-    FeedTab.forYou => 'For You',
+    FeedTab.forYou => 'Most Recent',
     FeedTab.following => 'Following',
     FeedTab.nearby => 'Nearby',
     FeedTab.active => 'Active',
