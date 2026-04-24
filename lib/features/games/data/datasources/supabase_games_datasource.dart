@@ -457,20 +457,24 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
           .from('games')
           .select('*')
           .eq('id', gameId)
-          .single();
+          .maybeSingle();
+
+      if (response == null) {
+        throw GameNotFoundException('Game not found');
+      }
 
       // Get current player count (only confirmed players)
       final currentPlayerCount = await _getCurrentPlayerCount(gameId);
 
-      // Resolve venue_space_id to parent venue_id
-      final venueSpaceId = response['venue_space_id'] as String?;
-      final venueId = await _getVenueIdFromSpaceId(venueSpaceId);
-
-      // Add currentPlayers and venue_id to response for GameModel parsing
+      // Add currentPlayers to response for GameModel parsing.
+      // venue_id is already a direct column on games — use it directly.
+      // Fall back to resolving from venue_space_id only when venue_id is absent.
       final responseWithCount = Map<String, dynamic>.from(response);
       responseWithCount['current_players'] = currentPlayerCount;
-      if (venueId != null) {
-        responseWithCount['venue_id'] = venueId;
+      if (responseWithCount['venue_id'] == null) {
+        final venueSpaceId = response['venue_space_id'] as String?;
+        final venueId = await _getVenueIdFromSpaceId(venueSpaceId);
+        if (venueId != null) responseWithCount['venue_id'] = venueId;
       }
 
       return GameModel.fromJson(responseWithCount);

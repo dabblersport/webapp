@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../presentation/controllers/games_controller.dart';
-import '../presentation/controllers/game_detail_controller.dart';
 import '../presentation/controllers/venues_controller.dart';
 import '../presentation/controllers/my_games_controller.dart';
 import '../presentation/controllers/bookings_controller.dart';
@@ -18,7 +17,6 @@ import '../data/datasources/supabase_games_datasource.dart';
 import '../data/datasources/venues_datasource.dart';
 import '../data/datasources/bookings_datasource.dart';
 import '../data/datasources/bookings_remote_data_source.dart';
-import 'package:dabbler/data/repositories/joinability_repository_impl.dart';
 import '../services/game_completion_rewards_handler.dart';
 import 'package:dabbler/services/sport_profile_service.dart';
 
@@ -175,28 +173,6 @@ final bookingsControllerProvider =
       return BookingsController(ref.watch(bookingsRepositoryProvider));
     });
 
-/// Game detail controller for individual game management (family provider for different games)
-final gameDetailControllerProvider =
-    StateNotifierProvider.family<
-      GameDetailController,
-      GameDetailState,
-      GameDetailParams
-    >((ref, params) {
-      return GameDetailController(
-        joinGameUseCase: ref.watch(joinGameUseCaseProvider),
-        gamesRepository: ref.watch(gamesRepositoryProvider),
-        venuesRepository: ref.watch(venuesRepositoryProvider),
-        joinabilityRepository: ref.watch(joinabilityRepositoryProvider),
-        gameId: params.gameId,
-        currentUserId: params.currentUserId,
-      );
-    });
-
-/// Convenience state-only provider to simplify overriding in tests/widgets
-final gameDetailStateProvider =
-    Provider.family<GameDetailState, GameDetailParams>((ref, params) {
-      return ref.watch(gameDetailControllerProvider(params));
-    });
 
 // =============================================================================
 // CONVENIENCE PROVIDERS
@@ -488,24 +464,6 @@ final myGamesActionsProvider = Provider.family<MyGamesActions, String>((
 // SUPPORTING CLASSES
 // =============================================================================
 
-/// Parameters for game detail controller
-class GameDetailParams {
-  final String gameId;
-  final String? currentUserId;
-
-  const GameDetailParams({required this.gameId, this.currentUserId});
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is GameDetailParams &&
-          runtimeType == other.runtimeType &&
-          gameId == other.gameId &&
-          currentUserId == other.currentUserId;
-
-  @override
-  int get hashCode => gameId.hashCode ^ currentUserId.hashCode;
-}
 
 /// Action wrapper classes for easier UI integration
 class GamesActions {

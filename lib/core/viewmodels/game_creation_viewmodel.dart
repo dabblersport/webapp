@@ -14,6 +14,7 @@ class GameCreationViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> _dbSports = [];
   List<Map<String, dynamic>> _dbVariants = [];
   bool _sportsLoading = false;
+  String? _sportsError;
 
   // Available venues loaded from venue_spaces
   List<VenueSlot> _availableVenues = [];
@@ -27,6 +28,7 @@ class GameCreationViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> get dbSports => List.unmodifiable(_dbSports);
   List<Map<String, dynamic>> get dbVariants => List.unmodifiable(_dbVariants);
   bool get sportsLoading => _sportsLoading;
+  String? get sportsError => _sportsError;
   List<VenueSlot> get availableVenues => List.unmodifiable(_availableVenues);
   List<String> get recentTeammates => List.unmodifiable(_recentTeammates);
 
@@ -336,6 +338,7 @@ class GameCreationViewModel extends ChangeNotifier {
 
   Future<void> loadDbSports() async {
     _sportsLoading = true;
+    _sportsError = null;
     notifyListeners();
     try {
       final response = await Supabase.instance.client
@@ -345,8 +348,10 @@ class GameCreationViewModel extends ChangeNotifier {
           .eq('is_challenge_sport', true)
           .order('name_en');
       _dbSports = List<Map<String, dynamic>>.from(response as List);
-    } catch (_) {
+      _sportsError = null;
+    } catch (e) {
       _dbSports = [];
+      _sportsError = 'Failed to load sports: $e';
     }
     _sportsLoading = false;
     notifyListeners();

@@ -6,10 +6,16 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 /// Community screen with Following, Followers, and People (discover) tabs.
 /// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
@@ -32,8 +38,11 @@ class RealFriendsScreen extends ConsumerStatefulWidget {
 class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Map<String, dynamic>? _userProfile;
+  final _authService = AuthService();
 
   /// Whether we're viewing another user's data (no People tab).
   bool get _isViewingOther => widget.profileId != null;
@@ -66,11 +75,20 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       initialIndex: clamped,
     );
     _tabController.addListener(() => setState(() {}));
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profile = await _authService.getUserProfile();
+      if (mounted) setState(() => _userProfile = profile);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -113,36 +131,39 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
               }
 
               return Scaffold(
-                backgroundColor: colorScheme.surface,
-                body: CustomScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: MediaQuery.of(context).padding.top + 8,
+                backgroundColor: Colors.transparent,
+                body: Stack(
+                  children: [
+                    DynamicBackground(scrollController: _scrollController),
+                    CustomScrollView(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
                       ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildAppBar(colorScheme),
-                            _buildTabSwitcher(colorScheme),
-                            const SizedBox(height: 12),
-                            _buildSearchBar(colorScheme),
-                          ],
+                      slivers: [
+                        SliverToBoxAdapter(
+                          child: _buildHeader(colorScheme),
                         ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                        child: _buildBottomSection(),
-                      ),
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _SocialTabBarDelegate(
+                            tabBar: _buildPillTabs(colorScheme),
+                            cs: colorScheme,
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                            child: _buildSearchBar(colorScheme),
+                          ),
+                        ),
+                        SliverToBoxAdapter(
+                          child: _buildBottomSection(),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -403,113 +424,211 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // APP BAR
+  // HEADER (home-screen style)
   // ---------------------------------------------------------------------------
 
-  Widget _buildAppBar(ColorScheme colorScheme) {
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () {
-            context.canPop() ? context.pop() : context.go(RoutePaths.home);
-          },
-          iconSize: 24,
-          constraints: const BoxConstraints.tightFor(width: 48, height: 48),
-          style: IconButton.styleFrom(
-            backgroundColor: Colors.transparent,
-            foregroundColor: colorScheme.onSecondaryContainer,
+  Widget _buildHeader(ColorScheme cs) {
+    final topPadding = MediaQuery.of(context).padding.top + 12;
+    final displayName = (_userProfile?['display_name'] as String?)?.trim() ??
+        (_userProfile?['username'] as String?)?.trim() ??
+        'User';
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset(
+                  'assets/images/dabbler_text_logo.svg',
+                  width: 100,
+                  height: 18,
+                  colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
+                ),
+                const SizedBox(height: 4),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final locAsync = ref.watch(activeLocationProvider);
+                    final locState = locAsync.valueOrNull;
+                    final locationName = locState is ActiveLocationReady
+                        ? locState.location.area.name
+                        : 'Set location';
+                    return GestureDetector(
+                      onTap: () => showAdaptiveSheet<void>(
+                        context: context,
+                        builder: (_) => DraggableScrollableSheet(
+                          initialChildSize: 0.85,
+                          minChildSize: 0.5,
+                          maxChildSize: 1.0,
+                          expand: false,
+                          builder: (ctx, sc) =>
+                              HomeLocationPickerSheet(scrollController: sc),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Iconsax.location_copy,
+                            size: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            locationName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Iconsax.arrow_down_1_copy,
+                            size: 10,
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-          icon: const Icon(Iconsax.arrow_left_copy),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Community',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.socialSearch),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Iconsax.search_normal_1_copy,
+                    color: cs.primary,
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.notifications),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Iconsax.notification_copy,
+                        color: cs.primary,
+                        size: 18,
+                      ),
+                    ),
+                    const Positioned(
+                      top: -2,
+                      right: -2,
+                      child: NotificationBadge(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.profile),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: DSAvatar.small(
+                    imageUrl: _userProfile?['avatar_url'] as String?,
+                    displayName: displayName,
+                    context: AvatarContext.social,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // TAB SWITCHER
+  // PILL TAB SWITCHER (home-screen style)
   // ---------------------------------------------------------------------------
 
-  Widget _buildTabSwitcher(ColorScheme colorScheme) {
+  Widget _buildPillTabs(ColorScheme cs) {
     final textTheme = Theme.of(context).textTheme;
-    final socialScheme = context.getCategoryTheme('main');
+    final labels = [
+      'Following',
+      'Followers',
+      if (!_isViewingOther) 'People',
+    ];
 
-    return Padding(
-      padding: const EdgeInsets.only(top: 12),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<int>(
-          segments: [
-            const ButtonSegment(
-              value: 0,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [Text('Following')],
-              ),
-            ),
-            const ButtonSegment(
-              value: 1,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [Text('Followers')],
-              ),
-            ),
-            if (!_isViewingOther)
-              const ButtonSegment(
-                value: 2,
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [Text('People')],
+    return AnimatedBuilder(
+      animation: _tabController,
+      builder: (context, _) {
+        return SizedBox(
+          height: 48,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            itemCount: labels.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, i) {
+              final isSelected = _tabController.index == i;
+              return GestureDetector(
+                onTap: () {
+                  if (_tabController.index != i) {
+                    setState(() => _tabController.index = i);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? cs.primary
+                        : cs.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    labels[i],
+                    style: textTheme.labelLarge?.copyWith(
+                      color: isSelected ? cs.onPrimary : cs.onSurface,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-          ],
-          selected: <int>{_tabController.index},
-          onSelectionChanged: (Set<int> s) {
-            final idx = s.first;
-            if (_tabController.index != idx) {
-              setState(() => _tabController.index = idx);
-            }
-          },
-          style: ButtonStyle(
-            side: WidgetStateProperty.all(
-              const BorderSide(color: Colors.transparent),
-            ),
-            backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return socialScheme.primary;
-              }
-              return socialScheme.primary.withValues(alpha: 0.08);
-            }),
-            foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-              if (states.contains(WidgetState.selected)) {
-                return socialScheme.onPrimary;
-              }
-              return socialScheme.onSurfaceVariant;
-            }),
-            textStyle: WidgetStateProperty.all(
-              textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
-            padding: WidgetStateProperty.all(
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            ),
-            shape: WidgetStateProperty.all(
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+              );
+            },
           ),
-          showSelectedIcon: false,
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -827,6 +946,50 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       ),
     );
   }
+}
+
+// =============================================================================
+// PINNED TAB BAR DELEGATE (home-screen style)
+// =============================================================================
+
+class _SocialTabBarDelegate extends SliverPersistentHeaderDelegate {
+  const _SocialTabBarDelegate({required this.tabBar, required this.cs});
+
+  final Widget tabBar;
+  final ColorScheme cs;
+
+  @override
+  double get minExtent => 56;
+
+  @override
+  double get maxExtent => 56;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: Colors.transparent,
+      child: Column(
+        children: [
+          const SizedBox(height: 9),
+          Expanded(child: tabBar),
+          const SizedBox(height: 6),
+          Divider(
+            height: 1,
+            thickness: 0,
+            color: cs.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SocialTabBarDelegate oldDelegate) =>
+      oldDelegate.cs != cs || oldDelegate.tabBar != tabBar;
 }
 
 // =============================================================================

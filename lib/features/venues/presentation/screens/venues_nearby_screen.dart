@@ -11,6 +11,7 @@ import 'package:dabbler/features/venues/presentation/providers/nearby_venues_pro
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 // =============================================================================
 // SCREEN
@@ -63,7 +64,7 @@ class _VenuesNearbyScreenState extends ConsumerState<VenuesNearbyScreen> {
   Widget build(BuildContext context) {
     final locAsync = ref.watch(activeLocationProvider);
 
-    return locAsync.when(
+    final child = locAsync.when(
       loading: () => _buildSkeletons(),
       error: (_, __) => _buildDeniedState(),
       data: (locState) => switch (locState) {
@@ -72,6 +73,13 @@ class _VenuesNearbyScreenState extends ConsumerState<VenuesNearbyScreen> {
         ActiveLocationError() => _buildDeniedState(),
         ActiveLocationReady(:final location) => _buildReady(location),
       },
+    );
+
+    return Stack(
+      children: [
+        Positioned.fill(child: const DynamicBackground()),
+        child,
+      ],
     );
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
@@ -7,16 +8,13 @@ import 'package:intl/intl.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/utils/sport_id_mapping.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
-import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
-import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 // =============================================================================
 // SCREEN
@@ -31,22 +29,19 @@ class GamesScreen extends ConsumerStatefulWidget {
 
 class _GamesScreenState extends ConsumerState<GamesScreen>
     with TickerProviderStateMixin {
-  static const List<String> _tabs = [
-    'All',
-    'Football',
-    'Cricket',
-    'Padel',
-    'Basketball',
-    'Tennis',
-    'Badminton',
-    'Running',
-    'Swimming',
-    'Equestrian',
-    'Shooting',
+  static const List<Map<String, String>> _tabs = [
+    {'name': 'All', 'emoji': ''},
+    {'name': 'Football', 'emoji': '⚽'},
+    {'name': 'Cricket', 'emoji': '🏏'},
+    {'name': 'Padel', 'emoji': '🎾'},
+    {'name': 'Basketball', 'emoji': '🏀'},
+    {'name': 'Tennis', 'emoji': '🎾'},
+    {'name': 'Badminton', 'emoji': '🏸'},
+    {'name': 'Running', 'emoji': '🏃'},
+    {'name': 'Swimming', 'emoji': '🏊'},
+    {'name': 'Equestrian', 'emoji': '🐎'},
+    {'name': 'Shooting', 'emoji': '🎯'},
   ];
-
-  final AuthService _authService = AuthService();
-  Map<String, dynamic>? _userProfile;
 
   late final TabController _tabController;
   late final List<ScrollController> _scrollControllers;
@@ -58,7 +53,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     _scrollControllers =
         List.generate(_tabs.length, (_) => ScrollController());
     _tabController.addListener(_onTabChanged);
-    _loadUserProfile();
   }
 
   @override
@@ -77,41 +71,13 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     setState(() {});
   }
 
-  Future<void> _loadUserProfile() async {
-    try {
-      final activeType = ref.read(activeProfileTypeProvider);
-      final profile =
-          await _authService.getUserProfile(personaType: activeType);
-      if (mounted) setState(() => _userProfile = profile);
-    } catch (_) {}
-  }
-
-  String _resolveDisplayName(Map<String, dynamic>? profile) {
-    if (profile == null) return 'User';
-    final displayName = (profile['display_name'] as String?)?.trim() ?? '';
-    if (displayName.isNotEmpty) return displayName;
-    final username = (profile['username'] as String?)?.trim() ?? '';
-    if (username.isNotEmpty) return username;
-    final email = (profile['email'] as String?)?.trim() ?? '';
-    if (email.isNotEmpty) return email.split('@').first;
-    return 'User';
-  }
-
   String? _sportIdForTab(int index) {
-    if (index == 0) return null; // "All"
-    return SportIdMapping.getSportId(_tabs[index].toLowerCase());
+    if (index == 0) return null;
+    return SportIdMapping.getSportId(_tabs[index]['name']!.toLowerCase());
   }
 
   Future<void> _handleRefresh() async {
     final sportId = _sportIdForTab(_tabController.index);
-    const params = (
-      lat: null,
-      lng: null,
-      radiusMeters: null,
-      sportId: null,
-      sortOrder: NearbySortOrder.nearest,
-    );
-    // Invalidate for current tab
     ref.invalidate(nearbyGamesProvider((
       lat: null,
       lng: null,
@@ -126,69 +92,99 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
   Widget _buildHeader() {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('main');
+    final topPadding = MediaQuery.of(context).padding.top + 12;
+    final profileState = ref.watch(profileControllerProvider);
+    final avatarUrl =
+        profileState.profile?.avatarUrl;
+    final displayName = profileState.profile?.displayName ??
+        profileState.profile?.username ??
+        'User';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Left: wordmark
+          Expanded(
+            child: SvgPicture.asset(
+              'assets/images/dabbler_text_logo.svg',
+              width: 100,
+              height: 18,
+              colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
+            ),
+          ),
+          // Right: action buttons + avatar
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Games',
-                style: tt.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: sportsScheme.primary,
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.socialSearch),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Iconsax.search_normal_1_copy,
+                    color: cs.primary,
+                    size: 18,
+                  ),
                 ),
               ),
-              const Spacer(),
-              IconButton(
-                onPressed: () => context.push(RoutePaths.socialSearch),
-                icon: const Icon(Iconsax.search_normal_1_copy),
-                style: IconButton.styleFrom(
-                  foregroundColor: cs.onSurface,
-                ),
-              ),
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  IconButton(
-                    onPressed: () => context.push(RoutePaths.notifications),
-                    icon: const Icon(Iconsax.notification_copy),
-                    style: IconButton.styleFrom(
-                      foregroundColor: cs.onSurface,
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => context.push(RoutePaths.notifications),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: cs.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Iconsax.notification_copy,
+                        color: cs.primary,
+                        size: 18,
+                      ),
                     ),
-                  ),
-                  const Positioned(
-                    top: 4,
-                    right: 4,
-                    child: NotificationBadge(),
-                  ),
-                ],
+                    const Positioned(
+                      top: -2,
+                      right: -2,
+                      child: NotificationBadge(),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 10),
               GestureDetector(
                 onTap: () => context.push(RoutePaths.profile),
                 child: Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: cs.primary, width: 2),
+                    border: Border.all(
+                      color: cs.primary.withValues(alpha: 0.2),
+                      width: 2,
+                    ),
                   ),
                   padding: const EdgeInsets.all(2),
                   child: DSAvatar.small(
-                    imageUrl: _userProfile?['avatar_url'] as String?,
-                    displayName: _resolveDisplayName(_userProfile),
+                    imageUrl: avatarUrl,
+                    displayName: displayName,
                     context: AvatarContext.main,
                   ),
                 ),
               ),
             ],
           ),
-        ),
-        const HomeLocationBar(),
-      ],
+        ],
+      ),
     );
   }
 
@@ -205,44 +201,35 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
           height: 48,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding:
-                const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             itemCount: _tabs.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(width: AppSpacing.sm),
+            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
+              final tab = _tabs[index];
               final isSelected = _tabController.index == index;
-              final label = index == 0
-                  ? 'All'
-                  : '${_emojiFor(_tabs[index])} ${_tabs[index]}';
+              final emoji = tab['emoji']!;
+              final name = tab['name']!;
 
               return GestureDetector(
                 onTap: () => _tabController.animateTo(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 9,
+                    horizontal: 16,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        isSelected ? cs.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected
-                          ? cs.primary
-                          : cs.outlineVariant,
-                    ),
+                    color: isSelected
+                        ? cs.primary
+                        : cs.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    label,
+                    emoji.isEmpty ? name : '$emoji $name',
                     style: tt.labelLarge?.copyWith(
-                      color: isSelected
-                          ? cs.onPrimary
-                          : cs.onSurface,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
+                      color: isSelected ? cs.onPrimary : cs.onSurface,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -263,41 +250,40 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
 
     return Scaffold(
       backgroundColor: cs.surface,
-      body: NestedScrollView(
-        headerSliverBuilder: (_, innerBoxIsScrolled) => [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height:
-                  isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-            ),
+      body: Stack(
+        children: [
+          DynamicBackground(
+            tabController: _tabController,
+            scrollControllers: _scrollControllers,
           ),
-          SliverToBoxAdapter(child: _buildHeader()),
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _TabBarDelegate(
-              tabBar: _buildTabBar(),
-              cs: cs,
+          NestedScrollView(
+            headerSliverBuilder: (_, __) => [
+              if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
+              ),
+            ],
+            body: TabBarView(
+              controller: _tabController,
+              children: List.generate(
+                _tabs.length,
+                (i) => _GameTabBody(
+                  sportId: _sportIdForTab(i),
+                  scrollController: _scrollControllers[i],
+                  onRefresh: _handleRefresh,
+                  onRetry: () => ref.invalidate(nearbyGamesProvider((
+                    lat: null,
+                    lng: null,
+                    radiusMeters: null,
+                    sportId: _sportIdForTab(i),
+                    sortOrder: NearbySortOrder.nearest,
+                  ))),
+                ),
+              ),
             ),
           ),
         ],
-        body: TabBarView(
-          controller: _tabController,
-          children: List.generate(
-            _tabs.length,
-            (i) => _GameTabBody(
-              sportId: _sportIdForTab(i),
-              scrollController: _scrollControllers[i],
-              onRefresh: _handleRefresh,
-              onRetry: () => ref.invalidate(nearbyGamesProvider((
-                lat: null,
-                lng: null,
-                radiusMeters: null,
-                sportId: _sportIdForTab(i),
-                sortOrder: NearbySortOrder.nearest,
-              ))),
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -315,18 +301,13 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent => 56;
-
   @override
   double get maxExtent => 56;
 
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return ColoredBox(
-      color: cs.surface,
+      color: Colors.transparent,
       child: Column(
         children: [
           const SizedBox(height: 9),
@@ -379,10 +360,8 @@ class _GameTabBody extends ConsumerWidget {
 
     return gamesAsync.when(
       loading: () => const _GameSkeletonList(),
-      error: (e, _) => _ErrorView(
-        message: "Couldn't load games",
-        onRetry: onRetry,
-      ),
+      error: (e, _) =>
+          _ErrorView(message: "Couldn't load games", onRetry: onRetry),
       data: (games) {
         if (games.isEmpty) {
           return const _EmptyView(
@@ -426,17 +405,12 @@ class _GameCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => GameDetailScreen(gameId: game.id),
-        ),
-      ),
+      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Title row ──────────────────────────────────────────────
             Row(
               children: [
                 if (game.sportName != null) ...[
@@ -459,8 +433,6 @@ class _GameCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-
-            // ── Time ───────────────────────────────────────────────────
             if (game.scheduledAt != null)
               Row(
                 children: [
@@ -472,20 +444,20 @@ class _GameCard extends StatelessWidget {
                   ),
                 ],
               ),
-
-            // ── Venue ──────────────────────────────────────────────────
             if (game.venueName?.isNotEmpty == true) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Iconsax.location_copy,
-                      size: 14, color: cs.onSurfaceVariant),
+                  Icon(
+                    Iconsax.location_copy,
+                    size: 14,
+                    color: cs.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       game.venueName!,
-                      style:
-                          tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -493,8 +465,6 @@ class _GameCard extends StatelessWidget {
                 ],
               ),
             ],
-
-            // ── Spots remaining ────────────────────────────────────────
             if (game.spotsRemaining != null) ...[
               const SizedBox(height: 8),
               _SmallChip(
@@ -695,11 +665,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Iconsax.game_copy,
-              size: 48,
-              color: cs.outline,
-            ),
+            Icon(Iconsax.game_copy, size: 48, color: cs.outline),
             const SizedBox(height: 16),
             Text(
               message,

@@ -33,9 +33,6 @@ class PushNotificationService {
   Future<void> init() async {
     if (_initialized) return;
 
-    // Initialize Firebase (uses platform-specific config files)
-    await Firebase.initializeApp();
-
     await _requestPermissions();
     await _configureForegroundHandling();
     await _logFcmToken();
@@ -273,19 +270,12 @@ class PushNotificationService {
 
   /// Check current permission status without requesting
   Future<AuthorizationStatus> checkPermissionStatus() async {
-    // Initialize Firebase if not already initialized
-    try {
-      await Firebase.initializeApp();
-    } catch (e) {
-      // Already initialized, ignore error
-    }
     final settings = await FirebaseMessaging.instance.getNotificationSettings();
     return settings.authorizationStatus;
   }
 
   /// Request notification permissions (called when user clicks "Enable")
   Future<bool> requestNotificationPermission() async {
-    await Firebase.initializeApp();
     final settings = await FirebaseMessaging.instance.requestPermission(
       alert: true,
       announcement: false,

@@ -35,6 +35,7 @@ import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 /// Provider that checks if a profile is under takedown
 /// Uses autoDispose.family to cache per profileId and clean up when not needed
@@ -84,8 +85,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with TickerProviderStateMixin, RouteAware {
   late AnimationController _animationController;
   late AnimationController _refreshController;
+  late TickerProvider _tickerProvider;
   late TabController _tabController;
   int _selectedTabIndex = 0;
+  final ScrollController _scrollController = ScrollController();
 
   String? _selectedProfileType; // 'player' or 'organiser'
 
@@ -131,6 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     _animationController.dispose();
     _refreshController.dispose();
     _tabController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -317,62 +321,64 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            // ── Hero section ──
-            SliverToBoxAdapter(
-              child: Container(
-                color: colorScheme.surface,
-                padding: EdgeInsets.only(
-                  top: isWide ? 16 : MediaQuery.of(context).padding.top + 12,
-                  bottom: 20,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // ── Header: only on mobile (desktop has side nav) ──
-                        if (!isWide) _buildHeader(context),
-                        if (!isWide) const SizedBox(height: 12),
-                        _buildProfileHeroCard(
-                          context,
-                          profileState,
-                          sportsState,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          DynamicBackground(scrollController: _scrollController),
+          RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
+                // ── Hero section ──
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      top: isWide ? 16 : MediaQuery.of(context).padding.top + 12,
+                      bottom: 20,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 700),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // ── Header: only on mobile (desktop has side nav) ──
+                            if (!isWide) _buildHeader(context),
+                            if (!isWide) const SizedBox(height: 12),
+                            _buildProfileHeroCard(
+                              context,
+                              profileState,
+                              sportsState,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // ── Posts section ──
-            SliverToBoxAdapter(
-              child: Container(
-                color: colorScheme.surface,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
-                    child: profileId == null
-                        ? const Padding(
-                            padding: EdgeInsets.all(48),
-                            child: Center(child: CircularProgressIndicator()),
-                          )
-                        : _buildTabbedPostsSection(context),
+                // ── Posts section ──
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 700),
+                      child: profileId == null
+                          ? const Padding(
+                              padding: EdgeInsets.all(48),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          : _buildTabbedPostsSection(context),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -397,6 +403,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         height: 18,
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       ),
+      background: DynamicBackground(scrollController: _scrollController),
       body: _buildWideBody(
         context,
         colorScheme,
@@ -426,10 +433,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final profileId = ref.watch(profileControllerProvider).profile?.id;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),

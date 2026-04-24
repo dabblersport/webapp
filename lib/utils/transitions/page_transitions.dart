@@ -214,6 +214,10 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
     super.key,
     Duration duration = const Duration(milliseconds: 400),
   }) : super(
+         opaque: false,
+         fullscreenDialog: true,
+         barrierDismissible: true,
+         barrierColor: Colors.black.withValues(alpha: 0.5),
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            return SlideTransition(
              position:

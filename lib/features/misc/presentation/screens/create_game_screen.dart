@@ -221,29 +221,33 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Step ${stepIndex + 1} of $totalSteps',
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: context.colors.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Step ${stepIndex + 1} of $totalSteps',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: context.colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _viewModel.state.stepTitle,
-                    style: context.textTheme.bodyMedium?.copyWith(
-                      color: context.colors.onSurface,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 2),
+                    Text(
+                      _viewModel.state.stepTitle,
+                      style: context.textTheme.bodyMedium?.copyWith(
+                        color: context.colors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     '${(progress * 100).round()}%',
@@ -297,61 +301,83 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Container(
-                height: 6,
-                decoration: BoxDecoration(
-                  color: context.colors.outline.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              FractionallySizedBox(
-                widthFactor: progress,
-                child: Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        context.colors.primary,
-                        context.colors.primary.withValues(alpha: 0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(totalSteps, (index) {
-                  final isCompleted = index < stepIndex;
-                  final isCurrent = index == stepIndex;
-
-                  return Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: isCompleted || isCurrent
-                          ? context.colors.primary
-                          : context.colors.outline.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: context.colors.surface,
-                        width: 2,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final trackWidth = constraints.maxWidth;
+              return SizedBox(
+                height: 12,
+                child: Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    // Track background
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: context.colors.outline.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                       ),
                     ),
-                    child: isCompleted
-                        ? Icon(
-                            LucideIcons.check,
-                            size: 6,
-                            color: context.colors.onPrimary,
-                          )
-                        : null,
-                  );
-                }),
-              ),
-            ],
+                    // Progress fill
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: trackWidth * progress,
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Container(
+                          height: 6,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                context.colors.primary,
+                                context.colors.primary.withValues(alpha: 0.8),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Step dots
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(totalSteps, (index) {
+                        final isCompleted = index < stepIndex;
+                        final isCurrent = index == stepIndex;
+
+                        return Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: isCompleted || isCurrent
+                                ? context.colors.primary
+                                : context.colors.outline.withValues(alpha: 0.3),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: context.colors.surface,
+                              width: 2,
+                            ),
+                          ),
+                          child: isCompleted
+                              ? Icon(
+                                  LucideIcons.check,
+                                  size: 6,
+                                  color: context.colors.onPrimary,
+                                )
+                              : null,
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           if (_viewModel.state.isDraft &&
               _viewModel.state.lastSaved != null) ...[
@@ -380,6 +406,26 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
   }
 
   Widget _buildStepContent() {
+    if (_viewModel.state.currentStep == GameCreationStep.sportAndFormat) {
+      if (_viewModel.sportsLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (_viewModel.sportsError != null && _viewModel.dbSports.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Failed to load sports. Please try again.'),
+              const SizedBox(height: 12),
+              FilledButton.tonal(
+                onPressed: _viewModel.loadDbSports,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
     switch (_viewModel.state.currentStep) {
       case GameCreationStep.sportAndFormat:
         return SportFormatStep(viewModel: _viewModel);

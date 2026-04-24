@@ -19,6 +19,7 @@ import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 /// Social search screen — powered by rpc_unified_search_sectioned.
 ///
@@ -48,6 +49,8 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
 
   final FocusNode _searchFocus = FocusNode();
   Timer? _debounce;
+  final List<ScrollController> _scrollControllers =
+      List.generate(8, (_) => ScrollController());
 
   static const List<SearchTab> _searchTabs = [
     SearchTab(key: 'all', label: 'All', icon: Icons.search),
@@ -90,6 +93,9 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
     _searchController.dispose();
     _searchFocus.dispose();
     _tabController.dispose();
+    for (final sc in _scrollControllers) {
+      sc.dispose();
+    }
     super.dispose();
   }
 
@@ -167,6 +173,10 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
         height: 18,
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       ),
+      background: DynamicBackground(
+        tabController: _tabController,
+        scrollControllers: _scrollControllers,
+      ),
       body: _buildWideBody(theme, searchState),
       rightPanel: _buildWideRightPanel(theme),
     );
@@ -175,7 +185,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   /// Center column on wide screens: search bar + tabs + results.
   Widget _buildWideBody(ThemeData theme, SearchState searchState) {
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           const SizedBox(height: 16),
@@ -248,7 +258,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   /// Right panel on wide screens: suggestions, grammar help & quick filters.
   Widget _buildWideRightPanel(ThemeData theme) {
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -276,71 +286,88 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
 
   Widget _buildMobileLayout(ThemeData theme, SearchState searchState) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            ),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          DynamicBackground(
+            tabController: _tabController,
+            scrollControllers: _scrollControllers,
           ),
-          child: TextField(
-            controller: _searchController,
-            focusNode: _searchFocus,
-            onChanged: _onSearchChanged,
-            onSubmitted: _triggerSearch,
-            decoration: InputDecoration(
-              hintText: _buildHintText(),
-              prefixIcon: const Icon(Icons.search, size: 18),
-              suffixIcon: searchState.query.isNotEmpty
-                  ? IconButton(
-                      onPressed: _clearSearch,
-                      icon: const Icon(Icons.close, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            style: theme.textTheme.bodyMedium,
+          Column(
+            children: [
+              _buildMobileHeader(theme, searchState),
+              if (searchState.query.isEmpty)
+                Expanded(child: _buildRecentAndSuggestions()),
+              if (searchState.query.isNotEmpty)
+                Expanded(child: _buildSearchResults(searchState)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Extracted AppBar structure for transparency support
+  PreferredSizeWidget _buildMobileHeader(
+    ThemeData theme,
+    SearchState searchState,
+  ) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      leading: IconButton(
+        onPressed: () => context.pop(),
+        icon: const Icon(Icons.arrow_back),
+      ),
+      title: Container(
+        height: 40,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          tabs: _searchTabs
-              .map(
-                (tab) => Tab(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(tab.icon, size: 16),
-                      const SizedBox(width: 6),
-                      Text(tab.label),
-                    ],
-                  ),
-                ),
-              )
-              .toList(),
+        child: TextField(
+          controller: _searchController,
+          focusNode: _searchFocus,
+          onChanged: _onSearchChanged,
+          onSubmitted: _triggerSearch,
+          decoration: InputDecoration(
+            hintText: _buildHintText(),
+            prefixIcon: const Icon(Icons.search, size: 18),
+            suffixIcon: searchState.query.isNotEmpty
+                ? IconButton(
+                    onPressed: _clearSearch,
+                    icon: const Icon(Icons.close, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          style: theme.textTheme.bodyMedium,
         ),
       ),
-      body: Column(
-        children: [
-          if (searchState.query.isEmpty)
-            Expanded(child: _buildRecentAndSuggestions()),
-          if (searchState.query.isNotEmpty)
-            Expanded(child: _buildSearchResults(searchState)),
-        ],
+      bottom: TabBar(
+        controller: _tabController,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        tabs: _searchTabs
+            .map(
+              (tab) => Tab(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(tab.icon, size: 16),
+                    const SizedBox(width: 6),
+                    Text(tab.label),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -501,6 +528,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildAllTab(SearchState s) {
     final b = s.bundle;
     return ListView(
+      controller: _scrollControllers[0],
       padding: const EdgeInsets.all(16),
       children: [
         if (b.profiles.isNotEmpty) ...[
@@ -573,6 +601,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildPeopleList(List<Profile> profiles) {
     if (profiles.isEmpty) return _emptyTab('No people found');
     return ListView.builder(
+      controller: _scrollControllers[1],
       padding: const EdgeInsets.all(16),
       itemCount: profiles.length,
       itemBuilder: (_, i) => _buildProfileTile(profiles[i]),
@@ -582,6 +611,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildPostsList(List<PostSearchResult> posts) {
     if (posts.isEmpty) return _emptyTab('No posts found');
     return ListView.builder(
+      controller: _scrollControllers[2],
       padding: const EdgeInsets.all(16),
       itemCount: posts.length,
       itemBuilder: (_, i) => _buildPostTile(posts[i]),
@@ -591,6 +621,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildGamesList(List<GameModel> games) {
     if (games.isEmpty) return _emptyTab('No games found');
     return ListView.builder(
+      controller: _scrollControllers[3],
       padding: const EdgeInsets.all(16),
       itemCount: games.length,
       itemBuilder: (_, i) => _buildGameTile(games[i]),
@@ -600,6 +631,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildVenuesList(List<Venue> venues) {
     if (venues.isEmpty) return _emptyTab('No venues found');
     return ListView.builder(
+      controller: _scrollControllers[4],
       padding: const EdgeInsets.all(16),
       itemCount: venues.length,
       itemBuilder: (_, i) => _buildVenueTile(venues[i]),
@@ -609,6 +641,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildCommentsList(List<CommentSearchResult> comments) {
     if (comments.isEmpty) return _emptyTab('No comments found');
     return ListView.builder(
+      controller: _scrollControllers[5],
       padding: const EdgeInsets.all(16),
       itemCount: comments.length,
       itemBuilder: (_, i) => _buildCommentTile(comments[i]),
@@ -618,6 +651,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildHashtagsList(List<HashtagSearchResult> hashtags) {
     if (hashtags.isEmpty) return _emptyTab('No hashtags found');
     return ListView.builder(
+      controller: _scrollControllers[6],
       padding: const EdgeInsets.all(16),
       itemCount: hashtags.length,
       itemBuilder: (_, i) => _buildHashtagTile(hashtags[i]),
@@ -627,6 +661,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildMeetupsList(List<MeetupSearchResult> meetups) {
     if (meetups.isEmpty) return _emptyTab('No meetups found');
     return ListView.builder(
+      controller: _scrollControllers[7],
       padding: const EdgeInsets.all(16),
       itemCount: meetups.length,
       itemBuilder: (_, i) => _buildMeetupTile(meetups[i]),

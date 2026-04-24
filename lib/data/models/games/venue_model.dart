@@ -59,20 +59,13 @@ class VenueModel extends Venue {
         }
       }
 
-      if (sports.isEmpty && json['venue_spaces'] != null) {
-        final spaces = json['venue_spaces'] as List<dynamic>?;
-        if (spaces != null) {
-          for (final space in spaces) {
-            if (space is Map<String, dynamic>) {
-              final sport = space['sport'] as String?;
-              final isActive = space['is_active'] as bool? ?? true;
-              if (sport != null && sport.trim().isNotEmpty && isActive) {
-                final value = sport.trim();
-                if (!sports.contains(value)) {
-                  sports.add(value);
-                }
-              }
-            }
+      // Fallback: use direct `sports` ARRAY column on venues table
+      if (sports.isEmpty && json['sports'] != null) {
+        final raw = json['sports'];
+        if (raw is List) {
+          for (final item in raw) {
+            final s = item.toString().trim();
+            if (s.isNotEmpty && !sports.contains(s)) sports.add(s);
           }
         }
       }
@@ -97,8 +90,11 @@ class VenueModel extends Venue {
       if (rating == 0.0 && json['rating'] != null) {
         rating = (json['rating'] as num?)?.toDouble() ?? 0.0;
       }
-      if (totalRatings == 0 && json['total_ratings'] != null) {
-        totalRatings = json['total_ratings'] as int? ?? 0;
+      if (totalRatings == 0) {
+        totalRatings =
+            json['total_ratings'] as int? ??
+            json['rating_count'] as int? ??
+            0;
       }
 
       // Extract amenities from venue_amenities join or amenities array
@@ -131,24 +127,25 @@ class VenueModel extends Venue {
         }
       }
 
-      // Extract opening hours from venue_opening_hours join
+      // Extract opening hours from opening_hours join (venue_id FK)
       String openingTime = '09:00';
       String closingTime = '18:00';
-      if (json['venue_opening_hours'] != null) {
-        final hours = json['venue_opening_hours'] as List<dynamic>?;
+      final hoursData =
+          json['opening_hours'] ?? json['venue_opening_hours'];
+      if (hoursData != null) {
+        final hours = hoursData as List<dynamic>?;
         if (hours != null && hours.isNotEmpty) {
-          // Use first day's hours as default, or find today's weekday
-          final today = DateTime.now().weekday % 7; // Convert to 0-6 (Sun-Sat)
-          final todayHours = hours.firstWhere(
+          // Find the first open row; fall back to first row
+          final openRow = hours.firstWhere(
             (h) =>
                 h is Map<String, dynamic> &&
-                (h['weekday'] as int?) == today &&
-                (h['is_open'] as bool?) == true,
+                (h['is_open'] as bool? ?? true) &&
+                !(h['is_closed'] as bool? ?? false),
             orElse: () => hours.first,
           );
-          if (todayHours is Map<String, dynamic>) {
-            openingTime = _parseTime(todayHours['open_time']) ?? openingTime;
-            closingTime = _parseTime(todayHours['close_time']) ?? closingTime;
+          if (openRow is Map<String, dynamic>) {
+            openingTime = _parseTime(openRow['open_time']) ?? openingTime;
+            closingTime = _parseTime(openRow['close_time']) ?? closingTime;
           }
         }
       }
@@ -163,11 +160,15 @@ class VenueModel extends Venue {
         addressLine1:
             json['address_line1'] as String? ??
             json['address_line_1'] as String? ??
+            json['address_en'] as String? ??
             '',
         addressLine2:
             json['address_line2'] as String? ??
             json['address_line_2'] as String?,
-        city: json['city'] as String? ?? '',
+        city:
+            json['city'] as String? ??
+            json['area'] as String? ??
+            '',
         state: json['district'] as String? ?? json['state'] as String? ?? '',
         country: json['country'] as String? ?? '',
         postalCode: json['postal_code'] as String? ?? '',

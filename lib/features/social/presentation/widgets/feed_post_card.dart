@@ -416,7 +416,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: cs.primaryContainer,
+                                color: Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
@@ -449,7 +449,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             ),
                           ],
                           if (typeLabel != null) ...[
-                            const Spacer(),
+                            SizedBox(width: 4),
                             _PostTypeBadge(
                               label: typeLabel,
                               icon: _postTypeIcon(post.postType),

@@ -8,10 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
-import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
-import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -27,7 +23,9 @@ final sportsSubTabProvider = StateProvider<int>((ref) => 1); // default Venues
 
 /// Main navigation screen with bottom nav bar
 class MainNavigationScreen extends ConsumerStatefulWidget {
-  const MainNavigationScreen({super.key});
+  const MainNavigationScreen({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
 
   @override
   ConsumerState<MainNavigationScreen> createState() =>
@@ -35,14 +33,15 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
 }
 
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
-  int _currentIndex = 0;
-  final PageController _pageController = PageController();
   bool _hasShownModalThisSession = false;
   bool _checkInModalInFlight = false;
 
   DateTime? _lastBackPressAt;
   bool _exitDialogShowing = false;
   bool _createMenuOpen = false;
+
+  // Convenience getter — the shell tracks which branch is active.
+  int get _currentIndex => widget.navigationShell.currentIndex;
 
   bool _isCompactNavWidth(BuildContext context) =>
       MediaQuery.sizeOf(context).width < 390;
@@ -61,27 +60,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   double _navItemGap(BuildContext context) =>
       _isCompactNavWidth(context) ? 2 : 4;
-
-  // Screens matching PageView pages: 0=Home, 1=Community, 2=Sports
-  // Nav indices: 0=Feeds, 1=Community, 2=Sports, 3=Create(action)
-  final List<Widget> _swipeableScreens = [
-    const HomeScreen(),
-    const RealFriendsScreen(), // Community
-    // Sports section: IndexedStack keeps both screens alive,
-    // sportsSubTabProvider drives which one is visible.
-    Consumer(
-      builder: (context, ref, _) {
-        final subTab = ref.watch(sportsSubTabProvider);
-        return IndexedStack(
-          index: subTab == 0 ? 1 : 0, // 0=Venues(default), 1=Games
-          children: const [
-            VenuesScreen(),
-            GamesScreen(),
-          ],
-        );
-      },
-    ),
-  ];
 
   @override
   void initState() {
@@ -105,7 +83,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (FeatureFlags.enableRewards) {
       AppLifecycleManager().offResume(_onAppResume);
     }
-    _pageController.dispose();
     super.dispose();
   }
 
@@ -221,58 +198,37 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  /// Whether the Sports/Explore page is currently visible.
-  bool get _isOnSportsPage => _currentIndex == 2;
+  // Branches: 0=Home, 1=Community, 2=Venues, 3=Games
+  bool get _isOnSportsPage => _currentIndex == 2 || _currentIndex == 3;
 
   void _onItemTapped(int index) {
     if (_isOnSportsPage) {
       // Sports-mode nav: [Home(0), Venues(1), Games(2), Create(3)]
       switch (index) {
         case 0: // Home icon → go back to feeds
-          setState(() => _currentIndex = 0);
-          _pageController.animateToPage(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+          widget.navigationShell.goBranch(0);
           return;
-        case 1: // Venues text → switch ExploreScreen to Venues tab
-          ref.read(sportsSubTabProvider.notifier).state = 1;
+        case 1: // Venues → branch 2
+          widget.navigationShell.goBranch(2);
           return;
-        case 2: // Games text → switch ExploreScreen to Games tab
-          ref.read(sportsSubTabProvider.notifier).state = 0;
+        case 2: // Games → branch 3
+          widget.navigationShell.goBranch(3);
           return;
         case 3: // Create
           _showCreateMenu();
           return;
       }
     } else {
-      // Home-mode nav: [Feeds(0), Community(1), Games icon(2), Create(3)]
+      // Home-mode nav: [Feeds(0), Community(1), Sports icon(2), Create(3)]
       switch (index) {
-        case 0: // Feeds → go to home page
-          setState(() => _currentIndex = 0);
-          _pageController.animateToPage(
-            0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+        case 0: // Feeds → branch 0
+          widget.navigationShell.goBranch(0);
           return;
-        case 1: // Community → go to community page
-          setState(() => _currentIndex = 1);
-          _pageController.animateToPage(
-            1,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+        case 1: // Community → branch 1
+          widget.navigationShell.goBranch(1);
           return;
-        case 2: // Games icon → switch to Sports page (Venues by default)
-          ref.read(sportsSubTabProvider.notifier).state = 1;
-          setState(() => _currentIndex = 2);
-          _pageController.animateToPage(
-            2,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+        case 2: // Sports icon → Venues by default (branch 2)
+          widget.navigationShell.goBranch(2);
           return;
         case 3: // Create
           _showCreateMenu();
@@ -281,44 +237,45 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  void _onPageChanged(int pageIndex) {
-    // Map page index to nav state: page 0→Home(0), page 1→Community(1), page 2→Sports(2)
-    setState(() {
-      _currentIndex = pageIndex;
-    });
-  }
-
   Future<void> _showCreateMenu() async {
     setState(() => _createMenuOpen = true);
-    await showModalBottomSheet<_CreateAction>(
+
+    // Capture router BEFORE the modal opens to avoid stale context after
+    // useRootNavigator:true dismisses the sheet on the root navigator.
+    final router = GoRouter.of(context);
+    final feedNotifier = ref.read(feedNotifierProvider.notifier);
+
+    final action = await showModalBottomSheet<_CreateAction>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.35),
       useRootNavigator: true,
       builder: (ctx) => const _CreateActionSheet(),
-    ).then((action) async {
-      if (!mounted) return;
-      setState(() => _createMenuOpen = false);
-      switch (action) {
-        case _CreateAction.post:
-          final result = await context.push<bool>(RoutePaths.socialCreatePost);
-          if (result == true && mounted) {
-            ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
-          }
-        case _CreateAction.game:
-          context.push(RoutePaths.createGame);
-        case _CreateAction.meetup:
-          // TODO: navigate to create meetup when route is added
+    );
+
+    if (!mounted) return;
+    setState(() => _createMenuOpen = false);
+
+    switch (action) {
+      case _CreateAction.post:
+        final result = await router.push<bool>(RoutePaths.socialCreatePost);
+        if (result == true && mounted) {
+          feedNotifier.clearNewPostsBadge();
+        }
+      case _CreateAction.game:
+        router.push(RoutePaths.createGame);
+      case _CreateAction.meetup:
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Meetups coming soon!'),
               behavior: SnackBarBehavior.floating,
             ),
           );
-        case null:
-          break;
-      }
-    });
+        }
+      case null:
+        break;
+    }
   }
 
   bool get _isAndroid =>
@@ -392,16 +349,17 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure profile data is bootstrapped once per session so
-    // profileType is available on first visit to Home
+    // Move side-effect out of build: use ref.listen to bootstrap profile data
+    ref.listen(initializeProfileDataProvider, (previous, next) {
+      next.whenData((success) {
+        if (success && !ref.read(profileBootstrapCompletedProvider)) {
+          ref.read(profileBootstrapCompletedProvider.notifier).state = true;
+        }
+      });
+    });
+
     final bootstrapCompleted = ref.watch(profileBootstrapCompletedProvider);
     final isProfileInitialized = ref.watch(initializeProfileDataProvider);
-
-    isProfileInitialized.whenData((success) {
-      if (success && !bootstrapCompleted) {
-        ref.read(profileBootstrapCompletedProvider.notifier).state = true;
-      }
-    });
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -442,18 +400,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget _buildDesktopLayout(BuildContext context, Color targetPrimaryColor) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Map _currentIndex (0=Home, 1=Community, 2=Sports) → sequential destination index.
-    // Destinations: 0 Home, 1 Create, 2 Sports, 3 Search, 4 Notifications, 5 Profile
+    // Map branch index (0=Home,1=Community,2=Venues,3=Games) → side-nav destination index.
     int destIndex;
     switch (_currentIndex) {
       case 0:
-        destIndex = 0;
+        destIndex = 0; // Home
         break;
       case 1:
-        destIndex = 4; // Community maps to Community destination
+        destIndex = 4; // Community
         break;
       case 2:
-        destIndex = 2;
+      case 3:
+        destIndex = 2; // Sports (Venues or Games)
         break;
       default:
         destIndex = 0;
@@ -469,10 +427,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         height: 18,
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       ),
-      body: IndexedStack(
-        index: _currentIndex < _swipeableScreens.length ? _currentIndex : 0,
-        children: _swipeableScreens,
-      ),
+      body: widget.navigationShell,
       rightPanel: const _DesktopRightPanel(),
     );
   }
@@ -503,15 +458,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  // ── Mobile layout (existing bottom nav + PageView) ──
+  // ── Mobile layout (bottom nav + shell body) ──
   Widget _buildMobileLayout(BuildContext context, Color targetPrimaryColor) {
     return Scaffold(
       extendBody: true,
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: _onPageChanged,
-        children: _swipeableScreens,
-      ),
+      body: widget.navigationShell,
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: LayoutBuilder(
@@ -521,74 +472,70 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 (constraints.maxWidth * (isCompactNav ? 0.97 : 0.92))
                     .clamp(0.0, 420.0)
                     .toDouble();
-            final isDark =
-                Theme.of(context).brightness == Brightness.dark;
-            final glassBase = isDark
-                ? Colors.black.withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.55);
-            final glassBorder = isDark
-                ? Colors.white.withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.70);
+            final cs = Theme.of(context).colorScheme;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final foregroundColor = cs.onPrimaryContainer;
+            final foregroundColorInactive = foregroundColor.withValues(alpha: 0.65);
 
-            final foregroundColor =
-                Theme.of(context).colorScheme.onPrimaryContainer;
-            final foregroundColorInactive =
-                foregroundColor.withValues(alpha: 0.65);
+            // Primary-tinted liquid glass colors
+            final glassColor = isDark
+                ? cs.primary.withValues(alpha: 0.18)
+                : cs.primaryContainer.withValues(alpha: 0.55);
+            final glassBorderColor = isDark
+                ? cs.primary.withValues(alpha: 0.32)
+                : cs.primary.withValues(alpha: 0.22);
+            final glowColor = isDark
+                ? cs.primary.withValues(alpha: 0.22)
+                : cs.primary.withValues(alpha: 0.14);
 
             return Align(
               alignment: Alignment.bottomCenter,
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: targetWidth),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(32),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                    filter: kIsWeb
+                        ? ImageFilter.blur(sigmaX: 0, sigmaY: 0) // No-op on web to be safe
+                        : ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
-                      // decoration: BoxDecoration(
-                      //   color: glassBase,
-                      //   borderRadius: BorderRadius.circular(28),
-                      //   border: Border.all(
-                      //     color: glassBorder,
-                      //     width: 1.0,
-                      //   ),
-                      //   boxShadow: [
-                      //     // BoxShadow(
-                      //     //   color: Colors.black.withValues(alpha: 0.12),
-                      //     //   blurRadius: 24,
-                      //     //   spreadRadius: -4,
-                      //     //   offset: const Offset(0, 8),
-                      //     // ),
-                      //     // BoxShadow(
-                      //     //   color: Colors.black.withValues(alpha: 0.06),
-                      //     //   blurRadius: 6,
-                      //     //   offset: const Offset(0, 2),
-                      //     // ),
-                      //   ],
-                      // ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isCompactNav ? 10 : 14,
-                          vertical: isCompactNav ? 8 : 10,
-                        ),
-                        child: SizedBox(
-                          // width: double.infinity,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: _isOnSportsPage
-                                  ? _buildSportsNavItems(
-                                      foregroundColor,
-                                      foregroundColorInactive,
-                                    )
-                                  : _buildHomeNavItems(
-                                      foregroundColor,
-                                      foregroundColorInactive,
-                                    ),
-                            ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isCompactNav ? 8 : 10,
+                        vertical: isCompactNav ? 7 : 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: glassColor,
+                        borderRadius: BorderRadius.circular(32),
+                        border: Border.all(color: glassBorderColor, width: 1.0),
+                        boxShadow: [
+                          BoxShadow(
+                            color: glowColor,
+                            blurRadius: 28,
+                            spreadRadius: -2,
+                            offset: const Offset(0, 8),
                           ),
+                          BoxShadow(
+                            color: cs.primary.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: _isOnSportsPage
+                              ? _buildSportsNavItems(
+                                  foregroundColor,
+                                  foregroundColorInactive,
+                                )
+                              : _buildHomeNavItems(
+                                  foregroundColor,
+                                  foregroundColorInactive,
+                                ),
                         ),
                       ),
                     ),
@@ -652,7 +599,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     Color foregroundColor,
     Color foregroundColorInactive,
   ) {
-    final sportsSubTab = ref.watch(sportsSubTabProvider);
+    final isGamesSelected = _currentIndex == 3;
+    final isVenuesSelected = _currentIndex == 2;
 
     return [
       _buildIconNavItem(
@@ -670,7 +618,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           _buildSportsTextNavItem(
             index: 1,
             label: 'Venues',
-            isSelected: sportsSubTab == 1,
+            isSelected: isVenuesSelected,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
@@ -678,7 +626,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           _buildSportsTextNavItem(
             index: 2,
             label: 'Games',
-            isSelected: sportsSubTab == 0,
+            isSelected: isGamesSelected,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
@@ -724,12 +672,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.30),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    color: colorScheme.primary.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ]
-              : null,
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Text(
           label,
@@ -766,19 +720,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : Colors.transparent,
+          color: isSelected ? colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.30),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+                    color: colorScheme.primary.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ]
-              : null,
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Text(
           label,
@@ -805,14 +763,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     bool isMenuOpen = false,
   }) {
     final isSelected = forceUnselected ? false : _currentIndex == index;
-    final buttonSize = _isCompactNavWidth(context) ? 46.0 : 50.0;
+    final buttonSize = _isCompactNavWidth(context) ? 44.0 : 48.0;
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final circleBg = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : Colors.black.withValues(alpha: 0.07);
+        ? cs.primary.withValues(alpha: 0.22)
+        : cs.primaryContainer.withValues(alpha: 0.50);
     final circleBorder = isDark
-        ? Colors.white.withValues(alpha: 0.18)
-        : Colors.white.withValues(alpha: 0.80);
+        ? cs.primary.withValues(alpha: 0.40)
+        : cs.primary.withValues(alpha: 0.28);
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
@@ -824,12 +783,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         decoration: BoxDecoration(
           color: circleBg,
           shape: BoxShape.circle,
-          border: Border.all(color: circleBorder, width: 0.8),
+          border: Border.all(color: circleBorder, width: 0.9),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+              blurRadius: 14,
+              spreadRadius: -2,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -851,16 +811,29 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required Color foregroundColor,
     required List<Widget> children,
   }) {
+    final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final pillBg = isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.black.withValues(alpha: 0.06);
+        ? cs.primary.withValues(alpha: 0.16)
+        : cs.primaryContainer.withValues(alpha: 0.38);
+    final pillBorder = isDark
+        ? cs.primary.withValues(alpha: 0.28)
+        : cs.primary.withValues(alpha: 0.18);
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: pillBg,
         borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: pillBorder, width: 0.8),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: isDark ? 0.20 : 0.10),
+            blurRadius: 16,
+            spreadRadius: -2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
@@ -1071,9 +1044,17 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
   late final Animation<double> _fadeAnim;
 
   static const _actions = [
-    (icon: Iconsax.edit_2_copy, label: 'Create Post', action: _CreateAction.post),
+    (
+      icon: Iconsax.edit_2_copy,
+      label: 'Create Post',
+      action: _CreateAction.post,
+    ),
     (icon: Iconsax.game_copy, label: 'Create Game', action: _CreateAction.game),
-    (icon: Iconsax.people_copy, label: 'Create Meetup', action: _CreateAction.meetup),
+    (
+      icon: Iconsax.people_copy,
+      label: 'Create Meetup',
+      action: _CreateAction.meetup,
+    ),
   ];
 
   @override
@@ -1119,7 +1100,9 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(28),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+            filter: kIsWeb
+                ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+                : ImageFilter.blur(sigmaX: 28, sigmaY: 28),
             child: Container(
               decoration: BoxDecoration(
                 color: glassBase,
@@ -1140,13 +1123,20 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
                   final item = _actions[i];
                   final delay = i * 0.12;
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.4),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: _controller,
-                      curve: Interval(delay, 1.0, curve: Curves.easeOutCubic),
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 0.4),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: _controller,
+                            curve: Interval(
+                              delay,
+                              1.0,
+                              curve: Curves.easeOutCubic,
+                            ),
+                          ),
+                        ),
                     child: FadeTransition(
                       opacity: CurvedAnimation(
                         parent: _controller,

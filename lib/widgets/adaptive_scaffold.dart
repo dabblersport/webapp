@@ -41,6 +41,7 @@ class AdaptiveScaffold extends StatelessWidget {
     required this.destinations,
     required this.currentIndex,
     required this.onDestinationSelected,
+    this.background,
     this.rightPanel,
     this.mobileBottomNav,
     this.maxContentWidth = 600,
@@ -49,6 +50,9 @@ class AdaptiveScaffold extends StatelessWidget {
 
   /// Main scrollable content (the feed, explore, etc.).
   final Widget body;
+
+  /// Optional background layer (e.g. DynamicBackground).
+  final Widget? background;
 
   /// Navigation destinations shared between mobile & desktop.
   final List<AdaptiveDestination> destinations;

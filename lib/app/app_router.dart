@@ -46,7 +46,13 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/register_s
 // Core screens
 import 'package:dabbler/features/error/presentation/pages/error_page.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
+import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
+import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
+import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
+import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart' show RealFriendsScreen;
 import 'package:dabbler/features/misc/presentation/screens/activities_screen_v2.dart';
 import 'package:dabbler/features/misc/presentation/screens/rewards_screen.dart';
 
@@ -87,7 +93,7 @@ import 'package:dabbler/features/misc/presentation/screens/transactions_screen.d
 import 'package:dabbler/features/notifications/presentation/screens/notifications_screen_v2.dart';
 
 // Game screens
-import 'package:dabbler/features/misc/presentation/screens/create_game_screen.dart';
+import 'package:dabbler/features/misc/presentation/screens/game_composer_screen.dart';
 
 // Social screens
 import 'package:dabbler/features/social/presentation/screens/post_detail_screen.dart';
@@ -698,35 +704,135 @@ class AppRouter {
       ),
     ),
 
-    // Home route
-    GoRoute(
-      path: RoutePaths.home,
-      name: RouteNames.home,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const MainNavigationScreen(),
-      ),
+    // ── Shell route: persistent bottom-nav tabs with per-tab URLs ──
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return MainNavigationScreen(navigationShell: navigationShell);
+      },
+      branches: [
+        // Branch 0 — Home / Feeds
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.home,
+              name: RouteNames.home,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const HomeScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 1 — Community
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.community,
+              name: RouteNames.community,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const RealFriendsScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 2 — Venues
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.venuesTab,
+              name: RouteNames.venuesTab,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const VenuesScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 3 — Games
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.gamesTab,
+              name: RouteNames.gamesTab,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const GamesScreen(),
+              ),
+            ),
+          ],
+        ),
+      ],
     ),
 
-    // Social/Community route — feed lives in HomeScreen now.
+    // ── Deep-link entry routes ─────────────────────────────────────────────
+    // These top-level paths let the OS (Android / iOS) hand off
+    // dabbler://app/game/:gameId  and  dabbler://app/create-game  directly
+    // to the correct screen without needing to know the shell structure.
+
+    // /sports/games/:gameId — game detail (root-level, no shell/bottom-nav)
+    GoRoute(
+      path: '/sports/games/:gameId',
+      name: RouteNames.gameDetail,
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final gameId = state.pathParameters['gameId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: GameDetailScreen(gameId: gameId),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
+    // /sports/venues/:venueId — venue detail (root-level, no shell/bottom-nav)
+    GoRoute(
+      path: '/sports/venues/:venueId',
+      name: RouteNames.venueDetail,
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final venueId = state.pathParameters['venueId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: VenueDetailScreen(venueId: venueId),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
+    // dabbler://app/game/:gameId → /sports/games/:gameId (root-level detail)
+    GoRoute(
+      path: '/game/:gameId',
+      redirect: (context, state) {
+        final gameId = state.pathParameters['gameId'];
+        if (gameId == null || gameId.isEmpty) return RoutePaths.gamesTab;
+        return '/sports/games/$gameId';
+      },
+    ),
+
+    // dabbler://app/create-game is already a first-class top-level route
+    // (/create-game) so no redirect needed — it resolves directly.
+
+
     GoRoute(
       path: RoutePaths.social,
       name: RouteNames.social,
-      redirect: (context, state) => RoutePaths.home,
+      redirect: (context, state) => RoutePaths.community,
     ),
 
-    // Sports route (hidden for MVP - not in tab list)
-    // Route kept for deep links/admin access but UI entry points hidden
+    // Legacy /sports top-level redirect handled inside the shell branch above.
+    // Sports explore screen (direct access, feature-flagged)
     GoRoute(
-      path: RoutePaths.sports,
+      path: RoutePaths.sportsExplore,
       name: RouteNames.sports,
       redirect: (context, state) {
-        // Hide Sports from MVP - redirect to Activities (My Games)
-        // Keep route definition for deep links/future enablement
         if (!FeatureFlags.enableGameBrowsing) {
           return RoutePaths.home;
         }
-        return null; // Allow access if enabled
+        return null;
       },
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
@@ -989,13 +1095,10 @@ class AppRouter {
         // Allow access if profile type has permission
         return null;
       },
-      pageBuilder: (context, state) => BottomSheetTransitionPage(
+      pageBuilder: (context, state) => SlideTransitionPage(
         key: state.pageKey,
-        child: CreateGameScreen(
-          initialData: state.extra is Map<String, dynamic>
-              ? state.extra as Map<String, dynamic>
-              : null,
-        ),
+        direction: SlideDirection.fromBottom,
+        child: const GameComposerScreen(),
       ),
     ),
 
@@ -1003,31 +1106,23 @@ class AppRouter {
       path: RoutePaths.createGameBasicInfo,
       name: RouteNames.createGameBasicInfo,
       redirect: (context, state) async {
-        // Check user's profile type and apply feature flags
         final container = ProviderScope.containerOf(context, listen: false);
         final profileState = container.read(profileControllerProvider);
         final profileType = profileState.profile?.profileType;
 
-        // Block players from creating games if feature disabled
         if (profileType == 'player' && !FeatureFlags.enablePlayerGameCreation) {
           return RoutePaths.home;
         }
-
-        // Block organisers from creating games if feature disabled
         if (profileType == 'organiser' &&
             !FeatureFlags.enableOrganiserGameCreation) {
           return RoutePaths.home;
         }
-
-        return null; // Allow access if profile type has permission
+        return null;
       },
-      pageBuilder: (context, state) => BottomSheetTransitionPage(
+      pageBuilder: (context, state) => SlideTransitionPage(
         key: state.pageKey,
-        child: CreateGameScreen(
-          initialData: state.extra is Map<String, dynamic>
-              ? state.extra as Map<String, dynamic>
-              : null,
-        ),
+        direction: SlideDirection.fromBottom,
+        child: const GameComposerScreen(),
       ),
     ),
 

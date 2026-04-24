@@ -185,11 +185,10 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
           .from('venues')
           .select('''
         *,
-        venue_spaces(sport, name_en, surface_key, indoor, lighting, capacity, min_players, max_players, is_active),
-        venue_rating_aggregate(composite_score, event_count, dim_sums, dim_counts, last_event_at),
+        venue_spaces(sport_id, name_en, surface_key, indoor, lighting, capacity, is_active),
+        venue_rating_aggregate(composite_score, event_count, last_event_at),
         venue_photos(url, sort_order),
-        venue_opening_hours(weekday, open_time, close_time, is_open),
-        venue_amenities(amenity_key, value)
+        opening_hours(day_group, open_time, close_time, is_open, is_closed)
       ''')
           .eq('id', venueId)
           .single();

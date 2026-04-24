@@ -41,6 +41,12 @@
 	<string>Your location is used to show nearby games and venues even when the app is in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to show nearby games and venues.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Dabbler uses your camera to set a profile photo or share game moments.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dabbler accesses your photo library to let you set a profile photo or share game moments.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Dabbler saves photos to your library.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Dabbler uses notifications to keep you updated about games, bookings, and friend activity.</string>
 	<key>UIApplicationSceneManifest</key>

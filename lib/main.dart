@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'url_strategy_stub.dart'
+    if (dart.library.html) 'url_strategy_web.dart';
 import 'app/app_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/responsive_app_shell.dart';
@@ -65,6 +67,9 @@ Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // Use clean path-based URLs on web (removes the # fragment).
+      if (kIsWeb) configureWebUrlStrategy();
 
       // Surface real errors in the browser console on Flutter web.
       FlutterError.onError = (FlutterErrorDetails details) {

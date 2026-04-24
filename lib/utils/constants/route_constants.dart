@@ -3,6 +3,11 @@ class RoutePaths {
   // Deep Link Configuration
   static const String deepLinkPrefix = 'dabbler://app';
 
+  // ── Deep Link entry paths (top-level, redirect into the shell) ──
+  // dabbler://app/game/:gameId  → /sports/games/:gameId
+  static const String deepLinkGame = '/game/:gameId';
+  // dabbler://app/create-game  → /create-game (already top-level, works directly)
+
   // Landing & Authentication
   static const String landing = '/landing';
   static const String phoneInput = '/phone_input';
@@ -43,11 +48,15 @@ class RoutePaths {
 
   // Main App
   static const String home = '/home';
+  static const String community = '/community';
+  static const String venuesTab = '/sports/venues';
+  static const String gamesTab = '/sports/games';
   static const String profile = '/profile';
   static const String sportProfile = '/profile/sport';
   static const String games = '/games';
   static const String social = '/social';
   static const String sports = '/sports';
+  static const String sportsExplore = '/sports-explore';
   static const String bookings = '/bookings';
   static const String activities = '/activities';
   static const String notifications = '/notifications';
@@ -61,6 +70,10 @@ class RoutePaths {
 
   static String venueSubmissionDetail(String submissionId) =>
       '/venue-submissions/$submissionId';
+
+  // Game & Venue detail paths (root-level, no shell)
+  static String gameDetail(String gameId) => '/sports/games/$gameId';
+  static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
   // Rewards & Leaderboard
   static const String rewards = '/rewards';
@@ -226,6 +239,9 @@ class RouteNames {
 
   // Main Navigation Routes
   static const String sports = 'sports';
+  static const String community = 'community';
+  static const String venuesTab = 'venues-tab';
+  static const String gamesTab = 'games-tab';
   static const String activities = 'activities';
 
   // Rewards & Leaderboard

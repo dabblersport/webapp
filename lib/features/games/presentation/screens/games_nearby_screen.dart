@@ -9,9 +9,11 @@ import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
-import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 // =============================================================================
 // SCREEN
@@ -60,7 +62,12 @@ class _GamesNearbyScreenState extends ConsumerState<GamesNearbyScreen> {
     final locState = locAsync.valueOrNull;
     final location =
         locState is ActiveLocationReady ? locState.location : null;
-    return _buildContent(location);
+    return Stack(
+      children: [
+        Positioned.fill(child: const DynamicBackground()),
+        _buildContent(location),
+      ],
+    );
   }
 
   Widget _buildContent(ActiveLocation? location) {
@@ -381,10 +388,9 @@ class _NearbyGameCard extends StatelessWidget {
   final NearbyGameModel game;
 
   void _openDetail(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => GameDetailScreen(gameId: game.id),
-      ),
+    context.pushNamed(
+      RouteNames.gameDetail,
+      pathParameters: {'gameId': game.id},
     );
   }
 

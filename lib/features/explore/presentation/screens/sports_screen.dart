@@ -28,6 +28,7 @@ import 'package:dabbler/features/venues/presentation/providers/venues_with_sport
 import 'package:dabbler/core/utils/sport_id_mapping.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart'
     show sportsSubTabProvider;
+import 'package:dabbler/widgets/dynamic_background.dart';
 
 IconData _sportIconFor(String sport) {
   switch (sport.toLowerCase()) {
@@ -382,6 +383,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     with SingleTickerProviderStateMixin {
   late TabController _mainTabController;
   late LocationService _locationService;
+  final ScrollController _mainScrollController = ScrollController();
   int _selectedSportIndex = 0;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -548,6 +550,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   void dispose() {
     _locationService.removeListener(_onLocationChanged);
     _mainTabController.dispose();
+    _mainScrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -933,13 +936,20 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          DynamicBackground(
+            scrollController: _mainScrollController,
+            startColor: context.getCategoryTheme('main').primary,
           ),
+          RefreshIndicator(
+            onRefresh: _handleRefresh,
+            child: CustomScrollView(
+              controller: _mainScrollController,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
           slivers: [
             // Safe-area top spacing
             SliverToBoxAdapter(
@@ -967,10 +977,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               ),
             ),
 
-            // ── Tab content (games / venues) ──
             SliverToBoxAdapter(
-              child:
-                  (_mainTabController.index == 0 &&
+              child: (_mainTabController.index == 0 &&
                       FeatureFlags.enableGameBrowsing)
                   ? _buildGamesTabContent()
                   : _buildVenuesTabContent(),
@@ -978,8 +986,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
           ],
         ),
       ),
-    );
-  }
+    ],
+  ),
+);
+}
 
   Widget _buildGamesTabContent() {
     final publicGamesAsync = publicGamesProvider;
