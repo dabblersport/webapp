@@ -1305,6 +1305,7 @@ class AppRouter {
     GoRoute(
       path: '${RoutePaths.socialPostDetail}/:postId',
       name: RouteNames.socialPostDetail,
+      parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final postId = state.pathParameters['postId'] ?? '';
         return ScaleTransitionPage(

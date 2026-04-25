@@ -1498,7 +1498,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     await _db.from('post_views').upsert({
       'post_id': postId,
       'viewer_user_id': uid,
-    });
+    }, onConflict: 'post_id,viewer_user_id', ignoreDuplicates: true);
     return const Unit();
   });
 

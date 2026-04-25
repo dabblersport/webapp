@@ -48,6 +48,7 @@ class HomeLocationBar extends ConsumerWidget {
   void _openPicker(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
@@ -242,6 +243,7 @@ class _DeniedBar extends StatelessWidget {
     return GestureDetector(
       onTap: () => showModalBottomSheet(
         context: context,
+        useRootNavigator: true,
         isScrollControlled: true,
         backgroundColor: cs.surface,
         shape: const RoundedRectangleBorder(

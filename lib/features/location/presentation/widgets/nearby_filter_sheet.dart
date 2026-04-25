@@ -28,6 +28,7 @@ class NearbyFilterSheet extends ConsumerStatefulWidget {
   static Future<NearbyFilterResult?> show(BuildContext context) {
     return showModalBottomSheet<NearbyFilterResult>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(

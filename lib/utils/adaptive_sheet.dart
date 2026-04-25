@@ -50,6 +50,7 @@ Future<T?> showAdaptiveSheet<T>({
   final cs = Theme.of(context).colorScheme;
   return showModalBottomSheet<T>(
     context: context,
+    useRootNavigator: true,
     builder: effectiveBuilder,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
@@ -78,6 +79,7 @@ Future<T?> _showCenteredDialog<T>({
 
   return showDialog<T>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: isDismissible,
     builder: (ctx) {
       return Center(

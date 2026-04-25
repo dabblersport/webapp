@@ -328,6 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     return GestureDetector(
                       onTap: () => showModalBottomSheet(
                         context: context,
+                        useRootNavigator: true,
                         isScrollControlled: true,
                         backgroundColor: Theme.of(context).colorScheme.surface,
                         shape: const RoundedRectangleBorder(
