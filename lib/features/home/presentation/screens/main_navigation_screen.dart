@@ -458,11 +458,26 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
+  // Height of the floating pill nav bar (pill content + bottom margin).
+  // Used to inject bottom padding into child screens so their content
+  // isn't hidden behind the floating bar when extendBody is true.
+  static const double _kNavBarHeight = 80.0;
+
   // ── Mobile layout (bottom nav + shell body) ──
   Widget _buildMobileLayout(BuildContext context, Color targetPrimaryColor) {
+    final mq = MediaQuery.of(context);
+    final extraBottom = _kNavBarHeight + mq.padding.bottom;
+
     return Scaffold(
       extendBody: true,
-      body: widget.navigationShell,
+      // Inject bottom padding so child screens know how far to scroll.
+      body: MediaQuery(
+        data: mq.copyWith(
+          padding: mq.padding.copyWith(bottom: extraBottom),
+          viewPadding: mq.viewPadding.copyWith(bottom: extraBottom),
+        ),
+        child: widget.navigationShell,
+      ),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: LayoutBuilder(
