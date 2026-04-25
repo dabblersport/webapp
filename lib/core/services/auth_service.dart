@@ -314,55 +314,32 @@ class AuthService {
   /// Sign in with Google OAuth
   Future<bool> signInWithGoogle() async {
     try {
-      // Use native token-based Google Sign-In on all platforms (no browser redirect).
-      // - Android: native account chooser via Credential Manager (reads serverClientId from google-services.json).
-      // - iOS: native account chooser (reads clientId from GoogleService-Info.plist).
-      // - Web: popup flow when clientId is set.
-      if (kIsWeb && Environment.googleWebClientId.isEmpty) {
-        throw Exception(
-          'Missing GOOGLE_WEB_CLIENT_ID for web Google sign-in. '
-          'Add it to your .env as the OAuth Client ID for a Web application '
-          '(ends with .apps.googleusercontent.com).',
+      if (kIsWeb) {
+        // On web, google_sign_in does not return an idToken via the popup flow.
+        // Use Supabase's built-in OAuth redirect — it handles the full PKCE flow
+        // and sets the session automatically on redirect back.
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: Uri.base.origin,
+          scopes: 'email profile openid',
         );
+        // Returns true immediately; the page will redirect to Google and back.
+        // The auth state listener picks up the session on return.
+        return true;
       }
 
-      // Native flow for Android, iOS, and web
+      // Native flow for Android and iOS.
       //
-      // clientId       – used by the web and iOS platforms.
-      // serverClientId – used by Android (Credential Manager) to request an
-      //                  idToken whose "aud" claim matches the Web client that
-      //                  Supabase verifies against.
+      // serverClientId tells Credential Manager (Android) which Web OAuth client
+      // to mint the idToken for — must match the Web client ID in Supabase.
       final webClientId = Environment.googleWebClientId;
       final googleSignIn = GoogleSignIn(
         scopes: const ['email', 'profile', 'openid'],
-        // clientId is used by the web (and iOS) plugin.
-        clientId: kIsWeb ? webClientId : null,
-        // serverClientId is used by Android only; the web plugin throws if set.
-        serverClientId: !kIsWeb && webClientId.isNotEmpty ? webClientId : null,
+        serverClientId: webClientId.isNotEmpty ? webClientId : null,
       );
 
-      GoogleSignInAccount? account;
-
-      // On web, try silent sign-in first to check for existing session
-      if (kIsWeb) {
-        try {
-          account = await googleSignIn.signInSilently(suppressErrors: true);
-        } catch (e) {
-          // Silent sign-in failed, will try interactive below
-          print('Silent sign-in failed: $e');
-        }
-      }
-
-      // If no existing session, use interactive sign-in
-      // Note: On web, signIn() is deprecated but still works for now
-      // TODO: Migrate to renderButton() approach for web
-      if (account == null) {
-        account = await googleSignIn.signIn();
-        if (account == null) {
-          // User cancelled.
-          return false;
-        }
-      }
+      final account = await googleSignIn.signIn();
+      if (account == null) return false;
 
       final auth = await account.authentication;
       final idToken = auth.idToken;

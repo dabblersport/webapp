@@ -107,15 +107,19 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     try {
       final authService = ref.read(authServiceProvider);
 
-      // Native Google Sign-In completes in-app
       final launched = await authService.signInWithGoogle();
       if (!launched) {
-        // User cancelled
         if (mounted) setState(() => _isLoading = false);
         return;
       }
 
-      // Check the result after OAuth completes
+      // On web, signInWithGoogle() triggers a full-page redirect to Google.
+      // The browser navigates away immediately — nothing below runs until
+      // the user returns, at which point Supabase restores the session and
+      // onAuthStateChange fires, letting the router redirect to home.
+      if (kIsWeb) return;
+
+      // Check the result after OAuth completes (mobile only)
       final result = await authService.handleGoogleSignInFlow();
 
       if (!mounted) return;

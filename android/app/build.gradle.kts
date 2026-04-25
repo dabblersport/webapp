@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId = "com.dabbler.dabblerapp"
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion // pinned: existing Play Store APKs require minSdk 21
         targetSdk = 35  // or 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
