@@ -19,21 +19,13 @@ class UsernameRepositoryImpl implements UsernameRepository {
     if (trimmed.isEmpty) {
       return Ok(true);
     }
-    try {
-      final row = await _client
-          .from('profiles')
-          .select('id')
-          .eq('username', trimmed)
-          .maybeSingle();
-      return Ok(row == null);
-    } catch (error) {
-      return Err(
-        ServerFailure(
-          message: 'Failed to check username availability',
-          cause: error,
-        ),
-      );
-    }
+    // Delegate to the authoritative RPC to avoid btrim(uuid) when PostgREST
+    // infers uuid type for UUID-formatted strings compared against citext username column.
+    final rpcResult = await checkAvailabilityRpc(trimmed);
+    return rpcResult.fold(
+      (err) => Err(err),
+      (data) => Ok(data.available),
+    );
   }
 
   @override
@@ -173,6 +165,66 @@ class UsernameRepositoryImpl implements UsernameRepository {
       return Err(
         ServerFailure(message: 'Failed to update username', cause: error),
       );
+    }
+  }
+
+  @override
+  Future<Result<({bool available, String reason, String usernameNorm}), Failure>>
+      checkAvailabilityRpc(String username) async {
+    final trimmed = username.trim();
+    if (trimmed.isEmpty) {
+      return Ok((available: false, reason: 'empty', usernameNorm: ''));
+    }
+    try {
+      final response = await _client.rpc(
+        'rpc_username_availability',
+        params: {'p_username': trimmed},
+      );
+      // TABLE-returning functions come back as List<dynamic>
+      final row = (response is List)
+          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          : response as Map<String, dynamic>?;
+      if (row == null) {
+        return Err(const ServerFailure(message: 'Empty response from availability check'));
+      }
+      return Ok((
+        available: row['available'] as bool,
+        reason: (row['reason'] as String?) ?? '',
+        usernameNorm: (row['username_norm'] as String?) ?? trimmed,
+      ));
+    } catch (error) {
+      return Err(
+        ServerFailure(
+          message: 'Failed to check username availability',
+          cause: error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<String, Failure>> claimUsername({
+    required String username,
+    required String profileType,
+  }) async {
+    final trimmed = username.trim();
+    try {
+      final response = await _client.rpc(
+        'rpc_username_claim',
+        params: {'p_username': trimmed, 'p_profile_type': profileType},
+      );
+      // TABLE-returning functions come back as List<dynamic>
+      final row = (response is List)
+          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          : response as Map<String, dynamic>?;
+      return Ok((row?['claimed_username'] as String?) ?? trimmed);
+    } on PostgrestException catch (error) {
+      if (error.code == '23505' || error.message.contains('already taken')) {
+        return Err(const ConflictFailure(message: 'Username already taken'));
+      }
+      return Err(ServerFailure(message: 'Failed to claim username', cause: error));
+    } catch (error) {
+      return Err(ServerFailure(message: 'Failed to claim username', cause: error));
     }
   }
 

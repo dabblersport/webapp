@@ -11,6 +11,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/onboardi
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SetPasswordScreen extends ConsumerStatefulWidget {
   const SetPasswordScreen({super.key});
@@ -332,6 +333,18 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
       } else {
         // This screen is only for email users
         throw Exception('This screen is only for email-based registration.');
+      }
+
+      // Persist get_updates preference to user_preferences
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        await Supabase.instance.client.from('user_preferences').upsert(
+          {
+            'user_id': userId,
+            'get_updates': onboardingData.getUpdates,
+          },
+          onConflict: 'user_id',
+        );
       }
 
       // Mark onboarding complete

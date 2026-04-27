@@ -188,6 +188,7 @@ class AppRouter {
         RoutePaths.setPassword,
         RoutePaths.setUsername,
         RoutePaths.emailVerification,
+        RoutePaths.onboardingWelcome, // Progress screen — must not be gated
 
         // New DB-authoritative onboarding routes
         RoutePaths.onboardingPersonaSelection,
@@ -205,6 +206,7 @@ class AppRouter {
         RoutePaths.interestsSelection,
         RoutePaths.setPassword,
         RoutePaths.setUsername,
+        RoutePaths.onboardingWelcome, // Progress screen — must not be gated
 
         // New DB-authoritative onboarding routes
         RoutePaths.onboardingPersonaSelection,
@@ -324,7 +326,9 @@ class AppRouter {
         }
 
         // If onboarding needs a specific route, enforce it.
-        if (desired != null && loc != desired) {
+        // Exception: never redirect away from the progress screen — it is
+        // actively creating the profile and will navigate itself when done.
+        if (desired != null && loc != desired && loc != RoutePaths.onboardingWelcome) {
           logRoute('redirect (onboarding step) -> $desired');
           return desired;
         }

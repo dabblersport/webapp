@@ -5,7 +5,7 @@ import 'package:confetti/confetti.dart';
 import 'package:dabbler/features/profile/services/onboarding_gamification.dart'
     as gamification;
 import '../../../../../themes/design_system.dart';
-import 'onboarding_welcome_screen.dart'; // For providers
+import 'onboarding_providers.dart';
 
 class OnboardingCompletionScreen extends ConsumerStatefulWidget {
   const OnboardingCompletionScreen({super.key});

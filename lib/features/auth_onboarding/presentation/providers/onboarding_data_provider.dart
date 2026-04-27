@@ -14,6 +14,8 @@ class OnboardingData {
   final List<String>? interests; // list of sport UUIDs
   final String? username;
   final String? country; // User's country from country picker
+  final bool getUpdates; // Email marketing opt-in (cached, written to user_preferences after account creation)
+  final String? preferredSportName; // Human-readable sport name for username suggestion engine
 
   OnboardingData({
     this.email,
@@ -26,6 +28,8 @@ class OnboardingData {
     this.interests,
     this.username,
     this.country,
+    this.getUpdates = true,
+    this.preferredSportName,
   }) : assert(
          email != null || phone != null,
          'Either email or phone must be provided',
@@ -42,6 +46,8 @@ class OnboardingData {
     List<String>? interests,
     String? username,
     String? country,
+    bool? getUpdates,
+    String? preferredSportName,
   }) {
     return OnboardingData(
       email: email ?? this.email,
@@ -54,6 +60,8 @@ class OnboardingData {
       interests: interests ?? this.interests,
       username: username ?? this.username,
       country: country ?? this.country,
+      getUpdates: getUpdates ?? this.getUpdates,
+      preferredSportName: preferredSportName ?? this.preferredSportName,
     );
   }
 
@@ -70,6 +78,8 @@ class OnboardingData {
       'interests': interests,
       'username': username,
       'country': country,
+      'getUpdates': getUpdates,
+      'preferredSportName': preferredSportName,
     };
   }
 
@@ -88,6 +98,8 @@ class OnboardingData {
           : null,
       username: map['username'] as String?,
       country: map['country'] as String?,
+      getUpdates: (map['getUpdates'] as bool?) ?? true,
+      preferredSportName: map['preferredSportName'] as String?,
     );
   }
 
@@ -139,11 +151,16 @@ class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
   }
 
   /// Update sports (Screen 3)
-  void setSports({required String preferredSport, List<String>? interests}) {
+  void setSports({
+    required String preferredSport,
+    List<String>? interests,
+    String? preferredSportName,
+  }) {
     if (state == null) return;
     state = state!.copyWith(
       preferredSport: preferredSport,
       interests: interests,
+      preferredSportName: preferredSportName,
     );
   }
 
@@ -151,6 +168,18 @@ class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
   void setUsername(String username) {
     if (state == null) return;
     state = state!.copyWith(username: username);
+  }
+
+  /// Store display name + username before navigating to progress screen
+  void setIdentity({required String displayName, required String username}) {
+    if (state == null) return;
+    state = state!.copyWith(displayName: displayName, username: username);
+  }
+
+  /// Update email marketing opt-in
+  void setGetUpdates(bool value) {
+    if (state == null) return;
+    state = state!.copyWith(getUpdates: value);
   }
 
   /// Clear all data (after successful registration or cancellation)

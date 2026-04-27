@@ -47,6 +47,7 @@ class _InterestsSelectionScreenState
     extends ConsumerState<InterestsSelectionScreen> {
   final Set<String> _selectedSportIds = {}; // UUIDs
   bool _isLoading = false;
+  List<Sport> _loadedSports = [];
 
   void _toggleSport(String sportId) {
     setState(() {
@@ -83,9 +84,17 @@ class _InterestsSelectionScreenState
         }
       } else {
         // ONBOARDING MODE: Store UUIDs in provider, navigate to primary sport
-        ref
-            .read(onboardingDataProvider.notifier)
-            .setSports(preferredSport: sportIds.first, interests: sportIds);
+        final firstSport = _loadedSports.isNotEmpty
+            ? _loadedSports.firstWhere(
+                (s) => s.id == sportIds.first,
+                orElse: () => _loadedSports.first,
+              )
+            : null;
+        ref.read(onboardingDataProvider.notifier).setSports(
+          preferredSport: sportIds.first,
+          interests: sportIds,
+          preferredSportName: firstSport?.nameEn,
+        );
 
         if (mounted) {
           context.push(RoutePaths.onboardingPrimarySport);
@@ -227,8 +236,8 @@ class _InterestsSelectionScreenState
     // Get persona-specific copy
     final (title, subtitle) = _getPersonaSpecificCopy();
 
-    // Watch sports from Supabase (loads Sport objects with UUID ids)
-    final sportsAsync = ref.watch(sportsProvider);
+    // Watch sports filtered by the user's selected country
+    final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
 
     return AdaptiveAuthShell(
       backgroundColor: tokens.main.background,
@@ -256,7 +265,9 @@ class _InterestsSelectionScreenState
             ),
           ),
         ),
-        data: (sports) => SingleChildScrollView(
+        data: (sports) {
+          _loadedSports = sports;
+          return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: EdgeInsets.all(AppSpacing.xxl),
@@ -381,7 +392,8 @@ class _InterestsSelectionScreenState
               ],
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }

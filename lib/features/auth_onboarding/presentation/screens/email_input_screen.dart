@@ -31,7 +31,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   String? _errorMessage;
   String? _successMessage;
   bool _isEmailValid = false;
-  bool _keepInLoop = true;
+  bool _getUpdates = true;
 
   @override
   void initState() {
@@ -88,6 +88,13 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       await authService.sendOtp(identifier: email, type: IdentifierType.email);
 
       if (!mounted) return;
+
+      // Seed onboarding data so getUpdates is carried through the flow
+      final notifier = ref.read(onboardingDataProvider.notifier);
+      if (ref.read(onboardingDataProvider) == null) {
+        notifier.initWithEmail(email);
+      }
+      notifier.setGetUpdates(_getUpdates);
 
       // Navigate to OTP verification screen
       context.push(
@@ -506,41 +513,31 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: _isLoading
-          ? null
-          : () {
-              setState(() => _keepInLoop = !_keepInLoop);
-            },
-      child: Container(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Checkbox(
-              value: _keepInLoop,
-              onChanged: _isLoading
-                  ? null
-                  : (v) => setState(() => _keepInLoop = v ?? false),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-              activeColor: colorScheme.primary,
-              checkColor: colorScheme.onPrimary,
-              side: BorderSide(color: colorScheme.primary, width: 2),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            'Keep me in the loop with emails about updates & more',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
-            Expanded(
-              child: Text(
-                'Keep me in the loop with emails about updates & more',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        Switch(
+          value: _getUpdates,
+          onChanged: _isLoading
+              ? null
+              : (v) {
+                  setState(() => _getUpdates = v);
+                  ref
+                      .read(onboardingDataProvider.notifier)
+                      .setGetUpdates(v);
+                },
+          activeThumbColor: colorScheme.primary,
+        ),
+      ],
     );
   }
 

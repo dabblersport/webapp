@@ -13,6 +13,7 @@ import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/data/repositories/post_repository_impl.dart';
 import 'package:dabbler/data/repositories/sports_repository.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/data/repositories/vibes_repository.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -315,6 +316,38 @@ final sportsRepositoryProvider = Provider<SportsRepository>((ref) {
 final sportsProvider = FutureProvider.autoDispose<List<Sport>>((ref) async {
   final repo = ref.watch(sportsRepositoryProvider);
   final result = await repo.getActiveSports();
+  return result.fold((err) => throw Exception(err.message), (sports) => sports);
+});
+
+/// Active sports filtered by the user's selected country code.
+/// Resolves country name → ISO code via ref_countries, then filters sports
+/// by popularity_countries. Falls back to all active sports when no match.
+final sportsForSelectedCountryProvider =
+    FutureProvider.autoDispose<List<Sport>>((ref) async {
+  final repo = ref.watch(sportsRepositoryProvider);
+
+  // Resolve country name to ISO code
+  String? countryCode;
+  try {
+    final countryName = ref
+        .watch(selectedCountryProvider)
+        .valueOrNull;
+    if (countryName != null && countryName.isNotEmpty) {
+      final rows = await Supabase.instance.client
+          .from('ref_countries')
+          .select('code')
+          .eq('name_en', countryName)
+          .eq('coverage', true)
+          .limit(1);
+      if (rows.isNotEmpty) {
+        countryCode = rows.first['code'] as String?;
+      }
+    }
+  } catch (_) {
+    // If lookup fails, fall through with null countryCode → all sports
+  }
+
+  final result = await repo.getActiveSportsForCountry(countryCode);
   return result.fold((err) => throw Exception(err.message), (sports) => sports);
 });
 

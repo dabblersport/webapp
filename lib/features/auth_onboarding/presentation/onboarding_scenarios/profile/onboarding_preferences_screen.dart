@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../themes/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
-import 'onboarding_welcome_screen.dart'; // For providers
+import 'onboarding_providers.dart'; // For providers
 
 class OnboardingPreferencesScreen extends ConsumerStatefulWidget {
   const OnboardingPreferencesScreen({super.key});

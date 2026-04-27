@@ -68,6 +68,17 @@ final setMyUsernameForTypeProvider = FutureProvider.autoDispose
       );
     });
 
+// RPC-based availability check (authoritative — checks banned/reserved/registry)
+final usernameAvailabilityRpcProvider = FutureProvider.autoDispose
+    .family<({bool available, String reason, String usernameNorm}), String>((
+      ref,
+      username,
+    ) async {
+      final repo = ref.watch(usernameRepositoryProvider);
+      final result = await repo.checkAvailabilityRpc(username);
+      return result.fold((f) => throw f, (v) => v);
+    });
+
 // stream my profile of a type
 final myProfileTypeStreamProvider = StreamProvider.autoDispose
     .family<Result<Profile, Failure>, String>((ref, profileType) {

@@ -926,20 +926,137 @@ class AuthService {
     }
   }
 
-  /// Check if username already exists in public.profiles
+  /// Step 1: Create or update the profile row + avatar.
+  /// Returns the profileId.
+  Future<String> createProfileStep({
+    required String displayName,
+    required String username,
+    required int age,
+    required String gender,
+    required String intention,
+    required String preferredSport,
+    List<String>? interests,
+    String? country,
+    String? city,
+    String? password,
+  }) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+
+    final personaType = intention;
+
+    if (password != null && password.isNotEmpty) {
+      await _supabase.auth.updateUser(UserAttributes(password: password));
+    }
+
+    await _supabase.auth.updateUser(UserAttributes(data: {
+      'display_name': displayName,
+      if (username.isNotEmpty) 'username': username,
+    }));
+
+    // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
+    // and bypass legacy-field triggers (profile_type / is_player / intention)
+    final profileId = await _supabase.rpc('rpc_onboard_profile', params: {
+      'p_user_id': user.id,
+      'p_display_name': displayName,
+      'p_username': username,
+      'p_age': age,
+      'p_gender': gender,
+      'p_persona_type': personaType,
+      if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
+      if (interests != null && interests.isNotEmpty) 'p_interests': interests,
+      if (country != null) 'p_country': country,
+      if (city != null) 'p_city': city,
+    }) as String;
+
+    await DefaultAvatarService(client: _supabase)
+        .ensureProfileAvatar(userId: user.id, profileId: profileId);
+
+    return profileId;
+  }
+
+  /// Step 2: Create the persona-specific table row (player / organiser / hoster).
+  Future<void> createPersonaProfileStep(
+    String profileId,
+    String personaType, {
+    String? sportKey,
+  }) async {
+    if (personaType == 'player') {
+      try {
+        final existing = await _supabase
+            .from('player')
+            .select('id')
+            .eq('profile_id', profileId)
+            .maybeSingle();
+        if (existing == null) {
+          await _supabase.from('player').insert({'profile_id': profileId});
+        }
+      } catch (_) {}
+    } else if (personaType == 'organiser') {
+      try {
+        final existing = await _supabase
+            .from('organiser')
+            .select('id')
+            .eq('profile_id', profileId)
+            .maybeSingle();
+        if (existing == null) {
+          await _supabase.from('organiser').insert({
+            'profile_id': profileId,
+            if (sportKey != null) 'sport': sportKey,
+          });
+        }
+      } catch (_) {}
+    } else if (personaType == 'hoster') {
+      try {
+        final existing = await _supabase
+            .from('hoster')
+            .select('id')
+            .eq('profile_id', profileId)
+            .maybeSingle();
+        if (existing == null) {
+          await _supabase.from('hoster').insert({'profile_id': profileId});
+        }
+      } catch (_) {}
+    }
+    // socialiser: no persona table
+  }
+
+  /// Step 3: Create sport_profiles row via RPC (player-only guard enforced in DB).
+  Future<void> createSportProfileStep(
+    String profileId,
+    String preferredSportUuid,
+  ) async {
+    final sportRecord = await _supabase
+        .from('sports')
+        .select('id, sport_key')
+        .eq('id', preferredSportUuid)
+        .maybeSingle();
+    if (sportRecord == null) {
+      throw Exception('Sport "$preferredSportUuid" not found');
+    }
+    await _supabase.rpc('rpc_create_sport_profile', params: {
+      'p_profile_id': profileId,
+      'p_sport_id': sportRecord['id'] as String,
+      'p_sport_key': sportRecord['sport_key'] as String,
+      'p_skill_level': 1,
+    });
+  }
+
+  /// Check if username already exists — uses RPC to avoid btrim(uuid) when
+  /// PostgREST infers uuid type for UUID-formatted strings against citext column.
   Future<bool> checkUsernameExists(String username) async {
     try {
-      final result = await _supabase
-          .from(SupabaseConfig.usersTable)
-          .select('id')
-          .eq('username', username)
-          .maybeSingle();
-
-      final exists = result != null;
-
-      return exists;
+      final response = await _supabase.rpc(
+        'rpc_username_availability',
+        params: {'p_username': username.trim()},
+      );
+      final row = (response is List)
+          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          : response as Map<String, dynamic>?;
+      if (row == null) return false;
+      return !(row['available'] as bool? ?? true);
     } catch (e) {
-      return false; // On error, allow the username (validation will happen on insert)
+      return false;
     }
   }
 

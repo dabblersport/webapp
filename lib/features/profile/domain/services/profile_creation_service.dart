@@ -384,20 +384,22 @@ class ProfileCreationService {
     }
   }
 
-  /// Check if a username is available
+  /// Check if a username is available — uses RPC to avoid btrim(uuid) when
+  /// PostgREST infers uuid type for UUID-formatted strings against citext column.
   Future<bool> isUsernameAvailable(String username) async {
-    final user = _client.auth.currentUser;
-    if (user == null) return false;
-
-    final result = await _client
-        .from('profiles')
-        .select('id')
-        .eq('username', username)
-        .neq('user_id', user.id) // Exclude current user's profiles
-        .limit(1)
-        .maybeSingle();
-
-    return result == null;
+    try {
+      final response = await _client.rpc(
+        'rpc_username_availability',
+        params: {'p_username': username.trim()},
+      );
+      final row = (response is List)
+          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          : response as Map<String, dynamic>?;
+      if (row == null) return false;
+      return row['available'] as bool? ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'onboarding_welcome_screen.dart';
+import 'onboarding_providers.dart';
 import 'package:dabbler/themes/design_system.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 

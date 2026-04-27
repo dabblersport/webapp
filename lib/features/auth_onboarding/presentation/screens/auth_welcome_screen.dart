@@ -4,6 +4,7 @@ import 'package:dabbler/design_system/tokens/main_dark.dart'
     as main_dark_tokens;
 import 'package:dabbler/design_system/tokens/main_light.dart'
     as main_light_tokens;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/utils/ui_constants.dart';
@@ -25,75 +26,43 @@ class AuthWelcomeScreen extends ConsumerStatefulWidget {
 class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   bool _isLoading = false;
 
-  static const List<String> _countries = <String>[
-    'United Arab Emirates',
-    'Saudi Arabia',
-    'Qatar',
-    'Kuwait',
-    'Bahrain',
-    'Oman',
-    'Egypt',
-    'Jordan',
-    'Lebanon',
-    'Global',
-  ];
+  List<Map<String, dynamic>> _countries = [];
+  bool _countriesLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCountries();
+  }
+
+  Future<void> _fetchCountries() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('ref_countries')
+          .select('name_en')
+          .eq('coverage', true)
+          .order('name_en');
+      if (mounted) {
+        setState(() {
+          _countries = (response as List).cast<Map<String, dynamic>>();
+          _countriesLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _countriesLoading = false);
+    }
+  }
 
   Future<void> _openCountryPicker() async {
     final selected = ref.read(selectedCountryProvider).valueOrNull;
 
     final picked = await showAdaptiveSheet<String>(
       context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        final isDark = theme.colorScheme.brightness == Brightness.dark;
-        final tokens = isDark
-            ? main_dark_tokens.theme
-            : main_light_tokens.theme;
-
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Choose your country',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: tokens.main.onSurface,
-                  ),
-                ),
-              ),
-            ),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _countries.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final country = _countries[index];
-                  final isSelected = selected == country;
-                  return ListTile(
-                    title: Text(
-                      country,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: isSelected ? FontWeight.w800 : null,
-                        color: tokens.main.onSurface,
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? Icon(Icons.check, color: tokens.main.primary)
-                        : null,
-                    onTap: () => Navigator.of(context).pop(country),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        );
-      },
+      builder: (context) => _CountryPickerSheet(
+        countries: _countries,
+        loading: _countriesLoading,
+        selectedCountryName: selected,
+      ),
     );
 
     if (!mounted || picked == null) return;
@@ -569,6 +538,77 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
         ),
       ),
     ];
+  }
+}
+
+// ── Country picker bottom sheet ──────────────────────────────────────────────
+
+class _CountryPickerSheet extends StatelessWidget {
+  final List<Map<String, dynamic>> countries;
+  final bool loading;
+  final String? selectedCountryName;
+
+  const _CountryPickerSheet({
+    required this.countries,
+    required this.loading,
+    required this.selectedCountryName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.colorScheme.brightness == Brightness.dark;
+    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Choose your country',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: tokens.main.onSurface,
+              ),
+            ),
+          ),
+        ),
+        if (loading)
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: CircularProgressIndicator(color: tokens.main.primary),
+          )
+        else
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: countries.length,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final countryName = countries[index]['name_en'] as String;
+                final isSelected = countryName == selectedCountryName;
+                return ListTile(
+                  title: Text(
+                    countryName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: isSelected ? FontWeight.w800 : null,
+                      color: tokens.main.onSurface,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? Icon(Icons.check, color: tokens.main.primary)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(countryName),
+                );
+              },
+            ),
+          ),
+        const SizedBox(height: 12),
+      ],
+    );
   }
 }
 

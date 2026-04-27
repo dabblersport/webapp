@@ -358,7 +358,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               'Join games that match your level, respect the rules set by the organiser, and confirm only when you\'re ready to play.',
           philosophyStatement: 'Your reliability builds your reputation.',
           reminderText:
-              'Confirm only when you’re sure you can play.\nRespect the rules, timing, and other players.',
+              'Confirm only when you\'re sure you can play.\nRespect the rules, timing, and other players.',
           finalEmphasis: 'Confirm only when you\'re ready to play',
         );
 
