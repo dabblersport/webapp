@@ -1079,6 +1079,7 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.createGame,
       name: RouteNames.createGame,
+      parentNavigatorKey: _rootNavigatorKey,
       redirect: (context, state) async {
         // Check user's profile type and apply feature flags
         final container = ProviderScope.containerOf(context, listen: false);
@@ -1109,6 +1110,7 @@ class AppRouter {
     GoRoute(
       path: RoutePaths.createGameBasicInfo,
       name: RouteNames.createGameBasicInfo,
+      parentNavigatorKey: _rootNavigatorKey,
       redirect: (context, state) async {
         final container = ProviderScope.containerOf(context, listen: false);
         final profileState = container.read(profileControllerProvider);

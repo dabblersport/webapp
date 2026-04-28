@@ -19,6 +19,7 @@ class _ComposerState {
     this.sportId,
     this.sportNameEn,
     this.sportEmoji,
+    this.sportColorCode,
     this.variantId,
     this.variantNameEn,
     this.requiredPlayers,
@@ -44,6 +45,7 @@ class _ComposerState {
   final String? sportId;
   final String? sportNameEn;
   final String? sportEmoji;
+  final String? sportColorCode;
   final String? variantId;
   final String? variantNameEn;
   final int? requiredPlayers;
@@ -76,6 +78,7 @@ class _ComposerState {
     String? sportId,
     String? sportNameEn,
     String? sportEmoji,
+    String? sportColorCode,
     String? variantId,
     String? variantNameEn,
     int? requiredPlayers,
@@ -105,6 +108,7 @@ class _ComposerState {
       sportId: sportId ?? this.sportId,
       sportNameEn: sportNameEn ?? this.sportNameEn,
       sportEmoji: sportEmoji ?? this.sportEmoji,
+      sportColorCode: sportColorCode ?? this.sportColorCode,
       variantId: clearVariant ? null : variantId ?? this.variantId,
       variantNameEn: clearVariant ? null : variantNameEn ?? this.variantNameEn,
       requiredPlayers: clearVariant ? null : requiredPlayers ?? this.requiredPlayers,
@@ -198,6 +202,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       sportId: sport['id'] as String,
       sportNameEn: sport['name_en'] as String,
       sportEmoji: sport['emoji'] as String?,
+      sportColorCode: sport['color_code'] as String?,
       clearVariant: true,
       clearVenue: true,
     );
@@ -364,140 +369,185 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final state = ref.watch(_gameComposerProvider);
 
+    const bg = Color(0xFFF4EEF9);
+    const bgDark = Color(0xFFEDE6EE);
+    const outline = Color(0xFFDDD6E4);
+    const onBg = Color(0xFF1D1A20);
+
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: bg,
       appBar: AppBar(
-        backgroundColor: cs.surface,
+        backgroundColor: bg,
         surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Iconsax.close_circle),
-          onPressed: () => context.pop(),
-        ),
-        title: const Text('New Game'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton(
-              onPressed: state.canSubmit ? _submit : null,
-              child: state.isSubmitting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Create'),
-            ),
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => context.pop(),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: bgDark,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: outline, width: 1.5),
+                  ),
+                  child: const Icon(Icons.close_rounded, size: 18, color: onBg),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'New Game',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: onBg,
+                      ),
+                ),
+              ),
+              _CreateButton(
+                canCreate: state.canSubmit,
+                isSubmitting: state.isSubmitting,
+                onTap: _submit,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: EdgeInsets.zero,
         children: [
-          _SectionHeader('Sport & Format'),
-          _SportVariantRow(
-            sportLabel: state.sportId != null
-                ? '${state.sportEmoji ?? ''} ${state.sportNameEn}'
-                : null,
-            variantLabel: state.variantNameEn,
-            onTapSport: () => _openSportPicker(context),
-            onTapVariant: state.sportId != null
-                ? () => _openVariantPicker(context)
-                : null,
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Sport & Format',
+            child: _SportVariantRow(
+              sportLabel: state.sportId != null
+                  ? '${state.sportEmoji ?? ''} ${state.sportNameEn}'
+                  : null,
+              sportColorCode: state.sportColorCode,
+              variantLabel: state.variantNameEn,
+              onTapSport: () => _openSportPicker(context),
+              onTapVariant: state.sportId != null
+                  ? () => _openVariantPicker(context)
+                  : null,
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Date & Time'),
-          _DateTimeRow(
-            date: state.selectedDate,
-            time: state.selectedTime,
-            durationMinutes: state.durationMinutes,
-            onTapDate: () => _pickDate(context),
-            onTapTime: () => _pickTime(context),
-            onTapDuration: () => _openDurationPicker(context),
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Date & Time',
+            child: _DateTimeRow(
+              date: state.selectedDate,
+              time: state.selectedTime,
+              durationMinutes: state.durationMinutes,
+              onTapDate: () => _pickDate(context),
+              onTapTime: () => _pickTime(context),
+              onTapDuration: () => _openDurationPicker(context),
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Venue'),
-          _VenueChip(
-            venueName: state.venueName,
-            venueSpaceName: state.venueSpaceName,
-            enabled: state.variantId != null,
-            onTap: () => _openVenuePicker(context),
-            onClear: ref.read(_gameComposerProvider.notifier).clearVenue,
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Venue',
+            child: _VenueChip(
+              venueName: state.venueName,
+              venueSpaceName: state.venueSpaceName,
+              enabled: state.variantId != null,
+              onTap: () => _openVenuePicker(context),
+              onClear: ref.read(_gameComposerProvider.notifier).clearVenue,
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Join Policy'),
-          _PillRow(
-            options: const ['open', 'request', 'invite', 'link'],
-            selected: state.joinPolicy,
-            labels: const {
-              'open': 'Open',
-              'request': 'Request',
-              'invite': 'Invite',
-              'link': 'Link',
-            },
-            onSelect: ref.read(_gameComposerProvider.notifier).setJoinPolicy,
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Join Policy',
+            child: _PillRow(
+              options: const ['open', 'request', 'invite', 'link'],
+              selected: state.joinPolicy,
+              labels: const {
+                'open': 'Open',
+                'request': 'Request',
+                'invite': 'Invite',
+                'link': 'Link',
+              },
+              onSelect: ref.read(_gameComposerProvider.notifier).setJoinPolicy,
+            ),
           ),
-          const SizedBox(height: 16),
-
-          _SectionHeader('Visibility'),
-          _PillRow(
-            options: const ['public', 'friends', 'private'],
-            selected: state.listingVisibility,
-            labels: const {
-              'public': 'Public',
-              'friends': 'Friends',
-              'private': 'Private',
-            },
-            onSelect: ref.read(_gameComposerProvider.notifier).setVisibility,
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Visibility',
+            child: _PillRow(
+              options: const ['public', 'friends', 'private'],
+              selected: state.listingVisibility,
+              labels: const {
+                'public': 'Public',
+                'friends': 'Friends',
+                'private': 'Private',
+              },
+              onSelect: ref.read(_gameComposerProvider.notifier).setVisibility,
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Skill Level'),
-          _SkillChip(
-            level: state.skillLevel,
-            onTap: () => _openSkillPicker(context),
-            onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Skill Level',
+            child: _SkillChip(
+              level: state.skillLevel,
+              onTap: () => _openSkillPicker(context),
+              onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Options'),
-          _ToggleRow(
-            icon: Iconsax.clock,
-            label: 'Waitlist',
-            subtitle: 'Let players queue when full',
-            value: state.allowWaitlist,
-            onChanged: (_) =>
-                ref.read(_gameComposerProvider.notifier).toggleWaitlist(),
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Options',
+            child: Column(
+              children: [
+                _ToggleRow(
+                  icon: Iconsax.clock,
+                  label: 'Waitlist',
+                  subtitle: 'Let players queue when full',
+                  value: state.allowWaitlist,
+                  onChanged: (_) =>
+                      ref.read(_gameComposerProvider.notifier).toggleWaitlist(),
+                ),
+                const SizedBox(height: 12),
+                _ToggleRow(
+                  icon: Iconsax.eye,
+                  label: 'Spectators',
+                  subtitle: 'Allow spectators to watch',
+                  value: state.allowSpectators,
+                  onChanged: (_) => ref
+                      .read(_gameComposerProvider.notifier)
+                      .toggleSpectators(),
+                ),
+              ],
+            ),
           ),
-          _ToggleRow(
-            icon: Iconsax.eye,
-            label: 'Spectators',
-            subtitle: 'Allow spectators to watch',
-            value: state.allowSpectators,
-            onChanged: (_) =>
-                ref.read(_gameComposerProvider.notifier).toggleSpectators(),
+          const Divider(height: 1, thickness: 1, color: outline),
+          _Section(
+            label: 'Details (optional)',
+            child: Column(
+              children: [
+                _ComposerTextField(
+                  controller: _titleController,
+                  hint: 'Game title',
+                  onChanged: ref.read(_gameComposerProvider.notifier).setTitle,
+                ),
+                const SizedBox(height: 8),
+                _ComposerTextField(
+                  controller: _descController,
+                  hint: 'Add a note for players...',
+                  minLines: 3,
+                  maxLines: 6,
+                  onChanged:
+                      ref.read(_gameComposerProvider.notifier).setDescription,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-
-          _SectionHeader('Details (optional)'),
-          _ComposerTextField(
-            controller: _titleController,
-            hint: 'Game title',
-            onChanged: ref.read(_gameComposerProvider.notifier).setTitle,
-          ),
-          const SizedBox(height: 8),
-          _ComposerTextField(
-            controller: _descController,
-            hint: 'Add a note for players...',
-            minLines: 3,
-            maxLines: 6,
-            onChanged: ref.read(_gameComposerProvider.notifier).setDescription,
-          ),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -527,6 +577,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           'name_en': sport.nameEn,
           'emoji': sport.emoji,
           'sport_key': sport.sportKey,
+          'color_code': sport.colorCode,
         }),
       ),
     );
@@ -608,21 +659,81 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
 // ─── Widgets ──────────────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.label);
-  final String label;
+class _CreateButton extends StatelessWidget {
+  const _CreateButton({
+    required this.canCreate,
+    required this.isSubmitting,
+    required this.onTap,
+  });
+
+  final bool canCreate;
+  final bool isSubmitting;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    const primary = Color(0xFF7328CE);
+    return GestureDetector(
+      onTap: canCreate ? onTap : null,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        decoration: BoxDecoration(
+          color: canCreate ? primary : const Color(0xFFDDD6E4),
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: canCreate
+              ? [
+                  BoxShadow(
+                    color: primary.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: isSubmitting
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            : Text(
+                'Create',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: canCreate ? Colors.white : const Color(0xFF8B849A),
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  const _Section({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF8B849A),
             ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
       ),
     );
   }
@@ -634,15 +745,25 @@ class _SportVariantRow extends StatelessWidget {
     required this.variantLabel,
     required this.onTapSport,
     required this.onTapVariant,
+    this.sportColorCode,
   });
 
   final String? sportLabel;
   final String? variantLabel;
   final VoidCallback onTapSport;
   final VoidCallback? onTapVariant;
+  final String? sportColorCode;
 
   @override
   Widget build(BuildContext context) {
+    Color? sportAccent;
+    if (sportColorCode != null) {
+      try {
+        sportAccent = Color(
+            int.parse(sportColorCode!.replaceFirst('#', '0xFF')));
+      } catch (_) {}
+    }
+
     return Row(
       children: [
         Expanded(
@@ -651,6 +772,7 @@ class _SportVariantRow extends StatelessWidget {
             icon: Iconsax.activity,
             filled: sportLabel != null,
             onTap: onTapSport,
+            accentColor: sportAccent,
           ),
         ),
         const SizedBox(width: 8),
@@ -737,6 +859,7 @@ class _ChipButton extends StatelessWidget {
     required this.filled,
     required this.onTap,
     this.enabled = true,
+    this.accentColor,
   });
 
   final String label;
@@ -744,40 +867,61 @@ class _ChipButton extends StatelessWidget {
   final bool filled;
   final VoidCallback? onTap;
   final bool enabled;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = filled ? cs.primaryContainer : cs.surfaceContainerHigh;
-    final fgColor = filled ? cs.onPrimaryContainer : cs.onSurfaceVariant;
-    final disabledColor = cs.surfaceContainerLow;
+    const surface = Color(0xFFFEF7FF);
+    const outline = Color(0xFFDDD6E4);
+    const muted = Color(0xFF8B849A);
+    const onBg = Color(0xFF1D1A20);
+    const primary = Color(0xFF7328CE);
+
+    final effectiveAccent = accentColor ?? (filled ? primary : null);
+    final borderColor = effectiveAccent != null
+        ? effectiveAccent.withValues(alpha: filled ? 0.6 : 0.25)
+        : outline;
+    final iconColor = enabled
+        ? (effectiveAccent ?? (filled ? primary : muted))
+        : muted.withValues(alpha: 0.4);
+    final textColor = enabled
+        ? (filled ? onBg : muted)
+        : muted.withValues(alpha: 0.4);
 
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: enabled ? color : disabledColor,
+          color: enabled ? surface : surface.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon,
-                size: 16,
-                color: enabled
-                    ? fgColor
-                    : cs.onSurface.withValues(alpha: 0.38)),
-            const SizedBox(width: 6),
+            if (filled && effectiveAccent != null) ...[
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: effectiveAccent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ] else ...[
+              Icon(icon, size: 15, color: iconColor),
+              const SizedBox(width: 6),
+            ],
             Flexible(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: enabled
-                          ? fgColor
-                          : cs.onSurface.withValues(alpha: 0.38),
+                      color: textColor,
                       fontWeight:
                           filled ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -807,47 +951,45 @@ class _VenueChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    const surface = Color(0xFFFEF7FF);
+    const outline = Color(0xFFDDD6E4);
+    const muted = Color(0xFF8B849A);
+    const onBg = Color(0xFF1D1A20);
     final hasVenue = venueName != null;
+    final borderColor = hasVenue ? const Color(0xFF7328CE).withValues(alpha: 0.4) : outline;
 
     return GestureDetector(
       onTap: enabled ? onTap : null,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: hasVenue
-              ? cs.secondaryContainer
-              : enabled
-                  ? cs.surfaceContainerHigh
-                  : cs.surfaceContainerLow,
+          color: surface,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1.5),
         ),
         child: Row(
           children: [
             Icon(
               Iconsax.location,
-              size: 16,
+              size: 15,
               color: hasVenue
-                  ? cs.onSecondaryContainer
-                  : cs.onSurfaceVariant.withValues(alpha: enabled ? 1 : 0.38),
+                  ? const Color(0xFF7328CE)
+                  : muted.withValues(alpha: enabled ? 1 : 0.4),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 hasVenue
-                    ? [venueName, venueSpaceName]
-                        .whereType<String>()
-                        .join(' · ')
+                    ? [venueName, venueSpaceName].whereType<String>().join(' · ')
                     : enabled
                         ? 'Select venue (optional)'
                         : 'Select a format first',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: hasVenue
-                          ? cs.onSecondaryContainer
-                          : cs.onSurfaceVariant
-                              .withValues(alpha: enabled ? 1 : 0.38),
-                      fontWeight:
-                          hasVenue ? FontWeight.w600 : FontWeight.normal,
+                          ? onBg
+                          : muted.withValues(alpha: enabled ? 1 : 0.4),
+                      fontWeight: hasVenue ? FontWeight.w600 : FontWeight.normal,
                     ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -855,8 +997,7 @@ class _VenueChip extends StatelessWidget {
             if (hasVenue)
               GestureDetector(
                 onTap: onClear,
-                child: Icon(Icons.close_rounded,
-                    size: 16, color: cs.onSecondaryContainer),
+                child: const Icon(Icons.close_rounded, size: 16, color: muted),
               ),
           ],
         ),
@@ -878,32 +1019,36 @@ class _SkillChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    const surface = Color(0xFFFEF7FF);
+    const outline = Color(0xFFDDD6E4);
+    const muted = Color(0xFF8B849A);
+    const onBg = Color(0xFF1D1A20);
+    const primary = Color(0xFF7328CE);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: level != null
-              ? cs.tertiaryContainer
-              : cs.surfaceContainerHigh,
+          color: surface,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: level != null ? primary.withValues(alpha: 0.4) : outline,
+            width: 1.5,
+          ),
         ),
         child: Row(
           children: [
             Icon(Iconsax.medal,
-                size: 16,
-                color: level != null
-                    ? cs.onTertiaryContainer
-                    : cs.onSurfaceVariant),
+                size: 15,
+                color: level != null ? primary : muted),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 level ?? 'Any skill level',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: level != null
-                          ? cs.onTertiaryContainer
-                          : cs.onSurfaceVariant,
+                      color: level != null ? onBg : muted,
                       fontWeight:
                           level != null ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -912,8 +1057,7 @@ class _SkillChip extends StatelessWidget {
             if (level != null)
               GestureDetector(
                 onTap: onClear,
-                child: Icon(Icons.close_rounded,
-                    size: 16, color: cs.onTertiaryContainer),
+                child: const Icon(Icons.close_rounded, size: 16, color: muted),
               ),
           ],
         ),
@@ -937,25 +1081,44 @@ class _PillRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    const primary = Color(0xFF7328CE);
+    const outline = Color(0xFFDDD6E4);
+    const muted = Color(0xFF8B849A);
+
     return Wrap(
       spacing: 8,
+      runSpacing: 8,
       children: options.map((o) {
         final isSelected = o == selected;
         return GestureDetector(
           onTap: () => onSelect(o),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
             decoration: BoxDecoration(
-              color: isSelected ? cs.primary : cs.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(20),
+              color: isSelected ? primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: isSelected ? primary : outline,
+                width: 1.5,
+              ),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: primary.withValues(alpha: 0.25),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      )
+                    ]
+                  : null,
             ),
             child: Text(
               labels[o] ?? o,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? Colors.white : muted,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
             ),
           ),
@@ -982,31 +1145,80 @@ class _ToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: cs.onSurfaceVariant),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        )),
-                Text(subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        )),
-              ],
+    const bgDark = Color(0xFFEDE6EE);
+    const muted = Color(0xFF8B849A);
+    const onBg = Color(0xFF1D1A20);
+    const primary = Color(0xFF7328CE);
+
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: bgDark,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 17, color: muted),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: onBg,
+                    ),
+              ),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: muted,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: () => onChanged(!value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 46,
+            height: 26,
+            decoration: BoxDecoration(
+              color: value ? primary : const Color(0xFFDDD6E4),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: AnimatedAlign(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              alignment:
+                  value ? Alignment.centerRight : Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x22000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      )
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-          Switch(value: value, onChanged: onChanged),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1028,21 +1240,34 @@ class _ComposerTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    const surface = Color(0xFFFEF7FF);
+    const outline = Color(0xFFDDD6E4);
+    const muted = Color(0xFF8B849A);
+    const onBg = Color(0xFF1D1A20);
+
     return TextField(
       controller: controller,
       onChanged: onChanged,
       minLines: minLines,
       maxLines: maxLines,
-      style: Theme.of(context).textTheme.bodyMedium,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: onBg),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: cs.onSurfaceVariant),
+        hintStyle: const TextStyle(color: muted),
         filled: true,
-        fillColor: cs.surfaceContainerHigh,
+        fillColor: surface,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: outline, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              const BorderSide(color: Color(0xFF7328CE), width: 1.5),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(color: outline, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
