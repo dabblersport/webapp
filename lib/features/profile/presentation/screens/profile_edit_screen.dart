@@ -155,7 +155,23 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _usernameController.text = (response['username'] as String?) ?? '';
         _bioController.text = (response['bio'] as String?) ?? '';
         _cityController.text = (response['city'] as String?) ?? '';
-        _countryController.text = (response['country'] as String?) ?? '';
+        final storedCountry = (response['country'] as String?) ?? '';
+        // If stored as ISO code, resolve to display name
+        if (storedCountry.length == 2) {
+          try {
+            final rows = await Supabase.instance.client
+                .from('ref_countries')
+                .select('name_en')
+                .eq('code', storedCountry.toUpperCase())
+                .limit(1);
+            _countryController.text =
+                rows.isNotEmpty ? (rows.first['name_en'] as String? ?? storedCountry) : storedCountry;
+          } catch (_) {
+            _countryController.text = storedCountry;
+          }
+        } else {
+          _countryController.text = storedCountry;
+        }
         _ageController.text = response['age'] != null
             ? response['age'].toString()
             : '';
@@ -1660,15 +1676,31 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       // Update city, country, preferred_sport, primary_sport, interests directly
       final user = _authService.getCurrentUser();
       if (user != null && _profileId != null) {
+        // Resolve country name → ISO code before saving
+        String? countryToSave;
+        final rawCountry = _countryController.text.trim();
+        if (rawCountry.isNotEmpty) {
+          if (rawCountry.length == 2) {
+            countryToSave = rawCountry.toUpperCase();
+          } else {
+            try {
+              final rows = await Supabase.instance.client
+                  .from('ref_countries')
+                  .select('code')
+                  .eq('name_en', rawCountry)
+                  .limit(1);
+              countryToSave = rows.isNotEmpty ? rows.first['code'] as String? : null;
+            } catch (_) {}
+          }
+        }
+
         await Supabase.instance.client
             .from(SupabaseConfig.usersTable)
             .update({
               'city': _cityController.text.trim().isEmpty
                   ? null
                   : _cityController.text.trim(),
-              'country': _countryController.text.trim().isEmpty
-                  ? null
-                  : _countryController.text.trim(),
+              'country': countryToSave,
               'preferred_sport': _preferredSport,
               'primary_sport': _primarySport,
               'interests': _selectedInterests.toList(),

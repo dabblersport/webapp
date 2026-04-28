@@ -129,6 +129,20 @@ class OnboardingRepository {
 
   /// Create or update profile
   /// IDEMPOTENT: If profile exists, returns existing profile
+  Future<String?> _resolveCountryCode(String? country) async {
+    if (country == null || country.isEmpty) return null;
+    if (country.length == 2) return country.toUpperCase();
+    try {
+      final rows = await _client
+          .from('ref_countries')
+          .select('code')
+          .eq('name_en', country)
+          .limit(1);
+      if (rows.isNotEmpty) return rows.first['code'] as String?;
+    } catch (_) {}
+    return null;
+  }
+
   Future<Result<Map<String, dynamic>, Failure>> createProfile({
     required String personaType,
     required String username,
@@ -167,6 +181,7 @@ class OnboardingRepository {
         // Create new profile
         // Keep all persona types separate (player, organiser, host, socialiser)
         final profileType = personaType;
+        final countryCode = await _resolveCountryCode(country);
 
         final profileData = {
           'user_id': userId,
@@ -177,7 +192,7 @@ class OnboardingRepository {
           'age': age,
           'gender': gender,
           'city': city,
-          'country': country,
+          'country': countryCode,
           'language': language ?? 'en',
           'preferred_sport': preferredSport,
           'primary_sport': primarySport,

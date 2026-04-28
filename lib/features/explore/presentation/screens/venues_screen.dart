@@ -4,11 +4,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-import 'package:dabbler/core/utils/sport_id_mapping.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
+import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 
@@ -16,36 +17,43 @@ import 'package:dabbler/widgets/dynamic_background.dart';
 // SCREEN
 // =============================================================================
 
-class VenuesScreen extends ConsumerStatefulWidget {
+class VenuesScreen extends ConsumerWidget {
   const VenuesScreen({super.key});
 
   @override
-  ConsumerState<VenuesScreen> createState() => _VenuesScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
+
+    return sportsAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator.adaptive())),
+      error: (_, __) => const Scaffold(body: Center(child: Text('Failed to load sports'))),
+      data: (sports) => _VenuesTabScreen(key: ValueKey(sports.map((s) => s.id).join()), sports: sports),
+    );
+  }
 }
 
-class _VenuesScreenState extends ConsumerState<VenuesScreen>
+// =============================================================================
+// TAB SCREEN — created fresh when sport list changes
+// =============================================================================
+
+class _VenuesTabScreen extends ConsumerStatefulWidget {
+  const _VenuesTabScreen({super.key, required this.sports});
+
+  final List<Sport> sports;
+
+  @override
+  ConsumerState<_VenuesTabScreen> createState() => _VenuesTabScreenState();
+}
+
+class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
     with TickerProviderStateMixin {
   late final TabController _tabController;
   late final ScrollController _scrollController;
 
-  static const List<Map<String, dynamic>> _sports = [
-    {'name': 'Football', 'emoji': '⚽'},
-    {'name': 'Cricket', 'emoji': '🏏'},
-    {'name': 'Padel', 'emoji': '🎾'},
-    {'name': 'Basketball', 'emoji': '🏀'},
-    {'name': 'Tennis', 'emoji': '🎾'},
-    {'name': 'Badminton', 'emoji': '🏸'},
-    {'name': 'Gym', 'emoji': '🏋️'},
-    {'name': 'Running', 'emoji': '🏃'},
-    {'name': 'Swimming', 'emoji': '🏊'},
-    {'name': 'Equestrian', 'emoji': '🐎'},
-    {'name': 'Shooting', 'emoji': '🎯'},
-  ];
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _sports.length, vsync: this);
+    _tabController = TabController(length: widget.sports.length, vsync: this);
     _scrollController = ScrollController();
   }
 
@@ -55,8 +63,6 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
     _scrollController.dispose();
     super.dispose();
   }
-
-  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -75,18 +81,15 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
                 pinned: true,
                 delegate: _SportTabBarDelegate(
                   tabController: _tabController,
-                  sports: _sports,
+                  sports: widget.sports,
                   ref: ref,
                 ),
               ),
             ],
             body: TabBarView(
               controller: _tabController,
-              children: _sports.map((sport) {
-                final sportId = SportIdMapping.getSportId(
-                  (sport['name'] as String).toLowerCase(),
-                );
-                return _AllVenuesList(sportId: sportId);
+              children: widget.sports.map((sport) {
+                return _AllVenuesList(sportId: sport.id);
               }).toList(),
             ),
           ),
@@ -107,7 +110,6 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left: wordmark
           Expanded(
             child: SvgPicture.asset(
               'assets/images/dabbler_text_logo.svg',
@@ -116,7 +118,6 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
               colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
             ),
           ),
-          // Right: action buttons
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -138,8 +139,7 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
               GestureDetector(
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) =>
-                        const SportsLibraryScreen(initialTabIndex: 1),
+                    builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
                   ),
                 ),
                 child: Container(
@@ -149,8 +149,7 @@ class _VenuesScreenState extends ConsumerState<VenuesScreen>
                     color: cs.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child:
-                      Icon(Iconsax.archive_copy, color: cs.primary, size: 18),
+                  child: Icon(Iconsax.archive_copy, color: cs.primary, size: 18),
                 ),
               ),
             ],
@@ -173,7 +172,7 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
   });
 
   final TabController tabController;
-  final List<Map<String, dynamic>> sports;
+  final List<Sport> sports;
   final WidgetRef ref;
 
   @override
@@ -206,22 +205,17 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
 
                     int venueCount = 0;
                     if (isSelected) {
-                      final sportId = SportIdMapping.getSportId(
-                        (sport['name'] as String).toLowerCase(),
-                      );
-                      if (sportId != null) {
-                        venueCount = ref
-                            .watch(venuesBySportWithFiltersProvider(
-                              VenuesBySportFilters(
-                                sportId: sportId,
-                                isActive: true,
-                              ),
-                            ))
-                            .maybeWhen(
-                              data: (v) => v.length,
-                              orElse: () => 0,
-                            );
-                      }
+                      venueCount = ref
+                          .watch(venuesBySportWithFiltersProvider(
+                            VenuesBySportFilters(
+                              sportId: sport.id,
+                              isActive: true,
+                            ),
+                          ))
+                          .maybeWhen(
+                            data: (v) => v.length,
+                            orElse: () => 0,
+                          );
                     }
 
                     return GestureDetector(
@@ -241,17 +235,16 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (sport.emoji != null)
+                              Text(
+                                sport.emoji!,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            if (sport.emoji != null) const SizedBox(width: 5),
                             Text(
-                              sport['emoji'] as String,
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(
-                              sport['name'] as String,
+                              sport.nameEn,
                               style: tt.labelLarge?.copyWith(
-                                color: isSelected
-                                    ? cs.onPrimary
-                                    : cs.onSurface,
+                                color: isSelected ? cs.onPrimary : cs.onSurface,
                                 fontWeight: isSelected
                                     ? FontWeight.w700
                                     : FontWeight.w500,
@@ -300,7 +293,8 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_SportTabBarDelegate oldDelegate) =>
-      oldDelegate.tabController != tabController;
+      oldDelegate.tabController != tabController ||
+      oldDelegate.sports != sports;
 }
 
 // =============================================================================
@@ -310,13 +304,11 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
 class _AllVenuesList extends ConsumerWidget {
   const _AllVenuesList({required this.sportId});
 
-  final String? sportId;
+  final String sportId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (sportId == null) return _buildEmpty(context);
-
-    final filters = VenuesBySportFilters(sportId: sportId!, isActive: true);
+    final filters = VenuesBySportFilters(sportId: sportId, isActive: true);
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
 
     return venuesAsync.when(
@@ -370,11 +362,7 @@ class _AllVenuesList extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Iconsax.building_3_copy,
-              size: 48,
-              color: cs.outline,
-            ),
+            Icon(Iconsax.building_3_copy, size: 48, color: cs.outline),
             const SizedBox(height: 16),
             Text(
               'No venues found',
@@ -442,7 +430,6 @@ class _VenueCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon accent
             Container(
               width: 44,
               height: 44,
@@ -450,11 +437,7 @@ class _VenueCard extends StatelessWidget {
                 color: cs.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Iconsax.building_3_copy,
-                size: 20,
-                color: cs.primary,
-              ),
+              child: Icon(Iconsax.building_3_copy, size: 20, color: cs.primary),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -466,9 +449,7 @@ class _VenueCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           venue.nameEn,
-                          style: tt.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -481,17 +462,12 @@ class _VenueCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Iconsax.location_copy,
-                        size: 12,
-                        color: cs.onSurfaceVariant,
-                      ),
+                      Icon(Iconsax.location_copy, size: 12, color: cs.onSurfaceVariant),
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
                           locationLine,
-                          style: tt.bodySmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
+                          style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -508,7 +484,6 @@ class _VenueCard extends StatelessWidget {
                 ],
               ),
             ),
-            // 
           ],
         ),
       ),

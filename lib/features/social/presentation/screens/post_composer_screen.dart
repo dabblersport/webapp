@@ -19,6 +19,8 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_location_chip.dart';
+import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
@@ -181,19 +183,29 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _showSportsPicker() {
-    final cs = Theme.of(context).colorScheme;
+    final composerState = ref.read(postComposerProvider);
+    final selectedSport = composerState.sportId != null
+        ? Sport(
+            id: composerState.sportId!,
+            nameEn: composerState.sportName ?? '',
+            emoji: composerState.sportEmoji,
+          )
+        : null;
 
     showAdaptiveSheet(
       context: context,
-      backgroundColor: cs.surfaceContainerHigh,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 1.0,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _ComposerSportsPickerSheet(scrollController: scrollController),
+      builder: (_) => SportSelectionSheet(
+        sportsProvider: activeSportsByProfileCountryProvider,
+        selectedSport: selectedSport,
+        showClear: composerState.sportId != null,
+        onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
+        onSelect: (sport) => ref.read(postComposerProvider.notifier).setSport(
+          id: sport.id,
+          name: sport.nameEn,
+          emoji: sport.emoji,
+        ),
       ),
     );
   }
@@ -1692,185 +1704,8 @@ class _ComposerVibesPickerSheetState
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// SPORTS PICKER SHEET (for composer)
-// ═════════════════════════════════════════════════════════════════════════════
+// LOCATION PICKER SHEET
 
-class _ComposerSportsPickerSheet extends ConsumerStatefulWidget {
-  const _ComposerSportsPickerSheet({required this.scrollController});
-  final ScrollController scrollController;
-
-  @override
-  ConsumerState<_ComposerSportsPickerSheet> createState() =>
-      _ComposerSportsPickerSheetState();
-}
-
-class _ComposerSportsPickerSheetState
-    extends ConsumerState<_ComposerSportsPickerSheet> {
-  String? _activeCategoryFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final sportsAsync = ref.watch(sportsProvider);
-    final composerState = ref.watch(postComposerProvider);
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Sports',
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                if (composerState.sportId != null)
-                  TextButton(
-                    onPressed: () {
-                      ref.read(postComposerProvider.notifier).clearSport();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Clear', style: TextStyle(color: cs.primary)),
-                  ),
-              ],
-            ),
-          ),
-
-          // Category chips
-          sportsAsync.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (sports) {
-              final categories =
-                  sports
-                      .where(
-                        (s) => s.category != null && s.category!.isNotEmpty,
-                      )
-                      .map((s) => s.category!)
-                      .toSet()
-                      .toList()
-                    ..sort();
-              if (categories.length <= 1) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: SizedBox(
-                  height: 38,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _ComposerFilterChip(
-                        label: 'All',
-                        isSelected: _activeCategoryFilter == null,
-                        onTap: () =>
-                            setState(() => _activeCategoryFilter = null),
-                      ),
-                      const SizedBox(width: 8),
-                      for (final cat in categories) ...[
-                        _ComposerFilterChip(
-                          label: _prettifyLabel(cat),
-                          isSelected: _activeCategoryFilter == cat,
-                          onTap: () =>
-                              setState(() => _activeCategoryFilter = cat),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-
-          // List
-          Expanded(
-            child: sportsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Text(
-                  'Failed to load sports',
-                  style: TextStyle(color: cs.error),
-                ),
-              ),
-              data: (sports) {
-                var filtered = sports.toList();
-                if (_activeCategoryFilter != null) {
-                  filtered = filtered
-                      .where((s) => s.category == _activeCategoryFilter)
-                      .toList();
-                }
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No sports available',
-                      style: TextStyle(color: cs.onSurfaceVariant),
-                    ),
-                  );
-                }
-                return ListView.builder(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                  itemCount: filtered.length,
-                  itemBuilder: (ctx, i) {
-                    final sport = filtered[i];
-                    final isSelected = sport.id == composerState.sportId;
-                    return ListTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      tileColor: isSelected
-                          ? cs.primaryContainer
-                          : Colors.transparent,
-                      leading: Text(
-                        sport.emoji ?? '🏅',
-                        style: const TextStyle(fontSize: 24),
-                      ),
-                      title: Text(
-                        sport.nameEn,
-                        style: tt.bodyMedium?.copyWith(
-                          color: isSelected
-                              ? cs.onPrimaryContainer
-                              : cs.onSurface,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                      ),
-                      subtitle: sport.category != null
-                          ? Text(
-                              _prettifyLabel(sport.category!),
-                              style: tt.labelSmall?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            )
-                          : null,
-                      onTap: () {
-                        ref
-                            .read(postComposerProvider.notifier)
-                            .setSport(
-                              id: sport.id,
-                              name: sport.nameEn,
-                              emoji: sport.emoji,
-                            );
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // LOCATION PICKER SHEET

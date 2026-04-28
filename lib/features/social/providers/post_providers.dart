@@ -351,6 +351,46 @@ final sportsForSelectedCountryProvider =
   return result.fold((err) => throw Exception(err.message), (sports) => sports);
 });
 
+/// Active sports filtered by the authenticated user's stored country (ISO code).
+/// Falls back to all active sports when country is unset or unmatched.
+/// Active sports filtered by the authenticated user's stored country (ISO code),
+/// sorted so the user's primary sport appears first.
+/// Falls back to all active sports when country is unset or unmatched.
+final activeSportsByProfileCountryProvider =
+    FutureProvider.autoDispose<List<Sport>>((ref) async {
+  final repo = ref.watch(sportsRepositoryProvider);
+  final profile = ref.watch(profileControllerProvider).profile;
+  final countryCode = profile?.country; // already an ISO code (e.g. "AE")
+  final primarySportId = profile?.preferredSport;
+
+  final result = await repo.getActiveSportsForCountry(countryCode);
+  final sports = result.fold((err) => throw Exception(err.message), (s) => s);
+
+  if (primarySportId == null) return sports;
+
+  final primary = sports.where((s) => s.id == primarySportId).toList();
+  final rest = sports.where((s) => s.id != primarySportId).toList();
+  return [...primary, ...rest];
+});
+
+/// Challenge-eligible sports filtered by the user's country, primary sport first.
+/// Used by the game composer sport picker.
+final activeChallengeSportsByProfileCountryProvider =
+    FutureProvider.autoDispose<List<Sport>>((ref) async {
+  final repo = ref.watch(sportsRepositoryProvider);
+  final profile = ref.watch(profileControllerProvider).profile;
+  final countryCode = profile?.country;
+  final primarySportId = profile?.preferredSport;
+
+  final result = await repo.getActiveChallengeSportsForCountry(countryCode);
+  final sports = result.fold((err) => throw Exception(err.message), (s) => s);
+
+  if (primarySportId == null) return sports;
+  final primary = sports.where((s) => s.id == primarySportId).toList();
+  final rest = sports.where((s) => s.id != primarySportId).toList();
+  return [...primary, ...rest];
+});
+
 /// Legacy: raw map list for backward compatibility with old pickers.
 final sportsListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {

@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show sportsProvider;
+    show activeSportsByProfileCountryProvider;
 
 /// Bottom sheet for adding/removing sports from the user's profile.
 ///
@@ -163,7 +163,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final sportsAsync = ref.watch(sportsProvider);
+    final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
 
     return DraggableScrollableSheet(
       expand: false,

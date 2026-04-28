@@ -6,52 +6,65 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/core/utils/sport_id_mapping.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 
 // =============================================================================
-// SCREEN
+// SCREEN — outer shell; waits for country-filtered sport list
 // =============================================================================
 
-class GamesScreen extends ConsumerStatefulWidget {
+class GamesScreen extends ConsumerWidget {
   const GamesScreen({super.key});
 
   @override
-  ConsumerState<GamesScreen> createState() => _GamesScreenState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
+
+    return sportsAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator.adaptive())),
+      error: (_, __) => const Scaffold(body: Center(child: Text('Failed to load sports'))),
+      data: (sports) => _GamesTabScreen(
+        key: ValueKey(sports.map((s) => s.id).join()),
+        sports: sports,
+      ),
+    );
+  }
 }
 
-class _GamesScreenState extends ConsumerState<GamesScreen>
-    with TickerProviderStateMixin {
-  static const List<Map<String, String>> _tabs = [
-    {'name': 'All', 'emoji': ''},
-    {'name': 'Football', 'emoji': '⚽'},
-    {'name': 'Cricket', 'emoji': '🏏'},
-    {'name': 'Padel', 'emoji': '🎾'},
-    {'name': 'Basketball', 'emoji': '🏀'},
-    {'name': 'Tennis', 'emoji': '🎾'},
-    {'name': 'Badminton', 'emoji': '🏸'},
-    {'name': 'Running', 'emoji': '🏃'},
-    {'name': 'Swimming', 'emoji': '🏊'},
-    {'name': 'Equestrian', 'emoji': '🐎'},
-    {'name': 'Shooting', 'emoji': '🎯'},
-  ];
+// =============================================================================
+// TAB SCREEN — owns TabController; recreated when sport list changes
+// =============================================================================
 
+class _GamesTabScreen extends ConsumerStatefulWidget {
+  const _GamesTabScreen({super.key, required this.sports});
+
+  final List<Sport> sports;
+
+  @override
+  ConsumerState<_GamesTabScreen> createState() => _GamesTabScreenState();
+}
+
+class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
+    with TickerProviderStateMixin {
+  // Index 0 = "All", then one tab per sport
   late final TabController _tabController;
   late final List<ScrollController> _scrollControllers;
+
+  int get _tabCount => widget.sports.length + 1; // +1 for "All"
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    _scrollControllers =
-        List.generate(_tabs.length, (_) => ScrollController());
+    _tabController = TabController(length: _tabCount, vsync: this);
+    _scrollControllers = List.generate(_tabCount, (_) => ScrollController());
     _tabController.addListener(_onTabChanged);
   }
 
@@ -71,9 +84,10 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     setState(() {});
   }
 
+  // index 0 → null (all sports), index N → sport id at N-1
   String? _sportIdForTab(int index) {
     if (index == 0) return null;
-    return SportIdMapping.getSportId(_tabs[index]['name']!.toLowerCase());
+    return widget.sports[index - 1].id;
   }
 
   Future<void> _handleRefresh() async {
@@ -94,8 +108,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
     final cs = Theme.of(context).colorScheme;
     final topPadding = MediaQuery.of(context).padding.top + 12;
     final profileState = ref.watch(profileControllerProvider);
-    final avatarUrl =
-        profileState.profile?.avatarUrl;
+    final avatarUrl = profileState.profile?.avatarUrl;
     final displayName = profileState.profile?.displayName ??
         profileState.profile?.username ??
         'User';
@@ -106,7 +119,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Left: wordmark
           Expanded(
             child: SvgPicture.asset(
               'assets/images/dabbler_text_logo.svg',
@@ -115,7 +127,6 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
               colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
             ),
           ),
-          // Right: action buttons + avatar
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -128,11 +139,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                     color: cs.primary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Iconsax.search_normal_1_copy,
-                    color: cs.primary,
-                    size: 18,
-                  ),
+                  child: Icon(Iconsax.search_normal_1_copy, color: cs.primary, size: 18),
                 ),
               ),
               const SizedBox(width: 6),
@@ -148,11 +155,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                         color: cs.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Iconsax.notification_copy,
-                        color: cs.primary,
-                        size: 18,
-                      ),
+                      child: Icon(Iconsax.notification_copy, color: cs.primary, size: 18),
                     ),
                     const Positioned(
                       top: -2,
@@ -202,22 +205,27 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: _tabs.length,
+            itemCount: _tabCount,
             separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
             itemBuilder: (context, index) {
-              final tab = _tabs[index];
               final isSelected = _tabController.index == index;
-              final emoji = tab['emoji']!;
-              final name = tab['name']!;
+              final String label;
+              final String emoji;
+
+              if (index == 0) {
+                label = 'All';
+                emoji = '';
+              } else {
+                final sport = widget.sports[index - 1];
+                label = sport.nameEn;
+                emoji = sport.emoji ?? '';
+              }
 
               return GestureDetector(
                 onTap: () => _tabController.animateTo(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? cs.primary
@@ -225,11 +233,10 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    emoji.isEmpty ? name : '$emoji $name',
+                    emoji.isEmpty ? label : '$emoji $label',
                     style: tt.labelLarge?.copyWith(
                       color: isSelected ? cs.onPrimary : cs.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -267,7 +274,7 @@ class _GamesScreenState extends ConsumerState<GamesScreen>
             body: TabBarView(
               controller: _tabController,
               children: List.generate(
-                _tabs.length,
+                _tabCount,
                 (i) => _GameTabBody(
                   sportId: _sportIdForTab(i),
                   scrollController: _scrollControllers[i],
@@ -360,8 +367,7 @@ class _GameTabBody extends ConsumerWidget {
 
     return gamesAsync.when(
       loading: () => const _GameSkeletonList(),
-      error: (e, _) =>
-          _ErrorView(message: "Couldn't load games", onRetry: onRetry),
+      error: (e, _) => _ErrorView(message: "Couldn't load games", onRetry: onRetry),
       data: (games) {
         if (games.isEmpty) {
           return const _EmptyView(
@@ -448,11 +454,7 @@ class _GameCard extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(
-                    Iconsax.location_copy,
-                    size: 14,
-                    color: cs.onSurfaceVariant,
-                  ),
+                  Icon(Iconsax.location_copy, size: 14, color: cs.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(

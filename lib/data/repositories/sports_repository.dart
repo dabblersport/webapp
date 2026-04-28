@@ -49,4 +49,27 @@ class SportsRepository extends BaseRepository {
 
         return rows.map((r) => Sport.fromMap(r)).toList();
       });
+
+  /// Active challenge-eligible sports filtered by country, with fallback.
+  Future<Result<List<Sport>, Failure>> getActiveChallengeSportsForCountry(
+    String? countryCode,
+  ) =>
+      guard(() async {
+        var query = svc.client
+            .from('sports')
+            .select()
+            .eq('is_active', true)
+            .eq('is_challenge_sport', true);
+
+        if (countryCode != null && countryCode.isNotEmpty) {
+          final rows = await query
+              .contains('popularity_countries', [countryCode])
+              .order('name_en');
+          if (rows.isNotEmpty) return rows.map((r) => Sport.fromMap(r)).toList();
+        }
+
+        // Fallback: all challenge sports regardless of country
+        final fallback = await query.order('name_en');
+        return fallback.map((r) => Sport.fromMap(r)).toList();
+      });
 }

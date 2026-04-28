@@ -5,6 +5,10 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart'
+    show activeChallengeSportsByProfileCountryProvider;
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/services/moderation_service.dart';
 
@@ -503,15 +507,27 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   Future<void> _openSportPicker(BuildContext context) async {
     final notifier = ref.read(_gameComposerProvider.notifier);
-    await notifier.ensureSports();
-    final sports = notifier.sports;
+    final state = ref.read(_gameComposerProvider);
+    final selectedSport = state.sportId != null
+        ? Sport(
+            id: state.sportId!,
+            nameEn: state.sportNameEn ?? '',
+            emoji: state.sportEmoji,
+          )
+        : null;
     if (!context.mounted) return;
 
     await showAdaptiveSheet(
       context: context,
-      builder: (_) => _SportPickerSheet(
-        sports: sports,
-        onSelect: notifier.selectSport,
+      builder: (_) => SportSelectionSheet(
+        sportsProvider: activeChallengeSportsByProfileCountryProvider,
+        selectedSport: selectedSport,
+        onSelect: (sport) => notifier.selectSport({
+          'id': sport.id,
+          'name_en': sport.nameEn,
+          'emoji': sport.emoji,
+          'sport_key': sport.sportKey,
+        }),
       ),
     );
   }
@@ -1036,56 +1052,6 @@ class _ComposerTextField extends StatelessWidget {
 }
 
 // ─── Picker Sheets ─────────────────────────────────────────────────────────────
-
-class _SportPickerSheet extends StatelessWidget {
-  const _SportPickerSheet({
-    required this.sports,
-    required this.onSelect,
-  });
-
-  final List<Map<String, dynamic>> sports;
-  final void Function(Map<String, dynamic>) onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.85,
-      builder: (_, controller) => Column(
-        children: [
-          const _SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text('Select Sport',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          Expanded(
-            child: sports.isEmpty
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: controller,
-                    itemCount: sports.length,
-                    itemBuilder: (_, i) {
-                      final s = sports[i];
-                      return ListTile(
-                        leading: Text(s['emoji'] as String? ?? '🏅',
-                            style: const TextStyle(fontSize: 24)),
-                        title: Text(s['name_en'] as String),
-                        onTap: () {
-                          onSelect(s);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _VariantPickerSheet extends StatelessWidget {
   const _VariantPickerSheet({

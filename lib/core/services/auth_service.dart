@@ -627,6 +627,23 @@ class AuthService {
   /// Creates sport_profiles for ALL personas and persona-specific tables
   /// Tables: auth.users → profiles (persona_type) → sport_profiles → [player|organiser|hoster]
   /// Persona mapping: player→player table, organiser→organiser table, hoster→hoster table, socialiser→no table
+  /// Resolves a country value (either a name like "United Arab Emirates" or
+  /// already an ISO code like "AE") to the ref_countries ISO code.
+  Future<String?> _resolveCountryCode(String? country) async {
+    if (country == null || country.isEmpty) return null;
+    // Already a 2-letter ISO code
+    if (country.length == 2) return country.toUpperCase();
+    try {
+      final rows = await _supabase
+          .from('ref_countries')
+          .select('code')
+          .eq('name_en', country)
+          .limit(1);
+      if (rows.isNotEmpty) return rows.first['code'] as String?;
+    } catch (_) {}
+    return null;
+  }
+
   Future<void> completeOnboarding({
     required String displayName,
     required String username,
@@ -675,6 +692,9 @@ class AuthService {
         await _supabase.auth.updateUser(UserAttributes(password: password));
       }
 
+      // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
+      final countryCode = await _resolveCountryCode(country);
+
       // Update auth.users metadata with key profile fields
       final userMetadata = {
         'display_name': displayName,
@@ -711,7 +731,7 @@ class AuthService {
           'preferred_sport': preferredSport, // UUID from sports.id
           'primary_sport': preferredSport, // UUID from sports.id
           'interests': interests, // list of sport UUIDs (uuid[])
-          'country': country, // User's detected/selected country
+          'country': countryCode, // ISO code e.g. "AE"
           'city': city, // User's detected city from IP
           'is_player':
               personaType == 'player', // Only true if persona is player
@@ -747,7 +767,7 @@ class AuthService {
           'preferred_sport': preferredSport, // UUID from sports.id
           'primary_sport': preferredSport, // UUID from sports.id
           'interests': interests, // list of sport UUIDs (uuid[])
-          'country': country, // User's detected/selected country
+          'country': countryCode, // ISO code e.g. "AE"
           'city': city, // User's detected city from IP
           'is_player':
               personaType == 'player', // Only true if persona is player
