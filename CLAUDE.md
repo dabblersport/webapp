@@ -50,14 +50,22 @@ lib/
 
 Each feature under `lib/features/<domain>/` follows:
 ```
+domain/
+  repositories/  # Abstract interfaces
+  usecases/      # Business logic — extend UseCase<T, Params> from domain/usecases/usecase.dart
+  models/        # Domain-only models
+data/
+  datasources/   # Supabase calls (class SupabaseXxxDataSource implements XxxDataSource)
+  repositories/  # Concrete implementations of domain interfaces
+  mappers/       # Entity ↔ Model conversion
 presentation/
   screens/       # UI screens (ConsumerWidget/ConsumerStatefulWidget)
   widgets/       # Feature-specific widgets
-  controllers/   # AsyncNotifier / StateNotifier
-  providers/     # Feature-scoped providers
-domain/
-  models/        # Domain models (may differ from data models)
+  controllers/   # StateNotifier subclasses with typed XxxState
+  providers/     # Three-layer stack: infra provider → repo provider → controller provider
 ```
+
+Simpler features may omit `domain/usecases/` and `data/datasources/`, wiring directly from repository to controller.
 
 ### Data Flow
 
@@ -74,6 +82,8 @@ return Result.guard(
 );
 ```
 
+**Dual error-handling conventions exist in the codebase.** Older features use `Either<Failure, T>` from `fpdart` (`Right(value)` = success, `Left(failure)` = error). New code must use `Result<T, E>` from `lib/core/fp/result.dart`. Don't mix them within a single feature.
+
 ### Key Files
 
 | File | Purpose |
@@ -81,7 +91,8 @@ return Result.guard(
 | `lib/app/app_router.dart` | All routes, `_handleRedirect` for auth/onboarding/feature-flag gating |
 | `lib/providers.dart` | Central re-export of all providers — add new providers here |
 | `lib/core/config/feature_flags.dart` | Feature flag definitions — gate new features here |
-| `lib/core/config/environment.dart` | Env config loaded from `.env` |
+| `lib/core/config/environment.dart` | Env config — supports `.env` file and `--dart-define` |
+| `lib/core/config/supabase_config.dart` | All table names, bucket names, RPC functions, sport constraints — never hardcode these strings |
 | `lib/core/fp/result.dart` | `Result<T,E>`, `Ok`, `Err`, `Unit` — the FP error-handling primitives |
 | `lib/core/errors/` | `Failure` type hierarchy |
 
@@ -106,17 +117,35 @@ return Result.guard(
 - Components: `AppButton.primary/secondary/ghost`, `AppCard`, `AppButtonCard`, `AppActionCard`, `CustomInputField`.
 - Spacing: 4dp grid system.
 - Icons: Lucide (`lucide_icons`) and Iconsax (`iconsax_flutter`).
+- Theme categories (`main`, `social`, `sports`, `activity`, `profile`) are preloaded in `main.dart` via `AppTheme.initialize()`. Switch active palette with `AppTheme.setActiveCategory(category)` — screens do this in their `initState` or on navigation.
 
 ### Data Models
 
 - All models are Freezed classes with `@JsonSerializable`. Run `dart run build_runner build -d` after changes.
 - Pattern: define model → implement repository returning `Result<T, Failure>` → expose via provider → consume in controller/UI.
 
+### Environment Setup
+
+Copy `.env.example` to `.env` and fill `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_NAME`. For web/production, use `--dart-define` flags instead (`.env` files are blocked by CDN/WAF):
+```bash
+flutter run --dart-define=SUPABASE_URL=https://xxx.supabase.co --dart-define=SUPABASE_ANON_KEY=xxx
+```
+
 ### Supabase
 
 - Access via `Supabase.instance.client`.
 - Trust RLS for authorization — keep queries minimal, no client-side auth checks.
-- Schema reference: `supabase/schema/schema.json`.
+- All table/bucket/RPC names are constants in `lib/core/config/supabase_config.dart`.
+- Edge functions live in `supabase/functions/<name>/index.ts` (TypeScript/Deno). Call via `supabase.functions.invoke('function-name', body: {...})`.
+
+### Testing
+
+`mockito ^5.4.4` is in dev dependencies. Generate mocks:
+```dart
+@GenerateMocks([MyRepository])
+void main() { ... }
+```
+Then run `dart run build_runner build -d`. No tests exist yet — start with repository and usecase unit tests.
 
 ## Do / Avoid
 
