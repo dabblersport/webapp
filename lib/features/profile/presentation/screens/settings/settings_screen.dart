@@ -13,6 +13,24 @@ import 'package:dabbler/features/profile/presentation/providers/add_persona_prov
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
+import 'package:dabbler/core/providers/locale_provider.dart';
+
+// ─── Supported options ────────────────────────────────────────────────────────
+
+const _kSupportedCountries = [
+  (name: 'Egypt',                flag: '🇪🇬'),
+  (name: 'United Arab Emirates', flag: '🇦🇪'),
+  (name: 'Saudi Arabia',         flag: '🇸🇦'),
+  (name: 'Morocco',              flag: '🇲🇦'),
+];
+
+const _kSupportedLanguages = [
+  (code: 'en', label: 'English',  native: 'English',  flag: '🇬🇧'),
+  (code: 'ar', label: 'Arabic',   native: 'العربية',  flag: '🇸🇦'),
+];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -81,14 +99,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           route: '/settings/theme',
           searchTerms: ['theme', 'dark', 'light', 'appearance'],
         ),
-        // Release 2: Language
-        // SettingsItem(
-        //   title: 'Language',
-        //   subtitle: 'Choose your preferred language',
-        //   icon: Iconsax.global_copy,
-        //   route: '/settings/language',
-        //   searchTerms: ['language', 'locale', 'translate'],
-        // ),
+        SettingsItem(
+          title: 'Language',
+          subtitle: 'English · العربية',
+          icon: Iconsax.language_square_copy,
+          route: '',
+          searchTerms: ['language', 'locale', 'translate', 'arabic', 'english', 'ar', 'en'],
+        ),
+        SettingsItem(
+          title: 'App Country',
+          subtitle: 'Egypt · UAE · KSA · Morocco',
+          icon: Iconsax.global_copy,
+          route: '',
+          searchTerms: ['country', 'region', 'egypt', 'uae', 'ksa', 'saudi', 'morocco'],
+        ),
       ],
     ),
     // Release 2: Help & Support section
@@ -451,6 +475,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    // Dynamic subtitle for inline-picker items
+    String subtitle = item.subtitle;
+    if (item.title == 'Language') {
+      final langCode = ref.watch(localeProvider).languageCode;
+      final lang = _kSupportedLanguages.firstWhere(
+        (l) => l.code == langCode,
+        orElse: () => _kSupportedLanguages.first,
+      );
+      subtitle = '${lang.flag}  ${lang.label} · ${lang.native}';
+    } else if (item.title == 'App Country') {
+      final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
+      if (country.isNotEmpty) {
+        final meta = _kSupportedCountries.where((c) => c.name.toLowerCase() == country.toLowerCase()).firstOrNull;
+        subtitle = meta != null ? '${meta.flag}  ${meta.name}' : country;
+      }
+    }
+
     return Column(
       children: [
         ListTile(
@@ -472,7 +513,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
           ),
           subtitle: Text(
-            item.subtitle,
+            subtitle,
             style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -1018,7 +1059,93 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   void _navigateToSetting(SettingsItem item) {
-    context.push(item.route);
+    if (item.title == 'Language') {
+      _showLanguagePicker();
+    } else if (item.title == 'App Country') {
+      _showCountryPicker();
+    } else {
+      context.push(item.route);
+    }
+  }
+
+  void _showLanguagePicker() {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(999))),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Language', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+            ),
+            const SizedBox(height: 16),
+            ..._kSupportedLanguages.map((lang) {
+              final currentCode = ref.read(localeProvider).languageCode;
+              final isSelected = currentCode == lang.code;
+              return _PickerTile(
+                flag: lang.flag,
+                label: lang.label,
+                sublabel: lang.native,
+                isSelected: isSelected,
+                onTap: () {
+                  ref.read(localeProvider.notifier).setLocale(Locale(lang.code));
+                  Navigator.pop(context);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCountryPicker() {
+    final cs = Theme.of(context).colorScheme;
+    final currentCountry = ref.read(selectedCountryProvider).valueOrNull ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 36, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(999))),
+            const SizedBox(height: 20),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('App Country', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Sets which sports and venues you see', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            ),
+            const SizedBox(height: 16),
+            ..._kSupportedCountries.map((c) {
+              final isSelected = currentCountry.toLowerCase() == c.name.toLowerCase();
+              return _PickerTile(
+                flag: c.flag,
+                label: c.name,
+                isSelected: isSelected,
+                onTap: () {
+                  ref.read(selectedCountryProvider.notifier).setCountry(c.name);
+                  Navigator.pop(context);
+                },
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showSignOutDialog() {
@@ -1109,4 +1236,60 @@ class SettingsItem {
     required this.route,
     required this.searchTerms,
   });
+}
+
+// ─── Picker tile ─────────────────────────────────────────────────────────────
+
+class _PickerTile extends StatelessWidget {
+  final String flag;
+  final String label;
+  final String? sublabel;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PickerTile({
+    required this.flag,
+    required this.label,
+    this.sublabel,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? cs.primary.withValues(alpha: 0.10) : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Text(flag, style: const TextStyle(fontSize: 22)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isSelected ? cs.primary : cs.onSurface)),
+                  if (sublabel != null)
+                    Text(sublabel!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle_rounded, color: cs.primary, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }

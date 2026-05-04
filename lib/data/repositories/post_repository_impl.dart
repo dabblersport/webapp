@@ -396,6 +396,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   });
 
   @override
+  Future<Result<List<Post>, Failure>> getPostsByIds(List<String> ids) =>
+      guard(() async => _fetchPostsByIds(ids));
+
+  @override
   Future<Result<List<Post>, Failure>> getFollowingFeed({
     int limit = 20,
     int offset = 0,
@@ -621,8 +625,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_comments')
-        .select('post_id, created_at')
+        .from('comments')
+        .select('parent_activity_id, created_at')
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
@@ -633,7 +637,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final seen = <String>{};
 
     for (final row in rows) {
-      final postId = row['post_id'];
+      final postId = row['parent_activity_id'];
       if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
       }
@@ -655,8 +659,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_reactions')
-        .select('post_id, created_at')
+        .from('reactions')
+        .select('parent_activity_id, created_at')
         .eq('actor_profile_id', profileId)
         .order('created_at', ascending: false)
         .range(0, (limit + offset) * 3);
@@ -665,7 +669,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final seen = <String>{};
 
     for (final row in rows) {
-      final postId = row['post_id'];
+      final postId = row['parent_activity_id'];
       if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
       }
@@ -686,8 +690,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_likes')
-        .select('post_id, created_at')
+        .from('likes')
+        .select('parent_activity_id, created_at')
         .eq('profile_id', profileId)
         .order('created_at', ascending: false)
         .range(0, (limit + offset) * 3);
@@ -695,7 +699,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final orderedIds = <String>[];
     final seen = <String>{};
     for (final row in rows) {
-      final postId = row['post_id'];
+      final postId = row['parent_activity_id'];
       if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
       }
@@ -716,8 +720,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_comments')
-        .select('post_id, created_at')
+        .from('comments')
+        .select('parent_activity_id, created_at')
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
@@ -727,7 +731,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final orderedIds = <String>[];
     final seen = <String>{};
     for (final row in rows) {
-      final postId = row['post_id'];
+      final postId = row['parent_activity_id'];
       if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
       }
@@ -749,7 +753,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   }) => guard(() async {
     final rows = await _db
         .from('post_reposts')
-        .select('original_post_id, created_at')
+        .select('parent_activity_id, created_at')
         .eq('reposter_profile_id', profileId)
         .order('created_at', ascending: false)
         .range(0, (limit + offset) * 3);
@@ -757,7 +761,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final orderedIds = <String>[];
     final seen = <String>{};
     for (final row in rows) {
-      final postId = row['original_post_id'];
+      final postId = row['parent_activity_id'];
       if (postId is! String || postId.isEmpty || seen.contains(postId)) {
         continue;
       }
@@ -818,8 +822,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
   @override
   Future<Result<Post, Failure>> getPost(String postId) => guard(() async {
-    final row = await _db.from('posts').select().eq('id', postId).single();
-    final enriched = await _enrichRows([row]);
+    final rows =
+        await _db.from('posts').select().eq('id', postId).limit(1) as List;
+    if (rows.isEmpty) throw Exception('post $postId not found');
+    final enriched =
+        await _enrichRows([rows.first as Map<String, dynamic>]);
     final hydrated = await _attachOriginalPosts(enriched);
     final themed = await _attachPostThemes(hydrated);
 
@@ -1301,33 +1308,36 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Unit, Failure>> likePost(String postId) => guard(() async {
     final uid = svc.authUserId()!;
     final pid = await _profileId();
-    await _db.from('post_likes').upsert({
-      'post_id': postId,
-      'user_id': uid,
-      'profile_id': pid,
-    });
+    await _db.from('likes').upsert(
+      {
+        'parent_activity_id': postId,
+        'profile_id': pid,
+        'actor_user_id': uid,
+      },
+      onConflict: 'parent_activity_id,profile_id',
+    );
     return const Unit();
   });
 
   @override
   Future<Result<Unit, Failure>> unlikePost(String postId) => guard(() async {
-    final uid = svc.authUserId()!;
+    final pid = await _profileId();
     await _db
-        .from('post_likes')
+        .from('likes')
         .delete()
-        .eq('post_id', postId)
-        .eq('user_id', uid);
+        .eq('parent_activity_id', postId)
+        .eq('profile_id', pid);
     return const Unit();
   });
 
   @override
   Future<Result<bool, Failure>> hasLiked(String postId) => guard(() async {
-    final uid = svc.authUserId()!;
+    final pid = await _profileId();
     final rows = await _db
-        .from('post_likes')
-        .select('post_id')
-        .eq('post_id', postId)
-        .eq('user_id', uid)
+        .from('likes')
+        .select('id')
+        .eq('parent_activity_id', postId)
+        .eq('profile_id', pid)
         .limit(1);
     return rows.isNotEmpty;
   });
@@ -1341,11 +1351,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_comments')
+        .from('comments')
         .select(
           '*, profiles!post_comments_author_profile_id_fkey(display_name)',
         )
-        .eq('post_id', postId)
+        .eq('parent_activity_id', postId)
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
         .order('created_at')
@@ -1377,7 +1387,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final uid = svc.authUserId()!;
     final pid = await _profileId();
     final data = <String, dynamic>{
-      'post_id': postId,
+      'parent_activity_id': postId,
       'author_user_id': uid,
       'author_profile_id': pid,
       'body': body,
@@ -1388,15 +1398,33 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       if (locationLat != null) 'location_lat': locationLat,
       if (locationLng != null) 'location_lng': locationLng,
     };
-    final row = await _db.from('post_comments').insert(data).select().single();
-    return PostComment.fromJson(row);
+    // Insert without chained .single() to avoid RLS 0-row issue on RETURNING.
+    await _db.from('comments').insert(data);
+    final rows = await _db
+        .from('comments')
+        .select(
+          '*, profiles!post_comments_author_profile_id_fkey(display_name)',
+        )
+        .eq('parent_activity_id', postId)
+        .eq('author_profile_id', pid)
+        .order('created_at', ascending: false)
+        .limit(1);
+    final list = rows as List<dynamic>;
+    if (list.isEmpty) throw Exception('comment not found after insert');
+    final r = Map<String, dynamic>.from(list.first as Map);
+    final profile = r.remove('profiles');
+    if (profile is Map && profile['display_name'] != null) {
+      r['author_display_name'] = profile['display_name'];
+    }
+    final enriched = await _enrichCommentRows([r]);
+    return PostComment.fromJson(enriched.first);
   });
 
   @override
   Future<Result<Unit, Failure>> deleteComment(String commentId) =>
       guard(() async {
         await _db
-            .from('post_comments')
+            .from('comments')
             .update({'is_deleted': true})
             .eq('id', commentId);
         return const Unit();
@@ -1431,7 +1459,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         await _db
             .from('post_reposts')
             .delete()
-            .eq('original_post_id', originalPostId)
+            .eq('parent_activity_id',originalPostId)
             .eq('reposter_user_id', uid);
 
         return const Unit();
@@ -1443,7 +1471,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final rows = await _db
         .from('post_reposts')
         .select('id')
-        .eq('original_post_id', postId)
+        .eq('parent_activity_id',postId)
         .eq('reposter_user_id', uid)
         .limit(1);
     return rows.isNotEmpty;
@@ -1456,12 +1484,17 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       guard(() async {
         final uid = svc.authUserId()!;
         final pid = await _profileId();
-        await _db.from('post_reactions').upsert({
-          'post_id': postId,
-          'actor_profile_id': pid,
-          'vibe_id': vibeId,
-          'actor_user_id': uid,
-        });
+        // onConflict targets the unique index (parent_activity_id, actor_user_id)
+        // so re-reacting with a different vibe replaces the previous one.
+        await _db.from('reactions').upsert(
+          {
+            'parent_activity_id': postId,
+            'actor_profile_id': pid,
+            'actor_user_id': uid,
+            'vibe_id': vibeId,
+          },
+          onConflict: 'parent_activity_id,actor_user_id',
+        );
         return const Unit();
       });
 
@@ -1470,9 +1503,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       guard(() async {
         final pid = await _profileId();
         await _db
-            .from('post_reactions')
+            .from('reactions')
             .delete()
-            .eq('post_id', postId)
+            .eq('parent_activity_id', postId)
             .eq('actor_profile_id', pid)
             .eq('vibe_id', vibeId);
         return const Unit();
@@ -1483,9 +1516,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       guard(() async {
         final pid = await _profileId();
         final rows = await _db
-            .from('post_reactions')
+            .from('reactions')
             .select('vibe_id')
-            .eq('post_id', postId)
+            .eq('parent_activity_id', postId)
             .eq('actor_profile_id', pid);
         return rows.map((r) => r['vibe_id'] as String).toSet();
       });

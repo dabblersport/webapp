@@ -110,7 +110,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
+          Container(
             child: SvgPicture.asset(
               'assets/images/dabbler_text_logo.svg',
               width: 100,
@@ -118,6 +118,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
               colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
             ),
           ),
+          const Spacer(),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -229,7 +230,7 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? cs.primary
-                              : cs.primary.withValues(alpha: 0.08),
+                              : cs.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Row(

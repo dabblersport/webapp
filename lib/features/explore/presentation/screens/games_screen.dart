@@ -119,7 +119,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
+          Container(
             child: SvgPicture.asset(
               'assets/images/dabbler_text_logo.svg',
               width: 100,
@@ -127,6 +127,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
               colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
             ),
           ),
+          const Spacer(),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

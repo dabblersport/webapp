@@ -512,7 +512,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   child: BackdropFilter(
                     filter: kIsWeb
                         ? ImageFilter.blur(sigmaX: 0, sigmaY: 0) // No-op on web to be safe
-                        : ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        : ImageFilter.blur(sigmaX: 00, sigmaY: 00),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeInOut,
@@ -520,24 +520,24 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                         horizontal: isCompactNav ? 8 : 10,
                         vertical: isCompactNav ? 7 : 8,
                       ),
-                      decoration: BoxDecoration(
-                        color: glassColor,
-                        borderRadius: BorderRadius.circular(32),
-                        border: Border.all(color: glassBorderColor, width: 1.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: glowColor,
-                            blurRadius: 28,
-                            spreadRadius: -2,
-                            offset: const Offset(0, 8),
-                          ),
-                          BoxShadow(
-                            color: cs.primary.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
+                      // decoration: BoxDecoration(
+                      //   color: Colors.transparent,
+                      //   borderRadius: BorderRadius.circular(32),
+                      //   border: Border.all(color: Colors.transparent, width: 1.0),
+                      //   // boxShadow: [
+                      //   //   BoxShadow(
+                      //   //     color: glowColor,
+                      //   //     blurRadius: 28,
+                      //   //     spreadRadius: -2,
+                      //   //     offset: const Offset(0, 8),
+                      //   //   ),
+                      //   //   BoxShadow(
+                      //   //     color: cs.primary.withValues(alpha: 0.08),
+                      //   //     blurRadius: 10,
+                      //   //     offset: const Offset(0, 2),
+                      //   //   ),
+                      //   // ],
+                      // ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Row(
@@ -735,7 +735,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : Colors.transparent,
+          color: isSelected ? colorScheme.primary : colorScheme.primaryContainer.withValues(alpha:0.70),
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
           boxShadow: isSelected
               ? [
@@ -747,9 +747,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                    color: Colors.transparent,
+                    blurRadius: 0,
+                    offset: const Offset(0, 0),
                   ),
                 ],
         ),
@@ -796,7 +796,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         width: buttonSize,
         height: buttonSize,
         decoration: BoxDecoration(
-          color: circleBg,
+          color: cs.primaryContainer,
           shape: BoxShape.circle,
           border: Border.all(color: circleBorder, width: 0.9),
           boxShadow: [
@@ -838,7 +838,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: pillBg,
+        color: cs.primaryContainer,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: pillBorder, width: 0.8),
         boxShadow: [

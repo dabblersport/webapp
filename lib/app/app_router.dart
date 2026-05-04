@@ -50,6 +50,8 @@ import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
+import 'package:dabbler/features/news/presentation/screens/news_detail_screen.dart';
+import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart' show RealFriendsScreen;
@@ -787,6 +789,21 @@ class AppRouter {
         return SharedAxisTransitionPage(
           key: state.pageKey,
           child: GameDetailScreen(gameId: gameId),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    ),
+
+    // /news/:newsId — news article detail (root-level, no shell)
+    GoRoute(
+      path: '/news/:newsId',
+      name: RouteNames.newsDetail,
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final item = state.extra as FeedNewsItem;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: NewsDetailScreen(item: item),
           type: SharedAxisType.horizontal,
         );
       },

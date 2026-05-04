@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:dabbler/data/models/feed/feed_item.dart';
+
 import 'package:flutter/material.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -29,6 +31,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/app/app_router.dart';
+import 'package:dabbler/features/news/providers/news_providers.dart';
+import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -229,7 +235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       case FeedTab.forYou:
         // Already loaded in initState; re-load only if empty.
         final s = ref.read(feedNotifierProvider);
-        if (s.posts.isEmpty && !s.isLoading) {
+        if (s.items.isEmpty && !s.isLoading) {
           ref.read(feedNotifierProvider.notifier).load();
         }
       case FeedTab.following:
@@ -239,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       case FeedTab.active:
         ref.read(activeFeedProvider.notifier).ensureLoaded();
       case FeedTab.news:
-        ref.read(newsFeedProvider.notifier).ensureLoaded();
+        ref.read(newsTabFeedProvider.notifier).ensureLoaded();
     }
   }
 
@@ -269,9 +275,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           ref.read(activeFeedProvider.notifier).loadMore();
         }
       case FeedTab.news:
-        final s = ref.read(newsFeedProvider);
+        final s = ref.read(newsTabFeedProvider);
         if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
-          ref.read(newsFeedProvider.notifier).loadMore();
+          ref.read(newsTabFeedProvider.notifier).loadMore();
         }
     }
   }
@@ -289,7 +295,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       case FeedTab.active:
         await ref.read(activeFeedProvider.notifier).load();
       case FeedTab.news:
-        await ref.read(newsFeedProvider.notifier).load();
+        await ref.read(newsTabFeedProvider.notifier).load();
     }
     await Future.delayed(const Duration(milliseconds: 300));
   }
@@ -474,10 +480,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 onTap: () => _tabController.animateTo(index),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? cs.primary
@@ -560,14 +563,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   onRefresh: _handleRefresh,
                   onRetry: () => ref.read(activeFeedProvider.notifier).load(),
                 ),
-                _PostFeedTabBody(
-                  state: ref.watch(newsFeedProvider),
+                _NewsFeedTabBody(
+                  state: ref.watch(newsTabFeedProvider),
                   scrollController: _scrollControllers[4],
                   onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(newsFeedProvider.notifier).load(),
-                  emptyMessage: 'No news right now.',
-                  emptyHint:
-                      'Check back later for updates from the Dabbler team.',
+                  onRetry: () =>
+                      ref.read(newsTabFeedProvider.notifier).load(),
                 ),
               ],
             ),
@@ -691,15 +692,15 @@ class _ForYouTabBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    if (state.isLoading && state.posts.isEmpty) {
+    if (state.isLoading && state.items.isEmpty) {
       return const _FeedSkeletonList();
     }
 
-    if (state.error != null && state.posts.isEmpty) {
+    if (state.error != null && state.items.isEmpty) {
       return _ErrorView(message: 'Could not load feed', onRetry: onRetry);
     }
 
-    if (state.posts.isEmpty) {
+    if (state.items.isEmpty) {
       return _EmptyView(
         iconAsset: 'assets/icons/document-text.svg',
         message: 'No posts yet',
@@ -707,8 +708,8 @@ class _ForYouTabBody extends StatelessWidget {
       );
     }
 
-    final posts = state.posts;
-    final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
+    final feedItems = state.items;
+    final itemCount = feedItems.length + (state.isLoadingMore ? 1 : 0);
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -717,30 +718,26 @@ class _ForYouTabBody extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         itemCount: itemCount,
-        separatorBuilder: (_, index) {
-          if (index < posts.length && _nativeSeparator(posts[index])) {
-            return const SizedBox.shrink();
-          }
-          return Divider(
-            height: 1,
-            thickness: 1,
-            color: cs.outlineVariant.withValues(alpha: 0.3),
-          );
-        },
+        separatorBuilder: (_, index) => Divider(
+          height: 1,
+          thickness: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
         itemBuilder: (_, index) {
-          if (index == posts.length) {
+          if (index == feedItems.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
               child: Center(child: CircularProgressIndicator()),
             );
           }
-          return resolvePostLayout(posts[index]);
+          final item = feedItems[index];
+          if (item is FeedPostItem) return resolvePostLayout(item.post);
+          if (item is FeedNewsItem) return NewsCard(item: item);
+          return const SizedBox.shrink();
         },
       ),
     );
   }
-
-  static bool _nativeSeparator(dynamic post) => false;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1121,6 +1118,213 @@ class _FeedSkeletonList extends StatelessWidget {
         color: cs.outlineVariant.withValues(alpha: 0.3),
       ),
       itemBuilder: (_, __) => const _PostCardSkeleton(),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// News feed tab — renders NewsCard widgets from published_news
+// ────────────────────────────────────────────────────────────────────────────
+class _NewsFeedTabBody extends ConsumerWidget {
+  const _NewsFeedTabBody({
+    required this.state,
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+  });
+
+  final NewsTabState state;
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (state.isLoading && state.items.isEmpty) {
+      return const _FeedSkeletonList();
+    }
+
+    if (state.error != null && state.items.isEmpty) {
+      return _ErrorView(message: state.error!, onRetry: onRetry);
+    }
+
+    if (state.items.isEmpty) {
+      return const _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: 'No news right now.',
+        hint: 'Check back later for updates from the Dabbler team.',
+      );
+    }
+
+    final filtered = state.filteredItems;
+    final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.builder(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        // index 0 = filter chips header, rest = news items
+        itemCount: itemCount + 1,
+        itemBuilder: (_, index) {
+          if (index == 0) {
+            return _NewsFilterChips(state: state);
+          }
+          final i = index - 1;
+          if (i == filtered.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return NewsCard(item: filtered[i]);
+        },
+      ),
+    );
+  }
+}
+
+// Filter chips: one chip per user interest sport + region chips.
+// Chips come from profile.interests, not from what's in the news list.
+class _NewsFilterChips extends ConsumerWidget {
+  const _NewsFilterChips({required this.state});
+
+  final NewsTabState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final notifier = ref.read(newsTabFeedProvider.notifier);
+
+    final interestIds =
+        ref.watch(currentUserProfileProvider)?.interests ?? const [];
+    final allSports = ref.watch(sportsProvider).valueOrNull ?? [];
+
+    // Sports the user cares about, in interest order
+    final interestSports = interestIds
+        .map((id) => allSports.where((s) => s.id == id).firstOrNull)
+        .whereType<Sport>()
+        .toList();
+
+    // Distinct regions from loaded news
+    final regions = state.items
+        .expand((e) => e.regions)
+        .toSet()
+        .toList()
+      ..sort();
+
+    if (interestSports.isEmpty && regions.isEmpty) return const SizedBox.shrink();
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Row(
+        children: [
+          // ── All chip ────────────────────────────────────────────────
+          if (interestSports.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: const Text('All'),
+                selected: state.selectedSportId == null,
+                showCheckmark: false,
+                onSelected: (_) => notifier.setFilterSport(null),
+                selectedColor: cs.primaryContainer,
+                backgroundColor: cs.surface,
+                labelStyle: tt.labelSmall?.copyWith(
+                  color: state.selectedSportId == null
+                      ? cs.onPrimaryContainer
+                      : cs.onSurfaceVariant,
+                  fontWeight: state.selectedSportId == null
+                      ? FontWeight.w600
+                      : FontWeight.normal,
+                ),
+                side: BorderSide(
+                  color: state.selectedSportId == null
+                      ? cs.primary
+                      : cs.outlineVariant,
+                ),
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              ),
+            ),
+
+          // ── One chip per interest sport ──────────────────────────────
+          ...interestSports.map((sport) {
+            final selected = state.selectedSportId == sport.id;
+            final label =
+                '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(label),
+                selected: selected,
+                showCheckmark: false,
+                onSelected: (_) => notifier
+                    .setFilterSport(selected ? null : sport.id),
+                selectedColor: cs.primaryContainer,
+                backgroundColor: cs.surface,
+                labelStyle: tt.labelSmall?.copyWith(
+                  color: selected
+                      ? cs.onPrimaryContainer
+                      : cs.onSurfaceVariant,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                side: BorderSide(
+                  color: selected ? cs.primary : cs.outlineVariant,
+                ),
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              ),
+            );
+          }),
+
+          // ── Divider before region chips ──────────────────────────────
+          if (interestSports.isNotEmpty && regions.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: SizedBox(
+                height: 24,
+                child: VerticalDivider(color: cs.outlineVariant, width: 1),
+              ),
+            ),
+
+          // ── Region chips ─────────────────────────────────────────────
+          ...regions.map((region) {
+            final selected = state.selectedRegion == region;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: Text(region),
+                selected: selected,
+                showCheckmark: false,
+                onSelected: (_) =>
+                    notifier.setFilterRegion(selected ? null : region),
+                selectedColor: cs.secondaryContainer,
+                backgroundColor: cs.surface,
+                labelStyle: tt.labelSmall?.copyWith(
+                  color: selected
+                      ? cs.onSecondaryContainer
+                      : cs.onSurfaceVariant,
+                  fontWeight:
+                      selected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                side: BorderSide(
+                  color: selected ? cs.secondary : cs.outlineVariant,
+                ),
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }

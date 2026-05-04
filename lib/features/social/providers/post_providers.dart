@@ -214,9 +214,9 @@ final latestCommentProvider = FutureProvider.autoDispose
 
       // ── 1. Own reply ──────────────────────────────────────────────────
       final ownRows = await db
-          .from('post_comments')
+          .from('comments')
           .select(selectWithProfile)
-          .eq('post_id', postId)
+          .eq('parent_activity_id', postId)
           .eq('author_user_id', currentUserId)
           .eq('is_deleted', false)
           .eq('is_hidden_admin', false)
@@ -242,9 +242,9 @@ final latestCommentProvider = FutureProvider.autoDispose
       if (followedProfileIds.isEmpty) return null;
 
       final followedCommentRows = await db
-          .from('post_comments')
+          .from('comments')
           .select(selectWithProfile)
-          .eq('post_id', postId)
+          .eq('parent_activity_id', postId)
           .eq('is_deleted', false)
           .eq('is_hidden_admin', false)
           .inFilter('author_profile_id', followedProfileIds)

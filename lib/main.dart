@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -203,14 +205,15 @@ Future<void> main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   // Use a single ThemeService instance to avoid recreating listeners on rebuilds
   static final ThemeService _themeService = ThemeService();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
     return AnimatedBuilder(
       animation: _themeService,
       builder: (context, child) {
@@ -220,6 +223,9 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: _themeService.effectiveThemeMode,
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();

@@ -75,10 +75,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
-          table: 'post_comments',
+          table: 'comments',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
-            column: 'post_id',
+            column: 'parent_activity_id',
             value: widget.postId,
           ),
           callback: (_) {
@@ -91,10 +91,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         .onPostgresChanges(
           event: PostgresChangeEvent.delete,
           schema: 'public',
-          table: 'post_comments',
+          table: 'comments',
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
-            column: 'post_id',
+            column: 'parent_activity_id',
             value: widget.postId,
           ),
           callback: (_) {

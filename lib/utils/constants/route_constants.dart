@@ -75,6 +75,9 @@ class RoutePaths {
   static String gameDetail(String gameId) => '/sports/games/$gameId';
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
+  // News detail (root-level, no shell)
+  static String newsDetail(String newsId) => '/news/$newsId';
+
   // Rewards & Leaderboard
   static const String rewards = '/rewards';
   static const String leaderboard = '/rewards/leaderboard';
@@ -207,6 +210,9 @@ class RouteNames {
   // Venue Routes
   static const String venuesList = 'venues-list';
   static const String venueDetail = 'venue-detail';
+
+  // News Routes
+  static const String newsDetail = 'news-detail';
 
   // Organiser Venue Submissions
   static const String myVenueSubmissions = 'my-venue-submissions';

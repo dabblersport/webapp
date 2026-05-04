@@ -1,5 +1,6 @@
 library;
 
+export 'core/providers/locale_provider.dart';
 export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/profile/providers.dart';
@@ -25,3 +26,8 @@ export 'features/auth_onboarding/data/repositories/onboarding_repository.dart';
 // Explore / Nearby
 export 'features/explore/providers/nearby_games_providers.dart';
 export 'features/explore/providers/feed_providers.dart';
+
+// News
+export 'features/news/providers/news_providers.dart';
+export 'features/news/providers/news_actions_provider.dart';
+export 'features/news/providers/news_comments_provider.dart';

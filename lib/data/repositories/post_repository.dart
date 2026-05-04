@@ -24,6 +24,9 @@ abstract class PostRepository {
     int offset = 0,
   });
 
+  /// Batch-fetch enriched posts by their IDs (preserves input order).
+  Future<Result<List<Post>, Failure>> getPostsByIds(List<String> ids);
+
   /// Posts from users the caller follows.
   /// Includes only origin_type IN ('manual', 'repost') — no system/venue posts.
   Future<Result<List<Post>, Failure>> getFollowingFeed({
