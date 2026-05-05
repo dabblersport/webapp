@@ -25,6 +25,8 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
         userLikedPostsProvider,
         userCommentedPostsProvider,
         userRepostedPostsProvider;
+import 'package:dabbler/features/social/providers/public_activity_providers.dart';
+import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
@@ -61,7 +63,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       vsync: this,
     );
 
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         setState(() => _selectedTabIndex = _tabController.index);
@@ -1245,6 +1247,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             Tab(text: 'Replies'),
             Tab(text: 'Liked'),
             Tab(text: 'Reposts'),
+            Tab(text: 'Activity'),
           ],
         ),
         const SizedBox(height: 4),
@@ -1263,9 +1266,34 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         return _buildLikedTabContent(context, profileId);
       case 3:
         return _buildRepostsTabContent(context, profileId);
+      case 4:
+        return _buildActivityTabContent(context, profileId);
       default:
         return _buildPostsTabContent(context, profileId);
     }
+  }
+
+  Widget _buildActivityTabContent(BuildContext context, String? profileId) {
+    if (profileId == null) return const SizedBox.shrink();
+    final state = ref.watch(userActivitiesProvider(profileId));
+
+    if (state.isLoading && state.activities.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(48),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (state.activities.isEmpty) {
+      return _buildEmptyTabContent(context, 'No activity yet');
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: state.activities.map((activity) {
+        return PublicActivityCard(activity: activity);
+      }).toList(),
+    );
   }
 
   Widget _buildPostsTabContent(BuildContext context, String? profileId) {

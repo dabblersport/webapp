@@ -12,7 +12,6 @@ import 'package:dabbler/features/news/presentation/widgets/news_label_badge.dart
 import 'package:dabbler/features/news/presentation/widgets/news_like_bar.dart';
 import 'package:dabbler/features/news/providers/news_actions_provider.dart';
 import 'package:dabbler/features/news/providers/news_comments_provider.dart';
-import 'package:dabbler/features/social/providers/post_providers.dart';
 
 class NewsDetailScreen extends ConsumerStatefulWidget {
   const NewsDetailScreen({super.key, required this.item});
@@ -28,14 +27,11 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
   final _commentController = TextEditingController();
   final _commentsKey = GlobalKey();
   bool _submitting = false;
-  late int _localLikeCount;
   late int _localCommentCount;
-  bool? _prevIsLiked;
 
   @override
   void initState() {
     super.initState();
-    _localLikeCount = widget.item.likeCount;
     _localCommentCount = widget.item.commentCount;
   }
 
@@ -96,23 +92,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     final body = item.localizedBody(lang);
     final dateStr = DateFormat('MMM d, yyyy').format(item.createdAt.toLocal());
     final commentsAsync = ref.watch(newsCommentsProvider(item.newsId));
-
-    // Keep like count in sync with the post provider toggle result.
-    final isLiked = ref.watch(hasLikedProvider(item.newsId)).valueOrNull;
-    if (isLiked != null && isLiked != _prevIsLiked) {
-      if (_prevIsLiked != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _localLikeCount += isLiked ? 1 : -1;
-              _prevIsLiked = isLiked;
-            });
-          }
-        });
-      } else {
-        _prevIsLiked = isLiked;
-      }
-    }
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -197,7 +176,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   const SizedBox(height: 24),
                   NewsLikeBar(
                     newsId: item.newsId,
-                    likeCount: _localLikeCount,
                     commentCount: _localCommentCount,
                     viewCount: item.viewCount,
                     onCommentTap: _scrollToComments,

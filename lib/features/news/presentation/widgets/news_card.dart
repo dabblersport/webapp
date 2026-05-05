@@ -10,6 +10,7 @@ import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'news_label_badge.dart';
+import 'news_like_bar.dart';
 
 /// Card widget for a single news article in the feed or News tab.
 ///
@@ -175,27 +176,12 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: Row(
-        children: [
-          Icon(Iconsax.heart, size: 16, color: cs.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            '${item.likeCount}',
-            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-          ),
-          const SizedBox(width: 16),
-          Icon(Iconsax.message, size: 16, color: cs.onSurfaceVariant),
-          const SizedBox(width: 4),
-          Text(
-            '${item.commentCount}',
-            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant),
-          ),
-          const Spacer(),
-          Icon(Iconsax.share, size: 18, color: cs.onSurfaceVariant),
-        ],
+      child: NewsLikeBar(
+        newsId: item.newsId,
+        commentCount: item.commentCount,
+        viewCount: item.viewCount,
       ),
     );
   }

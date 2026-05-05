@@ -16,6 +16,9 @@ class SupabaseConfig {
   static const String feedPostsView = 'feed_posts';
   static const String publishedNewsTable = 'published_news';
 
+  // Social timeline
+  static const String publicActivitiesTable = 'public_activities';
+
   // RPC function names
   static const String searchMatchesFunction = 'search_matches';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';

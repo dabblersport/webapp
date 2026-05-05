@@ -34,6 +34,9 @@ import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/social/providers/public_activity_providers.dart';
+import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
+import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 
 /// Modern home screen for Dabbler
@@ -240,6 +243,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         }
       case FeedTab.following:
         ref.read(followingFeedProvider.notifier).ensureLoaded();
+        ref.read(followingActivitiesProvider.notifier).ensureLoaded();
       case FeedTab.nearby:
         ref.read(nearbyFeedProvider.notifier).ensureLoaded();
       case FeedTab.active:
@@ -263,6 +267,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         final s = ref.read(followingFeedProvider);
         if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
           ref.read(followingFeedProvider.notifier).loadMore();
+        }
+        final sa = ref.read(followingActivitiesProvider);
+        if (!sa.isLoading && !sa.isLoadingMore && sa.hasMore) {
+          ref.read(followingActivitiesProvider.notifier).loadMore();
         }
       case FeedTab.nearby:
         final s = ref.read(nearbyFeedProvider);
@@ -290,6 +298,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         await ref.read(feedNotifierProvider.notifier).load();
       case FeedTab.following:
         await ref.read(followingFeedProvider.notifier).load();
+        ref.read(followingActivitiesProvider.notifier).load();
       case FeedTab.nearby:
         await ref.read(nearbyFeedProvider.notifier).load();
       case FeedTab.active:
@@ -542,14 +551,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       .read(feedNotifierProvider.notifier)
                       .clearNewPostsBadge(),
                 ),
-                _PostFeedTabBody(
-                  state: ref.watch(followingFeedProvider),
+                _FollowingFeedTabBody(
                   scrollController: _scrollControllers[1],
                   onRefresh: _handleRefresh,
-                  onRetry: () =>
-                      ref.read(followingFeedProvider.notifier).load(),
-                  emptyMessage: 'No posts from people you follow yet.',
-                  emptyHint: 'Follow more people to see their posts here.',
+                  onRetry: () {
+                    ref.read(followingFeedProvider.notifier).load();
+                    ref.read(followingActivitiesProvider.notifier).load();
+                  },
                 ),
                 _NearbyFeedTabBody(
                   state: ref.watch(nearbyFeedProvider),
@@ -803,6 +811,91 @@ class _PostFeedTabBody extends StatelessWidget {
             );
           }
           return resolvePostLayout(posts[index]);
+        },
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Following feed tab — posts + public_activities merged by time
+// ────────────────────────────────────────────────────────────────────────────
+class _FollowingFeedTabBody extends ConsumerWidget {
+  const _FollowingFeedTabBody({
+    required this.scrollController,
+    required this.onRefresh,
+    required this.onRetry,
+  });
+
+  final ScrollController scrollController;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postState = ref.watch(followingFeedProvider);
+    final activityState = ref.watch(followingActivitiesProvider);
+    final cs = Theme.of(context).colorScheme;
+
+    final isLoading =
+        (postState.isLoading && postState.posts.isEmpty) &&
+        (activityState.isLoading && activityState.activities.isEmpty);
+
+    if (isLoading) return const _FeedSkeletonList();
+
+    // Merge posts and activities into a single time-sorted list.
+    // Each entry is either a Post or PublicActivity.
+    final merged = <({DateTime createdAt, Object item})>[
+      for (final p in postState.posts)
+        (createdAt: p.createdAt, item: p as Object),
+      for (final a in activityState.activities)
+        (createdAt: a.createdAt, item: a as Object),
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (merged.isEmpty) {
+      final hasError = postState.error != null || activityState.error != null;
+      if (hasError) {
+        return _ErrorView(
+          message: postState.error ?? activityState.error!,
+          onRetry: onRetry,
+        );
+      }
+      return const _EmptyView(
+        iconAsset: 'assets/icons/document-text.svg',
+        message: 'No posts from people you follow yet.',
+        hint: 'Follow more people to see their posts here.',
+      );
+    }
+
+    final isLoadingMore = postState.isLoadingMore || activityState.isLoadingMore;
+    final itemCount = merged.length + (isLoadingMore ? 1 : 0);
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        itemCount: itemCount,
+        separatorBuilder: (_, __) => Divider(
+          height: 1,
+          thickness: 1,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+        itemBuilder: (_, index) {
+          if (index == merged.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final entry = merged[index];
+          if (entry.item is PublicActivity) {
+            return PublicActivityCard(
+              activity: entry.item as PublicActivity,
+            );
+          }
+          return resolvePostLayout(entry.item as dynamic);
         },
       ),
     );
