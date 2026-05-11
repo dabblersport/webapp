@@ -153,6 +153,7 @@ dependencies:
   # Map rendering (no API key required — OpenStreetMap tiles)
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
+  flutter_slidable: ^4.0.3
 
 dev_dependencies:
   flutter_test:

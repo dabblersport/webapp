@@ -33,6 +33,7 @@ import 'package:dabbler/features/notifications/presentation/widgets/notification
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
+import 'package:dabbler/features/news/presentation/widgets/news_compact_card.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
@@ -541,6 +542,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ],
             body: TabBarView(
               controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _ForYouTabBody(
                   state: forYouState,
@@ -681,7 +683,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 // ────────────────────────────────────────────────────────────────────────────
 // For You tab — wraps existing FeedState (PostFeed + badge)
 // ────────────────────────────────────────────────────────────────────────────
-class _ForYouTabBody extends StatelessWidget {
+class _ForYouTabBody extends ConsumerWidget {
   const _ForYouTabBody({
     required this.state,
     required this.scrollController,
@@ -696,9 +698,38 @@ class _ForYouTabBody extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback onClearBadge;
 
+  Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _NewsUnsubscribeSheet(
+        onConfirm: () => Navigator.pop(ctx, true),
+        onCancel: () => Navigator.pop(ctx, false),
+      ),
+    );
+    if (confirmed == true) {
+      await ref.read(updateNewsPreferenceProvider)();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('News hidden from Most Recent'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final showNews = ref.watch(newsEnabledProvider);
 
     if (state.isLoading && state.items.isEmpty) {
       return const _FeedSkeletonList();
@@ -716,7 +747,9 @@ class _ForYouTabBody extends StatelessWidget {
       );
     }
 
-    final feedItems = state.items;
+    final feedItems = state.items
+        .where((item) => item is! FeedNewsItem || showNews)
+        .toList();
     final itemCount = feedItems.length + (state.isLoadingMore ? 1 : 0);
 
     return RefreshIndicator(
@@ -740,9 +773,82 @@ class _ForYouTabBody extends StatelessWidget {
           }
           final item = feedItems[index];
           if (item is FeedPostItem) return resolvePostLayout(item.post);
-          if (item is FeedNewsItem) return NewsCard(item: item);
+          if (item is FeedNewsItem) {
+            return NewsCompactCard(
+              item: item,
+              onDismiss: () => _confirmUnsubscribe(context, ref),
+            );
+          }
           return const SizedBox.shrink();
         },
+      ),
+    );
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// News unsubscribe confirmation sheet
+// ────────────────────────────────────────────────────────────────────────────
+class _NewsUnsubscribeSheet extends StatelessWidget {
+  const _NewsUnsubscribeSheet({
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: cs.outlineVariant,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Icon(Iconsax.notification_status_copy, size: 36, color: cs.primary),
+            const SizedBox(height: 12),
+            Text(
+              'Hide news from feed?',
+              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'News cards will no longer appear in Most Recent. You can still read all news in the News tab.',
+              textAlign: TextAlign.center,
+              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancel,
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onConfirm,
+                    child: const Text('Hide news'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1250,6 +1356,10 @@ class _NewsFeedTabBody extends ConsumerWidget {
     }
 
     final filtered = state.filteredItems;
+    final isUnsubscribed = !ref.watch(newsEnabledProvider);
+    // index 0 = filter chips, index 1 = resubscribe banner (when unsubscribed),
+    // remaining = news items
+    final headerCount = isUnsubscribed ? 2 : 1;
     final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
 
     return RefreshIndicator(
@@ -1258,13 +1368,26 @@ class _NewsFeedTabBody extends ConsumerWidget {
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
-        // index 0 = filter chips header, rest = news items
-        itemCount: itemCount + 1,
+        itemCount: itemCount + headerCount,
         itemBuilder: (_, index) {
-          if (index == 0) {
-            return _NewsFilterChips(state: state);
+          if (index == 0) return _NewsFilterChips(state: state);
+          if (isUnsubscribed && index == 1) {
+            return _NewsResubscribeBanner(
+              onResubscribe: () async {
+                await ref.read(resubscribeNewsProvider)();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('News will now appear in Most Recent'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+            );
           }
-          final i = index - 1;
+          final i = index - headerCount;
           if (i == filtered.length) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -1273,6 +1396,93 @@ class _NewsFeedTabBody extends ConsumerWidget {
           }
           return NewsCard(item: filtered[i]);
         },
+      ),
+    );
+  }
+}
+
+// Resubscribe banner — shown in News tab when profiles.news == false
+class _NewsResubscribeBanner extends StatelessWidget {
+  const _NewsResubscribeBanner({required this.onResubscribe});
+
+  final Future<void> Function() onResubscribe;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(Iconsax.notification_status_copy, size: 20, color: cs.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'News is hidden from Most Recent.',
+              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: onResubscribe,
+            child: Text(
+              'Show again',
+              style: tt.labelSmall?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Pill chip matching the home tab bar style.
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
+          decoration: BoxDecoration(
+            color: selected
+                ? cs.primary
+                : cs.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: tt.labelMedium?.copyWith(
+              color: selected ? cs.onPrimary : cs.onSurface,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1288,7 +1498,6 @@ class _NewsFilterChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final notifier = ref.read(newsTabFeedProvider.notifier);
 
     final interestIds =
@@ -1317,63 +1526,19 @@ class _NewsFilterChips extends ConsumerWidget {
         children: [
           // ── All chip ────────────────────────────────────────────────
           if (interestSports.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: const Text('All'),
-                selected: state.selectedSportId == null,
-                showCheckmark: false,
-                onSelected: (_) => notifier.setFilterSport(null),
-                selectedColor: cs.primaryContainer,
-                backgroundColor: cs.surface,
-                labelStyle: tt.labelSmall?.copyWith(
-                  color: state.selectedSportId == null
-                      ? cs.onPrimaryContainer
-                      : cs.onSurfaceVariant,
-                  fontWeight: state.selectedSportId == null
-                      ? FontWeight.w600
-                      : FontWeight.normal,
-                ),
-                side: BorderSide(
-                  color: state.selectedSportId == null
-                      ? cs.primary
-                      : cs.outlineVariant,
-                ),
-                visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-              ),
+            _FilterPill(
+              label: 'All',
+              selected: state.selectedSportId == null,
+              onTap: () => notifier.setFilterSport(null),
             ),
 
           // ── One chip per interest sport ──────────────────────────────
           ...interestSports.map((sport) {
             final selected = state.selectedSportId == sport.id;
-            final label =
-                '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(label),
-                selected: selected,
-                showCheckmark: false,
-                onSelected: (_) => notifier
-                    .setFilterSport(selected ? null : sport.id),
-                selectedColor: cs.primaryContainer,
-                backgroundColor: cs.surface,
-                labelStyle: tt.labelSmall?.copyWith(
-                  color: selected
-                      ? cs.onPrimaryContainer
-                      : cs.onSurfaceVariant,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                side: BorderSide(
-                  color: selected ? cs.primary : cs.outlineVariant,
-                ),
-                visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-              ),
+            return _FilterPill(
+              label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+              selected: selected,
+              onTap: () => notifier.setFilterSport(selected ? null : sport.id),
             );
           }),
 
@@ -1390,30 +1555,10 @@ class _NewsFilterChips extends ConsumerWidget {
           // ── Region chips ─────────────────────────────────────────────
           ...regions.map((region) {
             final selected = state.selectedRegion == region;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(
-                label: Text(region),
-                selected: selected,
-                showCheckmark: false,
-                onSelected: (_) =>
-                    notifier.setFilterRegion(selected ? null : region),
-                selectedColor: cs.secondaryContainer,
-                backgroundColor: cs.surface,
-                labelStyle: tt.labelSmall?.copyWith(
-                  color: selected
-                      ? cs.onSecondaryContainer
-                      : cs.onSurfaceVariant,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.normal,
-                ),
-                side: BorderSide(
-                  color: selected ? cs.secondary : cs.outlineVariant,
-                ),
-                visualDensity: VisualDensity.compact,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-              ),
+            return _FilterPill(
+              label: region,
+              selected: selected,
+              onTap: () => notifier.setFilterRegion(selected ? null : region),
             );
           }),
         ],

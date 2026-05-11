@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/features/news/data/news_repository.dart';
 import 'package:dabbler/features/news/data/news_repository_impl.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
@@ -151,4 +153,45 @@ final newsTabFeedProvider =
     StateNotifierProvider<NewsTabNotifier, NewsTabState>((ref) {
   final repo = ref.watch(newsRepositoryProvider);
   return NewsTabNotifier(repo);
+});
+
+// ---------------------------------------------------------------------------
+// News preference — optimistic local override + async DB persist
+// ---------------------------------------------------------------------------
+
+/// Local override for the news preference of the active profile.
+/// null = follow profiles.news from DB; true/false = user toggled this session.
+final newsPreferenceOverrideProvider = StateProvider<bool?>((ref) => null);
+
+/// Resolved news preference: local override takes priority over DB value.
+final newsEnabledProvider = Provider<bool>((ref) {
+  final override = ref.watch(newsPreferenceOverrideProvider);
+  if (override != null) return override;
+  return ref.watch(currentUserProfileProvider)?.news ?? true;
+});
+
+/// Sets news = false for the active profile (optimistic + async DB persist).
+final updateNewsPreferenceProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    ref.read(newsPreferenceOverrideProvider.notifier).state = false;
+    final profileId = ref.read(currentUserProfileProvider)?.id;
+    if (profileId == null || profileId.isEmpty) return;
+    await Supabase.instance.client
+        .from('profiles')
+        .update({'news': false})
+        .eq('id', profileId);
+  };
+});
+
+/// Sets news = true for the active profile (optimistic + async DB persist).
+final resubscribeNewsProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    ref.read(newsPreferenceOverrideProvider.notifier).state = true;
+    final profileId = ref.read(currentUserProfileProvider)?.id;
+    if (profileId == null || profileId.isEmpty) return;
+    await Supabase.instance.client
+        .from('profiles')
+        .update({'news': true})
+        .eq('id', profileId);
+  };
 });

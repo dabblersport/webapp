@@ -32,6 +32,7 @@ class UserProfile {
   final String? language;
   final bool verified; // matches DB column name
   final bool isActive;
+  final bool news;
   final DateTime? lastSeen;
   final double? geoLat;
   final double? geoLng;
@@ -67,6 +68,7 @@ class UserProfile {
     this.language,
     this.verified = false,
     this.isActive = true,
+    this.news = true,
     this.lastSeen,
     this.geoLat,
     this.geoLng,
@@ -298,6 +300,7 @@ class UserProfile {
     String? language,
     bool? verified,
     bool? isActive,
+    bool? news,
     DateTime? lastSeen,
     double? geoLat,
     double? geoLng,
@@ -330,6 +333,7 @@ class UserProfile {
       language: language ?? this.language,
       verified: verified ?? this.verified,
       isActive: isActive ?? this.isActive,
+      news: news ?? this.news,
       lastSeen: lastSeen ?? this.lastSeen,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,
@@ -387,6 +391,7 @@ class UserProfile {
       language: json['language'] as String?,
       verified: json['verified'] as bool? ?? false,
       isActive: json['is_active'] as bool? ?? true,
+      news: json['news'] as bool? ?? true,
       lastSeen: json['last_seen'] != null
           ? DateTime.tryParse(json['last_seen'] as String)
           : null,
@@ -428,6 +433,7 @@ class UserProfile {
       'language': language,
       'verified': verified,
       'is_active': isActive,
+      'news': news,
       'last_seen': lastSeen?.toIso8601String(),
       'geo_lat': geoLat,
       'geo_lng': geoLng,
@@ -459,6 +465,7 @@ class UserProfile {
         other.language == language &&
         other.verified == verified &&
         other.isActive == isActive &&
+        other.news == news &&
         other.lastSeen == lastSeen &&
         other.geoLat == geoLat &&
         other.geoLng == geoLng &&
@@ -493,6 +500,7 @@ class UserProfile {
       language,
       verified,
       isActive,
+      news,
       lastSeen,
       geoLat,
       geoLng,

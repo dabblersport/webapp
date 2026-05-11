@@ -549,7 +549,7 @@ class _TopBar extends StatelessWidget {
       child: Row(
         children: [
           _SquareIconButton(
-            icon: Iconsax.home_copy,
+            icon: Iconsax.arrow_left_2_copy,
             onTap: () =>
                 context.canPop() ? context.pop() : context.go('/home'),
           ),
@@ -699,10 +699,10 @@ class _ChipsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 48,
+      height: 52,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(18, 6, 18, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
         itemCount: chips.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
@@ -854,7 +854,7 @@ class _UnreadCounterRow extends StatelessWidget {
     final unread = state.unreadCount as int;
     final total = (state.notifications as List).length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 2, 22, 12),
+      padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
       child: Row(
         children: [
           Stack(
@@ -954,29 +954,15 @@ class _NotificationRow extends StatelessWidget {
           color: unread ? cs.primaryContainer.withValues(alpha: 0.18) : null,
           border: Border(
             bottom: BorderSide(color: context.colorTokens.stroke, width: 1),
+            left: BorderSide(
+              color: unread ? cs.primary : Colors.transparent,
+              width: 3,
+            ),
           ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (unread)
-              Container(
-                width: 3,
-                height: 26,
-                margin: const EdgeInsets.only(right: 11, top: 8),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(3),
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [cs.primary, visual.color],
-                  ),
-                ),
-              )
-            else
-              const SizedBox(width: 14),
             SizedBox(
               width: 50,
               height: 50,
