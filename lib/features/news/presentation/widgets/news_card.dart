@@ -44,7 +44,7 @@ class NewsCard extends ConsumerWidget {
         extra: item,
       ),
       child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         clipBehavior: Clip.antiAlias,
         color: Colors.transparent,
         shadowColor: Colors.transparent,
@@ -55,27 +55,18 @@ class NewsCard extends ConsumerWidget {
           children: [
             _CoverImage(item: item),
             _ActionRow(item: item),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-              child: Row(
-                children: [
-                  if (item.sourceLabel != null)
-                    Text(
-                      item.sourceLabel!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: cs.primary,
-                      ),
-                    ),
-                  const Spacer(),
-                  Text(
-                    timeago.format(item.createdAt),
-                    style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            if (item.sourceLabel != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+                child: Text(
+                  item.sourceLabel!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: cs.primary,
                   ),
-                ],
+                ),
               ),
-            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
@@ -120,14 +111,21 @@ class _CoverImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Stack(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Stack(
         fit: StackFit.expand,
         children: [
           if (item.coverImageUrl != null)
             CachedNetworkImage(
               imageUrl: item.coverImageUrl!,
+              httpHeaders: const {
+                'User-Agent':
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+                'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+              },
               fit: BoxFit.cover,
               placeholder: (_, __) => Container(color: Colors.grey.shade800),
               errorWidget: (_, __, ___) =>
@@ -163,6 +161,7 @@ class _CoverImage extends StatelessWidget {
               child: Icon(Iconsax.bookmark_2_copy, color: Colors.white, size: 18),
             ),
         ],
+        ),
       ),
     );
   }
@@ -174,14 +173,35 @@ class _ActionRow extends StatelessWidget {
   const _ActionRow({required this.item});
   final FeedNewsItem item;
 
+  String _fmt(int n) {
+    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
+    return '$n';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: NewsLikeBar(
-        newsId: item.newsId,
-        commentCount: item.commentCount,
-        viewCount: item.viewCount,
+      padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+      child: Row(
+        children: [
+          NewsLikeBar(newsId: item.newsId),
+          const Spacer(),
+          Icon(Iconsax.message_copy, size: 16, color: cs.onSurfaceVariant),
+          const SizedBox(width: 3),
+          Text(_fmt(item.commentCount), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(width: 10),
+          Icon(Iconsax.eye_copy, size: 16, color: cs.onSurfaceVariant),
+          const SizedBox(width: 3),
+          Text(_fmt(item.viewCount), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+          const SizedBox(width: 10),
+          Text(
+            timeago.format(item.createdAt),
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

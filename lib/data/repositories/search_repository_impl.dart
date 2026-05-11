@@ -41,9 +41,6 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
         params: {'p_query': trimmed, 'p_limit_per_section': limit},
       );
 
-      // ignore: avoid_print
-      print('UNIFIED SEARCH RAW RESPONSE type=${raw.runtimeType}: $raw');
-
       // The RPC returns a single JSON object keyed by section name:
       //   { "profiles": [...], "games": [...], "posts": [...], ... }
       if (raw == null) return SearchResultBundle.empty;
@@ -59,9 +56,6 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
       }
 
       final bundle = _parseSectionMap(sectionMap);
-
-      // ignore: avoid_print
-      print('RAW COMMENTS SECTION: ${sectionMap['comments']}');
 
       // Client-side mode filter: when the user typed a prefix (e.g. @, #, /g)
       // we only surface the relevant section(s) and clear the rest so the UI
@@ -125,13 +119,6 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
     final hashtagRows = rows('hashtags');
     final meetupRows = rows('meetups');
 
-    // ignore: avoid_print
-    print('RAW PROFILES: $profileRows');
-    // ignore: avoid_print
-    print('RAW COMMENTS: $commentRows');
-    // ignore: avoid_print
-    print('RAW HASHTAGS: $hashtagRows');
-
     return SearchResultBundle(
       profiles: profileRows
           .map((r) {
@@ -147,11 +134,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
                 'is_active': r['is_active'],
               };
               return Profile.fromJson(mapped);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for Profile: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -180,11 +163,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
                     r['updated_at'] ?? DateTime.now().toIso8601String(),
               };
               return GameModel.fromJson(mapped);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for GameModel: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -201,11 +180,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
                 'address': r['address'],
               };
               return Venue.fromJson(mapped);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for Venue: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -215,11 +190,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
           .map((r) {
             try {
               return PostSearchResult.fromJson(r);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for PostSearchResult: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -229,11 +200,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
           .map((r) {
             try {
               return CommentSearchResult.fromJson(r);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for CommentSearchResult: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -243,11 +210,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
           .map((r) {
             try {
               return HashtagSearchResult.fromJson(r);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for HashtagSearchResult: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })
@@ -257,11 +220,7 @@ class SearchRepositoryImpl extends BaseRepository implements SearchRepository {
           .map((r) {
             try {
               return MeetupSearchResult.fromJson(r);
-            } catch (e) {
-              // ignore: avoid_print
-              print('PARSE ERROR for MeetupSearchResult: $e');
-              // ignore: avoid_print
-              print('ROW: $r');
+            } catch (_) {
               return null;
             }
           })

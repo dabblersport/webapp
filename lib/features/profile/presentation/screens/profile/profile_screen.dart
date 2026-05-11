@@ -501,13 +501,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final textTheme = Theme.of(context).textTheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Row(
         children: [
           IconButton.filledTonal(
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/home'),
-            icon: const Icon(Iconsax.home_copy),
+            icon: const Icon(Iconsax.arrow_left_2_copy),
             style: IconButton.styleFrom(
               backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
               foregroundColor: colorScheme.onSurface,
@@ -1051,7 +1051,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         vertical: AppSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colorScheme.outlineVariant),
       ),

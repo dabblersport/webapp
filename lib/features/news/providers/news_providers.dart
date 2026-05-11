@@ -40,13 +40,15 @@ class NewsTabState {
   final String? selectedRegion;
 
   List<FeedNewsItem> get filteredItems {
-    return items.where((item) {
+    final result = items.where((item) {
       final sportMatch =
           selectedSportId == null || item.sportId == selectedSportId;
       final regionMatch =
           selectedRegion == null || item.regions.contains(selectedRegion);
       return sportMatch && regionMatch;
-    }).toList();
+    }).toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result;
   }
 
   NewsTabState copyWith({

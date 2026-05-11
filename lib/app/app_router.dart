@@ -404,6 +404,7 @@ class AppRouter {
 
     // Landing page route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/landing',
       pageBuilder: (context, state) =>
           FadeTransitionPage(key: state.pageKey, child: const LandingPage()),
@@ -411,6 +412,7 @@ class AppRouter {
 
     // Auth-choice welcome screen (after landing)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.authWelcome,
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -419,6 +421,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.phoneInput,
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -428,6 +431,7 @@ class AppRouter {
 
     // Email input route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.emailInput,
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -437,6 +441,7 @@ class AppRouter {
 
     // OTP verification route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.otpVerification,
       pageBuilder: (context, state) {
         final extra = state.extra;
@@ -476,6 +481,7 @@ class AppRouter {
 
     // Enter password route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.enterPassword,
       pageBuilder: (context, state) {
         final extra = state.extra;
@@ -491,6 +497,7 @@ class AppRouter {
 
     // Forgot password route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.forgotPassword,
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -500,6 +507,7 @@ class AppRouter {
 
     // Reset password route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.resetPassword,
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -509,6 +517,7 @@ class AppRouter {
 
     // Register route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.register,
       pageBuilder: (context, state) =>
           FadeTransitionPage(key: state.pageKey, child: const RegisterScreen()),
@@ -516,6 +525,7 @@ class AppRouter {
 
     // Create user information route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.createUserInfo,
       pageBuilder: (context, state) {
         final extra = state.extra;
@@ -538,6 +548,7 @@ class AppRouter {
 
     // Language selection route (placeholder)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/language_selection',
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
@@ -549,6 +560,7 @@ class AppRouter {
 
     // Interests selection route (after intent selection)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.interestsSelection,
       pageBuilder: (context, state) {
         return SlideTransitionPage(
@@ -561,6 +573,7 @@ class AppRouter {
 
     // Intent selection route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.intentSelection,
       pageBuilder: (context, state) {
         return SlideTransitionPage(
@@ -573,6 +586,7 @@ class AppRouter {
 
     // Set password route (for email users)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.setPassword,
       pageBuilder: (context, state) {
         return SlideTransitionPage(
@@ -585,6 +599,7 @@ class AppRouter {
 
     // Set username route (for phone users)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.setUsername,
       pageBuilder: (context, state) {
         return SlideTransitionPage(
@@ -597,6 +612,7 @@ class AppRouter {
 
     // Welcome route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.welcome,
       redirect: (context, state) {
         // Prevent returning to welcome after it has been dismissed
@@ -627,6 +643,7 @@ class AppRouter {
 
     // Email verification pending route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.emailVerification,
       pageBuilder: (context, state) {
         final extra = state.extra;
@@ -640,6 +657,7 @@ class AppRouter {
 
     // Profile Onboarding Routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingWelcome,
       name: RouteNames.onboardingWelcome,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -650,6 +668,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingSports,
       name: RouteNames.onboardingSports,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -660,6 +679,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingPreferences,
       name: RouteNames.onboardingPreferences,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -670,6 +690,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingPrivacy,
       name: RouteNames.onboardingPrivacy,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -680,6 +701,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingCompletion,
       name: RouteNames.onboardingCompletion,
       pageBuilder: (context, state) => ScaleTransitionPage(
@@ -691,6 +713,7 @@ class AppRouter {
     // Interests Selection Route
     // Note: This is the sports interests selection during onboarding
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingInterestsSelection,
       name: RouteNames.onboardingInterestsSelection,
       pageBuilder: (context, state) => FadeTransitionPage(
@@ -702,6 +725,7 @@ class AppRouter {
     // Primary Sport Selection Route
     // Note: Select ONE sport to represent the user
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.onboardingPrimarySport,
       name: RouteNames.onboardingPrimarySport,
       pageBuilder: (context, state) => FadeTransitionPage(
@@ -847,6 +871,7 @@ class AppRouter {
     // Legacy /sports top-level redirect handled inside the shell branch above.
     // Sports explore screen (direct access, feature-flagged)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.sportsExplore,
       name: RouteNames.sports,
       redirect: (context, state) {
@@ -863,6 +888,7 @@ class AppRouter {
 
     // Activities route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.activities,
       name: RouteNames.activities,
       pageBuilder: (context, state) => FadeThroughTransitionPage(
@@ -873,6 +899,7 @@ class AppRouter {
 
     // Rewards route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.rewards,
       name: RouteNames.rewards,
       redirect: (context, state) {
@@ -889,6 +916,7 @@ class AppRouter {
 
     // Profile route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.profile,
       name: RouteNames.profile,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -899,6 +927,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.sportProfile,
       name: RouteNames.sportProfile,
       pageBuilder: (context, state) {
@@ -921,6 +950,7 @@ class AppRouter {
 
     // Organiser Venue Submissions
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.myVenueSubmissions,
       name: RouteNames.myVenueSubmissions,
       redirect: (context, state) {
@@ -939,6 +969,7 @@ class AppRouter {
       ),
       routes: [
         GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
           path: 'create',
           name: RouteNames.createVenueSubmission,
           pageBuilder: (context, state) {
@@ -953,6 +984,7 @@ class AppRouter {
           },
         ),
         GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
           path: ':${RouteParams.submissionId}',
           name: RouteNames.venueSubmissionDetail,
           pageBuilder: (context, state) {
@@ -970,6 +1002,7 @@ class AppRouter {
     // Notifications route (hidden for MVP)
     // Route kept for deep links/admin access but UI entry points hidden
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.notifications,
       redirect: (context, state) {
         // Notifications hidden for MVP
@@ -986,6 +1019,7 @@ class AppRouter {
 
     // Profile Edit route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/profile/edit',
       pageBuilder: (context, state) => BottomSheetTransitionPage(
         key: state.pageKey,
@@ -995,6 +1029,7 @@ class AppRouter {
 
     // Profile Photo route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/profile/photo',
       pageBuilder: (context, state) => ScaleTransitionPage(
         key: state.pageKey,
@@ -1004,6 +1039,7 @@ class AppRouter {
 
     // Profile Sports Preferences route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/profile/sports-preferences',
       pageBuilder: (context, state) {
         final profileType = state.extra is Map<String, dynamic>
@@ -1019,6 +1055,7 @@ class AppRouter {
 
     // Settings route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1029,6 +1066,7 @@ class AppRouter {
 
     // Add Persona Flow Routes (from Settings)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.addPersonaInterests,
       name: RouteNames.addPersonaInterests,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -1040,6 +1078,7 @@ class AppRouter {
       ),
     ),
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.addPersonaPrimarySport,
       name: RouteNames.addPersonaPrimarySport,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -1051,6 +1090,7 @@ class AppRouter {
       ),
     ),
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.addPersonaUsername,
       name: RouteNames.addPersonaUsername,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -1060,6 +1100,7 @@ class AppRouter {
       ),
     ),
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.addPersonaWelcome,
       name: RouteNames.addPersonaWelcome,
       pageBuilder: (context, state) {
@@ -1078,6 +1119,7 @@ class AppRouter {
 
     // Transactions route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/transactions',
       redirect: (context, state) {
         if (!FeatureFlags.enablePayments) {
@@ -1151,6 +1193,7 @@ class AppRouter {
 
     // Settings sub-routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings/account',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1160,6 +1203,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings/privacy',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1169,6 +1213,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings/notifications',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1178,6 +1223,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings/theme',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1187,6 +1233,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/settings/language',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1197,6 +1244,7 @@ class AppRouter {
 
     // Preferences routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/preferences/games',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1206,6 +1254,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/preferences/availability',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1216,6 +1265,7 @@ class AppRouter {
 
     // Help & Support routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/help/center',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1225,6 +1275,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/help/contact',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1234,6 +1285,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/help/bug-report',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
@@ -1244,6 +1296,7 @@ class AppRouter {
 
     // About routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/about/terms',
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
@@ -1252,6 +1305,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/about/privacy',
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
@@ -1260,6 +1314,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '/about/licenses',
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
@@ -1269,6 +1324,7 @@ class AppRouter {
 
     // ── Post Creation ──
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialCreatePost,
       name: RouteNames.socialCreatePost,
       pageBuilder: (context, state) => AdaptiveModalPage(
@@ -1279,6 +1335,7 @@ class AppRouter {
 
     // ── Post Composer (full-featured) ──
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.postComposer,
       name: RouteNames.postComposer,
       pageBuilder: (context, state) => AdaptiveModalPage(
@@ -1295,6 +1352,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialSearch,
       name: RouteNames.socialSearch,
       redirect: (context, state) {
@@ -1308,6 +1366,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.hashtagFeed}/:slug',
       name: RouteNames.hashtagFeed,
       pageBuilder: (context, state) {
@@ -1339,6 +1398,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.userProfile}/:userId',
       name: RouteNames.userProfile,
       pageBuilder: (context, state) {
@@ -1354,6 +1414,7 @@ class AppRouter {
 
     // Social Onboarding Routes
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialOnboardingWelcome,
       name: RouteNames.socialOnboardingWelcome,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -1364,6 +1425,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialOnboardingFriends,
       name: RouteNames.socialOnboardingFriends,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -1374,6 +1436,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialOnboardingPrivacy,
       name: RouteNames.socialOnboardingPrivacy,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -1384,6 +1447,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialOnboardingNotifications,
       name: RouteNames.socialOnboardingNotifications,
       pageBuilder: (context, state) => SlideTransitionPage(
@@ -1394,6 +1458,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialOnboardingComplete,
       name: RouteNames.socialOnboardingComplete,
       pageBuilder: (context, state) => ScaleTransitionPage(
@@ -1404,6 +1469,7 @@ class AppRouter {
 
     // Social Friends (People) screen — own profile, 3 tabs
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialFriends,
       name: RouteNames.socialFriends,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -1415,6 +1481,7 @@ class AppRouter {
 
     // Following list for a specific profile (2 tabs, starts on Following)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.following}/:profileId',
       name: RouteNames.following,
       pageBuilder: (context, state) {
@@ -1429,6 +1496,7 @@ class AppRouter {
 
     // Followers list for a specific profile (2 tabs, starts on Followers)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.followers}/:profileId',
       name: RouteNames.followers,
       pageBuilder: (context, state) {
@@ -1443,6 +1511,7 @@ class AppRouter {
 
     // Placeholder Social Routes (for routes referenced in code but screens don't exist yet)
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialChatList,
       name: RouteNames.socialChatList,
       pageBuilder: (context, state) => FadeThroughTransitionPage(
@@ -1452,6 +1521,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialNotifications,
       name: RouteNames.socialNotifications,
       redirect: (context, state) {
@@ -1465,6 +1535,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialMessages,
       name: RouteNames.socialMessages,
       redirect: (context, state) {
@@ -1478,6 +1549,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.socialChat}/:conversationId',
       name: RouteNames.socialChat,
       redirect: (context, state) {
@@ -1496,6 +1568,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialEditPost,
       name: RouteNames.socialEditPost,
       pageBuilder: (context, state) => BottomSheetTransitionPage(
@@ -1505,6 +1578,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialAnalytics,
       name: RouteNames.socialAnalytics,
       pageBuilder: (context, state) => SharedAxisTransitionPage(
@@ -1516,6 +1590,7 @@ class AppRouter {
 
     // Admin routes with admin check guards
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.adminModerationQueue,
       redirect: (context, state) async {
         try {
@@ -1536,6 +1611,7 @@ class AppRouter {
     ),
 
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.adminSafetyOverview,
       redirect: (context, state) async {
         try {
@@ -1557,6 +1633,7 @@ class AppRouter {
 
     // Error route
     GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
       path: '${RoutePaths.error}:message',
       name: RouteNames.error,
       pageBuilder: (context, state) {
