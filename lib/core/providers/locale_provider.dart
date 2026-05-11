@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dabbler/core/services/mock_localization_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:dabbler/data/models/profile/user_profile.dart';
 
 const _kLangKey = 'mock_language';
 const _kSupported = ['en', 'ar'];
@@ -11,6 +13,8 @@ class LocaleNotifier extends StateNotifier<Locale> {
     _load();
   }
 
+  String? _activeProfileId;
+
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_kLangKey);
@@ -18,7 +22,6 @@ class LocaleNotifier extends StateNotifier<Locale> {
       state = Locale(saved);
       return;
     }
-    // First launch: sync with iOS/device system language
     final system =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
     final resolved = _kSupported.contains(system) ? system : 'en';
@@ -26,11 +29,38 @@ class LocaleNotifier extends StateNotifier<Locale> {
     await prefs.setString(_kLangKey, resolved);
   }
 
+  /// Hydrate locale from a loaded profile. Tracks the active profile id so
+  /// future setLocale calls write back to the right row.
+  Future<void> hydrateFromProfile(UserProfile? profile) async {
+    _activeProfileId = profile?.id;
+    final lang = profile?.language;
+    if (lang == null || !_kSupported.contains(lang)) return;
+    if (state.languageCode == lang) return;
+    state = Locale(lang);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLangKey, lang);
+  }
+
+  /// User-initiated locale change. Persists to SharedPreferences and, when
+  /// logged in, writes to the active profile.
   Future<void> setLocale(Locale locale) async {
+    if (state.languageCode == locale.languageCode) return;
     state = locale;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kLangKey, locale.languageCode);
-    MockLocalizationService().setLanguage(locale.languageCode);
+
+    final profileId = _activeProfileId;
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null && profileId != null && profileId.isNotEmpty) {
+      try {
+        await Supabase.instance.client
+            .from('profiles')
+            .update({'language': locale.languageCode})
+            .eq('id', profileId);
+      } catch (_) {
+        // Best-effort — locale state is already updated locally
+      }
+    }
   }
 }
 

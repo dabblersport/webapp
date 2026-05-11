@@ -39,6 +39,7 @@ import 'package:dabbler/features/social/providers/public_activity_providers.dart
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -498,7 +499,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    tab.label,
+                    tab.label(AppLocalizations.of(context)),
                     style: textTheme.labelLarge?.copyWith(
                       color: isSelected ? cs.onPrimary : cs.onSurface,
                       fontWeight: isSelected
@@ -716,10 +717,10 @@ class _ForYouTabBody extends ConsumerWidget {
       await ref.read(updateNewsPreferenceProvider)();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('News hidden from Most Recent'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).news_hidden_snack),
             behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -735,15 +736,16 @@ class _ForYouTabBody extends ConsumerWidget {
       return const _FeedSkeletonList();
     }
 
+    final l = AppLocalizations.of(context);
     if (state.error != null && state.items.isEmpty) {
-      return _ErrorView(message: 'Could not load feed', onRetry: onRetry);
+      return _ErrorView(message: l.feed_could_not_load, onRetry: onRetry);
     }
 
     if (state.items.isEmpty) {
       return _EmptyView(
         iconAsset: 'assets/icons/document-text.svg',
-        message: 'No posts yet',
-        hint: 'Share moments, dabs, and kick-ins with your community.',
+        message: l.feed_empty_no_posts,
+        hint: l.feed_empty_no_posts_hint,
       );
     }
 
@@ -802,6 +804,7 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
@@ -820,12 +823,12 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
             Icon(Iconsax.notification_status_copy, size: 36, color: cs.primary),
             const SizedBox(height: 12),
             Text(
-              'Hide news from feed?',
+              l.news_hide_sheet_title,
               style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              'News cards will no longer appear in Most Recent. You can still read all news in the News tab.',
+              l.news_hide_sheet_body,
               textAlign: TextAlign.center,
               style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
             ),
@@ -835,14 +838,14 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: onCancel,
-                    child: const Text('Cancel'),
+                    child: Text(l.news_hide_cancel),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: onConfirm,
-                    child: const Text('Hide news'),
+                    child: Text(l.news_hide_confirm),
                   ),
                 ),
               ],
@@ -1218,7 +1221,10 @@ class _ErrorView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: Text(AppLocalizations.of(context).feed_retry),
+            ),
           ],
         ),
       ),
@@ -1347,11 +1353,12 @@ class _NewsFeedTabBody extends ConsumerWidget {
       return _ErrorView(message: state.error!, onRetry: onRetry);
     }
 
+    final l = AppLocalizations.of(context);
     if (state.items.isEmpty) {
-      return const _EmptyView(
+      return _EmptyView(
         iconAsset: 'assets/icons/document-text.svg',
-        message: 'No news right now.',
-        hint: 'Check back later for updates from the Dabbler team.',
+        message: l.news_empty_title,
+        hint: l.news_empty_hint,
       );
     }
 
@@ -1377,10 +1384,12 @@ class _NewsFeedTabBody extends ConsumerWidget {
                 await ref.read(resubscribeNewsProvider)();
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('News will now appear in Most Recent'),
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context).news_resubscribed_snack,
+                      ),
                       behavior: SnackBarBehavior.floating,
-                      duration: Duration(seconds: 3),
+                      duration: const Duration(seconds: 3),
                     ),
                   );
                 }
@@ -1411,6 +1420,7 @@ class _NewsResubscribeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1425,7 +1435,7 @@ class _NewsResubscribeBanner extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'News is hidden from Most Recent.',
+              l.news_resubscribe_banner,
               style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
@@ -1433,7 +1443,7 @@ class _NewsResubscribeBanner extends StatelessWidget {
           GestureDetector(
             onTap: onResubscribe,
             child: Text(
-              'Show again',
+              l.news_resubscribe_action,
               style: tt.labelSmall?.copyWith(
                 color: cs.primary,
                 fontWeight: FontWeight.w700,
@@ -1463,7 +1473,7 @@ class _FilterPill extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsetsDirectional.only(end: 8),
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
@@ -1545,7 +1555,7 @@ class _NewsFilterChips extends ConsumerWidget {
           // ── Divider before region chips ──────────────────────────────
           if (interestSports.isNotEmpty && regions.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: SizedBox(
                 height: 24,
                 child: VerticalDivider(color: cs.outlineVariant, width: 1),

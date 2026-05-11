@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/data/models/profile/user_profile.dart';
+import 'package:timeago/timeago.dart' as timeago;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -69,6 +73,10 @@ Future<void> main() async {
   await runZonedGuarded(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
+
+      // Register Arabic locale messages for the timeago package so relative
+      // times render in the user's selected language.
+      timeago.setLocaleMessages('ar', timeago.ArMessages());
 
       // Use clean path-based URLs on web (removes the # fragment).
       if (kIsWeb) configureWebUrlStrategy();
@@ -214,6 +222,10 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(localeProvider);
+    ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {
+      if (next == null) return;
+      ref.read(localeProvider.notifier).hydrateFromProfile(next);
+    });
     return AnimatedBuilder(
       animation: _themeService,
       builder: (context, child) {
@@ -229,6 +241,17 @@ class MyApp extends ConsumerWidget {
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();
+            // When the active locale is Arabic, swap the primary text theme to
+            // Tajawal so the entire UI renders in a native-feeling Arabic font.
+            if (locale.languageCode == 'ar') {
+              final base = Theme.of(context);
+              return Theme(
+                data: base.copyWith(
+                  textTheme: GoogleFonts.tajawalTextTheme(base.textTheme),
+                ),
+                child: ResponsiveAppShell(child: child),
+              );
+            }
             return ResponsiveAppShell(child: child);
           },
         );

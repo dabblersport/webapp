@@ -103,7 +103,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             pinned: true,
             backgroundColor: cs.surface,
             leading: IconButton(
-              icon: const Icon(Iconsax.arrow_left),
+              icon: const Icon(Icons.arrow_back),
               onPressed: () => context.pop(),
             ),
             flexibleSpace: FlexibleSpaceBar(

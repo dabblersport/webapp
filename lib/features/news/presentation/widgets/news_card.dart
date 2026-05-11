@@ -169,7 +169,7 @@ class _CoverImage extends StatelessWidget {
 
 // ---------------------------------------------------------------------------
 
-class _ActionRow extends StatelessWidget {
+class _ActionRow extends ConsumerWidget {
   const _ActionRow({required this.item});
   final FeedNewsItem item;
 
@@ -180,9 +180,10 @@ class _ActionRow extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final lang = ref.watch(localeProvider).languageCode;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
       child: Row(
@@ -198,7 +199,7 @@ class _ActionRow extends StatelessWidget {
           Text(_fmt(item.viewCount), style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(width: 10),
           Text(
-            timeago.format(item.createdAt),
+            timeago.format(item.createdAt, locale: lang),
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],

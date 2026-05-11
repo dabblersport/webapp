@@ -1195,7 +1195,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                 ),
                 Text(
                   _getTimeFromNow(game.scheduledDate),
-                  textAlign: TextAlign.right,
+                  textAlign: TextAlign.end,
                   style: TextStyle(
                     color: Theme.of(
                       context,

@@ -952,9 +952,9 @@ class _NotificationRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
         decoration: BoxDecoration(
           color: unread ? cs.primaryContainer.withValues(alpha: 0.18) : null,
-          border: Border(
+          border: BorderDirectional(
             bottom: BorderSide(color: context.colorTokens.stroke, width: 1),
-            left: BorderSide(
+            start: BorderSide(
               color: unread ? cs.primary : Colors.transparent,
               width: 3,
             ),

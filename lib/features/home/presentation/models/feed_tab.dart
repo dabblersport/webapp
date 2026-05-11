@@ -1,3 +1,5 @@
+import 'package:dabbler/l10n/app_localizations.dart';
+
 /// Represents each tab in the Home Feed.
 enum FeedTab {
   forYou,
@@ -6,11 +8,11 @@ enum FeedTab {
   active,
   news;
 
-  String get label => switch (this) {
-    FeedTab.forYou => 'Most Recent',
-    FeedTab.following => 'Following',
-    FeedTab.nearby => 'Nearby',
-    FeedTab.active => 'Active',
-    FeedTab.news => 'News',
-  };
+  String label(AppLocalizations l) => switch (this) {
+        FeedTab.forYou => l.tab_most_recent,
+        FeedTab.following => l.tab_following,
+        FeedTab.nearby => l.tab_nearby,
+        FeedTab.active => l.tab_active,
+        FeedTab.news => l.tab_news,
+      };
 }

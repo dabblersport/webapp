@@ -1,17 +1,20 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
+import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/data/models/news/news_comment.dart';
 
-class NewsCommentTile extends StatelessWidget {
+class NewsCommentTile extends ConsumerWidget {
   const NewsCommentTile({super.key, required this.comment});
 
   final NewsComment comment;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final lang = ref.watch(localeProvider).languageCode;
     final displayName =
         comment.authorDisplayName ?? comment.authorUsername ?? 'User';
 
@@ -38,7 +41,7 @@ class NewsCommentTile extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      timeago.format(comment.createdAt),
+                      timeago.format(comment.createdAt, locale: lang),
                       style: TextStyle(
                         fontSize: 11,
                         color: cs.onSurfaceVariant,

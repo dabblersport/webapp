@@ -43,4 +43,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get venues_search_disabled_mvp => 'Search is disabled in the MVP';
+
+  @override
+  String get tab_most_recent => 'Most Recent';
+
+  @override
+  String get tab_following => 'Following';
+
+  @override
+  String get tab_nearby => 'Nearby';
+
+  @override
+  String get tab_active => 'Active';
+
+  @override
+  String get tab_news => 'News';
+
+  @override
+  String get feed_empty_no_posts => 'No posts yet';
+
+  @override
+  String get feed_empty_no_posts_hint =>
+      'Share moments, dabs, and kick-ins with your community.';
+
+  @override
+  String get feed_could_not_load => 'Could not load feed';
+
+  @override
+  String get feed_retry => 'Retry';
+
+  @override
+  String get news_empty_title => 'No news right now.';
+
+  @override
+  String get news_empty_hint =>
+      'Check back later for updates from the Dabbler team.';
+
+  @override
+  String get news_hide_sheet_title => 'Hide news from feed?';
+
+  @override
+  String get news_hide_sheet_body =>
+      'News cards will no longer appear in Most Recent. You can still read all news in the News tab.';
+
+  @override
+  String get news_hide_confirm => 'Hide news';
+
+  @override
+  String get news_hide_cancel => 'Cancel';
+
+  @override
+  String get news_hidden_snack => 'News hidden from Most Recent';
+
+  @override
+  String get news_resubscribed_snack => 'News will now appear in Most Recent';
+
+  @override
+  String get news_resubscribe_banner => 'News is hidden from Most Recent.';
+
+  @override
+  String get news_resubscribe_action => 'Show again';
 }

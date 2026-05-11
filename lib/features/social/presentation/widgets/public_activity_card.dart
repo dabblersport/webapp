@@ -57,7 +57,7 @@ class PublicActivityCard extends StatelessWidget {
                         TextSpan(text: ' ${activity.actionLabel}'),
                         TextSpan(
                           text:
-                              '  ·  ${timeago.format(activity.createdAt, allowFromNow: true)}',
+                              '  ·  ${timeago.format(activity.createdAt, allowFromNow: true, locale: locale)}',
                           style: tt.bodySmall
                               ?.copyWith(color: cs.onSurfaceVariant),
                         ),

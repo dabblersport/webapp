@@ -169,6 +169,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search is disabled in the MVP'**
   String get venues_search_disabled_mvp;
+
+  /// No description provided for @tab_most_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Most Recent'**
+  String get tab_most_recent;
+
+  /// No description provided for @tab_following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get tab_following;
+
+  /// No description provided for @tab_nearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby'**
+  String get tab_nearby;
+
+  /// No description provided for @tab_active.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tab_active;
+
+  /// No description provided for @tab_news.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get tab_news;
+
+  /// No description provided for @feed_empty_no_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get feed_empty_no_posts;
+
+  /// No description provided for @feed_empty_no_posts_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share moments, dabs, and kick-ins with your community.'**
+  String get feed_empty_no_posts_hint;
+
+  /// No description provided for @feed_could_not_load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load feed'**
+  String get feed_could_not_load;
+
+  /// No description provided for @feed_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get feed_retry;
+
+  /// No description provided for @news_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No news right now.'**
+  String get news_empty_title;
+
+  /// No description provided for @news_empty_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Check back later for updates from the Dabbler team.'**
+  String get news_empty_hint;
+
+  /// No description provided for @news_hide_sheet_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide news from feed?'**
+  String get news_hide_sheet_title;
+
+  /// No description provided for @news_hide_sheet_body.
+  ///
+  /// In en, this message translates to:
+  /// **'News cards will no longer appear in Most Recent. You can still read all news in the News tab.'**
+  String get news_hide_sheet_body;
+
+  /// No description provided for @news_hide_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide news'**
+  String get news_hide_confirm;
+
+  /// No description provided for @news_hide_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get news_hide_cancel;
+
+  /// No description provided for @news_hidden_snack.
+  ///
+  /// In en, this message translates to:
+  /// **'News hidden from Most Recent'**
+  String get news_hidden_snack;
+
+  /// No description provided for @news_resubscribed_snack.
+  ///
+  /// In en, this message translates to:
+  /// **'News will now appear in Most Recent'**
+  String get news_resubscribed_snack;
+
+  /// No description provided for @news_resubscribe_banner.
+  ///
+  /// In en, this message translates to:
+  /// **'News is hidden from Most Recent.'**
+  String get news_resubscribe_banner;
+
+  /// No description provided for @news_resubscribe_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Show again'**
+  String get news_resubscribe_action;
 }
 
 class _AppLocalizationsDelegate
