@@ -1097,7 +1097,7 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final glassBase = isDark
-        ? Colors.black.withValues(alpha: 0.55)
+        ? Colors.black.withValues(alpha: 1.55)
         : Colors.white.withValues(alpha: 0.72);
     final glassBorder = isDark
         ? Colors.white.withValues(alpha: 0.12)
