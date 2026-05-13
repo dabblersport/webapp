@@ -12,6 +12,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/onboardi
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 import '../providers/auth_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class EnterPasswordScreen extends ConsumerStatefulWidget {
   final String email;
@@ -62,10 +63,11 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   }
 
   String? _validateEmail(String? value) {
+    final l10n = AppLocalizations.of(context);
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Email is required';
+    if (email.isEmpty) return l10n.email_password_validate_email_required;
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      return 'Enter a valid email address';
+      return l10n.email_password_validate_email_invalid;
     }
     return null;
   }
@@ -97,7 +99,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
       if (result.user == null) {
         if (!mounted) return;
-        setState(() => _errorMessage = 'Invalid email or password');
+        setState(() => _errorMessage = AppLocalizations.of(context).email_password_error_invalid_creds);
         return;
       }
 
@@ -143,8 +145,8 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (!mounted) return;
       setState(() {
         _errorMessage = isInvalidCreds
-            ? 'Invalid email or password'
-            : 'Login failed.';
+            ? AppLocalizations.of(context).email_password_error_invalid_creds
+            : AppLocalizations.of(context).email_password_error_login_failed;
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -154,7 +156,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   Future<void> _handleSendEmailOtp() async {
     if (_validateEmail(_emailController.text) != null) {
       setState(() {
-        _errorMessage = 'Enter a valid email address.';
+        _errorMessage = AppLocalizations.of(context).email_password_validate_email_hint;
       });
       return;
     }
@@ -186,7 +188,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Failed to send OTP. Please try again.');
+      setState(() => _errorMessage = AppLocalizations.of(context).email_password_error_otp_failed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -244,7 +246,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           break;
       }
     } catch (e) {
-      if (mounted) setState(() => _errorMessage = 'Google sign-in failed.');
+      if (mounted) setState(() => _errorMessage = AppLocalizations.of(context).email_password_google_failed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -278,7 +280,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Login',
+                            AppLocalizations.of(context).email_password_title,
                             style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface,
@@ -286,7 +288,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Enter your email and password\nor login using OTP',
+                            AppLocalizations.of(context).email_password_subtitle,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -324,7 +326,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                                       },
                                     ),
                               child: Text(
-                                'Forget password?',
+                                AppLocalizations.of(context).email_password_forgot,
                                 style: _controlTextStyle(
                                   context,
                                   fontWeight: FontWeight.w700,
@@ -342,7 +344,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                                   ? null
                                   : _handleSendEmailOtp,
                               child: Text(
-                                'Send email OTP',
+                                AppLocalizations.of(context).email_password_send_otp,
                                 style: _controlTextStyle(
                                   context,
                                   fontWeight: FontWeight.w700,
@@ -396,7 +398,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         color: colorScheme.onSurface,
       ),
       decoration: InputDecoration(
-        hintText: 'email@domain.com',
+        hintText: AppLocalizations.of(context).email_password_hint_email,
         hintStyle: _controlTextStyle(
           context,
           fontWeight: FontWeight.w500,
@@ -441,7 +443,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         color: colorScheme.onSurface,
       ),
       decoration: InputDecoration(
-        hintText: 'Password',
+        hintText: AppLocalizations.of(context).email_password_hint_password,
         hintStyle: _controlTextStyle(
           context,
           fontWeight: FontWeight.w500,
@@ -476,7 +478,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         suffixIcon: Padding(
           padding: const EdgeInsets.only(right: 12),
           child: IconButton(
-            tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+            tooltip: _obscurePassword ? AppLocalizations.of(context).email_password_show_password : AppLocalizations.of(context).email_password_hide_password,
             icon: Icon(
               _obscurePassword ? Iconsax.eye_copy : Iconsax.eye_slash_copy,
               color: colorScheme.onSurfaceVariant,
@@ -487,7 +489,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           ),
         ),
       ),
-      validator: (v) => v == null || v.isEmpty ? 'Enter password' : null,
+      validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context).email_password_validate_password_required : null,
     );
   }
 
@@ -516,7 +518,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
               width: 22,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Text('Login'),
+          : Text(AppLocalizations.of(context).email_password_login_btn),
     );
   }
 
@@ -554,7 +556,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  'Continue with Google',
+                  AppLocalizations.of(context).email_password_btn_google,
                   style: _controlTextStyle(
                     context,
                     fontWeight: FontWeight.w700,
@@ -572,7 +574,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           ? null
           : () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Apple sign-in is coming soon.')),
+                SnackBar(content: Text(AppLocalizations.of(context).email_password_apple_soon)),
               );
             },
       style: FilledButton.styleFrom(
@@ -592,7 +594,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           ),
           const SizedBox(width: 12),
           Text(
-            'Continue with Apple',
+            AppLocalizations.of(context).email_password_btn_apple,
             style: _controlTextStyle(
               context,
               fontWeight: FontWeight.w700,

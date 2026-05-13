@@ -38,6 +38,8 @@ import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/profile/utils/persona_label.dart';
 
 /// Provider that checks if a profile is under takedown
 /// Uses autoDispose.family to cache per profileId and clean up when not needed
@@ -227,7 +229,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       if (mounted) {
         final errorMsg =
             ref.read(personaServiceProvider).errorMessage ??
-            'Failed to switch profile';
+            AppLocalizations.of(context).profile_error_switch_profile_failed;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(errorMsg)));
@@ -526,7 +528,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     return Text(
                       (username != null && username.isNotEmpty)
                           ? username
-                          : 'Profile',
+                          : AppLocalizations.of(context).profile_header_fallback,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -546,7 +548,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               foregroundColor: colorScheme.onSurface,
               minimumSize: const Size(48, 48),
             ),
-            tooltip: 'Manage profiles',
+            tooltip: AppLocalizations.of(context).profile_btn_manage_profiles_tooltip,
           ),
           const SizedBox(width: 8),
           IconButton.filledTonal(
@@ -592,7 +594,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     Text(
                       profile?.getDisplayName().isNotEmpty == true
                           ? profile!.getDisplayName()
-                          : 'Complete your profile',
+                          : AppLocalizations.of(context).profile_complete_your_profile,
                       style: textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,
@@ -624,7 +626,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           Text(
             profile?.bio?.isNotEmpty == true
                 ? profile!.bio!
-                : 'Add a short bio so teammates know what to expect.',
+                : AppLocalizations.of(context).profile_bio_placeholder,
             style: textTheme.bodyMedium?.copyWith(color: onTop),
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
@@ -767,9 +769,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           _buildInfoPill(
             context,
             icon: Iconsax.profile_circle_copy,
-            label:
-                profile.personaType![0].toUpperCase() +
-                profile.personaType!.substring(1),
+            label: personaLabel(context, profile.personaType),
             colorScheme: colorScheme,
             textTheme: textTheme,
             baseOnTop: baseOnTop,
@@ -777,7 +777,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         // Primary sport pill
         if (primarySport != null)
           _buildSportPill(
-            label: primarySport.nameEn as String,
+            label: primarySport.localizedName(context),
             emoji: primarySport.emoji as String?,
             colorScheme: colorScheme,
             textTheme: textTheme,
@@ -788,7 +788,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             (primarySport == null ||
                 (preferredSport.id as String) != (primarySport.id as String)))
           _buildSportPill(
-            label: preferredSport.nameEn as String,
+            label: preferredSport.localizedName(context),
             emoji: preferredSport.emoji as String?,
             colorScheme: colorScheme,
             textTheme: textTheme,
@@ -850,7 +850,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ),
                   ),
                   TextSpan(
-                    text: postsCount == 1 ? 'Post' : 'Posts',
+                    text: AppLocalizations.of(context).profile_post_count(postsCount),
                     style: textTheme.bodyMedium?.copyWith(
                       color: baseOnTop,
                       fontWeight: FontWeight.w700,
@@ -884,7 +884,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ),
                   ),
                   TextSpan(
-                    text: 'Following',
+                    text: AppLocalizations.of(context).profile_following_label,
                     style: textTheme.bodyMedium?.copyWith(
                       color: baseOnTop,
                       fontWeight: FontWeight.w700,
@@ -918,7 +918,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     ),
                   ),
                   TextSpan(
-                    text: followersCount == 1 ? 'Follower' : 'Followers',
+                    text: AppLocalizations.of(context).profile_follower_count(followersCount),
                     style: textTheme.bodyMedium?.copyWith(
                       color: baseOnTop,
                       fontWeight: FontWeight.w700,
@@ -984,7 +984,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               color: colorScheme.onSurface,
             ),
             label: Text(
-              'Edit profile',
+              AppLocalizations.of(context).profile_btn_edit,
               style: textTheme.labelLarge?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -1013,7 +1013,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               color: colorScheme.onSurface,
             ),
             label: Text(
-              'Share profile',
+              AppLocalizations.of(context).profile_btn_share,
               style: textTheme.labelLarge?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -1063,7 +1063,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             child: Row(
               children: [
                 Text(
-                  'Sports',
+                  AppLocalizations.of(context).profile_section_sports,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: onTop,
@@ -1197,7 +1197,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               }
 
               return Text(
-                'No sports added yet',
+                AppLocalizations.of(context).profile_empty_no_sports,
                 style: textTheme.bodySmall?.copyWith(
                   color: onTop.withValues(alpha: 0.6),
                 ),
@@ -1231,12 +1231,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           unselectedLabelStyle: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w400,
           ),
-          tabs: const [
-            Tab(text: 'Posts'),
-            Tab(text: 'Replies'),
-            Tab(text: 'Liked'),
-            Tab(text: 'Reposts'),
-            Tab(text: 'Activity'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).profile_tab_posts),
+            Tab(text: AppLocalizations.of(context).profile_tab_replies),
+            Tab(text: AppLocalizations.of(context).profile_tab_liked),
+            Tab(text: AppLocalizations.of(context).profile_tab_reposts),
+            Tab(text: AppLocalizations.of(context).profile_tab_activity),
           ],
         ),
         const SizedBox(height: 4),
@@ -1279,7 +1279,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
 
     if (state.activities.isEmpty) {
-      return _buildEmptyTabContent(context, 'No activity yet');
+      return _buildEmptyTabContent(context, AppLocalizations.of(context).profile_empty_no_activity);
     }
 
     return Column(
@@ -1295,7 +1295,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No posts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_posts);
   }
 
   Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
@@ -1303,7 +1303,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No replies yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_replies);
   }
 
   Widget _buildLikedTabContent(BuildContext context, String? profileId) {
@@ -1311,7 +1311,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No liked posts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_liked);
   }
 
   Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
@@ -1319,7 +1319,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No reposts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_reposts);
   }
 
   Widget _buildPostsList(
@@ -1345,9 +1345,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         padding: EdgeInsets.all(48),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: Text('Failed to load posts.')),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.all(48),
+        child: Center(child: Text(AppLocalizations.of(context).profile_error_failed_load_posts)),
       ),
     );
   }
@@ -1397,7 +1397,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              'Content Removed',
+              AppLocalizations.of(context).profile_takedown_title,
               style: textTheme.titleLarge?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -1405,7 +1405,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'This content has been removed due to a violation of our community guidelines.',
+              AppLocalizations.of(context).profile_takedown_body,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -1459,7 +1459,7 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
               Row(
                 children: [
                   Text(
-                    'Manage Profiles',
+                    AppLocalizations.of(context).profile_manage_profiles_title,
                     style: textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: colorScheme.onSurface,
@@ -1480,7 +1480,7 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
                       child: Padding(
                         padding: const EdgeInsets.all(32),
                         child: Text(
-                          'No profiles found',
+                          AppLocalizations.of(context).profile_no_profiles_found,
                           style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -1526,7 +1526,7 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
                         Divider(color: colorScheme.outlineVariant),
                         const SizedBox(height: 16),
                         Text(
-                          'Add Profile',
+                          AppLocalizations.of(context).profile_add_profile,
                           style: textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: colorScheme.onSurfaceVariant,
@@ -1553,7 +1553,7 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Error loading profiles',
+                      AppLocalizations.of(context).profile_error_loading_profiles,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colorScheme.error,
                       ),
@@ -1625,15 +1625,17 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
       builder: (dialogContext) => AlertDialog(
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
-        title: Text('Convert to ${availability.targetPersona.displayName}?'),
-        content: Text(
-          'This will deactivate your ${availability.convertFrom?.displayName} profile and create a new ${availability.targetPersona.displayName} profile.\n\n'
-          'Your account data (age, gender) will be preserved.',
-        ),
+        title: Text(AppLocalizations.of(context).profile_convert_to(
+          personaLabel(context, availability.targetPersona.name),
+        )),
+        content: Text(AppLocalizations.of(context).profile_convert_confirm_body(
+          personaLabel(context, availability.convertFrom?.name),
+          personaLabel(context, availability.targetPersona.name),
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).profile_btn_cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -1641,7 +1643,7 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
               // Navigate to first screen of add flow
               context.push(RoutePaths.addPersonaInterests);
             },
-            child: const Text('Continue'),
+            child: Text(AppLocalizations.of(context).profile_btn_continue),
           ),
         ],
       ),
@@ -1711,7 +1713,7 @@ class _PersonaOptionTile extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            availability.targetPersona.displayName,
+                            personaLabel(context, availability.targetPersona.name),
                             style: textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: colorScheme.onSurface,
@@ -1729,7 +1731,7 @@ class _PersonaOptionTile extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Convert',
+                                AppLocalizations.of(context).profile_persona_convert_badge,
                                 style: textTheme.labelSmall?.copyWith(
                                   color: colorScheme.onTertiaryContainer,
                                   fontWeight: FontWeight.w600,

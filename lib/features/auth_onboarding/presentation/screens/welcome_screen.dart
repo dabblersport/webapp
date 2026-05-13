@@ -4,15 +4,12 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final String displayName;
@@ -47,22 +44,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
     final isWide = MediaQuery.sizeOf(context).width >= 800;
 
     // Get persona-specific content
     final personaContent = _getPersonaContent(widget.personaType);
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       maxCardWidth: isWide ? 960 : 520,
       // WelcomeScreen manages its own two-column desktop layout internally.
       splitWideLayout: false,
       child: isWide
-          ? _buildDesktopLayout(context, theme, tokens, personaContent)
-          : _buildMobileLayout(context, theme, tokens, personaContent),
+          ? _buildDesktopLayout(context, theme, colorScheme, personaContent)
+          : _buildMobileLayout(context, theme, colorScheme, personaContent),
     );
   }
 
@@ -71,7 +67,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget _buildDesktopLayout(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     _PersonaContent personaContent,
   ) {
     return Padding(
@@ -93,14 +89,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     _getWelcomeTitle(),
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
                     personaContent.guidanceText,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                       height: 1.4,
                     ),
                   ),
@@ -108,25 +104,25 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   Text(
                     personaContent.philosophyStatement,
                     style: theme.textTheme.headlineMedium?.copyWith(
-                      color: tokens.main.primary,
+                      color: colorScheme.primary,
                       fontWeight: FontWeight.w700,
                       height: 1.3,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
-                  _buildReminderCard(theme, tokens, personaContent),
+                  _buildReminderCard(theme, colorScheme, personaContent),
                   const SizedBox(height: AppSpacing.xxxl),
                   Text(
                     personaContent.finalEmphasis,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   SizedBox(
                     width: double.infinity,
-                    child: _buildCTAButton(context, theme, tokens),
+                    child: _buildCTAButton(context, theme, colorScheme),
                   ),
                 ],
               ),
@@ -137,7 +133,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           Expanded(
             flex: 3,
             child: Center(
-              child: _buildAvatarCard(theme, tokens, personaContent),
+              child: _buildAvatarCard(theme, colorScheme, personaContent),
             ),
           ),
         ],
@@ -150,7 +146,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget _buildMobileLayout(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     _PersonaContent personaContent,
   ) {
     return LayoutBuilder(
@@ -170,17 +166,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       _getWelcomeTitle(),
                       style: theme.textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                       ),
                       textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    _buildAvatarCard(theme, tokens, personaContent),
+                    _buildAvatarCard(theme, colorScheme, personaContent),
                     const SizedBox(height: AppSpacing.xxxl),
                     Text(
                       personaContent.guidanceText,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         height: 1.25,
                       ),
                       textAlign: TextAlign.start,
@@ -189,26 +185,26 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     Text(
                       personaContent.philosophyStatement,
                       style: theme.textTheme.headlineLarge?.copyWith(
-                        color: tokens.main.primary,
+                        color: colorScheme.primary,
                         fontWeight: FontWeight.w500,
                         height: 1.3,
                       ),
                       textAlign: TextAlign.start,
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    _buildReminderCard(theme, tokens, personaContent),
+                    _buildReminderCard(theme, colorScheme, personaContent),
                     const Spacer(),
                     const SizedBox(height: AppSpacing.xl),
                     Text(
                       personaContent.finalEmphasis,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.w500,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.xl),
-                    _buildCTAButton(context, theme, tokens),
+                    _buildCTAButton(context, theme, colorScheme),
                     const SizedBox(height: AppSpacing.lg),
                   ],
                 ),
@@ -224,7 +220,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildAvatarCard(
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     _PersonaContent personaContent,
   ) {
     return Row(
@@ -244,8 +240,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               imageUrl: avatarUrl,
               displayName: avatarDisplayName,
               context: AvatarContext.main,
-              backgroundColor: tokens.main.primary,
-              foregroundColor: tokens.main.onPrimary,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
               hasBorder: false,
             );
           },
@@ -259,7 +255,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               widget.displayName,
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: tokens.main.onSecondaryContainer,
+                color: colorScheme.onSecondaryContainer,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -269,16 +265,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 vertical: AppSpacing.xs,
               ),
               decoration: BoxDecoration(
-                color: tokens.main.secondary,
+                color: colorScheme.secondary,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                  color: tokens.main.outline.withValues(alpha: 0.3),
+                  color: colorScheme.outline.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
                 personaContent.chipLabel,
                 style: theme.textTheme.labelLarge?.copyWith(
-                  color: tokens.main.onSecondary,
+                  color: colorScheme.onSecondary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -291,7 +287,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   Widget _buildReminderCard(
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     _PersonaContent personaContent,
   ) {
     return Column(
@@ -301,14 +297,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           'Don\'t forget',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: tokens.main.onSecondaryContainer,
+            color: colorScheme.onSecondaryContainer,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           personaContent.reminderText,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: tokens.main.onSecondaryContainer,
+            color: colorScheme.onSecondaryContainer,
             height: 1.7,
           ),
         ),
@@ -319,7 +315,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Widget _buildCTAButton(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
     return FilledButton(
       onPressed: () {
@@ -329,13 +325,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(56),
         shape: const StadiumBorder(),
-        backgroundColor: tokens.main.primary,
-        foregroundColor: tokens.main.onPrimary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         textStyle: theme.textTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w700,
         ),
       ),
-      child: const Text('Continue'),
+      child: Text(AppLocalizations.of(context).welcome_screen_continue),
     );
   }
 

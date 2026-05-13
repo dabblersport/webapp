@@ -203,7 +203,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
         onSelect: (sport) => ref.read(postComposerProvider.notifier).setSport(
           id: sport.id,
-          name: sport.nameEn,
+          name: sport.localizedName(context),
           emoji: sport.emoji,
         ),
       ),

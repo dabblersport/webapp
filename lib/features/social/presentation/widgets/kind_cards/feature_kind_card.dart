@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
 /// Feature card: promotes new features / product updates.
 /// Teal accent with a sparkle icon, slightly elevated visual treatment.
@@ -106,11 +108,13 @@ class FeatureKindCard extends StatelessWidget {
                       color: teal.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      post.sport!,
-                      style: tt.labelSmall?.copyWith(
-                        color: teal,
-                        fontWeight: FontWeight.w600,
+                    child: Consumer(
+                      builder: (context, ref, _) => Text(
+                        resolvePostSportLabel(context, ref, post),
+                        style: tt.labelSmall?.copyWith(
+                          color: teal,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),

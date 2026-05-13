@@ -10,6 +10,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/core/design_system/widgets/app_input_field.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class IdentityVerificationScreen extends ConsumerStatefulWidget {
   const IdentityVerificationScreen({super.key});
@@ -324,7 +325,7 @@ class _IdentityVerificationScreenState
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(double.infinity, 56),
                       ),
-                      child: Text(_isLoading ? 'Sending...' : 'Continue'),
+                      child: Text(_isLoading ? AppLocalizations.of(context).identity_verify_continue_sending : AppLocalizations.of(context).identity_verify_continue),
                     ),
 
                     SizedBox(height: 16.0),
@@ -347,7 +348,7 @@ class _IdentityVerificationScreenState
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      label: const Text('Continue with Google'),
+                      label: Text(AppLocalizations.of(context).identity_verify_google_btn),
                     ),
 
                     // Error/Success messages
@@ -450,8 +451,8 @@ class _IdentityVerificationScreenState
         children: [
           AppInputField(
             controller: _phoneController,
-            label: 'Email address',
-            hintText: 'Enter your email address',
+            label: AppLocalizations.of(context).identity_verify_email_label,
+            hintText: AppLocalizations.of(context).identity_verify_email_hint,
             keyboardType: _currentIdentifierType == IdentifierType.email
                 ? TextInputType.emailAddress
                 : TextInputType.phone,

@@ -99,7 +99,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         controller: _scrollController,
         slivers: [
           SliverAppBar(
-            expandedHeight: MediaQuery.sizeOf(context).width * 9 / 16,
+            expandedHeight: MediaQuery.sizeOf(context).width * 5 / 4,
             pinned: true,
             backgroundColor: cs.surface,
             leading: IconButton(

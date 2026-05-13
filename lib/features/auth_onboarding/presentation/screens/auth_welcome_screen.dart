@@ -1,14 +1,12 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +49,14 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     } catch (_) {
       if (mounted) setState(() => _countriesLoading = false);
     }
+  }
+
+  Future<void> _openLanguagePicker() async {
+    final current = ref.read(localeProvider);
+    await showAdaptiveSheet<void>(
+      context: context,
+      builder: (context) => _LanguagePickerSheet(currentLocale: current),
+    );
   }
 
   Future<void> _openCountryPicker() async {
@@ -148,7 +154,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not sign in with Google: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).auth_welcome_google_error(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -157,7 +163,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
   void _handleApple() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Apple sign-in is coming soon.')),
+      SnackBar(content: Text(AppLocalizations.of(context).auth_welcome_apple_soon)),
     );
   }
 
@@ -172,31 +178,28 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
     final countryState = ref.watch(selectedCountryProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 800;
 
-    // Country detection priority (via selectedCountryProvider + LocationDetector):
-    //   1. IP-derived country (Supabase edge function using ipapi.co)
-    //   2. Device locale country (Platform locale settings)
-    //   3. Global (safe fallback)
     final countryName = countryState.maybeWhen(
       data: (country) => country,
       orElse: () => 'Global',
     );
 
+    final locale = ref.watch(localeProvider);
+    final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
+
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
-      // On wide screens pass the welcome/trust branding as the left panel so the
-      // right panel can focus entirely on auth CTAs.
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       leftPanelContent: isWide
-          ? _WelcomeLeftPanel(tokens: tokens, isDark: isDark, theme: theme)
+          ? _WelcomeLeftPanel(colorScheme: colorScheme, theme: theme)
           : null,
       child: isWide
-          ? _buildWideCTAs(context, theme, tokens, isDark, countryName)
-          : _buildMobileContent(context, theme, tokens, isDark, countryName),
+          ? _buildWideCTAs(context, theme, colorScheme, isDark, countryName, langLabel)
+          : _buildMobileContent(context, theme, colorScheme, isDark, countryName, langLabel),
     );
   }
 
@@ -205,9 +208,10 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   Widget _buildWideCTAs(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     bool isDark,
     String countryName,
+    String langLabel,
   ) {
     return SingleChildScrollView(
       child: Padding(
@@ -221,62 +225,23 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
           children: [
             const SizedBox(height: AppSpacing.xl),
             Text(
-              'Get started',
+              AppLocalizations.of(context).auth_welcome_get_started,
               style: theme.textTheme.headlineLarge?.copyWith(
-                color: tokens.main.onSecondaryContainer,
+                color: colorScheme.onSecondaryContainer,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Create an account or log in',
+              AppLocalizations.of(context).auth_welcome_get_started_subtitle,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: tokens.main.onSecondaryContainer.withValues(alpha: 0.7),
+                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: AppSpacing.xxxl),
-            ..._buildCTAButtons(context, theme, tokens, isDark),
+            ..._buildCTAButtons(context, theme, colorScheme, isDark),
             const SizedBox(height: AppSpacing.xxxl),
-            Center(
-              child: Material(
-                type: MaterialType.transparency,
-                child: InkWell(
-                  borderRadius: AppRadius.medium,
-                  onTap: _isLoading ? null : _openCountryPicker,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.md,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          countryName,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: tokens.main.onSecondaryContainer,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          'Change',
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: tokens.main.primary,
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: AppIconSize.sm,
-                          color: tokens.main.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            _buildLocaleSwitchers(context, theme, colorScheme, countryName, langLabel),
           ],
         ),
       ),
@@ -288,9 +253,10 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   Widget _buildMobileContent(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     bool isDark,
     String countryName,
+    String langLabel,
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -308,9 +274,9 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                     Row(
                       children: [
                         Text(
-                          'Welcome',
+                          AppLocalizations.of(context).auth_welcome_title,
                           style: theme.textTheme.displayMedium?.copyWith(
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -318,87 +284,46 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                         Text(
                           '👋',
                           style: theme.textTheme.displayMedium?.copyWith(
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'We are stoked to have you join us. Create an account and start dabbing in local sports.',
+                      AppLocalizations.of(context).auth_welcome_subtitle,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         height: 1.25,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     Text(
-                      'Built for trust',
+                      AppLocalizations.of(context).auth_welcome_trust_heading,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     _TrustBullet(
-                      text:
-                          'Reviewed players, verified memberships and rated venues',
-                      tokens: tokens,
+                      text: AppLocalizations.of(context).auth_welcome_trust_verified,
+                      colorScheme: colorScheme,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _TrustBullet(
-                      text:
-                          'Connections and recommendations personalised to your sports',
-                      tokens: tokens,
+                      text: AppLocalizations.of(context).auth_welcome_trust_personalised,
+                      colorScheme: colorScheme,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _TrustBullet(
-                      text: 'We do not sell your data, privacy-first by design',
-                      tokens: tokens,
+                      text: AppLocalizations.of(context).auth_welcome_trust_privacy,
+                      colorScheme: colorScheme,
                     ),
                     const Spacer(),
-                    ..._buildCTAButtons(context, theme, tokens, isDark),
+                    ..._buildCTAButtons(context, theme, colorScheme, isDark),
                     const Spacer(),
-                    Center(
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: InkWell(
-                          borderRadius: AppRadius.medium,
-                          onTap: _isLoading ? null : _openCountryPicker,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.lg,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  countryName,
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: tokens.main.onSecondaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Text(
-                                  'Change',
-                                  style: theme.textTheme.labelLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: tokens.main.primary,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: AppIconSize.sm,
-                                  color: tokens.main.primary,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                    _buildLocaleSwitchers(context, theme, colorScheme, countryName, langLabel),
                   ],
                 ),
               ),
@@ -409,24 +334,65 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     );
   }
 
+  // ── Locale switchers row ────────────────────────────────────────────
+
+  Widget _buildLocaleSwitchers(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String countryName,
+    String langLabel,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ActionChip(
+              avatar: Icon(
+                Icons.public_rounded,
+                size: AppIconSize.sm,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              label: Text(countryName),
+              onPressed: _isLoading ? null : _openCountryPicker,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            ActionChip(
+              avatar: Icon(
+                Icons.language_rounded,
+                size: AppIconSize.sm,
+                color: colorScheme.onSurfaceVariant,
+              ),
+              label: Text(langLabel),
+              onPressed: _isLoading ? null : _openLanguagePicker,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ── Shared CTA buttons list ──────────────────────────────────────────
 
   List<Widget> _buildCTAButtons(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     bool isDark,
   ) {
+    final googleBg = isDark
+        ? colorScheme.inverseSurface
+        : colorScheme.surfaceContainerLowest;
+    final googleFg = isDark ? colorScheme.onInverseSurface : colorScheme.onSurface;
+
     return [
       FilledButton(
         onPressed: _isLoading ? null : _handleGoogle,
         style: FilledButton.styleFrom(
-          backgroundColor: isDark
-              ? tokens.main.inverseSurface
-              : tokens.main.surfaceContainerLowest,
-          foregroundColor: isDark
-              ? tokens.main.inverseOnSurface
-              : tokens.main.onSurface,
+          backgroundColor: googleBg,
+          foregroundColor: googleFg,
           minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
           padding: AppButtonSize.extraLargePadding,
           shape: const StadiumBorder(),
@@ -438,18 +404,13 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
               'assets/icons/google.svg',
               width: AppIconSize.sm,
               height: AppIconSize.sm,
-              colorFilter: ColorFilter.mode(
-                isDark ? tokens.main.inverseOnSurface : tokens.main.onSurface,
-                BlendMode.srcIn,
-              ),
+              colorFilter: ColorFilter.mode(googleFg, BlendMode.srcIn),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Continue with Google',
+              AppLocalizations.of(context).auth_welcome_btn_google,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: isDark
-                    ? tokens.main.inverseOnSurface
-                    : tokens.main.onSurface,
+                color: googleFg,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -461,10 +422,8 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
         FilledButton(
           onPressed: _isLoading ? null : _handleApple,
           style: FilledButton.styleFrom(
-            backgroundColor: tokens.main.scrim,
-            foregroundColor: isDark
-                ? tokens.main.onBackground
-                : tokens.main.onPrimary,
+            backgroundColor: colorScheme.scrim,
+            foregroundColor: colorScheme.onPrimary,
             minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
             padding: AppButtonSize.extraLargePadding,
             shape: const StadiumBorder(),
@@ -477,17 +436,15 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 width: AppIconSize.sm,
                 height: AppIconSize.sm,
                 colorFilter: ColorFilter.mode(
-                  isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+                  colorScheme.onPrimary,
                   BlendMode.srcIn,
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Continue with Apple',
+                AppLocalizations.of(context).auth_welcome_btn_apple,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: isDark
-                      ? tokens.main.onBackground
-                      : tokens.main.onPrimary,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -499,8 +456,8 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       FilledButton(
         onPressed: _isLoading ? null : _handleEmail,
         style: FilledButton.styleFrom(
-          backgroundColor: tokens.main.primary,
-          foregroundColor: tokens.main.onPrimary,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
           padding: AppButtonSize.extraLargePadding,
           shape: const StadiumBorder(),
@@ -511,13 +468,13 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
             Icon(
               Icons.mail_outline,
               size: AppIconSize.sm,
-              color: tokens.main.onPrimary,
+              color: colorScheme.onPrimary,
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              'Continue with Email',
+              AppLocalizations.of(context).auth_welcome_btn_email,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: tokens.main.onPrimary,
+                color: colorScheme.onPrimary,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -529,9 +486,9 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
         child: TextButton(
           onPressed: _isLoading ? null : _handleLogin,
           child: Text(
-            'Already have an account? Log in',
+            AppLocalizations.of(context).auth_welcome_btn_login,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: tokens.main.primary,
+              color: colorScheme.primary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -557,8 +514,7 @@ class _CountryPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -568,10 +524,10 @@ class _CountryPickerSheet extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Choose your country',
+              AppLocalizations.of(context).auth_welcome_country_picker_title,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
-                color: tokens.main.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
           ),
@@ -579,7 +535,7 @@ class _CountryPickerSheet extends StatelessWidget {
         if (loading)
           Padding(
             padding: const EdgeInsets.all(24),
-            child: CircularProgressIndicator(color: tokens.main.primary),
+            child: CircularProgressIndicator(color: colorScheme.primary),
           )
         else
           Flexible(
@@ -595,11 +551,11 @@ class _CountryPickerSheet extends StatelessWidget {
                     countryName,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: isSelected ? FontWeight.w800 : null,
-                      color: tokens.main.onSurface,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   trailing: isSelected
-                      ? Icon(Icons.check, color: tokens.main.primary)
+                      ? Icon(Icons.check, color: colorScheme.primary)
                       : null,
                   onTap: () => Navigator.of(context).pop(countryName),
                 );
@@ -616,19 +572,17 @@ class _CountryPickerSheet extends StatelessWidget {
 
 class _WelcomeLeftPanel extends StatelessWidget {
   const _WelcomeLeftPanel({
-    required this.tokens,
-    required this.isDark,
+    required this.colorScheme,
     required this.theme,
   });
 
-  final dynamic tokens;
-  final bool isDark;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: tokens.main.secondaryContainer,
+      color: colorScheme.secondaryContainer,
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.xxxl * 1.5,
@@ -642,9 +596,9 @@ class _WelcomeLeftPanel extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'Welcome',
+                  AppLocalizations.of(context).auth_welcome_title,
                   style: theme.textTheme.displayMedium?.copyWith(
-                    color: tokens.main.onSecondaryContainer,
+                    color: colorScheme.onSecondaryContainer,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -652,42 +606,41 @@ class _WelcomeLeftPanel extends StatelessWidget {
                 Text(
                   '👋',
                   style: theme.textTheme.displayMedium?.copyWith(
-                    color: tokens.main.onSecondaryContainer,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              'We are stoked to have you join us. Create an account and start dabbing in local sports.',
+              AppLocalizations.of(context).auth_welcome_subtitle,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: tokens.main.onSecondaryContainer.withValues(alpha: 0.75),
+                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.75),
                 height: 1.4,
               ),
             ),
             const SizedBox(height: AppSpacing.xxxl * 1.5),
             Text(
-              'Built for trust',
+              AppLocalizations.of(context).auth_welcome_trust_heading,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: tokens.main.onSecondaryContainer,
+                color: colorScheme.onSecondaryContainer,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
             _TrustBullet(
-              text: 'Reviewed players, verified memberships and rated venues',
-              tokens: tokens,
+              text: AppLocalizations.of(context).auth_welcome_trust_verified,
+              colorScheme: colorScheme,
             ),
             const SizedBox(height: AppSpacing.lg),
             _TrustBullet(
-              text:
-                  'Connections and recommendations personalised to your sports',
-              tokens: tokens,
+              text: AppLocalizations.of(context).auth_welcome_trust_personalised,
+              colorScheme: colorScheme,
             ),
             const SizedBox(height: AppSpacing.lg),
             _TrustBullet(
-              text: 'We do not sell your data — privacy-first by design',
-              tokens: tokens,
+              text: AppLocalizations.of(context).auth_welcome_trust_privacy,
+              colorScheme: colorScheme,
             ),
           ],
         ),
@@ -696,13 +649,74 @@ class _WelcomeLeftPanel extends StatelessWidget {
   }
 }
 
+// ── Language picker bottom sheet ────────────────────────────────────────────
+
+class _LanguagePickerSheet extends ConsumerWidget {
+  const _LanguagePickerSheet({required this.currentLocale});
+
+  final Locale currentLocale;
+
+  static const _languages = [
+    {'code': 'en', 'name': 'English'},
+    {'code': 'ar', 'name': 'العربية'},
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final current = ref.watch(localeProvider);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppLocalizations.of(context).auth_welcome_language_picker_title,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ),
+        ..._languages.map((lang) {
+          final isSelected = current.languageCode == lang['code'];
+          return ListTile(
+            title: Text(
+              lang['name']!,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w800 : null,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(Icons.check, color: colorScheme.primary)
+                : null,
+            onTap: () {
+              ref
+                  .read(localeProvider.notifier)
+                  .setLocale(Locale(lang['code']!));
+              Navigator.of(context).pop();
+            },
+          );
+        }),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+}
+
 // ── Shared trust bullet widget ───────────────────────────────────────────────
 
 class _TrustBullet extends StatelessWidget {
-  const _TrustBullet({required this.text, required this.tokens});
+  const _TrustBullet({required this.text, required this.colorScheme});
 
   final String text;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
@@ -713,14 +727,14 @@ class _TrustBullet extends StatelessWidget {
         Icon(
           Icons.check_circle,
           size: AppIconSize.sm,
-          color: tokens.main.primary,
+          color: colorScheme.primary,
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Text(
             text,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: tokens.main.onSecondaryContainer,
+              color: colorScheme.onSecondaryContainer,
               height: 1.4,
             ),
           ),

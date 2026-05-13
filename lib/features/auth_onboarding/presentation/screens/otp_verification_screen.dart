@@ -8,12 +8,9 @@ import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class OtpVerificationScreen extends ConsumerStatefulWidget {
   final String? identifier; // Can be email or phone
@@ -227,11 +224,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final theme = Theme.of(context);
-        final isDark = theme.colorScheme.brightness == Brightness.dark;
-        final tokens = isDark
-            ? main_dark_tokens.theme
-            : main_light_tokens.theme;
+        final colorScheme = Theme.of(context).colorScheme;
 
         // Strip the Exception wrapper added by auth_service for a clean message.
         final rawMessage = e.toString().replaceFirst(
@@ -241,7 +234,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(rawMessage),
-            backgroundColor: tokens.main.error,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -324,34 +317,28 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       await authService.sendOtp(identifier: _identifier, type: _identifierType);
 
       if (mounted) {
-        final theme = Theme.of(context);
-        final isDark = theme.colorScheme.brightness == Brightness.dark;
-        final tokens = isDark
-            ? main_dark_tokens.theme
-            : main_light_tokens.theme;
+        final colorScheme = Theme.of(context).colorScheme;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'OTP sent successfully to your ${_identifierType == IdentifierType.email ? 'email' : 'phone'}',
+              _identifierType == IdentifierType.email
+                  ? AppLocalizations.of(context).otp_verify_sent_email
+                  : AppLocalizations.of(context).otp_verify_sent_phone,
             ),
-            backgroundColor: tokens.main.primary,
+            backgroundColor: colorScheme.primary,
           ),
         );
         _startResendCountdown();
       }
     } catch (e) {
       if (mounted) {
-        final theme = Theme.of(context);
-        final isDark = theme.colorScheme.brightness == Brightness.dark;
-        final tokens = isDark
-            ? main_dark_tokens.theme
-            : main_light_tokens.theme;
+        final colorScheme = Theme.of(context).colorScheme;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: tokens.main.error,
+            content: Text(AppLocalizations.of(context).otp_verify_error_prefix(e.toString())),
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -365,7 +352,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Widget _buildOtpInputRow(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
     const gap = AppSpacing.sm;
 
@@ -389,33 +376,33 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: tokens.main.onSurface,
+                  color: colorScheme.onSurface,
                 ),
                 decoration: InputDecoration(
                   counterText: '',
                   hintText: '0',
                   hintStyle: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w400,
-                    color: tokens.main.onSurface.withOpacity(0.3),
+                    color: colorScheme.onSurface.withValues(alpha: 0.3),
                   ),
                   filled: true,
-                  fillColor: tokens.main.surface,
+                  fillColor: colorScheme.surface,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(1000),
                     borderSide: BorderSide(
-                      color: tokens.main.outlineVariant.withOpacity(0.2),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(1000),
                     borderSide: BorderSide(
-                      color: tokens.main.outlineVariant.withOpacity(0.2),
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.2),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(1000),
                     borderSide: BorderSide(
-                      color: tokens.main.primary,
+                      color: colorScheme.primary,
                       width: 2,
                     ),
                   ),
@@ -433,25 +420,25 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
+    final l10n = AppLocalizations.of(context);
     final title = _identifierType == IdentifierType.email
-        ? 'Verify email'
-        : 'Verify phone';
+        ? l10n.otp_verify_title_email
+        : l10n.otp_verify_title_phone;
     final subtitle = _identifierType == IdentifierType.email
-        ? 'Enter the 6 digits we\'ve sent to your email'
-        : 'Enter the 6 digits we\'ve sent to your phone';
+        ? l10n.otp_verify_subtitle_email
+        : l10n.otp_verify_subtitle_phone;
     final changeLabel = _identifierType == IdentifierType.email
-        ? 'Change email'
-        : 'Change phone';
+        ? l10n.otp_verify_change_email
+        : l10n.otp_verify_change_phone;
     final changeRoute = _identifierType == IdentifierType.email
         ? RoutePaths.emailInput
         : RoutePaths.phoneInput;
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       resizeToAvoidBottomInset: false,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -465,7 +452,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   Text(
                     title,
                     style: theme.textTheme.displaySmall?.copyWith(
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -473,7 +460,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodyLarge?.copyWith(
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                       height: 1.25,
                     ),
                   ),
@@ -487,7 +474,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
                       ),
@@ -496,7 +483,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                         child: Text(
                           changeLabel,
                           style: theme.textTheme.labelLarge?.copyWith(
-                            color: tokens.main.primary,
+                            color: colorScheme.primary,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -504,7 +491,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
-                  _buildOtpInputRow(context, theme, tokens),
+                  _buildOtpInputRow(context, theme, colorScheme),
                 ],
               ),
             ),
@@ -516,8 +503,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                   FilledButton(
                     onPressed: _isLoading ? null : _handleSubmit,
                     style: FilledButton.styleFrom(
-                      backgroundColor: tokens.main.primary,
-                      foregroundColor: tokens.main.onPrimary,
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       minimumSize: const Size.fromHeight(
                         AppButtonSize.extraLargeHeight,
                       ),
@@ -531,14 +518,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                tokens.main.onPrimary,
+                                colorScheme.onPrimary,
                               ),
                             ),
                           )
                         : Text(
-                            'Continue',
+                            l10n.otp_verify_continue,
                             style: theme.textTheme.titleMedium?.copyWith(
-                              color: tokens.main.onPrimary,
+                              color: colorScheme.onPrimary,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -549,16 +536,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Didn\'t get a code? ',
+                          l10n.otp_verify_didnt_get,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
                         if (_resendCountdown > 0)
                           Text(
-                            'Resend code (${_resendCountdown}s)',
+                            l10n.otp_verify_resend_countdown(_resendCountdown),
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: tokens.main.onSecondaryContainer
+                              color: colorScheme.onSecondaryContainer
                                   .withValues(alpha: 0.6),
                             ),
                           )
@@ -571,9 +558,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                             child: Text(
-                              _isResending ? 'Sending...' : 'Resend code',
+                              _isResending ? l10n.otp_verify_sending : l10n.otp_verify_resend,
                               style: theme.textTheme.labelLarge?.copyWith(
-                                color: tokens.main.primary,
+                                color: colorScheme.primary,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

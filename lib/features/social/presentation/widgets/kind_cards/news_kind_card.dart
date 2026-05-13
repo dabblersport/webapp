@@ -8,6 +8,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
 /// News-style card: horizontal layout with image thumbnail on the right,
 /// headline-weight body text on the left, and a blue accent stripe.
@@ -140,7 +141,7 @@ class NewsKindCard extends ConsumerWidget {
                             post.sport!.trim().isNotEmpty) ...[
                           const SizedBox(height: AppSpacing.sm),
                           Text(
-                            post.sport!,
+                            resolvePostSportLabel(context, ref, post),
                             style: tt.labelSmall?.copyWith(
                               color: cs.onSurfaceVariant,
                             ),

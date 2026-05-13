@@ -4,15 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/ui_constants.dart' show AppRadius;
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Mode for the primary sport selection screen
 enum PrimarySportSelectionMode {
@@ -92,7 +89,7 @@ class _PrimarySportSelectionScreenState
     if (_selectedSportId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select your primary sport'),
+          content: Text(AppLocalizations.of(context).primary_sport_select_error),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -143,24 +140,23 @@ class _PrimarySportSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     // Watch sports from Supabase to resolve UUIDs to display data
     final sportsAsync = ref.watch(sportsProvider);
 
     return sportsAsync.when(
       loading: () => Scaffold(
-        backgroundColor: tokens.main.background,
+        backgroundColor: colorScheme.surface,
         body: const Center(child: CircularProgressIndicator()),
       ),
       error: (err, _) => Scaffold(
-        backgroundColor: tokens.main.background,
+        backgroundColor: colorScheme.surface,
         body: Center(
           child: Text(
             'Failed to load sports',
             style: theme.textTheme.bodyLarge?.copyWith(
-              color: tokens.main.onBackground,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -172,12 +168,12 @@ class _PrimarySportSelectionScreenState
         // If no sports resolved, show error state
         if (selectedSports.isEmpty) {
           return Scaffold(
-            backgroundColor: tokens.main.background,
+            backgroundColor: colorScheme.surface,
             body: Center(
               child: Text(
                 'No sports selected. Please go back.',
                 style: theme.textTheme.bodyLarge?.copyWith(
-                  color: tokens.main.onBackground,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
@@ -185,8 +181,8 @@ class _PrimarySportSelectionScreenState
         }
 
         return AdaptiveAuthShell(
-          backgroundColor: tokens.main.background,
-          containerColor: tokens.main.secondaryContainer,
+          backgroundColor: colorScheme.surface,
+          containerColor: colorScheme.secondaryContainer,
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
@@ -203,14 +199,14 @@ class _PrimarySportSelectionScreenState
                           // Flow indicator for add persona mode
                           if (widget.mode ==
                               PrimarySportSelectionMode.addPersona)
-                            _buildFlowIndicator(theme, tokens),
+                            _buildFlowIndicator(theme, colorScheme),
 
                           // Title
                           Text(
                             'Choose your primary sport',
                             style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: tokens.main.onSecondaryContainer,
+                              color: colorScheme.onSecondaryContainer,
                             ),
                           ),
 
@@ -221,7 +217,7 @@ class _PrimarySportSelectionScreenState
                             'This sport will appear on your profile and be used by default.',
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w500,
-                              color: tokens.main.onSecondaryContainer,
+                              color: colorScheme.onSecondaryContainer,
                             ),
                           ),
 
@@ -231,7 +227,7 @@ class _PrimarySportSelectionScreenState
                           Text(
                             'You can change it later.',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: tokens.main.onSecondaryContainer
+                              color: colorScheme.onSecondaryContainer
                                   .withValues(alpha: 0.7),
                             ),
                           ),
@@ -243,7 +239,7 @@ class _PrimarySportSelectionScreenState
                             sports: selectedSports,
                             selectedSportId: _selectedSportId,
                             onSelect: _selectSport,
-                            tokens: tokens,
+                            colorScheme: colorScheme,
                             theme: theme,
                           ),
 
@@ -257,8 +253,8 @@ class _PrimarySportSelectionScreenState
                             style: FilledButton.styleFrom(
                               minimumSize: const Size.fromHeight(56),
                               shape: const StadiumBorder(),
-                              backgroundColor: tokens.main.primary,
-                              foregroundColor: tokens.main.onPrimary,
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
                               textStyle: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -271,7 +267,7 @@ class _PrimarySportSelectionScreenState
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Continue'),
+                                : Text(AppLocalizations.of(context).primary_sport_continue),
                           ),
 
                           SizedBox(height: AppSpacing.xxl),
@@ -287,7 +283,7 @@ class _PrimarySportSelectionScreenState
                                     : 'Back',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: tokens.main.primary,
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             ),
@@ -306,7 +302,7 @@ class _PrimarySportSelectionScreenState
     );
   }
 
-  Widget _buildFlowIndicator(ThemeData theme, dynamic tokens) {
+  Widget _buildFlowIndicator(ThemeData theme, ColorScheme colorScheme) {
     final addPersonaData = ref.read(addPersonaDataProvider);
     final label = addPersonaData?.targetPersona.displayName ?? 'Profile';
 
@@ -320,13 +316,13 @@ class _PrimarySportSelectionScreenState
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: tokens.main.primary.withOpacity(0.15),
+              color: colorScheme.primary.withValues(alpha: 0.15),
               borderRadius: AppRadius.small,
             ),
             child: Text(
               'Adding $label Profile',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: tokens.main.primary,
+                color: colorScheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -342,14 +338,14 @@ class _SportsRadioList extends StatelessWidget {
   final List<Sport> sports;
   final String? selectedSportId;
   final Function(String) onSelect;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _SportsRadioList({
     required this.sports,
     required this.selectedSportId,
     required this.onSelect,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -365,7 +361,7 @@ class _SportsRadioList extends StatelessWidget {
             sport: sport,
             isSelected: isSelected,
             onSelect: () => onSelect(sport.id),
-            tokens: tokens,
+            colorScheme: colorScheme,
             theme: theme,
           ),
         );
@@ -379,14 +375,14 @@ class _SportRadioCard extends StatelessWidget {
   final Sport sport;
   final bool isSelected;
   final VoidCallback onSelect;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _SportRadioCard({
     required this.sport,
     required this.isSelected,
     required this.onSelect,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -396,11 +392,11 @@ class _SportRadioCard extends StatelessWidget {
       onTap: onSelect,
       child: Container(
         decoration: BoxDecoration(
-          color: tokens.main.surface,
+          color: colorScheme.surface,
           border: Border.all(
             color: isSelected
-                ? tokens.main.primary
-                : tokens.main.outlineVariant,
+                ? colorScheme.primary
+                : colorScheme.outlineVariant,
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(16),
@@ -415,10 +411,10 @@ class _SportRadioCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? tokens.main.primary : tokens.main.outline,
+                  color: isSelected ? colorScheme.primary : colorScheme.outline,
                   width: 2,
                 ),
-                color: isSelected ? tokens.main.primary : Colors.transparent,
+                color: isSelected ? colorScheme.primary : Colors.transparent,
               ),
               child: isSelected
                   ? Center(
@@ -427,7 +423,7 @@ class _SportRadioCard extends StatelessWidget {
                         height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: tokens.main.onPrimary,
+                          color: colorScheme.onPrimary,
                         ),
                       ),
                     )
@@ -447,7 +443,7 @@ class _SportRadioCard extends StatelessWidget {
                 sport.nameEn,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                  color: tokens.main.onSurface,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),
@@ -460,18 +456,18 @@ class _SportRadioCard extends StatelessWidget {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: tokens.main.primary.withOpacity(0.1),
+                  color: colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.star, size: 16, color: tokens.main.primary),
+                    Icon(Icons.star, size: 16, color: colorScheme.primary),
                     SizedBox(width: AppSpacing.xs),
                     Text(
                       'Primary',
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: tokens.main.primary,
+                        color: colorScheme.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

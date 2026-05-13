@@ -10,13 +10,10 @@ import 'package:dabbler/features/profile/domain/services/profile_creation_servic
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'dart:async';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 enum SetUsernameMode {
   onboarding,
@@ -343,7 +340,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     required String label,
     required String hintText,
     required String? Function(String?) validator,
-    required dynamic tokens,
+    required ColorScheme colorScheme,
     required ThemeData theme,
     Function(String)? onChanged,
     Widget? suffixIcon,
@@ -355,7 +352,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
           label,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: tokens.main.onSecondaryContainer,
+            color: colorScheme.onSecondaryContainer,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -364,17 +361,17 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
           onChanged: onChanged,
           validator: validator,
           style: theme.textTheme.titleMedium?.copyWith(
-            color: tokens.main.onSurface,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: theme.textTheme.titleMedium?.copyWith(
-              color: tokens.main.onSurfaceVariant,
+              color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
             filled: true,
-            fillColor: tokens.main.surface,
+            fillColor: colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 22,
               vertical: 16,
@@ -389,15 +386,15 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(color: tokens.main.primary, width: 2),
+              borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(color: tokens.main.error, width: 2),
+              borderSide: BorderSide(color: colorScheme.error, width: 2),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(color: tokens.main.error, width: 2),
+              borderSide: BorderSide(color: colorScheme.error, width: 2),
             ),
             suffixIcon: suffixIcon,
           ),
@@ -406,7 +403,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     );
   }
 
-  Widget _buildSuggestionChips(dynamic tokens, ThemeData theme) {
+  Widget _buildSuggestionChips(ColorScheme colorScheme, ThemeData theme) {
     if (_loadingSuggestions) {
       return SizedBox(
         height: 36,
@@ -418,7 +415,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
             width: 110,
             height: 36,
             decoration: BoxDecoration(
-              color: tokens.main.surfaceVariant.withOpacity(0.5),
+              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(18),
             ),
           ),
@@ -452,13 +449,13 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: selected
-                    ? tokens.main.primaryContainer
-                    : tokens.main.surfaceVariant,
+                    ? colorScheme.primaryContainer
+                    : colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: selected
-                      ? tokens.main.primary
-                      : tokens.main.outline.withOpacity(0.3),
+                      ? colorScheme.primary
+                      : colorScheme.outline.withValues(alpha: 0.3),
                   width: selected ? 1.5 : 1,
                 ),
               ),
@@ -466,8 +463,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                 '@$s',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: selected
-                      ? tokens.main.onPrimaryContainer
-                      : tokens.main.onSurfaceVariant,
+                      ? colorScheme.onPrimaryContainer
+                      : colorScheme.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -481,8 +478,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     final addPersonaData = widget.mode == SetUsernameMode.addPersona
         ? ref.watch(addPersonaDataProvider)
@@ -505,8 +501,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
         : 'Complete';
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -525,13 +521,13 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
                         if (widget.mode == SetUsernameMode.addPersona &&
                             addPersonaData != null)
-                          _buildFlowIndicator(theme, tokens, addPersonaData),
+                          _buildFlowIndicator(theme, colorScheme, addPersonaData),
 
                         Text(
                           title,
                           style: theme.textTheme.displaySmall?.copyWith(
                             fontWeight: FontWeight.w800,
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
 
@@ -541,7 +537,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                           subtitle,
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                           ),
                         ),
 
@@ -551,9 +547,9 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                         _buildInputField(
                           context,
                           controller: _displayNameController,
-                          label: 'Display Name',
-                          hintText: 'Enter your display name',
-                          tokens: tokens,
+                          label: AppLocalizations.of(context).set_username_display_name_label,
+                          hintText: AppLocalizations.of(context).set_username_display_name_hint,
+                          colorScheme: colorScheme,
                           theme: theme,
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -573,13 +569,13 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                           Text(
                             'Suggestions',
                             style: theme.textTheme.labelMedium?.copyWith(
-                              color: tokens.main.onSecondaryContainer
-                                  .withOpacity(0.6),
+                              color: colorScheme.onSecondaryContainer
+                                  .withValues(alpha: 0.6),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          _buildSuggestionChips(tokens, theme),
+                          _buildSuggestionChips(colorScheme, theme),
                           const SizedBox(height: AppSpacing.lg),
                         ],
 
@@ -587,9 +583,9 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                         _buildInputField(
                           context,
                           controller: _usernameController,
-                          label: 'Username',
-                          hintText: 'Choose a unique username',
-                          tokens: tokens,
+                          label: AppLocalizations.of(context).set_username_username_label,
+                          hintText: AppLocalizations.of(context).set_username_username_hint,
+                          colorScheme: colorScheme,
                           theme: theme,
                           onChanged: (v) {
                             setState(() => _selectedSuggestion = null);
@@ -622,7 +618,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                                     _usernameController.text.isNotEmpty
                               ? Icon(
                                   Iconsax.tick_circle_copy,
-                                  color: tokens.main.primary,
+                                  color: colorScheme.primary,
                                 )
                               : null,
                         ),
@@ -636,7 +632,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                                   ? _usernameReason!
                                   : _usernameError!,
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: tokens.main.error,
+                                color: colorScheme.error,
                               ),
                             ),
                           ),
@@ -653,8 +649,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                             ),
                             padding: AppButtonSize.extraLargePadding,
                             shape: const StadiumBorder(),
-                            backgroundColor: tokens.main.primary,
-                            foregroundColor: tokens.main.onPrimary,
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                           ),
                           child: _isLoading
                               ? SizedBox(
@@ -663,14 +659,14 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      tokens.main.onPrimary,
+                                      colorScheme.onPrimary,
                                     ),
                                   ),
                                 )
                               : Text(
                                   buttonText,
                                   style: theme.textTheme.titleMedium?.copyWith(
-                                    color: tokens.main.onPrimary,
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -685,7 +681,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                                 'Back',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: tokens.main.primary,
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             ),
@@ -707,7 +703,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
   Widget _buildFlowIndicator(
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
     AddPersonaData data,
   ) {
     return Padding(
@@ -721,9 +717,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
             ),
             decoration: BoxDecoration(
               color: data.isConversion
-                  ? tokens.main.tertiaryContainer ??
-                        tokens.main.primary.withOpacity(0.15)
-                  : tokens.main.primary.withOpacity(0.15),
+                  ? colorScheme.tertiaryContainer
+                  : colorScheme.primary.withValues(alpha: 0.15),
               borderRadius: AppRadius.small,
             ),
             child: Row(
@@ -734,7 +729,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                       ? Icons.swap_horiz
                       : Icons.add_circle_outline,
                   size: 18,
-                  color: tokens.main.primary,
+                  color: colorScheme.primary,
                 ),
                 SizedBox(width: AppSpacing.sm),
                 Text(
@@ -742,7 +737,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                       ? 'Converting to ${data.targetPersona.displayName}'
                       : 'Adding ${data.targetPersona.displayName} profile',
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: tokens.main.primary,
+                    color: colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

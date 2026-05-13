@@ -1,34 +1,633 @@
 {
   "@@locale": "ar",
   "games_browse_empty_title": "لا توجد مباريات عامة حالياً",
-  "games_browse_empty_desc": "تحقق لاحقاً.",
-  "games_browse_error": "تعذّر تحميل المباريات العامة.",
-  "my_games_empty_title": "لم تنضم إلى أي مباراة بعد",
-  "my_games_empty_desc": "انضم إلى مباراة عامة لتظهر هنا.",
-  "error_generic": "حدث خطأ ما",
-  "game_full": "المباراة ممتلئة",
-  "game_waitlisted": "تمت إضافتك إلى قائمة الانتظار",
+  "games_browse_empty_desc": "اتحقق تاني بعدين.",
+  "games_browse_error": "مقدرناش نحمل المباريات العامة.",
+  "my_games_empty_title": "لسه ما انضمتش لأي مباراة",
+  "my_games_empty_desc": "انضم لمباراة عامة وهتظهر هنا.",
+  "error_generic": "حصل حاجة غلط",
+  "game_full": "المباراة اتملت",
+  "game_waitlisted": "اتضفت على قايمة الانتظار",
   "pull_to_refresh": "اسحب للتحديث",
-  "rating_thanks": "شكرًا على تقييمك!",
-  "rating_submit_error": "تعذّر إرسال التقييم.",
-  "venues_search_disabled_mvp": "ميزة البحث غير متاحة في الإصدار الأول",
+  "rating_thanks": "شكراً على تقييمك!",
+  "rating_submit_error": "مقدرناش نبعت التقييم.",
+  "venues_search_disabled_mvp": "البحث مش متاح في الإصدار ده",
   "tab_most_recent": "الأحدث",
-  "tab_following": "المتابَعون",
+  "tab_following": "المتابَعين",
   "tab_nearby": "القريبة",
-  "tab_active": "النشِطة",
+  "tab_active": "النشطة",
   "tab_news": "الأخبار",
-  "feed_empty_no_posts": "لا توجد منشورات بعد",
+  "feed_empty_no_posts": "مفيش بوستات لسه",
   "feed_empty_no_posts_hint": "شارك لحظاتك ومبارياتك مع مجتمعك.",
-  "feed_could_not_load": "تعذّر تحميل المحتوى",
-  "feed_retry": "إعادة المحاولة",
-  "news_empty_title": "لا توجد أخبار حالياً.",
-  "news_empty_hint": "تحقق لاحقاً للاطلاع على آخر تحديثات فريق دابلر.",
-  "news_hide_sheet_title": "إخفاء الأخبار من المنشورات؟",
-  "news_hide_sheet_body": "لن تظهر بطاقات الأخبار في تبويب الأحدث، لكنها ستبقى متاحة بالكامل في تبويب الأخبار.",
-  "news_hide_confirm": "إخفاء الأخبار",
+  "feed_could_not_load": "مقدرناش نحمل الفيد",
+  "feed_retry": "حاول تاني",
+  "news_empty_title": "مفيش أخبار دلوقتي.",
+  "news_empty_hint": "اتابع بعدين لأحدث تحديثات تيم دابلر.",
+  "news_hide_sheet_title": "تخبي الأخبار من الفيد؟",
+  "news_hide_sheet_body": "كروت الأخبار مش هتبان في الأحدث. تقدر تقراهم كلهم في تبويب الأخبار.",
+  "news_hide_confirm": "خبّي الأخبار",
   "news_hide_cancel": "إلغاء",
-  "news_hidden_snack": "تم إخفاء الأخبار من تبويب الأحدث",
-  "news_resubscribed_snack": "ستظهر الأخبار مجدداً في تبويب الأحدث",
-  "news_resubscribe_banner": "الأخبار مخفية من تبويب الأحدث.",
-  "news_resubscribe_action": "إظهار مجدداً"
+  "news_hidden_snack": "الأخبار اتخبت من الأحدث",
+  "news_resubscribed_snack": "الأخبار هتبان تاني في الأحدث",
+  "news_resubscribe_banner": "الأخبار متخبية من الأحدث.",
+  "news_resubscribe_action": "وريهم تاني",
+
+  "auth_welcome_title": "أهلاً بيك!",
+  "auth_welcome_subtitle": "يسعدنا انضمامك لينا. أنشئ حساب وابدأ تلعب رياضة مع مجتمعك.",
+  "auth_welcome_trust_heading": "مبني على الثقة",
+  "auth_welcome_trust_verified": "لاعبين موثوقين، عضويات معتمدة، وملاعب متقيَّمة",
+  "auth_welcome_trust_personalised": "توصيات وتواصل مخصص لرياضاتك المفضلة",
+  "auth_welcome_trust_privacy": "مش بنبيع بياناتك — الخصوصية أولوية عندنا",
+  "auth_welcome_get_started": "يلا نبدأ",
+  "auth_welcome_get_started_subtitle": "أنشئ حساب أو سجّل دخولك",
+  "auth_welcome_btn_google": "كمّل عبر Google",
+  "auth_welcome_btn_apple": "كمّل عبر Apple",
+  "auth_welcome_btn_email": "كمّل عبر الإيميل",
+  "auth_welcome_btn_login": "عندك حساب بالفعل؟ سجّل دخولك",
+  "auth_welcome_apple_soon": "تسجيل الدخول بـ Apple جاي قريباً.",
+  "auth_welcome_google_error": "مقدرناش ندخل بـ Google: {error}",
+  "@auth_welcome_google_error": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "auth_welcome_country_picker_title": "اختار بلدك",
+  "auth_welcome_language_picker_title": "اختار اللغة",
+
+  "landing_quote1": "وعدت نفسي إني ألعب مرتين في الأسبوع على الأقل.",
+  "landing_quote2": "بين الشغل والحياة، لقاء مباراة بقت أصعب من ماراثون.",
+  "landing_tagline": "دابلر بيربط اللاعبين والكابتنية والملاعب — وقّف تدور وابدأ تلعب",
+  "landing_continue": "كمّل",
+  "landing_choose_language": "اختار اللغة",
+
+  "email_input_title": "تسجيل",
+  "email_input_subtitle": "أدخل إيميلك عشان نبدأ",
+  "email_input_label": "الإيميل",
+  "email_input_hint": "email@domain.com",
+  "email_input_continue": "كمّل",
+  "email_input_keep_in_loop": "خليني على اطلاع بتحديثات وأخبار",
+  "email_input_already_account": "عندك حساب بالفعل؟ سجّل دخولك",
+  "email_input_btn_google": "كمّل عبر Google",
+  "email_input_btn_apple": "كمّل عبر Apple",
+  "email_input_terms_prefix": "بالضغط على كمّل، إنت بتوافق على ",
+  "email_input_terms_link": "شروط الخدمة",
+  "email_input_terms_and": " و",
+  "email_input_privacy_link": "سياسة الخصوصية",
+  "email_input_validate_required": "الإيميل مطلوب",
+  "email_input_validate_invalid": "أدخل إيميل صح",
+  "email_input_error_generic": "حصل خطأ. جرب تاني.",
+  "email_input_google_failed": "تسجيل الدخول بـ Google فشل. جرب تاني.",
+
+  "email_password_title": "تسجيل الدخول",
+  "email_password_subtitle": "أدخل إيميلك وكلمة سرك\nأو سجّل دخولك بـ OTP",
+  "email_password_forgot": "نسيت كلمة السر؟",
+  "email_password_send_otp": "ابعتلي OTP على الإيميل",
+  "email_password_login_btn": "دخول",
+  "email_password_btn_google": "كمّل عبر Google",
+  "email_password_btn_apple": "كمّل عبر Apple",
+  "email_password_hint_email": "email@domain.com",
+  "email_password_hint_password": "كلمة السر",
+  "email_password_show_password": "وري كلمة السر",
+  "email_password_hide_password": "خبّي كلمة السر",
+  "email_password_validate_email_required": "الإيميل مطلوب",
+  "email_password_validate_email_invalid": "أدخل إيميل صح",
+  "email_password_validate_password_required": "أدخل كلمة السر",
+  "email_password_error_invalid_creds": "الإيميل أو كلمة السر غلط",
+  "email_password_error_login_failed": "فشل تسجيل الدخول.",
+  "email_password_error_otp_failed": "مقدرناش نبعت الـ OTP. جرب تاني.",
+  "email_password_apple_soon": "تسجيل الدخول بـ Apple جاي قريباً.",
+  "email_password_google_failed": "تسجيل الدخول بـ Google فشل.",
+  "email_password_validate_email_hint": "أدخل إيميل صح.",
+
+  "email_verify_appbar": "تأكيد الإيميل",
+  "email_verify_title": "اتحقق من صندوق الوارد",
+  "email_verify_body_with_email": "بعتنالك لينك تأكيد على {email}.\n\nأكّد إيميلك عشان تكمّل إنشاء حسابك.",
+  "@email_verify_body_with_email": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "email_verify_body_no_email": "بعتنالك لينك تأكيد على إيميلك.\n\nأكّد إيميلك عشان تكمّل إنشاء حسابك.",
+  "email_verify_instruction": "بعد ما تأكد إيميلك، ارجع للتطبيق واضغط \"أكّدت إيميلي\" عشان تكمّل.",
+  "email_verify_confirmed_btn": "أكّدت إيميلي",
+  "email_verify_resend_btn": "ابعت إيميل تأكيد تاني",
+  "email_verify_different_account": "استخدم حساب تاني",
+  "email_verify_no_email_error": "مفيش إيميل للمستخدم الحالي.",
+  "email_verify_spam_note": "لو ما لقيتش الإيميل، اتحقق من الـ Spam أو اطلب لينك جديد من شاشة الدخول.",
+
+  "forgot_password_title": "إعادة تعيين كلمة السر",
+  "forgot_password_subtitle": "أدخل إيميلك وهنبعتلك لينك تغيير كلمة السر.",
+  "forgot_password_email_hint": "الإيميل",
+  "forgot_password_send_btn": "ابعت لينك الإعادة",
+  "forgot_password_sent_msg": "اتبعت اللينك! اتحقق من صندوق الوارد والـ Spam عندك.",
+  "forgot_password_back_to_signin": "ارجع لتسجيل الدخول",
+  "forgot_password_validate_email": "أدخل إيميل صح",
+
+  "otp_verify_title_email": "تأكيد الإيميل",
+  "otp_verify_title_phone": "تأكيد الموبايل",
+  "otp_verify_subtitle_email": "أدخل الـ 6 أرقام اللي بعتناهالك على إيميلك",
+  "otp_verify_subtitle_phone": "أدخل الـ 6 أرقام اللي بعتناهالك على موبايلك",
+  "otp_verify_change_email": "غيّر الإيميل",
+  "otp_verify_change_phone": "غيّر الموبايل",
+  "otp_verify_continue": "كمّل",
+  "otp_verify_didnt_get": "ما وصلكش الكود؟ ",
+  "otp_verify_resend_countdown": "ابعت كود تاني ({seconds}ث)",
+  "@otp_verify_resend_countdown": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "otp_verify_resend": "ابعت كود تاني",
+  "otp_verify_sending": "بيتبعت...",
+  "otp_verify_sent_email": "اتبعت الـ OTP على إيميلك بنجاح",
+  "otp_verify_sent_phone": "اتبعت الـ OTP على موبايلك بنجاح",
+  "otp_verify_error_prefix": "خطأ: {error}",
+  "@otp_verify_error_prefix": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "reset_password_title": "تغيير كلمة السر",
+  "reset_password_subtitle": "أنشئ كلمة سر جديدة لحسابك",
+  "reset_password_new_label": "كلمة السر الجديدة",
+  "reset_password_confirm_label": "تأكيد كلمة السر",
+  "reset_password_update_btn": "حدّث كلمة السر",
+  "reset_password_validate_enter": "أدخل كلمة سر",
+  "reset_password_validate_min": "استخدم 8 حروف على الأقل",
+  "reset_password_validate_confirm": "أكّد كلمة السر",
+  "reset_password_validate_match": "كلمتا السر مش متطابقتين",
+
+  "set_password_title": "أنشئ حسابك",
+  "set_password_email_prefix": "الإيميل: {email}",
+  "@set_password_email_prefix": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "set_password_username_label": "اسم المستخدم",
+  "set_password_username_hint": "اختار اسم مستخدم مميز",
+  "set_password_password_label": "كلمة السر",
+  "set_password_password_hint": "أدخل كلمة سر قوية",
+  "set_password_confirm_label": "تأكيد كلمة السر",
+  "set_password_confirm_hint": "أعد إدخال كلمة السر",
+  "set_password_create_btn": "أنشئ الحساب",
+  "set_password_creating_btn": "بيتنشأ الحساب...",
+  "set_password_wait_btn": "استنّى {seconds} ث",
+  "@set_password_wait_btn": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "set_password_validate_username_required": "اسم المستخدم مطلوب",
+  "set_password_validate_username_min": "اسم المستخدم لازم يكون 3 حروف على الأقل",
+  "set_password_validate_username_max": "اسم المستخدم لازم يكون 20 حرف أو أقل",
+  "set_password_validate_username_chars": "حروف وأرقام وـ بس",
+  "set_password_validate_username_taken": "اسم المستخدم مش متاح",
+  "set_password_validate_username_checking": "خطأ في التحقق من اسم المستخدم",
+  "set_password_validate_password_required": "كلمة السر مطلوبة",
+  "set_password_validate_password_min": "كلمة السر لازم تكون 6 حروف على الأقل",
+  "set_password_validate_confirm_required": "أكّد كلمة السر",
+  "set_password_validate_confirm_match": "كلمتا السر مش متطابقتين",
+  "set_password_wait_validation": "استنّى حتى ينتهي التحقق من اسم المستخدم",
+  "set_password_account_exists": "الحساب موجود بالفعل. سجّل دخولك بكلمة سرك.",
+  "set_password_rate_limit": "استنّى شوية وحاول تاني.",
+  "set_password_error_prefix": "خطأ: {error}",
+  "@set_password_error_prefix": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "create_info_title": "قولنا عن نفسك شوية",
+  "create_info_subtitle": "أكّد سنك، لازم تكون عندك 16 سنة أو أكتر عشان تستخدم دابلر",
+  "create_info_birth_date": "تاريخ الميلاد",
+  "create_info_birth_date_placeholder": "اختار تاريخ ميلادك",
+  "create_info_age_display": "عندك {age} سنة",
+  "@create_info_age_display": {
+    "placeholders": {
+      "age": { "type": "int" }
+    }
+  },
+  "create_info_gender": "الجنس",
+  "create_info_continue": "كمّل",
+  "create_info_error_fill_required": "إملا كل الحقول المطلوبة صح",
+  "create_info_error_select_birth": "اختار تاريخ ميلادك",
+  "create_info_error_min_age": "لازم تكون عندك 16 سنة على الأقل عشان تسجّل",
+  "create_info_error_max_age": "السن لازم تكون بين 16 و{max} سنة",
+  "@create_info_error_max_age": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "create_info_error_select_gender": "اختار جنسك",
+  "create_info_error_occurred": "حصل خطأ: {error}",
+  "@create_info_error_occurred": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "set_username_title_onboarding": "عرّف بنفسك",
+  "set_username_title_conversion": "أكمل التحويل",
+  "set_username_title_new_profile": "أكمل البروفايل الجديد",
+  "set_username_subtitle_onboarding": "اختار إزاي الناس تناديك وحدد اسم مستخدمك",
+  "set_username_subtitle_persona": "اختار اسم عرض واسم مستخدم لبروفايل الـ {persona} بتاعك",
+  "@set_username_subtitle_persona": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_display_name_label": "الاسم المعروض",
+  "set_username_display_name_hint": "أدخل اسمك المعروض",
+  "set_username_username_label": "اسم المستخدم",
+  "set_username_username_hint": "اختار اسم مستخدم مميز",
+  "set_username_suggestions": "اقتراحات",
+  "set_username_btn_complete": "خلصنا",
+  "set_username_btn_create_profile": "أنشئ البروفايل",
+  "set_username_btn_complete_conversion": "أكمل التحويل",
+  "set_username_back": "ارجع",
+  "set_username_converting_to": "بيتحول لـ {persona}",
+  "@set_username_converting_to": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_adding_profile": "بيضاف بروفايل {persona}",
+  "@set_username_adding_profile": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_validate_display_required": "الاسم المعروض مطلوب",
+  "set_username_validate_display_min": "الاسم المعروض لازم يكون حرفين على الأقل",
+  "set_username_validate_username_required": "اسم المستخدم مطلوب",
+  "set_username_validate_username_min": "اسم المستخدم لازم يكون 3 حروف على الأقل",
+  "set_username_validate_username_chars": "حروف وأرقام وـ بس",
+  "set_username_unavailable": "اسم المستخدم مش متاح",
+  "set_username_check_error": "خطأ في التحقق من اسم المستخدم",
+  "set_username_missing_onboarding": "بيانات التسجيل ناقصة. ابدأ من الأول.",
+  "set_username_missing_steps": "معلومات ناقصة. أكمل كل الخطوات.",
+  "set_username_session_expired": "جلستك انتهت. أكّد رقم موبايلك تاني.",
+  "set_username_missing_persona_data": "بيانات ناقصة. ابدأ من الأول.",
+
+  "intent_title": "إيه اللي جابك هنا؟",
+  "intent_subtitle": "قولنا عشان نخلي دابلر مناسب ليك",
+  "intent_compete_title": "تنافس",
+  "intent_compete_desc": "انضم لمباريات، تابع مستواك، العب بانتظام",
+  "intent_organise_title": "نظّم",
+  "intent_organise_desc": "أنشئ مباريات، حدد قواعد، أدر اللاعبين",
+  "intent_host_title": "استضيف",
+  "intent_host_desc": "أدر الملاعب والتوافر والحجوزات",
+  "intent_socialise_title": "تواصل",
+  "intent_socialise_desc": "تابع رياضات وناس ومجتمعات",
+  "intent_continue": "كمّل",
+  "intent_back": "ارجع",
+  "intent_select_role": "اختار دورك",
+
+  "interests_title_player": "إيه الرياضات اللي بتمارسها؟",
+  "interests_title_organiser": "إيه الرياضات اللي بتنظمها؟",
+  "interests_title_hoster": "إيه الرياضات اللي بتاستضيفها؟",
+  "interests_title_socialiser": "إيه الرياضات اللي بتحبها؟",
+  "interests_title_default": "إيه الرياضات اللي بتمارسها؟",
+  "interests_subtitle": "تقدر تغيّر وتضيف رياضات تانية بعدين",
+  "interests_available_sports": "الرياضات المتاحة",
+  "interests_selected_count_one": "رياضة واحدة اتختارت ({count})",
+  "@interests_selected_count_one": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "interests_selected_count_many": "{count} رياضات اتختارت",
+  "@interests_selected_count_many": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "interests_continue": "كمّل",
+  "interests_back": "ارجع",
+  "interests_cancel": "إلغاء",
+  "interests_select_one": "اختار رياضة واحدة على الأقل",
+  "interests_failed_load": "فشل تحميل الرياضات",
+  "interests_retry": "حاول تاني",
+
+  "primary_sport_title": "اختار رياضتك الأساسية",
+  "primary_sport_subtitle": "الرياضة دي هتبان على بروفايلك وهتتستخدم افتراضياً.",
+  "primary_sport_helper": "تقدر تغيّرها بعدين.",
+  "primary_sport_badge": "أساسية",
+  "primary_sport_continue": "كمّل",
+  "primary_sport_back": "ارجع",
+  "primary_sport_cancel": "إلغاء",
+  "primary_sport_select_error": "اختار رياضتك الأساسية",
+  "primary_sport_failed_load": "فشل تحميل الرياضات",
+  "primary_sport_no_sports": "مفيش رياضات متاخترة. ارجع للخلف.",
+  "primary_sport_adding": "بيضاف بروفايل {label}",
+  "@primary_sport_adding": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+
+  "identity_verify_title": "التحقق من الهوية",
+  "identity_verify_email_label": "الإيميل",
+  "identity_verify_email_hint": "أدخل إيميلك",
+  "identity_verify_continue_sending": "بيتبعت...",
+  "identity_verify_continue": "كمّل",
+  "identity_verify_or": "أو",
+  "identity_verify_google_btn": "كمّل عبر Google",
+  "identity_verify_terms_prefix": "بالكمال، إنت بتوافق على ",
+  "identity_verify_terms_link": "شروط الخدمة",
+  "identity_verify_terms_and": " و",
+  "identity_verify_privacy_link": "سياسة الخصوصية",
+  "identity_verify_otp_sent_email": "اتبعت الـ OTP! اتحقق من إيميلك.",
+  "identity_verify_otp_sent_phone": "اتبعت الـ OTP! اتحقق من موبايلك.",
+  "identity_verify_phone_disabled": "التحقق بالموبايل مش متاح لسه. استخدم الإيميل عشان تكمّل.",
+  "identity_verify_service_error": "خطأ في الخدمة: {error}",
+  "@identity_verify_service_error": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "identity_verify_error_generic": "مقدرناش نبعت الـ OTP. جرب تاني.",
+  "identity_verify_nav_failed": "فشل الانتقال: {error}",
+  "@identity_verify_nav_failed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "identity_verify_use_email": "استخدم إيميلك",
+  "identity_verify_required": "الإيميل أو رقم الموبايل مطلوب",
+  "identity_verify_google_failed": "تسجيل الدخول بـ Google فشل. جرب تاني.",
+
+  "welcome_screen_title_first_time": "أهلاً بيك في دابلر 😉",
+  "welcome_screen_title_returning": "أهلاً بيك تاني! 👋",
+  "welcome_screen_title_conversion": "التحويل اكتمل! 🎉",
+  "welcome_screen_dont_forget": "متنساش",
+  "welcome_screen_continue": "كمّل",
+  "welcome_screen_chip_player": "لاعب رياضي",
+  "welcome_screen_chip_organiser": "منظّم مباريات",
+  "welcome_screen_chip_hoster": "مضيف ملعب",
+  "welcome_screen_chip_socialiser": "متواصل رياضي",
+  "welcome_screen_player_guidance": "انضم لمباريات بمستواك، احترم قواعد المنظّم، وأكّد مشاركتك بس لما تكون متأكد إنك هتيجي.",
+  "welcome_screen_player_philosophy": "التزامك ببني سمعتك.",
+  "welcome_screen_player_reminder": "أكّد بس لما تكون متأكد إنك تقدر تيجي.\nاحترم القواعد والمواعيد واللاعبين التانيين.",
+  "welcome_screen_player_emphasis": "أكّد بس لما تكون جاهز تلعب",
+  "welcome_screen_organiser_guidance": "أنشئ مباريات بقواعد واضحة ومستويات عادلة ومواعيد معقولة.",
+  "welcome_screen_organiser_philosophy": "إنت بتحدد الأجواء — المباريات العظيمة بتبدأ بتنظيم عظيم.",
+  "welcome_screen_organiser_reminder": "حدد قواعد واضحة ومواعيد معقولة.\nبلّغ عن أي تغييرات بدري وبوضوح.",
+  "welcome_screen_organiser_emphasis": "كمّل بس لما تكون جاهز!",
+  "welcome_screen_hoster_guidance": "خلّي اللاعبين يحسوا بالترحيب بإنك تخلّي المعلومات دقيقة والمساحات جاهزة.",
+  "welcome_screen_hoster_philosophy": "الوضوح في التوافر والتنسيم السلس بيحسّن تجربة الكل.",
+  "welcome_screen_hoster_reminder": "خلّي التوافر والتفاصيل دايماً محدّثة.\nحدّث المعلومات فور ما أي حاجة تتغير.",
+  "welcome_screen_hoster_emphasis": "كمّل بس لما تكون جاهز!",
+  "welcome_screen_socialiser_guidance": "تواصل مع اللاعبين، ابدأ محادثات، وخلّي المباريات أكتر إنسانية.",
+  "welcome_screen_socialiser_philosophy": "وجودك بيشكّل المجتمع — ودود وشامل ومحترم.",
+  "welcome_screen_socialiser_reminder": "كون محترم وشامل.\nضيف قيمة من غير ما تعطّل المباراة.",
+  "welcome_screen_socialiser_emphasis": "كمّل بس لما تكون جاهز!",
+
+  "onboarding_welcome_title": "بيتضبط حسابك",
+  "onboarding_welcome_subtitle": "ده هياخد لحظة بس...",
+  "onboarding_welcome_step_profile": "بيتنشأ بروفايلك",
+  "onboarding_welcome_step_persona": "بيتضبط دورك",
+  "onboarding_welcome_step_sport": "بيضاف بروفايل الرياضة",
+
+  "social_onboarding_welcome_title": "أهلاً في السوشيال",
+  "social_onboarding_welcome_subtitle": "تواصل مع لاعبين زيك، شارك تجارب مبارياتك، وابني مجتمعك الرياضي.",
+  "social_onboarding_welcome_skip": "تخطّي",
+  "social_onboarding_welcome_get_started": "يلا نبدأ",
+  "social_onboarding_welcome_find_friends_title": "لاقي أصحابك",
+  "social_onboarding_welcome_find_friends_desc": "تواصل مع لاعبين في منطقتك",
+  "social_onboarding_welcome_chat_title": "شات وشارك",
+  "social_onboarding_welcome_chat_desc": "راسل أصحابك وشارك لحظاتك في المباريات",
+  "social_onboarding_welcome_game_title": "العب مع بعض",
+  "social_onboarding_welcome_game_desc": "اكتشف وانضم لمباريات مع شبكتك",
+
+  "social_onboarding_friends_appbar": "لاقي أصحابك",
+  "social_onboarding_friends_title": "لاقي مجتمعك الرياضي",
+  "social_onboarding_friends_subtitle": "تواصل مع أصحابك عشان تشارك تجارب المباريات وتكتشف فرص جديدة.",
+  "social_onboarding_friends_sync_btn": "زامن جهات الاتصال",
+  "social_onboarding_friends_syncing": "بيتزامن...",
+  "social_onboarding_friends_or": "أو",
+  "social_onboarding_friends_suggested": "مقترح ليك",
+  "social_onboarding_friends_selected": "{count} اتختارت",
+  "@social_onboarding_friends_selected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_mutual_one": "صاحب مشترك ({count})",
+  "@social_onboarding_friends_mutual_one": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_mutual_many": "{count} أصحاب مشتركين",
+  "@social_onboarding_friends_mutual_many": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_add_btn": "أضف",
+  "social_onboarding_friends_added": "اتضاف",
+  "social_onboarding_friends_skip": "تخطّي",
+  "social_onboarding_friends_continue": "كمّل",
+  "social_onboarding_friends_send_requests": "ابعت {count} طلبات وكمّل",
+  "@social_onboarding_friends_send_requests": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_send_request": "ابعت الطلب وكمّل",
+  "social_onboarding_friends_synced": "اتزامنت جهات الاتصال بنجاح!",
+  "social_onboarding_friends_sync_error": "خطأ في الوصول لجهات الاتصال. جرب تاني.",
+  "social_onboarding_friends_sent": "اتبعتت طلبات صداقة لـ {count} ناس!",
+  "@social_onboarding_friends_sent": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "social_onboarding_notif_appbar": "الإشعارات",
+  "social_onboarding_notif_title": "الإشعارات متوقفة دلوقتي",
+  "social_onboarding_notif_body": "بنبني إعدادات الإشعارات من الأول. تقدر تكمّل التسجيل دلوقتي وهنضيف خيارات الضبط في تحديث جاي.",
+  "social_onboarding_notif_finish": "خلّصنا",
+
+  "social_onboarding_privacy_appbar": "إعدادات الخصوصية",
+  "social_onboarding_privacy_title": "الخصوصية والأمان",
+  "social_onboarding_privacy_subtitle": "تحكّم في مين يشوف بروفايلك ويتفاعل معاك. تقدر تغيّر الإعدادات دي بعدين.",
+  "social_onboarding_privacy_step": "3 من 4",
+  "social_onboarding_privacy_profile_visible_title": "البروفايل واضح للأصحاب",
+  "social_onboarding_privacy_profile_visible_subtitle": "بروفايلك واضح لأصحابك",
+  "social_onboarding_privacy_posts_public_title": "البوستات عامة",
+  "social_onboarding_privacy_posts_public_subtitle": "أي حد يقدر يشوف بوستاتك",
+  "social_onboarding_privacy_allow_requests_title": "السماح بطلبات الصداقة",
+  "social_onboarding_privacy_allow_requests_subtitle": "الناس تقدر تبعتلك طلبات صداقة",
+  "social_onboarding_privacy_allow_messages_title": "السماح بطلبات الرسايل",
+  "social_onboarding_privacy_allow_messages_subtitle": "غير الأصحاب يقدروا يبعتولك رسايل",
+  "social_onboarding_privacy_online_status_title": "إظهار حالة الاتصال",
+  "social_onboarding_privacy_online_status_subtitle": "أصحابك يشوفوا لما تكون أونلاين",
+  "social_onboarding_privacy_back": "ارجع",
+  "social_onboarding_privacy_continue": "كمّل",
+
+  "social_onboarding_complete_title": "أهلاً بيك في السوشيال!",
+  "social_onboarding_complete_subtitle": "خلّصنا! ابدأ تتواصل مع أصحابك، شارك تجارب مبارياتك، واكتشف لاعبين جدد في منطقتك.",
+  "social_onboarding_complete_connect_title": "تواصل مع اللاعبين",
+  "social_onboarding_complete_connect_desc": "لاقي وأضف أصحاب بيحبوا نفس الرياضات",
+  "social_onboarding_complete_share_title": "شارك رحلتك",
+  "social_onboarding_complete_share_desc": "انشر تحديثات وصور واحتفل بإنجازاتك",
+  "social_onboarding_complete_discover_title": "اكتشف مباريات",
+  "social_onboarding_complete_discover_desc": "شوف إيه المباريات اللي أصحابك بيلعبوها",
+  "social_onboarding_complete_explore_btn": "استكشف السوشيال",
+  "social_onboarding_complete_home_btn": "روح الهوم",
+  "social_onboarding_complete_later": "هستكشف بعدين",
+
+  "language_select_title": "اختار لغتك",
+  "language_select_saving": "بيتحفظ...",
+  "register_title": "إنشاء حساب",
+  "register_btn": "سجّل",
+
+  "post_card_author_anonymous": "مجهول",
+  "post_card_user_fallback": "مستخدم",
+  "post_card_persona_organiser": "منظّم",
+  "post_card_persona_player": "لاعب",
+  "post_card_near_you": "قريّب منك",
+  "post_card_edited": "اتعدّل",
+  "post_card_menu_repost": "إعادة نشر",
+  "post_card_menu_quote_repost": "اقتباس وإعادة نشر",
+
+  "post_card_kind_moment": "لحظة",
+  "post_card_kind_dab": "Dab",
+  "post_card_kind_kick_in": "Kick-in",
+  "post_card_kind_game": "ماتش",
+  "post_card_kind_achievement": "إنجاز",
+  "post_card_kind_venue": "ملعب",
+  "post_card_kind_admin": "إدارة",
+  "post_card_kind_system": "النظام",
+  "post_card_kind_repost": "إعادة نشر",
+
+  "post_card_expired": "خلص",
+  "post_card_expires_in_days": "بيخلص بعد {n}ي",
+  "@post_card_expires_in_days": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expires_in_hours": "بيخلص بعد {n}س",
+  "@post_card_expires_in_hours": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expires_in_minutes": "بيخلص بعد {n}د",
+  "@post_card_expires_in_minutes": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expiring_soon": "قرّب يخلص",
+
+  "repost_card_unavailable": "البوست الأصلي مش متاح.",
+  "post_type_original": "أصلي",
+  "post_type_news": "أخبار",
+  "post_type_announcement": "إعلان",
+  "post_type_alert": "تنبيه",
+  "post_type_highlight": "لقطة",
+  "post_type_general": "عام",
+  "post_type_feature": "مميز",
+  "post_card_my_story": "ستوري",
+  "post_card_kick_in_label": "Kick-In",
+  "post_card_allocated": "متحجز",
+
+  "nav_feeds": "الفيد",
+  "nav_community": "المجتمع",
+  "nav_venues": "الملاعب",
+  "nav_games": "الماتشات",
+  "nav_create_post": "بوست جديد",
+  "nav_create_game": "ماتش جديد",
+  "nav_create_meetup": "لمّة جديدة",
+  "nav_meetups_coming_soon": "اللمّات جايّة قريب!",
+  "nav_exit_app_title": "تخرج من التطبيق؟",
+  "nav_exit_app_body": "متأكد إنك عايز تخرج من دابلر؟",
+  "nav_exit_app_cancel": "إلغاء",
+  "nav_exit_app_confirm": "اخرج",
+  "nav_press_back_to_exit": "اضغط رجوع تاني عشان تخرج",
+  "nav_search_hint": "دوّر في دابلر",
+  "nav_whats_happening": "اللي بيحصل دلوقتي",
+  "nav_trend_sports_category": "رياضة",
+  "nav_trend_sports_title": "ماتشات جديدة قريّب منك",
+  "nav_trend_sports_subtitle": "شوف أحدث الماتشات في منطقتك",
+  "nav_trend_community_category": "مجتمع",
+  "nav_trend_community_title": "Squads بتكبر",
+  "nav_trend_community_subtitle": "انضم لـ Squad وكمّل لعب",
+  "nav_trend_dabbler_category": "دابلر",
+  "nav_trend_dabbler_title": "شارك لحظاتك",
+  "nav_trend_dabbler_subtitle": "انشر تحديثاتك واتواصل مع اللاعبين",
+  "nav_quick_actions": "اختصارات",
+  "nav_find_friends": "لاقي أصحابك",
+  "nav_settings": "الإعدادات",
+
+  "persona_label_hoster": "مضيف",
+  "persona_label_socialiser": "متواصل",
+
+  "profile_header_fallback": "البروفايل",
+  "profile_section_sports": "الرياضات",
+  "profile_complete_your_profile": "كمّل بروفايلك",
+  "profile_bio_placeholder": "اكتب نبذة قصيرة عشان الناس تعرف تتوقع منك إيه.",
+  "profile_btn_edit": "تعديل البروفايل",
+  "profile_btn_share": "شارك البروفايل",
+  "profile_btn_manage_profiles_tooltip": "إدارة البروفايلات",
+  "profile_manage_profiles_title": "إدارة البروفايلات",
+  "profile_add_profile": "إضافة بروفايل",
+  "profile_no_profiles_found": "مفيش بروفايلات",
+  "profile_error_loading_profiles": "حصل خطأ في تحميل البروفايلات",
+  "profile_error_switch_profile_failed": "مقدرناش نبدّل البروفايل",
+  "profile_btn_cancel": "إلغاء",
+  "profile_btn_continue": "كمّل",
+  "profile_persona_convert_badge": "تحويل",
+  "profile_convert_to": "تحوّل لـ {persona}؟",
+  "@profile_convert_to": { "placeholders": { "persona": { "type": "String" } } },
+  "profile_convert_confirm_body": "هتتحوّل من {fromPersona} لـ {toPersona}. بروفايلك الحالي هيتغيّر.",
+  "@profile_convert_confirm_body": {
+    "placeholders": {
+      "fromPersona": { "type": "String" },
+      "toPersona": { "type": "String" }
+    }
+  },
+
+  "profile_tab_posts": "البوستات",
+  "profile_tab_replies": "الردود",
+  "profile_tab_liked": "اللي عجبني",
+  "profile_tab_reposts": "إعادات النشر",
+  "profile_tab_activity": "النشاط",
+
+  "profile_empty_no_activity": "مفيش نشاط لسه",
+  "profile_empty_no_posts": "مفيش بوستات لسه",
+  "profile_empty_no_replies": "مفيش ردود لسه",
+  "profile_empty_no_liked": "مفيش بوستات عجبتك لسه",
+  "profile_empty_no_reposts": "مفيش إعادات نشر لسه",
+  "profile_empty_no_sports": "ما اضفتش رياضات لسه",
+  "profile_error_failed_load_posts": "مقدرناش نحمل البوستات.",
+
+  "profile_post_count": "{count, plural, one{بوست} other{بوستات}}",
+  "@profile_post_count": { "placeholders": { "count": { "type": "int" } } },
+  "profile_follower_count": "{count, plural, one{متابِع} other{متابعين}}",
+  "@profile_follower_count": { "placeholders": { "count": { "type": "int" } } },
+  "profile_following_label": "بيتابع",
+
+  "profile_takedown_title": "المحتوى اتشال",
+  "profile_takedown_body": "المحتوى ده اتشال لأنه بيخالف قواعد المجتمع عندنا.",
+
+  "user_profile_error_not_found_title": "البروفايل مش موجود",
+  "user_profile_error_unable_to_load": "مقدرناش نحمل البروفايل",
+  "user_profile_btn_go_back": "ارجع",
+  "user_profile_btn_loading": "بيتحمّل",
+  "user_profile_btn_unblock": "فك الحظر",
+  "user_profile_btn_follow": "تابع",
+  "user_profile_btn_following": "بتتابعه",
+  "user_profile_age_suffix": "سنة",
+
+  "user_profile_stat_games": "ماتشات",
+  "user_profile_stat_win_rate": "نسبة الفوز",
+  "user_profile_stat_sports": "الرياضات",
+  "user_profile_stat_reliability": "الالتزام",
+  "user_profile_stat_activity": "النشاط",
+  "user_profile_stat_last_play": "آخر ماتش",
+
+  "user_profile_block_dialog_title": "حظر المستخدم",
+  "user_profile_block_dialog_body": "متأكد إنك عايز تحظر المستخدم ده؟ مش هيقدر يشوف بروفايلك أو يكلّمك.",
+  "user_profile_block_btn_block": "احظر",
+  "user_profile_blocked_snack": "تم حظر المستخدم",
+  "user_profile_unblocked_snack": "تم فك الحظر",
+  "user_profile_menu_unblock_user": "فك حظر المستخدم",
+  "user_profile_menu_block_user": "احظر المستخدم",
+  "user_profile_menu_report_user": "بلّغ عن المستخدم",
+  "user_profile_cannot_message_blocked": "مقدرش تراسل مستخدم محظور"
 }

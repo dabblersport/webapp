@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({super.key, this.onboardingData});
@@ -98,7 +99,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final email = _userEmail;
     if (email == null || email.isEmpty) {
       setState(() {
-        _errorMessage = 'No email found for the current user.';
+        _errorMessage = AppLocalizations.of(context).email_verify_no_email_error;
         _successMessage = null;
       });
       return;
@@ -112,8 +113,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     try {
       setState(() {
-        _successMessage =
-            'If you don\'t see the email, please check your spam folder or request a new link from the sign-in screen.';
+        _successMessage = AppLocalizations.of(context).email_verify_spam_note;
       });
     } catch (e) {
       setState(() {
@@ -272,7 +272,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confirm your email'),
+        title: Text(AppLocalizations.of(context).email_verify_appbar),
         automaticallyImplyLeading: false,
       ),
       body: SafeArea(
@@ -283,7 +283,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             children: [
               const SizedBox(height: 24),
               Text(
-                'Check your inbox',
+                AppLocalizations.of(context).email_verify_title,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -291,13 +291,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               const SizedBox(height: 12),
               Text(
                 email != null
-                    ? 'We\'ve sent a confirmation link to $email.\n\nPlease confirm your email to finish setting up your account.'
-                    : 'We\'ve sent a confirmation link to your email.\n\nPlease confirm your email to finish setting up your account.',
+                    ? AppLocalizations.of(context).email_verify_body_with_email(email)
+                    : AppLocalizations.of(context).email_verify_body_no_email,
                 style: theme.textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
               Text(
-                'After confirming your email, come back to the app and tap "I\'ve confirmed my email" to continue.',
+                AppLocalizations.of(context).email_verify_instruction,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.textTheme.bodySmall?.color?.withValues(
                     alpha: 0.8,
@@ -314,7 +314,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check_circle_outline),
-                label: const Text('I\'ve confirmed my email'),
+                label: Text(AppLocalizations.of(context).email_verify_confirmed_btn),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
@@ -329,7 +329,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.email_outlined),
-                label: const Text('Resend confirmation email'),
+                label: Text(AppLocalizations.of(context).email_verify_resend_btn),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(48),
                 ),
@@ -352,7 +352,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               const Spacer(),
               TextButton(
                 onPressed: () => context.go(RoutePaths.phoneInput),
-                child: const Text('Use a different account'),
+                child: Text(AppLocalizations.of(context).email_verify_different_account),
               ),
             ],
           ),

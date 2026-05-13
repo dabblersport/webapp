@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'feed_post_card.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Card used in the feed when a post has `originType == OriginType.repost`.
 ///
@@ -43,13 +44,14 @@ class RepostCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final original = post.originalPost;
 
     final author = (post.authorDisplayName ?? '').trim();
-    final authorLabel = author.isEmpty ? 'Anonymous' : author;
+    final authorLabel = author.isEmpty ? l10n.post_card_author_anonymous : author;
     final isAnonymous = author.isEmpty;
     final timeAgo = _relativeTime(post.createdAt);
-    final typeLabel = _postTypeLabel(post.postType);
+    final typeLabel = _postTypeLabel(post.postType, l10n);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -142,8 +144,8 @@ class RepostCard extends ConsumerWidget {
                         ),
                         child: Text(
                           post.personaTypeSnapshot == 'organiser'
-                              ? 'Organiser'
-                              : 'Player',
+                              ? l10n.post_card_persona_organiser
+                              : l10n.post_card_persona_player,
                           style: tt.labelSmall?.copyWith(
                             color: post.personaTypeSnapshot == 'organiser'
                                 ? cs.onTertiaryContainer
@@ -165,7 +167,7 @@ class RepostCard extends ConsumerWidget {
                     Icon(Icons.repeat_rounded, size: 12, color: cs.primary),
                     const SizedBox(width: 4),
                     Text(
-                      'Repost',
+                      l10n.post_card_kind_repost,
                       style: tt.bodySmall?.copyWith(
                         color: cs.primary,
                         fontWeight: FontWeight.w600,
@@ -178,7 +180,7 @@ class RepostCard extends ConsumerWidget {
                     ),
                     _dotSep(tt, cs),
                     Text(
-                      _kindLabel(post.kind),
+                      _kindLabel(post.kind, l10n),
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                     ),
                     if (typeLabel != null) ...[
@@ -235,7 +237,7 @@ class RepostCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        'Original post is no longer available.',
+                        l10n.repost_card_unavailable,
                         style: tt.bodySmall?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -262,35 +264,35 @@ String _relativeTime(DateTime createdAt) {
   return DateFormat.MMMd().format(createdAt);
 }
 
-String _kindLabel(PostKind kind) {
+String _kindLabel(PostKind kind, AppLocalizations l10n) {
   switch (kind) {
     case PostKind.original:
-      return 'Original';
+      return l10n.post_type_original;
     case PostKind.news:
-      return 'News';
+      return l10n.post_type_news;
     case PostKind.announcement:
-      return 'Announcement';
+      return l10n.post_type_announcement;
     case PostKind.alert:
-      return 'Alert';
+      return l10n.post_type_alert;
     case PostKind.highlight:
-      return 'Highlight';
+      return l10n.post_type_highlight;
     case PostKind.general:
-      return 'General';
+      return l10n.post_type_general;
     case PostKind.feature:
-      return 'Feature';
+      return l10n.post_type_feature;
   }
 }
 
-String? _postTypeLabel(PostType type) {
+String? _postTypeLabel(PostType type, AppLocalizations l10n) {
   switch (type) {
     case PostType.moment:
-      return 'My Story';
+      return l10n.post_card_my_story;
     case PostType.dab:
       return null;
     case PostType.kickIn:
-      return 'Kick-In';
+      return l10n.post_card_kick_in_label;
     case PostType.allocated:
-      return 'Allocated';
+      return l10n.post_card_allocated;
   }
 }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
 /// Announcement card: bold gradient banner at the top with a megaphone icon,
 /// followed by prominent body text on a tinted surface.
@@ -97,14 +99,16 @@ class AnnouncementKindCard extends StatelessWidget {
                   ),
                 if (post.sport != null && post.sport!.trim().isNotEmpty) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Chip(
-                    label: Text(post.sport!),
-                    labelStyle: tt.labelSmall?.copyWith(
-                      color: cs.onSecondaryContainer,
+                  Consumer(
+                    builder: (context, ref, _) => Chip(
+                      label: Text(resolvePostSportLabel(context, ref, post)),
+                      labelStyle: tt.labelSmall?.copyWith(
+                        color: cs.onSecondaryContainer,
+                      ),
+                      backgroundColor: cs.secondaryContainer,
+                      side: BorderSide.none,
+                      visualDensity: VisualDensity.compact,
                     ),
-                    backgroundColor: cs.secondaryContainer,
-                    side: BorderSide.none,
-                    visualDensity: VisualDensity.compact,
                   ),
                 ],
               ],

@@ -8,8 +8,19 @@ import 'package:dabbler/data/models/profile/user_profile.dart';
 const _kLangKey = 'mock_language';
 const _kSupported = ['en', 'ar'];
 
+/// Synchronously picks the best supported locale from the device's preferred
+/// locale list. Used as the initial state so the very first frame already has
+/// the correct language and text direction — no flicker from 'en' → 'ar'.
+Locale _deviceLocale() {
+  final locales = WidgetsBinding.instance.platformDispatcher.locales;
+  for (final l in locales) {
+    if (_kSupported.contains(l.languageCode)) return Locale(l.languageCode);
+  }
+  return const Locale('en');
+}
+
 class LocaleNotifier extends StateNotifier<Locale> {
-  LocaleNotifier() : super(const Locale('en')) {
+  LocaleNotifier() : super(_deviceLocale()) {
     _load();
   }
 

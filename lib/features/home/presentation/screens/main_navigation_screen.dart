@@ -16,6 +16,7 @@ import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
 import 'package:dabbler/features/rewards/presentation/widgets/early_bird_check_in_modal.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Tracks the active sub-tab inside ExploreScreen (0=Games, 1=Venues).
 /// Shared between MainNavigationScreen (nav bar) and ExploreScreen (tab controller).
@@ -267,8 +268,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       case _CreateAction.meetup:
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Meetups coming soon!'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context).nav_meetups_coming_soon),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -291,16 +292,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       final shouldExit = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Exit app?'),
-          content: const Text('Are you sure you want to exit Dabbler?'),
+          title: Text(AppLocalizations.of(context).nav_exit_app_title),
+          content: Text(AppLocalizations.of(context).nav_exit_app_body),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).nav_exit_app_cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Exit'),
+              child: Text(AppLocalizations.of(context).nav_exit_app_confirm),
             ),
           ],
         ),
@@ -335,10 +336,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text('Press back again to exit'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).nav_press_back_to_exit),
             behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
       return;
@@ -575,14 +576,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         children: [
           _buildTextNavItem(
             index: 0,
-            label: 'Feeds',
+            label: AppLocalizations.of(context).nav_feeds,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
           ),
           _buildTextNavItem(
             index: 1,
-            label: 'Community',
+            label: AppLocalizations.of(context).nav_community,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
@@ -632,7 +633,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         children: [
           _buildSportsTextNavItem(
             index: 1,
-            label: 'Venues',
+            label: AppLocalizations.of(context).nav_venues,
             isSelected: isVenuesSelected,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
@@ -640,7 +641,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           ),
           _buildSportsTextNavItem(
             index: 2,
-            label: 'Games',
+            label: AppLocalizations.of(context).nav_games,
             isSelected: isGamesSelected,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
@@ -864,6 +865,7 @@ class _DesktopRightPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return SafeArea(
       child: Padding(
@@ -874,7 +876,7 @@ class _DesktopRightPanel extends StatelessWidget {
             // Search bar
             TextField(
               decoration: InputDecoration(
-                hintText: 'Search Dabbler',
+                hintText: l10n.nav_search_hint,
                 prefixIcon: Icon(
                   Iconsax.search_normal_1_copy,
                   color: colorScheme.onSurfaceVariant,
@@ -911,28 +913,28 @@ class _DesktopRightPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "What's happening",
+                    l10n.nav_whats_happening,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 16),
                   _TrendingItem(
-                    category: 'Sports',
-                    title: 'New games near you',
-                    subtitle: 'Check out the latest games in your area',
+                    category: l10n.nav_trend_sports_category,
+                    title: l10n.nav_trend_sports_title,
+                    subtitle: l10n.nav_trend_sports_subtitle,
                   ),
                   const SizedBox(height: 12),
                   _TrendingItem(
-                    category: 'Community',
-                    title: 'Growing squads',
-                    subtitle: 'Join a squad to play regularly',
+                    category: l10n.nav_trend_community_category,
+                    title: l10n.nav_trend_community_title,
+                    subtitle: l10n.nav_trend_community_subtitle,
                   ),
                   const SizedBox(height: 12),
                   _TrendingItem(
-                    category: 'Dabbler',
-                    title: 'Share your moments',
-                    subtitle: 'Post updates and connect with players',
+                    category: l10n.nav_trend_dabbler_category,
+                    title: l10n.nav_trend_dabbler_title,
+                    subtitle: l10n.nav_trend_dabbler_subtitle,
                   ),
                 ],
               ),
@@ -951,7 +953,7 @@ class _DesktopRightPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Quick actions',
+                    l10n.nav_quick_actions,
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -959,12 +961,12 @@ class _DesktopRightPanel extends StatelessWidget {
                   const SizedBox(height: 12),
                   _QuickActionTile(
                     icon: Iconsax.people_copy,
-                    label: 'Find friends',
+                    label: l10n.nav_find_friends,
                     onTap: () => context.push(RoutePaths.socialFriends),
                   ),
                   _QuickActionTile(
                     icon: Iconsax.setting_2_copy,
-                    label: 'Settings',
+                    label: l10n.nav_settings,
                     onTap: () => context.push(RoutePaths.profile),
                   ),
                 ],
@@ -1058,19 +1060,14 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
   late final AnimationController _controller;
   late final Animation<double> _fadeAnim;
 
-  static const _actions = [
-    (
-      icon: Iconsax.edit_2_copy,
-      label: 'Create Post',
-      action: _CreateAction.post,
-    ),
-    (icon: Iconsax.game_copy, label: 'Create Game', action: _CreateAction.game),
-    (
-      icon: Iconsax.people_copy,
-      label: 'Create Meetup',
-      action: _CreateAction.meetup,
-    ),
-  ];
+  List<({IconData icon, String label, _CreateAction action})> _buildActions(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      (icon: Iconsax.edit_2_copy, label: l10n.nav_create_post, action: _CreateAction.post),
+      (icon: Iconsax.game_copy, label: l10n.nav_create_game, action: _CreateAction.game),
+      (icon: Iconsax.people_copy, label: l10n.nav_create_meetup, action: _CreateAction.meetup),
+    ];
+  }
 
   @override
   void initState() {
@@ -1096,6 +1093,7 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final actions = _buildActions(context);
     final glassBase = isDark
         ? Colors.black.withValues(alpha: 1.55)
         : Colors.white.withValues(alpha: 0.72);
@@ -1134,8 +1132,8 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: List.generate(_actions.length, (i) {
-                  final item = _actions[i];
+                children: List.generate(actions.length, (i) {
+                  final item = actions[i];
                   final delay = i * 0.12;
                   return SlideTransition(
                     position:
@@ -1161,7 +1159,7 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
                         icon: item.icon,
                         label: item.label,
                         onTap: () => _select(item.action),
-                        showDivider: i < _actions.length - 1,
+                        showDivider: i < actions.length - 1,
                       ),
                     ),
                   );

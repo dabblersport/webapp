@@ -476,7 +476,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
         final match = sports.where((s) => s.id == selectedSportId);
         if (match.isNotEmpty) {
           final s = match.first;
-          sportLabel = '${s.emoji ?? '🏅'} ${s.nameEn}'.trim();
+          sportLabel = '${s.emoji ?? '🏅'} ${s.localizedName(context)}'.trim();
         }
       });
     }
@@ -1112,7 +1112,7 @@ class _SportsPickerSheetState extends ConsumerState<_SportsPickerSheet> {
                         style: const TextStyle(fontSize: 24),
                       ),
                       title: Text(
-                        sport.nameEn,
+                        sport.localizedName(context),
                         style: tt.bodyMedium?.copyWith(
                           color: isSelected
                               ? cs.onPrimaryContainer

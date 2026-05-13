@@ -15,6 +15,7 @@ import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/post_location_chip.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Shared post card used in Feed, ProfileScreen, and UserProfileScreen.
 ///
@@ -125,7 +126,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
           children: [
             ListTile(
               leading: Icon(Iconsax.refresh_copy, color: cs.onSurface),
-              title: Text('Repost', style: tt.bodyLarge),
+              title: Text(AppLocalizations.of(context).post_card_menu_repost, style: tt.bodyLarge),
               onTap: () {
                 Navigator.of(ctx).pop();
                 ref.read(postActionsProvider.notifier).repostPost(post.id);
@@ -133,7 +134,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
             ),
             ListTile(
               leading: Icon(Iconsax.edit_2_copy, color: cs.onSurface),
-              title: Text('Quote Repost', style: tt.bodyLarge),
+              title: Text(AppLocalizations.of(context).post_card_menu_quote_repost, style: tt.bodyLarge),
               onTap: () {
                 Navigator.of(ctx).pop();
                 showAdaptiveSheet(
@@ -174,14 +175,14 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return DateFormat.MMMd().format(createdAt);
   }
 
-  String? _postTypeLabel(PostType type) {
+  String? _postTypeLabel(PostType type, AppLocalizations l10n) {
     switch (type) {
       case PostType.moment:
-        return 'Moment';
+        return l10n.post_card_kind_moment;
       case PostType.dab:
-        return 'Dab';
+        return l10n.post_card_kind_dab;
       case PostType.kickIn:
-        return 'Kick-in';
+        return l10n.post_card_kind_kick_in;
       case PostType.allocated:
         return null;
     }
@@ -217,22 +218,22 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     }
   }
 
-  String? _originLabel(OriginType origin) {
+  String? _originLabel(OriginType origin, AppLocalizations l10n) {
     switch (origin) {
       case OriginType.manual:
         return null;
       case OriginType.game:
-        return 'Game';
+        return l10n.post_card_kind_game;
       case OriginType.achievement:
-        return 'Achievement';
+        return l10n.post_card_kind_achievement;
       case OriginType.venue:
-        return 'Venue';
+        return l10n.post_card_kind_venue;
       case OriginType.admin:
-        return 'Admin';
+        return l10n.post_card_kind_admin;
       case OriginType.system:
-        return 'System';
+        return l10n.post_card_kind_system;
       case OriginType.repost:
-        return 'Repost';
+        return l10n.post_card_kind_repost;
     }
   }
 
@@ -265,14 +266,14 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     );
   }
 
-  String? _expiryLabel(DateTime? expiresAt) {
+  String? _expiryLabel(DateTime? expiresAt, AppLocalizations l10n) {
     if (expiresAt == null) return null;
     final diff = expiresAt.difference(DateTime.now());
-    if (diff.isNegative) return 'Expired';
-    if (diff.inDays > 0) return 'Expires in ${diff.inDays}d';
-    if (diff.inHours > 0) return 'Expires in ${diff.inHours}h';
-    if (diff.inMinutes > 0) return 'Expires in ${diff.inMinutes}m';
-    return 'Expiring soon';
+    if (diff.isNegative) return l10n.post_card_expired;
+    if (diff.inDays > 0) return l10n.post_card_expires_in_days(diff.inDays);
+    if (diff.inHours > 0) return l10n.post_card_expires_in_hours(diff.inHours);
+    if (diff.inMinutes > 0) return l10n.post_card_expires_in_minutes(diff.inMinutes);
+    return l10n.post_card_expiring_soon;
   }
 
   // ── Build ───────────────────────────────────────────────────────────
@@ -291,15 +292,16 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
     final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
+    final l10n = AppLocalizations.of(context);
     final author = (post.authorDisplayName ?? '').trim();
-    final authorLabel = author.isEmpty ? 'Anonymous' : author;
+    final authorLabel = author.isEmpty ? l10n.post_card_author_anonymous : author;
     final isAnonymous = author.isEmpty;
     final timeAgo = _relativeTime(post.createdAt);
-    final typeLabel = _postTypeLabel(post.postType);
-    final originLabel = _originLabel(post.originType);
+    final typeLabel = _postTypeLabel(post.postType, l10n);
+    final originLabel = _originLabel(post.originType, l10n);
     final imageUrl = _firstImageUrl(post.media);
     final hasImage = imageUrl != null;
-    final expiryText = _expiryLabel(post.expiresAt);
+    final expiryText = _expiryLabel(post.expiresAt, l10n);
     final hasLocation = post.areaId != null;
     final canRepost = post.allowReposts && post.originType != OriginType.repost;
 
@@ -397,8 +399,8 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                             _dotSep(tt, cs),
                             Text(
                               post.personaTypeSnapshot == 'organiser'
-                                  ? 'Organiser'
-                                  : 'Player',
+                                  ? l10n.post_card_persona_organiser
+                                  : l10n.post_card_persona_player,
                               style: tt.labelSmall?.copyWith(
                                 color: post.personaTypeSnapshot == 'organiser'
                                     ? cs.tertiary
@@ -429,7 +431,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Near you',
+                                    l10n.post_card_near_you,
                                     style: tt.labelSmall?.copyWith(
                                       color: cs.onPrimaryContainer,
                                       fontWeight: FontWeight.w600,
@@ -480,7 +482,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                           if (post.isEdited) ...[
                             _dotSep(tt, cs),
                             Text(
-                              'edited',
+                              l10n.post_card_edited,
                               style: tt.bodySmall?.copyWith(
                                 color: cs.onSurfaceVariant,
                                 fontStyle: FontStyle.italic,
@@ -581,7 +583,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                       matchedSport?.colorCode,
                                       cs,
                                     );
-                                    final sportText = post.sport!;
+                                    final sportText = matchedSport?.localizedName(context) ?? post.sport!;
                                     // Split emoji from label so emoji keeps native color
                                     final emoji = matchedSport?.emoji ?? '';
                                     final label =
@@ -898,7 +900,7 @@ class _ThreadCommentPreview extends ConsumerWidget {
       data: (comment) {
         if (comment == null) return const SizedBox.shrink();
 
-        final displayName = comment.authorDisplayName ?? 'User';
+        final displayName = comment.authorDisplayName ?? AppLocalizations.of(context).post_card_user_fallback;
         final avatarUrl = comment.authorAvatarUrl;
         final timeAgo = _relativeTime(comment.createdAt);
         final hasBody = comment.body.trim().isNotEmpty;

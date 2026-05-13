@@ -1,38 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/providers.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Landing screen shown after the native splash.
 /// This is the first Flutter screen the user sees.
-class LandingPage extends StatelessWidget {
+class LandingPage extends ConsumerWidget {
   const LandingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isWide = screenWidth >= 800;
 
+    final locale = ref.watch(localeProvider);
+    final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
+
     return Scaffold(
-      backgroundColor: tokens.main.background,
+      backgroundColor: colorScheme.surface,
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.xs),
         child: ClipRRect(
           borderRadius: AppRadius.extraExtraLarge,
           child: DecoratedBox(
-            decoration: BoxDecoration(color: tokens.main.secondaryContainer),
+            decoration: BoxDecoration(color: colorScheme.secondaryContainer),
             child: SafeArea(
               child: isWide
-                  ? _buildDesktopLayout(context, theme, tokens)
-                  : _buildMobileLayout(context, theme, tokens),
+                  ? _buildDesktopLayout(
+                      context,
+                      ref,
+                      theme,
+                      colorScheme,
+                      langLabel,
+                    )
+                  : _buildMobileLayout(
+                      context,
+                      ref,
+                      theme,
+                      colorScheme,
+                      langLabel,
+                    ),
             ),
           ),
         ),
@@ -44,8 +58,10 @@ class LandingPage extends StatelessWidget {
 
   Widget _buildDesktopLayout(
     BuildContext context,
+    WidgetRef ref,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
+    String langLabel,
   ) {
     return Center(
       child: ConstrainedBox(
@@ -75,38 +91,46 @@ class LandingPage extends StatelessWidget {
                           fit: BoxFit.contain,
                           alignment: Alignment.centerLeft,
                           colorFilter: ColorFilter.mode(
-                            tokens.main.primary,
+                            colorScheme.primary,
                             BlendMode.srcIn,
                           ),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxxl * 2),
                       Text(
-                        'I promised myself I\'d play at least twice a week.',
+                        AppLocalizations.of(context).landing_quote1,
                         style: theme.textTheme.headlineMedium?.copyWith(
-                          color: tokens.main.onSecondaryContainer,
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxl),
                       Text(
-                        'Between work and life finding a game feels harder than a 90-minute run.',
+                        AppLocalizations.of(context).landing_quote2,
                         style: theme.textTheme.displaySmall?.copyWith(
-                          color: tokens.main.onSecondaryContainer,
+                          color: colorScheme.onSecondaryContainer,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxxl),
                       Text(
-                        'Dabbler connects players, captains, and venues so you can stop searching and start playing',
+                        AppLocalizations.of(context).landing_tagline,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color: tokens.main.onSecondaryContainer,
+                          color: colorScheme.onSecondaryContainer,
                           height: 1.25,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxxl),
                       SizedBox(
                         width: 320,
-                        child: _buildCTAButton(context, theme, tokens),
+                        child: _buildCTAButton(context, theme, colorScheme),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildLanguageButton(
+                        context,
+                        ref,
+                        theme,
+                        colorScheme,
+                        langLabel,
                       ),
                     ],
                   ),
@@ -116,7 +140,7 @@ class LandingPage extends StatelessWidget {
               // ── Right column: avatar visual ──
               Expanded(
                 flex: 4,
-                child: Center(child: _buildAvatarVisual(theme, tokens)),
+                child: Center(child: _buildAvatarVisual(theme, colorScheme)),
               ),
             ],
           ),
@@ -129,8 +153,10 @@ class LandingPage extends StatelessWidget {
 
   Widget _buildMobileLayout(
     BuildContext context,
+    WidgetRef ref,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
+    String langLabel,
   ) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -151,40 +177,50 @@ class LandingPage extends StatelessWidget {
                         fit: BoxFit.contain,
                         alignment: Alignment.centerLeft,
                         colorFilter: ColorFilter.mode(
-                          tokens.main.primary,
+                          colorScheme.primary,
                           BlendMode.srcIn,
                         ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    _buildAvatarVisual(theme, tokens),
+                    _buildAvatarVisual(theme, colorScheme),
                     const SizedBox(height: AppSpacing.xxxl),
                     Text(
-                      'I promised myself I\'d play at least twice a week.',
+                      AppLocalizations.of(context).landing_quote1,
                       style: theme.textTheme.headlineSmall?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     Text(
-                      'Between work and life finding a game feels harder than a 90-minute run.',
+                      AppLocalizations.of(context).landing_quote2,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const Spacer(),
                     Text(
-                      'Dabbler connects players, captains, and venues so you can stop searching and start playing',
+                      AppLocalizations.of(context).landing_tagline,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: tokens.main.onSecondaryContainer,
+                        color: colorScheme.onSecondaryContainer,
                         height: 1.25,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     SizedBox(
                       width: double.infinity,
-                      child: _buildCTAButton(context, theme, tokens),
+                      child: _buildCTAButton(context, theme, colorScheme),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Center(
+                      child: _buildLanguageButton(
+                        context,
+                        ref,
+                        theme,
+                        colorScheme,
+                        langLabel,
+                      ),
                     ),
                   ],
                 ),
@@ -198,7 +234,7 @@ class LandingPage extends StatelessWidget {
 
   // ── Shared widgets ───────────────────────────────────────────────────
 
-  Widget _buildAvatarVisual(ThemeData theme, dynamic tokens) {
+  Widget _buildAvatarVisual(ThemeData theme, ColorScheme colorScheme) {
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: AppSpacing.lg,
@@ -206,7 +242,7 @@ class LandingPage extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: AppSpacing.xxxl + AppSpacing.xs,
-          backgroundColor: tokens.main.surfaceContainerHigh,
+          backgroundColor: colorScheme.surfaceContainerHigh,
           foregroundImage: const AssetImage('assets/Avatar/female-3.png'),
         ),
         Column(
@@ -215,7 +251,7 @@ class LandingPage extends StatelessWidget {
           children: [
             DecoratedBox(
               decoration: BoxDecoration(
-                color: tokens.main.secondary,
+                color: colorScheme.secondary,
                 borderRadius: AppRadius.circular,
               ),
               child: Padding(
@@ -229,13 +265,13 @@ class LandingPage extends StatelessWidget {
                     Icon(
                       Icons.sports_tennis,
                       size: AppIconSize.sm,
-                      color: tokens.main.onPrimary,
+                      color: colorScheme.onPrimary,
                     ),
                     const SizedBox(width: AppSpacing.xs),
                     Text(
                       'Determined',
                       style: theme.textTheme.labelLarge?.copyWith(
-                        color: tokens.main.onPrimary,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -247,7 +283,7 @@ class LandingPage extends StatelessWidget {
             Text(
               'Noor',
               style: theme.textTheme.headlineMedium?.copyWith(
-                color: tokens.main.onSurface,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -260,24 +296,106 @@ class LandingPage extends StatelessWidget {
   Widget _buildCTAButton(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
     return FilledButton(
       onPressed: () => context.go(RoutePaths.authWelcome),
       style: FilledButton.styleFrom(
-        backgroundColor: tokens.main.primary,
-        foregroundColor: tokens.main.onPrimary,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
         padding: AppButtonSize.extraLargePadding,
         shape: const StadiumBorder(),
       ),
       child: Text(
-        'Continue',
+        AppLocalizations.of(context).landing_continue,
         style: theme.textTheme.titleMedium?.copyWith(
-          color: tokens.main.onPrimary,
+          color: colorScheme.onPrimary,
           fontWeight: FontWeight.w800,
         ),
       ),
+    );
+  }
+
+  Widget _buildLanguageButton(
+    BuildContext context,
+    WidgetRef ref,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String langLabel,
+  ) {
+    return ActionChip(
+      avatar: Icon(
+        Icons.language_rounded,
+        size: AppIconSize.sm,
+        color: colorScheme.onSurfaceVariant,
+      ),
+      label: Text(langLabel),
+      onPressed: () => showAdaptiveSheet<void>(
+        context: context,
+        builder: (ctx) => _LandingLanguagePickerSheet(ref: ref),
+      ),
+    );
+  }
+}
+
+// ── Language picker bottom sheet ────────────────────────────────────────────
+
+class _LandingLanguagePickerSheet extends StatelessWidget {
+  const _LandingLanguagePickerSheet({required this.ref});
+
+  final WidgetRef ref;
+
+  static const _languages = [
+    {'code': 'en', 'name': 'English'},
+    {'code': 'ar', 'name': 'العربية'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final current = ref.watch(localeProvider);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              AppLocalizations.of(context).landing_choose_language,
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ),
+        ..._languages.map((lang) {
+          final isSelected = current.languageCode == lang['code'];
+          return ListTile(
+            title: Text(
+              lang['name']!,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: isSelected ? FontWeight.w800 : null,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(Icons.check, color: colorScheme.primary)
+                : null,
+            onTap: () {
+              ref
+                  .read(localeProvider.notifier)
+                  .setLocale(Locale(lang['code']!));
+              Navigator.of(context).pop();
+            },
+          );
+        }),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }

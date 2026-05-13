@@ -9,12 +9,9 @@ import 'package:dabbler/core/utils/helpers.dart';
 import 'package:dabbler/core/services/user_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class RegistrationData {
   String email;
@@ -274,14 +271,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   Future<void> _handleSubmit() async {
     // Validate all fields before proceeding
     if (!_formKey.currentState!.validate()) {
-      final theme = Theme.of(context);
-      final isDark = theme.colorScheme.brightness == Brightness.dark;
-      final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+      final colorScheme = Theme.of(context).colorScheme;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please fill in all required fields correctly'),
-          backgroundColor: tokens.main.error,
+          content: Text(AppLocalizations.of(context).create_info_error_fill_required),
+          backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
       );
@@ -290,14 +285,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
     // Additional validation checks
     if (_selectedBirthDate == null) {
-      final theme = Theme.of(context);
-      final isDark = theme.colorScheme.brightness == Brightness.dark;
-      final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+      final colorScheme = Theme.of(context).colorScheme;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please select your birth date'),
-          backgroundColor: tokens.main.error,
+          content: Text(AppLocalizations.of(context).create_info_error_select_birth),
+          backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
       );
@@ -308,14 +301,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
     // Age must be >= 16
     if (ageValue < 16) {
-      final theme = Theme.of(context);
-      final isDark = theme.colorScheme.brightness == Brightness.dark;
-      final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+      final colorScheme = Theme.of(context).colorScheme;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('You must be at least 16 years old to register'),
-          backgroundColor: tokens.main.error,
+          content: Text(AppLocalizations.of(context).create_info_error_min_age),
+          backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
       );
@@ -323,16 +314,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     }
 
     if (ageValue > AppConstants.maxAge) {
-      final theme = Theme.of(context);
-      final isDark = theme.colorScheme.brightness == Brightness.dark;
-      final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+      final colorScheme = Theme.of(context).colorScheme;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Age must be between 16 and ${AppConstants.maxAge} years',
-          ),
-          backgroundColor: tokens.main.error,
+          content: Text(AppLocalizations.of(context).create_info_error_max_age(AppConstants.maxAge)),
+          backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
       );
@@ -340,14 +327,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     }
 
     if (_selectedGender.isEmpty) {
-      final theme = Theme.of(context);
-      final isDark = theme.colorScheme.brightness == Brightness.dark;
-      final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+      final colorScheme = Theme.of(context).colorScheme;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please select your gender'),
-          backgroundColor: tokens.main.error,
+          content: Text(AppLocalizations.of(context).create_info_error_select_gender),
+          backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
       );
@@ -383,16 +368,12 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       }
     } catch (e) {
       if (mounted) {
-        final theme = Theme.of(context);
-        final isDark = theme.colorScheme.brightness == Brightness.dark;
-        final tokens = isDark
-            ? main_dark_tokens.theme
-            : main_light_tokens.theme;
+        final colorScheme = Theme.of(context).colorScheme;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('An error occurred: ${e.toString()}'),
-            backgroundColor: tokens.main.error,
+            content: Text(AppLocalizations.of(context).create_info_error_occurred(e.toString())),
+            backgroundColor: colorScheme.error,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -429,20 +410,21 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   Widget _buildBirthDatePicker(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
+    final l10n = AppLocalizations.of(context);
     final ageText = _selectedBirthDate != null
-        ? '${_calculateAge(_selectedBirthDate!)} years old'
-        : 'Select your birth date';
+        ? l10n.create_info_age_display(_calculateAge(_selectedBirthDate!))
+        : l10n.create_info_birth_date_placeholder;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Birth Date',
+          AppLocalizations.of(context).create_info_birth_date,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: tokens.main.onSecondaryContainer,
+            color: colorScheme.onSecondaryContainer,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -457,20 +439,20 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
             decoration: BoxDecoration(
               border: Border.all(
                 color: _selectedBirthDate != null
-                    ? tokens.main.primary
-                    : tokens.main.outline,
+                    ? colorScheme.primary
+                    : colorScheme.outline,
                 width: _selectedBirthDate != null ? 2 : 1.5,
               ),
               borderRadius: AppRadius.extraLarge,
-              color: tokens.main.surface,
+              color: colorScheme.surface,
             ),
             child: Row(
               children: [
                 Icon(
                   Iconsax.calendar_copy,
                   color: _selectedBirthDate != null
-                      ? tokens.main.primary
-                      : tokens.main.onSecondaryContainer.withOpacity(0.7),
+                      ? colorScheme.primary
+                      : colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
                   size: AppIconSize.sm,
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -479,8 +461,8 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                     ageText,
                     style: theme.textTheme.bodyLarge?.copyWith(
                       color: _selectedBirthDate != null
-                          ? tokens.main.onSecondaryContainer
-                          : tokens.main.onSecondaryContainer.withOpacity(0.5),
+                          ? colorScheme.onSecondaryContainer
+                          : colorScheme.onSecondaryContainer.withValues(alpha: 0.5),
                       fontWeight: FontWeight.normal,
                     ),
                   ),
@@ -539,16 +521,16 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   Widget _buildGenderSelect(
     BuildContext context,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Gender',
+          AppLocalizations.of(context).create_info_gender,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
-            color: tokens.main.onSecondaryContainer,
+            color: colorScheme.onSecondaryContainer,
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -557,18 +539,18 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
           decoration: BoxDecoration(
             border: Border.all(
               color: _selectedGender.isNotEmpty
-                  ? tokens.main.primary
-                  : tokens.main.outline,
+                  ? colorScheme.primary
+                  : colorScheme.outline,
               width: _selectedGender.isNotEmpty ? 2 : 1.5,
             ),
             borderRadius: AppRadius.extraLarge,
-            color: tokens.main.surface,
+            color: colorScheme.surface,
           ),
           child: Column(
             children: ['male', 'female']
                 .map(
                   (gender) =>
-                      _buildGenderOption(context, gender, theme, tokens),
+                      _buildGenderOption(context, gender, theme, colorScheme),
                 )
                 .toList(),
           ),
@@ -582,7 +564,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     BuildContext context,
     String gender,
     ThemeData theme,
-    dynamic tokens,
+    ColorScheme colorScheme,
   ) {
     final isSelected = _selectedGender == gender;
 
@@ -600,7 +582,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? tokens.main.primary.withOpacity(0.15)
+              ? colorScheme.primary.withValues(alpha: 0.15)
               : Colors.transparent,
           borderRadius: AppRadius.large,
         ),
@@ -611,8 +593,8 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                 AppHelpers.capitalize(gender),
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: isSelected
-                      ? tokens.main.primary
-                      : tokens.main.onSecondaryContainer,
+                      ? colorScheme.primary
+                      : colorScheme.onSecondaryContainer,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
@@ -620,7 +602,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
             if (isSelected)
               Icon(
                 Iconsax.tick_circle_copy,
-                color: tokens.main.primary,
+                color: colorScheme.primary,
                 size: AppIconSize.sm,
               ),
           ],
@@ -632,21 +614,20 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.colorScheme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     if (_isLoadingData) {
       return Scaffold(
-        backgroundColor: tokens.main.background,
+        backgroundColor: colorScheme.surface,
         body: Center(
-          child: CircularProgressIndicator(color: tokens.main.primary),
+          child: CircularProgressIndicator(color: colorScheme.primary),
         ),
       );
     }
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -663,26 +644,26 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                         const SizedBox(height: AppSpacing.xxxl),
                         // Header
                         Text(
-                          'Tell us a bit about you',
+                          AppLocalizations.of(context).create_info_title,
                           style: theme.textTheme.displaySmall?.copyWith(
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Confirm your age, you have to be 16+ to use dabbler',
+                          AppLocalizations.of(context).create_info_subtitle,
                           style: theme.textTheme.titleLarge?.copyWith(
-                            color: tokens.main.onSecondaryContainer,
+                            color: colorScheme.onSecondaryContainer,
                             height: 1.25,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xxxl),
                         // Birth Date Picker
-                        _buildBirthDatePicker(context, theme, tokens),
+                        _buildBirthDatePicker(context, theme, colorScheme),
                         const SizedBox(height: AppSpacing.lg),
                         // Gender Selection
-                        _buildGenderSelect(context, theme, tokens),
+                        _buildGenderSelect(context, theme, colorScheme),
                         const Spacer(),
                         // Continue Button
                         FilledButton(
@@ -690,8 +671,8 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                               ? null
                               : _handleSubmit,
                           style: FilledButton.styleFrom(
-                            backgroundColor: tokens.main.primary,
-                            foregroundColor: tokens.main.onPrimary,
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                             minimumSize: const Size.fromHeight(
                               AppButtonSize.extraLargeHeight,
                             ),
@@ -705,14 +686,14 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      tokens.main.onPrimary,
+                                      colorScheme.onPrimary,
                                     ),
                                   ),
                                 )
                               : Text(
-                                  'Continue',
+                                  AppLocalizations.of(context).create_info_continue,
                                   style: theme.textTheme.titleMedium?.copyWith(
-                                    color: tokens.main.onPrimary,
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),

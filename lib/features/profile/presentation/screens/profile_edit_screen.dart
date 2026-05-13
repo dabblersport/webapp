@@ -311,7 +311,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return _formatSportName(sportReference);
     }
 
-    return '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
+    return '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim();
   }
 
   List<Sport> _sortSportsByCategory(Iterable<Sport> sports) {
@@ -473,7 +473,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                           final isPrimary = _primarySport == sport.id;
                           final isPreferred = _preferredSport == sport.id;
                           final displayName =
-                              '${sport.emoji ?? ''} ${sport.nameEn}'.trim();
+                              '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim();
 
                           return Material(
                             color: isSelected
@@ -1316,7 +1316,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               .map(
                 (sport) => _AdaptiveSelectOption<String>(
                   value: sport.id,
-                  label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+                  label: '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
                   group: _sportCategoryLabel(sport.category),
                 ),
               )
@@ -1361,7 +1361,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               .map(
                 (sport) => _AdaptiveSelectOption<String>(
                   value: sport.id,
-                  label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+                  label: '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
                   group: _sportCategoryLabel(sport.category),
                 ),
               )

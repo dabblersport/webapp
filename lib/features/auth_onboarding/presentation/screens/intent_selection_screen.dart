@@ -4,11 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class IntentSelectionScreen extends ConsumerStatefulWidget {
   const IntentSelectionScreen({super.key});
@@ -84,8 +81,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   Future<void> _handleSubmit() async {
     if (_selectedPersona == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select your role'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).intent_select_role),
           backgroundColor: Colors.orange,
         ),
       );
@@ -132,21 +129,20 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     if (_isLoadingData) {
       return Scaffold(
-        backgroundColor: tokens.main.background,
+        backgroundColor: colorScheme.surface,
         body: Center(
-          child: CircularProgressIndicator(color: tokens.main.primary),
+          child: CircularProgressIndicator(color: colorScheme.primary),
         ),
       );
     }
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       child: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -165,7 +161,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                         'What brings you here?',
                         style: theme.textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color: tokens.main.onSecondaryContainer,
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
                       SizedBox(height: AppSpacing.lg),
@@ -174,7 +170,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                         'Help us tailor Dabbler',
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: tokens.main.onSecondaryContainer,
+                          color: colorScheme.onSecondaryContainer,
                         ),
                       ),
 
@@ -195,7 +191,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                             onTap: () => setState(
                               () => _selectedPersona = option['value'],
                             ),
-                            tokens: tokens,
+                            colorScheme: colorScheme,
                             theme: theme,
                           ),
                         );
@@ -210,8 +206,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(56),
                           shape: const StadiumBorder(),
-                          backgroundColor: tokens.main.primary,
-                          foregroundColor: tokens.main.onPrimary,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           textStyle: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -224,7 +220,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Continue'),
+                            : Text(AppLocalizations.of(context).intent_continue),
                       ),
 
                       SizedBox(height: AppSpacing.lg),
@@ -237,7 +233,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                             'Back',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
-                              color: tokens.main.primary,
+                              color: colorScheme.primary,
                             ),
                           ),
                         ),
@@ -262,7 +258,7 @@ class _PersonaCard extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _PersonaCard({
@@ -272,7 +268,7 @@ class _PersonaCard extends StatelessWidget {
     required this.icon,
     required this.isSelected,
     required this.onTap,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -287,10 +283,10 @@ class _PersonaCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: isSelected
-                ? tokens.main.primary.withOpacity(0.1)
+                ? colorScheme.primary.withValues(alpha: 0.1)
                 : Colors.transparent,
             border: Border.all(
-              color: isSelected ? tokens.main.primary : tokens.main.outline,
+              color: isSelected ? colorScheme.primary : colorScheme.outline,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(16),
@@ -307,16 +303,16 @@ class _PersonaCard extends StatelessWidget {
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isSelected
-                            ? tokens.main.primary
-                            : tokens.main.onSecondaryContainer,
+                            ? colorScheme.primary
+                            : colorScheme.onSecondaryContainer,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       description,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: tokens.main.onSecondaryContainer.withOpacity(
-                          0.7,
+                        color: colorScheme.onSecondaryContainer.withValues(
+                          alpha: 0.7,
                         ),
                       ),
                     ),

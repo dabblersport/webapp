@@ -20,6 +20,7 @@ import 'package:dabbler/features/places/presentation/widgets/place_picker_sheet.
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   const PostDetailScreen({super.key, required this.postId});
@@ -904,7 +905,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           children: [
             if (post.sport?.isNotEmpty == true)
               _Chip(
-                label: '${_sportEmoji(post.sport!)} ${post.sport}',
+                label: '${_sportEmoji(post.sport!)} ${resolvePostSportLabel(context, ref, post)}',
                 bgColor: cs.secondaryContainer,
                 textColor: cs.onSecondaryContainer,
                 tt: tt,

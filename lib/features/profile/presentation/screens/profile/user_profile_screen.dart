@@ -28,6 +28,8 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/profile/utils/persona_label.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -160,12 +162,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 Icon(Iconsax.danger_copy, size: 64, color: colorScheme.error),
                 const SizedBox(height: 16),
                 Text(
-                  'Profile not found',
+                  AppLocalizations.of(context).user_profile_error_not_found_title,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  profileState.errorMessage ?? 'Unable to load profile',
+                  profileState.errorMessage ?? AppLocalizations.of(context).user_profile_error_unable_to_load,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -175,7 +177,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 FilledButton.icon(
                   onPressed: () => context.pop(),
                   icon: const Icon(Iconsax.arrow_left_copy),
-                  label: const Text('Go back'),
+                  label: Text(AppLocalizations.of(context).user_profile_btn_go_back),
                 ),
               ],
             ),
@@ -564,7 +566,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  postsCount == 1 ? 'Post' : 'Posts',
+                  AppLocalizations.of(context).profile_post_count(postsCount),
                   style: textTheme.bodyMedium?.copyWith(
                     color: baseOnTop.withValues(alpha: 0.8),
                   ),
@@ -597,7 +599,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Following',
+                  AppLocalizations.of(context).profile_following_label,
                   style: textTheme.bodyMedium?.copyWith(
                     color: baseOnTop.withValues(alpha: 0.8),
                   ),
@@ -630,7 +632,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  followersCount == 1 ? 'Follower' : 'Followers',
+                  AppLocalizations.of(context).profile_follower_count(followersCount),
                   style: textTheme.bodyMedium?.copyWith(
                     color: baseOnTop.withValues(alpha: 0.8),
                   ),
@@ -696,7 +698,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               ),
               const SizedBox(width: 4),
               Text(
-                '${profile!.age!} Yo',
+                '${profile!.age!} ${AppLocalizations.of(context).user_profile_age_suffix}',
                 style: textTheme.bodySmall?.copyWith(
                   color: baseOnTop.withValues(alpha: 0.7),
                 ),
@@ -781,7 +783,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             orElse: () => null,
           )
         : null;
-    final sportName = matchedSport?.nameEn as String?;
+    final sportName = matchedSport != null ? matchedSport.localizedName(context) as String : null;
     final sportEmoji = matchedSport?.emoji as String?;
 
     return Wrap(
@@ -792,9 +794,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
           _buildInfoPill(
             context,
-            label:
-                profile.personaType![0].toUpperCase() +
-                profile.personaType!.substring(1),
+            label: personaLabel(context, profile.personaType),
             colorScheme: colorScheme,
             textTheme: textTheme,
             baseOnTop: baseOnTop,
@@ -843,34 +843,35 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    final l10n = AppLocalizations.of(context);
     final allStats = [
       _StatItem(
-        label: 'Games',
+        label: l10n.user_profile_stat_games,
         value: statistics.totalGamesPlayed.toString(),
         icon: Iconsax.medal_star_copy,
       ),
       _StatItem(
-        label: 'Win rate',
+        label: l10n.user_profile_stat_win_rate,
         value: statistics.winRateFormatted,
         icon: Iconsax.cup_copy,
       ),
       _StatItem(
-        label: 'Sports',
+        label: l10n.user_profile_stat_sports,
         value: sportsState.profiles.length.toString(),
         icon: Iconsax.game_copy,
       ),
       _StatItem(
-        label: 'Reliability',
+        label: l10n.user_profile_stat_reliability,
         value: '${statistics.getReliabilityScore().round()}%',
         icon: Iconsax.verify_copy,
       ),
       _StatItem(
-        label: 'Activity',
+        label: l10n.user_profile_stat_activity,
         value: statistics.getActivityLevel(),
         icon: Iconsax.flash_copy,
       ),
       _StatItem(
-        label: 'Last play',
+        label: l10n.user_profile_stat_last_play,
         value: statistics.lastActiveFormatted,
         icon: Iconsax.clock_copy,
       ),
@@ -1035,7 +1036,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Sports',
+            AppLocalizations.of(context).profile_section_sports,
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: onTop,
@@ -1108,7 +1109,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
-                    label: const Text('Loading'),
+                    label: Text(AppLocalizations.of(context).user_profile_btn_loading),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(40),
                       textStyle: buttonTextStyle,
@@ -1155,7 +1156,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       return OutlinedButton.icon(
         onPressed: () => _unblockUser(context),
         icon: const Icon(Iconsax.slash_copy),
-        label: const Text('Unblock'),
+        label: Text(AppLocalizations.of(context).user_profile_btn_unblock),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(40),
           textStyle: buttonTextStyle,
@@ -1188,7 +1189,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           currentlyFollowing: true,
         ),
         icon: const Icon(Iconsax.user_tick_copy),
-        label: const Text('Following'),
+        label: Text(AppLocalizations.of(context).user_profile_btn_following),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(40),
           textStyle: buttonTextStyle,
@@ -1209,7 +1210,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         currentlyFollowing: false,
       ),
       icon: const Icon(Iconsax.user_add_copy),
-      label: const Text('Follow'),
+      label: Text(AppLocalizations.of(context).user_profile_btn_follow),
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(40),
         textStyle: buttonTextStyle,
@@ -1242,12 +1243,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           unselectedLabelStyle: textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w400,
           ),
-          tabs: const [
-            Tab(text: 'Posts'),
-            Tab(text: 'Replies'),
-            Tab(text: 'Liked'),
-            Tab(text: 'Reposts'),
-            Tab(text: 'Activity'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context).profile_tab_posts),
+            Tab(text: AppLocalizations.of(context).profile_tab_replies),
+            Tab(text: AppLocalizations.of(context).profile_tab_liked),
+            Tab(text: AppLocalizations.of(context).profile_tab_reposts),
+            Tab(text: AppLocalizations.of(context).profile_tab_activity),
           ],
         ),
         const SizedBox(height: 4),
@@ -1285,7 +1286,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     }
 
     if (state.activities.isEmpty) {
-      return _buildEmptyTabContent(context, 'No activity yet');
+      return _buildEmptyTabContent(context, AppLocalizations.of(context).profile_empty_no_activity);
     }
 
     return Column(
@@ -1301,7 +1302,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No posts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_posts);
   }
 
   Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
@@ -1309,7 +1310,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No replies yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_replies);
   }
 
   Widget _buildLikedTabContent(BuildContext context, String? profileId) {
@@ -1317,7 +1318,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No liked posts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_liked);
   }
 
   Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
@@ -1325,7 +1326,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, 'No reposts yet');
+    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_reposts);
   }
 
   Widget _buildPostsList(
@@ -1351,9 +1352,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         padding: EdgeInsets.all(48),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: Text('Failed to load posts.')),
+      error: (_, __) => Padding(
+        padding: const EdgeInsets.all(48),
+        child: Center(child: Text(AppLocalizations.of(context).profile_error_failed_load_posts)),
       ),
     );
   }
@@ -1436,7 +1437,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     isBlocked.whenData((blocked) {
       if (blocked) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot message a blocked user')),
+          SnackBar(content: Text(AppLocalizations.of(context).user_profile_cannot_message_blocked)),
         );
         return;
       }
@@ -1486,23 +1487,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(ctx).colorScheme.surface,
-        title: const Text('Block User'),
-        content: const Text(
-          'This will block the user across the entire app. '
-          'They won\'t be able to see your profile, posts, or interact with you. '
-          'You can unblock them later from their profile or Privacy Settings.',
-        ),
+        title: Text(AppLocalizations.of(ctx).user_profile_block_dialog_title),
+        content: Text(AppLocalizations.of(ctx).user_profile_block_dialog_body),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(ctx).profile_btn_cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('Block'),
+            child: Text(AppLocalizations.of(ctx).user_profile_block_btn_block),
           ),
         ],
       ),
@@ -1544,7 +1541,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('User blocked')));
+          ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).user_profile_blocked_snack)));
         }
       },
     );
@@ -1584,7 +1581,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         if (mounted) {
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('User unblocked')));
+          ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).user_profile_unblocked_snack)));
         }
       },
     );
@@ -1619,7 +1616,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             if (blocked)
               ListTile(
                 leading: const Icon(Iconsax.close_circle_copy),
-                title: const Text('Unblock user'),
+                title: Text(AppLocalizations.of(context).user_profile_menu_unblock_user),
                 onTap: () async {
                   Navigator.pop(context);
                   await _unblockUser(this.context);
@@ -1628,7 +1625,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             else
               ListTile(
                 leading: const Icon(Iconsax.close_circle_copy),
-                title: const Text('Block user'),
+                title: Text(AppLocalizations.of(context).user_profile_menu_block_user),
                 onTap: () async {
                   Navigator.pop(context);
                   await _blockUser(this.context);
@@ -1636,7 +1633,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               ),
             ListTile(
               leading: const Icon(Iconsax.warning_2_copy),
-              title: const Text('Report user'),
+              title: Text(AppLocalizations.of(context).user_profile_menu_report_user),
               onTap: () {
                 Navigator.pop(context);
                 _reportUser(this.context);

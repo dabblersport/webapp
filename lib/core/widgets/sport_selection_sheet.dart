@@ -175,7 +175,7 @@ class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
                           style: const TextStyle(fontSize: 24),
                         ),
                         title: Text(
-                          sport.nameEn,
+                          sport.localizedName(context),
                           style: tt.bodyMedium?.copyWith(
                             color: isSelected
                                 ? cs.onPrimaryContainer

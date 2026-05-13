@@ -30,5 +30,604 @@
   "news_hidden_snack": "News hidden from Most Recent",
   "news_resubscribed_snack": "News will now appear in Most Recent",
   "news_resubscribe_banner": "News is hidden from Most Recent.",
-  "news_resubscribe_action": "Show again"
+  "news_resubscribe_action": "Show again",
+
+  "auth_welcome_title": "Welcome",
+  "auth_welcome_subtitle": "We are stoked to have you join us. Create an account and start dabbing in local sports.",
+  "auth_welcome_trust_heading": "Built for trust",
+  "auth_welcome_trust_verified": "Reviewed players, verified memberships and rated venues",
+  "auth_welcome_trust_personalised": "Connections and recommendations personalised to your sports",
+  "auth_welcome_trust_privacy": "We do not sell your data — privacy-first by design",
+  "auth_welcome_get_started": "Get started",
+  "auth_welcome_get_started_subtitle": "Create an account or log in",
+  "auth_welcome_btn_google": "Continue with Google",
+  "auth_welcome_btn_apple": "Continue with Apple",
+  "auth_welcome_btn_email": "Continue with Email",
+  "auth_welcome_btn_login": "Already have an account? Log in",
+  "auth_welcome_apple_soon": "Apple sign-in is coming soon.",
+  "auth_welcome_google_error": "Could not sign in with Google: {error}",
+  "@auth_welcome_google_error": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "auth_welcome_country_picker_title": "Choose your country",
+  "auth_welcome_language_picker_title": "Choose language",
+
+  "landing_quote1": "I promised myself I'd play at least twice a week.",
+  "landing_quote2": "Between work and life finding a game feels harder than a 90-minute run.",
+  "landing_tagline": "Dabbler connects players, captains, and venues so you can stop searching and start playing",
+  "landing_continue": "Continue",
+  "landing_choose_language": "Choose language",
+
+  "email_input_title": "Authenticate",
+  "email_input_subtitle": "Enter your email to get started",
+  "email_input_label": "Email",
+  "email_input_hint": "email@domain.com",
+  "email_input_continue": "Continue",
+  "email_input_keep_in_loop": "Keep me in the loop with emails about updates & more",
+  "email_input_already_account": "Already have an account? Log in",
+  "email_input_btn_google": "Continue with Google",
+  "email_input_btn_apple": "Continue with Apple",
+  "email_input_terms_prefix": "By clicking Continue, you are indicating that you have read and agree to the ",
+  "email_input_terms_link": "Terms of Service",
+  "email_input_terms_and": " & ",
+  "email_input_privacy_link": "Privacy Policy",
+  "email_input_validate_required": "Email is required",
+  "email_input_validate_invalid": "Enter a valid email address",
+  "email_input_error_generic": "An error occurred. Please try again.",
+  "email_input_google_failed": "Google sign-in failed. Please try again.",
+
+  "email_password_title": "Login",
+  "email_password_subtitle": "Enter your email and password\nor login using OTP",
+  "email_password_forgot": "Forget password?",
+  "email_password_send_otp": "Send email OTP",
+  "email_password_login_btn": "Login",
+  "email_password_btn_google": "Continue with Google",
+  "email_password_btn_apple": "Continue with Apple",
+  "email_password_hint_email": "email@domain.com",
+  "email_password_hint_password": "Password",
+  "email_password_show_password": "Show password",
+  "email_password_hide_password": "Hide password",
+  "email_password_validate_email_required": "Email is required",
+  "email_password_validate_email_invalid": "Enter a valid email address",
+  "email_password_validate_password_required": "Enter password",
+  "email_password_error_invalid_creds": "Invalid email or password",
+  "email_password_error_login_failed": "Login failed.",
+  "email_password_error_otp_failed": "Failed to send OTP. Please try again.",
+  "email_password_apple_soon": "Apple sign-in is coming soon.",
+  "email_password_google_failed": "Google sign-in failed.",
+  "email_password_validate_email_hint": "Enter a valid email address.",
+
+  "email_verify_appbar": "Confirm your email",
+  "email_verify_title": "Check your inbox",
+  "email_verify_body_with_email": "We've sent a confirmation link to {email}.\n\nPlease confirm your email to finish setting up your account.",
+  "@email_verify_body_with_email": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "email_verify_body_no_email": "We've sent a confirmation link to your email.\n\nPlease confirm your email to finish setting up your account.",
+  "email_verify_instruction": "After confirming your email, come back to the app and tap \"I've confirmed my email\" to continue.",
+  "email_verify_confirmed_btn": "I've confirmed my email",
+  "email_verify_resend_btn": "Resend confirmation email",
+  "email_verify_different_account": "Use a different account",
+  "email_verify_no_email_error": "No email found for the current user.",
+  "email_verify_spam_note": "If you don't see the email, please check your spam folder or request a new link from the sign-in screen.",
+
+  "forgot_password_title": "Reset Your Password",
+  "forgot_password_subtitle": "Enter your email address and we'll send you a link to reset your password.",
+  "forgot_password_email_hint": "Email Address",
+  "forgot_password_send_btn": "Send Reset Link",
+  "forgot_password_sent_msg": "Reset link sent! Check your email inbox and spam folder for instructions to reset your password.",
+  "forgot_password_back_to_signin": "Back to Sign In",
+  "forgot_password_validate_email": "Enter a valid email",
+
+  "otp_verify_title_email": "Verify email",
+  "otp_verify_title_phone": "Verify phone",
+  "otp_verify_subtitle_email": "Enter the 6 digits we've sent to your email",
+  "otp_verify_subtitle_phone": "Enter the 6 digits we've sent to your phone",
+  "otp_verify_change_email": "Change email",
+  "otp_verify_change_phone": "Change phone",
+  "otp_verify_continue": "Continue",
+  "otp_verify_didnt_get": "Didn't get a code? ",
+  "otp_verify_resend_countdown": "Resend code ({seconds}s)",
+  "@otp_verify_resend_countdown": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "otp_verify_resend": "Resend code",
+  "otp_verify_sending": "Sending...",
+  "otp_verify_sent_email": "OTP sent successfully to your email",
+  "otp_verify_sent_phone": "OTP sent successfully to your phone",
+  "otp_verify_error_prefix": "Error: {error}",
+  "@otp_verify_error_prefix": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "reset_password_title": "Reset Password",
+  "reset_password_subtitle": "Create a new password for your account",
+  "reset_password_new_label": "New password",
+  "reset_password_confirm_label": "Confirm password",
+  "reset_password_update_btn": "Update Password",
+  "reset_password_validate_enter": "Enter a password",
+  "reset_password_validate_min": "Use at least 8 characters",
+  "reset_password_validate_confirm": "Re-enter the password",
+  "reset_password_validate_match": "Passwords don't match",
+
+  "set_password_title": "Create Your Account",
+  "set_password_email_prefix": "Email: {email}",
+  "@set_password_email_prefix": {
+    "placeholders": {
+      "email": { "type": "String" }
+    }
+  },
+  "set_password_username_label": "Username",
+  "set_password_username_hint": "Choose a unique username",
+  "set_password_password_label": "Password",
+  "set_password_password_hint": "Enter a strong password",
+  "set_password_confirm_label": "Confirm Password",
+  "set_password_confirm_hint": "Re-enter your password",
+  "set_password_create_btn": "Create Account",
+  "set_password_creating_btn": "Creating account...",
+  "set_password_wait_btn": "Wait {seconds} s",
+  "@set_password_wait_btn": {
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+  "set_password_validate_username_required": "Username is required",
+  "set_password_validate_username_min": "Username must be at least 3 characters",
+  "set_password_validate_username_max": "Username must be 20 characters or less",
+  "set_password_validate_username_chars": "Only letters, numbers, and underscores allowed",
+  "set_password_validate_username_taken": "Username is already taken",
+  "set_password_validate_username_checking": "Error checking username",
+  "set_password_validate_password_required": "Password is required",
+  "set_password_validate_password_min": "Password must be at least 6 characters",
+  "set_password_validate_confirm_required": "Please confirm your password",
+  "set_password_validate_confirm_match": "Passwords do not match",
+  "set_password_wait_validation": "Please wait for username validation",
+  "set_password_account_exists": "Account already exists. Please sign in with your password.",
+  "set_password_rate_limit": "Please wait a few seconds before trying again.",
+  "set_password_error_prefix": "Error: {error}",
+  "@set_password_error_prefix": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "create_info_title": "Tell us a bit about you",
+  "create_info_subtitle": "Confirm your age, you have to be 16+ to use dabbler",
+  "create_info_birth_date": "Birth Date",
+  "create_info_birth_date_placeholder": "Select your birth date",
+  "create_info_age_display": "{age} years old",
+  "@create_info_age_display": {
+    "placeholders": {
+      "age": { "type": "int" }
+    }
+  },
+  "create_info_gender": "Gender",
+  "create_info_continue": "Continue",
+  "create_info_error_fill_required": "Please fill in all required fields correctly",
+  "create_info_error_select_birth": "Please select your birth date",
+  "create_info_error_min_age": "You must be at least 16 years old to register",
+  "create_info_error_max_age": "Age must be between 16 and {max} years",
+  "@create_info_error_max_age": {
+    "placeholders": {
+      "max": { "type": "int" }
+    }
+  },
+  "create_info_error_select_gender": "Please select your gender",
+  "create_info_error_occurred": "An error occurred: {error}",
+  "@create_info_error_occurred": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "set_username_title_onboarding": "Identify yourself",
+  "set_username_title_conversion": "Complete Your Conversion",
+  "set_username_title_new_profile": "Complete Your New Profile",
+  "set_username_subtitle_onboarding": "Choose how others should call you and set a username",
+  "set_username_subtitle_persona": "Choose a display name and username for your {persona} profile",
+  "@set_username_subtitle_persona": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_display_name_label": "Display Name",
+  "set_username_display_name_hint": "Enter your display name",
+  "set_username_username_label": "Username",
+  "set_username_username_hint": "Choose a unique username",
+  "set_username_suggestions": "Suggestions",
+  "set_username_btn_complete": "Complete",
+  "set_username_btn_create_profile": "Create Profile",
+  "set_username_btn_complete_conversion": "Complete Conversion",
+  "set_username_back": "Back",
+  "set_username_converting_to": "Converting to {persona}",
+  "@set_username_converting_to": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_adding_profile": "Adding {persona} profile",
+  "@set_username_adding_profile": {
+    "placeholders": {
+      "persona": { "type": "String" }
+    }
+  },
+  "set_username_validate_display_required": "Display name is required",
+  "set_username_validate_display_min": "Display name must be at least 2 characters",
+  "set_username_validate_username_required": "Username is required",
+  "set_username_validate_username_min": "Username must be at least 3 characters",
+  "set_username_validate_username_chars": "Only letters, numbers, and underscores",
+  "set_username_unavailable": "Username unavailable",
+  "set_username_check_error": "Error checking username",
+  "set_username_missing_onboarding": "Missing onboarding data. Please start over.",
+  "set_username_missing_steps": "Missing required information. Please complete all steps.",
+  "set_username_session_expired": "Your session has expired. Please verify your phone number again.",
+  "set_username_missing_persona_data": "Missing data. Please start over.",
+
+  "intent_title": "What brings you here?",
+  "intent_subtitle": "Help us tailor Dabbler",
+  "intent_compete_title": "Compete",
+  "intent_compete_desc": "Join games, track your level, play regularly",
+  "intent_organise_title": "Organise",
+  "intent_organise_desc": "Create games, set rules, manage players",
+  "intent_host_title": "Host",
+  "intent_host_desc": "Manage venues, availability, and bookings",
+  "intent_socialise_title": "Socialise",
+  "intent_socialise_desc": "Follow sports, people, and communities",
+  "intent_continue": "Continue",
+  "intent_back": "Back",
+  "intent_select_role": "Please select your role",
+
+  "interests_title_player": "What do you regularly practice?",
+  "interests_title_organiser": "What do you intend to organise?",
+  "interests_title_hoster": "Which sports do you host?",
+  "interests_title_socialiser": "Which sports are you interested in?",
+  "interests_title_default": "What do you regularly practice?",
+  "interests_subtitle": "You can change and add more sports later",
+  "interests_available_sports": "Available sports",
+  "interests_selected_count_one": "{count} sport selected",
+  "@interests_selected_count_one": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "interests_selected_count_many": "{count} sports selected",
+  "@interests_selected_count_many": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "interests_continue": "Continue",
+  "interests_back": "Back",
+  "interests_cancel": "Cancel",
+  "interests_select_one": "Please select at least one sport",
+  "interests_failed_load": "Failed to load sports",
+  "interests_retry": "Retry",
+
+  "primary_sport_title": "Choose your primary sport",
+  "primary_sport_subtitle": "This sport will appear on your profile and be used by default.",
+  "primary_sport_helper": "You can change it later.",
+  "primary_sport_badge": "Primary",
+  "primary_sport_continue": "Continue",
+  "primary_sport_back": "Back",
+  "primary_sport_cancel": "Cancel",
+  "primary_sport_select_error": "Please select your primary sport",
+  "primary_sport_failed_load": "Failed to load sports",
+  "primary_sport_no_sports": "No sports selected. Please go back.",
+  "primary_sport_adding": "Adding {label} Profile",
+  "@primary_sport_adding": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+
+  "identity_verify_title": "Identity verification",
+  "identity_verify_email_label": "Email address",
+  "identity_verify_email_hint": "Enter your email address",
+  "identity_verify_continue_sending": "Sending...",
+  "identity_verify_continue": "Continue",
+  "identity_verify_or": "or",
+  "identity_verify_google_btn": "Continue with Google",
+  "identity_verify_terms_prefix": "By continuing, you agree to our ",
+  "identity_verify_terms_link": "Terms of Service",
+  "identity_verify_terms_and": " and ",
+  "identity_verify_privacy_link": "Privacy Policy",
+  "identity_verify_otp_sent_email": "OTP sent! Please check your email.",
+  "identity_verify_otp_sent_phone": "OTP sent! Please check your phone.",
+  "identity_verify_phone_disabled": "Phone authentication is not available yet. Please use email to continue.",
+  "identity_verify_service_error": "Service error: {error}",
+  "@identity_verify_service_error": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "identity_verify_error_generic": "Failed to send OTP. Please try again.",
+  "identity_verify_nav_failed": "Navigation failed: {error}",
+  "@identity_verify_nav_failed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "identity_verify_use_email": "Please use your email address",
+  "identity_verify_required": "Email or phone number is required",
+  "identity_verify_google_failed": "Google sign-in failed. Please try again.",
+
+  "welcome_screen_title_first_time": "Welcome to Dabbler 😉",
+  "welcome_screen_title_returning": "Welcome Back! 👋",
+  "welcome_screen_title_conversion": "Conversion Complete! 🎉",
+  "welcome_screen_dont_forget": "Don't forget",
+  "welcome_screen_continue": "Continue",
+  "welcome_screen_chip_player": "Sports player",
+  "welcome_screen_chip_organiser": "Games organiser",
+  "welcome_screen_chip_hoster": "Venue host",
+  "welcome_screen_chip_socialiser": "Sports socialiser",
+  "welcome_screen_player_guidance": "Join games that match your level, respect the rules set by the organiser, and confirm only when you're ready to play.",
+  "welcome_screen_player_philosophy": "Your reliability builds your reputation.",
+  "welcome_screen_player_reminder": "Confirm only when you're sure you can play.\nRespect the rules, timing, and other players.",
+  "welcome_screen_player_emphasis": "Confirm only when you're ready to play",
+  "welcome_screen_organiser_guidance": "Create games with clear rules, fair skill levels, and realistic timings.",
+  "welcome_screen_organiser_philosophy": "You set the tone — great games start with great organisation.",
+  "welcome_screen_organiser_reminder": "Set clear rules and realistic timings.\nCommunicate changes early and clearly.",
+  "welcome_screen_organiser_emphasis": "Continue only when you're ready!",
+  "welcome_screen_hoster_guidance": "Help players feel welcome by keeping information accurate and spaces ready.",
+  "welcome_screen_hoster_philosophy": "Clear availability and smooth coordination make everyone's experience better.",
+  "welcome_screen_hoster_reminder": "Keep availability and details accurate.\nUpdate information as soon as things change.",
+  "welcome_screen_hoster_emphasis": "Continue only when you're ready!",
+  "welcome_screen_socialiser_guidance": "Connect with players, spark conversations, and help games feel more human.",
+  "welcome_screen_socialiser_philosophy": "Your presence shapes the community — friendly, inclusive, and respectful.",
+  "welcome_screen_socialiser_reminder": "Be respectful and inclusive.\nAdd value without disrupting the game.",
+  "welcome_screen_socialiser_emphasis": "Continue only when you're ready!",
+
+  "onboarding_welcome_title": "Setting up your account",
+  "onboarding_welcome_subtitle": "This only takes a moment…",
+  "onboarding_welcome_step_profile": "Creating your profile",
+  "onboarding_welcome_step_persona": "Setting up your persona",
+  "onboarding_welcome_step_sport": "Adding sport profile",
+
+  "social_onboarding_welcome_title": "Welcome to Social",
+  "social_onboarding_welcome_subtitle": "Connect with fellow players, share your game experiences, and build your sports community.",
+  "social_onboarding_welcome_skip": "Skip",
+  "social_onboarding_welcome_get_started": "Get Started",
+  "social_onboarding_welcome_find_friends_title": "Find Friends",
+  "social_onboarding_welcome_find_friends_desc": "Connect with players in your area",
+  "social_onboarding_welcome_chat_title": "Chat & Share",
+  "social_onboarding_welcome_chat_desc": "Message friends and share game moments",
+  "social_onboarding_welcome_game_title": "Game Together",
+  "social_onboarding_welcome_game_desc": "Discover and join games with your network",
+
+  "social_onboarding_friends_appbar": "Find Friends",
+  "social_onboarding_friends_title": "Find Your Sports Community",
+  "social_onboarding_friends_subtitle": "Connect with friends to share game experiences and discover new opportunities.",
+  "social_onboarding_friends_sync_btn": "Sync Contacts",
+  "social_onboarding_friends_syncing": "Syncing...",
+  "social_onboarding_friends_or": "or",
+  "social_onboarding_friends_suggested": "Suggested for You",
+  "social_onboarding_friends_selected": "{count} selected",
+  "@social_onboarding_friends_selected": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_mutual_one": "{count} mutual friend",
+  "@social_onboarding_friends_mutual_one": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_mutual_many": "{count} mutual friends",
+  "@social_onboarding_friends_mutual_many": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_add_btn": "Add",
+  "social_onboarding_friends_added": "Added",
+  "social_onboarding_friends_skip": "Skip",
+  "social_onboarding_friends_continue": "Continue",
+  "social_onboarding_friends_send_requests": "Send {count} Requests & Continue",
+  "@social_onboarding_friends_send_requests": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "social_onboarding_friends_send_request": "Send Request & Continue",
+  "social_onboarding_friends_synced": "Contacts synced successfully!",
+  "social_onboarding_friends_sync_error": "Error accessing contacts. Please try again.",
+  "social_onboarding_friends_sent": "Friend requests sent to {count} people!",
+  "@social_onboarding_friends_sent": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "social_onboarding_notif_appbar": "Notifications",
+  "social_onboarding_notif_title": "Notifications Paused",
+  "social_onboarding_notif_body": "We're rebuilding notification preferences. You can finish onboarding now and we'll add configuration options in a future update.",
+  "social_onboarding_notif_finish": "Finish",
+
+  "social_onboarding_privacy_appbar": "Privacy Settings",
+  "social_onboarding_privacy_title": "Privacy & Safety",
+  "social_onboarding_privacy_subtitle": "Control who can see your profile and interact with you. You can always change these settings later.",
+  "social_onboarding_privacy_step": "3 of 4",
+  "social_onboarding_privacy_profile_visible_title": "Profile Visible to Friends",
+  "social_onboarding_privacy_profile_visible_subtitle": "Your profile is visible to your friends",
+  "social_onboarding_privacy_posts_public_title": "Posts Visible to Public",
+  "social_onboarding_privacy_posts_public_subtitle": "Anyone can see your posts",
+  "social_onboarding_privacy_allow_requests_title": "Allow Friend Requests",
+  "social_onboarding_privacy_allow_requests_subtitle": "People can send you friend requests",
+  "social_onboarding_privacy_allow_messages_title": "Allow Message Requests",
+  "social_onboarding_privacy_allow_messages_subtitle": "Non-friends can send you messages",
+  "social_onboarding_privacy_online_status_title": "Show Online Status",
+  "social_onboarding_privacy_online_status_subtitle": "Friends can see when you're online",
+  "social_onboarding_privacy_back": "Back",
+  "social_onboarding_privacy_continue": "Continue",
+
+  "social_onboarding_complete_title": "Welcome to Social!",
+  "social_onboarding_complete_subtitle": "You're all set up! Start connecting with friends, sharing your game experiences, and discovering new players in your area.",
+  "social_onboarding_complete_connect_title": "Connect with Players",
+  "social_onboarding_complete_connect_desc": "Find and add friends who love the same sports",
+  "social_onboarding_complete_share_title": "Share Your Journey",
+  "social_onboarding_complete_share_desc": "Post updates, photos, and celebrate your wins",
+  "social_onboarding_complete_discover_title": "Discover Games",
+  "social_onboarding_complete_discover_desc": "See what games your friends are playing",
+  "social_onboarding_complete_explore_btn": "Explore Social",
+  "social_onboarding_complete_home_btn": "Go to Home",
+  "social_onboarding_complete_later": "I'll explore later",
+
+  "language_select_title": "Select Language",
+  "language_select_saving": "Saving...",
+  "register_title": "Register",
+  "register_btn": "Register",
+
+  "post_card_author_anonymous": "Anonymous",
+  "post_card_user_fallback": "User",
+  "post_card_persona_organiser": "Organiser",
+  "post_card_persona_player": "Player",
+  "post_card_near_you": "Near you",
+  "post_card_edited": "edited",
+  "post_card_menu_repost": "Repost",
+  "post_card_menu_quote_repost": "Quote Repost",
+
+  "post_card_kind_moment": "Moment",
+  "post_card_kind_dab": "Dab",
+  "post_card_kind_kick_in": "Kick-in",
+  "post_card_kind_game": "Game",
+  "post_card_kind_achievement": "Achievement",
+  "post_card_kind_venue": "Venue",
+  "post_card_kind_admin": "Admin",
+  "post_card_kind_system": "System",
+  "post_card_kind_repost": "Repost",
+
+  "post_card_expired": "Expired",
+  "post_card_expires_in_days": "Expires in {n}d",
+  "@post_card_expires_in_days": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expires_in_hours": "Expires in {n}h",
+  "@post_card_expires_in_hours": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expires_in_minutes": "Expires in {n}m",
+  "@post_card_expires_in_minutes": { "placeholders": { "n": { "type": "int" } } },
+  "post_card_expiring_soon": "Expiring soon",
+
+  "repost_card_unavailable": "Original post is no longer available.",
+  "post_type_original": "Original",
+  "post_type_news": "News",
+  "post_type_announcement": "Announcement",
+  "post_type_alert": "Alert",
+  "post_type_highlight": "Highlight",
+  "post_type_general": "General",
+  "post_type_feature": "Feature",
+  "post_card_my_story": "My Story",
+  "post_card_kick_in_label": "Kick-In",
+  "post_card_allocated": "Allocated",
+
+  "nav_feeds": "Feeds",
+  "nav_community": "Community",
+  "nav_venues": "Venues",
+  "nav_games": "Games",
+  "nav_create_post": "Create Post",
+  "nav_create_game": "Create Game",
+  "nav_create_meetup": "Create Meetup",
+  "nav_meetups_coming_soon": "Meetups coming soon!",
+  "nav_exit_app_title": "Exit app?",
+  "nav_exit_app_body": "Are you sure you want to exit Dabbler?",
+  "nav_exit_app_cancel": "Cancel",
+  "nav_exit_app_confirm": "Exit",
+  "nav_press_back_to_exit": "Press back again to exit",
+  "nav_search_hint": "Search Dabbler",
+  "nav_whats_happening": "What's happening",
+  "nav_trend_sports_category": "Sports",
+  "nav_trend_sports_title": "New games near you",
+  "nav_trend_sports_subtitle": "Check out the latest games in your area",
+  "nav_trend_community_category": "Community",
+  "nav_trend_community_title": "Growing squads",
+  "nav_trend_community_subtitle": "Join a squad to play regularly",
+  "nav_trend_dabbler_category": "Dabbler",
+  "nav_trend_dabbler_title": "Share your moments",
+  "nav_trend_dabbler_subtitle": "Post updates and connect with players",
+  "nav_quick_actions": "Quick actions",
+  "nav_find_friends": "Find friends",
+  "nav_settings": "Settings",
+
+  "persona_label_hoster": "Host",
+  "persona_label_socialiser": "Socialiser",
+
+  "profile_header_fallback": "Profile",
+  "profile_section_sports": "Sports",
+  "profile_complete_your_profile": "Complete your profile",
+  "profile_bio_placeholder": "Add a short bio so teammates know what to expect.",
+  "profile_btn_edit": "Edit profile",
+  "profile_btn_share": "Share profile",
+  "profile_btn_manage_profiles_tooltip": "Manage profiles",
+  "profile_manage_profiles_title": "Manage Profiles",
+  "profile_add_profile": "Add Profile",
+  "profile_no_profiles_found": "No profiles found",
+  "profile_error_loading_profiles": "Error loading profiles",
+  "profile_error_switch_profile_failed": "Failed to switch profile",
+  "profile_btn_cancel": "Cancel",
+  "profile_btn_continue": "Continue",
+  "profile_persona_convert_badge": "Convert",
+  "profile_convert_to": "Convert to {persona}?",
+  "@profile_convert_to": { "placeholders": { "persona": { "type": "String" } } },
+  "profile_convert_confirm_body": "You're about to convert from {fromPersona} to {toPersona}. Your current profile will be replaced.",
+  "@profile_convert_confirm_body": {
+    "placeholders": {
+      "fromPersona": { "type": "String" },
+      "toPersona": { "type": "String" }
+    }
+  },
+
+  "profile_tab_posts": "Posts",
+  "profile_tab_replies": "Replies",
+  "profile_tab_liked": "Liked",
+  "profile_tab_reposts": "Reposts",
+  "profile_tab_activity": "Activity",
+
+  "profile_empty_no_activity": "No activity yet",
+  "profile_empty_no_posts": "No posts yet",
+  "profile_empty_no_replies": "No replies yet",
+  "profile_empty_no_liked": "No liked posts yet",
+  "profile_empty_no_reposts": "No reposts yet",
+  "profile_empty_no_sports": "No sports added yet",
+  "profile_error_failed_load_posts": "Failed to load posts.",
+
+  "profile_post_count": "{count, plural, one{Post} other{Posts}}",
+  "@profile_post_count": { "placeholders": { "count": { "type": "int" } } },
+  "profile_follower_count": "{count, plural, one{Follower} other{Followers}}",
+  "@profile_follower_count": { "placeholders": { "count": { "type": "int" } } },
+  "profile_following_label": "Following",
+
+  "profile_takedown_title": "Content Removed",
+  "profile_takedown_body": "This content has been removed due to a violation of our community guidelines.",
+
+  "user_profile_error_not_found_title": "Profile not found",
+  "user_profile_error_unable_to_load": "Unable to load profile",
+  "user_profile_btn_go_back": "Go back",
+  "user_profile_btn_loading": "Loading",
+  "user_profile_btn_unblock": "Unblock",
+  "user_profile_btn_follow": "Follow",
+  "user_profile_btn_following": "Following",
+  "user_profile_age_suffix": "Yo",
+
+  "user_profile_stat_games": "Games",
+  "user_profile_stat_win_rate": "Win rate",
+  "user_profile_stat_sports": "Sports",
+  "user_profile_stat_reliability": "Reliability",
+  "user_profile_stat_activity": "Activity",
+  "user_profile_stat_last_play": "Last play",
+
+  "user_profile_block_dialog_title": "Block User",
+  "user_profile_block_dialog_body": "Are you sure you want to block this user? They won't be able to see your profile or contact you.",
+  "user_profile_block_btn_block": "Block",
+  "user_profile_blocked_snack": "User blocked",
+  "user_profile_unblocked_snack": "User unblocked",
+  "user_profile_menu_unblock_user": "Unblock user",
+  "user_profile_menu_block_user": "Block user",
+  "user_profile_menu_report_user": "Report user",
+  "user_profile_cannot_message_blocked": "Cannot message a blocked user"
 }

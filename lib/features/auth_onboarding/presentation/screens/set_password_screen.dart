@@ -12,6 +12,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class SetPasswordScreen extends ConsumerStatefulWidget {
   const SetPasswordScreen({super.key});
@@ -61,7 +62,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
     // Basic validation
     if (username.length < 3) {
       setState(() {
-        _usernameError = 'Username must be at least 3 characters';
+        _usernameError = AppLocalizations.of(context).set_password_validate_username_min;
         _isCheckingUsername = false;
       });
       return;
@@ -69,7 +70,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
     if (username.length > 20) {
       setState(() {
-        _usernameError = 'Username must be 20 characters or less';
+        _usernameError = AppLocalizations.of(context).set_password_validate_username_max;
         _isCheckingUsername = false;
       });
       return;
@@ -77,7 +78,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
     if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(username)) {
       setState(() {
-        _usernameError = 'Only letters, numbers, and underscores allowed';
+        _usernameError = AppLocalizations.of(context).set_password_validate_username_chars;
         _isCheckingUsername = false;
       });
       return;
@@ -95,13 +96,13 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
       result.fold(
         (failure) {
           setState(() {
-            _usernameError = 'Error checking username';
+            _usernameError = AppLocalizations.of(context).set_password_validate_username_checking;
             _isCheckingUsername = false;
           });
         },
         (isAvailable) {
           setState(() {
-            _usernameError = isAvailable ? null : 'Username is already taken';
+            _usernameError = isAvailable ? null : AppLocalizations.of(context).set_password_validate_username_taken;
             _isCheckingUsername = false;
           });
         },
@@ -124,8 +125,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
     if (_usernameError != null || _isCheckingUsername) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please wait for username validation'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).set_password_wait_validation),
           backgroundColor: Colors.orange,
         ),
       );
@@ -208,9 +209,9 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
           if (userExists) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text(
-                  'Account already exists. Please sign in with your password.',
+                  AppLocalizations.of(context).set_password_account_exists,
                 ),
                 backgroundColor: Colors.orange,
               ),
@@ -294,9 +295,9 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               msg.contains('user_already_exists')) {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text(
-                  'Account already exists. Please sign in with your password.',
+                  AppLocalizations.of(context).set_password_account_exists,
                 ),
                 backgroundColor: Colors.orange,
               ),
@@ -321,8 +322,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
               });
             });
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Please wait a few seconds before trying again.'),
+              SnackBar(
+                content: Text(AppLocalizations.of(context).set_password_rate_limit),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -364,7 +365,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(AppLocalizations.of(context).set_password_error_prefix(e.toString())), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -401,7 +402,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Create Your Account',
+                            AppLocalizations.of(context).set_password_title,
                             style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface,
@@ -410,7 +411,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                           const SizedBox(height: 18),
                           if (email.isNotEmpty)
                             Text(
-                              'Email: $email',
+                              AppLocalizations.of(context).set_password_email_prefix(email),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w500,
                                 color: colorScheme.onSurface,
@@ -420,7 +421,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
                           // Username Field
                           Text(
-                            'Username',
+                            AppLocalizations.of(context).set_password_username_label,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -428,8 +429,8 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                           const SizedBox(height: 8),
                           CustomInputField(
                             controller: _usernameController,
-                            label: 'Username',
-                            hintText: 'Choose a unique username',
+                            label: AppLocalizations.of(context).set_password_username_label,
+                            hintText: AppLocalizations.of(context).set_password_username_hint,
                             onChanged: _checkUsernameAvailability,
                             suffixIcon: _isCheckingUsername
                                 ? const Padding(
@@ -451,7 +452,7 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                                 : null,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Username is required';
+                                return AppLocalizations.of(context).set_password_validate_username_required;
                               }
                               if (_usernameError != null) {
                                 return _usernameError;
@@ -475,15 +476,15 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
                           // Password Field
                           Text(
-                            'Password',
+                            AppLocalizations.of(context).set_password_password_label,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 8),
                           CustomInputField(
                             controller: _passwordController,
-                            label: 'Password',
-                            hintText: 'Enter a strong password',
+                            label: AppLocalizations.of(context).set_password_password_label,
+                            hintText: AppLocalizations.of(context).set_password_password_hint,
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -497,10 +498,10 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Password is required';
+                                return AppLocalizations.of(context).set_password_validate_password_required;
                               }
                               if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
+                                return AppLocalizations.of(context).set_password_validate_password_min;
                               }
                               return null;
                             },
@@ -510,15 +511,15 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
 
                           // Confirm Password Field
                           Text(
-                            'Confirm Password',
+                            AppLocalizations.of(context).set_password_confirm_label,
                             style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 8),
                           CustomInputField(
                             controller: _confirmPasswordController,
-                            label: 'Confirm Password',
-                            hintText: 'Re-enter your password',
+                            label: AppLocalizations.of(context).set_password_confirm_label,
+                            hintText: AppLocalizations.of(context).set_password_confirm_hint,
                             obscureText: _obscureConfirmPassword,
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -533,10 +534,10 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
-                                return 'Please confirm your password';
+                                return AppLocalizations.of(context).set_password_validate_confirm_required;
                               }
                               if (value != _passwordController.text) {
-                                return 'Passwords do not match';
+                                return AppLocalizations.of(context).set_password_validate_confirm_match;
                               }
                               return null;
                             },
@@ -547,10 +548,10 @@ class _SetPasswordScreenState extends ConsumerState<SetPasswordScreen> {
                           // Create Account Button
                           AppButton(
                             label: _isLoading
-                                ? 'Creating account...'
+                                ? AppLocalizations.of(context).set_password_creating_btn
                                 : (_cooldown > 0
-                                      ? 'Wait $_cooldown s'
-                                      : 'Create Account'),
+                                      ? AppLocalizations.of(context).set_password_wait_btn(_cooldown)
+                                      : AppLocalizations.of(context).set_password_create_btn),
                             onPressed: _isLoading || _cooldown > 0
                                 ? null
                                 : _handleSubmit,

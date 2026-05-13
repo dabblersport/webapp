@@ -5,14 +5,11 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/onboardi
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Mode for the interests selection screen
 enum InterestsSelectionMode {
@@ -63,7 +60,7 @@ class _InterestsSelectionScreenState
     if (_selectedSportIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please select at least one sport'),
+          content: Text(AppLocalizations.of(context).interests_select_one),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -184,7 +181,7 @@ class _InterestsSelectionScreenState
   }
 
   /// Build flow indicator badge for add persona mode
-  Widget _buildFlowIndicator(ThemeData theme, dynamic tokens) {
+  Widget _buildFlowIndicator(ThemeData theme, ColorScheme colorScheme) {
     final addPersonaData = ref.read(addPersonaDataProvider);
     final targetPersona = addPersonaData?.targetPersona ?? PersonaType.player;
     final isConversion = addPersonaData?.isConversion ?? false;
@@ -196,8 +193,8 @@ class _InterestsSelectionScreenState
       ),
       decoration: BoxDecoration(
         color: isConversion
-            ? tokens.main.tertiaryContainer
-            : tokens.main.primaryContainer,
+            ? colorScheme.tertiaryContainer
+            : colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -207,8 +204,8 @@ class _InterestsSelectionScreenState
             isConversion ? Icons.swap_horiz : Icons.add_circle_outline,
             size: 18,
             color: isConversion
-                ? tokens.main.onTertiaryContainer
-                : tokens.main.onPrimaryContainer,
+                ? colorScheme.onTertiaryContainer
+                : colorScheme.onPrimaryContainer,
           ),
           SizedBox(width: AppSpacing.xs),
           Text(
@@ -218,8 +215,8 @@ class _InterestsSelectionScreenState
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: isConversion
-                  ? tokens.main.onTertiaryContainer
-                  : tokens.main.onPrimaryContainer,
+                  ? colorScheme.onTertiaryContainer
+                  : colorScheme.onPrimaryContainer,
             ),
           ),
         ],
@@ -230,8 +227,7 @@ class _InterestsSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
 
     // Get persona-specific copy
     final (title, subtitle) = _getPersonaSpecificCopy();
@@ -240,8 +236,8 @@ class _InterestsSelectionScreenState
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       child: sportsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
@@ -253,7 +249,7 @@ class _InterestsSelectionScreenState
                 Text(
                   'Failed to load sports',
                   style: theme.textTheme.bodyLarge?.copyWith(
-                    color: tokens.main.onSecondaryContainer,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
                 SizedBox(height: AppSpacing.md),
@@ -276,7 +272,7 @@ class _InterestsSelectionScreenState
               children: [
                 // Flow indicator (only for add persona mode)
                 if (widget.mode == InterestsSelectionMode.addPersona) ...[
-                  _buildFlowIndicator(theme, tokens),
+                  _buildFlowIndicator(theme, colorScheme),
                   SizedBox(height: AppSpacing.lg),
                 ],
 
@@ -285,7 +281,7 @@ class _InterestsSelectionScreenState
                   title,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w800,
-                    color: tokens.main.onSecondaryContainer,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
 
@@ -296,7 +292,7 @@ class _InterestsSelectionScreenState
                   subtitle,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: tokens.main.onSecondaryContainer,
+                    color: colorScheme.onSecondaryContainer,
                   ),
                 ),
 
@@ -304,8 +300,8 @@ class _InterestsSelectionScreenState
 
                 // Available sports section
                 _SectionHeader(
-                  title: 'Available sports',
-                  tokens: tokens,
+                  title: AppLocalizations.of(context).interests_available_sports,
+                  colorScheme: colorScheme,
                   theme: theme,
                 ),
                 SizedBox(height: AppSpacing.md),
@@ -313,7 +309,7 @@ class _InterestsSelectionScreenState
                   sports: sports,
                   selectedSportIds: _selectedSportIds,
                   onToggle: _toggleSport,
-                  tokens: tokens,
+                  colorScheme: colorScheme,
                   theme: theme,
                 ),
 
@@ -324,7 +320,7 @@ class _InterestsSelectionScreenState
                   Container(
                     padding: EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
-                      color: tokens.main.surface,
+                      color: colorScheme.surface,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -332,13 +328,13 @@ class _InterestsSelectionScreenState
                         Icon(
                           Icons.check_circle,
                           size: 20,
-                          color: tokens.main.primary,
+                          color: colorScheme.primary,
                         ),
                         SizedBox(width: AppSpacing.sm),
                         Text(
                           '${_selectedSportIds.length} sport${_selectedSportIds.length > 1 ? 's' : ''} selected',
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: tokens.main.onSurface,
+                            color: colorScheme.onSurface,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -356,8 +352,8 @@ class _InterestsSelectionScreenState
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
                     shape: const StadiumBorder(),
-                    backgroundColor: tokens.main.primary,
-                    foregroundColor: tokens.main.onPrimary,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                     textStyle: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -368,7 +364,7 @@ class _InterestsSelectionScreenState
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Continue'),
+                      : Text(AppLocalizations.of(context).interests_continue),
                 ),
 
                 SizedBox(height: AppSpacing.xxl),
@@ -383,7 +379,7 @@ class _InterestsSelectionScreenState
                           : 'Back',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: tokens.main.primary,
+                        color: colorScheme.primary,
                       ),
                     ),
                   ),
@@ -402,12 +398,12 @@ class _InterestsSelectionScreenState
 // Section Header Widget
 class _SectionHeader extends StatelessWidget {
   final String title;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _SectionHeader({
     required this.title,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -417,7 +413,7 @@ class _SectionHeader extends StatelessWidget {
       title,
       style: theme.textTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w700,
-        color: tokens.main.onSecondaryContainer,
+        color: colorScheme.onSecondaryContainer,
       ),
     );
   }
@@ -428,14 +424,14 @@ class _SportsGrid extends StatelessWidget {
   final List<Sport> sports;
   final Set<String> selectedSportIds;
   final Function(String) onToggle;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _SportsGrid({
     required this.sports,
     required this.selectedSportIds,
     required this.onToggle,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -459,7 +455,7 @@ class _SportsGrid extends StatelessWidget {
           sport: sport,
           isSelected: isSelected,
           onToggle: () => onToggle(sport.id),
-          tokens: tokens,
+          colorScheme: colorScheme,
           theme: theme,
         );
       },
@@ -472,14 +468,14 @@ class _SportCard extends StatelessWidget {
   final Sport sport;
   final bool isSelected;
   final VoidCallback onToggle;
-  final dynamic tokens;
+  final ColorScheme colorScheme;
   final ThemeData theme;
 
   const _SportCard({
     required this.sport,
     required this.isSelected,
     required this.onToggle,
-    required this.tokens,
+    required this.colorScheme,
     required this.theme,
   });
 
@@ -490,12 +486,12 @@ class _SportCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: isSelected
-              ? tokens.main.primaryContainer
-              : tokens.main.primaryContainer.withOpacity(0.3),
+              ? colorScheme.primaryContainer
+              : colorScheme.primaryContainer.withValues(alpha: 0.3),
           border: Border.all(
             color: isSelected
-                ? tokens.main.primary
-                : tokens.main.outline.withOpacity(0.2),
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.2),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -513,7 +509,7 @@ class _SportCard extends StatelessWidget {
               sport.nameEn,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: tokens.main.onSurface,
+                color: colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -523,7 +519,7 @@ class _SportCard extends StatelessWidget {
             // Selection indicator
             if (isSelected) ...[
               const SizedBox(height: 4),
-              Icon(Icons.check_circle, size: 16, color: tokens.main.primary),
+              Icon(Icons.check_circle, size: 16, color: colorScheme.primary),
             ],
           ],
         ),

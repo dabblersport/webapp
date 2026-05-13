@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class RegisterScreen extends ConsumerWidget {
   const RegisterScreen({super.key});
@@ -10,7 +11,7 @@ class RegisterScreen extends ConsumerWidget {
     final state = ref.watch(registerControllerProvider);
     final controller = ref.read(registerControllerProvider.notifier);
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).register_title)),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -27,7 +28,7 @@ class RegisterScreen extends ConsumerWidget {
                   children: [
                     TextField(
                       decoration: InputDecoration(
-                        labelText: 'Email',
+                        labelText: AppLocalizations.of(context).email_input_label,
                         errorText: state.error,
                       ),
                       onChanged: controller.updateEmail,
@@ -36,7 +37,7 @@ class RegisterScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     TextField(
-                      decoration: const InputDecoration(labelText: 'Password'),
+                      decoration: InputDecoration(labelText: AppLocalizations.of(context).set_password_password_label),
                       obscureText: true,
                       onChanged: controller.updatePassword,
                       textInputAction: TextInputAction.done,
@@ -61,7 +62,7 @@ class RegisterScreen extends ConsumerWidget {
                               },
                         child: state.isLoading
                             ? const CircularProgressIndicator()
-                            : const Text('Register'),
+                            : Text(AppLocalizations.of(context).register_btn),
                       ),
                     ),
                   ],

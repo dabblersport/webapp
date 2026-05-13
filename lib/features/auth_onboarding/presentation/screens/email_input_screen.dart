@@ -10,12 +10,9 @@ import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
-import 'package:dabbler/design_system/tokens/main_dark.dart'
-    as main_dark_tokens;
-import 'package:dabbler/design_system/tokens/main_light.dart'
-    as main_light_tokens;
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class EmailInputScreen extends ConsumerStatefulWidget {
   const EmailInputScreen({super.key});
@@ -50,10 +47,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   String? _validateEmail(String? value) {
+    final l10n = AppLocalizations.of(context);
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Email is required';
+    if (email.isEmpty) return l10n.email_input_validate_required;
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      return 'Enter a valid email address';
+      return l10n.email_input_validate_invalid;
     }
     return null;
   }
@@ -114,7 +112,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         setState(() {
           _errorMessage = kDebugMode
               ? message
-              : 'An error occurred. Please try again.';
+              : AppLocalizations.of(context).email_input_error_generic;
         });
       }
       return; // Don't navigate if there's an error
@@ -130,15 +128,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
-
-    // Kept for existing widget helpers that still use ColorScheme.
     final colorScheme = theme.colorScheme;
 
     return AdaptiveAuthShell(
-      backgroundColor: tokens.main.background,
-      containerColor: tokens.main.secondaryContainer,
+      backgroundColor: colorScheme.surface,
+      containerColor: colorScheme.secondaryContainer,
       resizeToAvoidBottomInset: false,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
@@ -151,28 +145,28 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
                 children: [
                   const SizedBox(height: AppSpacing.xxxl),
                   Text(
-                    'Authenticate',
+                    AppLocalizations.of(context).email_input_title,
                     style: theme.textTheme.displayMedium?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   Text(
-                    'Enter your email to get started',
+                    AppLocalizations.of(context).email_input_subtitle,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   _buildTermsTextInline(context),
                   const SizedBox(height: AppSpacing.xxxl * 2),
                   Text(
-                    'Email',
+                    AppLocalizations.of(context).email_input_label,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: tokens.main.onSecondaryContainer,
+                      color: colorScheme.onSecondaryContainer,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -200,7 +194,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
                     child: TextButton(
                       onPressed: _isLoading ? null : _goToLogin,
                       child: Text(
-                        'Already have an account? Log in',
+                        AppLocalizations.of(context).email_input_already_account,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: colorScheme.primary,
@@ -234,18 +228,18 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   Widget _buildGoogleButton() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return FilledButton(
       onPressed: _isLoading ? null : _handleGoogleSignIn,
       style: FilledButton.styleFrom(
         backgroundColor: isDark
-            ? tokens.main.inverseSurface
-            : tokens.main.surfaceContainerLowest,
+            ? colorScheme.inverseSurface
+            : colorScheme.surfaceContainerLowest,
         foregroundColor: isDark
-            ? tokens.main.inverseOnSurface
-            : tokens.main.onSurface,
+            ? colorScheme.onInverseSurface
+            : colorScheme.onSurface,
         minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
         padding: AppButtonSize.extraLargePadding,
         shape: const StadiumBorder(),
@@ -257,7 +251,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  isDark ? tokens.main.inverseOnSurface : tokens.main.onSurface,
+                  isDark ? colorScheme.onInverseSurface : colorScheme.onSurface,
                 ),
               ),
             )
@@ -270,18 +264,18 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
                   height: AppIconSize.sm,
                   colorFilter: ColorFilter.mode(
                     isDark
-                        ? tokens.main.inverseOnSurface
-                        : tokens.main.onSurface,
+                        ? colorScheme.onInverseSurface
+                        : colorScheme.onSurface,
                     BlendMode.srcIn,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Continue with Google',
+                  AppLocalizations.of(context).email_input_btn_google,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: isDark
-                        ? tokens.main.inverseOnSurface
-                        : tokens.main.onSurface,
+                        ? colorScheme.onInverseSurface
+                        : colorScheme.onSurface,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -292,22 +286,22 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   Widget _buildAppleButton(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final tokens = isDark ? main_dark_tokens.theme : main_light_tokens.theme;
+    final colorScheme = theme.colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return FilledButton(
       onPressed: _isLoading
           ? null
           : () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Apple sign-in is coming soon.')),
+                SnackBar(content: Text(AppLocalizations.of(context).auth_welcome_apple_soon)),
               );
             },
       style: FilledButton.styleFrom(
-        backgroundColor: tokens.main.scrim,
+        backgroundColor: colorScheme.scrim,
         foregroundColor: isDark
-            ? tokens.main.onBackground
-            : tokens.main.onPrimary,
+            ? colorScheme.onSurface
+            : colorScheme.onPrimary,
         minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
         padding: AppButtonSize.extraLargePadding,
         shape: const StadiumBorder(),
@@ -320,15 +314,15 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
             width: AppIconSize.sm,
             height: AppIconSize.sm,
             colorFilter: ColorFilter.mode(
-              isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+              isDark ? colorScheme.onSurface : colorScheme.onPrimary,
               BlendMode.srcIn,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            'Continue with Apple',
+            AppLocalizations.of(context).email_input_btn_apple,
             style: theme.textTheme.titleMedium?.copyWith(
-              color: isDark ? tokens.main.onBackground : tokens.main.onPrimary,
+              color: isDark ? colorScheme.onSurface : colorScheme.onPrimary,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -414,7 +408,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Google sign-in failed. Please try again.';
+          _errorMessage = AppLocalizations.of(context).email_input_google_failed;
         });
       }
     } finally {
@@ -446,7 +440,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
-          hintText: 'email@domain.com',
+          hintText: AppLocalizations.of(context).email_input_hint,
           hintStyle: theme.textTheme.titleMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
@@ -505,7 +499,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               width: 22,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Text('Continue'),
+          : Text(AppLocalizations.of(context).email_input_continue),
     );
   }
 
@@ -518,7 +512,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       children: [
         Expanded(
           child: Text(
-            'Keep me in the loop with emails about updates & more',
+            AppLocalizations.of(context).email_input_keep_in_loop,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
@@ -552,12 +546,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           height: 1.35,
         ),
         children: [
-          const TextSpan(
-            text:
-                'By clicking Continue, you are indicating that you have read and agree to the ',
+          TextSpan(
+            text: AppLocalizations.of(context).email_input_terms_prefix,
           ),
           TextSpan(
-            text: 'Terms of Service',
+            text: AppLocalizations.of(context).email_input_terms_link,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: colorScheme.primary,
@@ -566,9 +559,9 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               ..onTap = () =>
                   _openExternalUrl('https://www.dabbler.pro/terms.html'),
           ),
-          const TextSpan(text: ' & '),
+          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
           TextSpan(
-            text: 'Privacy Policy',
+            text: AppLocalizations.of(context).email_input_privacy_link,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: colorScheme.primary,

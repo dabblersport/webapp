@@ -114,7 +114,7 @@ class _CoverImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: AspectRatio(
-        aspectRatio: 16 / 9,
+        aspectRatio: 4 / 5,
         child: Stack(
         fit: StackFit.expand,
         children: [

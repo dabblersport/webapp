@@ -1546,7 +1546,7 @@ class _NewsFilterChips extends ConsumerWidget {
           ...interestSports.map((sport) {
             final selected = state.selectedSportId == sport.id;
             return _FilterPill(
-              label: '${sport.emoji ?? ''} ${sport.nameEn}'.trim(),
+              label: '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
               selected: selected,
               onTap: () => notifier.setFilterSport(selected ? null : sport.id),
             );

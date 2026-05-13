@@ -243,7 +243,7 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
                               ),
                             if (sport.emoji != null) const SizedBox(width: 5),
                             Text(
-                              sport.nameEn,
+                              sport.localizedName(context),
                               style: tt.labelLarge?.copyWith(
                                 color: isSelected ? cs.onPrimary : cs.onSurface,
                                 fontWeight: isSelected

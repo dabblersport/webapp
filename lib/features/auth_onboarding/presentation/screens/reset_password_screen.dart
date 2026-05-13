@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import '../../../../utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -47,7 +48,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Reset Password',
+                            AppLocalizations.of(context).reset_password_title,
                             style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface,
@@ -55,7 +56,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           const SizedBox(height: 18),
                           Text(
-                            'Create a new password for your account',
+                            AppLocalizations.of(context).reset_password_subtitle,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w500,
                               color: colorScheme.onSurface,
@@ -64,7 +65,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           const SizedBox(height: 40),
                           TextFormField(
                             decoration: InputDecoration(
-                              labelText: 'New password',
+                              labelText: AppLocalizations.of(context).reset_password_new_label,
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscure1
@@ -79,10 +80,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             onChanged: (v) => _password = v,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
-                                return 'Enter a password';
+                                return AppLocalizations.of(context).reset_password_validate_enter;
                               }
                               if (v.length < 8) {
-                                return 'Use at least 8 characters';
+                                return AppLocalizations.of(context).reset_password_validate_min;
                               }
                               return null;
                             },
@@ -90,7 +91,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           const SizedBox(height: 12),
                           TextFormField(
                             decoration: InputDecoration(
-                              labelText: 'Confirm password',
+                              labelText: AppLocalizations.of(context).reset_password_confirm_label,
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscure2
@@ -105,10 +106,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             controller: _confirmController,
                             validator: (v) {
                               if (v == null || v.isEmpty) {
-                                return 'Re-enter the password';
+                                return AppLocalizations.of(context).reset_password_validate_confirm;
                               }
                               if (v != _password) {
-                                return "Passwords don't match";
+                                return AppLocalizations.of(context).reset_password_validate_match;
                               }
                               return null;
                             },
@@ -153,7 +154,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Update Password'),
+                                : Text(AppLocalizations.of(context).reset_password_update_btn),
                           ),
                           if (_error != null) ...[
                             const SizedBox(height: 12),

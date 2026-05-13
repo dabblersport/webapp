@@ -218,7 +218,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
                 emoji = '';
               } else {
                 final sport = widget.sports[index - 1];
-                label = sport.nameEn;
+                label = sport.localizedName(context);
                 emoji = sport.emoji ?? '';
               }
 

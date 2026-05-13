@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
 /// General card: clean, minimal card for system posts without a specialised kind.
 /// Uses subtle surface container styling with neutral tones.
@@ -79,10 +81,12 @@ class GeneralKindCard extends StatelessWidget {
           // ── Sport tag ──
           if (post.sport != null && post.sport!.trim().isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              post.sport!,
-              style: tt.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+            Consumer(
+              builder: (context, ref, _) => Text(
+                resolvePostSportLabel(context, ref, post),
+                style: tt.labelSmall?.copyWith(
+                  color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+                ),
               ),
             ),
           ],

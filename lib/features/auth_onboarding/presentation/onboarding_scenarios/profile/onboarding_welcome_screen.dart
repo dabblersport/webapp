@@ -6,6 +6,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/onboardi
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 enum _StepStatus { pending, running, done, error }
 
@@ -26,9 +27,9 @@ class _ProfileOnboardingWelcomeScreenState
   void initState() {
     super.initState();
     _steps = [
-      _Step('Creating your profile'),
-      _Step('Setting up your persona'),
-      _Step('Adding sport profile'),
+      const _Step(),
+      const _Step(),
+      const _Step(),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) => _runCreation());
   }
@@ -38,7 +39,7 @@ class _ProfileOnboardingWelcomeScreenState
     setState(() {
       _steps = [
         for (int j = 0; j < _steps.length; j++)
-          j == i ? _Step(_steps[j].label, status: status, errorMsg: error) : _steps[j],
+          j == i ? _Step(status: status, errorMsg: error) : _steps[j],
       ];
     });
   }
@@ -133,6 +134,12 @@ class _ProfileOnboardingWelcomeScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final labels = [
+      l10n.onboarding_welcome_step_profile,
+      l10n.onboarding_welcome_step_persona,
+      l10n.onboarding_welcome_step_sport,
+    ];
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -143,7 +150,7 @@ class _ProfileOnboardingWelcomeScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Setting up your account',
+                l10n.onboarding_welcome_title,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colorScheme.onSurface,
@@ -151,13 +158,14 @@ class _ProfileOnboardingWelcomeScreenState
               ),
               const SizedBox(height: 8),
               Text(
-                'This only takes a moment…',
+                l10n.onboarding_welcome_subtitle,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 48),
-              ..._steps.map((s) => _StepRow(step: s, colorScheme: colorScheme, theme: theme)),
+              for (int i = 0; i < _steps.length; i++)
+                _StepRow(step: _steps[i], label: labels[i], colorScheme: colorScheme, theme: theme),
             ],
           ),
         ),
@@ -167,19 +175,19 @@ class _ProfileOnboardingWelcomeScreenState
 }
 
 class _Step {
-  final String label;
   final _StepStatus status;
   final String? errorMsg;
 
-  const _Step(this.label, {this.status = _StepStatus.pending, this.errorMsg});
+  const _Step({this.status = _StepStatus.pending, this.errorMsg});
 }
 
 class _StepRow extends StatelessWidget {
   final _Step step;
+  final String label;
   final ColorScheme colorScheme;
   final ThemeData theme;
 
-  const _StepRow({required this.step, required this.colorScheme, required this.theme});
+  const _StepRow({required this.step, required this.label, required this.colorScheme, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -217,7 +225,7 @@ class _StepRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  step.label,
+                  label,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: step.status == _StepStatus.done
                         ? FontWeight.w600

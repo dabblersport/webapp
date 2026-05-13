@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dabbler/core/services/mock_localization_service.dart';
 import 'package:dabbler/core/utils/constants.dart';
 import 'package:dabbler/widgets/app_button.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
@@ -74,7 +75,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Language'),
+        title: Text(AppLocalizations.of(context).language_select_title),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -207,7 +208,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               // Continue Button
               AppButton(
                 onPressed: _isLoading ? null : _handleSubmit,
-                label: _isLoading ? 'Saving...' : 'Continue',
+                label: _isLoading ? AppLocalizations.of(context).language_select_saving : AppLocalizations.of(context).landing_continue,
               ),
 
               const SizedBox(height: 32),
