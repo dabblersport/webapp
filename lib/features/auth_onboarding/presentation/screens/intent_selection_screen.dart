@@ -3,9 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
 
 class IntentSelectionScreen extends ConsumerStatefulWidget {
   const IntentSelectionScreen({super.key});
@@ -20,35 +19,36 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   bool _isLoading = false;
   bool _isLoadingData = true;
 
-  // Persona options
-  List<Map<String, dynamic>> get _personaOptions {
-    return [
-      {
-        'value': 'compete',
-        'title': 'Compete',
-        'description': 'Join games, track your level, play regularly',
-        'icon': Icons.sports_soccer,
-      },
-      {
-        'value': 'organise',
-        'title': 'Organise',
-        'description': 'Create games, set rules, manage players',
-        'icon': Icons.event,
-      },
-      {
-        'value': 'host',
-        'title': 'Host',
-        'description': 'Manage venues, availability, and bookings',
-        'icon': Icons.stadium,
-      },
-      {
-        'value': 'socialise',
-        'title': 'Socialise',
-        'description': 'Follow sports, people, and communities',
-        'icon': Icons.groups,
-      },
-    ];
-  }
+  static const _personaOptions = [
+    _PersonaOption(
+      value: 'compete',
+      title: 'Compete',
+      description: 'Join games, track your level, play regularly',
+      icon: Icons.sports_score,
+      accent: Color(0xFFFF3376),
+    ),
+    _PersonaOption(
+      value: 'organise',
+      title: 'Organise',
+      description: 'Create games, set rules, manage players',
+      icon: Icons.groups,
+      accent: Color(0xFF7328CE),
+    ),
+    _PersonaOption(
+      value: 'host',
+      title: 'Host',
+      description: 'Manage venues, availability, and bookings',
+      icon: Icons.storefront,
+      accent: Color(0xFF00B0FF),
+    ),
+    _PersonaOption(
+      value: 'socialise',
+      title: 'Socialise',
+      description: 'Follow sports, people, and communities',
+      icon: Icons.forum,
+      accent: Color(0xFF00C853),
+    ),
+  ];
 
   @override
   void initState() {
@@ -58,23 +58,15 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
 
   Future<void> _loadExistingUserData() async {
     try {
-      // Check if we have data in onboarding provider
       final onboardingData = ref.read(onboardingDataProvider);
       if (onboardingData?.intention != null &&
           onboardingData!.intention!.isNotEmpty) {
-        // Map intention back to persona if needed
         if (onboardingData.intention == 'organise') {
-          setState(() {
-            _selectedPersona = 'organiser';
-          });
+          setState(() => _selectedPersona = 'organiser');
         }
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingData = false;
-        });
-      }
+      if (mounted) setState(() => _isLoadingData = false);
     }
   }
 
@@ -88,12 +80,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       );
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
-      // Map UI selection to persona_type (single source of truth)
-      // Database uses only persona_type: 'player', 'organiser', 'hoster', 'socialiser'
       String personaType;
       if (_selectedPersona == 'compete') {
         personaType = 'player';
@@ -102,17 +90,10 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       } else if (_selectedPersona == 'host') {
         personaType = 'hoster';
       } else {
-        // socialise
         personaType = 'socialiser';
       }
-
-      // Store persona type in onboarding provider
       ref.read(onboardingDataProvider.notifier).setIntention(personaType);
-
-      if (mounted) {
-        // Navigate to interests selection screen
-        context.push(RoutePaths.interestsSelection);
-      }
+      if (mounted) context.push(RoutePaths.interestsSelection);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,17 +101,13 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    final colorScheme = Theme.of(context).colorScheme;
     if (_isLoadingData) {
       return Scaffold(
         backgroundColor: colorScheme.surface,
@@ -140,187 +117,199 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       );
     }
 
-    return AdaptiveAuthShell(
+    return Scaffold(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.xxl),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: AppSpacing.xxxl),
-                      // Screen Title
-                      Text(
-                        'What brings you here?',
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.lg),
-                      // Headline
-                      Text(
-                        'Help us tailor Dabbler',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // Persona Options
-                      ..._personaOptions.map((option) {
-                        final isSelected = _selectedPersona == option['value'];
-
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: AppSpacing.lg),
-                          child: _PersonaCard(
-                            persona: option['value']!,
-                            title: option['title']!,
-                            description: option['description']!,
-                            icon: option['icon']!,
-                            isSelected: isSelected,
-                            onTap: () => setState(
-                              () => _selectedPersona = option['value'],
-                            ),
-                            colorScheme: colorScheme,
-                            theme: theme,
-                          ),
-                        );
-                      }),
-                      const Spacer(),
-
-                      // Continue Button
-                      FilledButton(
-                        onPressed: (_isLoading || _selectedPersona == null)
-                            ? null
-                            : _handleSubmit,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(56),
-                          shape: const StadiumBorder(),
-                          backgroundColor: colorScheme.primary,
-                          foregroundColor: colorScheme.onPrimary,
-                          textStyle: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(AppLocalizations.of(context).intent_continue),
-                      ),
-
-                      SizedBox(height: AppSpacing.lg),
-
-                      // Back Button
-                      Center(
-                        child: TextButton(
-                          onPressed: () => context.pop(),
-                          child: Text(
-                            'Back',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxxl),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _PersonaCard extends StatelessWidget {
-  final String persona;
-  final String title;
-  final String description;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  const _PersonaCard({
-    required this.persona,
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-    required this.colorScheme,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colorScheme.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            border: Border.all(
-              color: isSelected ? colorScheme.primary : colorScheme.outline,
-              width: isSelected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              //
-              Expanded(
+      body: SafeArea(
+        child: Column(
+          children: [
+            OnboardingTopBar(onBack: () => context.pop()),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? colorScheme.primary
-                            : colorScheme.onSecondaryContainer,
-                      ),
+                    const OnboardingScreenHead(
+                      eyebrow: 'Step 2 of 5',
+                      title: 'What brings you here?',
+                      subtitle:
+                          'Help us tailor Dabbler. You can pick more than one later in settings.',
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSecondaryContainer.withValues(
-                          alpha: 0.7,
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      child: Column(
+                        children: _personaOptions.map((opt) {
+                          final on = _selectedPersona == opt.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _IntentCard(
+                              option: opt,
+                              selected: on,
+                              onTap: () =>
+                                  setState(() => _selectedPersona = opt.value),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
+            OnboardingBottomBar(
+              child: OnboardingCTAButton(
+                label: AppLocalizations.of(context).intent_continue,
+                onPressed: (_isLoading || _selectedPersona == null)
+                    ? null
+                    : _handleSubmit,
+                isLoading: _isLoading,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PersonaOption {
+  final String value;
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color accent;
+
+  const _PersonaOption({
+    required this.value,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.accent,
+  });
+}
+
+class _IntentCard extends StatelessWidget {
+  const _IntentCard({
+    required this.option,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _PersonaOption option;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: selected
+              ? option.accent.withValues(alpha: 0.08)
+              : colorScheme.surfaceContainerLowest,
+          border: Border.all(
+            color: selected ? option.accent : colorScheme.outlineVariant,
+            width: selected ? 2 : 1.5,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: option.accent.withValues(alpha: 0.25),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                color: selected ? null : option.accent.withValues(alpha: 0.10),
+                gradient: selected
+                    ? LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          option.accent,
+                          option.accent.withValues(alpha: 0.8),
+                        ],
+                      )
+                    : null,
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: option.accent.withValues(alpha: 0.45),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(
+                option.icon,
+                size: 26,
+                color: selected ? colorScheme.onPrimary : option.accent,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    option.title,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: colorScheme.onSurface,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    option.description,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? option.accent : Colors.transparent,
+                border: selected
+                    ? null
+                    : Border.all(color: colorScheme.outline, width: 1.5),
+              ),
+              child: selected
+                  ? Icon(Icons.check, size: 14, color: colorScheme.onPrimary)
+                  : null,
+            ),
+          ],
         ),
       ),
     );

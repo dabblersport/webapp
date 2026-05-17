@@ -13,6 +13,9 @@ import 'package:dabbler/features/activities/presentation/providers/activity_prov
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/notifications/utils/notification_localizer.dart';
+import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
 
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
@@ -53,8 +56,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final userId = _authService.getCurrentUserId();
 
     if (userId == null) {
-      return const Scaffold(
-        body: Center(child: Text('Please sign in to view notifications')),
+      return Scaffold(
+        body: Center(child: Text(AppLocalizations.of(context).notif_signin_required)),
       );
     }
 
@@ -149,7 +152,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         slivers: [
           SliverToBoxAdapter(
             child: _TopBar(
-              title: isNotif ? 'Notifications' : 'Activity log',
+              title: isNotif ? AppLocalizations.of(context).notif_title_notifications : AppLocalizations.of(context).notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
             ),
@@ -209,33 +212,34 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   List<_ChipData> _notifChips(dynamic state) {
     final notifs = (state.notifications as List<AppNotification>);
+    final l10n = AppLocalizations.of(context);
     int countOf(bool Function(AppNotification) test) =>
         notifs.where((n) => !n.isRead && test(n)).length;
     return [
-      _ChipData('all', 'All', Iconsax.message_copy, count: state.unreadCount),
+      _ChipData('all', l10n.notif_chip_all, Iconsax.message_copy, count: state.unreadCount),
       _ChipData(
         'games',
-        'Games',
+        l10n.notif_chip_games,
         Iconsax.game_copy,
         count: countOf((n) => n.kindKey.startsWith('game')),
       ),
       _ChipData(
         'bookings',
-        'Bookings',
+        l10n.notif_chip_bookings,
         Iconsax.calendar_copy,
         count: countOf((n) =>
             n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena')),
       ),
       _ChipData(
         'social',
-        'Social',
+        l10n.notif_chip_social,
         Iconsax.people_copy,
         count: countOf((n) =>
             n.kindKey.startsWith('social') || n.kindKey.startsWith('friend')),
       ),
       _ChipData(
         'achieve',
-        'Achievements',
+        l10n.notif_chip_achievements,
         Iconsax.cup_copy,
         count: countOf((n) =>
             n.kindKey.startsWith('achievement') ||
@@ -245,15 +249,18 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     ];
   }
 
-  List<_ChipData> _activityChips() => const [
-        _ChipData('all', 'All', Iconsax.activity_copy),
-        _ChipData('me', 'You', Iconsax.edit_copy),
-        _ChipData('game', 'Games', Iconsax.game_copy),
-        _ChipData('booking', 'Bookings', Iconsax.calendar_copy),
-        _ChipData('social', 'Social', Iconsax.people_copy),
-        _ChipData('reward', 'Rewards', Iconsax.coin_copy),
-        _ChipData('security', 'Security', Iconsax.security_copy),
-      ];
+  List<_ChipData> _activityChips() {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _ChipData('all', l10n.notif_chip_all, Iconsax.activity_copy),
+      _ChipData('me', l10n.notif_chip_you, Iconsax.edit_copy),
+      _ChipData('game', l10n.notif_chip_games, Iconsax.game_copy),
+      _ChipData('booking', l10n.notif_chip_bookings, Iconsax.calendar_copy),
+      _ChipData('social', l10n.notif_chip_social, Iconsax.people_copy),
+      _ChipData('reward', l10n.notif_chip_rewards, Iconsax.coin_copy),
+      _ChipData('security', l10n.notif_chip_security, Iconsax.security_copy),
+    ];
+  }
 
   List<Widget> _buildNotificationsSlivers(String userId, dynamic state) {
     if (state.isLoading && state.notifications.isEmpty) {
@@ -291,11 +298,17 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     }
 
     final widgets = <Widget>[];
-    for (final label in const ['Today', 'Yesterday', 'Earlier']) {
-      final items = groups[label];
+    final l10n = AppLocalizations.of(context);
+    final bucketLabels = <String, String>{
+      'today': l10n.notif_section_today,
+      'yesterday': l10n.notif_section_yesterday,
+      'earlier': l10n.notif_section_earlier,
+    };
+    for (final key in const ['today', 'yesterday', 'earlier']) {
+      final items = groups[key];
       if (items == null || items.isEmpty) continue;
       widgets.add(SliverToBoxAdapter(
-        child: _SectionHeader(title: label, count: items.length),
+        child: _SectionHeader(title: bucketLabels[key]!, count: items.length),
       ));
       widgets.add(SliverList.builder(
         itemCount: items.length,
@@ -335,9 +348,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final today = DateTime(now.year, now.month, now.day);
     final dtDay = DateTime(dt.year, dt.month, dt.day);
     final diffDays = today.difference(dtDay).inDays;
-    if (diffDays <= 0) return 'Today';
-    if (diffDays == 1) return 'Yesterday';
-    return 'Earlier';
+    if (diffDays <= 0) return 'today';
+    if (diffDays == 1) return 'yesterday';
+    return 'earlier';
   }
 
   List<Widget> _buildActivitySlivers(dynamic state) {
@@ -386,31 +399,12 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final today = DateTime(now.year, now.month, now.day);
     final d = DateTime(dt.year, dt.month, dt.day);
     final diff = today.difference(d).inDays;
-    final weekday = const [
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun',
-    ][dt.weekday - 1];
-    final month = const [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ][dt.month - 1];
-    if (diff == 0) return 'Today · $weekday ${dt.day} $month';
-    if (diff == 1) return 'Yesterday · $weekday ${dt.day} $month';
+    final l10n = AppLocalizations.of(context);
+    final localeCode = Localizations.localeOf(context).languageCode;
+    final weekday = DateFormat.E(localeCode).format(dt);
+    final month = DateFormat.MMM(localeCode).format(dt);
+    if (diff == 0) return '${l10n.notif_section_today} · $weekday ${dt.day} $month';
+    if (diff == 1) return '${l10n.notif_section_yesterday} · $weekday ${dt.day} $month';
     return '$weekday ${dt.day} $month';
   }
 
@@ -905,7 +899,7 @@ class _UnreadCounterRow extends StatelessWidget {
                 color: scheme.primary,
               ),
               label: Text(
-                'Mark all read',
+                AppLocalizations.of(context).notif_mark_all_read,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -1009,26 +1003,13 @@ class _NotificationRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.4,
-                        color: cs.onSurface
-                            .withValues(alpha: unread ? 1 : 0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                      children: [
-                        if (actor != null)
-                          TextSpan(
-                            text: '$actor ',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                        TextSpan(text: notification.title),
-                      ],
+                  Text(
+                    localizedNotificationTitle(context, notification),
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: cs.onSurface.withValues(alpha: unread ? 1 : 0.7),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   if (notification.body != null &&
@@ -1050,7 +1031,7 @@ class _NotificationRow extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        _formatTime(notification.createdAt),
+                        _formatTime(context, notification.createdAt),
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
@@ -1058,7 +1039,7 @@ class _NotificationRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      if (_actionLabelFor(notification.kindKey) != null)
+                      if (_actionLabelFor(context, notification.kindKey) != null)
                         _quickAction(context, notification),
                     ],
                   ),
@@ -1091,7 +1072,7 @@ class _NotificationRow extends StatelessWidget {
   Widget _quickAction(BuildContext context, AppNotification n) {
     final cs = context.colorScheme;
     final scheme = context.getCategoryTheme('main');
-    final label = _actionLabelFor(n.kindKey)!;
+    final label = _actionLabelFor(context, n.kindKey)!;
     final isPrimary =
         n.kindKey.contains('invited') || n.kindKey.contains('reminder');
     return Container(
@@ -1117,11 +1098,12 @@ class _NotificationRow extends StatelessWidget {
     );
   }
 
-  String? _actionLabelFor(String kindKey) {
-    if (kindKey.startsWith('friend.requested')) return 'Respond';
-    if (kindKey.startsWith('social.followed')) return 'Follow back';
-    if (kindKey.startsWith('game.invited')) return 'View';
-    if (kindKey.startsWith('social.circle_joined')) return 'See circle';
+  String? _actionLabelFor(BuildContext context, String kindKey) {
+    final l10n = AppLocalizations.of(context);
+    if (kindKey.startsWith('friend.requested')) return l10n.notif_action_respond;
+    if (kindKey.startsWith('social.followed')) return l10n.notif_action_follow_back;
+    if (kindKey.startsWith('game.invited')) return l10n.notif_action_view;
+    if (kindKey.startsWith('social.circle_joined')) return l10n.notif_action_see_circle;
     return null;
   }
 
@@ -1258,7 +1240,7 @@ class _ActivitySummaryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LAST 7 DAYS',
+                    AppLocalizations.of(context).activity_last_7_days,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -1307,7 +1289,7 @@ class _ActivitySummaryCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        label: 'day streak',
+                        label: AppLocalizations.of(context).activity_day_streak,
                       ),
                     ],
                   ),
@@ -1488,7 +1470,7 @@ class _ActivitySearchRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Search activity…',
+                    AppLocalizations.of(context).activity_search_hint,
                     style: TextStyle(
                       fontSize: 13,
                       color: cs.onSurface.withValues(alpha: 0.45),
@@ -1621,10 +1603,10 @@ class _ActivityRow extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (_activityMeta(event) != null) ...[
+                        if (_activityMeta(context, event) != null) ...[
                           const SizedBox(height: 5),
                           Text(
-                            _activityMeta(event)!,
+                            _activityMeta(context, event)!,
                             style: TextStyle(
                               fontSize: 12.5,
                               height: 1.45,
@@ -1632,7 +1614,7 @@ class _ActivityRow extends StatelessWidget {
                             ),
                           ),
                         ],
-                        if (_activityPill(event) != null ||
+                        if (_activityPill(context, event) != null ||
                             event.timeBucket != 'past') ...[
                           const SizedBox(height: 8),
                           Wrap(
@@ -1640,15 +1622,15 @@ class _ActivityRow extends StatelessWidget {
                             runSpacing: 6,
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              if (_activityPill(event) != null)
+                              if (_activityPill(context, event) != null)
                                 _Pill(
-                                  label: _activityPill(event)!,
+                                  label: _activityPill(context, event)!,
                                   color: visual.color,
                                 ),
                               if (event.timeBucket == 'upcoming')
-                                _Pill(label: 'Upcoming', color: cs.primary),
+                                _Pill(label: AppLocalizations.of(context).activity_pill_upcoming, color: cs.primary),
                               if (event.timeBucket == 'present')
-                                _Pill(label: 'Live', color: cs.error),
+                                _Pill(label: AppLocalizations.of(context).activity_pill_live, color: cs.error),
                             ],
                           ),
                         ],
@@ -1672,7 +1654,7 @@ class _ActivityRow extends StatelessWidget {
     return '${verb[0].toUpperCase()}${verb.substring(1)} $subj';
   }
 
-  String? _activityMeta(ActivityFeedEvent a) {
+  String? _activityMeta(BuildContext context, ActivityFeedEvent a) {
     final p = a.payload ?? {};
     final parts = <String>[];
     for (final key in const [
@@ -1689,17 +1671,18 @@ class _ActivityRow extends StatelessWidget {
     }
     if (p['location'] is String) parts.add('at ${p['location']}');
     if (p['participants_count'] != null) {
-      parts.add('${p['participants_count']} participants');
+      parts.add(AppLocalizations.of(context).activity_participants_count(p['participants_count'] as int));
     }
     if (parts.isEmpty) return null;
     return parts.join(' · ');
   }
 
-  String? _activityPill(ActivityFeedEvent a) {
+  String? _activityPill(BuildContext context, ActivityFeedEvent a) {
     final p = a.payload ?? {};
     if (p['pill'] is String) return p['pill'] as String;
-    if (a.subjectType == 'reward') return 'Reward';
-    if (a.subjectType == 'security') return 'Security';
+    final l10n = AppLocalizations.of(context);
+    if (a.subjectType == 'reward') return l10n.activity_subject_reward;
+    if (a.subjectType == 'security') return l10n.activity_subject_security;
     return null;
   }
 
@@ -1788,7 +1771,7 @@ class _ActivitySecurityFooter extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'All activity looks normal',
+                    AppLocalizations.of(context).activity_all_normal_title,
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w700,
@@ -1804,12 +1787,11 @@ class _ActivitySecurityFooter extends StatelessWidget {
                         color: cs.onSurface.withValues(alpha: 0.65),
                       ),
                       children: [
-                        const TextSpan(
-                          text:
-                              'No unusual sign-ins or device changes in the past 30 days. ',
+                        TextSpan(
+                          text: AppLocalizations.of(context).activity_all_normal_body,
                         ),
                         TextSpan(
-                          text: 'Manage devices →',
+                          text: AppLocalizations.of(context).activity_manage_devices,
                           style: TextStyle(
                             color: cs.primary,
                             fontWeight: FontWeight.w700,
@@ -1851,7 +1833,7 @@ class _LoadMoreButton extends StatelessWidget {
             ),
           ),
           child: Text(
-            'Load older',
+            AppLocalizations.of(context).notif_load_older,
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
@@ -1881,7 +1863,7 @@ class _NotifEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No notifications yet',
+            AppLocalizations.of(context).notif_empty_no_notifications,
             style: context.textTheme.headlineSmall?.copyWith(
               color: cs.onSurface,
               fontWeight: FontWeight.w700,
@@ -1889,7 +1871,7 @@ class _NotifEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            "We'll notify you when something happens",
+            AppLocalizations.of(context).notif_empty_subtitle,
             textAlign: TextAlign.center,
             style: context.textTheme.bodyMedium?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.6),
@@ -1918,7 +1900,7 @@ class _ActivityEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'No activity yet',
+            AppLocalizations.of(context).activity_empty_no_activity,
             style: context.textTheme.headlineSmall?.copyWith(
               color: cs.onSurface,
               fontWeight: FontWeight.w700,
@@ -1926,7 +1908,7 @@ class _ActivityEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your activity will appear here',
+            AppLocalizations.of(context).activity_empty_subtitle,
             textAlign: TextAlign.center,
             style: context.textTheme.bodyMedium?.copyWith(
               color: cs.onSurface.withValues(alpha: 0.6),
@@ -1953,22 +1935,23 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text('Error: $message', textAlign: TextAlign.center),
+            child: Text(AppLocalizations.of(context).notif_error_prefix(message), textAlign: TextAlign.center),
           ),
           const SizedBox(height: 12),
-          TextButton(onPressed: onRetry, child: const Text('Retry')),
+          TextButton(onPressed: onRetry, child: Text(AppLocalizations.of(context).notif_btn_retry)),
         ],
       ),
     );
   }
 }
 
-String _formatTime(DateTime dateTime) {
+String _formatTime(BuildContext context, DateTime dateTime) {
+  final l10n = AppLocalizations.of(context);
   final now = DateTime.now();
   final diff = now.difference(dateTime);
-  if (diff.inMinutes < 1) return 'Just now';
-  if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-  if (diff.inDays < 1) return '${diff.inHours}h ago';
-  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  if (diff.inMinutes < 1) return l10n.time_just_now;
+  if (diff.inHours < 1) return l10n.time_minutes_ago(diff.inMinutes);
+  if (diff.inDays < 1) return l10n.time_hours_ago(diff.inHours);
+  if (diff.inDays < 7) return l10n.time_days_ago(diff.inDays);
   return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
 }

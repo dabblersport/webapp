@@ -44,6 +44,20 @@ class _ProfileOnboardingWelcomeScreenState
     });
   }
 
+  String _friendlyError(Object e) {
+    final raw = e.toString();
+    if (raw.contains('country_fkey') || raw.contains('profiles_country_fkey')) {
+      return 'The selected country isn\'t supported yet. Please go back and choose a different country.';
+    }
+    if (raw.contains('username') && (raw.contains('unique') || raw.contains('23505'))) {
+      return 'That username is already taken. Please go back and choose a different one.';
+    }
+    if (raw.contains('23503')) {
+      return 'Some information couldn\'t be saved. Please go back and check your details.';
+    }
+    return 'Something went wrong. Please try again.';
+  }
+
   Future<void> _runCreation() async {
     if (_didStart) return;
     _didStart = true;
@@ -80,7 +94,7 @@ class _ProfileOnboardingWelcomeScreenState
       );
       _setStep(0, _StepStatus.done);
     } catch (e) {
-      _setStep(0, _StepStatus.error, error: e.toString());
+      _setStep(0, _StepStatus.error, error: _friendlyError(e));
       return;
     }
 
@@ -93,7 +107,7 @@ class _ProfileOnboardingWelcomeScreenState
       );
       _setStep(1, _StepStatus.done);
     } catch (e) {
-      _setStep(1, _StepStatus.error, error: e.toString());
+      _setStep(1, _StepStatus.error, error: _friendlyError(e));
       return;
     }
 
@@ -105,7 +119,7 @@ class _ProfileOnboardingWelcomeScreenState
       }
       _setStep(2, _StepStatus.done);
     } catch (e) {
-      _setStep(2, _StepStatus.error, error: e.toString());
+      _setStep(2, _StepStatus.error, error: _friendlyError(e));
       return;
     }
 

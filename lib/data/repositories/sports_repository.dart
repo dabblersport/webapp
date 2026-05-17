@@ -18,7 +18,8 @@ class SportsRepository extends BaseRepository {
   });
 
   /// Active sports whose popularity_countries array contains [countryCode].
-  /// Falls back to all active sports when countryCode is null or unmatched.
+  /// Falls back to is_active only when country detection failed (null/empty).
+  /// When a country IS known, only country-matched active sports are returned.
   Future<Result<List<Sport>, Failure>> getActiveSportsForCountry(
     String? countryCode,
   ) =>
@@ -36,16 +37,6 @@ class SportsRepository extends BaseRepository {
             .eq('is_active', true)
             .contains('popularity_countries', [countryCode])
             .order('name_en');
-
-        // Fall back to all active sports if no results for this country
-        if (rows.isEmpty) {
-          final fallback = await svc.client
-              .from('sports')
-              .select()
-              .eq('is_active', true)
-              .order('name_en');
-          return fallback.map((r) => Sport.fromMap(r)).toList();
-        }
 
         return rows.map((r) => Sport.fromMap(r)).toList();
       });

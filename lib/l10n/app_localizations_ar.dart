@@ -131,13 +131,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_welcome_get_started_subtitle => 'أنشئ حساب أو سجّل دخولك';
 
   @override
-  String get auth_welcome_btn_google => 'كمّل عبر Google';
+  String get auth_welcome_btn_google => 'متابعه عبر Google';
 
   @override
-  String get auth_welcome_btn_apple => 'كمّل عبر Apple';
+  String get auth_welcome_btn_apple => 'متابعه عبر Apple';
 
   @override
-  String get auth_welcome_btn_email => 'كمّل عبر الإيميل';
+  String get auth_welcome_btn_email => 'متابعه عبر الإيميل';
 
   @override
   String get auth_welcome_btn_login => 'عندك حساب بالفعل؟ سجّل دخولك';
@@ -168,7 +168,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'دابلر بيربط اللاعبين والكابتنية والملاعب — وقّف تدور وابدأ تلعب';
 
   @override
-  String get landing_continue => 'كمّل';
+  String get landing_continue => 'متابعه';
 
   @override
   String get landing_choose_language => 'اختار اللغة';
@@ -186,7 +186,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email_input_hint => 'email@domain.com';
 
   @override
-  String get email_input_continue => 'كمّل';
+  String get email_input_continue => 'متابعه';
 
   @override
   String get email_input_keep_in_loop => 'خليني على اطلاع بتحديثات وأخبار';
@@ -195,13 +195,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email_input_already_account => 'عندك حساب بالفعل؟ سجّل دخولك';
 
   @override
-  String get email_input_btn_google => 'كمّل عبر Google';
+  String get email_input_btn_google => 'متابعه عبر Google';
 
   @override
-  String get email_input_btn_apple => 'كمّل عبر Apple';
+  String get email_input_btn_apple => 'متابعه عبر Apple';
 
   @override
-  String get email_input_terms_prefix => 'بالضغط على كمّل، إنت بتوافق على ';
+  String get email_input_terms_prefix => 'بالضغط على متابعه، إنت بتوافق على ';
 
   @override
   String get email_input_terms_link => 'شروط الخدمة';
@@ -242,10 +242,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email_password_login_btn => 'دخول';
 
   @override
-  String get email_password_btn_google => 'كمّل عبر Google';
+  String get email_password_btn_google => 'متابعه عبر Google';
 
   @override
-  String get email_password_btn_apple => 'كمّل عبر Apple';
+  String get email_password_btn_apple => 'متابعه عبر Apple';
 
   @override
   String get email_password_hint_email => 'email@domain.com';
@@ -366,7 +366,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get otp_verify_change_phone => 'غيّر الموبايل';
 
   @override
-  String get otp_verify_continue => 'كمّل';
+  String get otp_verify_continue => 'متابعه';
 
   @override
   String get otp_verify_didnt_get => 'ما وصلكش الكود؟ ';
@@ -529,7 +529,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get create_info_gender => 'الجنس';
 
   @override
-  String get create_info_continue => 'كمّل';
+  String get create_info_continue => 'متابعه';
 
   @override
   String get create_info_error_fill_required => 'إملا كل الحقول المطلوبة صح';
@@ -678,7 +678,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get intent_socialise_desc => 'تابع رياضات وناس ومجتمعات';
 
   @override
-  String get intent_continue => 'كمّل';
+  String get intent_continue => 'متابعه';
 
   @override
   String get intent_back => 'ارجع';
@@ -718,7 +718,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get interests_continue => 'كمّل';
+  String get interests_continue => 'متابعه';
 
   @override
   String get interests_back => 'ارجع';
@@ -749,7 +749,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get primary_sport_badge => 'أساسية';
 
   @override
-  String get primary_sport_continue => 'كمّل';
+  String get primary_sport_continue => 'متابعه';
 
   @override
   String get primary_sport_back => 'ارجع';
@@ -784,13 +784,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get identity_verify_continue_sending => 'بيتبعت...';
 
   @override
-  String get identity_verify_continue => 'كمّل';
+  String get identity_verify_continue => 'متابعه';
 
   @override
   String get identity_verify_or => 'أو';
 
   @override
-  String get identity_verify_google_btn => 'كمّل عبر Google';
+  String get identity_verify_google_btn => 'متابعه عبر Google';
 
   @override
   String get identity_verify_terms_prefix => 'بالكمال، إنت بتوافق على ';
@@ -852,7 +852,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcome_screen_dont_forget => 'متنساش';
 
   @override
-  String get welcome_screen_continue => 'كمّل';
+  String get welcome_screen_continue => 'متابعه';
 
   @override
   String get welcome_screen_chip_player => 'لاعب رياضي';
@@ -1021,7 +1021,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get social_onboarding_friends_skip => 'تخطّي';
 
   @override
-  String get social_onboarding_friends_continue => 'كمّل';
+  String get social_onboarding_friends_continue => 'متابعه';
 
   @override
   String social_onboarding_friends_send_requests(int count) {
@@ -1112,7 +1112,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get social_onboarding_privacy_back => 'ارجع';
 
   @override
-  String get social_onboarding_privacy_continue => 'كمّل';
+  String get social_onboarding_privacy_continue => 'متابعه';
 
   @override
   String get social_onboarding_complete_title => 'أهلاً بيك في السوشيال!';
@@ -1396,7 +1396,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_btn_cancel => 'إلغاء';
 
   @override
-  String get profile_btn_continue => 'كمّل';
+  String get profile_btn_continue => 'متابعه';
 
   @override
   String get profile_persona_convert_badge => 'تحويل';
@@ -1548,4 +1548,236 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get user_profile_cannot_message_blocked => 'مقدرش تراسل مستخدم محظور';
+
+  @override
+  String get notif_signin_required => 'سجّل دخولك عشان تشوف الإشعارات';
+
+  @override
+  String get notif_title_notifications => 'الإشعارات';
+
+  @override
+  String get notif_title_activity_log => 'سجل النشاط';
+
+  @override
+  String get notif_chip_all => 'الكل';
+
+  @override
+  String get notif_chip_games => 'ماتشات';
+
+  @override
+  String get notif_chip_bookings => 'حجوزات';
+
+  @override
+  String get notif_chip_social => 'سوشيال';
+
+  @override
+  String get notif_chip_achievements => 'إنجازات';
+
+  @override
+  String get notif_chip_you => 'إنت';
+
+  @override
+  String get notif_chip_rewards => 'مكافآت';
+
+  @override
+  String get notif_chip_security => 'الأمان';
+
+  @override
+  String get notif_section_today => 'النهارده';
+
+  @override
+  String get notif_section_yesterday => 'إمبارح';
+
+  @override
+  String get notif_section_earlier => 'قبل كده';
+
+  @override
+  String get notif_mark_all_read => 'علّم الكل كمقروء';
+
+  @override
+  String get notif_action_respond => 'رد';
+
+  @override
+  String get notif_action_follow_back => 'تابعه أنت كمان';
+
+  @override
+  String get notif_action_view => 'اعرض';
+
+  @override
+  String get notif_action_see_circle => 'شوف الـ Circle';
+
+  @override
+  String get notif_load_older => 'حمّل أقدم';
+
+  @override
+  String get notif_empty_no_notifications => 'مفيش إشعارات لسه';
+
+  @override
+  String get notif_empty_subtitle => 'هنبلّغك لما يحصل أي حاجة';
+
+  @override
+  String get notif_btn_retry => 'حاول تاني';
+
+  @override
+  String notif_error_prefix(String message) {
+    return 'خطأ: $message';
+  }
+
+  @override
+  String get activity_last_7_days => 'آخر ٧ أيام';
+
+  @override
+  String get activity_search_hint => 'دوّر في النشاط…';
+
+  @override
+  String get activity_pill_upcoming => 'قريّب';
+
+  @override
+  String get activity_pill_live => 'لايڤ';
+
+  @override
+  String get activity_subject_reward => 'مكافأة';
+
+  @override
+  String get activity_subject_security => 'الأمان';
+
+  @override
+  String get activity_all_normal_title => 'كل النشاط طبيعي';
+
+  @override
+  String get activity_all_normal_body =>
+      'مفيش تسجيلات دخول غريبة أو تغييرات في الأجهزة في آخر ٣٠ يوم. ';
+
+  @override
+  String get activity_manage_devices => 'إدارة الأجهزة ←';
+
+  @override
+  String get activity_empty_no_activity => 'مفيش نشاط لسه';
+
+  @override
+  String get activity_empty_subtitle => 'نشاطك هيظهر هنا';
+
+  @override
+  String get activity_day_streak => 'يوم متواصل';
+
+  @override
+  String activity_participants_count(int count) {
+    return '$count مشارك';
+  }
+
+  @override
+  String get time_just_now => 'دلوقتي';
+
+  @override
+  String time_minutes_ago(int n) {
+    return 'من $nد';
+  }
+
+  @override
+  String time_hours_ago(int n) {
+    return 'من $nس';
+  }
+
+  @override
+  String time_days_ago(int n) {
+    return 'من $nي';
+  }
+
+  @override
+  String notif_kind_friend_requested(String actor) {
+    return '$actor بعتلك طلب صداقة';
+  }
+
+  @override
+  String get notif_kind_friend_requested_anon => 'عندك طلب صداقة جديد';
+
+  @override
+  String notif_kind_friend_accepted(String actor) {
+    return '$actor قبل طلب الصداقة';
+  }
+
+  @override
+  String get notif_kind_friend_accepted_anon => 'طلب الصداقة بتاعك اتقبل';
+
+  @override
+  String notif_kind_social_followed(String actor) {
+    return '$actor بدأ يتابعك';
+  }
+
+  @override
+  String get notif_kind_social_followed_anon => 'عندك متابع جديد';
+
+  @override
+  String notif_kind_social_circle_joined(String actor) {
+    return '$actor انضم لـ Circle بتاعك';
+  }
+
+  @override
+  String get notif_kind_social_circle_joined_anon => 'حد انضم لـ Circle بتاعك';
+
+  @override
+  String notif_kind_social_post_liked(String actor) {
+    return '$actor عجبه بوستك';
+  }
+
+  @override
+  String get notif_kind_social_post_liked_anon => 'حد عجبه بوستك';
+
+  @override
+  String notif_kind_social_post_commented(String actor) {
+    return '$actor علّق على بوستك';
+  }
+
+  @override
+  String get notif_kind_social_post_commented_anon => 'تعليق جديد على بوستك';
+
+  @override
+  String notif_kind_social_comment_liked(String actor) {
+    return '$actor عجبه تعليقك';
+  }
+
+  @override
+  String get notif_kind_social_comment_liked_anon => 'حد عجبه تعليقك';
+
+  @override
+  String notif_kind_social_mentioned(String actor) {
+    return '$actor منشن عليك';
+  }
+
+  @override
+  String get notif_kind_social_mentioned_anon => 'اتعمل منشن عليك';
+
+  @override
+  String notif_kind_game_invited(String actor) {
+    return '$actor دعاك لماتش';
+  }
+
+  @override
+  String get notif_kind_game_invited_anon => 'عندك دعوة ماتش جديدة';
+
+  @override
+  String get notif_kind_game_updated => 'تفاصيل الماتش اتغيرت';
+
+  @override
+  String notif_kind_game_join_request(String actor) {
+    return '$actor طلب ينضم لماتشك';
+  }
+
+  @override
+  String get notif_kind_game_join_request_anon => 'حد طلب ينضم لماتشك';
+
+  @override
+  String get notif_kind_game_waitlist_promoted => 'أنت داخل! اتفتح مكان';
+
+  @override
+  String get notif_kind_game_reminder => 'تذكير بالماتش';
+
+  @override
+  String get notif_kind_arena_payment_required => 'محتاج تدفع لحجزك';
+
+  @override
+  String get notif_kind_reward_badge_awarded => 'حصلت على بادج جديد';
+
+  @override
+  String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
 }

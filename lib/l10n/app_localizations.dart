@@ -2893,6 +2893,408 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cannot message a blocked user'**
   String get user_profile_cannot_message_blocked;
+
+  /// No description provided for @notif_signin_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to view notifications'**
+  String get notif_signin_required;
+
+  /// No description provided for @notif_title_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notif_title_notifications;
+
+  /// No description provided for @notif_title_activity_log.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity log'**
+  String get notif_title_activity_log;
+
+  /// No description provided for @notif_chip_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get notif_chip_all;
+
+  /// No description provided for @notif_chip_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get notif_chip_games;
+
+  /// No description provided for @notif_chip_bookings.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get notif_chip_bookings;
+
+  /// No description provided for @notif_chip_social.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get notif_chip_social;
+
+  /// No description provided for @notif_chip_achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get notif_chip_achievements;
+
+  /// No description provided for @notif_chip_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get notif_chip_you;
+
+  /// No description provided for @notif_chip_rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get notif_chip_rewards;
+
+  /// No description provided for @notif_chip_security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get notif_chip_security;
+
+  /// No description provided for @notif_section_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notif_section_today;
+
+  /// No description provided for @notif_section_yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notif_section_yesterday;
+
+  /// No description provided for @notif_section_earlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get notif_section_earlier;
+
+  /// No description provided for @notif_mark_all_read.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all read'**
+  String get notif_mark_all_read;
+
+  /// No description provided for @notif_action_respond.
+  ///
+  /// In en, this message translates to:
+  /// **'Respond'**
+  String get notif_action_respond;
+
+  /// No description provided for @notif_action_follow_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow back'**
+  String get notif_action_follow_back;
+
+  /// No description provided for @notif_action_view.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get notif_action_view;
+
+  /// No description provided for @notif_action_see_circle.
+  ///
+  /// In en, this message translates to:
+  /// **'See circle'**
+  String get notif_action_see_circle;
+
+  /// No description provided for @notif_load_older.
+  ///
+  /// In en, this message translates to:
+  /// **'Load older'**
+  String get notif_load_older;
+
+  /// No description provided for @notif_empty_no_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notif_empty_no_notifications;
+
+  /// No description provided for @notif_empty_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll notify you when something happens'**
+  String get notif_empty_subtitle;
+
+  /// No description provided for @notif_btn_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get notif_btn_retry;
+
+  /// No description provided for @notif_error_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String notif_error_prefix(String message);
+
+  /// No description provided for @activity_last_7_days.
+  ///
+  /// In en, this message translates to:
+  /// **'LAST 7 DAYS'**
+  String get activity_last_7_days;
+
+  /// No description provided for @activity_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search activity…'**
+  String get activity_search_hint;
+
+  /// No description provided for @activity_pill_upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get activity_pill_upcoming;
+
+  /// No description provided for @activity_pill_live.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get activity_pill_live;
+
+  /// No description provided for @activity_subject_reward.
+  ///
+  /// In en, this message translates to:
+  /// **'Reward'**
+  String get activity_subject_reward;
+
+  /// No description provided for @activity_subject_security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get activity_subject_security;
+
+  /// No description provided for @activity_all_normal_title.
+  ///
+  /// In en, this message translates to:
+  /// **'All activity looks normal'**
+  String get activity_all_normal_title;
+
+  /// No description provided for @activity_all_normal_body.
+  ///
+  /// In en, this message translates to:
+  /// **'No unusual sign-ins or device changes in the past 30 days. '**
+  String get activity_all_normal_body;
+
+  /// No description provided for @activity_manage_devices.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage devices →'**
+  String get activity_manage_devices;
+
+  /// No description provided for @activity_empty_no_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get activity_empty_no_activity;
+
+  /// No description provided for @activity_empty_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your activity will appear here'**
+  String get activity_empty_subtitle;
+
+  /// No description provided for @activity_day_streak.
+  ///
+  /// In en, this message translates to:
+  /// **'day streak'**
+  String get activity_day_streak;
+
+  /// No description provided for @activity_participants_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} participants'**
+  String activity_participants_count(int count);
+
+  /// No description provided for @time_just_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get time_just_now;
+
+  /// No description provided for @time_minutes_ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}m ago'**
+  String time_minutes_ago(int n);
+
+  /// No description provided for @time_hours_ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h ago'**
+  String time_hours_ago(int n);
+
+  /// No description provided for @time_days_ago.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d ago'**
+  String time_days_ago(int n);
+
+  /// No description provided for @notif_kind_friend_requested.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} sent you a friend request'**
+  String notif_kind_friend_requested(String actor);
+
+  /// No description provided for @notif_kind_friend_requested_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a new friend request'**
+  String get notif_kind_friend_requested_anon;
+
+  /// No description provided for @notif_kind_friend_accepted.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} accepted your friend request'**
+  String notif_kind_friend_accepted(String actor);
+
+  /// No description provided for @notif_kind_friend_accepted_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'Your friend request was accepted'**
+  String get notif_kind_friend_accepted_anon;
+
+  /// No description provided for @notif_kind_social_followed.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} started following you'**
+  String notif_kind_social_followed(String actor);
+
+  /// No description provided for @notif_kind_social_followed_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a new follower'**
+  String get notif_kind_social_followed_anon;
+
+  /// No description provided for @notif_kind_social_circle_joined.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined your circle'**
+  String notif_kind_social_circle_joined(String actor);
+
+  /// No description provided for @notif_kind_social_circle_joined_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone joined your circle'**
+  String get notif_kind_social_circle_joined_anon;
+
+  /// No description provided for @notif_kind_social_post_liked.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} liked your post'**
+  String notif_kind_social_post_liked(String actor);
+
+  /// No description provided for @notif_kind_social_post_liked_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone liked your post'**
+  String get notif_kind_social_post_liked_anon;
+
+  /// No description provided for @notif_kind_social_post_commented.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} commented on your post'**
+  String notif_kind_social_post_commented(String actor);
+
+  /// No description provided for @notif_kind_social_post_commented_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'New comment on your post'**
+  String get notif_kind_social_post_commented_anon;
+
+  /// No description provided for @notif_kind_social_comment_liked.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} liked your comment'**
+  String notif_kind_social_comment_liked(String actor);
+
+  /// No description provided for @notif_kind_social_comment_liked_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone liked your comment'**
+  String get notif_kind_social_comment_liked_anon;
+
+  /// No description provided for @notif_kind_social_mentioned.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} mentioned you'**
+  String notif_kind_social_mentioned(String actor);
+
+  /// No description provided for @notif_kind_social_mentioned_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'You were mentioned'**
+  String get notif_kind_social_mentioned_anon;
+
+  /// No description provided for @notif_kind_game_invited.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} invited you to a game'**
+  String notif_kind_game_invited(String actor);
+
+  /// No description provided for @notif_kind_game_invited_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a new game invite'**
+  String get notif_kind_game_invited_anon;
+
+  /// No description provided for @notif_kind_game_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Game details updated'**
+  String get notif_kind_game_updated;
+
+  /// No description provided for @notif_kind_game_join_request.
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} requested to join your game'**
+  String notif_kind_game_join_request(String actor);
+
+  /// No description provided for @notif_kind_game_join_request_anon.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone requested to join your game'**
+  String get notif_kind_game_join_request_anon;
+
+  /// No description provided for @notif_kind_game_waitlist_promoted.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re in! A spot opened up'**
+  String get notif_kind_game_waitlist_promoted;
+
+  /// No description provided for @notif_kind_game_reminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Game reminder'**
+  String get notif_kind_game_reminder;
+
+  /// No description provided for @notif_kind_arena_payment_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment required for your booking'**
+  String get notif_kind_arena_payment_required;
+
+  /// No description provided for @notif_kind_reward_badge_awarded.
+  ///
+  /// In en, this message translates to:
+  /// **'You earned a new badge'**
+  String get notif_kind_reward_badge_awarded;
+
+  /// No description provided for @notif_kind_achievement_earned.
+  ///
+  /// In en, this message translates to:
+  /// **'You unlocked a new achievement'**
+  String get notif_kind_achievement_earned;
 }
 
 class _AppLocalizationsDelegate

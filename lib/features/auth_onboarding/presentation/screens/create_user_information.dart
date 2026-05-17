@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/constants.dart';
-import 'package:dabbler/core/utils/helpers.dart';
-
 import 'package:dabbler/core/services/user_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:dabbler/utils/ui_constants.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class RegistrationData {
   String email;
@@ -275,7 +272,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).create_info_error_fill_required),
+          content: Text(
+            AppLocalizations.of(context).create_info_error_fill_required,
+          ),
           backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
@@ -289,7 +288,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).create_info_error_select_birth),
+          content: Text(
+            AppLocalizations.of(context).create_info_error_select_birth,
+          ),
           backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
@@ -318,7 +319,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).create_info_error_max_age(AppConstants.maxAge)),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            ).create_info_error_max_age(AppConstants.maxAge),
+          ),
           backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
@@ -331,7 +336,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context).create_info_error_select_gender),
+          content: Text(
+            AppLocalizations.of(context).create_info_error_select_gender,
+          ),
           backgroundColor: colorScheme.error,
           duration: Duration(seconds: 3),
         ),
@@ -372,7 +379,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context).create_info_error_occurred(e.toString())),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              ).create_info_error_occurred(e.toString()),
+            ),
             backgroundColor: colorScheme.error,
             duration: const Duration(seconds: 4),
           ),
@@ -404,85 +415,6 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   /// Check if all required fields are filled and valid
   bool _areAllFieldsValid() {
     return _selectedBirthDate != null && _selectedGender.isNotEmpty;
-  }
-
-  /// Build Ant Design style birth date picker
-  Widget _buildBirthDatePicker(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final l10n = AppLocalizations.of(context);
-    final ageText = _selectedBirthDate != null
-        ? l10n.create_info_age_display(_calculateAge(_selectedBirthDate!))
-        : l10n.create_info_birth_date_placeholder;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context).create_info_birth_date,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSecondaryContainer,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        GestureDetector(
-          onTap: () => _showDatePicker(context),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _selectedBirthDate != null
-                    ? colorScheme.primary
-                    : colorScheme.outline,
-                width: _selectedBirthDate != null ? 2 : 1.5,
-              ),
-              borderRadius: AppRadius.extraLarge,
-              color: colorScheme.surface,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Iconsax.calendar_copy,
-                  color: _selectedBirthDate != null
-                      ? colorScheme.primary
-                      : colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
-                  size: AppIconSize.sm,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    ageText,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: _selectedBirthDate != null
-                          ? colorScheme.onSecondaryContainer
-                          : colorScheme.onSecondaryContainer.withValues(alpha: 0.5),
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_selectedBirthDate != null) ...[
-          const SizedBox(height: 8),
-          // Text(
-          //   'Born on ${_formatDate(_selectedBirthDate!)}',
-          //   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          //     color: Theme.of(context).colorScheme.primary,
-          //     fontStyle: FontStyle.italic,
-          //   ),
-          // ),
-        ],
-      ],
-    );
   }
 
   /// Show native date picker
@@ -517,105 +449,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     }
   }
 
-  /// Build Ant Design style gender select
-  Widget _buildGenderSelect(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context).create_info_gender,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSecondaryContainer,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _selectedGender.isNotEmpty
-                  ? colorScheme.primary
-                  : colorScheme.outline,
-              width: _selectedGender.isNotEmpty ? 2 : 1.5,
-            ),
-            borderRadius: AppRadius.extraLarge,
-            color: colorScheme.surface,
-          ),
-          child: Column(
-            children: ['male', 'female']
-                .map(
-                  (gender) =>
-                      _buildGenderOption(context, gender, theme, colorScheme),
-                )
-                .toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Build individual gender option
-  Widget _buildGenderOption(
-    BuildContext context,
-    String gender,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    final isSelected = _selectedGender == gender;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedGender = gender;
-        });
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.15)
-              : Colors.transparent,
-          borderRadius: AppRadius.large,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                AppHelpers.capitalize(gender),
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.onSecondaryContainer,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Iconsax.tick_circle_copy,
-                color: colorScheme.primary,
-                size: AppIconSize.sm,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
+    final colorScheme = Theme.of(context).colorScheme;
     if (_isLoadingData) {
       return Scaffold(
         backgroundColor: colorScheme.surface,
@@ -625,89 +461,252 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       );
     }
 
-    return AdaptiveAuthShell(
+    return Scaffold(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xxl),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: AppSpacing.xxxl),
-                        // Header
-                        Text(
-                          AppLocalizations.of(context).create_info_title,
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            color: colorScheme.onSecondaryContainer,
-                            fontWeight: FontWeight.w800,
-                          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            OnboardingTopBar(onBack: () => context.pop()),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OnboardingScreenHead(
+                        eyebrow: 'Step 1 of 5',
+                        title: AppLocalizations.of(context).create_info_title,
+                        subtitle: AppLocalizations.of(
+                          context,
+                        ).create_info_subtitle,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildBirthDateCard(context),
+                            const SizedBox(height: 16),
+                            _buildGenderGrid(context),
+                          ],
                         ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          AppLocalizations.of(context).create_info_subtitle,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSecondaryContainer,
-                            height: 1.25,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xxxl),
-                        // Birth Date Picker
-                        _buildBirthDatePicker(context, theme, colorScheme),
-                        const SizedBox(height: AppSpacing.lg),
-                        // Gender Selection
-                        _buildGenderSelect(context, theme, colorScheme),
-                        const Spacer(),
-                        // Continue Button
-                        FilledButton(
-                          onPressed: (_isLoading || !_areAllFieldsValid())
-                              ? null
-                              : _handleSubmit,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: colorScheme.onPrimary,
-                            minimumSize: const Size.fromHeight(
-                              AppButtonSize.extraLargeHeight,
-                            ),
-                            padding: AppButtonSize.extraLargePadding,
-                            shape: const StadiumBorder(),
-                          ),
-                          child: _isLoading
-                              ? SizedBox(
-                                  height: AppSpacing.xxl,
-                                  width: AppSpacing.xxl,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  AppLocalizations.of(context).create_info_continue,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            OnboardingBottomBar(
+              child: OnboardingCTAButton(
+                label: AppLocalizations.of(context).create_info_continue,
+                onPressed: (_isLoading || !_areAllFieldsValid())
+                    ? null
+                    : _handleSubmit,
+                isLoading: _isLoading,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBirthDateCard(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final age = _selectedBirthDate != null
+        ? _calculateAge(_selectedBirthDate!)
+        : null;
+    final ageText = age != null
+        ? l10n.create_info_age_display(age)
+        : l10n.create_info_birth_date_placeholder;
+
+    return GestureDetector(
+      onTap: () => _showDatePicker(context),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: _selectedBirthDate != null
+              ? colorScheme.primary.withValues(alpha: 0.07)
+              : colorScheme.surfaceContainerLowest,
+          border: Border.all(
+            color: _selectedBirthDate != null
+                ? colorScheme.primary
+                : colorScheme.outlineVariant,
+            width: _selectedBirthDate != null ? 2 : 1.5,
+          ),
+          boxShadow: _selectedBirthDate != null
+              ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.18),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: colorScheme.primary.withValues(alpha: 0.40),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Iconsax.calendar_1_copy,
+                color: colorScheme.onPrimary,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.create_info_birth_date,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurfaceVariant,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ageText,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _selectedBirthDate != null
+                          ? colorScheme.onSurface
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Iconsax.arrow_right_3,
+              color: _selectedBirthDate != null
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenderGrid(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    const genders = [
+      ('male', 'Male', Iconsax.man_copy),
+      ('female', 'Female', Iconsax.woman_copy),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AppLocalizations.of(context).create_info_gender,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: genders.map((g) {
+            final value = g.$1;
+            final label = g.$2;
+            final icon = g.$3;
+            final selected = _selectedGender == value;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: value != 'other' ? 8 : 0),
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedGender = value),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: selected
+                          ? colorScheme.primary.withValues(alpha: 0.08)
+                          : colorScheme.surfaceContainerLowest,
+                      border: Border.all(
+                        color: selected
+                            ? colorScheme.primary
+                            : colorScheme.outlineVariant,
+                        width: selected ? 2 : 1.5,
+                      ),
+                      boxShadow: selected
+                          ? [
+                              BoxShadow(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.18,
                                 ),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          icon,
+                          size: 28,
+                          color: selected
+                              ? colorScheme.primary
+                              : colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: AppSpacing.xxxl),
+                        const SizedBox(height: 6),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: selected
+                                ? colorScheme.onSurface
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

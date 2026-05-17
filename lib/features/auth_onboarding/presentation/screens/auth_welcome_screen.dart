@@ -4,7 +4,6 @@ import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
-import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
@@ -12,7 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 class AuthWelcomeScreen extends ConsumerStatefulWidget {
   const AuthWelcomeScreen({super.key});
@@ -23,7 +23,6 @@ class AuthWelcomeScreen extends ConsumerStatefulWidget {
 
 class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   bool _isLoading = false;
-
   List<Map<String, dynamic>> _countries = [];
   bool _countriesLoading = true;
 
@@ -61,7 +60,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
   Future<void> _openCountryPicker() async {
     final selected = ref.read(selectedCountryProvider).valueOrNull;
-
     final picked = await showAdaptiveSheet<String>(
       context: context,
       builder: (context) => _CountryPickerSheet(
@@ -70,44 +68,28 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
         selectedCountryName: selected,
       ),
     );
-
     if (!mounted || picked == null) return;
     await ref.read(selectedCountryProvider.notifier).setCountry(picked);
   }
 
   Future<void> _handleGoogle() async {
     if (_isLoading) return;
-
     setState(() => _isLoading = true);
     try {
       final authService = ref.read(authServiceProvider);
-
       final launched = await authService.signInWithGoogle();
       if (!launched) {
         if (mounted) setState(() => _isLoading = false);
         return;
       }
-
-      // On web, signInWithGoogle() triggers a full-page redirect to Google.
-      // The browser navigates away immediately — nothing below runs until
-      // the user returns, at which point Supabase restores the session and
-      // onAuthStateChange fires, letting the router redirect to home.
       if (kIsWeb) return;
-
-      // Check the result after OAuth completes (mobile only)
       final result = await authService.handleGoogleSignInFlow();
-
       if (!mounted) return;
-
-      // Navigate based on result
       switch (result) {
         case GoogleSignInResultGoToOnboarding():
-          // New Google user - go to onboarding
           context.go(RoutePaths.createUserInfo, extra: {'email': result.email});
           break;
-
         case GoogleSignInResultGoToSetUsername():
-          // Legacy case
           context.go(
             RoutePaths.setUsername,
             extra: {
@@ -116,9 +98,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
             },
           );
           break;
-
         case GoogleSignInResultGoToPhoneOtp():
-          // New Google user (with phone) - go to OTP
           context.push(
             RoutePaths.otpVerification,
             extra: {
@@ -128,22 +108,16 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
             },
           );
           break;
-
         case GoogleSignInResultGoToHome():
-          // Existing Google user - navigate to home (welcome screen will show first via router)
           context.go(RoutePaths.home);
           break;
-
         case GoogleSignInResultRequirePassword():
-          // Existing user (non-Google) - require password
           context.push(
             RoutePaths.enterPassword,
             extra: {'email': result.email},
           );
           break;
-
         case GoogleSignInResultError():
-          // Error occurred
           if (mounted) {
             ScaffoldMessenger.of(
               context,
@@ -154,7 +128,13 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).auth_welcome_google_error(e.toString()))),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(
+              context,
+            ).auth_welcome_google_error(e.toString()),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -163,342 +143,362 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
   void _handleApple() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context).auth_welcome_apple_soon)),
+      SnackBar(
+        content: Text(AppLocalizations.of(context).auth_welcome_apple_soon),
+      ),
     );
   }
 
-  void _handleEmail() {
-    context.go(RoutePaths.emailInput);
-  }
-
-  void _handleLogin() {
-    context.go(RoutePaths.enterPassword);
-  }
+  void _handleEmail() => context.go(RoutePaths.emailInput);
+  void _handleLogin() => context.go(RoutePaths.enterPassword);
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = colorScheme.brightness == Brightness.dark;
     final countryState = ref.watch(selectedCountryProvider);
-    final isWide = MediaQuery.sizeOf(context).width >= 800;
-
     final countryName = countryState.maybeWhen(
-      data: (country) => country,
+      data: (c) => c,
       orElse: () => 'Global',
     );
-
     final locale = ref.watch(localeProvider);
     final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
 
-    return AdaptiveAuthShell(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
-      leftPanelContent: isWide
-          ? _WelcomeLeftPanel(colorScheme: colorScheme, theme: theme)
-          : null,
-      child: isWide
-          ? _buildWideCTAs(context, theme, colorScheme, isDark, countryName, langLabel)
-          : _buildMobileContent(context, theme, colorScheme, isDark, countryName, langLabel),
-    );
-  }
-
-  // ── Wide: right-panel CTAs only ──────────────────────────────────────
-
-  Widget _buildWideCTAs(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isDark,
-    String countryName,
-    String langLabel,
-  ) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxl,
-          vertical: AppSpacing.xxxl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: Stack(
           children: [
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              AppLocalizations.of(context).auth_welcome_get_started,
-              style: theme.textTheme.headlineLarge?.copyWith(
-                color: colorScheme.onSecondaryContainer,
-                fontWeight: FontWeight.w800,
-              ),
+            Positioned(
+              top: -120,
+              right: -80,
+              child: GradientBlob(color: colorScheme.primary, size: 320, opacity: 0.25),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              AppLocalizations.of(context).auth_welcome_get_started_subtitle,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
-              ),
+            Positioned(
+              bottom: 200,
+              left: -100,
+              child: GradientBlob(color: kObPink, size: 280, opacity: 0.18),
             ),
-            const SizedBox(height: AppSpacing.xxxl),
-            ..._buildCTAButtons(context, theme, colorScheme, isDark),
-            const SizedBox(height: AppSpacing.xxxl),
-            _buildLocaleSwitchers(context, theme, colorScheme, countryName, langLabel),
-          ],
-        ),
-      ),
-    );
-  }
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            'Welcome',
+                            style: TextStyle(
+                              fontSize: 44,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1.6,
+                              color: colorScheme.onSurface,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('👋', style: TextStyle(fontSize: 36)),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        "We're stoked to have you. Create an account and start dabbling in local sports.",
+                        style: TextStyle(
+                          fontSize: 15.5,
+                          height: 1.5,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
 
-  // ── Mobile: original full-column layout ─────────────────────────────
-
-  Widget _buildMobileContent(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isDark,
-    String countryName,
-    String langLabel,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: AppSpacing.xl),
-
-                    Row(
+                // Glassmorphic trust card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GlassCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          AppLocalizations.of(context).auth_welcome_title,
-                          style: theme.textTheme.displayMedium?.copyWith(
-                            color: colorScheme.onSecondaryContainer,
-                            fontWeight: FontWeight.w800,
+                        Container(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: colorScheme.primaryContainer,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Iconsax.verify, size: 13, color: colorScheme.primary),
+                              const SizedBox(width: 6),
+                              Text(
+                                'BUILT FOR TRUST',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: colorScheme.primary,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(
-                          '👋',
-                          style: theme.textTheme.displayMedium?.copyWith(
-                            color: colorScheme.onSecondaryContainer,
+                        const SizedBox(height: 14),
+                        ..._kTrustItems.asMap().entries.map((e) {
+                          return Column(
+                            children: [
+                              if (e.key > 0)
+                                Divider(height: 1, color: colorScheme.outlineVariant),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: colorScheme.primary.withValues(
+                                              alpha: 0.4,
+                                            ),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Icon(
+                                        e.value.icon,
+                                        size: 17,
+                                        color: colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 6),
+                                        child: Text(
+                                          e.value.text,
+                                          style: TextStyle(
+                                            fontSize: 13.5,
+                                            height: 1.4,
+                                            color: colorScheme.onSurface,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Spacer(),
+
+                // CTAs
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                  child: Column(
+                    children: [
+                      _OutlineButton(
+                        onPressed: _isLoading ? null : _handleGoogle,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Iconsax.google_1,
+                              size: 20,
+                              color: colorScheme.onSurface,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                                color: colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      OnboardingCTAButton(
+                        label: AppLocalizations.of(
+                          context,
+                        ).auth_welcome_btn_email,
+                        onPressed: _isLoading ? null : _handleEmail,
+                        isLoading: _isLoading,
+                        icon: Icon(
+                          Iconsax.sms,
+                          size: 20,
+                          color: colorScheme.onPrimary,
+                        ),
+                      ),
+                      if (!kIsWeb &&
+                          defaultTargetPlatform == TargetPlatform.iOS) ...[
+                        const SizedBox(height: 12),
+                        _OutlineButton(
+                          onPressed: _handleApple,
+                          bgColor: const Color(0xFF2C2A33),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/apple.svg',
+                                width: 20,
+                                height: 20,
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.srcIn,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                AppLocalizations.of(
+                                  context,
+                                ).auth_welcome_btn_apple,
+                                style: const TextStyle(
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Text(
-                      AppLocalizations.of(context).auth_welcome_subtitle,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                        height: 1.25,
+                      const SizedBox(height: 14),
+                      GestureDetector(
+                        onTap: _isLoading ? null : _handleLogin,
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Already have an account? ',
+                            style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                            children: [
+                              TextSpan(
+                                text: 'Log in',
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    Text(
-                      AppLocalizations.of(context).auth_welcome_trust_heading,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _TrustBullet(
-                      text: AppLocalizations.of(context).auth_welcome_trust_verified,
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _TrustBullet(
-                      text: AppLocalizations.of(context).auth_welcome_trust_personalised,
-                      colorScheme: colorScheme,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _TrustBullet(
-                      text: AppLocalizations.of(context).auth_welcome_trust_privacy,
-                      colorScheme: colorScheme,
-                    ),
-                    const Spacer(),
-                    ..._buildCTAButtons(context, theme, colorScheme, isDark),
-                    const Spacer(),
-                    _buildLocaleSwitchers(context, theme, colorScheme, countryName, langLabel),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
-  // ── Locale switchers row ────────────────────────────────────────────
-
-  Widget _buildLocaleSwitchers(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    String countryName,
-    String langLabel,
-  ) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ActionChip(
-              avatar: Icon(
-                Icons.public_rounded,
-                size: AppIconSize.sm,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              label: Text(countryName),
-              onPressed: _isLoading ? null : _openCountryPicker,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            ActionChip(
-              avatar: Icon(
-                Icons.language_rounded,
-                size: AppIconSize.sm,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              label: Text(langLabel),
-              onPressed: _isLoading ? null : _openLanguagePicker,
+                // Country / Language pills
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GlassPill(
+                        icon: Iconsax.global,
+                        label: countryName ?? 'Global',
+                        onTap: _isLoading ? () {} : _openCountryPicker,
+                      ),
+                      const SizedBox(width: 8),
+                      GlassPill(
+                        icon: Iconsax.language_square,
+                        label: langLabel,
+                        onTap: _isLoading ? () {} : _openLanguagePicker,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
-  }
-
-  // ── Shared CTA buttons list ──────────────────────────────────────────
-
-  List<Widget> _buildCTAButtons(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isDark,
-  ) {
-    final googleBg = isDark
-        ? colorScheme.inverseSurface
-        : colorScheme.surfaceContainerLowest;
-    final googleFg = isDark ? colorScheme.onInverseSurface : colorScheme.onSurface;
-
-    return [
-      FilledButton(
-        onPressed: _isLoading ? null : _handleGoogle,
-        style: FilledButton.styleFrom(
-          backgroundColor: googleBg,
-          foregroundColor: googleFg,
-          minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
-          padding: AppButtonSize.extraLargePadding,
-          shape: const StadiumBorder(),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/icons/google.svg',
-              width: AppIconSize.sm,
-              height: AppIconSize.sm,
-              colorFilter: ColorFilter.mode(googleFg, BlendMode.srcIn),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              AppLocalizations.of(context).auth_welcome_btn_google,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: googleFg,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
-        FilledButton(
-          onPressed: _isLoading ? null : _handleApple,
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.scrim,
-            foregroundColor: colorScheme.onPrimary,
-            minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
-            padding: AppButtonSize.extraLargePadding,
-            shape: const StadiumBorder(),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SvgPicture.asset(
-                'assets/icons/apple.svg',
-                width: AppIconSize.sm,
-                height: AppIconSize.sm,
-                colorFilter: ColorFilter.mode(
-                  colorScheme.onPrimary,
-                  BlendMode.srcIn,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                AppLocalizations.of(context).auth_welcome_btn_apple,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-      ],
-      FilledButton(
-        onPressed: _isLoading ? null : _handleEmail,
-        style: FilledButton.styleFrom(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          minimumSize: const Size.fromHeight(AppButtonSize.extraLargeHeight),
-          padding: AppButtonSize.extraLargePadding,
-          shape: const StadiumBorder(),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.mail_outline,
-              size: AppIconSize.sm,
-              color: colorScheme.onPrimary,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              AppLocalizations.of(context).auth_welcome_btn_email,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: AppSpacing.lg),
-      Center(
-        child: TextButton(
-          onPressed: _isLoading ? null : _handleLogin,
-          child: Text(
-            AppLocalizations.of(context).auth_welcome_btn_login,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: colorScheme.primary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    ];
   }
 }
 
-// ── Country picker bottom sheet ──────────────────────────────────────────────
+class _TrustItem {
+  final IconData icon;
+  final String text;
+  const _TrustItem(this.icon, this.text);
+}
+
+const _kTrustItems = [
+  _TrustItem(
+    Iconsax.medal_star,
+    'Reviewed players, verified memberships, rated venues',
+  ),
+  _TrustItem(
+    Iconsax.setting_3,
+    'Connections and recommendations personalised to your sports',
+  ),
+  _TrustItem(Iconsax.lock, "We don't sell your data — privacy-first by design"),
+];
+
+class _OutlineButton extends StatelessWidget {
+  const _OutlineButton({required this.child, this.onPressed, this.bgColor});
+  final Widget child;
+  final VoidCallback? onPressed;
+  final Color? bgColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: bgColor ?? colorScheme.surfaceContainerLowest,
+          border: bgColor == null
+              ? Border.all(color: colorScheme.outlineVariant, width: 1.5)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(999),
+            onTap: onPressed,
+            child: Center(child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _CountryPickerSheet extends StatelessWidget {
   final List<Map<String, dynamic>> countries;
@@ -515,7 +515,6 @@ class _CountryPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -544,20 +543,20 @@ class _CountryPickerSheet extends StatelessWidget {
               itemCount: countries.length,
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
-                final countryName = countries[index]['name_en'] as String;
-                final isSelected = countryName == selectedCountryName;
+                final name = countries[index]['name_en'] as String;
+                final isSelected = name == selectedCountryName;
                 return ListTile(
                   title: Text(
-                    countryName,
+                    name,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: isSelected ? FontWeight.w800 : null,
                       color: colorScheme.onSurface,
                     ),
                   ),
                   trailing: isSelected
-                      ? Icon(Icons.check, color: colorScheme.primary)
+                      ? Icon(Iconsax.tick_circle, color: colorScheme.primary)
                       : null,
-                  onTap: () => Navigator.of(context).pop(countryName),
+                  onTap: () => Navigator.of(context).pop(name),
                 );
               },
             ),
@@ -568,92 +567,8 @@ class _CountryPickerSheet extends StatelessWidget {
   }
 }
 
-// ── Wide-screen left branding panel ─────────────────────────────────────────
-
-class _WelcomeLeftPanel extends StatelessWidget {
-  const _WelcomeLeftPanel({
-    required this.colorScheme,
-    required this.theme,
-  });
-
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return ColoredBox(
-      color: colorScheme.secondaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xxxl * 1.5,
-          vertical: AppSpacing.xxxl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  AppLocalizations.of(context).auth_welcome_title,
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '👋',
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              AppLocalizations.of(context).auth_welcome_subtitle,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.75),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xxxl * 1.5),
-            Text(
-              AppLocalizations.of(context).auth_welcome_trust_heading,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSecondaryContainer,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            _TrustBullet(
-              text: AppLocalizations.of(context).auth_welcome_trust_verified,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _TrustBullet(
-              text: AppLocalizations.of(context).auth_welcome_trust_personalised,
-              colorScheme: colorScheme,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _TrustBullet(
-              text: AppLocalizations.of(context).auth_welcome_trust_privacy,
-              colorScheme: colorScheme,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Language picker bottom sheet ────────────────────────────────────────────
-
 class _LanguagePickerSheet extends ConsumerWidget {
   const _LanguagePickerSheet({required this.currentLocale});
-
   final Locale currentLocale;
 
   static const _languages = [
@@ -666,7 +581,6 @@ class _LanguagePickerSheet extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final current = ref.watch(localeProvider);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -694,7 +608,7 @@ class _LanguagePickerSheet extends ConsumerWidget {
               ),
             ),
             trailing: isSelected
-                ? Icon(Icons.check, color: colorScheme.primary)
+                ? Icon(Iconsax.tick_circle, color: colorScheme.primary)
                 : null,
             onTap: () {
               ref
@@ -705,40 +619,6 @@ class _LanguagePickerSheet extends ConsumerWidget {
           );
         }),
         const SizedBox(height: 12),
-      ],
-    );
-  }
-}
-
-// ── Shared trust bullet widget ───────────────────────────────────────────────
-
-class _TrustBullet extends StatelessWidget {
-  const _TrustBullet({required this.text, required this.colorScheme});
-
-  final String text;
-  final ColorScheme colorScheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          Icons.check_circle,
-          size: AppIconSize.sm,
-          color: colorScheme.primary,
-        ),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Text(
-            text,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSecondaryContainer,
-              height: 1.4,
-            ),
-          ),
-        ),
       ],
     );
   }

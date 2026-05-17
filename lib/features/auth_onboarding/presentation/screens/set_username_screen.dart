@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
@@ -10,15 +9,11 @@ import 'package:dabbler/features/profile/domain/services/profile_creation_servic
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/utils/ui_constants.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'dart:async';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
 
-enum SetUsernameMode {
-  onboarding,
-  addPersona,
-}
+enum SetUsernameMode { onboarding, addPersona }
 
 class SetUsernameScreen extends ConsumerStatefulWidget {
   final SetUsernameMode mode;
@@ -123,14 +118,15 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       final emailPrefix = email.contains('@') ? email.split('@').first : '';
       final sportName = onboardingData?.preferredSportName ?? '';
       final age = onboardingData?.age;
-      final intention = onboardingData?.intention ??
-          addPersonaData?.targetPersona.name ??
-          '';
+      final intention =
+          onboardingData?.intention ?? addPersonaData?.targetPersona.name ?? '';
       final year2 = (DateTime.now().year % 100).toString();
 
       final rawVariants = [
         emailPrefix.isNotEmpty ? emailPrefix : displayName,
-        sportName.isNotEmpty ? '${displayName}_$sportName' : '${displayName}_sport',
+        sportName.isNotEmpty
+            ? '${displayName}_$sportName'
+            : '${displayName}_sport',
         age != null ? '$displayName$age$year2' : '${displayName}_$year2',
         intention.isNotEmpty ? '${displayName}_$intention' : displayName,
       ];
@@ -258,7 +254,9 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
         onboardingData.preferredSport == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Missing required information. Please complete all steps.'),
+          content: Text(
+            'Missing required information. Please complete all steps.',
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -268,13 +266,14 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     final authService = AuthService();
     final currentUser = authService.getCurrentUser();
     if (currentUser == null) {
-      throw Exception('Your session has expired. Please verify your phone number again.');
+      throw Exception(
+        'Your session has expired. Please verify your phone number again.',
+      );
     }
 
-    ref.read(onboardingDataProvider.notifier).setIdentity(
-      displayName: displayName,
-      username: username,
-    );
+    ref
+        .read(onboardingDataProvider.notifier)
+        .setIdentity(displayName: displayName, username: username);
 
     if (mounted) {
       context.push(RoutePaths.onboardingWelcome);
@@ -288,7 +287,10 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     final addPersonaData = ref.read(addPersonaDataProvider);
     if (addPersonaData == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Missing data. Please start over.'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Missing data. Please start over.'),
+          backgroundColor: Colors.red,
+        ),
       );
       context.go('/settings');
       return;
@@ -340,61 +342,73 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     required String label,
     required String hintText,
     required String? Function(String?) validator,
-    required ColorScheme colorScheme,
-    required ThemeData theme,
     Function(String)? onChanged,
     Widget? suffixIcon,
+    String? prefixText,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final br = BorderRadius.circular(16);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: TextStyle(
+            fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: colorScheme.onSecondaryContainer,
+            color: colorScheme.onSurface,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           onChanged: onChanged,
           validator: validator,
-          style: theme.textTheme.titleMedium?.copyWith(
+          style: TextStyle(
             color: colorScheme.onSurface,
+            fontSize: 15,
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: theme.textTheme.titleMedium?.copyWith(
+            hintStyle: TextStyle(
               color: colorScheme.onSurfaceVariant,
+              fontSize: 15,
+            ),
+            prefixText: prefixText,
+            prefixStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
             ),
             filled: true,
-            fillColor: colorScheme.surface,
+            fillColor: colorScheme.surfaceContainerLowest,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 22,
+              horizontal: 18,
               vertical: 16,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: br,
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide.none,
+              borderRadius: br,
+              borderSide: BorderSide(
+                color: colorScheme.outlineVariant,
+                width: 1.5,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: br,
               borderSide: BorderSide(color: colorScheme.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(color: colorScheme.error, width: 2),
+              borderRadius: br,
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(999),
-              borderSide: BorderSide(color: colorScheme.error, width: 2),
+              borderRadius: br,
+              borderSide: const BorderSide(color: Colors.red, width: 2),
             ),
             suffixIcon: suffixIcon,
           ),
@@ -403,7 +417,9 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     );
   }
 
-  Widget _buildSuggestionChips(ColorScheme colorScheme, ThemeData theme) {
+  Widget _buildSuggestionChips() {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_loadingSuggestions) {
       return SizedBox(
         height: 36,
@@ -412,11 +428,11 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
           itemCount: 4,
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (_, __) => Container(
-            width: 110,
+            width: 100,
             height: 36,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(18),
+              color: colorScheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(999),
             ),
           ),
         ),
@@ -449,23 +465,24 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: selected
-                    ? colorScheme.primaryContainer
-                    : colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(18),
+                    ? colorScheme.primary.withValues(alpha: 0.10)
+                    : colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(999),
                 border: Border.all(
                   color: selected
                       ? colorScheme.primary
-                      : colorScheme.outline.withValues(alpha: 0.3),
+                      : colorScheme.outlineVariant,
                   width: selected ? 1.5 : 1,
                 ),
               ),
               child: Text(
                 '@$s',
-                style: theme.textTheme.labelMedium?.copyWith(
+                style: TextStyle(
+                  fontSize: 13,
                   color: selected
-                      ? colorScheme.onPrimaryContainer
+                      ? colorScheme.primary
                       : colorScheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ),
@@ -477,275 +494,276 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     final addPersonaData = widget.mode == SetUsernameMode.addPersona
         ? ref.watch(addPersonaDataProvider)
         : null;
 
+    final l10n = AppLocalizations.of(context);
     final title = widget.mode == SetUsernameMode.addPersona
         ? (addPersonaData?.isConversion == true
-              ? 'Complete Your Conversion'
-              : 'Complete Your New Profile')
-        : 'Identify yourself';
+              ? l10n.set_username_title_conversion
+              : l10n.set_username_title_new_profile)
+        : l10n.set_username_title_onboarding;
 
     final subtitle = widget.mode == SetUsernameMode.addPersona
-        ? 'Choose a display name and username for your ${addPersonaData?.targetPersona.displayName ?? ''} profile'
-        : 'Choose how others should call you and set a username';
+        ? l10n.set_username_subtitle_persona(
+            addPersonaData?.targetPersona.displayName ?? '',
+          )
+        : l10n.set_username_subtitle_onboarding;
 
     final buttonText = widget.mode == SetUsernameMode.addPersona
         ? (addPersonaData?.isConversion == true
-              ? 'Complete Conversion'
-              : 'Create Profile')
-        : 'Complete';
+              ? l10n.set_username_btn_complete_conversion
+              : l10n.set_username_btn_create_profile)
+        : l10n.set_username_btn_complete;
 
-    return AdaptiveAuthShell(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight),
-              child: IntrinsicHeight(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xxl),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const SizedBox(height: AppSpacing.xxxl),
-
-                        if (widget.mode == SetUsernameMode.addPersona &&
-                            addPersonaData != null)
-                          _buildFlowIndicator(theme, colorScheme, addPersonaData),
-
-                        Text(
-                          title,
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: colorScheme.onSecondaryContainer,
-                          ),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xl),
-
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSecondaryContainer,
-                          ),
-                        ),
-
-                        const SizedBox(height: AppSpacing.xxxl),
-
-                        // Display Name Field
-                        _buildInputField(
-                          context,
-                          controller: _displayNameController,
-                          label: AppLocalizations.of(context).set_username_display_name_label,
-                          hintText: AppLocalizations.of(context).set_username_display_name_hint,
-                          colorScheme: colorScheme,
-                          theme: theme,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Display name is required';
-                            }
-                            if (value.trim().length < 2) {
-                              return 'Display name must be at least 2 characters';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: AppSpacing.lg),
-
-                        // Username suggestions
-                        if (_loadingSuggestions || _suggestions.isNotEmpty) ...[
-                          Text(
-                            'Suggestions',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSecondaryContainer
-                                  .withValues(alpha: 0.6),
-                              fontWeight: FontWeight.w600,
+      body: SafeArea(
+        child: Column(
+          children: [
+            OnboardingTopBar(onBack: () => context.pop()),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      OnboardingScreenHead(
+                        eyebrow: widget.mode == SetUsernameMode.addPersona
+                            ? null
+                            : 'Step 5 of 5',
+                        title: title,
+                        subtitle: subtitle,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Display Name Field
+                            _buildInputField(
+                              context,
+                              controller: _displayNameController,
+                              label: AppLocalizations.of(
+                                context,
+                              ).set_username_display_name_label,
+                              hintText: AppLocalizations.of(
+                                context,
+                              ).set_username_display_name_hint,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Display name is required';
+                                }
+                                if (value.trim().length < 2) {
+                                  return 'Display name must be at least 2 characters';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                          const SizedBox(height: AppSpacing.sm),
-                          _buildSuggestionChips(colorScheme, theme),
-                          const SizedBox(height: AppSpacing.lg),
-                        ],
 
-                        // Username Field
-                        _buildInputField(
-                          context,
-                          controller: _usernameController,
-                          label: AppLocalizations.of(context).set_username_username_label,
-                          hintText: AppLocalizations.of(context).set_username_username_hint,
-                          colorScheme: colorScheme,
-                          theme: theme,
-                          onChanged: (v) {
-                            setState(() => _selectedSuggestion = null);
-                            _checkUsernameAvailability(v);
-                          },
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Username is required';
-                            }
-                            if (value.trim().length < 3) {
-                              return 'Username must be at least 3 characters';
-                            }
-                            if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                              return 'Only letters, numbers, and underscores';
-                            }
-                            return null;
-                          },
-                          suffixIcon: _isCheckingUsername
-                              ? const Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                )
-                              : _usernameError == null &&
-                                    _usernameController.text.isNotEmpty
-                              ? Icon(
-                                  Iconsax.tick_circle_copy,
-                                  color: colorScheme.primary,
-                                )
-                              : null,
-                        ),
+                            const SizedBox(height: 20),
 
-                        if (_usernameError != null) ...[
-                          const SizedBox(height: AppSpacing.sm),
-                          Padding(
-                            padding: const EdgeInsets.only(left: AppSpacing.md),
-                            child: Text(
-                              _usernameReason != null && _usernameReason!.isNotEmpty
-                                  ? _usernameReason!
-                                  : _usernameError!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: AppSpacing.xxxl),
-                        const Spacer(),
-
-                        FilledButton(
-                          onPressed: _isLoading ? null : _handleSubmit,
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(
-                              AppButtonSize.extraLargeHeight,
-                            ),
-                            padding: AppButtonSize.extraLargePadding,
-                            shape: const StadiumBorder(),
-                            backgroundColor: colorScheme.primary,
-                            foregroundColor: colorScheme.onPrimary,
-                          ),
-                          child: _isLoading
-                              ? SizedBox(
-                                  height: AppSpacing.xxl,
-                                  width: AppSpacing.xxl,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      colorScheme.onPrimary,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  buttonText,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: colorScheme.onPrimary,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                        ),
-
-                        if (widget.mode == SetUsernameMode.addPersona) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          Center(
-                            child: TextButton(
-                              onPressed: () => context.pop(),
-                              child: Text(
-                                'Back',
-                                style: theme.textTheme.titleMedium?.copyWith(
+                            // Username suggestions
+                            if (_loadingSuggestions ||
+                                _suggestions.isNotEmpty) ...[
+                              Text(
+                                'Suggestions',
+                                style: TextStyle(
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: colorScheme.primary,
+                                  color: colorScheme.onSurfaceVariant,
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
+                              const SizedBox(height: 8),
+                              _buildSuggestionChips(),
+                              const SizedBox(height: 16),
+                            ],
 
-                        const SizedBox(height: AppSpacing.xl),
-                      ],
-                    ),
+                            // Username Field
+                            _buildInputField(
+                              context,
+                              controller: _usernameController,
+                              label: AppLocalizations.of(
+                                context,
+                              ).set_username_username_label,
+                              hintText: AppLocalizations.of(
+                                context,
+                              ).set_username_username_hint,
+                              prefixText: '@',
+                              onChanged: (v) {
+                                setState(() => _selectedSuggestion = null);
+                                _checkUsernameAvailability(v);
+                              },
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Username is required';
+                                }
+                                if (value.trim().length < 3) {
+                                  return 'Username must be at least 3 characters';
+                                }
+                                if (!RegExp(
+                                  r'^[a-zA-Z0-9_]+$',
+                                ).hasMatch(value)) {
+                                  return 'Only letters, numbers, and underscores';
+                                }
+                                return null;
+                              },
+                              suffixIcon: _isCheckingUsername
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : _usernameError == null &&
+                                        _usernameController.text.isNotEmpty
+                                  ? const Icon(
+                                      Icons.check_circle,
+                                      color: Color(0xFF00C853),
+                                    )
+                                  : null,
+                            ),
+
+                            if (_usernameError != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                _usernameReason != null &&
+                                        _usernameReason!.isNotEmpty
+                                    ? _usernameReason!
+                                    : _usernameError!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          );
-        },
+            OnboardingBottomBar(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OnboardingCTAButton(
+                    label: buttonText,
+                    onPressed: _isLoading ? null : _handleSubmit,
+                    isLoading: _isLoading,
+                  ),
+                  if (widget.mode == SetUsernameMode.addPersona) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => context.pop(),
+                      child: Text(
+                        'Back',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildFlowIndicator(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    AddPersonaData data,
-  ) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: AppSpacing.lg),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
+class _AvatarPreview extends StatelessWidget {
+  const _AvatarPreview({required this.displayName});
+  final String displayName;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final initials = displayName.trim().isEmpty
+        ? '?'
+        : displayName
+              .trim()
+              .split(' ')
+              .map((w) => w[0])
+              .take(2)
+              .join()
+              .toUpperCase();
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [colorScheme.primary, kObPink],
             ),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.25),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              initials,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onPrimary,
+                letterSpacing: -1,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: Container(
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
-              color: data.isConversion
-                  ? colorScheme.tertiaryContainer
-                  : colorScheme.primary.withValues(alpha: 0.15),
-              borderRadius: AppRadius.small,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  data.isConversion
-                      ? Icons.swap_horiz
-                      : Icons.add_circle_outline,
-                  size: 18,
-                  color: colorScheme.primary,
-                ),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  data.isConversion
-                      ? 'Converting to ${data.targetPersona.displayName}'
-                      : 'Adding ${data.targetPersona.displayName} profile',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.outlineVariant, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
+            child: Icon(
+              Icons.camera_alt_outlined,
+              size: 16,
+              color: colorScheme.primary,
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

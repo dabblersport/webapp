@@ -241,18 +241,49 @@ class MyApp extends ConsumerWidget {
           debugShowCheckedModeBanner: false,
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();
-            // When the active locale is Arabic, swap the primary text theme to
-            // Tajawal so the entire UI renders in a native-feeling Arabic font.
-            if (locale.languageCode == 'ar') {
-              final base = Theme.of(context);
-              return Theme(
-                data: base.copyWith(
-                  textTheme: GoogleFonts.tajawalTextTheme(base.textTheme),
-                ),
-                child: ResponsiveAppShell(child: child),
+            final base = Theme.of(context);
+            // Font strategy:
+            //   • iOS  → Apple's San Francisco (SF Pro) — covers Latin + Arabic.
+            //   • Other platforms (Android / web / desktop):
+            //       – Arabic locale → Readex Pro
+            //       – English / default → Roboto (already applied via AppTheme)
+            TextTheme? overrideTextTheme;
+            if (base.platform == TargetPlatform.iOS) {
+              overrideTextTheme = base.textTheme.apply(fontFamily: '.SF Pro Text');
+            } else if (locale.languageCode == 'ar') {
+              // Arabic readability: floor every weight at 500 (Medium).
+              final readex = GoogleFonts.readexProTextTheme(base.textTheme);
+              TextStyle? bump(TextStyle? s) {
+                if (s == null) return null;
+                final w = s.fontWeight ?? FontWeight.w400;
+                return w.value >= FontWeight.w500.value
+                    ? s
+                    : s.copyWith(fontWeight: FontWeight.w500);
+              }
+              overrideTextTheme = TextTheme(
+                displayLarge:  bump(readex.displayLarge),
+                displayMedium: bump(readex.displayMedium),
+                displaySmall:  bump(readex.displaySmall),
+                headlineLarge: bump(readex.headlineLarge),
+                headlineMedium: bump(readex.headlineMedium),
+                headlineSmall:  bump(readex.headlineSmall),
+                titleLarge:  bump(readex.titleLarge),
+                titleMedium: bump(readex.titleMedium),
+                titleSmall:  bump(readex.titleSmall),
+                bodyLarge:   bump(readex.bodyLarge),
+                bodyMedium:  bump(readex.bodyMedium),
+                bodySmall:   bump(readex.bodySmall),
+                labelLarge:  bump(readex.labelLarge),
+                labelMedium: bump(readex.labelMedium),
+                labelSmall:  bump(readex.labelSmall),
               );
             }
-            return ResponsiveAppShell(child: child);
+            final wrapped = ResponsiveAppShell(child: child);
+            if (overrideTextTheme == null) return wrapped;
+            return Theme(
+              data: base.copyWith(textTheme: overrideTextTheme),
+              child: wrapped,
+            );
           },
         );
       },

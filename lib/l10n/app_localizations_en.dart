@@ -1580,4 +1580,244 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get user_profile_cannot_message_blocked =>
       'Cannot message a blocked user';
+
+  @override
+  String get notif_signin_required => 'Please sign in to view notifications';
+
+  @override
+  String get notif_title_notifications => 'Notifications';
+
+  @override
+  String get notif_title_activity_log => 'Activity log';
+
+  @override
+  String get notif_chip_all => 'All';
+
+  @override
+  String get notif_chip_games => 'Games';
+
+  @override
+  String get notif_chip_bookings => 'Bookings';
+
+  @override
+  String get notif_chip_social => 'Social';
+
+  @override
+  String get notif_chip_achievements => 'Achievements';
+
+  @override
+  String get notif_chip_you => 'You';
+
+  @override
+  String get notif_chip_rewards => 'Rewards';
+
+  @override
+  String get notif_chip_security => 'Security';
+
+  @override
+  String get notif_section_today => 'Today';
+
+  @override
+  String get notif_section_yesterday => 'Yesterday';
+
+  @override
+  String get notif_section_earlier => 'Earlier';
+
+  @override
+  String get notif_mark_all_read => 'Mark all read';
+
+  @override
+  String get notif_action_respond => 'Respond';
+
+  @override
+  String get notif_action_follow_back => 'Follow back';
+
+  @override
+  String get notif_action_view => 'View';
+
+  @override
+  String get notif_action_see_circle => 'See circle';
+
+  @override
+  String get notif_load_older => 'Load older';
+
+  @override
+  String get notif_empty_no_notifications => 'No notifications yet';
+
+  @override
+  String get notif_empty_subtitle => 'We\'ll notify you when something happens';
+
+  @override
+  String get notif_btn_retry => 'Retry';
+
+  @override
+  String notif_error_prefix(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get activity_last_7_days => 'LAST 7 DAYS';
+
+  @override
+  String get activity_search_hint => 'Search activity…';
+
+  @override
+  String get activity_pill_upcoming => 'Upcoming';
+
+  @override
+  String get activity_pill_live => 'Live';
+
+  @override
+  String get activity_subject_reward => 'Reward';
+
+  @override
+  String get activity_subject_security => 'Security';
+
+  @override
+  String get activity_all_normal_title => 'All activity looks normal';
+
+  @override
+  String get activity_all_normal_body =>
+      'No unusual sign-ins or device changes in the past 30 days. ';
+
+  @override
+  String get activity_manage_devices => 'Manage devices →';
+
+  @override
+  String get activity_empty_no_activity => 'No activity yet';
+
+  @override
+  String get activity_empty_subtitle => 'Your activity will appear here';
+
+  @override
+  String get activity_day_streak => 'day streak';
+
+  @override
+  String activity_participants_count(int count) {
+    return '$count participants';
+  }
+
+  @override
+  String get time_just_now => 'Just now';
+
+  @override
+  String time_minutes_ago(int n) {
+    return '${n}m ago';
+  }
+
+  @override
+  String time_hours_ago(int n) {
+    return '${n}h ago';
+  }
+
+  @override
+  String time_days_ago(int n) {
+    return '${n}d ago';
+  }
+
+  @override
+  String notif_kind_friend_requested(String actor) {
+    return '$actor sent you a friend request';
+  }
+
+  @override
+  String get notif_kind_friend_requested_anon =>
+      'You have a new friend request';
+
+  @override
+  String notif_kind_friend_accepted(String actor) {
+    return '$actor accepted your friend request';
+  }
+
+  @override
+  String get notif_kind_friend_accepted_anon =>
+      'Your friend request was accepted';
+
+  @override
+  String notif_kind_social_followed(String actor) {
+    return '$actor started following you';
+  }
+
+  @override
+  String get notif_kind_social_followed_anon => 'You have a new follower';
+
+  @override
+  String notif_kind_social_circle_joined(String actor) {
+    return '$actor joined your circle';
+  }
+
+  @override
+  String get notif_kind_social_circle_joined_anon =>
+      'Someone joined your circle';
+
+  @override
+  String notif_kind_social_post_liked(String actor) {
+    return '$actor liked your post';
+  }
+
+  @override
+  String get notif_kind_social_post_liked_anon => 'Someone liked your post';
+
+  @override
+  String notif_kind_social_post_commented(String actor) {
+    return '$actor commented on your post';
+  }
+
+  @override
+  String get notif_kind_social_post_commented_anon =>
+      'New comment on your post';
+
+  @override
+  String notif_kind_social_comment_liked(String actor) {
+    return '$actor liked your comment';
+  }
+
+  @override
+  String get notif_kind_social_comment_liked_anon =>
+      'Someone liked your comment';
+
+  @override
+  String notif_kind_social_mentioned(String actor) {
+    return '$actor mentioned you';
+  }
+
+  @override
+  String get notif_kind_social_mentioned_anon => 'You were mentioned';
+
+  @override
+  String notif_kind_game_invited(String actor) {
+    return '$actor invited you to a game';
+  }
+
+  @override
+  String get notif_kind_game_invited_anon => 'You have a new game invite';
+
+  @override
+  String get notif_kind_game_updated => 'Game details updated';
+
+  @override
+  String notif_kind_game_join_request(String actor) {
+    return '$actor requested to join your game';
+  }
+
+  @override
+  String get notif_kind_game_join_request_anon =>
+      'Someone requested to join your game';
+
+  @override
+  String get notif_kind_game_waitlist_promoted =>
+      'You\'re in! A spot opened up';
+
+  @override
+  String get notif_kind_game_reminder => 'Game reminder';
+
+  @override
+  String get notif_kind_arena_payment_required =>
+      'Payment required for your booking';
+
+  @override
+  String get notif_kind_reward_badge_awarded => 'You earned a new badge';
+
+  @override
+  String get notif_kind_achievement_earned => 'You unlocked a new achievement';
 }

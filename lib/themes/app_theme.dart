@@ -995,7 +995,7 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return colorScheme.onPrimary;
+            return Colors.white;
           }
           return colorScheme.outline;
         }),
@@ -1004,6 +1004,12 @@ class AppTheme {
             return colorScheme.primary;
           }
           return colorScheme.surfaceContainerHighest;
+        }),
+        trackOutlineColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return Colors.transparent;
+          }
+          return colorScheme.outline;
         }),
       ),
 

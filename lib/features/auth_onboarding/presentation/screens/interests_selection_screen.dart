@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-/// Mode for the interests selection screen
-enum InterestsSelectionMode {
-  /// Onboarding flow - creates new user profile
-  onboarding,
+enum InterestsSelectionMode { onboarding, addPersona }
 
-  /// Add persona flow - adds profile to existing user
-  addPersona,
-}
-
-/// Screen for selecting sports interests during onboarding or add persona flow
-///
-/// UI + SELECTION ONLY - only updates profiles.interests field
-///
-/// Grouping Logic:
-/// 1. "Popular in your region" - sports matching user's region
-/// 2. "Other sports" - all remaining sports
 class InterestsSelectionScreen extends ConsumerStatefulWidget {
   final InterestsSelectionMode mode;
 
@@ -42,11 +29,13 @@ class InterestsSelectionScreen extends ConsumerStatefulWidget {
 
 class _InterestsSelectionScreenState
     extends ConsumerState<InterestsSelectionScreen> {
-  final Set<String> _selectedSportIds = {}; // UUIDs
+  final Set<String> _selectedSportIds = {};
   bool _isLoading = false;
   List<Sport> _loadedSports = [];
+  String _query = '';
 
   void _toggleSport(String sportId) {
+    HapticFeedback.lightImpact();
     setState(() {
       if (_selectedSportIds.contains(sportId)) {
         _selectedSportIds.remove(sportId);
@@ -73,29 +62,23 @@ class _InterestsSelectionScreenState
       final sportIds = _selectedSportIds.toList();
 
       if (widget.mode == InterestsSelectionMode.addPersona) {
-        // ADD PERSONA MODE: Just update provider, no DB write yet
         ref.read(addPersonaDataProvider.notifier).setInterests(sportIds);
-
-        if (mounted) {
-          context.push(RoutePaths.addPersonaPrimarySport);
-        }
+        if (mounted) context.push(RoutePaths.addPersonaPrimarySport);
       } else {
-        // ONBOARDING MODE: Store UUIDs in provider, navigate to primary sport
         final firstSport = _loadedSports.isNotEmpty
             ? _loadedSports.firstWhere(
                 (s) => s.id == sportIds.first,
                 orElse: () => _loadedSports.first,
               )
             : null;
-        ref.read(onboardingDataProvider.notifier).setSports(
-          preferredSport: sportIds.first,
-          interests: sportIds,
-          preferredSportName: firstSport?.nameEn,
-        );
-
-        if (mounted) {
-          context.push(RoutePaths.onboardingPrimarySport);
-        }
+        ref
+            .read(onboardingDataProvider.notifier)
+            .setSports(
+              preferredSport: sportIds.first,
+              interests: sportIds,
+              preferredSportName: firstSport?.nameEn,
+            );
+        if (mounted) context.push(RoutePaths.onboardingPrimarySport);
       }
     } catch (e) {
       if (mounted) {
@@ -107,15 +90,11 @@ class _InterestsSelectionScreenState
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  /// Returns persona-aware title and subtitle
   (String, String) _getPersonaSpecificCopy() {
-    // For add persona mode, use addPersonaDataProvider
     if (widget.mode == InterestsSelectionMode.addPersona) {
       final addPersonaData = ref.read(addPersonaDataProvider);
       final targetPersona = addPersonaData?.targetPersona;
@@ -144,7 +123,6 @@ class _InterestsSelectionScreenState
       };
     }
 
-    // For onboarding mode, use onboardingDataProvider
     final onboardingData = ref.read(onboardingDataProvider);
     final intention = onboardingData?.intention;
 
@@ -174,353 +152,348 @@ class _InterestsSelectionScreenState
 
   void _handleBack() {
     if (widget.mode == InterestsSelectionMode.addPersona) {
-      // Clear add persona data and go back
       ref.read(addPersonaDataProvider.notifier).clear();
     }
     context.pop();
   }
 
-  /// Build flow indicator badge for add persona mode
-  Widget _buildFlowIndicator(ThemeData theme, ColorScheme colorScheme) {
-    final addPersonaData = ref.read(addPersonaDataProvider);
-    final targetPersona = addPersonaData?.targetPersona ?? PersonaType.player;
-    final isConversion = addPersonaData?.isConversion ?? false;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: isConversion
-            ? colorScheme.tertiaryContainer
-            : colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isConversion ? Icons.swap_horiz : Icons.add_circle_outline,
-            size: 18,
-            color: isConversion
-                ? colorScheme.onTertiaryContainer
-                : colorScheme.onPrimaryContainer,
-          ),
-          SizedBox(width: AppSpacing.xs),
-          Text(
-            isConversion
-                ? 'Converting to ${targetPersona.displayName}'
-                : 'Adding ${targetPersona.displayName} profile',
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isConversion
-                  ? colorScheme.onTertiaryContainer
-                  : colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    // Get persona-specific copy
     final (title, subtitle) = _getPersonaSpecificCopy();
-
-    // Watch sports filtered by the user's selected country
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
 
-    return AdaptiveAuthShell(
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
-      child: sportsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.xxl),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Failed to load sports',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSecondaryContainer,
+      body: SafeArea(
+        child: Column(
+          children: [
+            OnboardingTopBar(onBack: _handleBack),
+            Expanded(
+              child: sportsAsync.when(
+                loading: () => Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                ),
+                error: (err, _) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Failed to load sports',
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () =>
+                            ref.invalidate(sportsForSelectedCountryProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: () => ref.invalidate(sportsProvider),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        data: (sports) {
-          _loadedSports = sports;
-          return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.xxl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Flow indicator (only for add persona mode)
-                if (widget.mode == InterestsSelectionMode.addPersona) ...[
-                  _buildFlowIndicator(theme, colorScheme),
-                  SizedBox(height: AppSpacing.lg),
-                ],
+                data: (sports) {
+                  _loadedSports = sports;
+                  final filtered = _query.isEmpty
+                      ? sports
+                      : sports
+                            .where(
+                              (s) => s.nameEn.toLowerCase().contains(
+                                _query.toLowerCase(),
+                              ),
+                            )
+                            .toList();
 
-                // Title (persona-specific)
-                Text(
-                  title,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                ),
-
-                SizedBox(height: AppSpacing.lg),
-
-                // Subtitle (persona-specific)
-                Text(
-                  subtitle,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                ),
-
-                SizedBox(height: AppSpacing.xxxl),
-
-                // Available sports section
-                _SectionHeader(
-                  title: AppLocalizations.of(context).interests_available_sports,
-                  colorScheme: colorScheme,
-                  theme: theme,
-                ),
-                SizedBox(height: AppSpacing.md),
-                _SportsGrid(
-                  sports: sports,
-                  selectedSportIds: _selectedSportIds,
-                  onToggle: _toggleSport,
-                  colorScheme: colorScheme,
-                  theme: theme,
-                ),
-
-                SizedBox(height: AppSpacing.xxxl),
-
-                // Selected count indicator
-                if (_selectedSportIds.isNotEmpty) ...[
-                  Container(
-                    padding: EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 20,
-                          color: colorScheme.primary,
-                        ),
-                        SizedBox(width: AppSpacing.sm),
-                        Text(
-                          '${_selectedSportIds.length} sport${_selectedSportIds.length > 1 ? 's' : ''} selected',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
+                  return CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        sliver: SliverToBoxAdapter(
+                          child: OnboardingScreenHead(
+                            eyebrow: 'Step 3 of 5',
+                            title: title,
+                            subtitle: subtitle,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.xxl),
-                ],
-
-                // Continue Button
-                FilledButton(
-                  onPressed: (_isLoading || _selectedSportIds.isEmpty)
-                      ? null
-                      : _handleContinue,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(56),
-                    shape: const StadiumBorder(),
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    textStyle: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(AppLocalizations.of(context).interests_continue),
-                ),
-
-                SizedBox(height: AppSpacing.xxl),
-
-                // Back/Cancel Button
-                Center(
-                  child: TextButton(
-                    onPressed: _handleBack,
-                    child: Text(
-                      widget.mode == InterestsSelectionMode.addPersona
-                          ? 'Cancel'
-                          : 'Back',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.primary,
                       ),
-                    ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                          child: _SearchPill(
+                            query: _query,
+                            selectedCount: _selectedSportIds.length,
+                            onChanged: (v) => setState(() => _query = v),
+                          ),
+                        ),
+                      ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                        sliver: SliverGrid.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 5,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: 0.8,
+                              ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final sport = filtered[index];
+                            final isSelected = _selectedSportIds.contains(
+                              sport.id,
+                            );
+                            return _SportTile(
+                              sport: sport,
+                              isSelected: isSelected,
+                              onTap: () => _toggleSport(sport.id),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            OnboardingBottomBar(
+              child: OnboardingCTAButton(
+                label: AppLocalizations.of(context).interests_continue,
+                onPressed: (_isLoading || _selectedSportIds.isEmpty)
+                    ? null
+                    : _handleContinue,
+                isLoading: _isLoading,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchPill extends StatefulWidget {
+  const _SearchPill({
+    required this.query,
+    required this.selectedCount,
+    required this.onChanged,
+  });
+
+  final String query;
+  final int selectedCount;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_SearchPill> createState() => _SearchPillState();
+}
+
+class _SearchPillState extends State<_SearchPill> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.query);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final borderRadius = BorderRadius.circular(16);
+    return TextField(
+      controller: _ctrl,
+      onChanged: widget.onChanged,
+      style: TextStyle(
+        color: colorScheme.onSurface,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
+      decoration: InputDecoration(
+        hintText: 'Search sports…',
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 15),
+        prefixIcon: Icon(
+          Iconsax.search_normal_1_copy,
+          color: colorScheme.onSurfaceVariant,
+          size: 20,
+        ),
+        suffixIcon: widget.selectedCount > 0
+            ? Container(
+                margin: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '${widget.selectedCount}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onPrimary,
                   ),
                 ),
-                SizedBox(height: AppSpacing.xxl),
-              ],
-            ),
-          ),
-        );
-        },
+              )
+            : null,
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLowest,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: borderRadius,
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
       ),
     );
   }
 }
 
-// Section Header Widget
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  const _SectionHeader({
-    required this.title,
-    required this.colorScheme,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-        color: colorScheme.onSecondaryContainer,
-      ),
-    );
-  }
-}
-
-// Sports Grid Widget - uses Sport objects from Supabase
-class _SportsGrid extends StatelessWidget {
-  final List<Sport> sports;
-  final Set<String> selectedSportIds;
-  final Function(String) onToggle;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  const _SportsGrid({
-    required this.sports,
-    required this.selectedSportIds,
-    required this.onToggle,
-    required this.colorScheme,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.0,
-      ),
-      itemCount: sports.length,
-      itemBuilder: (context, index) {
-        final sport = sports[index];
-        final isSelected = selectedSportIds.contains(sport.id);
-
-        return _SportCard(
-          sport: sport,
-          isSelected: isSelected,
-          onToggle: () => onToggle(sport.id),
-          colorScheme: colorScheme,
-          theme: theme,
-        );
-      },
-    );
-  }
-}
-
-// Sport Card Widget - uses Sport object from Supabase
-class _SportCard extends StatelessWidget {
-  final Sport sport;
-  final bool isSelected;
-  final VoidCallback onToggle;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
-
-  const _SportCard({
+class _SportTile extends StatelessWidget {
+  const _SportTile({
     required this.sport,
     required this.isSelected,
-    required this.onToggle,
-    required this.colorScheme,
-    required this.theme,
+    required this.onTap,
   });
+
+  final Sport sport;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final accent = kSportColors[sport.nameEn] ?? colorScheme.primary;
+    final duration = MediaQuery.of(context).disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+
     return GestureDetector(
-      onTap: onToggle,
-      child: Container(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: duration,
         decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primaryContainer
-              : colorScheme.primaryContainer.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? accent.withValues(alpha: 0.10) : colorScheme.surfaceContainerLowest,
           border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : colorScheme.outline.withValues(alpha: 0.2),
-            width: isSelected ? 2 : 1,
+            color: isSelected ? accent : colorScheme.outlineVariant,
+            width: isSelected ? 2 : 1.5,
           ),
-          borderRadius: BorderRadius.circular(12),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.22),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            // Emoji from DB (fallback to generic sports emoji)
-            Text(sport.emoji ?? '🏅', style: const TextStyle(fontSize: 28)),
-            const SizedBox(height: 6),
-
-            // Name from DB
-            Text(
-              sport.nameEn,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: colorScheme.onSurface,
+            // Corner blob
+            // Positioned(
+            //   top: -10,
+            //   right: -10,
+            //   child: Container(
+            //     width: 52,
+            //     height: 52,
+            //     decoration: BoxDecoration(
+            //       shape: BoxShape.circle,
+            //       color: accent.withValues(alpha: isSelected ? 0.18 : 0.08),
+            //     ),
+            //   ),
+            // ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Center(
+                      child: AnimatedContainer(
+                    duration: duration,
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected ? null : accent.withValues(alpha: 0.12),
+                      gradient: isSelected
+                          ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [accent, accent.withValues(alpha: 0.8)],
+                            )
+                          : null,
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: accent.withValues(alpha: 0.40),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Center(
+                      child: sport.emoji != null
+                          ? Text(
+                              sport.emoji!,
+                              style: const TextStyle(fontSize: 16),
+                            )
+                          : Icon(
+                              kSportIcons[sport.nameEn] ?? Iconsax.activity,
+                              size: 16,
+                              color: isSelected ? colorScheme.onPrimary : accent,
+                            ),
+                    ),
+                  ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    sport.nameEn,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
-
-            // Selection indicator
-            if (isSelected) ...[
-              const SizedBox(height: 4),
-              Icon(Icons.check_circle, size: 16, color: colorScheme.primary),
-            ],
+            // Check badge
+            if (isSelected)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: CheckBadge(color: accent, size: 13),
+              ),
           ],
         ),
       ),
