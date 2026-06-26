@@ -14,7 +14,6 @@ import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/providers.dart' as squads_p;
 import 'package:dabbler/features/social/providers/community_providers.dart';
 import 'package:dabbler/features/social/circles_providers.dart';
-import 'package:dabbler/providers/notification_providers.dart';
 import 'package:dabbler/features/rewards/providers/check_in_providers.dart';
 
 /// Invalidates every provider that holds data scoped to the currently
@@ -78,10 +77,6 @@ void resetUserScopedProviders(Ref ref) {
   ref.invalidate(circleListProvider);
   ref.invalidate(friendInboxProvider);
   ref.invalidate(friendOutboxProvider);
-
-  // --- Notifications ---
-  ref.invalidate(inboxStreamProvider);
-  ref.invalidate(unreadCountProvider);
 
   // --- Check-in / rewards ---
   ref.invalidate(checkInStatusDetailProvider);
