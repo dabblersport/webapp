@@ -1,4 +1,5 @@
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/repositories/base_repository.dart';
@@ -10,7 +11,7 @@ class SportsRepository extends BaseRepository {
   /// All active sports, ordered by name_en.
   Future<Result<List<Sport>, Failure>> getActiveSports() => guard(() async {
     final rows = await svc.client
-        .from('sports')
+        .from(SupabaseConfig.sportsTable)
         .select()
         .eq('is_active', true)
         .order('name_en');
@@ -32,7 +33,7 @@ class SportsRepository extends BaseRepository {
         }
 
         final rows = await svc.client
-            .from('sports')
+            .from(SupabaseConfig.sportsTable)
             .select()
             .eq('is_active', true)
             .contains('popularity_countries', [countryCode])
@@ -47,7 +48,7 @@ class SportsRepository extends BaseRepository {
   ) =>
       guard(() async {
         var query = svc.client
-            .from('sports')
+            .from(SupabaseConfig.sportsTable)
             .select()
             .eq('is_active', true)
             .eq('is_challenge_sport', true);

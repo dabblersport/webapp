@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -28,7 +29,7 @@ class RatingsRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw const AuthFailure(message: 'Not signed in');
 
-      dynamic q = _db.from('ratings').select().eq('rater_user_id', uid);
+      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('rater_user_id', uid);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -51,7 +52,7 @@ class RatingsRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw const AuthFailure(message: 'Not signed in');
 
-      dynamic q = _db.from('ratings').select().eq('target_user_id', uid);
+      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_user_id', uid);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -72,7 +73,7 @@ class RatingsRepositoryImpl extends BaseRepository
     int limit = 200,
   }) async {
     return guard<List<Rating>>(() async {
-      dynamic q = _db.from('ratings').select().eq('target_game_id', gameId);
+      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_game_id', gameId);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -93,7 +94,7 @@ class RatingsRepositoryImpl extends BaseRepository
     int limit = 200,
   }) async {
     return guard<List<Rating>>(() async {
-      dynamic q = _db.from('ratings').select().eq('target_venue_id', venueId);
+      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_venue_id', venueId);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -114,7 +115,7 @@ class RatingsRepositoryImpl extends BaseRepository
   ) async {
     return guard<RatingAggregate?>(() async {
       final row = await _db
-          .from('user_reputation_aggregate')
+          .from(SupabaseConfig.userReputationAggregateTable)
           .select()
           .eq('user_id', userId)
           .maybeSingle();
@@ -129,7 +130,7 @@ class RatingsRepositoryImpl extends BaseRepository
   ) async {
     return guard<RatingAggregate?>(() async {
       final row = await _db
-          .from('game_rating_aggregate')
+          .from(SupabaseConfig.gameRatingAggregateTable)
           .select()
           .eq('game_id', gameId)
           .maybeSingle();
@@ -144,7 +145,7 @@ class RatingsRepositoryImpl extends BaseRepository
   ) async {
     return guard<RatingAggregate?>(() async {
       final row = await _db
-          .from('venue_rating_aggregate')
+          .from(SupabaseConfig.venueRatingAggregateTable)
           .select()
           .eq('venue_id', venueId)
           .maybeSingle();

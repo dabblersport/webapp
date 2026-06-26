@@ -1,4 +1,5 @@
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/base_repository.dart';
@@ -19,7 +20,7 @@ class ProfileLocationRepositoryImpl extends BaseRepository
       guard(() async {
         // Insert a PostGIS geography point. Longitude comes first in WKT.
         final row = await svc.client
-            .from('geo_locations')
+            .from(SupabaseConfig.geoLocationsTable)
             .insert({
               'location': 'SRID=4326;POINT($lng $lat)',
               'area_id': areaId,
@@ -37,7 +38,7 @@ class ProfileLocationRepositoryImpl extends BaseRepository
       guard(() async {
         // RLS scopes this to the authenticated user's profile automatically.
         final rows = await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .select()
             .order('created_at', ascending: false);
         return rows
@@ -59,13 +60,13 @@ class ProfileLocationRepositoryImpl extends BaseRepository
         // If this will be primary, demote existing primary first.
         if (isPrimary) {
           await svc.client
-              .from('profile_locations')
+              .from(SupabaseConfig.profileLocationsTable)
               .update({'is_primary': false})
               .eq('is_primary', true);
         }
 
         final row = await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .insert({
               'geo_location_id': geoLocationId,
               'label': label.toJson(),
@@ -87,18 +88,18 @@ class ProfileLocationRepositoryImpl extends BaseRepository
       guard(() async {
         // Step 1: clear existing primary
         await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .update({'is_primary': false})
             .eq('is_primary', true);
 
         // Step 2: set new primary
         await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .update({'is_primary': true})
             .eq('id', locationId);
 
         // Step 3: sync to profiles table for post-trigger fallback
-        await svc.client.from('profiles').update({
+        await svc.client.from(SupabaseConfig.usersTable).update({
           'latitude': lat,
           'longitude': lng,
           'last_location_updated_at':
@@ -110,7 +111,7 @@ class ProfileLocationRepositoryImpl extends BaseRepository
   Future<Result<void, Failure>> deleteLocation(String locationId) =>
       guard(() async {
         await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .delete()
             .eq('id', locationId);
       });
@@ -122,7 +123,7 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     String? customName,
   }) =>
       guard(() async {
-        await svc.client.from('profile_locations').update({
+        await svc.client.from(SupabaseConfig.profileLocationsTable).update({
           'label': label.toJson(),
           'label_custom': customName,
         }).eq('id', locationId);
@@ -135,7 +136,7 @@ class ProfileLocationRepositoryImpl extends BaseRepository
   ) =>
       guard(() async {
         await svc.client
-            .from('profile_locations')
+            .from(SupabaseConfig.profileLocationsTable)
             .update({'nearby_radius_meters': meters}).eq('id', locationId);
       });
 

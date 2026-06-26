@@ -103,4 +103,67 @@ class SupabaseConfig {
     'padel': 4,
     'squash': 4,
   };
+
+  // ---- P4-1: table name constants (auto-generated from call sites) ----
+  static const String areasTable = 'areas';
+  static const String banTermsTable = 'ban_terms';
+  static const String circleMembersTable = 'circle_members';
+  static const String circlesTable = 'circles';
+  static const String commentsTable = 'comments';
+  static const String friendEdgesTable = 'friend_edges';
+  static const String friendshipsTable = 'friendships';
+  static const String gameRatingAggregateTable = 'game_rating_aggregate';
+  static const String gamesTable = 'games';
+  static const String geoLocationsTable = 'geo_locations';
+  static const String hashtagsTable = 'hashtags';
+  static const String likesTable = 'likes';
+  static const String moderationActionsTable = 'moderation_actions';
+  static const String moderationBanTermsTable = 'moderation_ban_terms';
+  static const String moderationFlagsTable = 'moderation_flags';
+  static const String moderationReportsTable = 'moderation_reports';
+  static const String moderationTicketsTable = 'moderation_tickets';
+  static const String notificationsTable = 'notifications';
+  static const String payoutsTable = 'payouts';
+  static const String postCirclesTable = 'post_circles';
+  static const String postHashtagsTable = 'post_hashtags';
+  static const String postRepostsTable = 'post_reposts';
+  static const String postSquadsTable = 'post_squads';
+  static const String postThemesTable = 'post_themes';
+  static const String postViewsTable = 'post_views';
+  static const String postsTable = 'posts';
+  static const String profileFollowsTable = 'profile_follows';
+  static const String profileLocationsTable = 'profile_locations';
+  static const String ratingsTable = 'ratings';
+  static const String reactionsTable = 'reactions';
+  static const String spaceSlotGridTable = 'space_slot_grid';
+  static const String spaceSlotHoldsTable = 'space_slot_holds';
+  static const String sportsTable = 'sports';
+  static const String squadInvitesTable = 'squad_invites';
+  static const String squadJoinRequestsTable = 'squad_join_requests';
+  static const String squadLinkTokensTable = 'squad_link_tokens';
+  static const String squadMembersTable = 'squad_members';
+  static const String squadsTable = 'squads';
+  static const String userBlocksTable = 'user_blocks';
+  static const String userReputationAggregateTable = 'user_reputation_aggregate';
+  static const String vCircleTable = 'v_circle';
+  static const String vFeedCircleTable = 'v_feed_circle';
+  static const String vSquadCardTable = 'v_squad_card';
+  static const String vSquadDetailTable = 'v_squad_detail';
+  static const String venueOpeningHoursTable = 'venue_opening_hours';
+  static const String venuePriceRulesTable = 'venue_price_rules';
+  static const String venueRatingAggregateTable = 'venue_rating_aggregate';
+  static const String venueSpacesTable = 'venue_spaces';
+  static const String venueSubmissionsTable = 'venue_submissions';
+  static const String vibesTable = 'vibes';
+  static const String walletLedgerTable = 'wallet_ledger';
+  static const String walletsTable = 'wallets';
+
+  // ---- P4-1: RPC name constants ----
+  static const String isAdminFn = 'is_admin';
+  static const String rpcBlockUserFn = 'rpc_block_user';
+  static const String rpcCircleListFn = 'rpc_circle_list';
+  static const String rpcFriendRequestsInboxFn = 'rpc_friend_requests_inbox';
+  static const String rpcFriendRequestsOutboxFn = 'rpc_friend_requests_outbox';
+  static const String rpcFriendUnfriendFn = 'rpc_friend_unfriend';
+  static const String rpcUnblockUserFn = 'rpc_unblock_user';
 }

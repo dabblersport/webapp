@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -21,7 +22,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
     try {
       final norm = DisplayNameRules.normalize(displayName);
       final row = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('display_name_norm', norm)
           .maybeSingle();
@@ -38,7 +39,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
     int offset = 0,
   }) async {
     try {
-      var request = _db.from('profiles').select();
+      var request = _db.from(SupabaseConfig.usersTable).select();
       final trimmedQuery = query.trim();
       if (trimmedQuery.isNotEmpty) {
         request = request.ilike('display_name', '%$trimmedQuery%');
@@ -74,7 +75,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
         'display_name_norm': DisplayNameRules.normalize(displayName),
       };
       final response = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update(patch)
           .eq('id', profileId)
           .select()
@@ -125,7 +126,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
 
     try {
       final existing = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', profileType)
@@ -140,7 +141,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
       final profileRow = Map<String, dynamic>.from(existing as Map);
       final profileId = profileRow['id'] as String;
       final response = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({
             'display_name': displayName.trim(),
             'display_name_norm': DisplayNameRules.normalize(displayName),
@@ -189,7 +190,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
     Future<Result<Profile, Failure>> fetch() async {
       try {
         final response = await _db
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select()
             .eq('user_id', uid)
             .eq('profile_type', profileType)
@@ -207,7 +208,7 @@ class DisplayNameRepositoryImpl implements DisplayNameRepository {
     try {
       yield await fetch();
 
-      final stream = _db.from('profiles').stream(primaryKey: ['id']);
+      final stream = _db.from(SupabaseConfig.usersTable).stream(primaryKey: ['id']);
 
       await for (final _ in stream) {
         yield await fetch();

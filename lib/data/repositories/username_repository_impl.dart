@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -32,7 +33,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
   Future<Result<Profile, Failure>> getByUsername(String username) async {
     try {
       final row = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select()
           .eq('username', username.trim())
           .maybeSingle();
@@ -57,7 +58,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
     int offset = 0,
   }) async {
     try {
-      dynamic builder = _client.from('profiles').select();
+      dynamic builder = _client.from(SupabaseConfig.usersTable).select();
       final trimmed = query.trim();
       if (trimmed.isNotEmpty) {
         builder = builder.ilike('username', '%$trimmed%');
@@ -91,7 +92,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
     final trimmed = username.trim();
     try {
       final row = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'username': trimmed})
           .eq('id', profileId)
           .select()
@@ -128,7 +129,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
     final trimmed = username.trim();
     try {
       final profileRow = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', profileType)
@@ -143,7 +144,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
       final profileMap = Map<String, dynamic>.from(profileRow);
       final profileId = profileMap['id'] as String;
       final row = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'username': trimmed})
           .eq('id', profileId)
           .select()
@@ -240,7 +241,7 @@ class UsernameRepositoryImpl implements UsernameRepository {
     try {
       // Query once instead of streaming for now
       final data = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select()
           .eq('user_id', uid)
           .eq('profile_type', profileType)

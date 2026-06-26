@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/utils/json.dart';
@@ -17,7 +18,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     int limit = 100,
   }) async {
     return guard<List<VenueSpace>>(() async {
-      var query = svc.from('venue_spaces').select().eq('is_active', true);
+      var query = svc.from(SupabaseConfig.venueSpacesTable).select().eq('is_active', true);
 
       if (venueId != null && venueId.isNotEmpty) {
         query = query.eq('venue_id', venueId);
@@ -36,7 +37,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<List<OpeningHour>>(() async {
       // RLS: public read (hours_public_read).
       final rows = await svc
-          .from('venue_opening_hours')
+          .from(SupabaseConfig.venueOpeningHoursTable)
           .select()
           .eq('venue_space_id', venueSpaceId)
           .order('day_of_week', ascending: true);
@@ -52,7 +53,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<List<SpacePrice>>(() async {
       // RLS: public read but only is_active=true (prices_public_read).
       final rows = await svc
-          .from('venue_price_rules')
+          .from(SupabaseConfig.venuePriceRulesTable)
           .select()
           .eq('venue_space_id', venueSpaceId)
           .eq('is_active', true)
@@ -67,7 +68,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<VenueSpace>(() async {
       // RLS: write allowed when user is venue admin/manager (spaces_manage / vspaces_write).
       final row = await svc
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .upsert(space.toInsertMap(), onConflict: 'id')
           .select()
           .single();
@@ -83,7 +84,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<OpeningHour>(() async {
       // RLS: write allowed when user is venue admin/manager (hours_manage).
       final row = await svc
-          .from('venue_opening_hours')
+          .from(SupabaseConfig.venueOpeningHoursTable)
           .upsert(hour.toInsertMap(), onConflict: 'id')
           .select()
           .single();
@@ -97,7 +98,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<SpacePrice>(() async {
       // RLS: write allowed when user is venue admin/manager (vprices_write / prices_manage).
       final row = await svc
-          .from('venue_price_rules')
+          .from(SupabaseConfig.venuePriceRulesTable)
           .upsert(price.toInsertMap(), onConflict: 'id')
           .select()
           .single();
@@ -114,7 +115,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     return guard<VenueSpace>(() async {
       // RLS: write allowed when user is venue admin/manager.
       final row = await svc
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .update({'is_active': isActive})
           .eq('id', spaceId)
           .select()

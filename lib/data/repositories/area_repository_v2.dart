@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,7 +27,7 @@ class AreaRepository {
     if (_cache != null) return _cache!;
     try {
       final rows = await _db
-          .from('areas')
+          .from(SupabaseConfig.areasTable)
           .select()
           .eq('is_active', true)
           .order('name');

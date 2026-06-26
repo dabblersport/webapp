@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -21,7 +22,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
           if (userId == null) return const <PublicActivity>[];
 
           final profileRows = await _db
-              .from('profiles')
+              .from(SupabaseConfig.usersTable)
               .select('id')
               .eq('user_id', userId)
               .limit(1) as List;
@@ -29,7 +30,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
           final myProfileId = profileRows.first['id'] as String;
 
           final followRows = await _db
-              .from('profile_follows')
+              .from(SupabaseConfig.profileFollowsTable)
               .select('following_profile_id')
               .eq('follower_profile_id', myProfileId) as List;
 
@@ -71,7 +72,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
     required int offset,
   }) async {
     dynamic query = _db
-        .from('public_activities')
+        .from(SupabaseConfig.publicActivitiesTable)
         .select('id, activity_type, actor_profile_id, parent_activity_id, created_at')
         .not('actor_profile_id', 'is', null);
 
@@ -95,7 +96,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
         .toList();
 
     final profileRows = await _db
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select('id, username, avatar_url')
         .inFilter('id', actorProfileIds) as List;
 
@@ -116,7 +117,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
     if (parentIds.isNotEmpty) {
       try {
         final newsRows = await _db
-            .from('published_news')
+            .from(SupabaseConfig.publishedNewsTable)
             .select('id, title, cover_image_url')
             .inFilter('id', parentIds) as List;
         for (final n in newsRows) {

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 
 import 'package:dabbler/core/fp/result.dart';
@@ -30,11 +31,11 @@ class NotificationsRepositoryImpl extends BaseRepository
 
       // Fetch blocked user IDs to filter notifications from blocked users
       final blockedByMe = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('blocked_user_id')
           .eq('blocker_user_id', uid);
       final blockedMe = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('blocker_user_id')
           .eq('blocked_user_id', uid);
       final blockedIds = <String>{
@@ -42,7 +43,7 @@ class NotificationsRepositoryImpl extends BaseRepository
         ...(blockedMe as List).map((r) => r['blocker_user_id'] as String),
       };
 
-      var query = _db.from('notifications').select().eq('user_id', uid);
+      var query = _db.from(SupabaseConfig.notificationsTable).select().eq('user_id', uid);
 
       if (since != null) {
         query = query.gte('created_at', since.toIso8601String());
@@ -73,7 +74,7 @@ class NotificationsRepositoryImpl extends BaseRepository
       if (uid == null) throw AuthException('Not authenticated');
 
       final rows = await _db
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .select()
           .eq('id', id)
           .limit(1)
@@ -93,7 +94,7 @@ class NotificationsRepositoryImpl extends BaseRepository
       final now = DateTime.now().toUtc().toIso8601String();
 
       final res = await _db
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .update({'read_at': now})
           .eq('id', id)
           .eq('user_id', uid);
@@ -115,7 +116,7 @@ class NotificationsRepositoryImpl extends BaseRepository
       final now = DateTime.now().toUtc().toIso8601String();
 
       var query = _db
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .update({'read_at': now})
           .eq('user_id', uid)
           .isFilter('read_at', null);
@@ -142,7 +143,7 @@ class NotificationsRepositoryImpl extends BaseRepository
 
     // Simple realtime stream using Supabase's .stream API.
     return _db
-        .from('notifications')
+        .from(SupabaseConfig.notificationsTable)
         .stream(primaryKey: ['id'])
         .eq('user_id', uid)
         .order('created_at', ascending: false)

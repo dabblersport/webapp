@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -33,7 +34,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
         };
 
         final row = await svc
-            .from('venue_submissions')
+            .from(SupabaseConfig.venueSubmissionsTable)
             .insert(insert)
             .select()
             .single();
@@ -46,7 +47,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
       };
 
       final row = await svc
-          .from('venue_submissions')
+          .from(SupabaseConfig.venueSubmissionsTable)
           .update(update)
           .eq('id', draft.id!)
           .select()
@@ -67,7 +68,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
 
     return guard<VenueSubmissionModel>(() async {
       final row = await svc
-          .from('venue_submissions')
+          .from(SupabaseConfig.venueSubmissionsTable)
           .update({'status': VenueSubmissionStatus.pending.name})
           .eq('id', submissionId)
           .select()
@@ -89,7 +90,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
 
     return guard<List<VenueSubmissionModel>>(() async {
       final rows = await svc
-          .from('venue_submissions')
+          .from(SupabaseConfig.venueSubmissionsTable)
           .select()
           .eq('organiser_profile_id', organiserProfileId)
           .order('created_at', ascending: false)
@@ -109,7 +110,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
     }
 
     return guard<VenueSubmissionModel>(() async {
-      final row = await svc.from('venue_submissions').select().eq('id', id).single();
+      final row = await svc.from(SupabaseConfig.venueSubmissionsTable).select().eq('id', id).single();
       return VenueSubmissionModel.fromMap(asMap(row));
     });
   }

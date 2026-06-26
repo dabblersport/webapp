@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -13,7 +14,7 @@ class AreaRepositoryImpl extends BaseRepository implements AreaRepository {
   @override
   Future<Result<Area, Failure>> getArea(String areaId) => guard(() async {
     final row = await svc.client
-        .from('areas')
+        .from(SupabaseConfig.areasTable)
         .select()
         .eq('id', areaId)
         .single();
@@ -23,7 +24,7 @@ class AreaRepositoryImpl extends BaseRepository implements AreaRepository {
   @override
   Future<Result<List<Area>, Failure>> getActiveAreas() => guard(() async {
     final rows = await svc.client
-        .from('areas')
+        .from(SupabaseConfig.areasTable)
         .select()
         .eq('is_active', true)
         .order('name');
@@ -35,7 +36,7 @@ class AreaRepositoryImpl extends BaseRepository implements AreaRepository {
     required double lat,
     required double lng,
   }) => guard(() async {
-    final rows = await svc.client.from('areas').select().eq('is_active', true);
+    final rows = await svc.client.from(SupabaseConfig.areasTable).select().eq('is_active', true);
 
     if (rows.isEmpty) {
       throw Exception('No active areas found');

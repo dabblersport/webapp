@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'base_repository.dart';
@@ -20,7 +21,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
       if (uid == targetUserId) throw Exception('Cannot block yourself');
 
       // Server-side RPC handles insert into user_blocks + removes follows/friendships
-      await _db.rpc('rpc_block_user', params: {'p_peer': targetUserId});
+      await _db.rpc(SupabaseConfig.rpcBlockUserFn, params: {'p_peer': targetUserId});
     });
   }
 
@@ -30,7 +31,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
       final uid = _uid;
       if (uid == null) throw AuthException('Not authenticated');
 
-      await _db.rpc('rpc_unblock_user', params: {'p_peer': targetUserId});
+      await _db.rpc(SupabaseConfig.rpcUnblockUserFn, params: {'p_peer': targetUserId});
     });
   }
 
@@ -42,13 +43,13 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
 
       // Get users I blocked
       final blockedByMe = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('blocked_user_id')
           .eq('blocker_user_id', uid);
 
       // Get users who blocked me
       final blockedMe = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('blocker_user_id')
           .eq('blocked_user_id', uid);
 
@@ -69,7 +70,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
 
       // Check if I blocked them
       final byMe = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('id')
           .eq('blocker_user_id', uid)
           .eq('blocked_user_id', otherUserId)
@@ -78,7 +79,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
 
       // Check if they blocked me
       final byThem = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('id')
           .eq('blocker_user_id', otherUserId)
           .eq('blocked_user_id', uid)
@@ -96,7 +97,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
 
       // Fetch users I have actively blocked (not users who blocked me)
       final rows = await _db
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('blocked_user_id, created_at')
           .eq('blocker_user_id', uid)
           .order('created_at', ascending: false);
@@ -109,7 +110,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
 
       // Fetch profile details
       final profiles = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id, display_name, username, avatar_url')
           .inFilter('user_id', blockedIds);
 

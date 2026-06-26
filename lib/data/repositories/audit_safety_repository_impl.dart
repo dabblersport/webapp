@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -66,7 +67,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
 
       final rows =
           await _db
-                  .from('moderation_reports')
+                  .from(SupabaseConfig.moderationReportsTable)
                   .select()
                   .eq('reporter_user_id', uid)
                   .order('created_at', ascending: false)
@@ -83,7 +84,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? since,
   }) async {
     return guard<List<AbuseFlag>>(() async {
-      var query = _db.from('moderation_reports').select();
+      var query = _db.from(SupabaseConfig.moderationReportsTable).select();
 
       if (since != null) {
         query = query.gte('created_at', since.toIso8601String());
@@ -104,7 +105,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     }
 
     return _db
-        .from('moderation_reports')
+        .from(SupabaseConfig.moderationReportsTable)
         .stream(primaryKey: ['id'])
         .eq('reporter_user_id', uid)
         .order('created_at', ascending: false)
@@ -124,7 +125,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? before,
   }) async {
     return guard<List<AbuseFlag>>(() async {
-      var query = _db.from('moderation_reports').select();
+      var query = _db.from(SupabaseConfig.moderationReportsTable).select();
 
       if (status != null) {
         query = query.eq('status', status);
@@ -168,7 +169,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? before,
   }) async {
     return guard<List<ModerationTicket>>(() async {
-      var query = _db.from('moderation_tickets').select();
+      var query = _db.from(SupabaseConfig.moderationTicketsTable).select();
 
       if (status != null) {
         query = query.eq('status', status);
@@ -194,7 +195,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
     DateTime? before,
   }) async {
     return guard<List<ModerationAction>>(() async {
-      var query = _db.from('moderation_actions').select();
+      var query = _db.from(SupabaseConfig.moderationActionsTable).select();
 
       if (subjectType != null) {
         query = query.eq('subject_type', subjectType);
@@ -219,7 +220,7 @@ class AuditSafetyRepositoryImpl extends BaseRepository
   @override
   Future<Result<List<BanTerm>, Failure>> listBanTerms({bool? enabled}) async {
     return guard<List<BanTerm>>(() async {
-      var query = _db.from('ban_terms').select();
+      var query = _db.from(SupabaseConfig.banTermsTable).select();
 
       if (enabled != null) {
         query = query.eq('enabled', enabled);

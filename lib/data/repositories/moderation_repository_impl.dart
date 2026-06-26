@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -18,7 +19,7 @@ class ModerationRepositoryImpl extends BaseRepository
       if (uid == null) {
         return Err(AuthFailure(message: 'No auth user'));
       }
-      final res = await _db.rpc('is_admin', params: {'u': uid});
+      final res = await _db.rpc(SupabaseConfig.isAdminFn, params: {'u': uid});
       // unwrap the response
       final data = res as bool?;
       return Ok(data == true);
@@ -67,7 +68,7 @@ class ModerationRepositoryImpl extends BaseRepository
   }) async {
     return _guardAdmin(() async {
       try {
-        dynamic q = _db.from('moderation_flags').select();
+        dynamic q = _db.from(SupabaseConfig.moderationFlagsTable).select();
         q = _applyWhere(q, where).range(offset, offset + limit - 1);
         final rows = await q;
         return Ok(List<Map<String, dynamic>>.from(rows));
@@ -88,7 +89,7 @@ class ModerationRepositoryImpl extends BaseRepository
   }) async {
     return _guardAdmin(() async {
       try {
-        dynamic q = _db.from('moderation_tickets').select();
+        dynamic q = _db.from(SupabaseConfig.moderationTicketsTable).select();
         q = _applyWhere(q, where).range(offset, offset + limit - 1);
         final rows = await q;
         return Ok(List<Map<String, dynamic>>.from(rows));
@@ -107,7 +108,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final rows = await _db
-            .from('moderation_tickets')
+            .from(SupabaseConfig.moderationTicketsTable)
             .insert(values)
             .select()
             .single();
@@ -128,7 +129,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final rows = await _db
-            .from('moderation_tickets')
+            .from(SupabaseConfig.moderationTicketsTable)
             .update(patch)
             .eq('id', id)
             .select()
@@ -151,7 +152,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final res = await _db
-            .from('moderation_tickets')
+            .from(SupabaseConfig.moderationTicketsTable)
             .update({'status': status})
             .eq('id', id);
         // PostgREST update returns affected rows count only in newer clients; fallback to select check:
@@ -174,7 +175,7 @@ class ModerationRepositoryImpl extends BaseRepository
   }) async {
     return _guardAdmin(() async {
       try {
-        dynamic q = _db.from('moderation_actions').select();
+        dynamic q = _db.from(SupabaseConfig.moderationActionsTable).select();
         q = _applyWhere(q, where).range(offset, offset + limit - 1);
         final rows = await q;
         return Ok(List<Map<String, dynamic>>.from(rows));
@@ -193,7 +194,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final row = await _db
-            .from('moderation_actions')
+            .from(SupabaseConfig.moderationActionsTable)
             .insert(values)
             .select()
             .single();
@@ -215,7 +216,7 @@ class ModerationRepositoryImpl extends BaseRepository
   }) async {
     return _guardAdmin(() async {
       try {
-        dynamic q = _db.from('moderation_ban_terms').select();
+        dynamic q = _db.from(SupabaseConfig.moderationBanTermsTable).select();
         q = _applyWhere(q, where).range(offset, offset + limit - 1);
         final rows = await q;
         return Ok(List<Map<String, dynamic>>.from(rows));
@@ -234,7 +235,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final row = await _db
-            .from('moderation_ban_terms')
+            .from(SupabaseConfig.moderationBanTermsTable)
             .upsert(values)
             .select()
             .single();
@@ -252,7 +253,7 @@ class ModerationRepositoryImpl extends BaseRepository
     return _guardAdmin(() async {
       try {
         final res = await _db
-            .from('moderation_ban_terms')
+            .from(SupabaseConfig.moderationBanTermsTable)
             .delete()
             .eq('id', id);
         if (res is int) return Ok(res);

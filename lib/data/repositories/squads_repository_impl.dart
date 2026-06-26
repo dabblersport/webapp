@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -103,7 +104,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
           'owner_user_id': uid,
         }..removeWhere((_, value) => value == null);
         final insert = await _db
-            .from('squads')
+            .from(SupabaseConfig.squadsTable)
             .insert(payload)
             .select('id')
             .maybeSingle();
@@ -125,7 +126,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   @override
   Future<Result<Squad, Failure>> getSquadById(String id) async {
     try {
-      final row = await _db.from('squads').select().eq('id', id).maybeSingle();
+      final row = await _db.from(SupabaseConfig.squadsTable).select().eq('id', id).maybeSingle();
       if (row == null) {
         return Err(const NotFoundFailure(message: 'Squad not found'));
       }
@@ -145,7 +146,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     int offset = 0,
   }) async {
     try {
-      PostgrestFilterBuilder query = _db.from('squads').select();
+      PostgrestFilterBuilder query = _db.from(SupabaseConfig.squadsTable).select();
       query = query.eq('is_active', true);
       if (sport != null && sport.isNotEmpty) {
         query = query.eq('sport', sport);
@@ -188,7 +189,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     controller.onListen = () {
       try {
         subscription = _db
-            .from('squad_members')
+            .from(SupabaseConfig.squadMembersTable)
             .stream(primaryKey: ['squad_id', 'profile_id'])
             .eq('squad_id', squadId)
             .listen((event) {
@@ -246,7 +247,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
           return Err(const AuthFailure(message: 'Not authenticated'));
         }
         final profileRow = await _db
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('user_id')
             .eq('id', toProfileId)
             .maybeSingle();
@@ -258,7 +259,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
           return _unexpected('Unable to resolve target user for invite');
         }
         final memberRow = await _db
-            .from('squad_members')
+            .from(SupabaseConfig.squadMembersTable)
             .select('profile_id')
             .eq('squad_id', squadId)
             .eq('user_id', uid)
@@ -270,7 +271,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
         String? creatorProfileId = memberMap?['profile_id'] as String?;
         if (creatorProfileId == null) {
           final squadRow = await _db
-              .from('squads')
+              .from(SupabaseConfig.squadsTable)
               .select('owner_profile_id')
               .eq('id', squadId)
               .maybeSingle();
@@ -290,7 +291,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
           'expires_at': expiresAt?.toIso8601String(),
         };
         final insert = await _db
-            .from('squad_invites')
+            .from(SupabaseConfig.squadInvitesTable)
             .insert(payload)
             .select('id')
             .maybeSingle();
@@ -425,7 +426,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     }
     try {
       final rows = await _db
-          .from('squad_invites')
+          .from(SupabaseConfig.squadInvitesTable)
           .select()
           .eq('to_user_id', uid)
           .order('created_at', ascending: false);
@@ -448,7 +449,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   ) async {
     try {
       final rows = await _db
-          .from('squad_invites')
+          .from(SupabaseConfig.squadInvitesTable)
           .select()
           .eq('squad_id', squadId)
           .order('created_at', ascending: false);
@@ -471,7 +472,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   ) async {
     try {
       final rows = await _db
-          .from('squad_join_requests')
+          .from(SupabaseConfig.squadJoinRequestsTable)
           .select()
           .eq('squad_id', squadId)
           .order('created_at', ascending: false);
@@ -497,7 +498,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     }
     try {
       final ownedResponse = await _db
-          .from('squads')
+          .from(SupabaseConfig.squadsTable)
           .select()
           .eq('owner_user_id', uid);
       final ownedMaps = ownedResponse
@@ -505,7 +506,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
           .toList(growable: false);
 
       final membershipRows = await _db
-          .from('squad_members')
+          .from(SupabaseConfig.squadMembersTable)
           .select('squad_id')
           .eq('user_id', uid)
           .eq('status', 'active');
@@ -525,7 +526,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
       List<Map<String, dynamic>> memberSquads = [];
       if (memberIds.isNotEmpty) {
         final rows = await _db
-            .from('squads')
+            .from(SupabaseConfig.squadsTable)
             .select()
             .filter('id', 'in', '(${memberIds.join(',')})');
         memberSquads = rows
@@ -585,12 +586,12 @@ class SquadsRepositoryImpl implements SquadsRepository {
       unawaited(emitCurrent());
       try {
         ownerSubscription = _db
-            .from('squads')
+            .from(SupabaseConfig.squadsTable)
             .stream(primaryKey: ['id'])
             .eq('owner_user_id', uid)
             .listen((_) => unawaited(emitCurrent()), onError: emitError);
         memberSubscription = _db
-            .from('squad_members')
+            .from(SupabaseConfig.squadMembersTable)
             .stream(primaryKey: ['squad_id', 'profile_id'])
             .eq('user_id', uid)
             .listen((_) => unawaited(emitCurrent()), onError: emitError);
@@ -618,7 +619,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
       return Err(const AuthFailure(message: 'Not authenticated'));
     }
     try {
-      final rows = await _db.from('squads').select().eq('owner_user_id', uid);
+      final rows = await _db.from(SupabaseConfig.squadsTable).select().eq('owner_user_id', uid);
       final squads = rows
           .map(
             (dynamic row) =>
@@ -635,7 +636,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   Future<Result<List<SquadMember>, Failure>> listMembers(String squadId) async {
     try {
       final rows = await _db
-          .from('squad_members')
+          .from(SupabaseConfig.squadMembersTable)
           .select()
           .eq('squad_id', squadId)
           .eq('status', 'active');
@@ -667,7 +668,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     }
     try {
       final rows = await _db
-          .from('squad_join_requests')
+          .from(SupabaseConfig.squadJoinRequestsTable)
           .select()
           .eq('user_id', uid)
           .order('created_at', ascending: false);
@@ -695,7 +696,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   ) async {
     try {
       final rows = await _db
-          .from('squad_link_tokens')
+          .from(SupabaseConfig.squadLinkTokensTable)
           .select()
           .eq('squad_id', squadId)
           .eq('is_active', true)
@@ -721,7 +722,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     // Placeholder implementation – return minimal mapped squad data.
     try {
       PostgrestFilterBuilder query = _db
-          .from('squads')
+          .from(SupabaseConfig.squadsTable)
           .select('id,name,sport,city,logo_url');
       if (squadId != null) {
         query = query.eq('id', squadId);
@@ -745,7 +746,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   ) async {
     try {
       final row = await _db
-          .from('squads')
+          .from(SupabaseConfig.squadsTable)
           .select()
           .eq('id', squadId)
           .maybeSingle();

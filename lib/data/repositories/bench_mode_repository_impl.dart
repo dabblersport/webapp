@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,7 +20,7 @@ class BenchModeRepositoryImpl implements BenchModeRepository {
     String type,
   ) async {
     final row = await _db
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select()
         .eq('user_id', uid)
         .eq('profile_type', type)
@@ -64,7 +65,7 @@ class BenchModeRepositoryImpl implements BenchModeRepository {
         return Err(const AuthFailure(message: 'Not signed in'));
       }
       final row = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('is_active')
           .eq('user_id', uid)
           .eq('profile_type', profileType)
@@ -91,7 +92,7 @@ class BenchModeRepositoryImpl implements BenchModeRepository {
       }
       final now = DateTime.now().toIso8601String();
       final row = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'is_active': false, 'updated_at': now})
           .eq('user_id', uid)
           .eq('profile_type', profileType)
@@ -119,7 +120,7 @@ class BenchModeRepositoryImpl implements BenchModeRepository {
       }
       final now = DateTime.now().toIso8601String();
       final row = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'is_active': true, 'updated_at': now})
           .eq('user_id', uid)
           .eq('profile_type', profileType)
@@ -165,7 +166,7 @@ class BenchModeRepositoryImpl implements BenchModeRepository {
       yield await fetch();
 
       // Realtime stream, scoped to my profile/type
-      final stream = _db.from('profiles').stream(primaryKey: ['id']);
+      final stream = _db.from(SupabaseConfig.usersTable).stream(primaryKey: ['id']);
 
       await for (final _ in stream) {
         yield await fetch();

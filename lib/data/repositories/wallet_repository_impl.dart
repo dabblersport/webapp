@@ -1,4 +1,5 @@
 import 'package:meta/meta.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 
 import 'package:dabbler/core/fp/result.dart';
@@ -16,7 +17,7 @@ class WalletRepositoryImpl extends BaseRepository implements WalletRepository {
   Future<Result<Wallet?, Failure>> getWallet() {
     return guard<Wallet?>(() async {
       // RLS should scope to the caller's row; we fetch one.
-      final row = await svc.client.from('wallets').select().maybeSingle();
+      final row = await svc.client.from(SupabaseConfig.walletsTable).select().maybeSingle();
 
       if (row == null) return null;
       return Wallet.fromMap(asMap(row));
@@ -30,7 +31,7 @@ class WalletRepositoryImpl extends BaseRepository implements WalletRepository {
   }) {
     return guard<List<WalletLedgerEntry>>(() async {
       final rows = await svc.client
-          .from('wallet_ledger')
+          .from(SupabaseConfig.walletLedgerTable)
           .select()
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
@@ -46,7 +47,7 @@ class WalletRepositoryImpl extends BaseRepository implements WalletRepository {
   }) {
     return guard<List<Payout>>(() async {
       final rows = await svc.client
-          .from('payouts')
+          .from(SupabaseConfig.payoutsTable)
           .select()
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);

@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:meta/meta.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -62,7 +63,7 @@ class GeoRepositoryImpl extends BaseRepository implements GeoRepository {
       final bbox = _bboxForRadius(lat, lng, radiusMeters);
       // Adjust column names if your schema differs (e.g., 'latitude'/'longitude').
       final rows = await _db
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select()
           .gte('lat', bbox.minLat)
           .lte('lat', bbox.maxLat)

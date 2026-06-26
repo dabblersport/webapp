@@ -47,7 +47,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final primarySportKeys = <String>{};
     if (profileIds.isNotEmpty) {
       final profileRows = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id, avatar_url, username, primary_sport')
           .inFilter('id', profileIds.toList());
       for (final p in profileRows) {
@@ -62,7 +62,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final Map<String, Map<String, dynamic>> sportsMap = {};
     if (sportIds.isNotEmpty) {
       final sportRows = await _db
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, name_en, emoji, sport_key, category')
           .inFilter('id', sportIds.toList());
       for (final s in sportRows) {
@@ -74,7 +74,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final Map<String, Map<String, dynamic>> sportKeyMap = {};
     if (primarySportKeys.isNotEmpty) {
       final keyRows = await _db
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, name_en, emoji, sport_key, category')
           .inFilter('sport_key', primarySportKeys.toList());
       for (final s in keyRows) {
@@ -87,7 +87,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final Map<String, Map<String, dynamic>> vibesMap = {};
     if (vibeIds.isNotEmpty) {
       final vibeRows = await _db
-          .from('vibes')
+          .from(SupabaseConfig.vibesTable)
           .select('id, key, label_en, label_ar, emoji, color_hex')
           .inFilter('id', vibeIds.toList());
       for (final v in vibeRows) {
@@ -120,7 +120,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     final profilesMap = <String, Map<String, dynamic>>{};
     final profileRows = await _db
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select('id, display_name, avatar_url')
         .inFilter('id', profileIds.toList());
 
@@ -233,7 +233,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .toList();
 
     final originalRows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .inFilter('id', originIds)
         .eq('is_deleted', false)
@@ -273,7 +273,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     if (themeIds.isEmpty) return rows;
 
     final themeRows = await _db
-        .from('post_themes')
+        .from(SupabaseConfig.postThemesTable)
         .select()
         .inFilter('id', themeIds.toList());
 
@@ -300,7 +300,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     }
 
     var query = _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .inFilter('id', postIds)
         .eq('is_deleted', false)
@@ -333,7 +333,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     Future<List<dynamic>> fetch({String? personaTypeFilter}) async {
       var query = _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('is_active', true);
@@ -364,7 +364,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
@@ -409,7 +409,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     // Resolve the caller's profile ID.
     final profileRows = await _db
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select('id')
         .eq('user_id', userId)
         .limit(1);
@@ -418,7 +418,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     // Fetch followed profile IDs from the profile_follows table.
     final followRows = await _db
-        .from('profile_follows')
+        .from(SupabaseConfig.profileFollowsTable)
         .select('following_profile_id')
         .eq('follower_profile_id', myProfileId);
 
@@ -430,7 +430,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     // Posts from followed users — manual posts and reposts only.
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .inFilter('author_profile_id', followedIds)
         .inFilter('origin_type', ['manual', 'repost'])
@@ -464,7 +464,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       final lngMax = lng + deltaDeg;
 
       rows = await _db
-          .from('posts')
+          .from(SupabaseConfig.postsTable)
           .select()
           .gte('geo_lat', latMin)
           .lte('geo_lat', latMax)
@@ -493,7 +493,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     } else {
       // Fallback: most recent posts with any location tag.
       rows = await _db
-          .from('posts')
+          .from(SupabaseConfig.postsTable)
           .select()
           .not('location_name', 'is', null)
           .eq('kind', 'original')
@@ -516,7 +516,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .eq('post_type', 'allocated')
         .eq('origin_type', 'system')
@@ -539,7 +539,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   }) => guard(() async {
     // Join through the post_circles junction table.
     final rows = await _db
-        .from('post_circles')
+        .from(SupabaseConfig.postCirclesTable)
         .select('posts(*)')
         .eq('circle_id', circleId)
         .order('created_at', ascending: false, referencedTable: 'posts')
@@ -562,7 +562,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_squads')
+        .from(SupabaseConfig.postSquadsTable)
         .select('posts(*)')
         .eq('squad_id', squadId)
         .order('created_at', ascending: false, referencedTable: 'posts')
@@ -585,7 +585,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
@@ -605,7 +605,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .eq('author_profile_id', profileId)
         .eq('sport_id', sportId)
@@ -625,7 +625,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('comments')
+        .from(SupabaseConfig.commentsTable)
         .select('parent_activity_id, created_at')
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
@@ -659,7 +659,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('reactions')
+        .from(SupabaseConfig.reactionsTable)
         .select('parent_activity_id, created_at')
         .eq('actor_profile_id', profileId)
         .order('created_at', ascending: false)
@@ -690,7 +690,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('likes')
+        .from(SupabaseConfig.likesTable)
         .select('parent_activity_id, created_at')
         .eq('profile_id', profileId)
         .order('created_at', ascending: false)
@@ -720,7 +720,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('comments')
+        .from(SupabaseConfig.commentsTable)
         .select('parent_activity_id, created_at')
         .eq('author_profile_id', profileId)
         .eq('is_deleted', false)
@@ -752,7 +752,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('post_reposts')
+        .from(SupabaseConfig.postRepostsTable)
         .select('parent_activity_id, created_at')
         .eq('reposter_profile_id', profileId)
         .order('created_at', ascending: false)
@@ -788,7 +788,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     if (normalised.isEmpty) return const <Post>[];
 
     final hashtagRows = await _db
-        .from('hashtags')
+        .from(SupabaseConfig.hashtagsTable)
         .select('id')
         .eq('tag', normalised)
         .limit(1);
@@ -797,7 +797,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final hashtagId = hashtagRows.first['id'] as String;
 
     final rows = await _db
-        .from('post_hashtags')
+        .from(SupabaseConfig.postHashtagsTable)
         .select('post_id, created_at')
         .eq('hashtag_id', hashtagId)
         .order('created_at', ascending: false)
@@ -823,7 +823,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   @override
   Future<Result<Post, Failure>> getPost(String postId) => guard(() async {
     final rows =
-        await _db.from('posts').select().eq('id', postId).limit(1) as List;
+        await _db.from(SupabaseConfig.postsTable).select().eq('id', postId).limit(1) as List;
     if (rows.isEmpty) throw Exception('post $postId not found');
     final enriched =
         await _enrichRows([rows.first as Map<String, dynamic>]);
@@ -840,7 +840,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select()
         .eq('area_id', areaId)
         .eq('is_deleted', false)
@@ -963,7 +963,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         // Ensure the current author profile is a member of the selected circle
         // before invoking the RPC.
         final pid = await _profileId(personaType: personaType);
-        await _db.from('circle_members').upsert({
+        await _db.from(SupabaseConfig.circleMembersTable).upsert({
           'circle_id': circleId,
           'member_profile_id': pid,
         }, onConflict: 'circle_id,member_profile_id');
@@ -971,7 +971,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         String? sportKey;
         if (sportId != null && sportId.isNotEmpty) {
           final sportRow = await _db
-              .from('sports')
+              .from(SupabaseConfig.sportsTable)
               .select('sport_key')
               .eq('id', sportId)
               .maybeSingle();
@@ -1026,7 +1026,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       print('INSERT PAYLOAD: $data');
 
-      final row = await _db.from('posts').insert(data).select().single();
+      final row = await _db.from(SupabaseConfig.postsTable).insert(data).select().single();
       final post = Post.fromJson(row);
       if (extractedTags.isNotEmpty) {
         await _linkHashtags(
@@ -1044,7 +1044,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<List<Map<String, dynamic>>, Failure>> listVibes() =>
       guard(() async {
         final rows = await _db
-            .from('vibes')
+            .from(SupabaseConfig.vibesTable)
             .select('id, key, label_en, label_ar, emoji, color_hex')
             .order('label_en');
         return rows.cast<Map<String, dynamic>>();
@@ -1087,7 +1087,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       // Circle-visibility requires the create_post RPC for atomic linking.
       if (request.visibility.name == 'circle' && request.circleId != null) {
         // Ensure membership first.
-        await _db.from('circle_members').upsert({
+        await _db.from(SupabaseConfig.circleMembersTable).upsert({
           'circle_id': request.circleId,
           'member_profile_id': authorProfileId,
         }, onConflict: 'circle_id,member_profile_id');
@@ -1096,7 +1096,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         String? sportKey;
         if (request.sportId != null) {
           final sportRow = await _db
-              .from('sports')
+              .from(SupabaseConfig.sportsTable)
               .select('sport_key')
               .eq('id', request.sportId!)
               .maybeSingle();
@@ -1134,9 +1134,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Squad-visibility: insert post + link to post_squads junction.
       if (request.visibility.name == 'squad' && request.squadId != null) {
-        final row = await _db.from('posts').insert(payload).select().single();
+        final row = await _db.from(SupabaseConfig.postsTable).insert(payload).select().single();
         // Link to squad junction table.
-        await _db.from('post_squads').insert({
+        await _db.from(SupabaseConfig.postSquadsTable).insert({
           'post_id': row['id'],
           'squad_id': request.squadId,
         });
@@ -1151,7 +1151,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
 
       // Standard insert path.
-      final row = await _db.from('posts').insert(payload).select().single();
+      final row = await _db.from(SupabaseConfig.postsTable).insert(payload).select().single();
       final post = Post.fromJson(row);
       await _linkHashtags(
         postId: post.id,
@@ -1188,7 +1188,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         Map<String, dynamic>? existing;
         try {
           existing = await _db
-              .from('hashtags')
+              .from(SupabaseConfig.hashtagsTable)
               .select('id')
               .eq('tag', normalised)
               .maybeSingle();
@@ -1199,7 +1199,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (existing == null) {
           try {
             existing = await _db
-                .from('hashtags')
+                .from(SupabaseConfig.hashtagsTable)
                 .select('id')
                 .eq('slug', normalised)
                 .maybeSingle();
@@ -1217,7 +1217,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           // Try minimal insert first (most schema-compatible).
           try {
             row = await _db
-                .from('hashtags')
+                .from(SupabaseConfig.hashtagsTable)
                 .insert({'tag': normalised})
                 .select('id')
                 .single();
@@ -1227,7 +1227,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           if (row == null) {
             try {
               row = await _db
-                  .from('hashtags')
+                  .from(SupabaseConfig.hashtagsTable)
                   .insert({'slug': normalised})
                   .select('id')
                   .single();
@@ -1236,7 +1236,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
           // Fallback: schemas that expect both.
           row ??= await _db
-              .from('hashtags')
+              .from(SupabaseConfig.hashtagsTable)
               .insert({'tag': normalised, 'slug': normalised})
               .select('id')
               .single();
@@ -1245,7 +1245,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         }
 
         // Insert junction row (composite PK prevents duplicates).
-        await _db.from('post_hashtags').upsert({
+        await _db.from(SupabaseConfig.postHashtagsTable).upsert({
           'post_id': postId,
           'hashtag_id': hashtagId,
           if (sportId != null) 'sport_id': sportId,
@@ -1267,7 +1267,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String query,
   ) => guard(() async {
     final rows = await _db
-        .from('venues')
+        .from(SupabaseConfig.venuesTable)
         .select('id, name_en, city, latitude, longitude')
         .ilike('name_en', '%$query%')
         .limit(20)
@@ -1280,7 +1280,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String query,
   ) => guard(() async {
     final rows = await _db
-        .from('games')
+        .from(SupabaseConfig.gamesTable)
         .select('id, title, sport, game_type, start_at, end_at')
         .ilike('title', '%$query%')
         .eq('is_cancelled', false)
@@ -1291,7 +1291,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
   @override
   Future<Result<Unit, Failure>> deletePost(String postId) => guard(() async {
-    await _db.from('posts').update({'is_deleted': true}).eq('id', postId);
+    await _db.from(SupabaseConfig.postsTable).update({'is_deleted': true}).eq('id', postId);
     return const Unit();
   });
 
@@ -1301,7 +1301,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Unit, Failure>> likePost(String postId) => guard(() async {
     final uid = svc.authUserId()!;
     final pid = await _profileId();
-    await _db.from('likes').upsert(
+    await _db.from(SupabaseConfig.likesTable).upsert(
       {
         'parent_activity_id': postId,
         'profile_id': pid,
@@ -1316,7 +1316,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Unit, Failure>> unlikePost(String postId) => guard(() async {
     final pid = await _profileId();
     await _db
-        .from('likes')
+        .from(SupabaseConfig.likesTable)
         .delete()
         .eq('parent_activity_id', postId)
         .eq('profile_id', pid);
@@ -1327,7 +1327,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<bool, Failure>> hasLiked(String postId) => guard(() async {
     final pid = await _profileId();
     final rows = await _db
-        .from('likes')
+        .from(SupabaseConfig.likesTable)
         .select('id')
         .eq('parent_activity_id', postId)
         .eq('profile_id', pid)
@@ -1344,7 +1344,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     final rows = await _db
-        .from('comments')
+        .from(SupabaseConfig.commentsTable)
         .select(
           '*, profiles!post_comments_author_profile_id_fkey(display_name)',
         )
@@ -1392,9 +1392,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       if (locationLng != null) 'location_lng': locationLng,
     };
     // Insert without chained .single() to avoid RLS 0-row issue on RETURNING.
-    await _db.from('comments').insert(data);
+    await _db.from(SupabaseConfig.commentsTable).insert(data);
     final rows = await _db
-        .from('comments')
+        .from(SupabaseConfig.commentsTable)
         .select(
           '*, profiles!post_comments_author_profile_id_fkey(display_name)',
         )
@@ -1417,7 +1417,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Unit, Failure>> deleteComment(String commentId) =>
       guard(() async {
         await _db
-            .from('comments')
+            .from(SupabaseConfig.commentsTable)
             .update({'is_deleted': true})
             .eq('id', commentId);
         return const Unit();
@@ -1443,14 +1443,14 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         final uid = svc.authUserId()!;
 
         await _db
-            .from('posts')
+            .from(SupabaseConfig.postsTable)
             .delete()
             .eq('origin_type', 'repost')
             .eq('origin_id', originalPostId)
             .eq('author_user_id', uid);
 
         await _db
-            .from('post_reposts')
+            .from(SupabaseConfig.postRepostsTable)
             .delete()
             .eq('parent_activity_id',originalPostId)
             .eq('reposter_user_id', uid);
@@ -1462,7 +1462,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<bool, Failure>> hasReposted(String postId) => guard(() async {
     final uid = svc.authUserId()!;
     final rows = await _db
-        .from('post_reposts')
+        .from(SupabaseConfig.postRepostsTable)
         .select('id')
         .eq('parent_activity_id',postId)
         .eq('reposter_user_id', uid)
@@ -1479,7 +1479,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         final pid = await _profileId();
         // onConflict targets the unique index (parent_activity_id, actor_user_id)
         // so re-reacting with a different vibe replaces the previous one.
-        await _db.from('reactions').upsert(
+        await _db.from(SupabaseConfig.reactionsTable).upsert(
           {
             'parent_activity_id': postId,
             'actor_profile_id': pid,
@@ -1496,7 +1496,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       guard(() async {
         final pid = await _profileId();
         await _db
-            .from('reactions')
+            .from(SupabaseConfig.reactionsTable)
             .delete()
             .eq('parent_activity_id', postId)
             .eq('actor_profile_id', pid)
@@ -1509,7 +1509,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       guard(() async {
         final pid = await _profileId();
         final rows = await _db
-            .from('reactions')
+            .from(SupabaseConfig.reactionsTable)
             .select('vibe_id')
             .eq('parent_activity_id', postId)
             .eq('actor_profile_id', pid);
@@ -1521,7 +1521,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   @override
   Future<Result<Unit, Failure>> recordView(String postId) => guard(() async {
     final uid = svc.authUserId()!;
-    await _db.from('post_views').upsert({
+    await _db.from(SupabaseConfig.postViewsTable).upsert({
       'post_id': postId,
       'viewer_user_id': uid,
     }, onConflict: 'post_id,viewer_user_id', ignoreDuplicates: true);

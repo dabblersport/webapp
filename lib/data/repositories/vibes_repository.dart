@@ -1,4 +1,5 @@
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/data/repositories/base_repository.dart';
@@ -10,7 +11,7 @@ class VibesRepository extends BaseRepository {
   /// All active vibes, ordered by sort_order.
   Future<Result<List<Vibe>, Failure>> getActiveVibes() => guard(() async {
     final rows = await svc.client
-        .from('vibes')
+        .from(SupabaseConfig.vibesTable)
         .select()
         .eq('is_active', true)
         .order('sort_order');

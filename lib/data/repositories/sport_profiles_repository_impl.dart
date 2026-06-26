@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/fp/failure.dart';
@@ -27,7 +28,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
     try {
       // First get profile_id from user_id
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')
@@ -69,7 +70,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
     try {
       // First get profile_id from user_id
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')
@@ -119,7 +120,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
     try {
       // First get profile_id from user_id
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')
@@ -167,7 +168,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
     try {
       // First get profile_id from user_id
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')
@@ -203,7 +204,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
     try {
       // First get profile_id from user_id
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')
@@ -265,7 +266,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
 
       // Get profile_id for realtime filters
       final profileResponse = await svc.client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', uid)
           .eq('profile_type', 'personal')

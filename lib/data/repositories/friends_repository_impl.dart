@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/fp/failure.dart';
@@ -28,7 +29,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
 
     try {
       final rows = await _db
-          .from('friendships')
+          .from(SupabaseConfig.friendshipsTable)
           .select(
             'user_id, peer_user_id, requested_by, status, created_at, updated_at',
           )
@@ -51,7 +52,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       if (senderIds.isEmpty) return Ok(payload);
 
       final profilesRows = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id, display_name, avatar_url, username')
           .inFilter('user_id', senderIds);
 
@@ -89,7 +90,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
 
     try {
       final rows = await _db
-          .from('friendships')
+          .from(SupabaseConfig.friendshipsTable)
           .select(
             'user_id, peer_user_id, requested_by, status, created_at, updated_at',
           )
@@ -112,7 +113,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       if (peerIds.isEmpty) return Ok(payload);
 
       final profilesRows = await _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id, display_name, avatar_url, username')
           .inFilter('user_id', peerIds);
 
@@ -200,7 +201,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
               ) ??
               false)) {
         try {
-          await _db.rpc('rpc_friend_unfriend', params: {'p_peer': peerUserId});
+          await _db.rpc(SupabaseConfig.rpcFriendUnfriendFn, params: {'p_peer': peerUserId});
           return Ok(null);
         } catch (fallbackError) {
           return Err(svc.mapPostgrestError(fallbackError));
@@ -217,7 +218,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
   Future<Result<List<Friendship>, Failure>> listFriendships() async {
     try {
       final rows = await _db
-          .from('friendships')
+          .from(SupabaseConfig.friendshipsTable)
           .select()
           .order('updated_at', ascending: false);
       final friendships = rows
@@ -236,7 +237,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
   @override
   Future<Result<List<Map<String, dynamic>>, Failure>> inbox() async {
     try {
-      final rows = await _db.rpc('rpc_friend_requests_inbox');
+      final rows = await _db.rpc(SupabaseConfig.rpcFriendRequestsInboxFn);
       if (rows is List) {
         final payload = rows
             .map((dynamic row) => Map<String, dynamic>.from(row as Map))
@@ -274,7 +275,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
   @override
   Future<Result<List<Map<String, dynamic>>, Failure>> outbox() async {
     try {
-      final rows = await _db.rpc('rpc_friend_requests_outbox');
+      final rows = await _db.rpc(SupabaseConfig.rpcFriendRequestsOutboxFn);
       if (rows is List) {
         final payload = rows
             .map((dynamic row) => Map<String, dynamic>.from(row as Map))
@@ -313,7 +314,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
   Future<Result<List<FriendEdge>, Failure>> listFriendEdges() async {
     try {
       final rows = await _db
-          .from('friend_edges')
+          .from(SupabaseConfig.friendEdgesTable)
           .select()
           .order('created_at', ascending: false);
       final edges = rows
@@ -409,7 +410,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       // This avoids server-side failures from broken/overloaded rpc_get_friends
       // definitions (e.g. "structure of query does not match function result type").
       // v_circle is scoped to auth.uid() via its definition + RLS.
-      final rows = await _db.from('v_circle').select();
+      final rows = await _db.from(SupabaseConfig.vCircleTable).select();
       final raw = rows.cast<Map<String, dynamic>>();
       if (raw.isEmpty) return Ok(const []);
 
@@ -463,7 +464,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       // Best-effort enrichment: fetch profile details for friend IDs.
       if (friendUserIds.isNotEmpty) {
         final profiles = await _db
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('id, user_id, display_name, username, avatar_url, verified')
             .inFilter('user_id', friendUserIds.toList());
         await mergeProfiles(profiles);
@@ -471,7 +472,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
 
       if (friendProfileIds.isNotEmpty) {
         final profiles = await _db
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('id, user_id, display_name, username, avatar_url, verified')
             .inFilter('id', friendProfileIds.toList());
         await mergeProfiles(profiles);
@@ -573,7 +574,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       final currentUserId = _db.auth.currentUser?.id;
 
       var query = _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id, display_name, username, avatar_url, created_at')
           .eq('is_active', true);
 
@@ -608,7 +609,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
       final like = '%$trimmed%';
 
       var q = _db
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id, display_name, username, avatar_url, created_at')
           .eq('is_active', true)
           .or('display_name.ilike.$like,username.ilike.$like');

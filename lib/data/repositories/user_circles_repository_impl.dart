@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -29,7 +30,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     try {
       // Fetch circles with member counts via a sub-select or count.
       final rows = await _db
-          .from('circles')
+          .from(SupabaseConfig.circlesTable)
           .select('id, name, owner_profile_id, created_at')
           .eq('owner_profile_id', ownerProfileId)
           .order('created_at', ascending: false);
@@ -42,7 +43,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
       Map<String, int> memberCounts = {};
       if (circleIds.isNotEmpty) {
         final countRows = await _db
-            .from('circle_members')
+            .from(SupabaseConfig.circleMembersTable)
             .select('circle_id')
             .inFilter('circle_id', circleIds);
 
@@ -84,13 +85,13 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     }
     try {
       final rows = await _db
-          .from('circles')
+          .from(SupabaseConfig.circlesTable)
           .insert({'name': name.trim(), 'owner_profile_id': ownerProfileId})
           .select('id, name, owner_profile_id, created_at')
           .single();
 
       // Ensure the owner is a member of their own circle (idempotent).
-      await _db.from('circle_members').upsert({
+      await _db.from(SupabaseConfig.circleMembersTable).upsert({
         'circle_id': rows['id'] as String,
         'member_profile_id': ownerProfileId,
       }, onConflict: 'circle_id,member_profile_id');
@@ -124,7 +125,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     }
     try {
       final rows = await _db
-          .from('circles')
+          .from(SupabaseConfig.circlesTable)
           .update({'name': name.trim()})
           .eq('id', circleId)
           .eq('owner_profile_id', ownerProfileId)
@@ -159,7 +160,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     }
     try {
       await _db
-          .from('circles')
+          .from(SupabaseConfig.circlesTable)
           .delete()
           .eq('id', circleId)
           .eq('owner_profile_id', ownerProfileId);
@@ -178,7 +179,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     try {
       // Join with profiles to get display info.
       final rows = await _db
-          .from('circle_members')
+          .from(SupabaseConfig.circleMembersTable)
           .select(
             'member_profile_id, added_at, '
             'profiles:member_profile_id(user_id, display_name, username, avatar_url)',
@@ -215,7 +216,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
     String? memberUserId,
   }) async {
     try {
-      await _db.from('circle_members').upsert({
+      await _db.from(SupabaseConfig.circleMembersTable).upsert({
         'circle_id': circleId,
         'member_profile_id': memberProfileId,
       }, onConflict: 'circle_id,member_profile_id');
@@ -234,7 +235,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
   ) async {
     try {
       await _db
-          .from('circle_members')
+          .from(SupabaseConfig.circleMembersTable)
           .delete()
           .eq('circle_id', circleId)
           .eq('member_profile_id', memberProfileId);
@@ -259,7 +260,7 @@ class UserCirclesRepositoryImpl implements UserCirclesRepository {
       // Source of truth for follower recency is the follow relationship.
       // This mirrors the logic in profile providers (profile_follows + join).
       final rows = await _db
-          .from('profile_follows')
+          .from(SupabaseConfig.profileFollowsTable)
           .select(
             'created_at, '
             'profiles!fk_follower_profile('
