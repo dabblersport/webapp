@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/profile/organiser_profile.dart';
 
@@ -57,7 +58,7 @@ class OrganiserProfileController extends StateNotifier<OrganiserProfileState> {
       // If profileId not provided, resolve the organiser profile.id for this auth user
       if (resolvedProfileId == null) {
         final profileRow = await client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('id')
             .eq('user_id', userId)
             .eq('profile_type', 'organiser')
@@ -73,7 +74,7 @@ class OrganiserProfileController extends StateNotifier<OrganiserProfileState> {
 
       // Load organiser profiles from organiser table
       final List<dynamic> rows = await client
-          .from('organiser')
+          .from(SupabaseConfig.organiserTable)
           .select()
           .eq('profile_id', resolvedProfileId);
 

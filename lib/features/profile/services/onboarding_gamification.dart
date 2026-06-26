@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 /// Gamification system for onboarding
 class OnboardingGamification {
@@ -11,7 +12,7 @@ class OnboardingGamification {
   Future<int> getUserPoints(String userId) async {
     try {
       final response = await _supabase
-          .from('user_points')
+          .from(SupabaseConfig.userPointsTable)
           .select('points')
           .eq('user_id', userId);
 
@@ -32,7 +33,7 @@ class OnboardingGamification {
     String description,
   ) async {
     try {
-      await _supabase.from('user_points').insert({
+      await _supabase.from(SupabaseConfig.userPointsTable).insert({
         'user_id': userId,
         'points': points,
         'source': source,
@@ -49,7 +50,7 @@ class OnboardingGamification {
   Future<List<Badge>> getUserBadges(String userId) async {
     try {
       final response = await _supabase
-          .from('user_badges')
+          .from(SupabaseConfig.userBadgesTable)
           .select('*, badge_definitions(*)')
           .eq('user_id', userId)
           .order('awarded_at', ascending: false);
@@ -96,7 +97,7 @@ class OnboardingGamification {
 
       // Check existing badges
       final existingBadges = await _supabase
-          .from('user_badges')
+          .from(SupabaseConfig.userBadgesTable)
           .select('badge_id')
           .eq('user_id', userId);
 
@@ -106,7 +107,7 @@ class OnboardingGamification {
       for (final criteria in badgeCriteria) {
         if (points >= criteria['points']! &&
             !existingBadgeIds.contains(criteria['id'])) {
-          await _supabase.from('user_badges').insert({
+          await _supabase.from(SupabaseConfig.userBadgesTable).insert({
             'user_id': userId,
             'badge_id': criteria['id'],
             'awarded_at': DateTime.now().toIso8601String(),
@@ -232,7 +233,7 @@ class OnboardingGamification {
   Future<double> calculateProfileStrength(String userId) async {
     try {
       final response = await _supabase
-          .from('user_profiles')
+          .from(SupabaseConfig.userProfilesTable)
           .select('*')
           .eq('user_id', userId)
           .single();
@@ -247,7 +248,7 @@ class OnboardingGamification {
   Future<String> getNextSuggestedAction(String userId) async {
     try {
       final response = await _supabase
-          .from('user_profiles')
+          .from(SupabaseConfig.userProfilesTable)
           .select('*')
           .eq('user_id', userId)
           .single();

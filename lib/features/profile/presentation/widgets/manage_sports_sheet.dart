@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -80,19 +81,19 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         // 1. Add UUID to interests array.
         final newInterests = {..._selectedIds, sport.id}.toList();
         await supabase
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({'interests': newInterests})
             .eq('id', _profileId!);
 
         // 2. Create sport_profile / organiser record.
         if (!_isOrganiserType) {
-          await supabase.from('sport_profiles').upsert({
+          await supabase.from(SupabaseConfig.sportProfilesTable).upsert({
             'profile_id': _profileId,
             'sport': sportKey,
             'skill_level': 1,
           }, onConflict: 'profile_id,sport');
         } else {
-          await supabase.from('organiser').upsert({
+          await supabase.from(SupabaseConfig.organiserTable).upsert({
             'profile_id': _profileId,
             'sport': sportKey,
             'organiser_level': 1,
@@ -110,20 +111,20 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             .where((id) => id != sport.id)
             .toList();
         await supabase
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({'interests': newInterests})
             .eq('id', _profileId!);
 
         // 2. Delete sport_profile / organiser record.
         if (!_isOrganiserType) {
           await supabase
-              .from('sport_profiles')
+              .from(SupabaseConfig.sportProfilesTable)
               .delete()
               .eq('profile_id', _profileId!)
               .eq('sport', sportKey);
         } else {
           await supabase
-              .from('organiser')
+              .from(SupabaseConfig.organiserTable)
               .delete()
               .eq('profile_id', _profileId!)
               .eq('sport', sportKey);

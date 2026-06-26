@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -65,7 +66,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
     if (user != null && profileId != null && profileId.isNotEmpty) {
       try {
         await Supabase.instance.client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({'language': locale.languageCode})
             .eq('id', profileId);
       } catch (_) {

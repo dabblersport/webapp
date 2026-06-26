@@ -1,4 +1,5 @@
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/post.dart';
@@ -116,7 +117,7 @@ class PostService {
           .toIso8601String();
 
       final rows = await _client
-          .from('posts')
+          .from(SupabaseConfig.postsTable)
           .select('id')
           .eq('author_user_id', _uid)
           .gte('created_at', oneMinuteAgo)
@@ -145,7 +146,7 @@ class PostService {
           .toIso8601String();
 
       final rows = await _client
-          .from('posts')
+          .from(SupabaseConfig.postsTable)
           .select('id')
           .eq('author_user_id', _uid)
           .eq('body', body)

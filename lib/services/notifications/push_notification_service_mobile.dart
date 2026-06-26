@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -204,7 +205,7 @@ class PushNotificationService {
         return;
       }
 
-      await supabase.from('fcm_tokens').upsert({
+      await supabase.from(SupabaseConfig.fcmTokensTable).upsert({
         'user_id': userId,
         'token': token,
         'platform': defaultTargetPlatform.name,

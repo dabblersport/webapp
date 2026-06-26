@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/core/game_creation_model.dart';
@@ -342,7 +343,7 @@ class GameCreationViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await Supabase.instance.client
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, sport_key, name_en, emoji')
           .eq('is_active', true)
           .eq('is_challenge_sport', true)
@@ -360,7 +361,7 @@ class GameCreationViewModel extends ChangeNotifier {
   Future<void> loadDbVariants(String sportId) async {
     try {
       final response = await Supabase.instance.client
-          .from('sport_variants')
+          .from(SupabaseConfig.sportVariantsTable)
           .select('id, name_en, required_players, players_per_side')
           .eq('sport_id', sportId)
           .eq('is_active', true)
@@ -485,7 +486,7 @@ class GameCreationViewModel extends ChangeNotifier {
       }
 
       final response = await Supabase.instance.client
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .select(
             'id, name_en, joining_rule, price_per_hour, venue:venues(id, name_en, address_en, area, rating, lat, lng)',
           )
@@ -766,7 +767,7 @@ class GameCreationViewModel extends ChangeNotifier {
       if (_state.maxSkill != null) params['p_max_skill'] = _state.maxSkill;
       if (rules.isNotEmpty) params['p_rules'] = rules;
 
-      await supabase.rpc('rpc_create_game', params: params);
+      await supabase.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
 
       // Delete draft on success
       if (_state.isDraft && _state.draftId != null) {

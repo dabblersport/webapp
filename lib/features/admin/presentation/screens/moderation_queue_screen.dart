@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +18,7 @@ final moderationQueueProvider = FutureProvider<List<ModerationReportSummary>>((
 /// Provider for admin status check
 final isAdminProvider = FutureProvider<bool>((ref) async {
   try {
-    final response = await Supabase.instance.client.rpc('is_admin');
+    final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
     return response == true;
   } catch (e) {
     return false;

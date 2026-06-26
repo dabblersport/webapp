@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/utils/either.dart';
@@ -27,7 +28,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   ) async {
     try {
       final row = await _db
-          .from('privacy_settings')
+          .from(SupabaseConfig.privacySettingsTable)
           .select()
           .eq('user_id', userId)
           .maybeSingle();
@@ -59,7 +60,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
       payload['user_id'] = userId;
 
       final row = await _db
-          .from('privacy_settings')
+          .from(SupabaseConfig.privacySettingsTable)
           .upsert(payload)
           .eq('user_id', userId)
           .select()
@@ -83,7 +84,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
   ) async {
     try {
       final row = await _db
-          .from('privacy_settings')
+          .from(SupabaseConfig.privacySettingsTable)
           .update({key: value})
           .eq('user_id', userId)
           .select()

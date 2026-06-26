@@ -1,4 +1,5 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/features/auth_onboarding/domain/usecases/usecase.dart';
 import 'package:dabbler/data/models/games/game.dart';
@@ -111,7 +112,7 @@ class JoinGameUseCase
       final organizerUserId = game.organizerId; // may be user_id or profile_id
       if (currentUserId != null) {
         final blockCheck = await db
-            .from('user_blocks')
+            .from(SupabaseConfig.userBlocksTable)
             .select('id')
             .or(
               'and(blocker_user_id.eq.$currentUserId,blocked_user_id.eq.$organizerUserId),'

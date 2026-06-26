@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -542,7 +543,7 @@ class _SportPreferencesSectionState
 
       if (widget.args.isOrganiserPersona) {
         await supabase
-            .from('organiser')
+            .from(SupabaseConfig.organiserTable)
             .update({'organiser_level': _skillLevel})
             .eq('profile_id', widget.args.profileId)
             .eq('sport', widget.args.sportKey.toLowerCase());
@@ -552,7 +553,7 @@ class _SportPreferencesSectionState
           updates['primary_position'] = _position;
         }
         await supabase
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .update(updates)
             .eq('profile_id', widget.args.profileId)
             .eq('sport', widget.args.sportKey.toLowerCase());

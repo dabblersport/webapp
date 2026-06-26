@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/data/models/games/venue_model.dart';
 import 'package:dabbler/data/models/games/sport_config_model.dart';
@@ -88,7 +89,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
         venue_photos(url, sort_order)
       ''';
 
-      var query = _supabaseClient.from('venues').select(select);
+      var query = _supabaseClient.from(SupabaseConfig.venuesTable).select(select);
 
       // Apply filters
       if (filters != null) {
@@ -182,7 +183,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
 
       // Fetch venue with all related data
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('''
         *,
         venue_spaces(sport_id, name_en, surface_key, indoor, lighting, capacity, is_active),
@@ -222,7 +223,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       var searchQuery = _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('*')
           .or(
             'name_en.ilike.%$query%,description_en.ilike.%$query%,district.ilike.%$query%',
@@ -312,7 +313,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
     try {
       // Query venue_spaces to get sports supported at this venue
       final response = await _supabaseClient
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .select('sport')
           .eq('venue_id', venueId)
           .eq('is_active', true);
@@ -387,7 +388,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('*')
           .eq('is_featured', true)
           .eq('is_available', true)
@@ -421,7 +422,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
 
       // Filter venues via venue_sports join (authoritative mapping).
       var query = _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('''
             *,
             venue_spaces(sport, name_en, is_active),
@@ -468,7 +469,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('venue_reviews')
+          .from(SupabaseConfig.venueReviewsTable)
           .select('''
             *,
             user:profiles(full_name, avatar_url)
@@ -479,7 +480,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
 
       // Get total count
       final countResponse = await _supabaseClient
-          .from('venue_reviews')
+          .from(SupabaseConfig.venueReviewsTable)
           .select('id')
           .eq('venue_id', venueId);
 
@@ -506,7 +507,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
     String? comment,
   ) async {
     try {
-      await _supabaseClient.from('venue_reviews').insert({
+      await _supabaseClient.from(SupabaseConfig.venueReviewsTable).insert({
         'venue_id': venueId,
         'user_id': userId,
         'rating': rating,
@@ -544,7 +545,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   Future<List<String>> getVenuePhotos(String venueId) async {
     try {
       final response = await _supabaseClient
-          .from('venue_photos')
+          .from(SupabaseConfig.venuePhotosTable)
           .select('url')
           .eq('venue_id', venueId)
           .order('sort_order')
@@ -562,7 +563,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   Future<Map<String, dynamic>> getVenueOperatingHours(String venueId) async {
     try {
       final response = await _supabaseClient
-          .from('venue_opening_hours')
+          .from(SupabaseConfig.venueOpeningHoursTable)
           .select('weekday, open_time, close_time, is_open')
           .eq('venue_id', venueId)
           .order('weekday');
@@ -620,7 +621,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('amenities')
           .eq('id', venueId)
           .single();
@@ -642,7 +643,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   Future<Map<String, dynamic>> getVenueContactInfo(String venueId) async {
     try {
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('phone, email, website, contact_person')
           .eq('id', venueId)
           .single();
@@ -665,7 +666,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('*')
           .eq('owner_id', userId)
           .order('created_at', ascending: false)
@@ -737,7 +738,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
       // This is more robust than querying venues with a reverse embed, which can
       // return empty depending on PostgREST relationship inference/caching.
       final response = await _supabaseClient
-          .from('venue_favorites')
+          .from(SupabaseConfig.venueFavoritesTable)
           .select('venue:venues(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false)
@@ -773,7 +774,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       var query = _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('*, game:games(title, sport)')
           .eq('venue_id', venueId);
 
@@ -906,7 +907,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('is_indoor, weather_protected, covered_areas')
           .eq('id', venueId)
           .single();
@@ -931,7 +932,7 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }) async {
     try {
       var query = _supabaseClient
-          .from('venues')
+          .from(SupabaseConfig.venuesTable)
           .select('*, venue_promotions!inner(*)')
           .gte(
             'venue_promotions.valid_until',

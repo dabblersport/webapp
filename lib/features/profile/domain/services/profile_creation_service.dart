@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/services/default_avatar_service.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
@@ -69,7 +70,7 @@ class ProfileCreationService {
       // This ensures profile count stays within limit
       if (deactivateProfileId != null) {
         await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({
               'is_active': false,
               'updated_at': DateTime.now().toIso8601String(),
@@ -80,7 +81,7 @@ class ProfileCreationService {
 
       // 2️⃣ Check current active profile count (excluding deactivated profile)
       final activeProfilesResponse = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', user.id)
           .eq('is_active', true);
@@ -97,7 +98,7 @@ class ProfileCreationService {
 
       // 3️⃣ Check if a profile with same user_id + profile_type already exists
       final existingProfile = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id, persona_type, is_active')
           .eq('user_id', user.id)
           .eq('profile_type', profileType)
@@ -151,7 +152,7 @@ class ProfileCreationService {
         };
 
         await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update(updateData)
             .eq('id', existingId)
             .eq('user_id', user.id);
@@ -204,7 +205,7 @@ class ProfileCreationService {
       };
 
       final insertedProfile = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .insert(profileData)
           .select('id')
           .single();
@@ -242,7 +243,7 @@ class ProfileCreationService {
   }) async {
     // Get sport record from sports table using UUID (primarySport is a UUID)
     final sportRecord = await _client
-        .from('sports')
+        .from(SupabaseConfig.sportsTable)
         .select('id, sport_key')
         .eq('id', data.primarySport!)
         .maybeSingle();
@@ -259,7 +260,7 @@ class ProfileCreationService {
     // Check if sport_profile already exists for this profile
     // Note: sport_profiles uses composite key (profile_id, sport_id), not a separate id column
     final existingSportProfile = await _client
-        .from('sport_profiles')
+        .from(SupabaseConfig.sportProfilesTable)
         .select('profile_id')
         .eq('profile_id', profileId)
         .eq('sport_id', sportId)
@@ -274,7 +275,7 @@ class ProfileCreationService {
         'skill_level': 1, // Beginner level
       };
 
-      await _client.from('sport_profiles').insert(sportProfileData);
+      await _client.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
     }
 
     // Create persona-specific table row if applicable
@@ -304,13 +305,13 @@ class ProfileCreationService {
     try {
       // Check if row already exists
       final existing = await _client
-          .from('player')
+          .from(SupabaseConfig.playerTable)
           .select('profile_id')
           .eq('profile_id', profileId)
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from('player').insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.playerTable).insert({'profile_id': profileId});
       }
     } catch (e) {
       // Player table insert is best-effort
@@ -322,13 +323,13 @@ class ProfileCreationService {
   Future<void> _createOrganiserProfile(String profileId) async {
     try {
       final existing = await _client
-          .from('organiser')
+          .from(SupabaseConfig.organiserTable)
           .select('profile_id')
           .eq('profile_id', profileId)
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from('organiser').insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.organiserTable).insert({'profile_id': profileId});
       }
     } catch (e) {
       // Organiser table insert is best-effort
@@ -339,13 +340,13 @@ class ProfileCreationService {
   Future<void> _createHosterProfile(String profileId) async {
     try {
       final existing = await _client
-          .from('hoster')
+          .from(SupabaseConfig.hosterTable)
           .select('profile_id')
           .eq('profile_id', profileId)
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from('hoster').insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.hosterTable).insert({'profile_id': profileId});
       }
     } catch (e) {
       // Hoster table insert is best-effort
@@ -357,7 +358,7 @@ class ProfileCreationService {
     try {
       // Get member tier ID
       final tierRecord = await _client
-          .from('tiers')
+          .from(SupabaseConfig.tiersTable)
           .select('id')
           .eq('name', 'member')
           .maybeSingle();
@@ -367,13 +368,13 @@ class ProfileCreationService {
 
         // Check if tier assignment exists
         final existing = await _client
-            .from('profile_tiers')
+            .from(SupabaseConfig.profileTiersTable)
             .select('id')
             .eq('profile_id', profileId)
             .maybeSingle();
 
         if (existing == null) {
-          await _client.from('profile_tiers').insert({
+          await _client.from(SupabaseConfig.profileTiersTable).insert({
             'profile_id': profileId,
             'tier_id': tierId,
           });

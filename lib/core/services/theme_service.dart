@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/material.dart';
 import 'package:dabbler/design_system/theme/app_theme.dart';
@@ -82,7 +83,7 @@ class ThemeService extends ChangeNotifier {
       if (user == null) return;
 
       final row = await client
-          .from('user_settings')
+          .from(SupabaseConfig.userSettingsTable)
           .select(
             'theme_mode, theme_category, auto_theme_enabled, day_start_time, night_start_time',
           )
@@ -364,20 +365,20 @@ class ThemeService extends ChangeNotifier {
       };
 
       final existing = await client
-          .from('user_settings')
+          .from(SupabaseConfig.userSettingsTable)
           .select('user_id')
           .eq('user_id', user.id)
           .maybeSingle();
 
       if (existing != null) {
         await client
-            .from('user_settings')
+            .from(SupabaseConfig.userSettingsTable)
             .update(payload)
             .eq('user_id', user.id);
         return;
       }
 
-      await client.from('user_settings').insert(<String, dynamic>{
+      await client.from(SupabaseConfig.userSettingsTable).insert(<String, dynamic>{
         'user_id': user.id,
         ...payload,
       });

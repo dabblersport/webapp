@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
@@ -180,7 +181,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     if (state.sportsLoaded) return;
     try {
       final rows = await _db
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, sport_key, name_en, emoji, color_code')
           .eq('is_active', true)
           .eq('is_challenge_sport', true)
@@ -197,7 +198,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   Future<void> loadVariants(String sportId) async {
     try {
       final rows = await _db
-          .from('sport_variants')
+          .from(SupabaseConfig.sportVariantsTable)
           .select('id, variant_key, name_en, required_players, players_per_side')
           .eq('sport_id', sportId)
           .eq('is_active', true)
@@ -223,7 +224,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     }
     try {
       final rows = await _db
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .select(
             'id, name_en, sport_id, sport_variant_keys, '
             'venue:venues(id, name_en, area)',
@@ -367,7 +368,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
       };
 
-      await _db.rpc('rpc_create_game', params: params);
+      await _db.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
       state = state.copyWith(isSubmitting: false);
       return true;
     } on PostgrestException catch (e) {

@@ -130,7 +130,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     try {
       // Load available sports from Supabase
       final sportsRows = await Supabase.instance.client
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select()
           .eq('is_active', true)
           .order('name_en');
@@ -160,7 +160,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         if (storedCountry.length == 2) {
           try {
             final rows = await Supabase.instance.client
-                .from('ref_countries')
+                .from(SupabaseConfig.refCountriesTable)
                 .select('name_en')
                 .eq('code', storedCountry.toUpperCase())
                 .limit(1);
@@ -212,7 +212,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _loadSportsProfiles(String profileId) async {
     try {
       final sportsResponse = await Supabase.instance.client
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select()
           .eq('profile_id', profileId);
 
@@ -242,7 +242,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _loadUserPreferences(String userId) async {
     try {
       final prefsResponse = await Supabase.instance.client
-          .from('user_preferences')
+          .from(SupabaseConfig.userPreferencesTable)
           .select()
           .eq('user_id', userId)
           .maybeSingle();
@@ -1685,7 +1685,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           } else {
             try {
               final rows = await Supabase.instance.client
-                  .from('ref_countries')
+                  .from(SupabaseConfig.refCountriesTable)
                   .select('code')
                   .eq('name_en', rawCountry)
                   .limit(1);
@@ -1760,7 +1760,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
       // Fetch existing rows — sport column stores the text key
       final existing = await Supabase.instance.client
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select('sport')
           .eq('profile_id', profileId);
 
@@ -1772,7 +1772,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final toDelete = existingKeys.difference(desiredKeys);
       if (toDelete.isNotEmpty) {
         await Supabase.instance.client
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .delete()
             .eq('profile_id', profileId)
             .inFilter('sport', toDelete.toList());
@@ -1783,14 +1783,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .where((r) => !existingKeys.contains(r['sport']))
           .toList();
       if (toInsert.isNotEmpty) {
-        await Supabase.instance.client.from('sport_profiles').insert(toInsert);
+        await Supabase.instance.client.from(SupabaseConfig.sportProfilesTable).insert(toInsert);
       }
 
       // Update skill level for sports that already existed
       for (final row in sportsData) {
         if (existingKeys.contains(row['sport'])) {
           await Supabase.instance.client
-              .from('sport_profiles')
+              .from(SupabaseConfig.sportProfilesTable)
               .update({'skill_level': row['skill_level']})
               .eq('sport', row['sport'] as String)
               .eq('profile_id', profileId);
@@ -1817,7 +1817,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
       // Check if preferences exist
       final existing = await Supabase.instance.client
-          .from('user_preferences')
+          .from(SupabaseConfig.userPreferencesTable)
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
@@ -1825,7 +1825,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       if (existing != null) {
         // Update existing
         await Supabase.instance.client
-            .from('user_preferences')
+            .from(SupabaseConfig.userPreferencesTable)
             .update({
               'weekly_availability': weeklyAvailJson,
               'preferred_game_types': preferredGameTypes,
@@ -1834,7 +1834,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             .eq('user_id', userId);
       } else {
         // Insert new
-        await Supabase.instance.client.from('user_preferences').insert({
+        await Supabase.instance.client.from(SupabaseConfig.userPreferencesTable).insert({
           'user_id': userId,
           'weekly_availability': weeklyAvailJson,
           'preferred_game_types': preferredGameTypes,

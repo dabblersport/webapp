@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/models/notifications/notification_model.dart';
 
 /// Exception for notification operations
@@ -35,7 +36,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   Future<List<NotificationModel>> getNotifications(String userId) async {
     try {
       final response = await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
@@ -54,7 +55,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   Future<List<NotificationModel>> getUnreadNotifications(String userId) async {
     try {
       final response = await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .select()
           .eq('user_id', userId)
           .eq('is_read', false)
@@ -77,7 +78,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   ) async {
     try {
       final response = await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .select()
           .eq('user_id', userId)
           .eq('type', type)
@@ -97,7 +98,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   Future<void> markAsRead(String notificationId) async {
     try {
       await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .update({
             'is_read': true,
             'read_at': DateTime.now().toIso8601String(),
@@ -114,7 +115,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   Future<void> markAllAsRead(String userId) async {
     try {
       await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .update({
             'is_read': true,
             'read_at': DateTime.now().toIso8601String(),
@@ -131,7 +132,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   @override
   Future<void> deleteNotification(String notificationId) async {
     try {
-      await client.from('notifications').delete().eq('id', notificationId);
+      await client.from(SupabaseConfig.notificationsTable).delete().eq('id', notificationId);
     } catch (e) {
       throw NotificationException(
         'Failed to delete notification: ${e.toString()}',
@@ -142,7 +143,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   @override
   Future<void> deleteAllNotifications(String userId) async {
     try {
-      await client.from('notifications').delete().eq('user_id', userId);
+      await client.from(SupabaseConfig.notificationsTable).delete().eq('user_id', userId);
     } catch (e) {
       throw NotificationException(
         'Failed to delete all notifications: ${e.toString()}',
@@ -156,7 +157,7 @@ class SupabaseNotificationsDataSource implements NotificationsDataSource {
   ) async {
     try {
       final response = await client
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .insert(notification.toJson())
           .select()
           .single();

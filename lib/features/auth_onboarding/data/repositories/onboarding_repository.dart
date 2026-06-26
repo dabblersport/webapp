@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/default_avatar_service.dart';
@@ -28,7 +29,7 @@ class OnboardingRepository {
         }
 
         final response = await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('''
               id,
               user_id,
@@ -108,7 +109,7 @@ class OnboardingRepository {
     return Result.guard(
       () async {
         final response = await _client
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .select('id')
             .eq('profile_id', profileId)
             .maybeSingle();
@@ -134,7 +135,7 @@ class OnboardingRepository {
     if (country.length == 2) return country.toUpperCase();
     try {
       final rows = await _client
-          .from('ref_countries')
+          .from(SupabaseConfig.refCountriesTable)
           .select('code')
           .eq('name_en', country)
           .limit(1);
@@ -202,7 +203,7 @@ class OnboardingRepository {
         };
 
         final response = await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .insert(profileData)
             .select()
             .single();
@@ -284,7 +285,7 @@ class OnboardingRepository {
 
         if (!alreadyExists) {
           // Create sport_profiles entry
-          await _client.from('sport_profiles').insert({
+          await _client.from(SupabaseConfig.sportProfilesTable).insert({
             'profile_id': profileId,
             'sport_id': sportId,
           });
@@ -292,7 +293,7 @@ class OnboardingRepository {
 
         // Update profile with primary_sport and profile_completion
         await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({
               'primary_sport': sportId,
               'profile_completion': 'sport_added',
@@ -318,7 +319,7 @@ class OnboardingRepository {
     return Result.guard(
       () async {
         await _client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({'onboard': true, 'profile_completion': 'complete'})
             .eq('id', profileId);
       },
@@ -339,7 +340,7 @@ class OnboardingRepository {
     return Result.guard(
       () async {
         final response = await _client
-            .from('sports')
+            .from(SupabaseConfig.sportsTable)
             .select('id')
             .eq('slug', slug)
             .single();

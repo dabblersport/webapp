@@ -1,4 +1,5 @@
 import 'package:dabbler/core/utils/logger.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -819,7 +820,7 @@ class ModerationService {
       Logger.debug('$_logTag: Fetching open moderation queue');
 
       final response = await _supabase
-          .from('v_mod_queue_open')
+          .from(SupabaseConfig.vModQueueOpenTable)
           .select()
           .order('created_at', ascending: false);
 
@@ -859,7 +860,7 @@ class ModerationService {
       Logger.debug('$_logTag: Fetching safety overview');
 
       final response = await _supabase
-          .from('v_safety_overview')
+          .from(SupabaseConfig.vSafetyOverviewTable)
           .select()
           .limit(1)
           .maybeSingle();
@@ -943,7 +944,7 @@ class ModerationService {
       );
 
       final response = await _supabase
-          .from('audit_events')
+          .from(SupabaseConfig.auditEventsTable)
           .select()
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);

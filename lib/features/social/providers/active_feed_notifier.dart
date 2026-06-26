@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -299,7 +300,7 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
   }) async {
     try {
       final rows = await _db
-          .from('v_game_card')
+          .from(SupabaseConfig.vGameCardTable)
           .select(
             'id, title, sport_name_en, start_at, venue_name, area_name, '
             'roster_count, capacity, creator_display_name, creator_avatar_url, created_at',

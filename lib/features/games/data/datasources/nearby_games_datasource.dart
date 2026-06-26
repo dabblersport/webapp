@@ -1,4 +1,5 @@
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
@@ -61,7 +62,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   }) =>
       Result.guard(
         () async {
-          var query = _svc.client.from('v_game_card').select(
+          var query = _svc.client.from(SupabaseConfig.vGameCardTable).select(
                 'id, title, sport_name_en, start_at, end_at, '
                 'is_cancelled, venue_name, area_name, capacity, roster_count, sport_id',
               );

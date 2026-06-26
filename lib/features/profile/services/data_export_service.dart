@@ -465,12 +465,12 @@ class DataExportService {
   ) async {
     try {
       final settingsResponse = await _supabase
-          .from('user_settings')
+          .from(SupabaseConfig.userSettingsTable)
           .select()
           .eq('user_id', userId);
 
       final preferencesResponse = await _supabase
-          .from('user_preferences')
+          .from(SupabaseConfig.userPreferencesTable)
           .select()
           .eq('user_id', userId);
 
@@ -490,7 +490,7 @@ class DataExportService {
 
         try {
           final settingsResponse = await _supabase
-              .from('user_settings')
+              .from(SupabaseConfig.userSettingsTable)
               .select()
               .eq('user_id', userId);
 
@@ -519,7 +519,7 @@ class DataExportService {
     try {
       // First get profile_id from user_id
       final profileResponse = await _supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId)
           .eq('profile_type', 'personal')
@@ -532,7 +532,7 @@ class DataExportService {
       final profileId = profileResponse['id'] as String;
 
       final response = await _supabase
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select('*')
           .eq('profile_id', profileId);
 
@@ -557,12 +557,12 @@ class DataExportService {
   ) async {
     try {
       final gameStats = await _supabase
-          .from('user_game_statistics')
+          .from(SupabaseConfig.userGameStatisticsTable)
           .select()
           .eq('user_id', userId);
 
       final performanceMetrics = await _supabase
-          .from('performance_metrics')
+          .from(SupabaseConfig.performanceMetricsTable)
           .select()
           .eq('user_id', userId);
 
@@ -585,7 +585,7 @@ class DataExportService {
   ) async {
     try {
       final response = await _supabase
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('''
             *, 
             game_participants!inner(user_id, joined_at, status, performance_rating),
@@ -613,7 +613,7 @@ class DataExportService {
   Future<Map<String, dynamic>?> _getPrivacySettingsData(String userId) async {
     try {
       final response = await _supabase
-          .from('privacy_settings')
+          .from(SupabaseConfig.privacySettingsTable)
           .select()
           .eq('user_id', userId)
           .single();
@@ -634,7 +634,7 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getConsentHistory(String userId) async {
     try {
       final response = await _supabase
-          .from('consent_records')
+          .from(SupabaseConfig.consentRecordsTable)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
@@ -659,7 +659,7 @@ class DataExportService {
     try {
       final twoYearsAgo = DateTime.now().subtract(Duration(days: 730));
       final response = await _supabase
-          .from('audit_logs')
+          .from(SupabaseConfig.auditLogsTable)
           .select()
           .eq('user_id', userId)
           .gte('created_at', twoYearsAgo.toIso8601String())
@@ -687,7 +687,7 @@ class DataExportService {
     try {
       final sixMonthsAgo = DateTime.now().subtract(Duration(days: 180));
       final response = await _supabase
-          .from('login_history')
+          .from(SupabaseConfig.loginHistoryTable)
           .select(
             'login_at, ip_address, user_agent, device_info, location_info',
           )
@@ -716,12 +716,12 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getConnectionsData(String userId) async {
     try {
       final friendships = await _supabase
-          .from('friendships')
+          .from(SupabaseConfig.friendshipsTable)
           .select('*, profiles!friend_id(name, email)')
           .or('user_id.eq.$userId,friend_id.eq.$userId');
 
       final blockedUsers = await _supabase
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('*, profiles!blocked_user_id(name)')
           .eq('blocker_user_id', userId);
 
@@ -751,14 +751,14 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getMessagesData(String userId) async {
     try {
       final sentMessages = await _supabase
-          .from('messages')
+          .from(SupabaseConfig.messagesTable)
           .select('content, sent_at, game_id, recipient_id')
           .eq('sender_id', userId)
           .order('sent_at', ascending: false)
           .limit(10000);
 
       final receivedMessages = await _supabase
-          .from('messages')
+          .from(SupabaseConfig.messagesTable)
           .select('content, sent_at, game_id, sender_id')
           .eq('recipient_id', userId)
           .order('sent_at', ascending: false)
@@ -791,7 +791,7 @@ class DataExportService {
   ) async {
     try {
       final response = await _supabase
-          .from('notifications')
+          .from(SupabaseConfig.notificationsTable)
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false)
@@ -816,7 +816,7 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getMediaMetadata(String userId) async {
     try {
       final response = await _supabase
-          .from('user_media')
+          .from(SupabaseConfig.userMediaTable)
           .select(
             'file_name, file_type, file_size, uploaded_at, media_category',
           )
@@ -843,7 +843,7 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getLocationData(String userId) async {
     try {
       final response = await _supabase
-          .from('location_data')
+          .from(SupabaseConfig.locationDataTable)
           .select('approximate_location, recorded_at, purpose, accuracy')
           .eq('user_id', userId)
           .order('recorded_at', ascending: false)
@@ -872,7 +872,7 @@ class DataExportService {
   ) async {
     try {
       final response = await _supabase
-          .from('device_info')
+          .from(SupabaseConfig.deviceInfoTable)
           .select('device_type, os_version, app_version, last_seen_at')
           .eq('user_id', userId);
 
@@ -895,7 +895,7 @@ class DataExportService {
   Future<Map<String, dynamic>?> _getPaymentData(String userId) async {
     try {
       final response = await _supabase
-          .from('payment_records')
+          .from(SupabaseConfig.paymentRecordsTable)
           .select(
             'transaction_id, amount, currency, status, created_at, subscription_type',
           )
@@ -919,7 +919,7 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getThirdPartyData(String userId) async {
     try {
       final response = await _supabase
-          .from('third_party_connections')
+          .from(SupabaseConfig.thirdPartyConnectionsTable)
           .select('provider, connected_at, permissions_granted, last_sync')
           .eq('user_id', userId);
 
@@ -1465,7 +1465,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
   // Database operations for export requests
   Future<void> _storeExportRequest(DataExportRequest request) async {
     try {
-      await _supabase.from('data_export_requests').insert({
+      await _supabase.from(SupabaseConfig.dataExportRequestsTable).insert({
         'id': request.id,
         'user_id': request.userId,
         'user_email': request.userEmail,
@@ -1487,7 +1487,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
   Future<List<DataExportRequest>> _getPendingExports(String userId) async {
     try {
       final response = await _supabase
-          .from('data_export_requests')
+          .from(SupabaseConfig.dataExportRequestsTable)
           .select()
           .eq('user_id', userId)
           .eq('status', 'pending')
@@ -1505,7 +1505,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
   ) async {
     try {
       final response = await _supabase
-          .from('data_export_requests')
+          .from(SupabaseConfig.dataExportRequestsTable)
           .select()
           .eq('user_id', userId)
           .order('requested_at', ascending: false)
@@ -1521,7 +1521,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
   Future<DataExportRequest?> _getExportRequest(String requestId) async {
     try {
       final response = await _supabase
-          .from('data_export_requests')
+          .from(SupabaseConfig.dataExportRequestsTable)
           .select()
           .eq('id', requestId)
           .single();
@@ -1553,7 +1553,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
       }
 
       await _supabase
-          .from('data_export_requests')
+          .from(SupabaseConfig.dataExportRequestsTable)
           .update(updateData)
           .eq('id', requestId);
 
@@ -1577,7 +1577,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
       }
 
       await _supabase
-          .from('data_export_requests')
+          .from(SupabaseConfig.dataExportRequestsTable)
           .update(updateData)
           .eq('id', requestId);
 
@@ -1596,7 +1596,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
       );
 
       // Log download event
-      await _supabase.from('export_download_logs').insert({
+      await _supabase.from(SupabaseConfig.exportDownloadLogsTable).insert({
         'request_id': requestId,
         'downloaded_at': DateTime.now().toIso8601String(),
         'ip_address': 'masked_for_privacy', // Could get real IP if needed
@@ -1635,7 +1635,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
   Future<void> _recordGDPRExport(DataExportRequest request) async {
     try {
       // Record in compliance log
-      await _supabase.from('gdpr_compliance_log').insert({
+      await _supabase.from(SupabaseConfig.gdprComplianceLogTable).insert({
         'user_id': request.userId,
         'action': 'data_export',
         'request_id': request.id,
@@ -1757,7 +1757,7 @@ Last Updated: ${DateTime.now().toIso8601String()}
 
       // Games data
       final gamesResponse = await _supabase
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select()
           .or('creator_id.eq.$userId,participants.cs.{$userId}');
       userData['games'] = gamesResponse;

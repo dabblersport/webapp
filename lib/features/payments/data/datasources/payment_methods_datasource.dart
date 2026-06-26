@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/models/payments/payment_method_model.dart';
 
 /// Exception for payment methods operations
@@ -32,7 +33,7 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
   Future<List<PaymentMethodModel>> getPaymentMethods(String userId) async {
     try {
       final response = await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .select()
           .eq('user_id', userId)
           .order('is_default', ascending: false)
@@ -54,7 +55,7 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
   Future<PaymentMethodModel?> getDefaultPaymentMethod(String userId) async {
     try {
       final response = await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .select()
           .eq('user_id', userId)
           .eq('is_default', true)
@@ -77,7 +78,7 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .insert(paymentMethod.toJson())
           .select()
           .single();
@@ -98,7 +99,7 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .update(paymentMethod.toJson())
           .eq('id', paymentMethod.id)
           .select()
@@ -118,7 +119,7 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
   Future<void> deletePaymentMethod(String paymentMethodId) async {
     try {
       await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .delete()
           .eq('id', paymentMethodId);
     } on PostgrestException catch (e) {
@@ -138,14 +139,14 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
     try {
       // First, unset all other payment methods as default
       await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .update({'is_default': false})
           .eq('user_id', userId);
 
       // Then set the selected one as default — scope by user_id as well as id
       // so a caller can never set another user's payment method as default.
       await _supabaseClient
-          .from('payment_methods')
+          .from(SupabaseConfig.paymentMethodsTable)
           .update({'is_default': true})
           .eq('id', paymentMethodId)
           .eq('user_id', userId);

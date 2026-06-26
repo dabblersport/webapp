@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/repositories/friends_repository_impl.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_error_mapper.dart';
@@ -56,7 +57,7 @@ final userFriendsListProvider = FutureProvider.autoDispose
       try {
         final supabase = Supabase.instance.client;
         final friendships = await supabase
-            .from('friendships')
+            .from(SupabaseConfig.friendshipsTable)
             .select('user_id, peer_user_id')
             .or('user_id.eq.$userId,peer_user_id.eq.$userId')
             .eq('status', 'accepted');
@@ -75,7 +76,7 @@ final userFriendsListProvider = FutureProvider.autoDispose
 
         // Fetch profiles
         final profiles = await supabase
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('user_id, display_name, avatar_url, username, verified')
             .inFilter('user_id', friendIds.toList())
             .eq('is_active', true);

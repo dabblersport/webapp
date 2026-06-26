@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -301,7 +302,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   Future<({List<FeedItem> items, DateTime? cursor})> _fetchPage({
     required DateTime? cursor,
   }) async {
-    final response = await _db.rpc('get_home_feed', params: {
+    final response = await _db.rpc(SupabaseConfig.getHomeFeedFn, params: {
       'p_limit': _pageSize,
       'p_cursor': cursor?.toUtc().toIso8601String(),
     });
@@ -350,7 +351,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
     if (newsIds.isNotEmpty) {
       try {
         final newsRows = await _db
-            .from('published_news')
+            .from(SupabaseConfig.publishedNewsTable)
             .select()
             .inFilter('id', newsIds);
         for (final row in newsRows as List<dynamic>) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/profile/organiser_profile.dart';
@@ -70,7 +71,7 @@ final sportProfileViewProvider = FutureProvider.autoDispose
 
       if (args.isOrganiserPersona) {
         final organiserRow = await supabase
-            .from('organiser')
+            .from(SupabaseConfig.organiserTable)
             .select()
             .eq('profile_id', args.profileId)
             .eq('sport', args.sportKey)
@@ -237,7 +238,7 @@ Future<List<SportProfileMetric>> _buildOrganiserMetrics({
   required OrganiserProfile? organiserProfile,
 }) async {
   final hostedRows = await supabase
-      .from('games')
+      .from(SupabaseConfig.gamesTable)
       .select('id, is_cancelled, start_at')
       .eq('host_user_id', args.userId)
       .eq('sport', args.sportKey);

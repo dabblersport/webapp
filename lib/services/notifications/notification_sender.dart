@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 
 /// Service to send push notifications to users via Edge Function
@@ -19,7 +20,7 @@ class NotificationSender {
       final currentUserId = supabase.auth.currentUser?.id;
       if (currentUserId != null) {
         final blockCheck = await supabase
-            .from('user_blocks')
+            .from(SupabaseConfig.userBlocksTable)
             .select('id')
             .or(
               'and(blocker_user_id.eq.$currentUserId,blocked_user_id.eq.$userId),'

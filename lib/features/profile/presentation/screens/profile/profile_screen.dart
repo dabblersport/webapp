@@ -1,5 +1,6 @@
 // import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,7 +67,7 @@ final myPostsCountProvider = FutureProvider.autoDispose<int>((ref) async {
 
   try {
     final response = await supabase
-        .from('posts')
+        .from(SupabaseConfig.postsTable)
         .select('id')
         .eq('author_user_id', userId)
         .eq('is_deleted', false)

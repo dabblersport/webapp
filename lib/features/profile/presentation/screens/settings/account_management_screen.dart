@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -1067,7 +1068,7 @@ class _AccountManagementScreenState
       // to all related public/auth data via ON DELETE CASCADE foreign keys.
       // The RPC runs server-side (SECURITY DEFINER) and is scoped to the
       // caller's own account (auth.uid()).
-      await Supabase.instance.client.rpc('delete_my_account');
+      await Supabase.instance.client.rpc(SupabaseConfig.deleteMyAccountFn);
 
       // The account no longer exists — clear the local session and leave.
       try {

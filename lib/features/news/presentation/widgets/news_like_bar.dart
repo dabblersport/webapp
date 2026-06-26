@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -27,7 +28,7 @@ final newsReactionCountsProvider =
   final db = Supabase.instance.client;
   final allowedIds = _newsReactions.map((r) => r.id).toList();
   final rows = await db
-      .from('reactions')
+      .from(SupabaseConfig.reactionsTable)
       .select('vibe_id')
       .eq('parent_activity_id', newsId)
       .inFilter('vibe_id', allowedIds) as List;

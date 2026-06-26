@@ -1,4 +1,5 @@
 import 'package:dabbler/core/utils/identifier_detector.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,7 +39,7 @@ class OnboardingCoordinator {
     try {
       // Check if user has a profile in public.profiles
       final profiles = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', user.id)
           .timeout(const Duration(seconds: 5));

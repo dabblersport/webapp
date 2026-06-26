@@ -22,7 +22,7 @@ class DataRetentionService {
     try {
       Logger.info('$_logTag: Configuring retention policy for user: $userId');
 
-      await _supabase.from('user_retention_policies').upsert({
+      await _supabase.from(SupabaseConfig.userRetentionPoliciesTable).upsert({
         'user_id': userId,
         'policies': retentionPolicies.map(
           (key, value) => MapEntry(key, value.inDays),
@@ -48,7 +48,7 @@ class DataRetentionService {
   Future<UserRetentionPolicy?> getUserRetentionPolicy(String userId) async {
     try {
       final response = await _supabase
-          .from('user_retention_policies')
+          .from(SupabaseConfig.userRetentionPoliciesTable)
           .select()
           .eq('user_id', userId)
           .single();
@@ -71,7 +71,7 @@ class DataRetentionService {
     try {
       // Clear existing scheduled tasks
       await _supabase
-          .from('scheduled_cleanup_tasks')
+          .from(SupabaseConfig.scheduledCleanupTasksTable)
           .delete()
           .eq('user_id', userId);
 
@@ -81,7 +81,7 @@ class DataRetentionService {
         final retentionPeriod = entry.value;
         final cleanupDate = DateTime.now().add(retentionPeriod);
 
-        await _supabase.from('scheduled_cleanup_tasks').insert({
+        await _supabase.from(SupabaseConfig.scheduledCleanupTasksTable).insert({
           'user_id': userId,
           'data_type': dataType,
           'scheduled_cleanup_date': cleanupDate.toIso8601String(),
@@ -109,7 +109,7 @@ class DataRetentionService {
 
       // Get due cleanup tasks
       var query = _supabase
-          .from('scheduled_cleanup_tasks')
+          .from(SupabaseConfig.scheduledCleanupTasksTable)
           .select()
           .eq('status', 'scheduled')
           .lte('scheduled_cleanup_date', DateTime.now().toIso8601String())
@@ -170,7 +170,7 @@ class DataRetentionService {
 
       // Mark task as completed
       await _supabase
-          .from('scheduled_cleanup_tasks')
+          .from(SupabaseConfig.scheduledCleanupTasksTable)
           .update({
             'status': 'completed',
             'completed_at': DateTime.now().toIso8601String(),
@@ -188,7 +188,7 @@ class DataRetentionService {
 
       // Mark task as failed
       await _supabase
-          .from('scheduled_cleanup_tasks')
+          .from(SupabaseConfig.scheduledCleanupTasksTable)
           .update({
             'status': 'failed',
             'error_message': e.toString(),
@@ -202,7 +202,7 @@ class DataRetentionService {
   Future<bool> _checkGracePeriod(String userId, String dataType) async {
     try {
       final response = await _supabase
-          .from('grace_period_requests')
+          .from(SupabaseConfig.gracePeriodRequestsTable)
           .select()
           .eq('user_id', userId)
           .eq('data_type', dataType)
@@ -221,7 +221,7 @@ class DataRetentionService {
     final newCleanupDate = DateTime.now().add(delay);
 
     await _supabase
-        .from('scheduled_cleanup_tasks')
+        .from(SupabaseConfig.scheduledCleanupTasksTable)
         .update({
           'scheduled_cleanup_date': newCleanupDate.toIso8601String(),
           'postponed_count': 1, // Could track multiple postponements
@@ -323,7 +323,7 @@ class DataRetentionService {
       ); // Keep 2 years
 
       final result = await _supabase
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .delete()
           .eq('creator_id', userId)
           .lt('created_at', cutoffDate.toIso8601String());
@@ -342,7 +342,7 @@ class DataRetentionService {
       ); // Keep 1 year
 
       final result = await _supabase
-          .from('messages')
+          .from(SupabaseConfig.messagesTable)
           .delete()
           .eq('sender_id', userId)
           .lt('created_at', cutoffDate.toIso8601String());
@@ -361,7 +361,7 @@ class DataRetentionService {
       ); // Keep 2 years for security
 
       final result = await _supabase
-          .from('audit_logs')
+          .from(SupabaseConfig.auditLogsTable)
           .delete()
           .eq('user_id', userId)
           .lt('created_at', cutoffDate.toIso8601String());
@@ -380,7 +380,7 @@ class DataRetentionService {
       ); // Keep 6 months
 
       final result = await _supabase
-          .from('login_history')
+          .from(SupabaseConfig.loginHistoryTable)
           .delete()
           .eq('user_id', userId)
           .lt('login_at', cutoffDate.toIso8601String());
@@ -400,7 +400,7 @@ class DataRetentionService {
 
       // First get the files to delete from storage
       final mediaFiles = await _supabase
-          .from('user_media')
+          .from(SupabaseConfig.userMediaTable)
           .select('file_path')
           .eq('user_id', userId)
           .lt('created_at', cutoffDate.toIso8601String());
@@ -411,7 +411,7 @@ class DataRetentionService {
 
       // Delete from database
       final result = await _supabase
-          .from('user_media')
+          .from(SupabaseConfig.userMediaTable)
           .delete()
           .eq('user_id', userId)
           .lt('created_at', cutoffDate.toIso8601String());
@@ -430,7 +430,7 @@ class DataRetentionService {
       ); // Keep 3 months
 
       final result = await _supabase
-          .from('location_data')
+          .from(SupabaseConfig.locationDataTable)
           .delete()
           .eq('user_id', userId)
           .lt('recorded_at', cutoffDate.toIso8601String());
@@ -449,7 +449,7 @@ class DataRetentionService {
       ); // Keep 1 year
 
       final result = await _supabase
-          .from('user_analytics')
+          .from(SupabaseConfig.userAnalyticsTable)
           .delete()
           .eq('user_id', userId)
           .lt('recorded_at', cutoffDate.toIso8601String());
@@ -468,7 +468,7 @@ class DataRetentionService {
     int recordsDeleted,
   ) async {
     try {
-      await _supabase.from('data_cleanup_audit').insert({
+      await _supabase.from(SupabaseConfig.dataCleanupAuditTable).insert({
         'user_id': userId,
         'data_type': dataType,
         'records_deleted': recordsDeleted,
@@ -489,7 +489,7 @@ class DataRetentionService {
     String? reason,
   }) async {
     try {
-      await _supabase.from('grace_period_requests').insert({
+      await _supabase.from(SupabaseConfig.gracePeriodRequestsTable).insert({
         'user_id': userId,
         'data_type': dataType,
         'requested_at': DateTime.now().toIso8601String(),
@@ -525,7 +525,7 @@ class DataRetentionService {
   Future<List<Map<String, dynamic>>> getUpcomingCleanups(String userId) async {
     try {
       final response = await _supabase
-          .from('scheduled_cleanup_tasks')
+          .from(SupabaseConfig.scheduledCleanupTasksTable)
           .select()
           .eq('user_id', userId)
           .eq('status', 'scheduled')

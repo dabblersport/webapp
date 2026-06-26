@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -235,7 +236,7 @@ class AppRouter {
         if (currentUser != null) {
           // Check if profile exists for this user
           final profileResponse = await supabase
-              .from('profiles')
+              .from(SupabaseConfig.usersTable)
               .select('id')
               .eq('user_id', currentUser.id)
               .limit(1)
@@ -1572,7 +1573,7 @@ class AppRouter {
           return RoutePaths.landing;
         }
         try {
-          final response = await Supabase.instance.client.rpc('is_admin');
+          final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
           if (response != true) {
             return RoutePaths.home; // Redirect non-admins to home
           }
@@ -1598,7 +1599,7 @@ class AppRouter {
           return RoutePaths.landing;
         }
         try {
-          final response = await Supabase.instance.client.rpc('is_admin');
+          final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
           if (response != true) {
             return RoutePaths.home; // Redirect non-admins to home
           }

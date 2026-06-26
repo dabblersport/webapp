@@ -1,4 +1,5 @@
 import 'package:dabbler/core/utils/logger.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_badge.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_event.dart';
@@ -29,7 +30,7 @@ class SportProfileService {
   ) async {
     try {
       final response = await _supabase
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select()
           .eq('profile_id', profileId)
           .eq('sport', sportKey)
@@ -71,7 +72,7 @@ class SportProfileService {
     try {
       // First, get the profile_id(s) for this user_id
       final profilesResponse = await _supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId);
 
@@ -91,7 +92,7 @@ class SportProfileService {
 
       // Now fetch sport_profiles using profile_id
       final response = await _supabase
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select('*')
           .inFilter('profile_id', profileIds);
 
@@ -134,7 +135,7 @@ class SportProfileService {
 
     try {
       final response = await _supabase
-          .from('sport_profile_events')
+          .from(SupabaseConfig.sportProfileEventsTable)
           .select()
           .eq('profile_id', profileId)
           .eq('sport', sportKey)
@@ -175,7 +176,7 @@ class SportProfileService {
   ) async {
     try {
       final response = await _supabase
-          .from('sport_profile_profile_badges')
+          .from(SupabaseConfig.sportProfileProfileBadgesTable)
           .select('badge:sport_profile_badges!inner(*)')
           .eq('profile_id', profileId)
           .eq('sport', sportKey)
@@ -221,7 +222,7 @@ class SportProfileService {
 
     try {
       final response = await _supabase
-          .from('sport_profile_tiers')
+          .from(SupabaseConfig.sportProfileTiersTable)
           .select()
           .eq('id', tierId)
           .limit(1)
@@ -265,7 +266,7 @@ class SportProfileService {
   }) async {
     try {
       final response = await _supabase
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select(
             'xp_total,matches_played,last_5_matches,reliability_score,ml_avg_vector,ml_vector_count',
           )
@@ -324,7 +325,7 @@ class SportProfileService {
       }
 
       await _supabase
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .update(updates)
           .eq('profile_id', profileId)
           .eq('sport', sportKey);

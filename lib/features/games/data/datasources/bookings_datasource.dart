@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/data/models/games/booking_model.dart';
 import 'bookings_remote_data_source.dart';
@@ -164,7 +165,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
 
       // Fetch the created booking with full details
       final bookingResponse = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             venue:venues(name, address),
@@ -231,7 +232,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   }) async {
     try {
       var query = _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('*')
           .eq('venue_id', venueId)
           .eq('booking_date', date)
@@ -275,7 +276,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   }) async {
     try {
       var query = _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             venue:venues(name, address),
@@ -319,7 +320,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   Future<BookingModel> getBooking(String bookingId) async {
     try {
       final response = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             venue:venues(name, address, phone, email),
@@ -348,7 +349,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .update(updates)
           .eq('id', bookingId)
           .select()
@@ -387,7 +388,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
 
       // Fetch updated booking
       final bookingResponse = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('*')
           .eq('id', bookingId)
           .single();
@@ -448,7 +449,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
       final endDate = DateTime.now().add(Duration(days: days));
 
       final response = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             venue:venues(name, address),
@@ -485,7 +486,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
       final startDate = DateTime.now().subtract(Duration(days: days));
 
       final response = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             venue:venues(name, address),
@@ -534,7 +535,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
 
       // Fetch updated booking
       final bookingResponse = await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('*')
           .eq('id', bookingId)
           .single();
@@ -596,7 +597,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   /// Sends booking reminder notifications
   Future<bool> sendBookingReminders() async {
     try {
-      await _supabaseClient.rpc('send_booking_reminders');
+      await _supabaseClient.rpc(SupabaseConfig.sendBookingRemindersFn);
       return true;
     } catch (e) {
       return false;
@@ -633,7 +634,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   Future<bool> markBookingAsNoShow(String bookingId, String reason) async {
     try {
       await _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .update({
             'status': 'no_show',
             'no_show_reason': reason,
@@ -661,7 +662,7 @@ class SupabaseBookingsDataSource implements BookingsDataSource {
   }) async {
     try {
       var query = _supabaseClient
-          .from('bookings')
+          .from(SupabaseConfig.bookingsTable)
           .select('''
             *,
             user:profiles(full_name, phone),

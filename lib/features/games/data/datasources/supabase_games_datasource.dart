@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'games_remote_data_source.dart';
@@ -52,7 +53,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   void _initializeRealTimeSubscriptions() {
     // Subscribe to games table changes
     _gamesSubscription = _supabaseClient
-        .from('games')
+        .from(SupabaseConfig.gamesTable)
         .stream(primaryKey: ['id'])
         .listen((data) {
           for (final record in data) {
@@ -69,7 +70,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<String> _getProfileId(String userId) async {
     try {
       final response = await _supabaseClient
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId)
           .eq('is_active', true)
@@ -95,7 +96,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<int> _getCurrentPlayerCount(String gameId) async {
     try {
       final response = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           // Table has no 'id' column; use profile_id just to count rows
           .select('profile_id')
           .eq('game_id', gameId)
@@ -111,7 +112,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<bool> _isPlayerInGame(String gameId, String userId) async {
     try {
       final response = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           // Table has no 'id' column; use game_id just to check existence
           .select('game_id')
           .eq('game_id', gameId)
@@ -131,7 +132,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
     try {
       final response = await _supabaseClient
-          .from('venue_spaces')
+          .from(SupabaseConfig.venueSpacesTable)
           .select('venue_id')
           .eq('id', venueSpaceId)
           .maybeSingle();
@@ -150,7 +151,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game details to check maxPlayers (capacity in DB)
       final gameResponse = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('capacity')
           .eq('id', gameId)
           .single();
@@ -159,7 +160,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Get the player's joined_at timestamp
       final playerResponse = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .select('joined_at')
           .eq('game_id', gameId)
           .eq('user_id', userId)
@@ -174,7 +175,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Count active players who joined before this player
       final playersBefore = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           // Table has no 'id' column; use profile_id just to count rows
           .select('profile_id')
           .eq('game_id', gameId)
@@ -199,13 +200,13 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Insert game
       final gameResponse = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .insert(gameData)
           .select()
           .single();
 
       // Add organizer as first player
-      await _supabaseClient.from('game_roster').insert({
+      await _supabaseClient.from(SupabaseConfig.gameRosterTable).insert({
         'game_id': gameResponse['id'],
         'profile_id': gameData['host_profile_id'],
         'user_id': gameData['host_user_id'],
@@ -233,7 +234,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Query without venue join to avoid foreign key issues
       // Venue data can be fetched separately if needed
-      var query = _supabaseClient.from('games').select('*');
+      var query = _supabaseClient.from(SupabaseConfig.gamesTable).select('*');
 
       // Apply basic filters
       if (filters != null) {
@@ -298,7 +299,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Get game details
       final gameResponse = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*')
           .eq('id', gameId)
           .single();
@@ -348,7 +349,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       }
 
       // Add player to game
-      await _supabaseClient.from('game_roster').insert({
+      await _supabaseClient.from(SupabaseConfig.gameRosterTable).insert({
         'game_id': gameId,
         'profile_id': profileId,
         'user_id': playerId,
@@ -400,7 +401,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // IDEMPOTENT CHECK: First check if player is in the game
       final existingPlayerResponse = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .select('game_id')
           .eq('game_id', gameId)
           .eq('user_id', playerId)
@@ -412,7 +413,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Remove player from game
       await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .delete()
           .eq('game_id', gameId)
           .eq('user_id', playerId);
@@ -432,7 +433,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   ) async {
     try {
       final response = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .update(updates)
           .eq('id', gameId)
           .select()
@@ -454,7 +455,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game data with player count
       final response = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*')
           .eq('id', gameId)
           .maybeSingle();
@@ -499,13 +500,13 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       // Get game IDs where user is either host OR joined as player
       // First, get games where user is host
       final hostedGamesQuery = _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('id')
           .eq('host_user_id', userId);
 
       // Also get games where user is in game_roster
       final joinedGamesResponse = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .select('game_id')
           .eq('user_id', userId)
           .eq('status', 'active');
@@ -529,7 +530,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Query games by IDs
       var query = _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*')
           .inFilter('id', allGameIds.toList());
 
@@ -588,7 +589,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // MVP: Simplified query without venue join
       var searchQuery = _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*')
           .textSearch('title', query);
 
@@ -612,11 +613,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       if (uid != null) {
         try {
           final blockedByMe = await _supabaseClient
-              .from('user_blocks')
+              .from(SupabaseConfig.userBlocksTable)
               .select('blocked_user_id')
               .eq('blocker_user_id', uid);
           final blockedMe = await _supabaseClient
-              .from('user_blocks')
+              .from(SupabaseConfig.userBlocksTable)
               .select('blocker_user_id')
               .eq('blocked_user_id', uid);
           blockedIds = {
@@ -677,7 +678,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<bool> cancelGame(String gameId) async {
     try {
       await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .update({
             'status': 'cancelled',
             'cancelled_at': DateTime.now().toIso8601String(),
@@ -698,7 +699,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*')
           .eq('sport', sportType)
           .eq('is_cancelled', false) // Changed from status to is_cancelled
@@ -873,7 +874,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*, game_favorites!inner(user_id)')
           .eq('game_favorites.user_id', userId)
           .order('start_at') // Changed from scheduled_date to start_at
@@ -910,7 +911,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('*, game_roster!inner(user_id)')
           .eq('game_roster.user_id', userId)
           .eq(
@@ -960,7 +961,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // First get game capacity to determine waitlist
       final gameResponse = await _supabaseClient
-          .from('games')
+          .from(SupabaseConfig.gamesTable)
           .select('capacity')
           .eq('id', gameId)
           .maybeSingle();
@@ -969,7 +970,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Get roster with profile data joined
       final response = await _supabaseClient
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .select('''
             *,
             profile:profiles(
@@ -1054,7 +1055,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      await _supabaseClient.from('game_ratings').upsert({
+      await _supabaseClient.from(SupabaseConfig.gameRatingsTable).upsert({
         'game_id': gameId,
         'user_id': userId,
         'rating': rating,
@@ -1073,7 +1074,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       if (userId == null) return 0.0;
 
       final response = await _supabaseClient
-          .from('game_ratings')
+          .from(SupabaseConfig.gameRatingsTable)
           .select('rating')
           .eq('user_id', userId);
 
@@ -1112,7 +1113,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Check if request already exists
       final existingRequest = await _supabaseClient
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .select('id, status')
           .eq('game_id', gameId)
           .eq('from_user_id', playerId)
@@ -1125,7 +1126,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Create new join request
       final response = await _supabaseClient
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .insert({
             'game_id': gameId,
             'from_profile_id': profileId,
@@ -1141,7 +1142,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       if (e.code == '23505') {
         // Unique violation - request already exists (race condition)
         final existingRequest = await _supabaseClient
-            .from('game_join_requests')
+            .from(SupabaseConfig.gameJoinRequestsTable)
             .select('id')
             .eq('game_id', gameId)
             .eq('from_user_id', playerId)
@@ -1163,7 +1164,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<bool> hasPendingJoinRequest(String gameId, String userId) async {
     try {
       final response = await _supabaseClient
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .select('id')
           .eq('game_id', gameId)
           .eq('from_user_id', userId)
@@ -1181,7 +1182,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // First check if a pending request exists
       final existingRequest = await _supabaseClient
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .select('id, status')
           .eq('game_id', gameId)
           .eq('from_user_id', userId)
@@ -1195,7 +1196,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       // Update the request status to 'cancelled' instead of deleting
       // RLS policy allows requester to update their own request to 'cancelled'
       final response = await _supabaseClient
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .update({
             'status': 'cancelled',
             'decided_at': DateTime.now().toUtc().toIso8601String(),

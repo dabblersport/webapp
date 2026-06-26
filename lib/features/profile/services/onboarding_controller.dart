@@ -80,7 +80,7 @@ class OnboardingController extends ChangeNotifier {
 
       // Save to backend if authenticated
       if (_supabase.auth.currentUser != null) {
-        await _supabase.from('onboarding_progress').upsert({
+        await _supabase.from(SupabaseConfig.onboardingProgressTable).upsert({
           'user_id': _supabase.auth.currentUser!.id,
           'step_name': 'step_${_progress!.currentStep}',
           'step_data': _progress!.toJson(),
@@ -180,7 +180,7 @@ class OnboardingController extends ChangeNotifier {
 
       // Send to backend for analysis
       if (_supabase.auth.currentUser != null) {
-        await _supabase.from('onboarding_analytics').upsert({
+        await _supabase.from(SupabaseConfig.onboardingAnalyticsTable).upsert({
           'user_id': _supabase.auth.currentUser!.id,
           'variant': _currentVariant,
           'analytics_data': _analytics,
@@ -306,7 +306,7 @@ class OnboardingController extends ChangeNotifier {
       if (_supabase.auth.currentUser != null) {
         final bonusPoints = _currentVariant == 'gamified' ? 100 : 50;
 
-        await _supabase.from('user_points').upsert({
+        await _supabase.from(SupabaseConfig.userPointsTable).upsert({
           'user_id': _supabase.auth.currentUser!.id,
           'points': bonusPoints,
           'source': 'onboarding_completion',

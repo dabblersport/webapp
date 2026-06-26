@@ -1,4 +1,5 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,7 +36,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   Future<void> _fetchCountries() async {
     try {
       final response = await Supabase.instance.client
-          .from('ref_countries')
+          .from(SupabaseConfig.refCountriesTable)
           .select('name_en')
           .eq('coverage', true)
           .order('name_en');

@@ -1,4 +1,5 @@
 import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter/material.dart';
@@ -1478,12 +1479,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       final supabase = Supabase.instance.client;
       if (currentlyFollowing) {
         await supabase
-            .from('profile_follows')
+            .from(SupabaseConfig.profileFollowsTable)
             .delete()
             .eq('follower_profile_id', myProfileId)
             .eq('following_profile_id', targetProfileId);
       } else {
-        await supabase.from('profile_follows').insert({
+        await supabase.from(SupabaseConfig.profileFollowsTable).insert({
           'follower_profile_id': myProfileId,
           'following_profile_id': targetProfileId,
         });

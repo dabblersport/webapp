@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -214,7 +215,7 @@ final latestCommentProvider = FutureProvider.autoDispose
 
       // ── 1. Own reply ──────────────────────────────────────────────────
       final ownRows = await db
-          .from('comments')
+          .from(SupabaseConfig.commentsTable)
           .select(selectWithProfile)
           .eq('parent_activity_id', postId)
           .eq('author_user_id', currentUserId)
@@ -231,7 +232,7 @@ final latestCommentProvider = FutureProvider.autoDispose
       if (myProfileId == null) return null;
 
       final followRows = await db
-          .from('profile_follows')
+          .from(SupabaseConfig.profileFollowsTable)
           .select('following_profile_id')
           .eq('follower_profile_id', myProfileId);
 
@@ -242,7 +243,7 @@ final latestCommentProvider = FutureProvider.autoDispose
       if (followedProfileIds.isEmpty) return null;
 
       final followedCommentRows = await db
-          .from('comments')
+          .from(SupabaseConfig.commentsTable)
           .select(selectWithProfile)
           .eq('parent_activity_id', postId)
           .eq('is_deleted', false)
@@ -334,7 +335,7 @@ final sportsForSelectedCountryProvider =
         .valueOrNull;
     if (countryName != null && countryName.isNotEmpty) {
       final rows = await Supabase.instance.client
-          .from('ref_countries')
+          .from(SupabaseConfig.refCountriesTable)
           .select('code')
           .eq('name_en', countryName)
           .eq('coverage', true)
@@ -396,7 +397,7 @@ final sportsListProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
       final svc = ref.watch(supabaseServiceProvider);
       final rows = await svc.client
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, name_en, sport_key, emoji, category')
           .eq('is_active', true)
           .order('name_en');

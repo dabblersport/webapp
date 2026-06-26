@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -277,7 +278,7 @@ class GameViewController extends StateNotifier<GameViewState> {
   Future<void> _fetchGame() async {
     try {
       final row = await _db
-          .from('v_game_card')
+          .from(SupabaseConfig.vGameCardTable)
           .select()
           .eq('id', gameId)
           .single();
@@ -290,7 +291,7 @@ class GameViewController extends StateNotifier<GameViewState> {
   Future<void> _fetchRoster() async {
     try {
       final rows = await _db
-          .from('game_roster')
+          .from(SupabaseConfig.gameRosterTable)
           .select('profile_id, user_id, role, profiles(display_name, username, avatar_url)')
           .eq('game_id', gameId)
           .eq('status', 'active')
@@ -304,7 +305,7 @@ class GameViewController extends StateNotifier<GameViewState> {
   Future<void> _fetchWaitlist() async {
     try {
       final rows = await _db
-          .from('game_waitlist')
+          .from(SupabaseConfig.gameWaitlistTable)
           .select('profile_id, user_id, position, profiles(display_name, username, avatar_url)')
           .eq('game_id', gameId)
           .order('position');
@@ -318,7 +319,7 @@ class GameViewController extends StateNotifier<GameViewState> {
     if (currentUserId == null) return;
     try {
       final row = await _db
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .select('id')
           .eq('game_id', gameId)
           .eq('from_user_id', currentUserId!)
@@ -346,7 +347,7 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      final rows = await _db.rpc('rpc_join_game', params: {
+      final rows = await _db.rpc(SupabaseConfig.rpcJoinGameFn, params: {
         'p_actor_type': 'player',
         'p_game_id': gameId,
       }) as List;
@@ -385,7 +386,7 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      await _db.rpc('rpc_leave_game', params: {
+      await _db.rpc(SupabaseConfig.rpcLeaveGameFn, params: {
         'p_actor_type': 'player',
         'p_game_id': gameId,
       });
@@ -402,7 +403,7 @@ class GameViewController extends StateNotifier<GameViewState> {
 
     try {
       await _db
-          .from('game_join_requests')
+          .from(SupabaseConfig.gameJoinRequestsTable)
           .update({'status': 'cancelled'})
           .eq('game_id', gameId)
           .eq('from_user_id', currentUserId!)

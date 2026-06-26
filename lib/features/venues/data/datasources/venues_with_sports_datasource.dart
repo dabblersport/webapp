@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
@@ -34,7 +35,7 @@ class SupabaseVenuesWithSportsDataSource implements VenuesWithSportsDataSource {
       () async {
         // Build query on the read-only view
         var query = _client
-            .from('v_venues_with_sports')
+            .from(SupabaseConfig.vVenuesWithSportsTable)
             .select()
             .eq('sport_id', sportId);
 

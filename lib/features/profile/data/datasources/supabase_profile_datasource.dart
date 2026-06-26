@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide StorageException;
 import 'profile_remote_datasource.dart';
 import 'package:dabbler/data/models/models.dart';
@@ -1136,7 +1137,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     try {
       // Query the canonical user_blocks table (bidirectional check)
       final response = await _client
-          .from('user_blocks')
+          .from(SupabaseConfig.userBlocksTable)
           .select('id')
           .or(
             'and(blocker_user_id.eq.$otherUserId,blocked_user_id.eq.$userId),and(blocker_user_id.eq.$userId,blocked_user_id.eq.$otherUserId)',
@@ -1417,7 +1418,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
   @override
   Future<Map<String, dynamic>> getMetrics() async {
     try {
-      return await _client.rpc('get_data_source_metrics');
+      return await _client.rpc(SupabaseConfig.getDataSourceMetricsFn);
     } catch (e) {
       return {
         'error': 'Failed to get metrics: $e',

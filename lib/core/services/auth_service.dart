@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -150,7 +151,7 @@ class AuthService {
             'skill_level': 1, // Beginner level
           };
           await _supabase
-              .from('sport_profiles')
+              .from(SupabaseConfig.sportProfilesTable)
               .insert(sportProfileData)
               .select()
               .single();
@@ -169,7 +170,7 @@ class AuthService {
             // commission_value (0), is_verified (false), is_active (true)
           };
           await _supabase
-              .from('organiser')
+              .from(SupabaseConfig.organiserTable)
               .insert(organiserData)
               .select()
               .single();
@@ -689,7 +690,7 @@ class AuthService {
     if (country.length == 2) return country.toUpperCase();
     try {
       final rows = await _supabase
-          .from('ref_countries')
+          .from(SupabaseConfig.refCountriesTable)
           .select('code')
           .eq('name_en', country)
           .limit(1);
@@ -845,7 +846,7 @@ class AuthService {
 
       // 1️⃣ Get sport record from sports table using UUID (preferredSport is already a UUID)
       final sportRecord = await _supabase
-          .from('sports')
+          .from(SupabaseConfig.sportsTable)
           .select('id, sport_key')
           .eq('id', preferredSport)
           .maybeSingle();
@@ -870,14 +871,14 @@ class AuthService {
 
         // Check if sport_profile already exists
         final existingSportProfile = await _supabase
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .select('profile_id')
             .eq('profile_id', profileId)
             .eq('sport_id', sportId)
             .maybeSingle();
 
         if (existingSportProfile == null) {
-          await _supabase.from('sport_profiles').insert(sportProfileData);
+          await _supabase.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
@@ -896,13 +897,13 @@ class AuthService {
 
           // Check if player_profile already exists
           final existingPlayerProfile = await _supabase
-              .from('player')
+              .from(SupabaseConfig.playerTable)
               .select('id')
               .eq('profile_id', profileId)
               .maybeSingle();
 
           if (existingPlayerProfile == null) {
-            await _supabase.from('player').insert(playerProfileData);
+            await _supabase.from(SupabaseConfig.playerTable).insert(playerProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -920,14 +921,14 @@ class AuthService {
 
           // Check if organiser_profile already exists
           final existingOrganiserProfile = await _supabase
-              .from('organiser')
+              .from(SupabaseConfig.organiserTable)
               .select('id')
               .eq('profile_id', profileId)
               .eq('sport', sportKey)
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase.from('organiser').insert(organiserProfileData);
+            await _supabase.from(SupabaseConfig.organiserTable).insert(organiserProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -944,13 +945,13 @@ class AuthService {
 
           // Check if host_profile already exists
           final existingHostProfile = await _supabase
-              .from('hoster')
+              .from(SupabaseConfig.hosterTable)
               .select('id')
               .eq('profile_id', profileId)
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase.from('hoster').insert(hostProfileData);
+            await _supabase.from(SupabaseConfig.hosterTable).insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -964,7 +965,7 @@ class AuthService {
       try {
         // Get the default tier from tiers table (uses 'code' as identifier)
         final defaultTier = await _supabase
-            .from('tiers')
+            .from(SupabaseConfig.tiersTable)
             .select('code')
             .eq('is_default', true)
             .maybeSingle();
@@ -974,14 +975,14 @@ class AuthService {
 
           // Check if tier assignment already exists
           final existingTierAssignment = await _supabase
-              .from('profile_tiers')
+              .from(SupabaseConfig.profileTiersTable)
               .select('profile_id')
               .eq('profile_id', profileId)
               .maybeSingle();
 
           if (existingTierAssignment == null) {
             // Assign default tier to profile
-            await _supabase.from('profile_tiers').insert({
+            await _supabase.from(SupabaseConfig.profileTiersTable).insert({
               'profile_id': profileId,
               'tier_code':
                   tierCode, // Using tier_code since tiers table uses 'code' as PK
@@ -1034,7 +1035,7 @@ class AuthService {
 
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
-    final profileId = await _supabase.rpc('rpc_onboard_profile', params: {
+    final profileId = await _supabase.rpc(SupabaseConfig.rpcOnboardProfileFn, params: {
       'p_user_id': user.id,
       'p_display_name': displayName,
       'p_username': username,
@@ -1062,23 +1063,23 @@ class AuthService {
     if (personaType == 'player') {
       try {
         final existing = await _supabase
-            .from('player')
+            .from(SupabaseConfig.playerTable)
             .select('id')
             .eq('profile_id', profileId)
             .maybeSingle();
         if (existing == null) {
-          await _supabase.from('player').insert({'profile_id': profileId});
+          await _supabase.from(SupabaseConfig.playerTable).insert({'profile_id': profileId});
         }
       } catch (_) {}
     } else if (personaType == 'organiser') {
       try {
         final existing = await _supabase
-            .from('organiser')
+            .from(SupabaseConfig.organiserTable)
             .select('id')
             .eq('profile_id', profileId)
             .maybeSingle();
         if (existing == null) {
-          await _supabase.from('organiser').insert({
+          await _supabase.from(SupabaseConfig.organiserTable).insert({
             'profile_id': profileId,
             if (sportKey != null) 'sport': sportKey,
           });
@@ -1087,12 +1088,12 @@ class AuthService {
     } else if (personaType == 'hoster') {
       try {
         final existing = await _supabase
-            .from('hoster')
+            .from(SupabaseConfig.hosterTable)
             .select('id')
             .eq('profile_id', profileId)
             .maybeSingle();
         if (existing == null) {
-          await _supabase.from('hoster').insert({'profile_id': profileId});
+          await _supabase.from(SupabaseConfig.hosterTable).insert({'profile_id': profileId});
         }
       } catch (_) {}
     }
@@ -1105,14 +1106,14 @@ class AuthService {
     String preferredSportUuid,
   ) async {
     final sportRecord = await _supabase
-        .from('sports')
+        .from(SupabaseConfig.sportsTable)
         .select('id, sport_key')
         .eq('id', preferredSportUuid)
         .maybeSingle();
     if (sportRecord == null) {
       throw Exception('Sport "$preferredSportUuid" not found');
     }
-    await _supabase.rpc('rpc_create_sport_profile', params: {
+    await _supabase.rpc(SupabaseConfig.rpcCreateSportProfileFn, params: {
       'p_profile_id': profileId,
       'p_sport_id': sportRecord['id'] as String,
       'p_sport_key': sportRecord['sport_key'] as String,

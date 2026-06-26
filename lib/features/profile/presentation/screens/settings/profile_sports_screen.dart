@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -82,7 +83,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       // If profile type not provided, try to detect from current profile
       if (_currentProfileType == null) {
         final currentProfile = await supabase
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('profile_type')
             .eq('user_id', userId)
             .order('created_at', ascending: true)
@@ -100,7 +101,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       // Fetch profile_id and interests for the specific profile type
       final profileResponse = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id, interests')
           .eq('user_id', userId)
           .eq('profile_type', profileType)
@@ -138,7 +139,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       if (!isOrganiserType) {
         // Load from sport_profiles table for player profiles
         final response = await supabase
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .select('*')
             .eq('profile_id', profileId);
 
@@ -151,7 +152,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       } else {
         // Load from organiser table for organiser/business profiles
         final response = await supabase
-            .from('organiser')
+            .from(SupabaseConfig.organiserTable)
             .select('*')
             .eq('profile_id', profileId);
 
@@ -679,7 +680,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       // Get profile_id for the specific profile type
       final profileResponse = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId)
           .eq('profile_type', profileType)
@@ -708,7 +709,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       if (!isOrganiserType) {
         // Delete all existing sport_profiles for this profile (player profiles)
         await supabase
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .delete()
             .eq('profile_id', profileId);
 
@@ -725,7 +726,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
           };
         }).toList();
 
-        await supabase.from('sport_profiles').insert(sportsData);
+        await supabase.from(SupabaseConfig.sportProfilesTable).insert(sportsData);
 
         // Refresh sports profiles in the controller
         final sportsController = ref.read(
@@ -734,7 +735,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
         await sportsController.loadSportsProfiles(userId, profileId: profileId);
       } else {
         // Delete all existing organiser records for this profile (organiser/business profiles)
-        await supabase.from('organiser').delete().eq('profile_id', profileId);
+        await supabase.from(SupabaseConfig.organiserTable).delete().eq('profile_id', profileId);
 
         // Insert new/updated organiser records
         final organiserData = enabledSports.map((entry) {
@@ -753,7 +754,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
           };
         }).toList();
 
-        await supabase.from('organiser').insert(organiserData);
+        await supabase.from(SupabaseConfig.organiserTable).insert(organiserData);
 
         // Refresh organiser profiles in the controller
         final organiserController = ref.read(
@@ -772,7 +773,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       if (primarySport != null) {
         await supabase
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .update({'preferred_sport': primarySport})
             .eq('id', profileId);
       }
@@ -846,7 +847,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       // Get profile_id
       final profileResponse = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId)
           .eq('profile_type', profileType)
@@ -860,7 +861,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       if (!isOrganiserType) {
         // Create sport_profile in database for player profiles
-        await supabase.from('sport_profiles').upsert({
+        await supabase.from(SupabaseConfig.sportProfilesTable).upsert({
           'profile_id': profileId,
           'sport': sportKey.toLowerCase(),
           'skill_level': _skillLevelToInt(preference.skillLevel),
@@ -879,7 +880,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
         final organiserLevel = _skillLevelToOrganiserLevel(
           preference.skillLevel,
         );
-        await supabase.from('organiser').upsert({
+        await supabase.from(SupabaseConfig.organiserTable).upsert({
           'profile_id': profileId,
           'sport': sportKey.toLowerCase(),
           'organiser_level': organiserLevel,
@@ -944,7 +945,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
       // Get profile_id
       final profileResponse = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', userId)
           .eq('profile_type', profileType)
@@ -959,7 +960,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       if (!isOrganiserType) {
         // Delete sport_profile from database for player profiles
         await supabase
-            .from('sport_profiles')
+            .from(SupabaseConfig.sportProfilesTable)
             .delete()
             .eq('profile_id', profileId)
             .eq('sport', sportKey.toLowerCase());
@@ -972,7 +973,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       } else {
         // Delete organiser record from database for organiser/business profiles
         await supabase
-            .from('organiser')
+            .from(SupabaseConfig.organiserTable)
             .delete()
             .eq('profile_id', profileId)
             .eq('sport', sportKey.toLowerCase());

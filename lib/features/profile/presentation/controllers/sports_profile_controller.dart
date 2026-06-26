@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/profile/sports_profile.dart';
@@ -78,7 +79,7 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
       // Prefer player persona, fallback to any active profile that has sport_profiles.
       if (resolvedProfileId == null) {
         var profileRow = await client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('id')
             .eq('user_id', userId)
             .eq('persona_type', 'player')
@@ -86,7 +87,7 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
 
         // Fallback: pick any profile for this user (organiser, hoster, etc.)
         profileRow ??= await client
-            .from('profiles')
+            .from(SupabaseConfig.usersTable)
             .select('id')
             .eq('user_id', userId)
             .order('created_at', ascending: true)
@@ -110,7 +111,7 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
       // Note: Database uses matches_played (not games_played), primary_position (not preferred_positions)
       // average_rating can be calculated from rating_total/rating_count if needed
       final List<dynamic> rows = await client
-          .from('sport_profiles')
+          .from(SupabaseConfig.sportProfilesTable)
           .select(
             'sport, skill_level, matches_played, primary_position, rating_total, rating_count, profile_id',
           )

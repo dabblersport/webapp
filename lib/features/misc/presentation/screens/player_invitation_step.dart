@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/core/game_creation_model.dart';
@@ -60,7 +61,7 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
       // Load player-only profiles
       // Filter by is_player = true and optionally by primary_sport
       var query = supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id,user_id,display_name,avatar_url,primary_sport,is_player')
           .eq('is_active', true)
           .eq('is_player', true)
@@ -146,7 +147,7 @@ class _PlayerInvitationStepState extends State<PlayerInvitationStep>
 
       // Search player-only profiles by display name
       var searchQuery = supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('id,user_id,display_name,avatar_url,primary_sport,is_player')
           .eq('is_active', true)
           .eq('is_player', true)

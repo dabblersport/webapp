@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
@@ -177,7 +178,7 @@ final updateNewsPreferenceProvider = Provider<Future<void> Function()>((ref) {
     final profileId = ref.read(currentUserProfileProvider)?.id;
     if (profileId == null || profileId.isEmpty) return;
     await Supabase.instance.client
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .update({'news': false})
         .eq('id', profileId);
   };
@@ -190,7 +191,7 @@ final resubscribeNewsProvider = Provider<Future<void> Function()>((ref) {
     final profileId = ref.read(currentUserProfileProvider)?.id;
     if (profileId == null || profileId.isEmpty) return;
     await Supabase.instance.client
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .update({'news': true})
         .eq('id', profileId);
   };

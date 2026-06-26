@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
@@ -84,7 +85,7 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
     // Prefer matching the organiser row for the preferred sport.
     if (preferredSport != null && preferredSport.isNotEmpty) {
       row = await svc
-          .from('organiser')
+          .from(SupabaseConfig.organiserTable)
           .select('id')
           .eq('profile_id', profile.id)
           .eq('sport', preferredSport)
@@ -94,7 +95,7 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
 
     // Fallback to the first active organiser record for this profile.
     row ??= await svc
-        .from('organiser')
+        .from(SupabaseConfig.organiserTable)
         .select('id')
         .eq('profile_id', profile.id)
         .eq('is_active', true)
@@ -102,7 +103,7 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
 
     // Final fallback: any organiser row for this profile.
     row ??= await svc
-        .from('organiser')
+        .from(SupabaseConfig.organiserTable)
         .select('id')
         .eq('profile_id', profile.id)
         .maybeSingle();

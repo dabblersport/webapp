@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/data/models/rewards/achievement.dart';
@@ -620,7 +621,7 @@ class SupabaseRewardsDataSource {
   /// Process queued events (called when connectivity is restored)
   Future<int> processQueuedEvents() async {
     return _withRetry(() async {
-      final response = await _client.rpc('process_queued_events');
+      final response = await _client.rpc(SupabaseConfig.processQueuedEventsFn);
       return response as int;
     });
   }

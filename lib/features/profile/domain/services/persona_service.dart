@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/persona_rules.dart';
@@ -120,7 +121,7 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
 
       // Fetch all profiles for this user (can have multiple with different intentions)
       final response = await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select(
             'id, persona_type, display_name, username, age, gender, is_active',
           )
@@ -188,13 +189,13 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
 
       // Deactivate all profiles for this user
       await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'is_active': false, 'updated_at': now})
           .eq('user_id', userId);
 
       // Activate the target profile
       await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({'is_active': true, 'updated_at': now})
           .eq('id', targetProfile.profileId)
           .eq('user_id', userId);
@@ -215,7 +216,7 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
       if (userId == null) return false;
 
       await _client
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .update({
             'is_active': false,
             'updated_at': DateTime.now().toIso8601String(),

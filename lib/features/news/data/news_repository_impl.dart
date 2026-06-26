@@ -39,7 +39,7 @@ class NewsRepositoryImpl extends BaseRepository implements NewsRepository {
   }) =>
       guard(() async {
         final rows = await svc.client
-            .from('comments')
+            .from(SupabaseConfig.commentsTable)
             .select(
               '*, profiles!post_comments_author_profile_id_fkey'
               '(display_name, username, avatar_url)',
@@ -76,7 +76,7 @@ class NewsRepositoryImpl extends BaseRepository implements NewsRepository {
         final pid = await _profileId();
 
         // Insert without chained .single() — RLS on RETURNING can block 0 rows.
-        await svc.client.from('comments').insert({
+        await svc.client.from(SupabaseConfig.commentsTable).insert({
           'parent_activity_id': newsId,
           'author_user_id': uid,
           'author_profile_id': pid,
@@ -85,7 +85,7 @@ class NewsRepositoryImpl extends BaseRepository implements NewsRepository {
 
         // Fetch the just-inserted row with profile join.
         final rows = await svc.client
-            .from('comments')
+            .from(SupabaseConfig.commentsTable)
             .select(
               '*, profiles!post_comments_author_profile_id_fkey'
               '(display_name, username, avatar_url)',
@@ -111,7 +111,7 @@ class NewsRepositoryImpl extends BaseRepository implements NewsRepository {
   Future<String> _profileId() async {
     final uid = svc.authUserId()!;
     final rows = await svc.client
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select('id')
         .eq('user_id', uid)
         .limit(1);

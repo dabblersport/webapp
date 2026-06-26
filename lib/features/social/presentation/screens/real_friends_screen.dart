@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -1029,12 +1030,12 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
       final supabase = Supabase.instance.client;
       if (isCurrentlyFollowing) {
         await supabase
-            .from('profile_follows')
+            .from(SupabaseConfig.profileFollowsTable)
             .delete()
             .eq('follower_profile_id', widget.currentProfileId)
             .eq('following_profile_id', _targetProfileId);
       } else {
-        await supabase.from('profile_follows').insert({
+        await supabase.from(SupabaseConfig.profileFollowsTable).insert({
           'follower_profile_id': widget.currentProfileId,
           'following_profile_id': _targetProfileId,
         });

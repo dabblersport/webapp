@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -349,7 +350,7 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
     // Fetch all profiles directly from Supabase
     final client = ref.watch(supabaseProvider);
     final response = await client
-        .from('profiles')
+        .from(SupabaseConfig.usersTable)
         .select('*')
         .eq('user_id', userId)
         .order('created_at', ascending: true);
@@ -380,7 +381,7 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
 
         if (personaType == 'player') {
           final sportProfilesResponse = await client
-              .from('sport_profiles')
+              .from(SupabaseConfig.sportProfilesTable)
               .select(
                 'sport, skill_level, matches_played, primary_position, rating_total, rating_count',
               )
@@ -394,7 +395,7 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
               .toList();
         } else if (personaType == 'organiser' || personaType == 'hoster') {
           final organiserResponse = await client
-              .from('organiser')
+              .from(SupabaseConfig.organiserTable)
               .select('*')
               .eq('profile_id', profileId);
 
@@ -651,7 +652,7 @@ final myProfileIdProvider = FutureProvider<String?>((ref) async {
   final activeType = ref.watch(activeProfileTypeProvider);
 
   var query = Supabase.instance.client
-      .from('profiles')
+      .from(SupabaseConfig.usersTable)
       .select('id')
       .eq('user_id', userId)
       .eq('is_active', true);
@@ -673,7 +674,7 @@ final profileIdByUserIdProvider = FutureProvider.family<String?, String>((
   userId,
 ) async {
   final response = await Supabase.instance.client
-      .from('profiles')
+      .from(SupabaseConfig.usersTable)
       .select('id')
       .eq('user_id', userId)
       .eq('is_active', true)
@@ -696,7 +697,7 @@ final followingCountProvider = FutureProvider.autoDispose.family<int, String>((
   try {
     final supabase = Supabase.instance.client;
     final response = await supabase
-        .from('profile_follows')
+        .from(SupabaseConfig.profileFollowsTable)
         .select('following_profile_id')
         .eq('follower_profile_id', profileId);
     return (response as List).length;
@@ -714,7 +715,7 @@ final followersCountProvider = FutureProvider.autoDispose.family<int, String>((
   try {
     final supabase = Supabase.instance.client;
     final response = await supabase
-        .from('profile_follows')
+        .from(SupabaseConfig.profileFollowsTable)
         .select('follower_profile_id')
         .eq('following_profile_id', profileId);
     return (response as List).length;
@@ -733,7 +734,7 @@ final followingListProvider = FutureProvider.autoDispose
       final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
 
       final response = await supabase
-          .from('profile_follows')
+          .from(SupabaseConfig.profileFollowsTable)
           .select(
             'profiles!fk_following_profile(id, user_id, display_name, username, avatar_url, verified, persona_type, is_active)',
           )
@@ -760,7 +761,7 @@ final isFollowingProvider = FutureProvider.autoDispose
     ) async {
       final supabase = Supabase.instance.client;
       final response = await supabase
-          .from('profile_follows')
+          .from(SupabaseConfig.profileFollowsTable)
           .select('follower_profile_id')
           .eq('follower_profile_id', params.currentProfileId)
           .eq('following_profile_id', params.targetProfileId)
@@ -783,7 +784,7 @@ final isBlockedProvider = FutureProvider.autoDispose
 
       // Resolve target profile ID to user_id
       final targetProfile = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select('user_id')
           .eq('id', params.targetProfileId)
           .maybeSingle();
@@ -808,7 +809,7 @@ final searchProfilesProvider = FutureProvider.autoDispose
       final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
 
       final response = await supabase
-          .from('profiles')
+          .from(SupabaseConfig.usersTable)
           .select(
             'id, user_id, display_name, username, avatar_url, verified, persona_type, is_active',
           )
@@ -840,7 +841,7 @@ final followersListProvider = FutureProvider.autoDispose
       final blockedUserIds = await ref.watch(blockedUserIdsProvider.future);
 
       final response = await supabase
-          .from('profile_follows')
+          .from(SupabaseConfig.profileFollowsTable)
           .select(
             'profiles!fk_follower_profile(id, user_id, display_name, username, avatar_url, verified, persona_type, is_active)',
           )
