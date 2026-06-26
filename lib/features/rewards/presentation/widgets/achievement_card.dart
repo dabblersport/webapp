@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../../../themes/app_text_styles.dart';
 import '../../../../utils/helpers/date_formatter.dart';
 import 'package:dabbler/data/models/rewards/achievement.dart';
 import 'package:dabbler/data/models/rewards/badge_tier.dart';
@@ -49,7 +48,7 @@ class AchievementCard extends StatelessWidget {
             // Main content
             Padding(
               padding: const EdgeInsets.all(16),
-              child: isGridView ? _buildGridLayout() : _buildListLayout(),
+              child: isGridView ? _buildGridLayout(context) : _buildListLayout(context),
             ),
 
             // Lock overlay for locked achievements
@@ -64,7 +63,7 @@ class AchievementCard extends StatelessWidget {
             if (isCompleted) _buildCompletionGlow(),
 
             // Category badge
-            Positioned(top: 8, right: 8, child: _buildCategoryBadge()),
+            Positioned(top: 8, right: 8, child: _buildCategoryBadge(context)),
 
             // Rarity indicator
             Positioned(top: 8, left: 8, child: _buildRarityIndicator()),
@@ -74,7 +73,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGridLayout() {
+  Widget _buildGridLayout(BuildContext context) {
     final isCompleted = userProgress.status == ProgressStatus.completed;
 
     return Column(
@@ -85,7 +84,7 @@ class AchievementCard extends StatelessWidget {
           children: [
             Expanded(child: _buildAchievementIcon()),
             if (!isCompleted) const Spacer(),
-            _buildPointsChip(),
+            _buildPointsChip(context),
           ],
         ),
 
@@ -94,7 +93,7 @@ class AchievementCard extends StatelessWidget {
         // Title
         Text(
           achievement.name,
-          style: AppTextStyles.titleMedium.copyWith(
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: _getTextColor(),
           ),
@@ -107,7 +106,7 @@ class AchievementCard extends StatelessWidget {
         // Description
         Text(
           achievement.description,
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: _getSecondaryTextColor(),
           ),
           maxLines: 3,
@@ -117,21 +116,21 @@ class AchievementCard extends StatelessWidget {
         const SizedBox(height: 12),
 
         // Progress section
-        _buildProgressSection(),
+        _buildProgressSection(context),
 
         // Completion date or quick actions
         if (isCompleted) ...[
           const SizedBox(height: 8),
-          _buildCompletionInfo(),
+          _buildCompletionInfo(context),
         ] else if (showQuickActions) ...[
           const SizedBox(height: 8),
-          _buildQuickActions(),
+          _buildQuickActions(context),
         ],
       ],
     );
   }
 
-  Widget _buildListLayout() {
+  Widget _buildListLayout(BuildContext context) {
     return Row(
       children: [
         // Icon
@@ -150,7 +149,7 @@ class AchievementCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       achievement.name,
-                      style: AppTextStyles.titleMedium.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: _getTextColor(),
                       ),
@@ -159,7 +158,7 @@ class AchievementCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildPointsChip(),
+                  _buildPointsChip(context),
                 ],
               ),
 
@@ -168,7 +167,7 @@ class AchievementCard extends StatelessWidget {
               // Description
               Text(
                 achievement.description,
-                style: AppTextStyles.bodySmall.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: _getSecondaryTextColor(),
                 ),
                 maxLines: 2,
@@ -180,10 +179,10 @@ class AchievementCard extends StatelessWidget {
               // Progress and completion info
               Row(
                 children: [
-                  Expanded(child: _buildProgressSection()),
+                  Expanded(child: _buildProgressSection(context)),
                   if (userProgress.status == ProgressStatus.completed) ...[
                     const SizedBox(width: 12),
-                    _buildCompletionInfo(),
+                    _buildCompletionInfo(context),
                   ],
                 ],
               ),
@@ -226,7 +225,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPointsChip() {
+  Widget _buildPointsChip(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -241,7 +240,7 @@ class AchievementCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             '${achievement.points}',
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.amber.shade700,
               fontWeight: FontWeight.bold,
             ),
@@ -251,7 +250,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection() {
+  Widget _buildProgressSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -267,7 +266,7 @@ class AchievementCard extends StatelessWidget {
         // Progress text
         Text(
           _getProgressText(),
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: _getSecondaryTextColor(),
             fontWeight: FontWeight.w500,
           ),
@@ -276,7 +275,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCompletionInfo() {
+  Widget _buildCompletionInfo(BuildContext context) {
     if (userProgress.completedAt == null) return const SizedBox.shrink();
 
     return Column(
@@ -288,7 +287,7 @@ class AchievementCard extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               'Completed',
-              style: AppTextStyles.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.green,
                 fontWeight: FontWeight.w600,
               ),
@@ -298,7 +297,7 @@ class AchievementCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           DateFormatter.formatDate(userProgress.completedAt!),
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Colors.grey[600],
             fontSize: 11,
           ),
@@ -307,7 +306,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -325,7 +324,7 @@ class AchievementCard extends StatelessWidget {
         // View details button
         Text(
           'Tap for details',
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: _getTierBorderColor(),
             fontWeight: FontWeight.w500,
           ),
@@ -334,7 +333,7 @@ class AchievementCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryBadge() {
+  Widget _buildCategoryBadge(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
@@ -343,7 +342,7 @@ class AchievementCard extends StatelessWidget {
       ),
       child: Text(
         _getCategoryName(),
-        style: AppTextStyles.bodySmall.copyWith(
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: _getCategoryColor(),
           fontSize: 10,
           fontWeight: FontWeight.w600,

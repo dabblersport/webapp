@@ -1,5 +1,12 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'default_avatar_service.dart';
 import '../config/environment.dart';
@@ -196,58 +203,39 @@ class AuthService {
     }
   }
 
-  /// Sign in with phone (OTP) - Legacy method, use sendOtp instead
-  Future<void> signInWithPhone({required String phone}) async {
-    try {
-      await _supabase.auth.signInWithOtp(phone: phone);
-    } catch (e) {
-      throw Exception('Phone sign in failed: $e');
-    }
-  }
-
-  /// Unified OTP sending method - works for both email and phone
+  /// Send a 6-digit OTP code to the user's email (passwordless flow).
   Future<void> sendOtp({
     required String identifier,
     required IdentifierType type,
   }) async {
+    if (type != IdentifierType.email) {
+      throw Exception('Only email OTP is supported.');
+    }
     try {
-      if (type == IdentifierType.email) {
-        final normalizedEmail = _normalizeEmail(identifier);
-        await _supabase.auth.signInWithOtp(email: normalizedEmail);
-      } else {
-        await _supabase.auth.signInWithOtp(phone: identifier);
-      }
+      final normalizedEmail = _normalizeEmail(identifier);
+      await _supabase.auth.signInWithOtp(email: normalizedEmail);
     } catch (e) {
       throw Exception('Failed to send OTP: $e');
     }
   }
 
-  /// Unified OTP verification method - works for both email and phone
-  /// After successful verification, ensures stub profile exists
+  /// Verify the email OTP code. No profile writes here — deferred to
+  /// completeOnboarding().
   Future<AuthResponse> verifyOtp({
     required String identifier,
     required IdentifierType type,
     required String token,
   }) async {
+    if (type != IdentifierType.email) {
+      throw Exception('Only email OTP is supported.');
+    }
     try {
-      AuthResponse response;
-      if (type == IdentifierType.email) {
-        final normalizedEmail = _normalizeEmail(identifier);
-        response = await _supabase.auth.verifyOTP(
-          email: normalizedEmail,
-          token: token,
-          type: OtpType.email,
-        );
-      } else {
-        response = await _supabase.auth.verifyOTP(
-          phone: identifier,
-          token: token,
-          type: OtpType.sms,
-        );
-      }
-
-      // No profile creation here - all DB writes deferred to completeOnboarding()
-      return response;
+      final normalizedEmail = _normalizeEmail(identifier);
+      return await _supabase.auth.verifyOTP(
+        email: normalizedEmail,
+        token: token,
+        type: OtpType.email,
+      );
     } on AuthException catch (e) {
       throw Exception(_friendlyOtpError(e));
     } catch (e) {
@@ -267,18 +255,6 @@ class AuthService {
       return 'Too many attempts. Please wait a moment before trying again.';
     }
     return 'Verification failed. Please try again.';
-  }
-
-  /// Legacy verifyOtp method for phone - use unified verifyOtp instead
-  Future<AuthResponse> verifyOtpLegacy({
-    required String phone,
-    required String token,
-  }) async {
-    return verifyOtp(
-      identifier: phone,
-      type: IdentifierType.phone,
-      token: token,
-    );
   }
 
   /// Sign out user
@@ -328,7 +304,51 @@ class AuthService {
         return true;
       }
 
-      // Native flow for Android and iOS.
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // iOS does not have a configured GoogleService-Info.plist CLIENT_ID, so
+        // the native google_sign_in plugin can't initialize (it raises a fatal
+        // exception and crashes — this was the App Review crash on iPad).
+        //
+        // Run Supabase's hosted Google OAuth inside an
+        // ASWebAuthenticationSession (via flutter_web_auth_2): the login UI
+        // stays in-app and the `dabbler://app/` callback is captured by the
+        // auth session itself. This avoids the external-Safari round trip and
+        // the "Open Dabbler?" system prompt, which on device could fail to
+        // relaunch the app ("app not found"). PKCE is enabled in main.dart, so
+        // we build the authorize URL, run the session, then exchange the
+        // returned authorization code for a Supabase session.
+        final oauth = await _supabase.auth.getOAuthSignInUrl(
+          provider: OAuthProvider.google,
+          redirectTo: '${RoutePaths.deepLinkPrefix}/',
+          scopes: 'email profile openid',
+        );
+
+        final String resultUrl;
+        try {
+          resultUrl = await FlutterWebAuth2.authenticate(
+            url: oauth.url,
+            callbackUrlScheme: Uri.parse(RoutePaths.deepLinkPrefix).scheme,
+          );
+        } on PlatformException catch (e) {
+          // User dismissed the in-app auth sheet — treat as a no-op, not an
+          // error, so callers reset their loading state without showing a
+          // failure message.
+          if (e.code == 'CANCELED') return false;
+          rethrow;
+        }
+
+        final code = Uri.parse(resultUrl).queryParameters['code'];
+        if (code == null || code.isEmpty) {
+          throw Exception(
+            'Google sign-in did not return an authorization code.',
+          );
+        }
+
+        await _supabase.auth.exchangeCodeForSession(code);
+        return true;
+      }
+
+      // Android native flow.
       //
       // serverClientId tells Credential Manager (Android) which Web OAuth client
       // to mint the idToken for — must match the Web client ID in Supabase.
@@ -357,6 +377,46 @@ class AuthService {
     } catch (e) {
       throw Exception('Google sign-in failed: $e');
     }
+  }
+
+  /// Sign in with Apple (iOS).
+  ///
+  /// Generates a raw nonce client-side, hashes it with SHA-256, asks Apple for
+  /// an identity token bound to the hashed nonce, then exchanges the token with
+  /// Supabase using `signInWithIdToken`. Supabase verifies the nonce against
+  /// the hashed value Apple signed.
+  Future<AuthResponse> signInWithApple() async {
+    final rawNonce = _generateRawNonce();
+    final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: const [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+      nonce: hashedNonce,
+    );
+
+    final idToken = credential.identityToken;
+    if (idToken == null) {
+      throw Exception('Apple Sign In returned no identity token.');
+    }
+
+    return _supabase.auth.signInWithIdToken(
+      provider: OAuthProvider.apple,
+      idToken: idToken,
+      nonce: rawNonce,
+    );
+  }
+
+  String _generateRawNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
   }
 
   /// Handle Google sign-in flow and determine the correct path for the user
@@ -485,13 +545,7 @@ class AuthService {
     return _checkUserExistsByIdentifier(normalizedEmail);
   }
 
-  /// Check if a user exists by phone in auth.users
-  /// Uses a unified database function to query auth.users table
-  Future<bool> checkUserExistsByPhone(String phone) async {
-    return _checkUserExistsByIdentifier(phone);
-  }
-
-  /// Internal method to check if a user exists by email or phone in auth.users
+  /// Internal method to check if a user exists by email in auth.users
   /// Uses a database function that checks both email and phone columns
   Future<bool> _checkUserExistsByIdentifier(String identifier) async {
     try {
@@ -974,6 +1028,10 @@ class AuthService {
       if (username.isNotEmpty) 'username': username,
     }));
 
+    // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
+    // The profiles.country FK targets ref_countries.code, not name_en.
+    final countryCode = await _resolveCountryCode(country);
+
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
     final profileId = await _supabase.rpc('rpc_onboard_profile', params: {
@@ -985,7 +1043,7 @@ class AuthService {
       'p_persona_type': personaType,
       if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
       if (interests != null && interests.isNotEmpty) 'p_interests': interests,
-      if (country != null) 'p_country': country,
+      if (countryCode != null) 'p_country': countryCode,
       if (city != null) 'p_city': city,
     }) as String;
 

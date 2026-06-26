@@ -11,14 +11,12 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 // Onboarding screens
 import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/auth_welcome_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/screens/identity_verification_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_input_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/create_user_information.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/intent_selection_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/interests_selection_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/screens/set_password_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/set_username_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_verification_screen.dart';
@@ -182,13 +180,11 @@ class AppRouter {
         RoutePaths.enterPassword,
         RoutePaths.forgotPassword,
         RoutePaths.resetPassword,
-        RoutePaths.phoneInput,
         RoutePaths.emailInput,
         RoutePaths.otpVerification,
         RoutePaths.createUserInfo,
         RoutePaths.intentSelection,
         RoutePaths.interestsSelection,
-        RoutePaths.setPassword,
         RoutePaths.setUsername,
         RoutePaths.emailVerification,
         RoutePaths.onboardingWelcome, // Progress screen — must not be gated
@@ -207,7 +203,6 @@ class AppRouter {
         RoutePaths.createUserInfo,
         RoutePaths.intentSelection,
         RoutePaths.interestsSelection,
-        RoutePaths.setPassword,
         RoutePaths.setUsername,
         RoutePaths.onboardingWelcome, // Progress screen — must not be gated
 
@@ -421,15 +416,6 @@ class AppRouter {
       ),
     ),
 
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.phoneInput,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const IdentityVerificationScreen(),
-      ),
-    ),
-
     // Email input route
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -580,19 +566,6 @@ class AppRouter {
         return SlideTransitionPage(
           key: state.pageKey,
           child: const IntentSelectionScreen(),
-          direction: SlideDirection.fromLeft,
-        );
-      },
-    ),
-
-    // Set password route (for email users)
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.setPassword,
-      pageBuilder: (context, state) {
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: const SetPasswordScreen(),
           direction: SlideDirection.fromLeft,
         );
       },

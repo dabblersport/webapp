@@ -185,7 +185,7 @@ class _AppBarButtonState extends State<_AppBarButton> {
                         ? const Color(0xFF9B7FDE)
                         : const Color(0xFFA78BFA),
                     _isPressed
-                        ? const Color(0xFF8B5CF6)
+                        ? const Color(0xFF7328CE)
                         : const Color(0xFF9B7FDE),
                   ],
           ),
@@ -195,7 +195,7 @@ class _AppBarButtonState extends State<_AppBarButton> {
                   BoxShadow(
                     color:
                         (isDark
-                                ? const Color(0xFF8B5CF6)
+                                ? const Color(0xFF7328CE)
                                 : const Color(0xFF9B7FDE))
                             .withValues(alpha: 0.3),
                     blurRadius: 12,

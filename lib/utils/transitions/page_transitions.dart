@@ -251,6 +251,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
     this.maxDialogHeightFraction = 0.88,
     this.mobileHeightFactor = 0.94,
     this.barrierColorValue = const Color(0x66000000),
+    this.transparentSurface = false,
   }) : super(
          opaque: false,
          barrierDismissible: true,
@@ -259,6 +260,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
            maxDialogWidth: maxDialogWidth,
            maxDialogHeightFraction: maxDialogHeightFraction,
            mobileHeightFactor: mobileHeightFactor,
+           transparentSurface: transparentSurface,
            child: child,
          ),
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -302,6 +304,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
   final double maxDialogHeightFraction;
   final double mobileHeightFactor;
   final Color barrierColorValue;
+  final bool transparentSurface;
 }
 
 class _AdaptiveModalFrame extends StatelessWidget {
@@ -310,18 +313,24 @@ class _AdaptiveModalFrame extends StatelessWidget {
     required this.maxDialogWidth,
     required this.maxDialogHeightFraction,
     required this.mobileHeightFactor,
+    this.transparentSurface = false,
   });
 
   final Widget child;
   final double maxDialogWidth;
   final double maxDialogHeightFraction;
   final double mobileHeightFactor;
+  final bool transparentSurface;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isWide = size.width >= AdaptiveBreakpoints.compact;
     final colorScheme = Theme.of(context).colorScheme;
+    final sheetColor = transparentSurface
+        ? Colors.transparent
+        : colorScheme.surface;
+    final sheetElevation = transparentSurface ? 0.0 : 12.0;
 
     if (isWide) {
       return Material(
@@ -334,8 +343,8 @@ class _AdaptiveModalFrame extends StatelessWidget {
                 maxHeight: size.height * maxDialogHeightFraction,
               ),
               child: Material(
-                color: colorScheme.surface,
-                elevation: 12,
+                color: sheetColor,
+                elevation: sheetElevation,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
@@ -352,16 +361,22 @@ class _AdaptiveModalFrame extends StatelessWidget {
       type: MaterialType.transparency,
       child: Align(
         alignment: Alignment.bottomCenter,
-        child: FractionallySizedBox(
-          widthFactor: 1,
-          heightFactor: mobileHeightFactor,
-          child: Material(
-            color: colorScheme.surface,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: size.height * mobileHeightFactor,
             ),
-            clipBehavior: Clip.antiAlias,
-            child: child,
+            child: Material(
+              color: sheetColor,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: child,
+            ),
           ),
         ),
       ),

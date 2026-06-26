@@ -65,39 +65,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<AuthSession, Failure>> signInWithPhone({
-    required String phone,
-  }) async {
-    if (!await networkInfo.isConnected) {
-      return Err<AuthSession, Failure>(
-        const NetworkFailure(message: 'No internet connection'),
-      );
-    }
-
-    final responseResult = await guardResult(() async {
-      try {
-        return await remoteDataSource.signInWithPhone(phone: phone);
-      } on AuthException catch (e) {
-        throw AuthFailure(message: e.message);
-      }
-    });
-
-    if (responseResult.isFailure) {
-      return Err(responseResult.requireError);
-    }
-
-    final response = responseResult.requireValue;
-    _cacheUser(response.user);
-    final session = response.session;
-    if (session == null) {
-      return Err<AuthSession, Failure>(
-        const AuthFailure(message: 'No session returned from authentication'),
-      );
-    }
-    return Ok<AuthSession, Failure>(session);
-  }
-
-  @override
   Future<Result<AuthSession, Failure>> signUp({
     required String email,
     required String password,
@@ -219,12 +186,12 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<AuthSession, Failure>> verifyOTP({
-    required String phone,
+    required String email,
     required String token,
   }) async {
     final responseResult = await guardResult(() async {
       try {
-        return await remoteDataSource.verifyOTP(phone: phone, token: token);
+        return await remoteDataSource.verifyOTP(email: email, token: token);
       } on AuthException catch (e) {
         throw AuthFailure(message: e.message);
       }

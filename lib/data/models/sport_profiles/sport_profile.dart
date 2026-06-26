@@ -11,6 +11,7 @@ class SportProfile {
     this.xpLevel = 0.0,
     this.xpNextLevel = 0.0,
     this.matchesPlayed = 0,
+    this.skillLevel = 1,
     this.primaryPosition = '',
     this.secondaryPositions = const <dynamic>[],
     this.playstyle = '',
@@ -56,6 +57,7 @@ class SportProfile {
       xpLevel: _readDouble(json['xp_level'] ?? json['xpLevel']),
       xpNextLevel: _readDouble(json['xp_next_level'] ?? json['xpNextLevel']),
       matchesPlayed: _readInt(json['matches_played'] ?? json['matchesPlayed']),
+      skillLevel: _readSkillLevel(json['skill_level'] ?? json['skillLevel']),
       primaryPosition: _readString(
         json['primary_position'] ?? json['primaryPosition'],
       ),
@@ -127,6 +129,9 @@ class SportProfile {
   final double xpLevel;
   final double xpNextLevel;
   final int matchesPlayed;
+
+  /// Self-reported skill level (1–3). Stored in the `skill_level` column.
+  final int skillLevel;
   final String primaryPosition;
   final List<dynamic> secondaryPositions;
   final String playstyle;
@@ -166,6 +171,7 @@ class SportProfile {
       'xp_level': xpLevel,
       'xp_next_level': xpNextLevel,
       'matches_played': matchesPlayed,
+      'skill_level': skillLevel,
       'primary_position': primaryPosition,
       'secondary_positions': secondaryPositions,
       'playstyle': playstyle,
@@ -225,6 +231,18 @@ int _readInt(dynamic value) {
     return int.tryParse(value) ?? 0;
   }
   return 0;
+}
+
+/// Skill level is a 1–3 scale; defaults to 1 (beginner) when missing/invalid.
+int _readSkillLevel(dynamic value) {
+  if (value == null) {
+    return 1;
+  }
+  final parsed = _readInt(value);
+  if (parsed < 1 || parsed > 3) {
+    return 1;
+  }
+  return parsed;
 }
 
 String _readString(dynamic value) {

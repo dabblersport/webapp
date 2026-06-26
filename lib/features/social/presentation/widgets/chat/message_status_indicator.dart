@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../../themes/app_colors.dart';
-import '../../../../../themes/app_text_styles.dart';
 
 /// Message delivery status types
 enum MessageStatus { sending, sent, delivered, read, failed }
@@ -210,7 +209,7 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
               const SizedBox(width: 4),
               Text(
                 'Retry',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.red,
                   fontWeight: FontWeight.w600,
                 ),
@@ -231,7 +230,7 @@ class _MessageStatusIndicatorState extends State<MessageStatusIndicator>
       ),
       child: Text(
         widget.readCount.toString(),
-        style: AppTextStyles.bodySmall.copyWith(
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.bold,
           fontSize: widget.size * 0.6,
@@ -380,7 +379,7 @@ class _DetailedMessageStatusIndicatorState
                   child: Center(
                     child: Text(
                       '+$remainingCount',
-                      style: AppTextStyles.bodySmall.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: widget.size * 0.4,

@@ -145,7 +145,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       if ((email == null || email.isEmpty) &&
           (phone == null || phone.isEmpty) &&
           mounted) {
-        context.go(RoutePaths.phoneInput);
+        context.go(RoutePaths.authWelcome);
         return;
       }
 

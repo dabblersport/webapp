@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
@@ -143,13 +144,12 @@ class _LandingPageState extends ConsumerState<LandingPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  child: Text(
-                    'dabbler',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: colorScheme.primary,
-                      letterSpacing: -0.6,
+                  child: SvgPicture.asset(
+                    'assets/images/dabbler_text_logo.svg',
+                    height: 22,
+                    colorFilter: ColorFilter.mode(
+                      colorScheme.primary,
+                      BlendMode.srcIn,
                     ),
                   ),
                 ),

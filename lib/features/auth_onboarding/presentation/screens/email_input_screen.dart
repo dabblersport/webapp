@@ -135,7 +135,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            OnboardingTopBar(onBack: () => Navigator.of(context).pop()),
+            OnboardingTopBar(
+              onBack: () => context.canPop()
+                  ? context.pop()
+                  : context.go(RoutePaths.authWelcome),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),

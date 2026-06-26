@@ -1,5 +1,28 @@
 import 'dart:convert';
 
+/// The kind of a [PublicActivity]. [wireValue] is the `activity_type` column
+/// value. [unknown] keeps the model forward-compatible with server-added types.
+enum PublicActivityType {
+  comment('comment'),
+  like('like'),
+  repost('repost'),
+  post('post'),
+  gameCreate('game_create'),
+  meetupCreate('meetup_create'),
+  unknown('unknown');
+
+  const PublicActivityType(this.wireValue);
+
+  final String wireValue;
+
+  static PublicActivityType fromWire(String? value) {
+    for (final t in PublicActivityType.values) {
+      if (t.wireValue == value) return t;
+    }
+    return PublicActivityType.unknown;
+  }
+}
+
 /// A row from `public_activities` enriched with actor profile info and,
 /// for comment activities, the target news title.
 ///
@@ -21,8 +44,8 @@ class PublicActivity {
 
   final String id;
 
-  /// 'comment', 'like', 'post', 'repost', 'game_create', 'meetup_create', etc.
-  final String activityType;
+  /// The activity kind, parsed from the `activity_type` column.
+  final PublicActivityType activityType;
   final String actorProfileId;
   final String actorUsername;
   final String? actorAvatarUrl;
@@ -42,24 +65,15 @@ class PublicActivity {
   String localizedTargetTitle(String languageCode) =>
       targetTitle[languageCode] ?? targetTitle['en'] ?? '';
 
-  String get actionLabel {
-    switch (activityType) {
-      case 'comment':
-        return 'commented on a news article';
-      case 'like':
-        return 'liked a post';
-      case 'repost':
-        return 'reposted';
-      case 'game_create':
-        return 'created a game';
-      case 'meetup_create':
-        return 'created a meetup';
-      case 'post':
-        return 'posted';
-      default:
-        return 'was active';
-    }
-  }
+  String get actionLabel => switch (activityType) {
+        PublicActivityType.comment => 'commented on a news article',
+        PublicActivityType.like => 'liked a post',
+        PublicActivityType.repost => 'reposted',
+        PublicActivityType.gameCreate => 'created a game',
+        PublicActivityType.meetupCreate => 'created a meetup',
+        PublicActivityType.post => 'posted',
+        PublicActivityType.unknown => 'was active',
+      };
 
   static Map<String, String> toStringMap(dynamic raw) {
     if (raw == null) return const {};
@@ -105,7 +119,9 @@ class PublicActivity {
   }) =>
       PublicActivity(
         id: row['id'] as String,
-        activityType: row['activity_type'] as String? ?? 'unknown',
+        activityType: PublicActivityType.fromWire(
+          row['activity_type'] as String?,
+        ),
         actorProfileId: row['actor_profile_id'] as String,
         actorUsername: actorUsername,
         actorAvatarUrl: actorAvatarUrl,

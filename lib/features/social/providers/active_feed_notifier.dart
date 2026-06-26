@@ -8,81 +8,210 @@ import 'package:dabbler/core/fp/result.dart';
 // ACTIVE FEED STATE
 // =============================================================================
 
-/// Represents one event from the `v_active_feed` view.
+/// One event from the active feed, modelled as a sealed union so each card
+/// receives a typed payload and the card router switch is exhaustive.
 ///
-/// The raw map is preserved so that each event card can access all fields,
-/// including custom columns specific to each [eventType].
-class ActiveEvent {
-  const ActiveEvent(this.data);
-  final Map<String, dynamic> data;
+/// Construct from a raw row via [ActiveEvent.fromRow], which reads `event_type`
+/// once and dispatches to the matching variant. Returns `null` for an unknown
+/// or malformed event type (the caller filters these out).
+sealed class ActiveEvent {
+  const ActiveEvent({required this.id, required this.createdAt});
 
-  String get id => data['id']?.toString() ?? '';
-  String get eventType => data['event_type']?.toString() ?? '';
-  DateTime get createdAt {
-    final raw = data['created_at'];
+  final String id;
+  final DateTime createdAt;
+
+  static DateTime _parseCreatedAt(dynamic raw) {
     if (raw is DateTime) return raw;
     if (raw is String) return DateTime.tryParse(raw) ?? DateTime.now();
     return DateTime.now();
   }
 
-  // Convenience accessors used across cards.
-  int get joinCount => (data['join_count'] as num?)?.toInt() ?? 0;
-  String? get gameId => data['game_id']?.toString();
-  String? get postId => data['post_id']?.toString();
-  String? get userId => data['user_id']?.toString();
-  String? get profileId => data['profile_id']?.toString();
-  String? get displayName => data['display_name']?.toString();
-  String? get avatarUrl => data['avatar_url']?.toString();
-  String? get gameTitle => data['game_title']?.toString();
-  String? get sport => data['sport']?.toString();
-  String? get venueName => data['venue_name']?.toString();
-  String? get body => data['body']?.toString();
-  double? get score => (data['score'] as num?)?.toDouble();
-  Map<String, dynamic>? get metadata {
-    final raw = data['metadata'];
-    if (raw is Map) return Map<String, dynamic>.from(raw);
-    return null;
+  static ActiveEvent? fromRow(Map<String, dynamic> data) {
+    final id = data['id']?.toString() ?? '';
+    final createdAt = _parseCreatedAt(data['created_at']);
+    String? str(String key) => data[key]?.toString();
+
+    switch (data['event_type']?.toString()) {
+      case 'game_created':
+        return GameCreatedEvent(
+          id: id,
+          createdAt: createdAt,
+          gameId: str('game_id'),
+          gameTitle: str('game_title'),
+          sport: str('sport'),
+          venueName: str('venue_name'),
+        );
+      case 'player_joined_game':
+        final avatarUrls = <String>[];
+        final meta = data['metadata'];
+        if (meta is Map && meta['user_avatars'] is List) {
+          for (final u in meta['user_avatars'] as List) {
+            if (u is String && u.isNotEmpty) avatarUrls.add(u);
+          }
+        }
+        return PlayerJoinedEvent(
+          id: id,
+          createdAt: createdAt,
+          gameId: str('game_id'),
+          gameTitle: str('game_title'),
+          sport: str('sport'),
+          venueName: str('venue_name'),
+          joinCount: (data['join_count'] as num?)?.toInt() ?? 0,
+          avatarUrls: avatarUrls,
+        );
+      case 'post_created':
+        return PostCreatedEvent(
+          id: id,
+          createdAt: createdAt,
+          postId: str('post_id'),
+        );
+      case 'user_joined':
+        return NewUserEvent(
+          id: id,
+          createdAt: createdAt,
+          profileId: str('profile_id'),
+          displayName: str('display_name'),
+          avatarUrl: str('avatar_url'),
+          sport: str('sport'),
+        );
+      default:
+        return null;
+    }
   }
+}
+
+/// `game_created` — a newly created game (Discovery card).
+final class GameCreatedEvent extends ActiveEvent {
+  const GameCreatedEvent({
+    required super.id,
+    required super.createdAt,
+    this.gameId,
+    this.gameTitle,
+    this.sport,
+    this.venueName,
+  });
+
+  final String? gameId;
+  final String? gameTitle;
+  final String? sport;
+  final String? venueName;
+}
+
+/// `player_joined_game` — one or more players joined a game (Live card).
+///
+/// NOTE: not yet produced by [ActiveFeedNotifier._fetch] (see its comment).
+final class PlayerJoinedEvent extends ActiveEvent {
+  const PlayerJoinedEvent({
+    required super.id,
+    required super.createdAt,
+    this.gameId,
+    this.gameTitle,
+    this.sport,
+    this.venueName,
+    this.joinCount = 0,
+    this.avatarUrls = const [],
+  });
+
+  final String? gameId;
+  final String? gameTitle;
+  final String? sport;
+  final String? venueName;
+  final int joinCount;
+  final List<String> avatarUrls;
+}
+
+/// `post_created` — a new social post (rendered via the real Post layout).
+///
+/// NOTE: not yet produced by [ActiveFeedNotifier._fetch].
+final class PostCreatedEvent extends ActiveEvent {
+  const PostCreatedEvent({
+    required super.id,
+    required super.createdAt,
+    this.postId,
+  });
+
+  final String? postId;
+}
+
+/// `user_joined` — a new user joined the platform (welcome chip).
+///
+/// NOTE: not yet produced by [ActiveFeedNotifier._fetch].
+final class NewUserEvent extends ActiveEvent {
+  const NewUserEvent({
+    required super.id,
+    required super.createdAt,
+    this.profileId,
+    this.displayName,
+    this.avatarUrl,
+    this.sport,
+  });
+
+  final String? profileId;
+  final String? displayName;
+  final String? avatarUrl;
+  final String? sport;
 }
 
 // =============================================================================
 
-class ActiveFeedState {
-  const ActiveFeedState({
-    this.events = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
+/// Active feed state as a sealed union — illegal flag combinations are
+/// unrepresentable. [ActiveFeedData] is the loaded steady state (its presence
+/// is what `loaded` used to mean). Base getters keep widget read sites stable.
+sealed class ActiveFeedState {
+  const ActiveFeedState();
+
+  List<ActiveEvent> get events => const [];
+  bool get isLoading => false;
+  bool get isLoadingMore => false;
+  bool get hasMore => false;
+  String? get error => null;
+}
+
+final class ActiveFeedLoading extends ActiveFeedState {
+  const ActiveFeedLoading();
+
+  @override
+  bool get isLoading => true;
+  @override
+  bool get hasMore => true;
+}
+
+final class ActiveFeedFailure extends ActiveFeedState {
+  const ActiveFeedFailure(this.message);
+
+  final String message;
+
+  @override
+  String? get error => message;
+}
+
+final class ActiveFeedData extends ActiveFeedState {
+  const ActiveFeedData({
+    required this.events,
     this.hasMore = true,
-    this.error,
-    this.loaded = false,
+    this.loadingMore = false,
   });
 
+  @override
   final List<ActiveEvent> events;
-  final bool isLoading;
-  final bool isLoadingMore;
+  @override
   final bool hasMore;
-  final String? error;
-  final bool loaded;
 
-  ActiveFeedState copyWith({
+  final bool loadingMore;
+  @override
+  bool get isLoadingMore => loadingMore;
+
+  ActiveFeedData copyWith({
     List<ActiveEvent>? events,
-    bool? isLoading,
-    bool? isLoadingMore,
     bool? hasMore,
-    Object? error = _sentinel,
-    bool? loaded,
+    bool? loadingMore,
   }) {
-    return ActiveFeedState(
+    return ActiveFeedData(
       events: events ?? this.events,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
-      error: error == _sentinel ? this.error : error as String?,
-      loaded: loaded ?? this.loaded,
+      loadingMore: loadingMore ?? this.loadingMore,
     );
   }
-
-  static const Object _sentinel = Object();
 }
 
 // =============================================================================
@@ -95,7 +224,7 @@ class ActiveFeedState {
 /// NOT autoDispose — caches across tab switches.
 class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
   ActiveFeedNotifier(this._db, {bool autoLoad = false})
-    : super(const ActiveFeedState()) {
+    : super(const ActiveFeedLoading()) {
     if (autoLoad) ensureLoaded();
   }
 
@@ -105,55 +234,60 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
 
   /// Loads the first page only if not yet loaded.
   Future<void> ensureLoaded() async {
-    if (state.loaded) return;
+    if (state is ActiveFeedData) return;
     await load();
   }
 
   /// Force-reload from first page.
   Future<void> load() async {
     if (!mounted) return;
-    state = state.copyWith(isLoading: true, error: null);
+    state = const ActiveFeedLoading();
     _activePage = 0;
 
     final result = await _fetch(limit: _pageSize, offset: 0);
     if (!mounted) return;
 
     result.fold(
-      (err) => state = state.copyWith(isLoading: false, error: err.message),
-      (events) => state = state.copyWith(
+      (err) => state = ActiveFeedFailure(err.message),
+      (events) => state = ActiveFeedData(
         events: events,
-        isLoading: false,
         hasMore: events.length >= _pageSize,
-        loaded: true,
       ),
     );
   }
 
   /// Appends the next page.
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || !mounted) return;
+    final data = state;
+    if (data is! ActiveFeedData || data.loadingMore || !data.hasMore ||
+        !mounted) {
+      return;
+    }
 
-    state = state.copyWith(isLoadingMore: true);
+    state = data.copyWith(loadingMore: true);
     final nextPage = _activePage + 1;
 
     final result = await _fetch(limit: _pageSize, offset: nextPage * _pageSize);
     if (!mounted) return;
 
-    result.fold((_) => state = state.copyWith(isLoadingMore: false), (
+    final current = state;
+    if (current is! ActiveFeedData) return;
+
+    result.fold((_) => state = current.copyWith(loadingMore: false), (
       newEvents,
     ) {
       if (newEvents.isEmpty) {
-        state = state.copyWith(hasMore: false, isLoadingMore: false);
+        state = current.copyWith(hasMore: false, loadingMore: false);
         return;
       }
       _activePage = nextPage;
-      final existingIds = state.events.map((e) => e.id).toSet();
+      final existingIds = current.events.map((e) => e.id).toSet();
       final deduped = newEvents
           .where((e) => !existingIds.contains(e.id))
           .toList();
-      state = state.copyWith(
-        events: [...state.events, ...deduped],
-        isLoadingMore: false,
+      state = current.copyWith(
+        events: [...current.events, ...deduped],
+        loadingMore: false,
         hasMore: newEvents.length >= _pageSize && deduped.isNotEmpty,
       );
     });
@@ -173,21 +307,19 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
-      final events = (rows as List<dynamic>).map((r) {
+      // Only `game_created` events are produced today — this notifier queries
+      // `v_game_card`. The other ActiveEvent variants exist for when the feed
+      // emits richer event types; construct GameCreatedEvent directly here.
+      final events = (rows as List<dynamic>).map<ActiveEvent>((r) {
         final row = Map<String, dynamic>.from(r as Map);
-        return ActiveEvent({
-          'id': row['id'],
-          'event_type': 'game_created',
-          'created_at': row['created_at'],
-          'game_id': row['id'],
-          'game_title': row['title'],
-          'sport': row['sport_name_en'],
-          'venue_name': row['venue_name'] ?? row['area_name'],
-          'join_count': row['roster_count'] ?? 0,
-          'display_name': row['creator_display_name'],
-          'avatar_url': row['creator_avatar_url'],
-          'score': 0.0,
-        });
+        return GameCreatedEvent(
+          id: row['id']?.toString() ?? '',
+          createdAt: ActiveEvent._parseCreatedAt(row['created_at']),
+          gameId: row['id']?.toString(),
+          gameTitle: row['title']?.toString(),
+          sport: row['sport_name_en']?.toString(),
+          venueName: (row['venue_name'] ?? row['area_name'])?.toString(),
+        );
       }).toList();
 
       return Ok(events);

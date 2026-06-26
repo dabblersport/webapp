@@ -77,22 +77,6 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
           as _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>>);
 
   @override
-  _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>> signInWithPhone({
-    required String? phone,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(#signInWithPhone, [], {#phone: phone}),
-            returnValue:
-                _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>>.value(
-                  _FakeResult_0<_i5.AuthSession, _i6.Failure>(
-                    this,
-                    Invocation.method(#signInWithPhone, [], {#phone: phone}),
-                  ),
-                ),
-          )
-          as _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>>);
-
-  @override
   _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>> signUp({
     required String? email,
     required String? password,
@@ -189,17 +173,17 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
 
   @override
   _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>> verifyOTP({
-    required String? phone,
+    required String? email,
     required String? token,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#verifyOTP, [], {#phone: phone, #token: token}),
+            Invocation.method(#verifyOTP, [], {#email: email, #token: token}),
             returnValue:
                 _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>>.value(
                   _FakeResult_0<_i5.AuthSession, _i6.Failure>(
                     this,
                     Invocation.method(#verifyOTP, [], {
-                      #phone: phone,
+                      #email: email,
                       #token: token,
                     }),
                   ),

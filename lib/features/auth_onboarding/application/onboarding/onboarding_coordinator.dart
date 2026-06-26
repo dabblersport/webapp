@@ -79,10 +79,6 @@ class OnboardingCoordinator {
       return {'email': identifier};
     }
 
-    if (type == IdentifierType.phone) {
-      return {'phone': identifier};
-    }
-
     return null;
   }
 }

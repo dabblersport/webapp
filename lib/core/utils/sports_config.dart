@@ -36,7 +36,7 @@ class SportsConfig {
       name: 'cricket',
       displayName: 'Cricket',
       icon: Icons.circle_outlined, // Cricket ball
-      primaryColor: Color(0xFF8B5CF6), // Purple
+      primaryColor: Color(0xFF7328CE), // Purple
       secondaryColor: Color(0xFFF3E8FF),
     ),
     Sport(

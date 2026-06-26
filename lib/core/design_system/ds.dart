@@ -6,7 +6,7 @@ class DS {
   // This is a placeholder - DS should be accessed through context
   // For now, provide static fallback colors
   static const Color error = Color(0xFFEF4444);
-  static const Color primary = Color(0xFF8B5CF6);
+  static const Color primary = Color(0xFF7328CE);
   static const Color onSurface = Color(0xFF1F2937);
   static const Color onSurfaceVariant = Color(0xFF6B7280);
 

@@ -2,25 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show activeChallengeSportsByProfileCountryProvider;
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/services/moderation_service.dart';
+import 'package:dabbler/utils/adaptive_sheet.dart';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
 class _ComposerState {
   const _ComposerState({
+    this.sports = const [],
+    this.sportsLoaded = false,
     this.sportId,
     this.sportNameEn,
     this.sportEmoji,
     this.sportColorCode,
     this.variantId,
+    this.variantKey,
     this.variantNameEn,
     this.requiredPlayers,
     this.selectedDate,
@@ -38,15 +42,25 @@ class _ComposerState {
     this.skillLevel,
     this.minSkill,
     this.maxSkill,
+    this.minPlayers,
+    this.maxPlayers,
     this.isSubmitting = false,
     this.error,
   });
+
+  /// Sport rows loaded from `public.sports`. Cached in state so chip
+  /// rendering is reactive without a separate FutureProvider.
+  final List<Map<String, dynamic>> sports;
+  final bool sportsLoaded;
 
   final String? sportId;
   final String? sportNameEn;
   final String? sportEmoji;
   final String? sportColorCode;
   final String? variantId;
+
+  /// `sport_variants.variant_key` — used to filter `venue_spaces.sport_variant_keys`.
+  final String? variantKey;
   final String? variantNameEn;
   final int? requiredPlayers;
   final DateTime? selectedDate;
@@ -64,6 +78,8 @@ class _ComposerState {
   final String? skillLevel;
   final int? minSkill;
   final int? maxSkill;
+  final int? minPlayers;
+  final int? maxPlayers;
   final bool isSubmitting;
   final String? error;
 
@@ -75,11 +91,14 @@ class _ComposerState {
       !isSubmitting;
 
   _ComposerState copyWith({
+    List<Map<String, dynamic>>? sports,
+    bool? sportsLoaded,
     String? sportId,
     String? sportNameEn,
     String? sportEmoji,
     String? sportColorCode,
     String? variantId,
+    String? variantKey,
     String? variantNameEn,
     int? requiredPlayers,
     DateTime? selectedDate,
@@ -97,27 +116,35 @@ class _ComposerState {
     String? skillLevel,
     int? minSkill,
     int? maxSkill,
+    int? minPlayers,
+    int? maxPlayers,
     bool? isSubmitting,
     String? error,
     bool clearError = false,
     bool clearVenue = false,
     bool clearVariant = false,
     bool clearSkill = false,
+    bool clearPlayers = false,
   }) {
     return _ComposerState(
+      sports: sports ?? this.sports,
+      sportsLoaded: sportsLoaded ?? this.sportsLoaded,
       sportId: sportId ?? this.sportId,
       sportNameEn: sportNameEn ?? this.sportNameEn,
       sportEmoji: sportEmoji ?? this.sportEmoji,
       sportColorCode: sportColorCode ?? this.sportColorCode,
       variantId: clearVariant ? null : variantId ?? this.variantId,
+      variantKey: clearVariant ? null : variantKey ?? this.variantKey,
       variantNameEn: clearVariant ? null : variantNameEn ?? this.variantNameEn,
-      requiredPlayers: clearVariant ? null : requiredPlayers ?? this.requiredPlayers,
+      requiredPlayers:
+          clearVariant ? null : requiredPlayers ?? this.requiredPlayers,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       venueSpaceId: clearVenue ? null : venueSpaceId ?? this.venueSpaceId,
       venueName: clearVenue ? null : venueName ?? this.venueName,
-      venueSpaceName: clearVenue ? null : venueSpaceName ?? this.venueSpaceName,
+      venueSpaceName:
+          clearVenue ? null : venueSpaceName ?? this.venueSpaceName,
       joinPolicy: joinPolicy ?? this.joinPolicy,
       listingVisibility: listingVisibility ?? this.listingVisibility,
       allowWaitlist: allowWaitlist ?? this.allowWaitlist,
@@ -127,6 +154,8 @@ class _ComposerState {
       skillLevel: clearSkill ? null : skillLevel ?? this.skillLevel,
       minSkill: clearSkill ? null : minSkill ?? this.minSkill,
       maxSkill: clearSkill ? null : maxSkill ?? this.maxSkill,
+      minPlayers: clearPlayers ? null : minPlayers ?? this.minPlayers,
+      maxPlayers: clearPlayers ? null : maxPlayers ?? this.maxPlayers,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : error ?? this.error,
     );
@@ -140,36 +169,36 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   final _db = Supabase.instance.client;
 
-  // Sports / variants cache
-  List<Map<String, dynamic>> _sports = [];
+  // Variant + venue caches live on the notifier (only read by picker sheets).
   List<Map<String, dynamic>> _variants = [];
   List<Map<String, dynamic>> _venueSpaces = [];
 
-  bool _sportsLoaded = false;
-
-  List<Map<String, dynamic>> get sports => _sports;
   List<Map<String, dynamic>> get variants => _variants;
   List<Map<String, dynamic>> get venueSpaces => _venueSpaces;
 
   Future<void> ensureSports() async {
-    if (_sportsLoaded) return;
+    if (state.sportsLoaded) return;
     try {
       final rows = await _db
           .from('sports')
-          .select('id, sport_key, name_en, emoji')
+          .select('id, sport_key, name_en, emoji, color_code')
           .eq('is_active', true)
           .eq('is_challenge_sport', true)
           .order('name_en');
-      _sports = List<Map<String, dynamic>>.from(rows as List);
-      _sportsLoaded = true;
-    } catch (_) {}
+      state = state.copyWith(
+        sports: List<Map<String, dynamic>>.from(rows as List),
+        sportsLoaded: true,
+      );
+    } catch (_) {
+      state = state.copyWith(sportsLoaded: true);
+    }
   }
 
   Future<void> loadVariants(String sportId) async {
     try {
       final rows = await _db
           .from('sport_variants')
-          .select('id, name_en, required_players, players_per_side')
+          .select('id, variant_key, name_en, required_players, players_per_side')
           .eq('sport_id', sportId)
           .eq('is_active', true)
           .order('name_en');
@@ -179,18 +208,29 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     }
   }
 
+  /// Loads venue spaces matching the selected sport AND variant.
+  ///
+  /// Schema reality (verified 2026-06-16 against `public.venue_spaces`):
+  /// the join is via `sport_id` (uuid) + `sport_variant_keys` (text[]
+  /// containing the variant's `variant_key`). There's no `sport_variant_id`
+  /// column — the previous filter on that column silently returned nothing.
   Future<void> loadVenueSpaces() async {
-    final variantId = state.variantId;
-    if (variantId == null) {
+    final sportId = state.sportId;
+    final variantKey = state.variantKey;
+    if (sportId == null || variantKey == null) {
       _venueSpaces = [];
       return;
     }
     try {
       final rows = await _db
           .from('venue_spaces')
-          .select('id, name_en, venue:venues(id, name_en, area)')
-          .eq('sport_variant_id', variantId)
-          .eq('is_active', true);
+          .select(
+            'id, name_en, sport_id, sport_variant_keys, '
+            'venue:venues(id, name_en, area)',
+          )
+          .eq('sport_id', sportId)
+          .eq('is_active', true)
+          .contains('sport_variant_keys', [variantKey]);
       _venueSpaces = List<Map<String, dynamic>>.from(rows as List);
     } catch (_) {
       _venueSpaces = [];
@@ -205,15 +245,22 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       sportColorCode: sport['color_code'] as String?,
       clearVariant: true,
       clearVenue: true,
+      clearPlayers: true,
     );
     loadVariants(sport['id'] as String);
   }
 
   void selectVariant(Map<String, dynamic> variant) {
+    final required = variant['required_players'] as int?;
     state = state.copyWith(
       variantId: variant['id'] as String,
+      variantKey: variant['variant_key'] as String?,
       variantNameEn: variant['name_en'] as String,
-      requiredPlayers: variant['required_players'] as int?,
+      requiredPlayers: required,
+      // Default min/max to the variant's `required_players` so the row reads
+      // out something immediately; user can still tap to override.
+      minPlayers: required,
+      maxPlayers: required,
       clearVenue: true,
     );
     loadVenueSpaces();
@@ -221,7 +268,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   void selectDate(DateTime date) => state = state.copyWith(selectedDate: date);
   void selectTime(TimeOfDay time) => state = state.copyWith(selectedTime: time);
-  void setDuration(int minutes) => state = state.copyWith(durationMinutes: minutes);
+  void setDuration(int minutes) =>
+      state = state.copyWith(durationMinutes: minutes);
 
   void selectVenueSpace(Map<String, dynamic> space) {
     final venue = space['venue'] as Map<String, dynamic>? ?? {};
@@ -234,25 +282,34 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   void clearVenue() => state = state.copyWith(clearVenue: true);
 
-  void setJoinPolicy(String policy) => state = state.copyWith(joinPolicy: policy);
+  void setJoinPolicy(String policy) =>
+      state = state.copyWith(joinPolicy: policy);
   void setVisibility(String v) => state = state.copyWith(listingVisibility: v);
-  void toggleWaitlist() => state = state.copyWith(allowWaitlist: !state.allowWaitlist);
-  void toggleSpectators() => state = state.copyWith(allowSpectators: !state.allowSpectators);
-  void setTitle(String v) => state = state.copyWith(title: v.isEmpty ? null : v);
-  void setDescription(String v) => state = state.copyWith(description: v.isEmpty ? null : v);
+  void toggleWaitlist() =>
+      state = state.copyWith(allowWaitlist: !state.allowWaitlist);
+  void toggleSpectators() =>
+      state = state.copyWith(allowSpectators: !state.allowSpectators);
+  void setTitle(String v) =>
+      state = state.copyWith(title: v.isEmpty ? null : v);
+  void setDescription(String v) =>
+      state = state.copyWith(description: v.isEmpty ? null : v);
 
   void selectSkillLevel(String level) {
     final (min, max) = switch (level) {
-      'Beginner'     => (1, 3),
+      'Beginner' => (1, 3),
       'Intermediate' => (4, 6),
-      'Advanced'     => (7, 8),
-      'Pro'          => (9, 10),
-      _              => (1, 10),
+      'Advanced' => (7, 8),
+      'Pro' => (9, 10),
+      _ => (1, 10),
     };
     state = state.copyWith(skillLevel: level, minSkill: min, maxSkill: max);
   }
 
   void clearSkill() => state = state.copyWith(clearSkill: true);
+
+  void setMinPlayers(int v) => state = state.copyWith(minPlayers: v);
+  void setMaxPlayers(int v) => state = state.copyWith(maxPlayers: v);
+  void clearPlayers() => state = state.copyWith(clearPlayers: true);
 
   Future<bool> submit() async {
     if (!state.canSubmit) return false;
@@ -276,7 +333,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
       final date = state.selectedDate!;
       final t = state.selectedTime!;
-      final startAt = DateTime(date.year, date.month, date.day, t.hour, t.minute);
+      final startAt =
+          DateTime(date.year, date.month, date.day, t.hour, t.minute);
       final endAt = startAt.add(Duration(minutes: state.durationMinutes));
 
       final rules = <String, dynamic>{
@@ -297,10 +355,16 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         'p_allow_spectators': state.allowSpectators,
         'p_allows_waitlist': state.allowWaitlist,
         'p_rules': rules,
-        if (state.title != null && state.title!.isNotEmpty) 'p_title': state.title,
-        if (state.venueSpaceId != null) 'p_venue_space_id': state.venueSpaceId,
+        if (state.title != null && state.title!.isNotEmpty)
+          'p_title': state.title,
+        if (state.venueSpaceId != null)
+          'p_venue_space_id': state.venueSpaceId,
         if (state.minSkill != null) 'p_min_skill': state.minSkill,
         if (state.maxSkill != null) 'p_max_skill': state.maxSkill,
+        // Editable Min/Max players — only sent when set. Back-end follow-up:
+        // extend rpc_create_game to accept p_min_players / p_max_players.
+        if (state.minPlayers != null) 'p_min_players': state.minPlayers,
+        if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
       };
 
       await _db.rpc('rpc_create_game', params: params);
@@ -309,10 +373,10 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     } on PostgrestException catch (e) {
       final msg = switch (e.message) {
         'sport_not_challenge_eligible' => 'Sport not available for games.',
-        'invalid_sport_variant'        => 'Invalid format for this sport.',
-        'invalid_time_range'           => 'End time must be after start time.',
-        'creator_profile_not_found'    => 'Complete your profile first.',
-        _                              => e.message,
+        'invalid_sport_variant' => 'Invalid format for this sport.',
+        'invalid_time_range' => 'End time must be after start time.',
+        'creator_profile_not_found' => 'Complete your profile first.',
+        _ => e.message,
       };
       state = state.copyWith(isSubmitting: false, error: msg);
       return false;
@@ -345,6 +409,14 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _descController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Kick off sport load so the chips appear as soon as the drawer opens.
+    Future.microtask(
+        () => ref.read(_gameComposerProvider.notifier).ensureSports());
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
@@ -370,190 +442,340 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(_gameComposerProvider);
+    final notifier = ref.read(_gameComposerProvider.notifier);
 
-    const bg = Color(0xFFF4EEF9);
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const onBg = Color(0xFF1D1A20);
-
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+    return ComposerDrawerShell(
+      title: 'Quick Game',
+      ctaLabel: 'Create game',
+      canSubmit: state.canSubmit,
+      isSubmitting: state.isSubmitting,
+      onCtaTap: _submit,
+      errorMessage: state.error,
+      children: [
+        // ── A. Sport ────────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: bgDark,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: outline, width: 1.5),
-                  ),
-                  child: const Icon(Icons.close_rounded, size: 18, color: onBg),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'New Game',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: onBg,
-                      ),
-                ),
-              ),
-              _CreateButton(
-                canCreate: state.canSubmit,
-                isSubmitting: state.isSubmitting,
-                onTap: _submit,
+              const ComposerSectionLabel(label: 'SPORT'),
+              const SizedBox(height: 8),
+              _SportChipsRow(
+                sports: state.sports,
+                loaded: state.sportsLoaded,
+                selectedSportId: state.sportId,
+                onSelect: notifier.selectSport,
               ),
             ],
           ),
         ),
-      ),
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Sport & Format',
-            child: _SportVariantRow(
-              sportLabel: state.sportId != null
-                  ? '${state.sportEmoji ?? ''} ${state.sportNameEn}'
-                  : null,
-              sportColorCode: state.sportColorCode,
-              variantLabel: state.variantNameEn,
-              onTapSport: () => _openSportPicker(context),
-              onTapVariant: state.sportId != null
-                  ? () => _openVariantPicker(context)
-                  : null,
+        _SectionDivider(),
+
+        // ── B. Format ───────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ComposerSettingsRow(
+            icon: Icons.grid_view_outlined,
+            title: 'Format',
+            subtitle: 'Game format',
+            showDivider: true,
+            trailing: ComposerSelectPill(
+              value: state.variantNameEn ??
+                  (state.sportId == null
+                      ? 'Select sport first'
+                      : 'Select format'),
+              caret: ComposerSelectCaret.right,
+              // Disabled until a sport is picked — tap is ignored and the
+              // pill renders in the faint text colour.
+              onTap: state.sportId == null
+                  ? null
+                  : () => _openVariantPicker(context),
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Date & Time',
-            child: _DateTimeRow(
-              date: state.selectedDate,
-              time: state.selectedTime,
-              durationMinutes: state.durationMinutes,
-              onTapDate: () => _pickDate(context),
-              onTapTime: () => _pickTime(context),
-              onTapDuration: () => _openDurationPicker(context),
+        ),
+
+        // ── C. Date & Time ──────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ComposerSettingsRow(
+            icon: Icons.calendar_today_outlined,
+            title: 'Date & Time',
+            subtitle: 'When is the game',
+            showDivider: true,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ComposerCompactSelectPill(
+                  value: _formatDateChip(state.selectedDate),
+                  onTap: () => _pickDate(context),
+                ),
+                const SizedBox(width: 8),
+                ComposerCompactSelectPill(
+                  value: _formatTimeChip(context, state.selectedTime),
+                  onTap: () => _pickTime(context),
+                ),
+                const SizedBox(width: 8),
+                ComposerCompactSelectPill(
+                  value: _formatDurationChip(state.durationMinutes),
+                  highlighted: true,
+                  onTap: () => _openDurationPicker(context),
+                ),
+              ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Venue',
-            child: _VenueChip(
-              venueName: state.venueName,
-              venueSpaceName: state.venueSpaceName,
-              enabled: state.variantId != null,
+        ),
+
+        // ── D. Venue ────────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ComposerSettingsRow(
+            icon: Icons.location_on_outlined,
+            title: 'Venue',
+            subtitle: 'Where to play',
+            showDivider: true,
+            trailing: ComposerSelectPill(
+              value: _venueLabel(state),
+              caret: ComposerSelectCaret.right,
               onTap: () => _openVenuePicker(context),
-              onClear: ref.read(_gameComposerProvider.notifier).clearVenue,
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Join Policy',
-            child: _PillRow(
-              options: const ['open', 'request', 'invite', 'link'],
-              selected: state.joinPolicy,
-              labels: const {
-                'open': 'Open',
-                'request': 'Request',
-                'invite': 'Invite',
-                'link': 'Link',
-              },
-              onSelect: ref.read(_gameComposerProvider.notifier).setJoinPolicy,
-            ),
+        ),
+
+        // ── E. Join Policy ──────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ComposerSectionLabel(label: 'JOIN POLICY'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final entry in const [
+                    ('open', 'Open'),
+                    ('request', 'Request'),
+                    ('invite', 'Invite'),
+                    ('link', 'Link'),
+                  ])
+                    ComposerPolicyChip(
+                      label: entry.$2,
+                      selected: state.joinPolicy == entry.$1,
+                      onTap: () => notifier.setJoinPolicy(entry.$1),
+                    ),
+                ],
+              ),
+            ],
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Visibility',
-            child: _PillRow(
-              options: const ['public', 'friends', 'private'],
-              selected: state.listingVisibility,
-              labels: const {
-                'public': 'Public',
-                'friends': 'Friends',
-                'private': 'Private',
-              },
-              onSelect: ref.read(_gameComposerProvider.notifier).setVisibility,
-            ),
+        ),
+        _SectionDivider(),
+
+        // ── F. Visibility ───────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ComposerSectionLabel(label: 'VISIBILITY'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final entry in const [
+                    ('public', 'Public'),
+                    ('friends', 'Friends'),
+                    ('private', 'Private'),
+                  ])
+                    ComposerPolicyChip(
+                      label: entry.$2,
+                      selected: state.listingVisibility == entry.$1,
+                      onTap: () => notifier.setVisibility(entry.$1),
+                    ),
+                ],
+              ),
+            ],
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Skill Level',
-            child: _SkillChip(
-              level: state.skillLevel,
+        ),
+        _SectionDivider(),
+
+        // ── G. Skill Level ──────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ComposerSettingsRow(
+            icon: Icons.workspace_premium_outlined,
+            title: 'Skill Level',
+            subtitle: 'Player experience',
+            showDivider: true,
+            trailing: ComposerSelectPill(
+              value: state.skillLevel ?? 'Any level',
+              caret: ComposerSelectCaret.down,
               onTap: () => _openSkillPicker(context),
-              onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Options',
-            child: Column(
+        ),
+
+        // ── H. Players ──────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: ComposerSettingsRow(
+            icon: Icons.people_outline,
+            title: 'Players',
+            subtitle: 'Min & max players',
+            showDivider: true,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _ToggleRow(
-                  icon: Iconsax.clock,
-                  label: 'Waitlist',
-                  subtitle: 'Let players queue when full',
+                ComposerCompactSelectPill(
+                  value: state.minPlayers?.toString() ?? '—',
+                  suffixLabel: 'min',
+                  onTap: () => _openPlayerCountPicker(
+                    context,
+                    title: 'Minimum players',
+                    initial: state.minPlayers ?? state.requiredPlayers ?? 2,
+                    onSelect: notifier.setMinPlayers,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ComposerCompactSelectPill(
+                  value: state.maxPlayers?.toString() ?? '—',
+                  suffixLabel: 'max',
+                  onTap: () => _openPlayerCountPicker(
+                    context,
+                    title: 'Maximum players',
+                    initial: state.maxPlayers ?? state.requiredPlayers ?? 10,
+                    onSelect: notifier.setMaxPlayers,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // ── Options divider + Options section ───────────────────────────────
+        _SectionDivider(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              ComposerSettingsRow(
+                icon: Icons.group_outlined,
+                title: 'Waitlist',
+                subtitle: 'Let players queue when full',
+                showDivider: true,
+                trailing: ComposerToggle(
                   value: state.allowWaitlist,
-                  onChanged: (_) =>
-                      ref.read(_gameComposerProvider.notifier).toggleWaitlist(),
+                  onChanged: (_) => notifier.toggleWaitlist(),
                 ),
-                const SizedBox(height: 12),
-                _ToggleRow(
-                  icon: Iconsax.eye,
-                  label: 'Spectators',
-                  subtitle: 'Allow spectators to watch',
+              ),
+              ComposerSettingsRow(
+                icon: Icons.visibility_outlined,
+                title: 'Spectators',
+                subtitle: 'Allow spectators to watch',
+                showDivider: false,
+                trailing: ComposerToggle(
                   value: state.allowSpectators,
-                  onChanged: (_) => ref
-                      .read(_gameComposerProvider.notifier)
-                      .toggleSpectators(),
+                  onChanged: (_) => notifier.toggleSpectators(),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const Divider(height: 1, thickness: 1, color: outline),
-          _Section(
-            label: 'Details (optional)',
-            child: Column(
-              children: [
-                _ComposerTextField(
-                  controller: _titleController,
-                  hint: 'Game title',
-                  onChanged: ref.read(_gameComposerProvider.notifier).setTitle,
-                ),
-                const SizedBox(height: 8),
-                _ComposerTextField(
-                  controller: _descController,
-                  hint: 'Add a note for players...',
-                  minLines: 3,
-                  maxLines: 6,
-                  onChanged:
-                      ref.read(_gameComposerProvider.notifier).setDescription,
-                ),
-              ],
-            ),
+        ),
+
+        // ── J. Details ──────────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const ComposerSectionLabel(
+                label: 'DETAILS (OPTIONAL)',
+                letterSpacing: 1.2,
+              ),
+              const SizedBox(height: 10),
+              ComposerGlassInput(
+                controller: _titleController,
+                hint: 'Game title',
+                onChanged: notifier.setTitle,
+              ),
+              const SizedBox(height: 10),
+              ComposerGlassInput(
+                controller: _descController,
+                hint: 'Add a note for players...',
+                minLines: 3,
+                maxLines: 6,
+                onChanged: notifier.setDescription,
+              ),
+            ],
           ),
-          const SizedBox(height: 40),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // ── Pickers ────────────────────────────────────────────────────────────────
+  // ─── Format helpers ────────────────────────────────────────────────────────
+
+  String _formatDateChip(DateTime? date) {
+    if (date == null) return 'Date';
+    final now = DateTime.now();
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
+      return 'Today';
+    }
+    final tomorrow = now.add(const Duration(days: 1));
+    if (date.year == tomorrow.year &&
+        date.month == tomorrow.month &&
+        date.day == tomorrow.day) {
+      return 'Tomorrow';
+    }
+    return DateFormat('MMM d').format(date);
+  }
+
+  String _formatTimeChip(BuildContext context, TimeOfDay? time) {
+    if (time == null) return 'Time';
+    return time.format(context);
+  }
+
+  String _formatDurationChip(int minutes) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (h > 0 && m > 0) return '${h}h ${m}m';
+    if (h > 0) return '${h}h';
+    return '${m}m';
+  }
+
+  String _venueLabel(_ComposerState state) {
+    if (state.venueSpaceId == null) return 'Select';
+    return [state.venueName, state.venueSpaceName]
+        .whereType<String>()
+        .join(' · ');
+  }
+
+  // ─── Pickers ───────────────────────────────────────────────────────────────
+
+  Future<void> _openVariantPicker(BuildContext context) async {
+    final state = ref.read(_gameComposerProvider);
+    if (state.sportId == null) {
+      // Sport must be picked first — silently open the sport picker instead.
+      return _openSportPicker(context);
+    }
+    final notifier = ref.read(_gameComposerProvider.notifier);
+    if (notifier.variants.isEmpty) {
+      await notifier.loadVariants(state.sportId!);
+    }
+    if (!context.mounted) return;
+
+    await showAdaptiveSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (_) => _VariantPickerSheet(
+        variants: notifier.variants,
+        onSelect: notifier.selectVariant,
+      ),
+    );
+  }
 
   Future<void> _openSportPicker(BuildContext context) async {
     final notifier = ref.read(_gameComposerProvider.notifier);
@@ -569,6 +791,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
     await showAdaptiveSheet(
       context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       builder: (_) => SportSelectionSheet(
         sportsProvider: activeChallengeSportsByProfileCountryProvider,
         selectedSport: selectedSport,
@@ -579,20 +802,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           'sport_key': sport.sportKey,
           'color_code': sport.colorCode,
         }),
-      ),
-    );
-  }
-
-  Future<void> _openVariantPicker(BuildContext context) async {
-    final notifier = ref.read(_gameComposerProvider.notifier);
-    final variants = notifier.variants;
-    if (!mounted) return;
-
-    await showAdaptiveSheet(
-      context: context,
-      builder: (_) => _VariantPickerSheet(
-        variants: variants,
-        onSelect: notifier.selectVariant,
       ),
     );
   }
@@ -625,6 +834,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final current = ref.read(_gameComposerProvider).durationMinutes;
     await showAdaptiveSheet(
       context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       builder: (_) => _DurationPickerSheet(
         currentMinutes: current,
         onSelect: ref.read(_gameComposerProvider.notifier).setDuration,
@@ -640,9 +850,12 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
     await showAdaptiveSheet(
       context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       builder: (_) => _VenuePickerSheet(
         spaces: spaces,
         onSelect: notifier.selectVenueSpace,
+        onClear: notifier.clearVenue,
+        canClear: ref.read(_gameComposerProvider).venueSpaceId != null,
       ),
     );
   }
@@ -650,633 +863,183 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   Future<void> _openSkillPicker(BuildContext context) async {
     await showAdaptiveSheet(
       context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       builder: (_) => _SkillPickerSheet(
         onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
+        onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
+        canClear: ref.read(_gameComposerProvider).skillLevel != null,
+      ),
+    );
+  }
+
+  Future<void> _openPlayerCountPicker(
+    BuildContext context, {
+    required String title,
+    required int initial,
+    required ValueChanged<int> onSelect,
+  }) async {
+    await showAdaptiveSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      builder: (_) => _PlayerCountPickerSheet(
+        title: title,
+        initialValue: initial,
+        onSelect: onSelect,
       ),
     );
   }
 }
 
-// ─── Widgets ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-class _CreateButton extends StatelessWidget {
-  const _CreateButton({
-    required this.canCreate,
-    required this.isSubmitting,
-    required this.onTap,
-  });
-
-  final bool canCreate;
-  final bool isSubmitting;
-  final VoidCallback onTap;
-
+/// 1px full-width divider used between Pencil "sections".
+class _SectionDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF7328CE);
-    return GestureDetector(
-      onTap: canCreate ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-        decoration: BoxDecoration(
-          color: canCreate ? primary : const Color(0xFFDDD6E4),
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: canCreate
-              ? [
-                  BoxShadow(
-                    color: primary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
-        ),
-        child: isSubmitting
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
-            : Text(
-                'Create',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: canCreate ? Colors.white : const Color(0xFF8B849A),
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-      ),
+    return Container(
+      height: 1,
+      color: ComposerPalette.of(context).divider,
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({required this.label, required this.child});
+// ─── Sport chips row ─────────────────────────────────────────────────────────
 
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF8B849A),
-            ),
-          ),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _SportVariantRow extends StatelessWidget {
-  const _SportVariantRow({
-    required this.sportLabel,
-    required this.variantLabel,
-    required this.onTapSport,
-    required this.onTapVariant,
-    this.sportColorCode,
-  });
-
-  final String? sportLabel;
-  final String? variantLabel;
-  final VoidCallback onTapSport;
-  final VoidCallback? onTapVariant;
-  final String? sportColorCode;
-
-  @override
-  Widget build(BuildContext context) {
-    Color? sportAccent;
-    if (sportColorCode != null) {
-      try {
-        sportAccent = Color(
-            int.parse(sportColorCode!.replaceFirst('#', '0xFF')));
-      } catch (_) {}
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: _ChipButton(
-            label: sportLabel ?? 'Select sport',
-            icon: Iconsax.activity,
-            filled: sportLabel != null,
-            onTap: onTapSport,
-            accentColor: sportAccent,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ChipButton(
-            label: variantLabel ?? 'Format',
-            icon: Iconsax.people,
-            filled: variantLabel != null,
-            onTap: onTapVariant,
-            enabled: onTapVariant != null,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DateTimeRow extends StatelessWidget {
-  const _DateTimeRow({
-    required this.date,
-    required this.time,
-    required this.durationMinutes,
-    required this.onTapDate,
-    required this.onTapTime,
-    required this.onTapDuration,
-  });
-
-  final DateTime? date;
-  final TimeOfDay? time;
-  final int durationMinutes;
-  final VoidCallback onTapDate;
-  final VoidCallback onTapTime;
-  final VoidCallback onTapDuration;
-
-  @override
-  Widget build(BuildContext context) {
-    final dateLabel = date != null
-        ? DateFormat('EEE, MMM d').format(date!)
-        : 'Date';
-    final timeLabel = time != null ? time!.format(context) : 'Time';
-    final durH = durationMinutes ~/ 60;
-    final durM = durationMinutes % 60;
-    final durLabel = durH > 0
-        ? (durM > 0 ? '${durH}h ${durM}m' : '${durH}h')
-        : '${durM}m';
-
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: _ChipButton(
-            label: dateLabel,
-            icon: Iconsax.calendar_1,
-            filled: date != null,
-            onTap: onTapDate,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: _ChipButton(
-            label: timeLabel,
-            icon: Iconsax.clock,
-            filled: time != null,
-            onTap: onTapTime,
-          ),
-        ),
-        const SizedBox(width: 8),
-        _ChipButton(
-          label: durLabel,
-          icon: Iconsax.timer_1,
-          filled: false,
-          onTap: onTapDuration,
-        ),
-      ],
-    );
-  }
-}
-
-class _ChipButton extends StatelessWidget {
-  const _ChipButton({
-    required this.label,
-    required this.icon,
-    required this.filled,
-    required this.onTap,
-    this.enabled = true,
-    this.accentColor,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool filled;
-  final VoidCallback? onTap;
-  final bool enabled;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    const surface = Color(0xFFFEF7FF);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    const primary = Color(0xFF7328CE);
-
-    final effectiveAccent = accentColor ?? (filled ? primary : null);
-    final borderColor = effectiveAccent != null
-        ? effectiveAccent.withValues(alpha: filled ? 0.6 : 0.25)
-        : outline;
-    final iconColor = enabled
-        ? (effectiveAccent ?? (filled ? primary : muted))
-        : muted.withValues(alpha: 0.4);
-    final textColor = enabled
-        ? (filled ? onBg : muted)
-        : muted.withValues(alpha: 0.4);
-
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: enabled ? surface : surface.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 1.5),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (filled && effectiveAccent != null) ...[
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: effectiveAccent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 6),
-            ] else ...[
-              Icon(icon, size: 15, color: iconColor),
-              const SizedBox(width: 6),
-            ],
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: textColor,
-                      fontWeight:
-                          filled ? FontWeight.w600 : FontWeight.normal,
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _VenueChip extends StatelessWidget {
-  const _VenueChip({
-    required this.venueName,
-    required this.venueSpaceName,
-    required this.enabled,
-    required this.onTap,
-    required this.onClear,
-  });
-
-  final String? venueName;
-  final String? venueSpaceName;
-  final bool enabled;
-  final VoidCallback onTap;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    const surface = Color(0xFFFEF7FF);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    final hasVenue = venueName != null;
-    final borderColor = hasVenue ? const Color(0xFF7328CE).withValues(alpha: 0.4) : outline;
-
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Iconsax.location,
-              size: 15,
-              color: hasVenue
-                  ? const Color(0xFF7328CE)
-                  : muted.withValues(alpha: enabled ? 1 : 0.4),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                hasVenue
-                    ? [venueName, venueSpaceName].whereType<String>().join(' · ')
-                    : enabled
-                        ? 'Select venue (optional)'
-                        : 'Select a format first',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: hasVenue
-                          ? onBg
-                          : muted.withValues(alpha: enabled ? 1 : 0.4),
-                      fontWeight: hasVenue ? FontWeight.w600 : FontWeight.normal,
-                    ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (hasVenue)
-              GestureDetector(
-                onTap: onClear,
-                child: const Icon(Icons.close_rounded, size: 16, color: muted),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SkillChip extends StatelessWidget {
-  const _SkillChip({
-    required this.level,
-    required this.onTap,
-    required this.onClear,
-  });
-
-  final String? level;
-  final VoidCallback onTap;
-  final VoidCallback onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    const surface = Color(0xFFFEF7FF);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    const primary = Color(0xFF7328CE);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: level != null ? primary.withValues(alpha: 0.4) : outline,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Iconsax.medal,
-                size: 15,
-                color: level != null ? primary : muted),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                level ?? 'Any skill level',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: level != null ? onBg : muted,
-                      fontWeight:
-                          level != null ? FontWeight.w600 : FontWeight.normal,
-                    ),
-              ),
-            ),
-            if (level != null)
-              GestureDetector(
-                onTap: onClear,
-                child: const Icon(Icons.close_rounded, size: 16, color: muted),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PillRow extends StatelessWidget {
-  const _PillRow({
-    required this.options,
-    required this.selected,
-    required this.labels,
+class _SportChipsRow extends StatelessWidget {
+  const _SportChipsRow({
+    required this.sports,
+    required this.loaded,
+    required this.selectedSportId,
     required this.onSelect,
   });
 
-  final List<String> options;
-  final String selected;
-  final Map<String, String> labels;
-  final void Function(String) onSelect;
+  final List<Map<String, dynamic>> sports;
+  final bool loaded;
+  final String? selectedSportId;
+  final ValueChanged<Map<String, dynamic>> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF7328CE);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: options.map((o) {
-        final isSelected = o == selected;
-        return GestureDetector(
-          onTap: () => onSelect(o),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(
-              color: isSelected ? primary : Colors.transparent,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: isSelected ? primary : outline,
-                width: 1.5,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: primary.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      )
-                    ]
-                  : null,
-            ),
-            child: Text(
-              labels[o] ?? o,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: isSelected ? Colors.white : muted,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _ToggleRow extends StatelessWidget {
-  const _ToggleRow({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    const bgDark = Color(0xFFEDE6EE);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    const primary = Color(0xFF7328CE);
-
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: bgDark,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, size: 17, color: muted),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: onBg,
-                    ),
-              ),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: muted,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () => onChanged(!value),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 46,
-            height: 26,
-            decoration: BoxDecoration(
-              color: value ? primary : const Color(0xFFDDD6E4),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              alignment:
-                  value ? Alignment.centerRight : Alignment.centerLeft,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x22000000),
-                        blurRadius: 4,
-                        offset: Offset(0, 1),
-                      )
-                    ],
-                  ),
-                ),
-              ),
+    if (!loaded) {
+      return SizedBox(
+        height: 78,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: ComposerPalette.of(context).textMuted,
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _ComposerTextField extends StatelessWidget {
-  const _ComposerTextField({
-    required this.controller,
-    required this.hint,
-    required this.onChanged,
-    this.minLines = 1,
-    this.maxLines = 1,
-  });
-
-  final TextEditingController controller;
-  final String hint;
-  final ValueChanged<String> onChanged;
-  final int minLines;
-  final int maxLines;
-
-  @override
-  Widget build(BuildContext context) {
-    const surface = Color(0xFFFEF7FF);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      minLines: minLines,
-      maxLines: maxLines,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: onBg),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: muted),
-        filled: true,
-        fillColor: surface,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: outline, width: 1.5),
+      );
+    }
+    if (sports.isEmpty) {
+      return SizedBox(
+        height: 78,
+        child: Center(
+          child: Text(
+            'No sports available',
+            style: TextStyle(
+              fontSize: 13,
+              color: ComposerPalette.of(context).textSubtle,
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: Color(0xFF7328CE), width: 1.5),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: outline, width: 1.5),
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      );
+    }
+    return SizedBox(
+      height: 78,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        itemCount: sports.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final sport = sports[i];
+          final id = sport['id'] as String;
+          return _SportChip(
+            label: sport['name_en'] as String? ?? 'Sport',
+            emoji: sport['emoji'] as String?,
+            selected: id == selectedSportId,
+            onTap: () => onSelect(sport),
+          );
+        },
       ),
     );
   }
 }
 
-// ─── Picker Sheets ─────────────────────────────────────────────────────────────
+/// Sport tile chip.
+/// Pencil: radius 12, padding [16, 12], vertical, gap 8, alignItems/justify
+/// center, 28px Phosphor icon (we render the sport emoji) + label 13/500.
+/// Selected = cs.primary fill, white content. Unselected = bgGlass +
+/// borderGlass stroke, textMuted content.
+class _SportChip extends StatelessWidget {
+  const _SportChip({
+    required this.label,
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String? emoji;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final palette = ComposerPalette.of(context);
+    return Semantics(
+      label: 'Sport: $label, tap to select',
+      button: true,
+      selected: selected,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 76,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: selected ? cs.primary : palette.bgGlass,
+            borderRadius: BorderRadius.circular(12),
+            border: selected
+                ? null
+                : Border.all(color: palette.borderGlass, width: 1),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                emoji ?? '🎯',
+                style: const TextStyle(fontSize: 22),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: selected ? Colors.white : palette.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Picker sheets ────────────────────────────────────────────────────────────
 
 class _VariantPickerSheet extends StatelessWidget {
   const _VariantPickerSheet({
@@ -1289,33 +1052,36 @@ class _VariantPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.4,
-      minChildSize: 0.3,
-      maxChildSize: 0.7,
-      builder: (_, controller) => Column(
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const _SheetHandle(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text('Select Format',
-                style: Theme.of(context).textTheme.titleMedium),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              'Select Format',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
-          Expanded(
+          Flexible(
             child: variants.isEmpty
-                ? const Center(child: Text('No formats available'))
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: Text('No formats available')),
+                  )
                 : ListView.builder(
-                    controller: controller,
+                    shrinkWrap: true,
                     itemCount: variants.length,
                     itemBuilder: (_, i) {
                       final v = variants[i];
                       final players = v['required_players'] as int?;
                       return ListTile(
                         title: Text(v['name_en'] as String),
-                        subtitle: players != null
-                            ? Text('$players players')
-                            : null,
+                        subtitle:
+                            players != null ? Text('$players players') : null,
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
                           onSelect(v);
@@ -1344,27 +1110,30 @@ class _DurationPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.4,
-      minChildSize: 0.3,
-      maxChildSize: 0.6,
-      builder: (_, controller) => Column(
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const _SheetHandle(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text('Duration',
-                style: Theme.of(context).textTheme.titleMedium),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              'Duration',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
           ),
-          Expanded(
+          Flexible(
             child: ListView(
-              controller: controller,
+              shrinkWrap: true,
               children: _options.map((m) {
                 final h = m ~/ 60;
                 final min = m % 60;
                 final label = h > 0
-                    ? (min > 0 ? '$h h $min min' : '$h hour${h > 1 ? 's' : ''}')
+                    ? (min > 0
+                        ? '$h h $min min'
+                        : '$h hour${h > 1 ? 's' : ''}')
                     : '$m minutes';
                 return ListTile(
                   title: Text(label),
@@ -1383,54 +1152,172 @@ class _DurationPickerSheet extends StatelessWidget {
   }
 }
 
-class _VenuePickerSheet extends StatelessWidget {
+class _VenuePickerSheet extends StatefulWidget {
   const _VenuePickerSheet({
     required this.spaces,
     required this.onSelect,
+    required this.onClear,
+    required this.canClear,
   });
 
   final List<Map<String, dynamic>> spaces;
   final void Function(Map<String, dynamic>) onSelect;
+  final VoidCallback onClear;
+  final bool canClear;
+
+  @override
+  State<_VenuePickerSheet> createState() => _VenuePickerSheetState();
+}
+
+class _VenuePickerSheetState extends State<_VenuePickerSheet> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> _filtered() {
+    if (_query.isEmpty) return widget.spaces;
+    final q = _query.toLowerCase();
+    return widget.spaces.where((sp) {
+      final venue = sp['venue'] as Map<String, dynamic>? ?? const {};
+      final venueName = (venue['name_en'] as String? ?? '').toLowerCase();
+      final spaceName = (sp['name_en'] as String? ?? '').toLowerCase();
+      final area = (venue['area'] as String? ?? '').toLowerCase();
+      return venueName.contains(q) ||
+          spaceName.contains(q) ||
+          area.contains(q);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.85,
-      builder: (_, controller) => Column(
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final filtered = _filtered();
+    final hasAnySpaces = widget.spaces.isNotEmpty;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const _SheetHandle(),
+          // Header
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text('Select Venue',
-                style: Theme.of(context).textTheme.titleMedium),
-          ),
-          Expanded(
-            child: spaces.isEmpty
-                ? const Center(child: Text('No venues available for this format'))
-                : ListView.builder(
-                    controller: controller,
-                    itemCount: spaces.length,
-                    itemBuilder: (_, i) {
-                      final sp = spaces[i];
-                      final venue =
-                          sp['venue'] as Map<String, dynamic>? ?? {};
-                      final venueName = venue['name_en'] as String? ?? 'Venue';
-                      final area = venue['area'] as String?;
-                      final spaceName = sp['name_en'] as String?;
-                      return ListTile(
-                        leading: const Icon(Iconsax.location),
-                        title: Text('$venueName${spaceName != null ? ' · $spaceName' : ''}'),
-                        subtitle: area != null ? Text(area) : null,
-                        onTap: () {
-                          onSelect(sp);
-                          Navigator.pop(context);
-                        },
-                      );
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Select Venue',
+                  style: tt.titleMedium,
+                ),
+                const Spacer(),
+                if (widget.canClear)
+                  TextButton(
+                    onPressed: () {
+                      widget.onClear();
+                      Navigator.pop(context);
                     },
+                    child: Text(
+                      'Clear',
+                      style: TextStyle(color: cs.primary),
+                    ),
                   ),
+              ],
+            ),
+          ),
+
+          // Search — only shown when there are spaces to filter
+          if (hasAnySpaces)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (v) => setState(() => _query = v.trim()),
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  hintText: 'Search venues, spaces or area…',
+                  prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
+                  suffixIcon: _query.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(
+                            Icons.clear_rounded,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: cs.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: cs.primary, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+
+          // Results
+          Flexible(
+            child: !hasAnySpaces
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text('No venues available for this format'),
+                    ),
+                  )
+                : filtered.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text(
+                            'No matches',
+                            style: TextStyle(color: cs.onSurfaceVariant),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: filtered.length,
+                        itemBuilder: (_, i) {
+                          final sp = filtered[i];
+                          final venue =
+                              sp['venue'] as Map<String, dynamic>? ?? const {};
+                          final venueName =
+                              venue['name_en'] as String? ?? 'Venue';
+                          final area = venue['area'] as String?;
+                          final spaceName = sp['name_en'] as String?;
+                          return ListTile(
+                            leading: const Icon(Iconsax.location),
+                            title: Text(
+                              '$venueName'
+                              '${spaceName != null ? ' · $spaceName' : ''}',
+                            ),
+                            subtitle: area != null ? Text(area) : null,
+                            onTap: () {
+                              widget.onSelect(sp);
+                              Navigator.pop(context);
+                            },
+                          );
+                        },
+                      ),
           ),
         ],
       ),
@@ -1439,8 +1326,15 @@ class _VenuePickerSheet extends StatelessWidget {
 }
 
 class _SkillPickerSheet extends StatelessWidget {
-  const _SkillPickerSheet({required this.onSelect});
+  const _SkillPickerSheet({
+    required this.onSelect,
+    required this.onClear,
+    required this.canClear,
+  });
+
   final void Function(String) onSelect;
+  final VoidCallback onClear;
+  final bool canClear;
 
   static const _levels = [
     ('Beginner', '1–3', 'Just getting started'),
@@ -1451,28 +1345,48 @@ class _SkillPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.5,
-      minChildSize: 0.3,
-      maxChildSize: 0.65,
-      builder: (_, controller) => Column(
+    final cs = Theme.of(context).colorScheme;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const _SheetHandle(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-            child: Text('Skill Level',
-                style: Theme.of(context).textTheme.titleMedium),
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Skill Level',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const Spacer(),
+                if (canClear)
+                  TextButton(
+                    onPressed: () {
+                      onClear();
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      'Clear',
+                      style: TextStyle(color: cs.primary),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          Expanded(
+          Flexible(
             child: ListView(
-              controller: controller,
+              shrinkWrap: true,
               children: _levels.map((l) {
                 return ListTile(
                   title: Text(l.$1),
                   subtitle: Text(l.$3),
-                  trailing: Text(l.$2,
-                      style: Theme.of(context).textTheme.labelSmall),
+                  trailing: Text(
+                    l.$2,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                   onTap: () {
                     onSelect(l.$1);
                     Navigator.pop(context);
@@ -1487,22 +1401,133 @@ class _SkillPickerSheet extends StatelessWidget {
   }
 }
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
+/// Number stepper sheet shared between Min and Max players.
+class _PlayerCountPickerSheet extends StatefulWidget {
+  const _PlayerCountPickerSheet({
+    required this.title,
+    required this.initialValue,
+    required this.onSelect,
+  });
+
+  final String title;
+  final int initialValue;
+  final ValueChanged<int> onSelect;
+
+  @override
+  State<_PlayerCountPickerSheet> createState() =>
+      _PlayerCountPickerSheetState();
+}
+
+class _PlayerCountPickerSheetState extends State<_PlayerCountPickerSheet> {
+  late int _value;
+
+  @override
+  void initState() {
+    super.initState();
+    _value = widget.initialValue.clamp(1, 50);
+  }
+
+  void _bump(int delta) {
+    setState(() => _value = (_value + delta).clamp(1, 50));
+  }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _StepButton(
+                  icon: Icons.remove_rounded,
+                  onTap: _value > 1 ? () => _bump(-1) : null,
+                ),
+                Text(
+                  '$_value',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                _StepButton(
+                  icon: Icons.add_rounded,
+                  onTap: _value < 50 ? () => _bump(1) : null,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  widget.onSelect(_value);
+                  Navigator.pop(context);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: const StadiumBorder(),
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  const _StepButton({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final disabled = onTap == null;
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
-        width: 36,
-        height: 4,
+        width: 56,
+        height: 56,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-          borderRadius: BorderRadius.circular(2),
+          color: disabled
+              ? cs.surfaceContainerHighest
+              : cs.primary.withValues(alpha: 0.10),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 28,
+          color: disabled
+              ? cs.onSurfaceVariant.withValues(alpha: 0.5)
+              : cs.primary,
         ),
       ),
     );
   }
 }
+

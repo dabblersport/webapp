@@ -318,8 +318,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
                       const SizedBox(width: 8),
                       Text(
                         'Searching…',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
                           color: cs.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
@@ -514,18 +513,21 @@ class _SearchHeader extends StatelessWidget {
                               onChanged: onChanged,
                               onSubmitted: onSubmitted,
                               cursorColor: cs.primary,
-                              style: TextStyle(
-                                fontSize: 14.5,
+                              textAlignVertical: TextAlignVertical.center,
+                              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                 fontWeight: FontWeight.w500,
                                 color: cs.onSurface,
                               ),
                               decoration: InputDecoration(
-                                isCollapsed: true,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                filled: true,
+                                fillColor: cs.surface,
                                 border: InputBorder.none,
+                                focusedBorder: InputBorder.none,
                                 hintText: hint,
-                                hintStyle: TextStyle(
+                                hintStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
                                   color: cs.onSurfaceVariant,
-                                  fontSize: 14.5,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -544,14 +546,7 @@ class _SearchHeader extends StatelessWidget {
                                 child: Icon(Icons.close,
                                     size: 12, color: cs.onSurfaceVariant),
                               ),
-                            )
-                          else ...[
-                            Icon(Iconsax.microphone_copy,
-                                size: 18, color: cs.onSurfaceVariant),
-                            const SizedBox(width: 10),
-                            Icon(Iconsax.scan_copy,
-                                size: 18, color: cs.onSurfaceVariant),
-                          ],
+                            ),
                         ],
                       ),
                     );
@@ -588,10 +583,10 @@ class _TabStrip extends StatelessWidget {
         labelPadding: const EdgeInsets.symmetric(horizontal: 10),
         labelColor: cs.primary,
         unselectedLabelColor: cs.onSurfaceVariant,
-        labelStyle: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: -0.1),
+        labelStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            fontWeight: FontWeight.w600, letterSpacing: -0.1),
         unselectedLabelStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500),
         indicatorWeight: 2.5,
         indicatorColor: cs.primary,
         indicatorSize: TabBarIndicatorSize.label,
@@ -649,13 +644,13 @@ class _EmptyState extends StatelessWidget {
   ];
 
   static const _grammar = [
-    (tag: '@',  label: 'people',   accent: 'primary'),
-    (tag: '#',  label: 'hashtags', accent: 'pink'),
-    (tag: '/g', label: 'games',    accent: 'green'),
-    (tag: '/v', label: 'venues',   accent: 'cyan'),
-    (tag: '/p', label: 'posts',    accent: 'orange'),
-    (tag: '/c', label: 'comments', accent: 'amber'),
-    (tag: '/m', label: 'meetups',  accent: 'orange'),
+    (tag: '@',  label: 'people',   accent: 'primary', icon: Iconsax.user_copy),
+    (tag: '#',  label: 'hashtags', accent: 'pink',    icon: Iconsax.hashtag_copy),
+    (tag: '/g', label: 'games',    accent: 'green',   icon: Iconsax.game_copy),
+    (tag: '/v', label: 'venues',   accent: 'cyan',    icon: Iconsax.location_copy),
+    (tag: '/p', label: 'posts',    accent: 'orange',  icon: Iconsax.document_text_copy),
+    (tag: '/c', label: 'comments', accent: 'amber',   icon: Iconsax.message_copy),
+    (tag: '/m', label: 'meetups',  accent: 'orange',  icon: Iconsax.calendar_copy),
   ];
 
   Color _accent(String key, ColorScheme cs) {
@@ -687,9 +682,9 @@ class _EmptyState extends StatelessWidget {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: cs.primary,
             ),
-            child: const Text(
+            child: Text(
               'Clear',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -705,44 +700,29 @@ class _EmptyState extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  cs.primaryContainer.withValues(alpha: 0.35),
-                  cs.surface,
-                ],
+          child: Column(
+            children: const [
+              _QuickAccessCard(
+                icon: Iconsax.people_copy,
+                accentKey: 'green',
+                title: 'People nearby',
+                subtitle: '127 active in 5 km',
               ),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: cs.outlineVariant, width: 1.5),
-            ),
-            child: const Column(
-              children: [
-                _ShortcutRow(
-                  icon: Iconsax.people_copy,
-                  accentKey: 'primary',
-                  title: 'People nearby',
-                  subtitle: '127 active in 5 km',
-                  showDivider: false,
-                ),
-                _ShortcutRow(
-                  icon: Iconsax.game_copy,
-                  accentKey: 'green',
-                  title: 'Popular games',
-                  subtitle: 'Open spots today',
-                  showDivider: true,
-                ),
-                _ShortcutRow(
-                  icon: Iconsax.activity_copy,
-                  accentKey: 'pink',
-                  title: 'Trending posts',
-                  subtitle: 'What everyone’s on',
-                  showDivider: true,
-                ),
-              ],
-            ),
+              SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Iconsax.game_copy,
+                accentKey: 'primary',
+                title: 'Popular games',
+                subtitle: 'Open spots today',
+              ),
+              SizedBox(height: 8),
+              _QuickAccessCard(
+                icon: Iconsax.activity_copy,
+                accentKey: 'pink',
+                title: 'Trending posts',
+                subtitle: 'What everyone’s on',
+              ),
+            ],
           ),
         ),
         _SectionLabel(
@@ -759,10 +739,10 @@ class _EmptyState extends StatelessWidget {
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Text(
                   'View all',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700),
                 ),
                 Icon(Iconsax.arrow_right_3_copy, size: 14),
               ],
@@ -775,7 +755,13 @@ class _EmptyState extends StatelessWidget {
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cs.outlineVariant, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               children: List.generate(_trendingTags.length, (i) {
@@ -803,8 +789,7 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'SEARCH SMARTER',
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   fontWeight: FontWeight.w700,
                   color: cs.onSurfaceVariant,
                   letterSpacing: 0.4,
@@ -825,7 +810,7 @@ class _EmptyState extends StatelessWidget {
             children: _grammar.map((g) {
               final c = _accent(g.accent, cs);
               return _GrammarChip(
-                tag: g.tag,
+                icon: g.icon,
                 label: 'Search ${g.label}',
                 accent: c,
                 onTap: () => onTapGrammar(
@@ -843,8 +828,7 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'QUICK FILTERS',
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   fontWeight: FontWeight.w700,
                   color: cs.onSurfaceVariant,
                   letterSpacing: 0.4,
@@ -896,8 +880,7 @@ class _RecentChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             query,
-            style: TextStyle(
-              fontSize: 12.5,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
               fontWeight: FontWeight.w500,
               color: cs.onSurface,
             ),
@@ -911,19 +894,17 @@ class _RecentChip extends StatelessWidget {
   }
 }
 
-class _ShortcutRow extends StatelessWidget {
-  const _ShortcutRow({
+class _QuickAccessCard extends StatelessWidget {
+  const _QuickAccessCard({
     required this.icon,
     required this.accentKey,
     required this.title,
     required this.subtitle,
-    required this.showDivider,
   });
   final IconData icon;
   final String accentKey;
   final String title;
   final String subtitle;
-  final bool showDivider;
 
   Color _accent(ColorScheme cs) {
     switch (accentKey) {
@@ -942,51 +923,54 @@ class _ShortcutRow extends StatelessWidget {
     final accent = _accent(cs);
     return Container(
       decoration: BoxDecoration(
-        border: showDivider
-            ? Border(top: BorderSide(color: cs.outlineVariant))
-            : null,
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-                color: accent.withValues(alpha: 0.20), width: 1.5),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 24, color: accent),
           ),
-          child: Icon(icon, size: 18, color: accent),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface)),
-              const SizedBox(height: 1),
-              Text(subtitle,
-                  style: TextStyle(
-                      fontSize: 11.5, color: cs.onSurfaceVariant)),
-            ],
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: cs.onSurface)),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: cs.onSurfaceVariant)),
+              ],
+            ),
           ),
-        ),
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-                color: accent.withValues(alpha: 0.4), width: 1.5),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: cs.outlineVariant, width: 1),
+            ),
+            child: Icon(Iconsax.arrow_right_3_copy,
+                size: 16, color: cs.onSurfaceVariant),
           ),
-          child: Icon(Iconsax.arrow_right_3_copy, size: 14, color: accent),
-        ),
-      ]),
+        ]),
     );
   }
 }
@@ -1026,23 +1010,21 @@ class _TrendingRow extends StatelessWidget {
             width: 24,
             child: Text('$rank',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w800,
                     color: cs.onSurfaceVariant)),
           ),
           const SizedBox(width: 8),
           Container(
-            width: 38,
-            height: 38,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
               child: Text('#',
-                  style: TextStyle(
-                      fontSize: 18,
+                  style: Theme.of(context).textTheme.titleLarge!.copyWith(
                       fontWeight: FontWeight.w900,
                       color: accent,
                       height: 1)),
@@ -1054,22 +1036,20 @@ class _TrendingRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(tag,
-                    style: TextStyle(
-                        fontSize: 14,
+                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                         fontWeight: FontWeight.w700,
                         color: cs.onSurface)),
                 const SizedBox(height: 2),
                 Row(children: [
                   Text('$posts posts',
-                      style: TextStyle(
-                          fontSize: 11.5, color: cs.onSurfaceVariant)),
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                          color: cs.onSurfaceVariant)),
                   if (delta.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     const Icon(Icons.trending_up, size: 11, color: _kGreen),
                     const SizedBox(width: 2),
                     Text(delta,
-                        style: const TextStyle(
-                            fontSize: 11.5,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
                             fontWeight: FontWeight.w700,
                             color: _kGreen)),
                   ],
@@ -1085,12 +1065,12 @@ class _TrendingRow extends StatelessWidget {
 
 class _GrammarChip extends StatelessWidget {
   const _GrammarChip({
-    required this.tag,
+    required this.icon,
     required this.label,
     required this.accent,
     required this.onTap,
   });
-  final String tag;
+  final IconData icon;
   final String label;
   final Color accent;
   final VoidCallback onTap;
@@ -1101,41 +1081,21 @@ class _GrammarChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
+          border: Border.all(color: cs.outlineVariant, width: 1),
         ),
         child: Row(children: [
-          Container(
-            constraints: const BoxConstraints(minWidth: 32, minHeight: 24),
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                  color: accent.withValues(alpha: 0.30), width: 1.5),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              tag,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: accent,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: accent),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 fontWeight: FontWeight.w500,
-                color: cs.onSurfaceVariant,
+                color: cs.onSurface,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -1172,8 +1132,7 @@ class _FilterChip extends StatelessWidget {
         ],
         Text(
           label,
-          style: TextStyle(
-            fontSize: 12.5,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             color: fg,
           ),
@@ -1211,9 +1170,9 @@ class _SectionLabel extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
             color: cs.onSurface,
             letterSpacing: -0.1,
           ),
@@ -1222,8 +1181,7 @@ class _SectionLabel extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '· $count',
-            style: TextStyle(
-              fontSize: 11,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(
               fontWeight: FontWeight.w600,
               color: cs.onSurfaceVariant,
             ),
@@ -1251,10 +1209,10 @@ class _ViewAllButton extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         foregroundColor: cs.primary,
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: const [
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text(
           'View all',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700),
         ),
         Icon(Iconsax.arrow_right_3_copy, size: 14),
       ]),
@@ -1399,14 +1357,10 @@ class _AllTabSections extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: cs.primary.withValues(alpha: 0.08),
+              color: cs.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cs.primary.withValues(alpha: 0.30),
-                width: 1.5,
-              ),
             ),
             child: Row(children: [
               Icon(Iconsax.search_normal_copy, size: 16, color: cs.primary),
@@ -1414,8 +1368,7 @@ class _AllTabSections extends StatelessWidget {
               Expanded(
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(
-                      fontSize: 12.5,
+                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
                       color: cs.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
@@ -1425,7 +1378,7 @@ class _AllTabSections extends StatelessWidget {
                         text: '"$q"',
                         style: TextStyle(
                           color: cs.primary,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -1434,8 +1387,7 @@ class _AllTabSections extends StatelessWidget {
               ),
               Text(
                 '~$total',
-                style: TextStyle(
-                  fontSize: 11,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
                   fontWeight: FontWeight.w600,
                   color: cs.onSurfaceVariant,
                 ),
@@ -1477,7 +1429,7 @@ class _AllTabSections extends StatelessWidget {
                 onTap: () => onViewAll(SearchMode.hashtags)),
           ),
           SizedBox(
-            height: 64,
+            height: 72,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1598,12 +1550,12 @@ class _PersonCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 124,
+        width: 132,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant, width: 1),
         ),
         child: Column(
           children: [
@@ -1617,10 +1569,9 @@ class _PersonCard extends StatelessWidget {
               text: profile.displayName,
               query: query,
               maxLines: 1,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                fontWeight: FontWeight.w600,
+                color: cs.primary,
               ),
             ),
             const SizedBox(height: 2),
@@ -1629,21 +1580,20 @@ class _PersonCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style:
-                  TextStyle(fontSize: 10.5, color: cs.onSurfaceVariant),
+                  Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Container(
-              height: 26,
               alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
                 color: cs.primary,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'Follow',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: cs.onPrimary,
                 ),
               ),
@@ -1684,8 +1634,8 @@ class _PeopleList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: cs.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: cs.outlineVariant, width: 1.5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: cs.outlineVariant, width: 1),
             ),
             child: Row(children: [
               DSAvatar.small(
@@ -1702,14 +1652,12 @@ class _PeopleList extends StatelessWidget {
                       text: p.displayName,
                       query: query,
                       maxLines: 1,
-                      style: TextStyle(
-                          fontSize: 14,
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface),
                     ),
                     Text('@${p.username}',
-                        style: TextStyle(
-                            fontSize: 11.5,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
                             color: cs.onSurfaceVariant)),
                   ],
                 ),
@@ -1723,8 +1671,7 @@ class _PeopleList extends StatelessWidget {
                 ),
                 child: Text(
                   'Follow',
-                  style: TextStyle(
-                    fontSize: 11.5,
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
                     fontWeight: FontWeight.w700,
                     color: cs.onPrimary,
                   ),
@@ -1757,7 +1704,7 @@ class _HashtagChip extends StatelessWidget {
         queryParameters: {'postCount': '${hashtag.postCount}'},
       ),
       child: Container(
-        constraints: const BoxConstraints(minWidth: 130),
+        constraints: const BoxConstraints(minWidth: 130, maxWidth: 220),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -1777,8 +1724,7 @@ class _HashtagChip extends StatelessWidget {
               text: '#${hashtag.slug}',
               query: query,
               maxLines: 1,
-              style: const TextStyle(
-                fontSize: 14,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 fontWeight: FontWeight.w800,
                 color: _kPink,
               ),
@@ -1787,7 +1733,7 @@ class _HashtagChip extends StatelessWidget {
             Text(
               '${hashtag.postCount} posts',
               style:
-                  TextStyle(fontSize: 10.5, color: cs.onSurfaceVariant),
+                  Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant),
             ),
           ],
         ),
@@ -1867,8 +1813,8 @@ class _GameTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant, width: 1),
         ),
         child: Row(children: [
           Container(
@@ -1891,8 +1837,7 @@ class _GameTile extends StatelessWidget {
                   text: game.title,
                   query: query,
                   maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 13.5,
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
                   ),
@@ -1904,12 +1849,11 @@ class _GameTile extends StatelessWidget {
                         horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
                       color: sc.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       game.sport,
-                      style: TextStyle(
-                        fontSize: 9.5,
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
                         fontWeight: FontWeight.w700,
                         color: sc,
                       ),
@@ -1921,8 +1865,7 @@ class _GameTile extends StatelessWidget {
                       '${game.venueName ?? ''} · $whenText',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
                     ),
@@ -1937,14 +1880,13 @@ class _GameTile extends StatelessWidget {
             children: [
               Text(
                 spotsText,
-                style: TextStyle(
-                    fontSize: 13,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w800,
                     color: sc),
               ),
               Text('spots',
-                  style: TextStyle(
-                      fontSize: 10, color: cs.onSurfaceVariant)),
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: cs.onSurfaceVariant)),
             ],
           ),
         ]),
@@ -2047,8 +1989,7 @@ class _VenueCard extends StatelessWidget {
                         const SizedBox(width: 2),
                         Text(
                           '4.6',
-                          style: TextStyle(
-                            fontSize: 10,
+                          style: Theme.of(context).textTheme.labelSmall!.copyWith(
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface,
                           ),
@@ -2069,8 +2010,7 @@ class _VenueCard extends StatelessWidget {
                   text: venue.name,
                   query: query,
                   maxLines: 2,
-                  style: TextStyle(
-                    fontSize: 12.5,
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface,
                     height: 1.3,
@@ -2087,8 +2027,7 @@ class _VenueCard extends StatelessWidget {
                         venue.address!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontSize: 10.5,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
                             color: cs.onSurfaceVariant),
                       ),
                     ),
@@ -2150,18 +2089,23 @@ class _PostTile extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         decoration: BoxDecoration(
           color: cs.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant, width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: _kOrange.withValues(alpha: 0.15),
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _kOrange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: const Icon(Iconsax.message_copy,
-                    size: 14, color: _kOrange),
+                    size: 16, color: _kOrange),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -2170,16 +2114,14 @@ class _PostTile extends StatelessWidget {
                   children: [
                     Text(
                       post.authorDisplayName ?? 'Post',
-                      style: TextStyle(
-                          fontSize: 12.5,
+                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
                           fontWeight: FontWeight.w700,
                           color: cs.onSurface),
                     ),
                     if (post.createdAt != null)
                       Text(
                         _relativeTime(post.createdAt!),
-                        style: TextStyle(
-                            fontSize: 10.5,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
                             color: cs.onSurfaceVariant),
                       ),
                   ],
@@ -2193,8 +2135,7 @@ class _PostTile extends StatelessWidget {
               text: post.body,
               query: query,
               maxLines: 3,
-              style: TextStyle(
-                fontSize: 13,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: cs.onSurfaceVariant,
                 height: 1.5,
               ),
@@ -2265,8 +2206,8 @@ class _CommentTile extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: RichText(
                   text: TextSpan(
-                    style: TextStyle(
-                        fontSize: 11, color: cs.onSurfaceVariant),
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                        color: cs.onSurfaceVariant),
                     children: [
                       const TextSpan(text: 'on '),
                       TextSpan(
@@ -2285,8 +2226,7 @@ class _CommentTile extends StatelessWidget {
               text: comment.snippet,
               query: query,
               maxLines: 3,
-              style: TextStyle(
-                fontSize: 13,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: cs.onSurfaceVariant,
                 height: 1.5,
               ),
@@ -2340,16 +2280,17 @@ class _MeetupTile extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [_kOrange.withValues(alpha: 0.10), cs.surface],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: _kOrange.withValues(alpha: 0.30), width: 1.5),
+            color: _kOrange.withValues(alpha: 0.30), width: 1),
       ),
       child: Row(children: [
         Container(
           width: 44,
           height: 44,
+          alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: _kOrange.withValues(alpha: 0.20),
+            color: cs.surface.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(Iconsax.calendar_copy,
@@ -2364,8 +2305,7 @@ class _MeetupTile extends StatelessWidget {
                 text: meetup.title,
                 query: query,
                 maxLines: 1,
-                style: TextStyle(
-                    fontSize: 13.5,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                     fontWeight: FontWeight.w700,
                     color: cs.onSurface),
               ),
@@ -2373,23 +2313,22 @@ class _MeetupTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   _formatGameWhen(meetup.startAt!),
-                  style: TextStyle(
-                      fontSize: 11.5, color: cs.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: cs.onSurfaceVariant),
                 ),
               ],
             ],
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: _kOrange,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(8),
           ),
-          child: const Text(
+          child: Text(
             'RSVP',
-            style: TextStyle(
-              fontSize: 11.5,
+            style: Theme.of(context).textTheme.labelSmall!.copyWith(
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
@@ -2586,8 +2525,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                     children: [
                       Text(
                         'ALL ${info.label.toUpperCase()} FOR',
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: Theme.of(context).textTheme.labelSmall!.copyWith(
                           fontWeight: FontWeight.w600,
                           color: cs.onSurfaceVariant,
                           letterSpacing: 0.4,
@@ -2602,8 +2540,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                             '"${widget.query}"',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface,
                             ),
@@ -2647,8 +2584,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                           ),
                           child: Text(
                             k[0].toUpperCase() + k.substring(1),
-                            style: TextStyle(
-                              fontSize: 13,
+                            style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                               fontWeight: active
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -2671,7 +2607,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
               RichText(
                 text: TextSpan(
                   style:
-                      TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                      Theme.of(context).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant),
                   children: [
                     TextSpan(
                       text: '$count ',
@@ -2691,8 +2627,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                 const SizedBox(width: 4),
                 Text(
                   'Trending only',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: Theme.of(context).textTheme.bodySmall!.copyWith(
                     fontWeight: FontWeight.w700,
                     color: cs.primary,
                   ),
@@ -2796,16 +2731,15 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                           text: p.displayName,
                           query: q,
                           maxLines: 1,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                             fontWeight: FontWeight.w700,
                             color: cs.onSurface,
                           ),
                         ),
                         Text(
                           '@${p.username}',
-                          style: TextStyle(
-                              fontSize: 11.5, color: cs.onSurfaceVariant),
+                          style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                              color: cs.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -2819,8 +2753,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
                     ),
                     child: Text(
                       'Follow',
-                      style: TextStyle(
-                        fontSize: 11.5,
+                      style: Theme.of(context).textTheme.labelSmall!.copyWith(
                         fontWeight: FontWeight.w700,
                         color: cs.onPrimary,
                       ),
@@ -2920,8 +2853,7 @@ class _LoadMoreButton extends StatelessWidget {
       ),
       child: Text(
         'Load more',
-        style: TextStyle(
-          fontSize: 13,
+        style: Theme.of(context).textTheme.bodyMedium!.copyWith(
           fontWeight: FontWeight.w700,
           color: cs.primary,
         ),

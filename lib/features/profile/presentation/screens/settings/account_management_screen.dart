@@ -3,11 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/core/design_system/colors/profile_colors.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart';
-import '../../../../../features/profile/data/datasources/supabase_profile_datasource.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
@@ -43,6 +40,11 @@ class _AccountManagementScreenState
   bool _isNewPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   String? _errorMessage;
+
+  // True when the account already has an email/password credential. OAuth-only
+  // accounts (Google/Apple) have no password, so they get a "Set Password" flow
+  // that doesn't ask for a current password.
+  bool _hasPassword = true;
 
   final AuthService _authService = AuthService();
 
@@ -80,18 +82,38 @@ class _AccountManagementScreenState
     });
 
     try {
-      // Load real user email
-      final userEmail = ref.read(currentUserEmailProvider);
-      final currentEmail = userEmail ?? _authService.getCurrentUserEmail();
+      // Read the email from the live Supabase session so it always reflects
+      // the currently signed-in user. currentUserEmailProvider is a cached
+      // (non-reactive) Provider and can be stale after switching accounts.
+      final currentEmail = _authService.getCurrentUserEmail();
 
       // Load 2FA status (if available)
       final user = _authService.getCurrentUser();
       final factors = user?.factors ?? [];
       final has2FA = factors.isNotEmpty;
 
+      // Detect whether the account actually has a password set. An "email"
+      // identity alone is NOT sufficient — email-OTP accounts have an email
+      // identity but no password — so ask the DB directly. Fall back to the
+      // identity heuristic only if the RPC is unavailable.
+      bool hasPassword;
+      try {
+        final result = await Supabase.instance.client.rpc(
+          'current_user_has_password',
+        );
+        hasPassword = result == true;
+      } catch (_) {
+        final identities = user?.identities ?? [];
+        hasPassword = identities.any(
+          (identity) => identity.provider == 'email',
+        );
+      }
+
+      if (!mounted) return;
       setState(() {
         _emailController.text = currentEmail ?? '';
         _isTwoFactorEnabled = has2FA;
+        _hasPassword = hasPassword;
         _isLoading = false;
       });
     } catch (e) {
@@ -246,9 +268,7 @@ class _AccountManagementScreenState
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final profileAccent = ProfileColors.getPrimaryColor(
-      Theme.of(context).brightness,
-    );
+    final profileAccent = colorScheme.primary;
 
     return Container(
       width: double.infinity,
@@ -292,9 +312,7 @@ class _AccountManagementScreenState
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final profileAccent = ProfileColors.getPrimaryColor(
-      Theme.of(context).brightness,
-    );
+    final profileAccent = colorScheme.primary;
     return Card(
       elevation: 0,
       color: profileAccent.withValues(
@@ -357,9 +375,7 @@ class _AccountManagementScreenState
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    final profileAccent = ProfileColors.getPrimaryColor(
-      Theme.of(context).brightness,
-    );
+    final profileAccent = colorScheme.primary;
     return Card(
       elevation: 0,
       color: profileAccent.withValues(
@@ -372,43 +388,55 @@ class _AccountManagementScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Change Password',
+              _hasPassword ? 'Change Password' : 'Set Password',
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _currentPasswordController,
-              decoration: InputDecoration(
-                labelText: 'Current Password',
-                labelStyle: TextStyle(color: profileAccent),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: profileAccent, width: 2),
-                ),
-                prefixIcon: Icon(Icons.lock_outlined, color: profileAccent),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: profileAccent,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
+            if (!_hasPassword) ...[
+              const SizedBox(height: 8),
+              Text(
+                'You signed in with Google or Apple. Set a password to also '
+                'sign in with your email.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
-              obscureText: !_isPasswordVisible,
-            ),
+            ],
             const SizedBox(height: 16),
+            if (_hasPassword) ...[
+              TextField(
+                controller: _currentPasswordController,
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  labelStyle: TextStyle(color: profileAccent),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: profileAccent, width: 2),
+                  ),
+                  prefixIcon: Icon(Icons.lock_outlined, color: profileAccent),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordVisible
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: profileAccent,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordVisible = !_isPasswordVisible;
+                      });
+                    },
+                  ),
+                ),
+                obscureText: !_isPasswordVisible,
+              ),
+              const SizedBox(height: 16),
+            ],
             TextField(
               controller: _newPasswordController,
               decoration: InputDecoration(
@@ -479,7 +507,11 @@ class _AccountManagementScreenState
               ),
             FilledButton.icon(
               onPressed: _isSaving ? null : _changePassword,
-              label: Text(_isSaving ? 'Changing...' : 'Change Password'),
+              label: Text(
+                _isSaving
+                    ? (_hasPassword ? 'Changing...' : 'Setting...')
+                    : (_hasPassword ? 'Change Password' : 'Set Password'),
+              ),
               style: FilledButton.styleFrom(
                 backgroundColor: profileAccent,
                 foregroundColor: colorScheme.onPrimary,
@@ -566,19 +598,23 @@ class _AccountManagementScreenState
 
   Widget _buildDangerZone() {
     final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Colors.red.shade50,
-            Colors.orange.shade50.withValues(alpha: 0.3),
+            colorScheme.errorContainer.withValues(alpha: 0.6),
+            colorScheme.errorContainer.withValues(alpha: 0.25),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.red.shade200, width: 1),
+        border: Border.all(
+          color: colorScheme.error.withValues(alpha: 0.3),
+          width: 1,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -591,7 +627,10 @@ class _AccountManagementScreenState
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.red.shade100, Colors.red.shade200],
+                    colors: [
+                      colorScheme.error.withValues(alpha: 0.18),
+                      colorScheme.error.withValues(alpha: 0.30),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -599,7 +638,7 @@ class _AccountManagementScreenState
                 ),
                 child: Icon(
                   Icons.delete_forever_outlined,
-                  color: Colors.red.shade700,
+                  color: colorScheme.error,
                   size: 24,
                 ),
               ),
@@ -607,19 +646,19 @@ class _AccountManagementScreenState
                 'Delete Account',
                 style: textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: Colors.red.shade900,
+                  color: colorScheme.onErrorContainer,
                 ),
               ),
               subtitle: Text(
                 'Permanently delete your account and all data',
                 style: textTheme.bodySmall?.copyWith(
-                  color: Colors.red.shade700,
+                  color: colorScheme.error,
                 ),
               ),
               trailing: Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: Colors.red.shade700,
+                color: colorScheme.error,
               ),
               onTap: _showDeleteAccountDialog,
             ),
@@ -677,11 +716,11 @@ class _AccountManagementScreenState
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+          SnackBar(
+            content: const Text(
               'Email update request sent. Please check your new email for verification.',
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: context.successColor,
           ),
         );
       }
@@ -695,7 +734,7 @@ class _AccountManagementScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update email: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -712,8 +751,10 @@ class _AccountManagementScreenState
       _errorMessage = null;
     });
 
-    // Validation
-    if (currentPassword.isEmpty) {
+    // Validation. The current password is only required when the account
+    // already has one (email/password users); OAuth-only users are setting a
+    // password for the first time.
+    if (_hasPassword && currentPassword.isEmpty) {
       setState(() {
         _errorMessage = 'password: Please enter your current password';
       });
@@ -741,7 +782,7 @@ class _AccountManagementScreenState
       return;
     }
 
-    if (currentPassword == newPassword) {
+    if (_hasPassword && currentPassword == newPassword) {
       setState(() {
         _errorMessage =
             'password: New password must be different from current password';
@@ -755,37 +796,47 @@ class _AccountManagementScreenState
     });
 
     try {
-      // Verify current password by attempting to re-authenticate
       final currentEmail = _authService.getCurrentUserEmail();
       if (currentEmail == null) {
         throw Exception('User not authenticated');
       }
 
-      // Re-authenticate with current password to verify
-      try {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: currentEmail,
-          password: currentPassword,
-        );
-      } catch (e) {
-        throw Exception('Current password is incorrect');
+      // For existing email/password accounts, verify the current password by
+      // re-authenticating before changing it. OAuth-only accounts skip this —
+      // they have an active session and no password to verify.
+      if (_hasPassword) {
+        try {
+          await Supabase.instance.client.auth.signInWithPassword(
+            email: currentEmail,
+            password: currentPassword,
+          );
+        } catch (e) {
+          throw Exception('Current password is incorrect');
+        }
       }
 
-      // Update password
+      // Update (or set) the password.
       await _authService.updatePassword(newPassword);
 
       if (mounted) {
+        final wasSettingPassword = !_hasPassword;
         setState(() {
           _isSaving = false;
+          // The account now has a password, so future visits show "Change".
+          _hasPassword = true;
           _currentPasswordController.clear();
           _newPasswordController.clear();
           _confirmPasswordController.clear();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password updated successfully'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              wasSettingPassword
+                  ? 'Password set. You can now sign in with your email and password.'
+                  : 'Password updated successfully',
+            ),
+            backgroundColor: context.successColor,
           ),
         );
       }
@@ -800,7 +851,7 @@ class _AccountManagementScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to change password: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -845,9 +896,9 @@ class _AccountManagementScreenState
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Two-factor authentication disabled'),
-              backgroundColor: Colors.green,
+            SnackBar(
+              content: const Text('Two-factor authentication disabled'),
+              backgroundColor: context.successColor,
             ),
           );
         }
@@ -861,7 +912,7 @@ class _AccountManagementScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to update 2FA: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -913,7 +964,6 @@ class _AccountManagementScreenState
   }
 
   void _showDeleteAccountDialog() {
-    final passwordController = TextEditingController();
     final confirmTextController = TextEditingController();
     bool isDeleting = false;
 
@@ -933,17 +983,6 @@ class _AccountManagementScreenState
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter your password to confirm',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outlined),
-                  ),
-                  obscureText: true,
-                  enabled: !isDeleting,
-                ),
-                const SizedBox(height: 12),
-                TextField(
                   controller: confirmTextController,
                   decoration: const InputDecoration(
                     labelText: 'Type "DELETE" to confirm',
@@ -960,7 +999,6 @@ class _AccountManagementScreenState
               onPressed: isDeleting
                   ? null
                   : () {
-                      passwordController.dispose();
                       confirmTextController.dispose();
                       Navigator.of(context).pop();
                     },
@@ -970,21 +1008,11 @@ class _AccountManagementScreenState
               onPressed: isDeleting
                   ? null
                   : () async {
-                      if (passwordController.text.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please enter your password'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                        return;
-                      }
-
                       if (confirmTextController.text != 'DELETE') {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Please type "DELETE" to confirm'),
-                            backgroundColor: Colors.red,
+                          SnackBar(
+                            content: const Text('Please type "DELETE" to confirm'),
+                            backgroundColor: Theme.of(context).colorScheme.error,
                           ),
                         );
                         return;
@@ -995,10 +1023,9 @@ class _AccountManagementScreenState
                       });
 
                       try {
-                        await _deleteAccount(passwordController.text);
+                        await _deleteAccount();
 
                         if (context.mounted) {
-                          passwordController.dispose();
                           confirmTextController.dispose();
                           Navigator.of(context).pop();
                         }
@@ -1011,13 +1038,15 @@ class _AccountManagementScreenState
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Failed to delete account: $e'),
-                              backgroundColor: Colors.red,
+                              backgroundColor: Theme.of(context).colorScheme.error,
                             ),
                           );
                         }
                       }
                     },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
               child: isDeleting
                   ? const SizedBox(
                       width: 16,
@@ -1032,57 +1061,28 @@ class _AccountManagementScreenState
     );
   }
 
-  Future<void> _deleteAccount(String password) async {
+  Future<void> _deleteAccount() async {
     try {
-      // Verify password by re-authenticating
-      final currentEmail = _authService.getCurrentUserEmail();
-      if (currentEmail == null) {
-        throw Exception('User not authenticated');
-      }
+      // Permanently delete the auth user. Deleting the auth.users row cascades
+      // to all related public/auth data via ON DELETE CASCADE foreign keys.
+      // The RPC runs server-side (SECURITY DEFINER) and is scoped to the
+      // caller's own account (auth.uid()).
+      await Supabase.instance.client.rpc('delete_my_account');
 
-      // Re-authenticate to verify password
+      // The account no longer exists — clear the local session and leave.
       try {
-        await Supabase.instance.client.auth.signInWithPassword(
-          email: currentEmail,
-          password: password,
-        );
-      } catch (e) {
-        throw Exception('Incorrect password');
+        await _authService.signOut();
+      } catch (_) {
+        // Session is already invalid after deletion; ignore.
       }
-
-      // Get user ID
-      final userId = _authService.getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User ID not found');
-      }
-
-      // Delete profile data first (cascading deletes should handle related data)
-      final profileDataSource = SupabaseProfileDataSource(
-        Supabase.instance.client,
-      );
-
-      try {
-        await profileDataSource.deleteProfile(userId);
-      } catch (e) {
-        // Log but continue with auth deletion
-      }
-
-      // Delete auth user (requires admin API or RPC function)
-      // Note: Direct user deletion requires admin privileges
-      // For now, we'll sign out and show a message
-      await _authService.signOut();
 
       if (mounted) {
-        // Navigate to login screen
-        context.go('/login');
+        context.go('/auth-welcome');
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Account deletion request submitted. Your account will be deleted after verification.',
-            ),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 5),
+          SnackBar(
+            content: const Text('Your account has been permanently deleted.'),
+            backgroundColor: context.successColor,
           ),
         );
       }

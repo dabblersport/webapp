@@ -138,7 +138,12 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 0),
                       child: Column(
-                        children: _personaOptions.map((opt) {
+                        children: _personaOptions
+                            // Temporarily hidden: 'organise' and 'host'.
+                            // Keep entries in _personaOptions so re-enabling
+                            // is a one-line revert.
+                            .where((o) => o.value != 'organise' && o.value != 'host')
+                            .map((opt) {
                           final on = _selectedPersona == opt.value;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),

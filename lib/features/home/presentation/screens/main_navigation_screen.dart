@@ -22,6 +22,18 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// Shared between MainNavigationScreen (nav bar) and ExploreScreen (tab controller).
 final sportsSubTabProvider = StateProvider<int>((ref) => 1); // default Venues
 
+/// The four GoRouter shell branches, in declaration order. [shellIndex] is the
+/// index passed to `StatefulNavigationShell.goBranch` — named here so branch
+/// numbers aren't scattered as magic integers across the nav logic.
+enum NavigationBranch {
+  home,
+  community,
+  venues,
+  games;
+
+  int get shellIndex => index;
+}
+
 /// Main navigation screen with bottom nav bar
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key, required this.navigationShell});
@@ -199,21 +211,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  // Branches: 0=Home, 1=Community, 2=Venues, 3=Games
-  bool get _isOnSportsPage => _currentIndex == 2 || _currentIndex == 3;
+  bool get _isOnSportsPage =>
+      _currentIndex == NavigationBranch.venues.shellIndex ||
+      _currentIndex == NavigationBranch.games.shellIndex;
+
+  void _goBranch(NavigationBranch branch) =>
+      widget.navigationShell.goBranch(branch.shellIndex);
 
   void _onItemTapped(int index) {
     if (_isOnSportsPage) {
       // Sports-mode nav: [Home(0), Venues(1), Games(2), Create(3)]
       switch (index) {
         case 0: // Home icon → go back to feeds
-          widget.navigationShell.goBranch(0);
+          _goBranch(NavigationBranch.home);
           return;
-        case 1: // Venues → branch 2
-          widget.navigationShell.goBranch(2);
+        case 1: // Venues
+          _goBranch(NavigationBranch.venues);
           return;
-        case 2: // Games → branch 3
-          widget.navigationShell.goBranch(3);
+        case 2: // Games
+          _goBranch(NavigationBranch.games);
           return;
         case 3: // Create
           _showCreateMenu();
@@ -222,14 +238,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     } else {
       // Home-mode nav: [Feeds(0), Community(1), Sports icon(2), Create(3)]
       switch (index) {
-        case 0: // Feeds → branch 0
-          widget.navigationShell.goBranch(0);
+        case 0: // Feeds
+          _goBranch(NavigationBranch.home);
           return;
-        case 1: // Community → branch 1
-          widget.navigationShell.goBranch(1);
+        case 1: // Community
+          _goBranch(NavigationBranch.community);
           return;
-        case 2: // Sports icon → Venues by default (branch 2)
-          widget.navigationShell.goBranch(2);
+        case 2: // Sports icon → Venues by default
+          _goBranch(NavigationBranch.venues);
           return;
         case 3: // Create
           _showCreateMenu();
@@ -239,6 +255,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   Future<void> _showCreateMenu() async {
+    // Toggle: if the sheet is already open, tapping the button closes it.
+    if (_createMenuOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+      return;
+    }
+
     setState(() => _createMenuOpen = true);
 
     // Capture router BEFORE the modal opens to avoid stale context after
@@ -1065,7 +1087,8 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
     return [
       (icon: Iconsax.edit_2_copy, label: l10n.nav_create_post, action: _CreateAction.post),
       (icon: Iconsax.game_copy, label: l10n.nav_create_game, action: _CreateAction.game),
-      (icon: Iconsax.people_copy, label: l10n.nav_create_meetup, action: _CreateAction.meetup),
+      // Hidden for now — kept for future re-enable.
+      // (icon: Iconsax.people_copy, label: l10n.nav_create_meetup, action: _CreateAction.meetup),
     ];
   }
 
@@ -1093,10 +1116,9 @@ class _CreateActionSheetState extends State<_CreateActionSheet>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
     final actions = _buildActions(context);
-    final glassBase = isDark
-        ? Colors.black.withValues(alpha: 1.55)
-        : Colors.white.withValues(alpha: 0.72);
+    final glassBase = colorScheme.surface;
     final glassBorder = isDark
         ? Colors.white.withValues(alpha: 0.12)
         : Colors.white.withValues(alpha: 0.80);

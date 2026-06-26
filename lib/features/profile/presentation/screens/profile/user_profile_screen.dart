@@ -256,7 +256,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 700),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
                       child: _buildTabbedPostsSection(context),
                     ),
                   ),
@@ -1099,9 +1099,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: SizedBox(
-            height: 40,
-            child: (myProfileId == null || targetProfileId == null)
+          child: (myProfileId == null || targetProfileId == null)
                 ? OutlinedButton.icon(
                     onPressed: null,
                     icon: const SizedBox(
@@ -1111,7 +1109,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                     ),
                     label: Text(AppLocalizations.of(context).user_profile_btn_loading),
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(40),
+                      minimumSize: const Size.fromHeight(44),
                       textStyle: buttonTextStyle,
                       foregroundColor: colorScheme.onSurface,
                       side: BorderSide(
@@ -1127,7 +1125,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                     myProfileId: myProfileId,
                     targetProfileId: targetProfileId,
                   ),
-          ),
         ),
       ],
     );
@@ -1139,7 +1136,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     required String targetProfileId,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final buttonTextStyle = Theme.of(context).textTheme.labelMedium;
+    final buttonTextStyle = Theme.of(context)
+        .textTheme
+        .labelLarge
+        ?.copyWith(fontWeight: FontWeight.w600);
 
     final isBlockedAsync = ref.watch(
       isBlockedProvider((
@@ -1156,9 +1156,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       return OutlinedButton.icon(
         onPressed: () => _unblockUser(context),
         icon: const Icon(Iconsax.slash_copy),
-        label: Text(AppLocalizations.of(context).user_profile_btn_unblock),
+        label: Flexible(
+          child: Text(
+            AppLocalizations.of(context).user_profile_btn_unblock,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(40),
+          minimumSize: const Size.fromHeight(44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           textStyle: buttonTextStyle,
           foregroundColor: colorScheme.error,
           side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
@@ -1189,9 +1196,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           currentlyFollowing: true,
         ),
         icon: const Icon(Iconsax.user_tick_copy),
-        label: Text(AppLocalizations.of(context).user_profile_btn_following),
+        label: Flexible(
+          child: Text(
+            AppLocalizations.of(context).user_profile_btn_following,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(40),
+          // minimumSize: const Size.fromHeight(44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           textStyle: buttonTextStyle,
           foregroundColor: colorScheme.onSurface,
           side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
@@ -1210,9 +1224,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         currentlyFollowing: false,
       ),
       icon: const Icon(Iconsax.user_add_copy),
-      label: Text(AppLocalizations.of(context).user_profile_btn_follow),
+      label: Flexible(
+        child: Text(
+          AppLocalizations.of(context).user_profile_btn_follow,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(40),
+        // minimumSize: const Size.fromHeight(44),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         textStyle: buttonTextStyle,
         foregroundColor: colorScheme.onSurface,
         side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
@@ -1233,6 +1254,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       children: [
         TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           labelColor: colorScheme.onSurface,
           unselectedLabelColor: colorScheme.onSurfaceVariant,
           indicatorColor: colorScheme.primary,

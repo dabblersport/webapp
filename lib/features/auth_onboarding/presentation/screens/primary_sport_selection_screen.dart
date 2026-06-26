@@ -134,8 +134,9 @@ class _PrimarySportSelectionScreenState
 
                   if (sports.length == 1 && _selectedSportId == null) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted)
+                      if (mounted) {
                         setState(() => _selectedSportId = sports.first.id);
+                      }
                     });
                   }
 

@@ -117,44 +117,38 @@ class TokenBasedTheme {
       inversePrimary: tokens.titleOnSec,
     );
 
-    // Text theme using Roboto from tokens
+    // Text theme — Roboto on every platform.
     final baseTextTheme = isLight
         ? ThemeData.light().textTheme
         : ThemeData.dark().textTheme;
 
+    TextStyle ts(TextStyle base) => base;
+
     final textTheme = GoogleFonts.robotoTextTheme(baseTextTheme).copyWith(
       // Display styles - from Figma AppTypography
-      displayLarge: AppTypography.displayLarge.copyWith(color: tokens.neutral),
-      displayMedium: AppTypography.displayMedium.copyWith(
-        color: tokens.neutral,
-      ),
-      displaySmall: AppTypography.displaySmall.copyWith(color: tokens.neutral),
+      displayLarge: ts(AppTypography.displayLarge).copyWith(color: tokens.neutral),
+      displayMedium: ts(AppTypography.displayMedium).copyWith(color: tokens.neutral),
+      displaySmall: ts(AppTypography.displaySmall).copyWith(color: tokens.neutral),
 
       // Headline styles - from Figma AppTypography
-      headlineLarge: AppTypography.headlineLarge.copyWith(
-        color: tokens.neutral,
-      ),
-      headlineMedium: AppTypography.headlineMedium.copyWith(
-        color: tokens.neutral,
-      ),
-      headlineSmall: AppTypography.headlineSmall.copyWith(
-        color: tokens.neutral,
-      ),
+      headlineLarge: ts(AppTypography.headlineLarge).copyWith(color: tokens.neutral),
+      headlineMedium: ts(AppTypography.headlineMedium).copyWith(color: tokens.neutral),
+      headlineSmall: ts(AppTypography.headlineSmall).copyWith(color: tokens.neutral),
 
       // Title styles - from Figma AppTypography
-      titleLarge: AppTypography.titleLarge.copyWith(color: tokens.neutral),
-      titleMedium: AppTypography.titleMedium.copyWith(color: tokens.neutral),
-      titleSmall: AppTypography.titleSmall.copyWith(color: tokens.neutral),
+      titleLarge: ts(AppTypography.titleLarge).copyWith(color: tokens.neutral),
+      titleMedium: ts(AppTypography.titleMedium).copyWith(color: tokens.neutral),
+      titleSmall: ts(AppTypography.titleSmall).copyWith(color: tokens.neutral),
 
       // Body styles - from Figma AppTypography
-      bodyLarge: AppTypography.bodyLarge.copyWith(color: tokens.neutral),
-      bodyMedium: AppTypography.bodyMedium.copyWith(color: tokens.neutral),
-      bodySmall: AppTypography.bodySmall.copyWith(color: tokens.neutral),
+      bodyLarge: ts(AppTypography.bodyLarge).copyWith(color: tokens.neutral),
+      bodyMedium: ts(AppTypography.bodyMedium).copyWith(color: tokens.neutral),
+      bodySmall: ts(AppTypography.bodySmall).copyWith(color: tokens.neutral),
 
       // Label styles - from Figma AppTypography
-      labelLarge: AppTypography.labelLarge.copyWith(color: tokens.neutral),
-      labelMedium: AppTypography.labelMedium.copyWith(color: tokens.neutral),
-      labelSmall: AppTypography.labelSmall.copyWith(color: tokens.neutral),
+      labelLarge: ts(AppTypography.labelLarge).copyWith(color: tokens.neutral),
+      labelMedium: ts(AppTypography.labelMedium).copyWith(color: tokens.neutral),
+      labelSmall: ts(AppTypography.labelSmall).copyWith(color: tokens.neutral),
     );
 
     // Shape system using tokens
@@ -265,10 +259,10 @@ class TokenBasedTheme {
         backgroundColor: tokens.btnBase,
         selectedColor: tokens.button,
         labelStyle: GoogleFonts.roboto(
-          fontSize: DesignTokens.fontSizeXs,
-          fontWeight: DesignTokens.fontWeightMedium,
-          color: tokens.neutralOpacity,
-        ),
+                fontSize: DesignTokens.fontSizeXs,
+                fontWeight: DesignTokens.fontWeightMedium,
+                color: tokens.neutralOpacity,
+              ),
         padding: EdgeInsets.symmetric(
           horizontal: DesignTokens.spacingSm,
           vertical: DesignTokens.spacingXs,
@@ -315,7 +309,9 @@ class TokenBasedTheme {
         shape: shapeMedium,
         backgroundColor: tokens.card,
         contentTextStyle: textTheme.bodyMedium,
-        behavior: SnackBarBehavior.floating,
+        // Fixed (docked) avoids the "Floating SnackBar presented off screen"
+        // error on screens with a bottom nav / footer.
+        behavior: SnackBarBehavior.fixed,
       ),
     );
   }

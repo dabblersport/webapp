@@ -72,13 +72,7 @@ class _PrivacyPolicyScreenState extends ConsumerState<PrivacyPolicyScreen>
           onPressed: () => context.pop(),
         ),
         elevation: _isScrolled ? 2 : 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _sharePolicy,
-            tooltip: 'Share Policy',
-          ),
-        ],
+        // Share action hidden until share is implemented.
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -343,28 +337,18 @@ class _PrivacyPolicyScreenState extends ConsumerState<PrivacyPolicyScreen>
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _contactSupport,
-                    child: const Text('Contact Us'),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _managePrivacySettings,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue.shade700,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _managePrivacySettings,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade700,
-                    ),
-                    child: const Text(
-                      'Privacy Settings',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
+                child: const Text(
+                  'Privacy Settings',
+                  style: TextStyle(color: Colors.white),
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -372,19 +356,6 @@ class _PrivacyPolicyScreenState extends ConsumerState<PrivacyPolicyScreen>
     );
   }
 
-  void _sharePolicy() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share functionality coming soon')),
-    );
-  }
-
-  void _contactSupport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Contact support functionality coming soon'),
-      ),
-    );
-  }
 
   void _managePrivacySettings() {
     context.push('/settings/privacy');

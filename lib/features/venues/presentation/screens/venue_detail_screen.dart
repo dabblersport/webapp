@@ -227,8 +227,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       children: [
         Text(
           venue.name,
-          style: TextStyle(
-            fontSize: 22,
+          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
             fontWeight: FontWeight.w900,
             color: cs.onSurface,
             letterSpacing: -0.5,
@@ -274,7 +273,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           const SizedBox(width: 5),
           Text(
             isOpen ? 'Open Now' : 'Closed',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color),
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: color),
           ),
         ],
       ),
@@ -295,7 +294,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         children: [
           Icon(icon, size: 12, color: cs.onSurfaceVariant),
           const SizedBox(width: 5),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+          Text(label, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -316,17 +315,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                   children: [
                     Icon(Iconsax.star_copy, size: 13, color: cs.onSurfaceVariant),
                     const SizedBox(width: 6),
-                    Text('RATING', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+                    Text('RATING', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   venue.totalRatings == 0 ? '—' : venue.rating.toStringAsFixed(1),
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: cs.onSurface),
+                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface),
                 ),
                 Text(
                   venue.totalRatings == 0 ? 'No ratings yet' : '${venue.totalRatings} reviews',
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                  style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -342,15 +341,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                     children: [
                       Icon(Iconsax.calendar_copy, size: 13, color: cs.primary),
                       const SizedBox(width: 6),
-                      Text('SPACES', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.primary, letterSpacing: 0.5)),
+                      Text('SPACES', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.primary, letterSpacing: 0.5)),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     venue.supportedSports.isNotEmpty ? '${venue.supportedSports.length}' : '—',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: cs.primary),
+                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.primary),
                   ),
-                  Text('Bookable areas', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  Text('Bookable areas', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -440,7 +439,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                           children: [
                             Icon(Iconsax.map_copy, size: 12, color: cs.primary),
                             const SizedBox(width: 4),
-                            Text('Open Map', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.primary)),
+                            Text('Open Map', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.primary)),
                           ],
                         ),
                       ),
@@ -469,11 +468,11 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('LOCATION', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+                      Text('LOCATION', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
                       const SizedBox(height: 3),
                       Text(
                         address.isEmpty ? 'Address unavailable' : address,
-                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w500, color: cs.onSurface, height: 1.5),
+                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface, height: 1.5),
                       ),
                     ],
                   ),
@@ -508,7 +507,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('CONTACT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+          Text('CONTACT', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           ...rows.asMap().entries.map((e) {
             final i = e.key;
@@ -532,7 +531,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       Expanded(
                         child: Text(
                           row.label,
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: row.onTap != null ? row.color : cs.onSurface),
+                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w600, color: row.onTap != null ? row.color : cs.onSurface),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -575,7 +574,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 children: [
                   Icon(_amenityIcon(a), size: 14, color: cs.onSurfaceVariant),
                   const SizedBox(width: 6),
-                  Text(a, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: cs.onSurface)),
+                  Text(a, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface)),
                 ],
               ),
             );
@@ -616,7 +615,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         _card(
           child: Text(
             venue.description,
-            style: TextStyle(fontSize: 14, height: 1.7, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(height: 1.7, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
           ),
         ),
       ],
@@ -642,7 +641,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 children: [
                   Text(
                     avg.toStringAsFixed(1),
-                    style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: cs.onSurface, letterSpacing: -2, height: 1),
+                    style: Theme.of(context).textTheme.displayLarge!.copyWith(fontWeight: FontWeight.w900, color: cs.onSurface, letterSpacing: -2, height: 1),
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -657,7 +656,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                     )),
                   ),
                   const SizedBox(height: 4),
-                  Text('${venue.totalRatings} reviews', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  Text('${venue.totalRatings} reviews', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
               const SizedBox(width: 16),
@@ -669,7 +668,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 3),
                       child: Row(
                         children: [
-                          Text('$n', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+                          Text('$n', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
                           const SizedBox(width: 4),
                           const Icon(Icons.star_rounded, size: 10, color: Color(0xFFF4C430)),
                           const SizedBox(width: 6),
@@ -703,10 +702,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
+        Text(title, style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
         if (sub != null) ...[
           const SizedBox(width: 6),
-          Text('· $sub', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+          Text('· $sub', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
         ],
       ],
     );
@@ -760,14 +759,14 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(meta.label, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
-                      Text('Sport Space', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+                      Text(meta.label, style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
+                      Text('Sport Space', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
                 Text(
                   venue.pricePerHour == 0 ? 'Free' : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: venue.pricePerHour == 0 ? _green : meta.color),
+                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w800, color: venue.pricePerHour == 0 ? _green : meta.color),
                 ),
               ],
             ),
@@ -790,7 +789,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             //       backgroundColor: cs.primary,
             //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             //     ),
-            //     child: const Text('Book Space', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+            //     child: const Text('Book Space', style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700)),
             //   ),
             // ),
           ],
@@ -814,8 +813,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           children: [
             Icon(icon, size: 18, color: cs.primary),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.onSurface)),
-            Text(label, style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+            Text(value, style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface)),
+            Text(label, style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
           ],
         ),
       ),
@@ -896,7 +895,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 children: [
                   const Icon(Iconsax.danger_copy, size: 56, color: Color(0xFFFF3376)),
                   const SizedBox(height: 16),
-                  Text('Failed to load venue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface), textAlign: TextAlign.center),
+                  Text('Failed to load venue', style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface), textAlign: TextAlign.center),
                   const SizedBox(height: 8),
                   Text('Please check your connection and try again.', style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
                   const SizedBox(height: 24),
@@ -1100,7 +1099,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                     const SizedBox(height: 3),
                     Text(
                       widget.venueName,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.4),
+                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.4),
                     ),
                   ],
                 ),
@@ -1149,8 +1148,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                 children: [
                   _glassBtn(icon: Iconsax.arrow_left_copy, onTap: widget.onBack, primary: primary),
                   const Spacer(),
-                  _glassBtn(icon: Iconsax.share_copy, onTap: widget.onShare, primary: primary),
-                  const SizedBox(width: 8),
+                  // Share button hidden until sharing is implemented.
                   _glassBtn(
                     icon: widget.isFavorited ? Iconsax.bookmark_2_copy : Iconsax.bookmark_copy,
                     onTap: widget.favoriteBusy ? null : widget.onFavorite,
@@ -1237,7 +1235,7 @@ class _SpaceCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(999)),
-                        child: const Text('Outdoor', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white)),
+                        child: Text('Outdoor', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white)),
                       ),
                     ),
                     Positioned(
@@ -1245,7 +1243,7 @@ class _SpaceCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: const Color(0xE5F4C430), borderRadius: BorderRadius.circular(999)),
-                        child: const Text('⚡ Lights', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+                        child: Text('⚡ Lights', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: Color(0xFF333333))),
                       ),
                     ),
                   ],
@@ -1258,9 +1256,9 @@ class _SpaceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(meta.label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: cs.onSurface, height: 1.3)),
+                  Text(meta.label, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface, height: 1.3)),
                   const SizedBox(height: 4),
-                  Text('Court / Field', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+                  Text('Court / Field', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1269,12 +1267,12 @@ class _SpaceCard extends StatelessWidget {
                         children: [
                           Icon(Icons.people_outline_rounded, size: 13, color: cs.onSurfaceVariant),
                           const SizedBox(width: 3),
-                          Text('10', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+                          Text('10', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
                         ],
                       ),
                       Text(
                         pricePerHour == 0 ? 'Free' : '$currency ${pricePerHour.toStringAsFixed(0)}',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: pricePerHour == 0 ? _green : color),
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w800, color: pricePerHour == 0 ? _green : color),
                       ),
                     ],
                   ),

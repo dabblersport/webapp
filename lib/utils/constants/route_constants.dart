@@ -10,7 +10,6 @@ class RoutePaths {
 
   // Landing & Authentication
   static const String landing = '/landing';
-  static const String phoneInput = '/phone_input';
   static const String emailInput = '/email_input';
   static const String otpVerification = '/otp_verification';
   static const String enterPassword = '/enter-password';
@@ -20,7 +19,6 @@ class RoutePaths {
   static const String createUserInfo = '/create-user-info';
   static const String interestsSelection = '/interests-selection';
   static const String intentSelection = '/intent-selection';
-  static const String setPassword = '/set-password';
   static const String setUsername = '/set-username';
   static const String authWelcome = '/auth-welcome';
   static const String welcome = '/welcome';
@@ -145,7 +143,6 @@ class RouteNames {
   static const String forgotPassword = 'forgot_password';
   static const String enterPassword = 'enter_password';
   static const String createUserInfo = 'create_user_information';
-  static const String setPassword = 'set_password';
   static const String welcome = 'welcome';
   static const String resetPassword = 'reset_password';
 

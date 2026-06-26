@@ -133,7 +133,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                       );
                                       if (!mounted) return;
                                       // After successful reset, go to login to sign in
-                                      context.go(RoutePaths.phoneInput);
+                                      context.go(RoutePaths.authWelcome);
                                     } catch (e) {
                                       setState(
                                         () => _error = e

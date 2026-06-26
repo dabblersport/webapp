@@ -26,7 +26,8 @@ class GamesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
+    // Only list challenge-eligible sports (sports.is_challenge_sport = true).
+    final sportsAsync = ref.watch(activeChallengeSportsByProfileCountryProvider);
 
     return sportsAsync.when(
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator.adaptive())),

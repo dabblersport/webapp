@@ -361,9 +361,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final changeLabel = _identifierType == IdentifierType.email
         ? l10n.otp_verify_change_email
         : l10n.otp_verify_change_phone;
-    final changeRoute = _identifierType == IdentifierType.email
-        ? RoutePaths.emailInput
-        : RoutePaths.phoneInput;
+    final changeRoute = RoutePaths.emailInput;
 
     final isAllFilled = _getOtpCode().length == 6;
     final duration = MediaQuery.of(context).disableAnimations
@@ -466,8 +464,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                   left: index == 0 ? 0 : 5,
                                   right: index == 5 ? 0 : 5,
                                 ),
-                                child: AspectRatio(
-                                  aspectRatio: 1,
+                                child: SizedBox(
+                                  height: 56,
                                   child: AnimatedContainer(
                                     duration: duration,
                                     decoration: BoxDecoration(

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,18 +11,21 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
-import 'package:dabbler/features/social/presentation/widgets/composer_location_chip.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
+
+// Composer drawer chrome + glass palette is shared via composer_drawer_kit.dart.
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
 ///
@@ -125,7 +129,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               child: Text(
                 'Who can see this?',
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
                   color: cs.onSurface,
                 ),
               ),
@@ -138,16 +141,18 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 ),
                 title: Text(
                   _visibilityLabel(v),
-                  style: TextStyle(
-                    fontWeight: state.visibility == v
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+                  style: (state.visibility == v
+                          ? Theme.of(ctx).textTheme.titleMedium
+                          : Theme.of(ctx).textTheme.bodyMedium)
+                      ?.copyWith(
                     color: state.visibility == v ? cs.primary : cs.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   _visibilityDescription(v),
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 trailing: state.visibility == v
                     ? Icon(Icons.check_circle, color: cs.primary)
@@ -241,6 +246,24 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
+  void _showLocationPicker() {
+    final cs = Theme.of(context).colorScheme;
+
+    showAdaptiveSheet(
+      context: context,
+      backgroundColor: cs.surfaceContainerHigh,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (ctx, scrollController) =>
+            _LocationPickerSheet(scrollController: scrollController),
+      ),
+    );
+  }
+
   void _showPostTypePicker() {
     final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
@@ -261,7 +284,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               child: Text(
                 'Post Type',
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
                   color: cs.onSurface,
                 ),
               ),
@@ -274,16 +296,18 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 ),
                 title: Text(
                   _postTypeLabel(t),
-                  style: TextStyle(
-                    fontWeight: state.postType == t
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+                  style: (state.postType == t
+                          ? Theme.of(ctx).textTheme.titleMedium
+                          : Theme.of(ctx).textTheme.bodyMedium)
+                      ?.copyWith(
                     color: state.postType == t ? cs.primary : cs.onSurface,
                   ),
                 ),
                 subtitle: Text(
                   _postTypeDescription(t),
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 trailing: state.postType == t
                     ? Icon(Icons.check_circle, color: cs.primary)
@@ -300,6 +324,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
+  // Retained while the Category row is hidden — see _buildOptionsSection.
+  // ignore: unused_element
   void _showContentClassPicker() {
     final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
@@ -318,7 +344,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               child: Text(
                 'Content Class',
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
                   color: cs.onSurface,
                 ),
               ),
@@ -331,10 +356,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 ),
                 title: Text(
                   _prettifyLabel(cc),
-                  style: TextStyle(
-                    fontWeight: state.contentClass == cc
-                        ? FontWeight.w600
-                        : FontWeight.w400,
+                  style: (state.contentClass == cc
+                          ? Theme.of(ctx).textTheme.titleMedium
+                          : Theme.of(ctx).textTheme.bodyMedium)
+                      ?.copyWith(
                     color: state.contentClass == cc ? cs.primary : cs.onSurface,
                   ),
                 ),
@@ -342,7 +367,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                   cc == 'social'
                       ? 'Standard social post'
                       : 'Editorial or long-form content',
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
                 trailing: state.contentClass == cc
                     ? Icon(Icons.check_circle, color: cs.primary)
@@ -377,7 +404,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 child: Text(
                   'Add Media',
                   style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
                     color: cs.onSurface,
                   ),
                 ),
@@ -503,10 +529,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Text(
                 'Post As',
-                style: tt.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
+                style: tt.titleMedium?.copyWith(color: cs.onSurface),
               ),
             ),
             for (final profile in profiles)
@@ -600,137 +623,38 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final tt = Theme.of(context).textTheme;
     final composerState = ref.watch(postComposerProvider);
 
-    const bg = Color(0xFFF4EEF9);
-    const outline = Color(0xFFDDD6E4);
-
-    return Scaffold(
-      backgroundColor: bg,
-      appBar: _buildAppBar(cs, tt, composerState),
-      body: Column(
-        children: [
-          if (composerState.error != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: cs.errorContainer,
-              child: Text(
-                composerState.error!,
-                style: tt.bodySmall?.copyWith(color: cs.onErrorContainer),
-              ),
-            ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.zero,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Author + type/visibility ──────────────────────
-                  _PostDividerSection(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildAuthorRow(cs, tt),
-                        const SizedBox(height: 12),
-                        _buildKindVisibilityRow(cs, composerState),
-                      ],
-                    ),
-                  ),
-
-                  // ── Body text + tag previews ──────────────────────
-                  _PostDividerSection(
-                    child: _buildBodyField(cs, tt, composerState),
-                  ),
-
-                  // ── Attachment chips ──────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: outline, width: 1),
-                      ),
-                    ),
-                    child: _buildAttachmentChips(cs, composerState),
-                  ),
-
-                  // ── Media list ────────────────────────────────────
-                  if (composerState.hasMedia)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: _buildMediaList(cs, tt, composerState),
-                    ),
-
-                  // ── Options ───────────────────────────────────────
-                  _buildOptionsSection(cs, tt, composerState),
-
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // APP BAR
-  // ═══════════════════════════════════════════════════════════════════════
-
-  PreferredSizeWidget _buildAppBar(
-    ColorScheme cs,
-    TextTheme tt,
-    PostComposerState composerState,
-  ) {
-    const bg = Color(0xFFF4EEF9);
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const onBg = Color(0xFF1D1A20);
-
-    return AppBar(
-      backgroundColor: bg,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      titleSpacing: 0,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Divider(height: 1, thickness: 1, color: outline),
-      ),
-      title: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () => context.pop(),
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: bgDark,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: outline, width: 1.5),
-                ),
-                child: const Icon(Icons.close_rounded, size: 16, color: onBg),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Create Post',
-                style: tt.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: onBg,
-                ),
-              ),
-            ),
-            _PostButton(
-              canPost: composerState.canSubmit,
-              isSubmitting: composerState.isSubmitting,
-              onTap: _submit,
-            ),
-          ],
+    return ComposerDrawerShell(
+      title: 'Create Post',
+      ctaLabel: 'Post',
+      canSubmit: composerState.canSubmit,
+      isSubmitting: composerState.isSubmitting,
+      onCtaTap: _submit,
+      errorMessage: composerState.error,
+      children: [
+        // Author row — pad [4, 20, 0, 20] per Pencil
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+          child: _buildAuthorRow(cs, tt),
         ),
-      ),
+        // Post type / visibility row — pad [8, 20]
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: _buildKindVisibilityRow(cs, composerState),
+        ),
+        // Input area card — pad [4, 20]
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+          child: _buildTextBoxCard(cs, tt, composerState),
+        ),
+        // Media — pad [6, 20]
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          child: composerState.hasMedia
+              ? _buildMediaTilesRow(cs, composerState)
+              : _buildMediaActions(cs),
+        ),
+        _buildOptionsSection(cs, tt, composerState),
+      ],
     );
   }
 
@@ -739,12 +663,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildAuthorRow(ColorScheme cs, TextTheme tt) {
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const onBg = Color(0xFF1D1A20);
-    const muted = Color(0xFF8B849A);
-    const primary = Color(0xFF7328CE);
-
     final displayName =
         _userProfile?['display_name'] as String? ??
         _userProfile?['username'] as String? ??
@@ -752,60 +670,57 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final avatarUrl = _userProfile?['avatar_url'] as String?;
     final composerState = ref.watch(postComposerProvider);
     final activePersona = ref.watch(activeProfileTypeProvider);
+    final canSwitch = activePersona != null && activePersona.isNotEmpty;
 
-    return Row(
-      children: [
-        DSAvatar.small(
-          imageUrl: avatarUrl,
-          displayName: displayName,
-          context: AvatarContext.main,
-          backgroundColor: cs.primaryContainer,
-          foregroundColor: cs.onPrimaryContainer,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName,
-                style: tt.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14.5,
-                  color: onBg,
-                  letterSpacing: -0.2,
-                ),
-              ),
-              if (activePersona != null && activePersona.isNotEmpty)
-                Text(
-                  _prettifyLabel(
-                    composerState.personaTypeSnapshot ?? activePersona,
-                  ),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: primary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: activePersona != null && activePersona.isNotEmpty
-              ? _showProfileSwitchPicker
-              : null,
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: bgDark,
-              shape: BoxShape.circle,
-              border: Border.all(color: outline, width: 1.5),
+    return Semantics(
+      label: canSwitch
+          ? 'Posting as $displayName. Tap to switch profile.'
+          : 'Posting as $displayName',
+      button: canSwitch,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: canSwitch ? _showProfileSwitchPicker : null,
+        child: Row(
+          children: [
+            DSAvatar(
+              size: AvatarSize.medium,
+              customDimension: 44,
+              imageUrl: avatarUrl,
+              displayName: displayName,
+              context: AvatarContext.main,
+              backgroundColor: cs.primaryContainer,
+              foregroundColor: cs.onPrimaryContainer,
             ),
-            child: Icon(Iconsax.convert_copy, size: 17, color: muted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  displayName,
+                  style: tt.titleSmall?.copyWith(
+                    color: ComposerPalette.of(context).textBright,
+                  ),
+                ),
+                if (canSwitch) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _prettifyLabel(
+                      composerState.personaTypeSnapshot ?? activePersona,
+                    ),
+                    style: tt.bodySmall?.copyWith(
+                      color: ComposerPalette.of(context).textMuted,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    ),
     );
   }
 
@@ -824,270 +739,271 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         _ComposerPill(
           icon: _postTypeIcon(composerState.postType),
           label: _postTypeLabel(composerState.postType),
+          semanticLabel:
+              'Post type: ${_postTypeLabel(composerState.postType)}. '
+              'Tap to change.',
           onTap: _showPostTypePicker,
-          activeColor: const Color(0xFF7328CE),
+          filled: true,
         ),
         _ComposerPill(
           icon: _visibilityIcon(composerState.visibility),
           label: _visibilityLabel(composerState.visibility),
+          semanticLabel:
+              'Visibility: ${_visibilityLabel(composerState.visibility)}. '
+              'Tap to change.',
           onTap: _showVisibilityPicker,
-          activeColor: const Color(0xFF8B849A),
+          filled: false,
         ),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // BODY TEXT FIELD
+  // TEXT BOX CARD (body + tags + enrich toolbar)
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildBodyField(
+  Widget _buildTextBoxCard(
     ColorScheme cs,
     TextTheme tt,
     PostComposerState composerState,
   ) {
-    const onBg = Color(0xFF1D1A20);
-    const muted = Color(0xFF8B849A);
-    const primary = Color(0xFF7328CE);
-    const pink = Color(0xFFFF3376);
     const maxLen = 2000;
+    final bodyLen = composerState.body.length;
+    final hasLocation = composerState.locationName != null;
 
-    final bodyLen = composerState.body?.length ?? 0; // ignore: invalid_null_aware_operator
-
-    // Build tag preview badges
-    final tags = <Widget>[];
-    if (composerState.hasVibe && composerState.vibeName != null) {
-      tags.add(_TagBadge(
-        label: '✦ ${composerState.vibeName!}',
-        bg: const Color(0x207328CE),
-        fg: primary,
-        border: const Color(0x507328CE),
-      ));
-    }
-    if (composerState.hasSport && composerState.sportName != null) {
-      Color sportColor = primary;
-      if (composerState.sportName != null) {
-        const sportColors = {
-          'Football': Color(0xFF00C853),
-          'Basketball': Color(0xFFFF6D00),
-          'Tennis': Color(0xFFF4C430),
-          'Running': Color(0xFF00B0FF),
-          'Cricket': Color(0xFF8BC34A),
-          'Swimming': Color(0xFF00BCD4),
-          'Boxing': Color(0xFFFF1744),
-          'Cycling': Color(0xFFE040FB),
-        };
-        sportColor = sportColors[composerState.sportName] ?? primary;
-      }
-      tags.add(_TagBadge(
-        label: '⚡ ${composerState.sportName!}',
-        bg: sportColor.withValues(alpha: 0.12),
-        fg: sportColor,
-        border: sportColor.withValues(alpha: 0.31),
-      ));
-    }
-    if (composerState.locationName != null) {
-      tags.add(_TagBadge(
-        label: '📍 ${composerState.locationName!}',
-        bg: const Color(0x208B849A),
-        fg: muted,
-        border: const Color(0x508B849A),
-      ));
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: _bodyController,
-          focusNode: _bodyFocusNode,
-          maxLines: null,
-          minLines: 5,
-          style: const TextStyle(
-            fontSize: 15,
-            height: 1.65,
-            color: onBg,
-          ),
-          decoration: InputDecoration(
-            hintText: "What's on your mind? Use #hashtags",
-            hintStyle: TextStyle(
-              fontSize: 15,
-              height: 1.65,
-              color: muted.withValues(alpha: 0.6),
-            ),
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-          onChanged: (value) {
-            ref.read(postComposerProvider.notifier).setBody(value);
-          },
+    final tagPills = <Widget>[
+      if (composerState.hasSport && composerState.sportName != null)
+        _BodyTagPill(
+          icon: Icons.emoji_events_rounded,
+          label: composerState.sportName!.toUpperCase(),
+          variant: _BodyTagVariant.primary,
         ),
-        if (tags.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Wrap(spacing: 7, runSpacing: 6, children: tags),
-        ],
-        const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Text(
-            '$bodyLen/$maxLen',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: bodyLen > maxLen * 0.9 ? pink : muted,
-            ),
-          ),
+      if (hasLocation)
+        _BodyTagPill(
+          icon: Icons.location_on_rounded,
+          label: composerState.locationName!,
+          variant: _BodyTagVariant.primary,
         ),
-      ],
-    );
-  }
+      if (composerState.hasGame && composerState.gameName != null)
+        _BodyTagPill(
+          icon: Icons.sports_esports_rounded,
+          label: composerState.gameName!,
+          variant: _BodyTagVariant.tertiary,
+        ),
+    ];
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // MEDIA LIST
-  // ═══════════════════════════════════════════════════════════════════════
+    final anyFilled =
+        composerState.hasVibe ||
+        composerState.hasSport ||
+        hasLocation ||
+        composerState.hasGame ||
+        bodyLen > 0;
 
-  Widget _buildMediaList(
-    ColorScheme cs,
-    TextTheme tt,
-    PostComposerState state,
-  ) {
-    final mediaItems = state.media;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 8),
+    final palette = ComposerPalette.of(context);
 
-        // ── Single media → large preview ──
-        if (mediaItems.length == 1)
-          _MediaPreviewTile(
-            url: mediaItems[0].toString(),
-            onRemove: () =>
-                ref.read(postComposerProvider.notifier).removeMediaAt(0),
-            cs: cs,
-            height: 220,
-            width: double.infinity,
-          )
-        // ── Two items → side-by-side ──
-        else if (mediaItems.length == 2)
-          Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: palette.bgGlass,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: palette.borderStrong, width: 1),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (int i = 0; i < 2; i++) ...[
-                if (i > 0) const SizedBox(width: 8),
-                Expanded(
-                  child: _MediaPreviewTile(
-                    url: mediaItems[i].toString(),
-                    onRemove: () => ref
-                        .read(postComposerProvider.notifier)
-                        .removeMediaAt(i),
-                    cs: cs,
-                    height: 180,
+              if (tagPills.isNotEmpty) ...[
+                Wrap(spacing: 8, runSpacing: 6, children: tagPills),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: _bodyController,
+                focusNode: _bodyFocusNode,
+                maxLines: null,
+                minLines: 4,
+                style: tt.bodyMedium?.copyWith(
+                  height: 1.5,
+                  color: palette.textBright,
+                ),
+                decoration: InputDecoration(
+                  hintText: "What's on your mind? Use #hashtags",
+                  hintStyle: tt.bodyMedium?.copyWith(
+                    height: 1.5,
+                    color: palette.textFaint,
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  filled: false,
+                  fillColor: Colors.transparent,
+                ),
+                onChanged: (value) {
+                  ref.read(postComposerProvider.notifier).setBody(value);
+                },
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  if (composerState.hasVibe && composerState.vibeName != null)
+                    _VibeBadge(
+                      emoji: composerState.vibeEmoji,
+                      label: composerState.vibeName!,
+                    ),
+                  const Spacer(),
+                  // Non-colour cue (WCAG 1.4.1): weight bumps to bold near
+                  // the limit alongside the colour change so colour-blind
+                  // users still get the warning.
+                  Text(
+                    '$bodyLen/$maxLen',
+                    semanticsLabel: '$bodyLen of $maxLen characters used',
+                    // labelMedium near limit (heavier per DS) doubles as the
+                    // WCAG 1.4.1 non-colour cue alongside the pink colour swap.
+                    style: (bodyLen > maxLen * 0.9
+                            ? tt.labelMedium
+                            : tt.bodySmall)
+                        ?.copyWith(
+                      color: bodyLen > maxLen * 0.9
+                          ? kComposerPink
+                          : (anyFilled ? palette.textSubtle : palette.textFaint),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: palette.borderGlass, width: 1),
                   ),
                 ),
-              ],
+                padding: const EdgeInsets.only(top: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _EnrichToolButton(
+                        icon: Icons.mood_outlined,
+                        filledIcon: Icons.mood_rounded,
+                        active: composerState.hasVibe,
+                        inactiveColor: palette.textMuted,
+                        semanticLabel: composerState.hasVibe
+                            ? 'Vibe: ${composerState.vibeName ?? "set"}. '
+                                  'Tap to change.'
+                            : 'Add vibe',
+                        onTap: _showVibesPicker,
+                      ),
+                    ),
+                    Expanded(
+                      child: _EnrichToolButton(
+                        icon: Icons.emoji_events_outlined,
+                        filledIcon: Icons.emoji_events_rounded,
+                        active: composerState.hasSport,
+                        inactiveColor: palette.textMuted,
+                        semanticLabel: composerState.hasSport
+                            ? 'Sport: ${composerState.sportName ?? "set"}. '
+                                  'Tap to change.'
+                            : 'Add sport',
+                        onTap: _showSportsPicker,
+                      ),
+                    ),
+                    Expanded(
+                      child: _EnrichToolButton(
+                        icon: Icons.location_on_outlined,
+                        filledIcon: Icons.location_on_rounded,
+                        active: hasLocation,
+                        inactiveColor: palette.textMuted,
+                        semanticLabel: hasLocation
+                            ? 'Location: ${composerState.locationName}. '
+                                  'Tap to change.'
+                            : 'Add location',
+                        onTap: _showLocationPicker,
+                      ),
+                    ),
+                    Expanded(
+                      child: _EnrichToolButton(
+                        icon: Icons.sports_esports_outlined,
+                        filledIcon: Icons.sports_esports_rounded,
+                        active: composerState.hasGame,
+                        inactiveColor: palette.textMuted,
+                        semanticLabel: composerState.hasGame
+                            ? 'Game: ${composerState.gameName ?? "set"}. '
+                                  'Tap to change.'
+                            : 'Link a game',
+                        onTap: _showGamePicker,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          )
-        // ── Three+ items → compact grid ──
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: mediaItems.length,
-            itemBuilder: (_, i) => _MediaPreviewTile(
-              url: mediaItems[i].toString(),
-              onRemove: () =>
-                  ref.read(postComposerProvider.notifier).removeMediaAt(i),
-              cs: cs,
-            ),
           ),
+        ),
+      ),
+    );
+  }
 
-        const SizedBox(height: 8),
+  // ═══════════════════════════════════════════════════════════════════════
+  // MEDIA SECTION
+  // ═══════════════════════════════════════════════════════════════════════
 
-        // ── Add more button ──
-        GestureDetector(
-          onTap: _showMediaInput,
-          child: Row(
-            children: [
-              Icon(
-                Icons.add_photo_alternate_outlined,
-                size: 20,
-                color: cs.primary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Add more',
-                style: tt.labelMedium?.copyWith(color: cs.primary),
-              ),
-            ],
+  /// Empty state — Media + Add GIF as two side-by-side glass pills sharing
+  /// the row (per-product call: a horizontal pair instead of Pencil's
+  /// stacked layout).
+  Widget _buildMediaActions(ColorScheme cs) {
+    return Row(
+      children: [
+        Expanded(
+          child: _MediaActionButton(
+            icon: Iconsax.gallery_add,
+            label: 'Media',
+            contentGap: 10,
+            onTap: _showMediaInput,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _MediaActionButton(
+            icon: Iconsax.image,
+            label: 'Add GIF',
+            contentGap: 10,
+            onTap: _showGifPicker,
           ),
         ),
       ],
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // ATTACHMENT CHIPS
-  // ═══════════════════════════════════════════════════════════════════════
-
-  Widget _buildAttachmentChips(ColorScheme cs, PostComposerState state) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          // Vibe
-          _AttachChip(
-            icon: Icons.mood_rounded,
-            label: state.hasVibe ? (state.vibeName ?? 'Vibe') : 'Vibe',
-            active: state.hasVibe,
-            onTap: _showVibesPicker,
-          ),
-          const SizedBox(width: 8),
-
-          // Sport
-          _AttachChip(
-            icon: Icons.sports_rounded,
-            label: state.hasSport ? (state.sportName ?? 'Sport') : 'Sport',
-            active: state.hasSport,
-            onTap: _showSportsPicker,
-          ),
-          const SizedBox(width: 8),
-
-          // Location
-          const ComposerLocationChip(),
-          const SizedBox(width: 8),
-
-          // Game
-          _AttachChip(
-            icon: Icons.sports_esports_rounded,
-            label: state.hasGame ? (state.gameName ?? 'Game') : 'Game',
-            active: state.hasGame,
-            onTap: _showGamePicker,
-          ),
-          const SizedBox(width: 8),
-
-          // Media
-          if (!state.hasMedia) ...[
-            _AttachChip(
-              icon: Icons.image_outlined,
-              label: 'Media',
-              active: false,
-              onTap: _showMediaInput,
-            ),
-            const SizedBox(width: 8),
-            _AttachChip(
-              icon: Icons.gif_box_rounded,
-              label: 'GIF',
-              active: false,
-              onTap: _showGifPicker,
-            ),
-          ],
-        ],
+  /// Filled state — horizontal 150-tall row: main 200 wide + extras 100 wide +
+  /// trailing 48-wide "Add More" tile. Each image tile has its own X-remove.
+  Widget _buildMediaTilesRow(ColorScheme cs, PostComposerState state) {
+    final items = state.media;
+    return SizedBox(
+      height: 150,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemCount: items.length + 1,
+        itemBuilder: (_, i) {
+          if (i == items.length) {
+            return _AddMoreTile(onTap: _showMediaInput);
+          }
+          final url = items[i].toString();
+          final width = i == 0 ? 200.0 : 100.0;
+          return _MediaTile(
+            url: url,
+            width: width,
+            onRemove: () => ref
+                .read(postComposerProvider.notifier)
+                .removeMediaAt(i),
+          );
+        },
       ),
     );
   }
@@ -1101,65 +1017,58 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     TextTheme tt,
     PostComposerState state,
   ) {
-    const onBg = Color(0xFF1D1A20);
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Options',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: onBg,
-              letterSpacing: 0.1,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          _OptionToggle(
-            icon: Iconsax.convert_copy,
-            label: 'Allow reposts',
+          ComposerSettingsRow(
+            icon: Icons.repeat_rounded,
+            title: 'Allow reposts',
             subtitle: 'Others can share this post',
-            value: state.allowReposts,
-            colored: true,
-            onChanged: (_) =>
-                ref.read(postComposerProvider.notifier).toggleAllowReposts(),
+            trailing: ComposerToggle(
+              value: state.allowReposts,
+              onChanged: (_) => ref
+                  .read(postComposerProvider.notifier)
+                  .toggleAllowReposts(),
+            ),
+            showDivider: true,
           ),
-          const SizedBox(height: 10),
-
-          _OptionToggle(
-            icon: Iconsax.archive_tick_copy,
-            label: 'Pin to profile',
-            subtitle: 'Keep this post at the top of your profile',
-            value: state.isPinned,
-            colored: false,
-            onChanged: (_) =>
-                ref.read(postComposerProvider.notifier).togglePinned(),
+          ComposerSettingsRow(
+            icon: Icons.push_pin_outlined,
+            title: 'Pin to profile',
+            subtitle: 'Keep at the top of your profile',
+            trailing: ComposerToggle(
+              value: state.isPinned,
+              onChanged: (_) =>
+                  ref.read(postComposerProvider.notifier).togglePinned(),
+            ),
+            showDivider: true,
           ),
-          const SizedBox(height: 10),
-
-          _OptionLink(
-            icon: Iconsax.clock,
-            label: state.expiresAt != null
-                ? 'Expires: ${_formatDate(state.expiresAt!)}'
-                : 'Set expiry',
-            subtitle: 'Post auto-hides after this date',
-            value: state.expiresAt != null ? 'Set' : null,
-            onTap: _showExpiryPicker,
-          ),
-          const SizedBox(height: 10),
-
-          _OptionLink(
-            icon: state.contentClass == 'editorial'
-                ? Iconsax.document_text
-                : Iconsax.people,
-            label: 'Content: ${_prettifyLabel(state.contentClass)}',
-            subtitle: 'Categorise this post for discovery',
-            value: _prettifyLabel(state.contentClass),
-            onTap: _showContentClassPicker,
+          // Category hidden for now — re-enable when discovery categories ship.
+          // ComposerSettingsRow(
+          //   icon: Icons.grid_view_outlined,
+          //   title: 'Category',
+          //   subtitle: 'Categorise for discovery',
+          //   trailing: ComposerSelectPill(
+          //     value: _prettifyLabel(state.contentClass),
+          //     caret: ComposerSelectCaret.down,
+          //     onTap: _showContentClassPicker,
+          //   ),
+          //   showDivider: true,
+          // ),
+          ComposerSettingsRow(
+            icon: Icons.schedule_outlined,
+            title: 'Set expiry',
+            subtitle: 'Auto-hides after date',
+            trailing: ComposerSelectPill(
+              value: state.expiresAt != null
+                  ? _formatDate(state.expiresAt!)
+                  : 'None',
+              caret: ComposerSelectCaret.right,
+              onTap: _showExpiryPicker,
+            ),
+            showDivider: false,
           ),
         ],
       ),
@@ -1171,17 +1080,19 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   IconData _visibilityIcon(PostVisibility v) {
+    // Visibility chip uses the outlined-glass style — pair it with outline
+    // icons. `link` and `circle_outlined` only ship as a single weight.
     switch (v) {
       case PostVisibility.public:
-        return Icons.public;
+        return Icons.public_outlined;
       case PostVisibility.followers:
-        return Icons.people;
+        return Icons.people_outline;
       case PostVisibility.circle:
         return Icons.circle_outlined;
       case PostVisibility.squad:
-        return Icons.groups;
+        return Icons.groups_outlined;
       case PostVisibility.private:
-        return Icons.lock;
+        return Icons.lock_outline;
       case PostVisibility.link:
         return Icons.link;
     }
@@ -1270,97 +1181,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 // ═════════════════════════════════════════════════════════════════════════════
 
 // ── Post-specific design helpers ──────────────────────────────────────────────
+// (Drawer handle + Post CTA button now live in composer_drawer_kit.dart.)
 
-class _PostButton extends StatelessWidget {
-  const _PostButton({
-    required this.canPost,
-    required this.isSubmitting,
-    required this.onTap,
-  });
-
-  final bool canPost;
-  final bool isSubmitting;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF7328CE);
-    const bgDark = Color(0xFFEDE6EE);
-    const muted = Color(0xFF8B849A);
-
-    return GestureDetector(
-      onTap: canPost ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
-        decoration: BoxDecoration(
-          color: canPost ? primary : bgDark,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: canPost
-              ? [BoxShadow(color: primary.withValues(alpha: 0.35), blurRadius: 14, offset: const Offset(0, 4))]
-              : null,
-        ),
-        child: isSubmitting
-            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Text(
-                'Post',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: canPost ? Colors.white : muted,
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-class _PostDividerSection extends StatelessWidget {
-  const _PostDividerSection({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    const outline = Color(0xFFDDD6E4);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: outline, width: 1)),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _TagBadge extends StatelessWidget {
-  const _TagBadge({
-    required this.label,
-    required this.bg,
-    required this.fg,
-    required this.border,
-  });
-
-  final String label;
-  final Color bg;
-  final Color fg;
-  final Color border;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: border),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg),
-      ),
-    );
-  }
-}
 
 /// Sheet drag handle.
 class _SheetHandle extends StatelessWidget {
@@ -1379,360 +1201,346 @@ class _SheetHandle extends StatelessWidget {
   }
 }
 
-/// Compact pill button for kind/visibility selectors (ChipDrop style).
+/// Compact pill button for kind/visibility selectors.
+///
+/// Two variants matching the Pencil design:
+/// - `filled: true`  → solid primary glass (post-type), white content.
+/// - `filled: false` → translucent surface glass with hairline border
+///   (visibility), muted content.
+///
+/// Both wrap in a BackdropFilter so the chip refracts whatever sits behind
+/// it, matching the Pencil `background_blur: 12` effect.
 class _ComposerPill extends StatelessWidget {
   const _ComposerPill({
     required this.icon,
     required this.label,
+    required this.semanticLabel,
     required this.onTap,
-    required this.activeColor,
+    required this.filled,
   });
 
   final IconData icon;
   final String label;
+  final String semanticLabel;
   final VoidCallback onTap;
-  final Color activeColor;
+  final bool filled;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 34,
-        padding: const EdgeInsets.only(left: 10, right: 12),
-        decoration: BoxDecoration(
-          color: Color.fromRGBO(
-            (activeColor.r * 255).round(),
-            (activeColor.g * 255).round(),
-            (activeColor.b * 255).round(),
-            0.08,
-          ),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: activeColor.withValues(alpha: 0.33),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14, color: activeColor),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: activeColor,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down_rounded, size: 15, color: activeColor),
-          ],
-        ),
-      ),
-    );
-  }
-}
+    final cs = Theme.of(context).colorScheme;
+    final palette = ComposerPalette.of(context);
 
-/// Attachment chip (unified add + selected state).
-class _AttachChip extends StatelessWidget {
-  const _AttachChip({
-    required this.icon,
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
+    // Pencil exact alphas:
+    // filled  → primary @53%, no border, white content (same in both themes)
+    // outline → bgGlass + borderGlass stroke, textMuted content
+    final bg = filled
+        ? cs.primary.withValues(alpha: 0.53)
+        : palette.bgGlass;
+    final fg = filled ? Colors.white : palette.textMuted;
+    final caretColor = filled
+        ? Colors.white.withValues(alpha: 0.67)
+        : palette.textMuted.withValues(alpha: 0.60);
+    final border = filled
+        ? null
+        : Border.all(color: palette.borderGlass, width: 1);
 
-  final IconData icon;
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF7328CE);
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 34,
-        padding: const EdgeInsets.only(left: 10, right: 14),
-        decoration: BoxDecoration(
-          color: active ? const Color(0x207328CE) : bgDark,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: active ? const Color(0x507328CE) : outline,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: active ? primary : muted),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: active ? primary : muted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Options row with icon box and custom toggle.
-class _OptionToggle extends StatelessWidget {
-  const _OptionToggle({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.value,
-    required this.colored,
-    required this.onChanged,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final bool value;
-  final bool colored;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF7328CE);
-    const surface = Color(0xFFFEF7FF);
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    const outlineVar = Color(0xFFCBC4CF);
-
-    final isActive = value && colored;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: isActive ? const Color(0x087328CE) : surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isActive ? const Color(0x407328CE) : outline,
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isActive ? const Color(0x157328CE) : bgDark,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 17, color: isActive ? primary : muted),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: isActive ? primary : onBg,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 12, color: muted),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => onChanged(!value),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 46,
-              height: 26,
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
-                color: value ? primary : outlineVar,
-                borderRadius: BorderRadius.circular(999),
+                color: bg,
+                borderRadius: BorderRadius.circular(20),
+                border: border,
               ),
-              child: AnimatedAlign(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: Container(
-                    width: 20,
-                    height: 20,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Color(0x22000000), blurRadius: 4, offset: Offset(0, 1))],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Options row with icon box and chevron (tap to navigate).
-class _OptionLink extends StatelessWidget {
-  const _OptionLink({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.onTap,
-    this.value,
-  });
-
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final VoidCallback onTap;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    const surface = Color(0xFFFEF7FF);
-    const bgDark = Color(0xFFEDE6EE);
-    const outline = Color(0xFFDDD6E4);
-    const muted = Color(0xFF8B849A);
-    const onBg = Color(0xFF1D1A20);
-    const primary = Color(0xFF7328CE);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
-          color: surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: outline, width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: bgDark,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 17, color: muted),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  Icon(icon, size: 14, color: fg),
+                  const SizedBox(width: 4),
                   Text(
                     label,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: onBg,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: fg,
                     ),
                   ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 12, color: muted),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 14,
+                    color: caretColor,
                   ),
                 ],
               ),
             ),
-            if (value != null) ...[
-              Text(
-                value!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: primary,
-                ),
-              ),
-              const SizedBox(width: 4),
-            ],
-            const Icon(Icons.chevron_right_rounded, size: 18, color: muted),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Visual thumbnail tile for a media URL (image / GIF).
-/// Shows the image with a rounded remove button overlay.
-class _MediaPreviewTile extends StatelessWidget {
-  const _MediaPreviewTile({
+/// Visual variant for body tag pills.
+enum _BodyTagVariant { primary, tertiary }
+
+/// Tag pill rendered above the body TextField (sport / location / game).
+///
+/// Pencil exact:
+/// - `primary`  → fill #7328CE99 (cs.primary @60%), no border, white content.
+/// - `tertiary` → fill #FF86DD18 (pink @9%), stroke #FF86DD33 (pink @20%),
+///   pink content.
+/// Both: radius 10, pad [4, 10], gap 6, blur 8, 14px icon, label 10/600.
+class _BodyTagPill extends StatelessWidget {
+  const _BodyTagPill({
+    required this.icon,
+    required this.label,
+    required this.variant,
+  });
+
+  final IconData icon;
+  final String label;
+  final _BodyTagVariant variant;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isPrimary = variant == _BodyTagVariant.primary;
+    final bg = isPrimary
+        ? cs.primary.withValues(alpha: 0.60)
+        : kComposerPink.withValues(alpha: 0.09);
+    final fg = isPrimary ? Colors.white : kComposerPink;
+    final border = isPrimary
+        ? null
+        : Border.all(color: kComposerPink.withValues(alpha: 0.20), width: 1);
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(10),
+            border: border,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: fg,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pink vibe badge shown next to the char counter inside the card.
+/// Pencil "Sport Badge" — fill #FF86DD22 + stroke #FF86DD44 1px, blur 8,
+/// radius 10, pad [2, 8], gap 6, emoji 12 white + label 10/600 pink.
+class _VibeBadge extends StatelessWidget {
+  const _VibeBadge({required this.emoji, required this.label});
+
+  final String? emoji;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: kComposerPink.withValues(alpha: 0.13),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: kComposerPink.withValues(alpha: 0.27),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (emoji != null && emoji!.isNotEmpty) ...[
+                Text(
+                  emoji!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 6),
+              ],
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: kComposerPink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon-only button for the enrich toolbar at the bottom of the Text Box card.
+/// Outline by default; swaps to the filled variant when `active`.
+class _EnrichToolButton extends StatelessWidget {
+  const _EnrichToolButton({
+    required this.icon,
+    required this.filledIcon,
+    required this.active,
+    required this.inactiveColor,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+
+  /// Outline glyph rendered when `active` is false.
+  final IconData icon;
+
+  /// Filled glyph rendered when `active` is true.
+  final IconData filledIcon;
+  final bool active;
+  final Color inactiveColor;
+
+  /// Spoken label for screen readers ("Add vibe", "Vibe: Passionate", etc.).
+  final String semanticLabel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final color = active ? cs.primary : inactiveColor;
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      selected: active,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: SizedBox(
+          height: 40,
+          child: Center(
+            child: Icon(active ? filledIcon : icon, size: 22, color: color),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-width glass pill button used in the empty-state media section.
+///
+/// Pencil exact: bg #FFFFFF08 (white @3%) + stroke #FFFFFF12 (white @7%) 1px,
+/// radius 14, blur 16, pad [12, 16]. Content centred: leading icon (20px
+/// #CAC4CF) OR 40×24 GIF badge (radius 6, cs.primary @40%, "GIF" 11/w800
+/// letter 0.8 #E6E0E9), gap, label 14/500 #CAC4CF.
+class _MediaActionButton extends StatelessWidget {
+  const _MediaActionButton({
+    this.icon,
+    required this.label,
+    required this.onTap,
+    required this.contentGap,
+  });
+
+  final IconData? icon;
+  final String label;
+  final VoidCallback onTap;
+  final double contentGap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ComposerPalette.of(context);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: palette.bgWeak,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: palette.borderWeak, width: 1),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                
+                  Icon(icon, size: 20, color: palette.textMuted),
+                SizedBox(width: contentGap),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: palette.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Single image/GIF tile in the filled-state media row.
+class _MediaTile extends StatelessWidget {
+  const _MediaTile({
     required this.url,
+    required this.width,
     required this.onRemove,
-    required this.cs,
-    this.height,
-    this.width,
   });
 
   final String url;
+  final double width;
   final VoidCallback onRemove;
-  final ColorScheme cs;
-  final double? height;
-  final double? width;
 
   bool get _isGif => url.toLowerCase().contains('.gif');
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: height,
       width: width,
+      height: 150,
       child: Stack(
         children: [
-          // Thumbnail
           Positioned.fill(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                color: cs.surfaceContainerHighest,
+                color: ComposerPalette.of(context).tilePlaceholder,
                 child: Image.network(
                   url,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.broken_image,
-                          size: 32,
-                          color: cs.onSurfaceVariant,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _isGif ? 'GIF' : 'Image',
-                          style: Theme.of(context).textTheme.labelSmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                      ],
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 24,
+                      color: ComposerPalette.of(context).textSubtle,
                     ),
                   ),
                   loadingBuilder: (_, child, progress) {
@@ -1751,42 +1559,70 @@ class _MediaPreviewTile extends StatelessWidget {
               ),
             ),
           ),
-
-          // GIF badge
           if (_isGif)
             Positioned(
-              left: 8,
-              bottom: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: cs.inverseSurface.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'GIF',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: cs.onInverseSurface,
-                    fontWeight: FontWeight.w700,
+              left: 6,
+              bottom: 6,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.40),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'GIF',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-
-          // Remove button
+          // Remove btn — 24×24 visible chip wrapped in a 44×44 hit area so
+          // the tap target meets WCAG 2.5.8 / iOS HIG.
           Positioned(
-            top: 6,
-            right: 6,
-            child: GestureDetector(
-              onTap: onRemove,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: cs.error.withValues(alpha: 0.85),
-                  shape: BoxShape.circle,
+            top: 0,
+            right: 0,
+            child: Semantics(
+              label: 'Remove media',
+              button: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onRemove,
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.40),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: Icon(Icons.close, size: 14, color: cs.onError),
               ),
             ),
           ),
@@ -1796,6 +1632,51 @@ class _MediaPreviewTile extends StatelessWidget {
   }
 }
 
+/// 48×150 trailing "Add More" tile — opens the media picker.
+/// Pencil: bg #FFFFFF08 (white @3%) + stroke #FFFFFF15 (white @8%) 1px,
+/// radius 12, blur 12, plus icon 24px #79747E centred.
+class _AddMoreTile extends StatelessWidget {
+  const _AddMoreTile({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = ComposerPalette.of(context);
+    return Semantics(
+      label: 'Add more media',
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: 48,
+              height: 150,
+              decoration: BoxDecoration(
+                color: palette.bgWeak,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: palette.borderMid, width: 1),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 24,
+                  color: palette.textSubtle,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// _SettingsRow / _SettingsToggle / _SelectCaret / _SettingsSelectPill now live
+// in composer_drawer_kit.dart as ComposerSettingsRow / ComposerToggle /
+// ComposerSelectCaret / ComposerSelectPill.
 
 // ═════════════════════════════════════════════════════════════════════════════
 // VIBES PICKER SHEET (for composer)
@@ -1831,10 +1712,7 @@ class _ComposerVibesPickerSheetState
               children: [
                 Text(
                   'Vibes',
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
                 ),
                 const Spacer(),
                 if (composerState.vibeId != null)
@@ -1954,18 +1832,18 @@ class _ComposerVibesPickerSheetState
                           children: [
                             Text(
                               vibe.emoji ?? '✨',
-                              style: const TextStyle(fontSize: 28),
+                              style: tt.headlineSmall,
                             ),
                             const SizedBox(height: 4),
                             Text(
                               vibe.labelEn,
-                              style: tt.labelSmall?.copyWith(
+                              style: (isSelected
+                                      ? tt.titleSmall
+                                      : tt.labelSmall)
+                                  ?.copyWith(
                                 color: isSelected
                                     ? cs.onPrimaryContainer
                                     : cs.onSurface,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -2033,10 +1911,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
               children: [
                 Text(
                   'Location',
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
                 ),
                 const Spacer(),
                 TextButton(
@@ -2275,10 +2150,7 @@ class _VenuePickerSheetState extends ConsumerState<_VenuePickerSheet> {
               children: [
                 Text(
                   'Select Venue',
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
                 ),
                 const Spacer(),
                 TextButton(
@@ -2462,10 +2334,7 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
               children: [
                 Text(
                   'Link a Game',
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface,
-                  ),
+                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
                 ),
                 const Spacer(),
                 TextButton(
@@ -2702,10 +2571,7 @@ class _HashtagTextEditingController extends TextEditingController {
       spans.add(
         TextSpan(
           text: match.group(0),
-          style: style?.copyWith(
-            color: hashtagColor,
-            fontWeight: FontWeight.w600,
-          ),
+          style: style?.copyWith(color: hashtagColor),
         ),
       );
       lastEnd = match.end;
@@ -2952,10 +2818,7 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Text(
             'Search GIFs',
-            style: tt.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
+            style: tt.titleMedium?.copyWith(color: cs.onSurface),
           ),
         ),
 

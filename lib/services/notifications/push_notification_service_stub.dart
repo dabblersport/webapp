@@ -1,3 +1,5 @@
+import 'package:dabbler/core/config/notification_preference.dart';
+
 /// Stub implementation for web platform (no-op).
 class PushNotificationService {
   PushNotificationService._internal();
@@ -18,7 +20,9 @@ class PushNotificationService {
   }
 
   /// Web stub - no-op
-  Future<void> saveNotificationPreference(String preference) async {
+  Future<void> saveNotificationPreference(
+    NotificationPreference preference,
+  ) async {
     // No-op on web
   }
 

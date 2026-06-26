@@ -43,24 +43,6 @@ class SupabaseAuthDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<AuthResponseModel> signInWithPhone({required String phone}) async {
-    try {
-      await client.auth.signInWithOtp(phone: phone);
-      // signInWithOtp returns void, so we create a response model without user/session
-      return AuthResponseModel(
-        user: null,
-        session: null,
-        error: null,
-        metadata: {'phone': phone, 'otp_sent': true},
-      );
-    } on supabase.AuthException catch (e) {
-      throw AuthException(e.message);
-    } catch (e) {
-      throw NetworkException(e.toString());
-    }
-  }
-
-  @override
   Future<AuthResponseModel> signUp({
     required String email,
     required String password,
@@ -143,14 +125,14 @@ class SupabaseAuthDataSource implements AuthRemoteDataSource {
 
   @override
   Future<AuthResponseModel> verifyOTP({
-    required String phone,
+    required String email,
     required String token,
   }) async {
     try {
       final response = await client.auth.verifyOTP(
-        phone: phone,
+        email: email,
         token: token,
-        type: supabase.OtpType.sms,
+        type: supabase.OtpType.email,
       );
       return _convertAuthResponseToModel(response);
     } on supabase.AuthException catch (e) {

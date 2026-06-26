@@ -11,6 +11,7 @@ import '../../domain/usecases/logout_usecase.dart';
 import 'package:dabbler/data/models/authentication/user.dart';
 import 'package:dabbler/data/models/authentication/auth_session.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/auth/session_cleanup.dart';
 
 // Use the working AuthService instead of unimplemented repository
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -53,7 +54,7 @@ final routerRefreshProvider = Provider<RouterRefreshNotifier>((ref) {
 // Simple auth state provider that works with AuthService
 final simpleAuthProvider =
     StateNotifierProvider<SimpleAuthNotifier, SimpleAuthState>((ref) {
-      return SimpleAuthNotifier(ref.read(authServiceProvider));
+      return SimpleAuthNotifier(ref, ref.read(authServiceProvider));
     });
 
 // Simple auth state
@@ -87,11 +88,13 @@ class SimpleAuthState {
 
 // Simple auth notifier that works with AuthService
 class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
+  final Ref _ref;
   final AuthService _authService;
   StreamSubscription<supa.AuthState>? _authSubscription;
   bool _isCheckingAuth = false;
 
-  SimpleAuthNotifier(this._authService) : super(const SimpleAuthState()) {
+  SimpleAuthNotifier(this._ref, this._authService)
+    : super(const SimpleAuthState()) {
     _setupAuthListener();
     Future.microtask(() async {
       await _checkAuthState();
@@ -146,12 +149,17 @@ class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
       // Show welcome after each explicit login.
       // Do NOT trigger this on initialSession to avoid showing welcome on app restart.
       if (event == supa.AuthChangeEvent.signedIn) {
+        // Clear any cached data from a previous account so a new user's
+        // session never shows the previous user's profile/settings.
+        resetUserScopedProviders(_ref);
         routerRefreshNotifier.requirePostLoginWelcome();
       }
 
       if (event == supa.AuthChangeEvent.signedOut) {
         final wasAuthenticated = state.isAuthenticated;
         state = const SimpleAuthState();
+        // Wipe all user-scoped provider caches on logout.
+        resetUserScopedProviders(_ref);
         routerRefreshNotifier.clearPostLoginWelcome();
         if (wasAuthenticated) {
           routerRefreshNotifier.notifyAuthStateChanged();

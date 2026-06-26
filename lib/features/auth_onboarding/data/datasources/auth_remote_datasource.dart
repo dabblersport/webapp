@@ -6,7 +6,6 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String password,
   });
-  Future<AuthResponseModel> signInWithPhone({required String phone});
   Future<AuthResponseModel> signUp({
     required String email,
     required String password,
@@ -17,7 +16,7 @@ abstract class AuthRemoteDataSource {
   Future<void> resetPassword({required String email});
   Future<void> updatePassword({required String newPassword});
   Future<AuthResponseModel> verifyOTP({
-    required String phone,
+    required String email,
     required String token,
   });
 }

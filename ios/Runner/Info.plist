@@ -4,6 +4,8 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleLocalizations</key>
@@ -31,7 +33,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.example.dabbler</string>
+			<string>app.dabbler.pro</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>dabbler</string>
@@ -54,6 +56,25 @@
 	<string>Dabbler saves photos to your library.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Dabbler uses notifications to keep you updated about games, bookings, and friend activity.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Dabbler uses the microphone when you record audio or video for game moments.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Dabbler can use your contacts to help you find friends who play sports.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>supabase.co</key>
+			<dict>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -78,7 +99,7 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
-	<string>LaunchScreen.storyboard</string>
+	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UIStatusBarHidden</key>

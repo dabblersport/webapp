@@ -748,17 +748,132 @@ class AppTheme {
     );
   }
 
+  /// Shifts every TextStyle in [base] one weight step heavier (w100 → w200,
+  /// w200 → w300, …, w800 → w900; w900 is the ceiling). Also re-asserts
+  /// `fontFamily: 'Roboto'` so the family survives downstream `copyWith(...)`
+  /// calls.
+  static const List<FontWeight> _weightLadder = [
+    FontWeight.w100,
+    FontWeight.w200,
+    FontWeight.w300,
+    FontWeight.w400,
+    FontWeight.w500,
+    FontWeight.w600,
+    FontWeight.w700,
+    FontWeight.w800,
+    FontWeight.w900,
+  ];
+
+  static FontWeight _heavier(FontWeight w) {
+    final idx = _weightLadder.indexOf(w);
+    if (idx == -1 || idx == _weightLadder.length - 1) return w;
+    return _weightLadder[idx + 1];
+  }
+
+  /// iOS uses the system font (SF Pro). We keep the system family (never force
+  /// Roboto) and use each style's natural/default weight — no iOS weight bump
+  /// (SF Pro renders at its designed weight now that the font resolves
+  /// correctly).
+  static bool get _isIOS =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  static TextTheme _enforceMinWeightAndFamily(TextTheme base) {
+    TextStyle? bump(TextStyle? s) {
+      if (s == null) return null;
+      final w = s.fontWeight ?? FontWeight.w400;
+      if (!_isIOS) {
+        return s.copyWith(fontWeight: _heavier(w), fontFamily: 'Roboto');
+      }
+      // iOS: system font (SF Pro), weight floored at w400, normal letter
+      // spacing (0) and default line height. `height` cannot be reset to null
+      // via copyWith, so we rebuild the style while preserving the Arabic
+      // fontFamilyFallback and omitting fontFamily to keep the system font.
+      return TextStyle(
+        inherit: s.inherit,
+        color: s.color,
+        backgroundColor: s.backgroundColor,
+        fontSize: s.fontSize,
+        fontWeight: w,
+        fontStyle: s.fontStyle,
+        letterSpacing: 0,
+        wordSpacing: s.wordSpacing,
+        textBaseline: s.textBaseline,
+        height: null,
+        leadingDistribution: s.leadingDistribution,
+        locale: s.locale,
+        foreground: s.foreground,
+        background: s.background,
+        shadows: s.shadows,
+        fontFeatures: s.fontFeatures,
+        fontVariations: s.fontVariations,
+        decoration: s.decoration,
+        decorationColor: s.decorationColor,
+        decorationStyle: s.decorationStyle,
+        decorationThickness: s.decorationThickness,
+        fontFamilyFallback: s.fontFamilyFallback,
+        overflow: s.overflow,
+      );
+    }
+
+    return base.copyWith(
+      displayLarge: bump(base.displayLarge),
+      displayMedium: bump(base.displayMedium),
+      displaySmall: bump(base.displaySmall),
+      headlineLarge: bump(base.headlineLarge),
+      headlineMedium: bump(base.headlineMedium),
+      headlineSmall: bump(base.headlineSmall),
+      titleLarge: bump(base.titleLarge),
+      titleMedium: bump(base.titleMedium),
+      titleSmall: bump(base.titleSmall),
+      bodyLarge: bump(base.bodyLarge),
+      bodyMedium: bump(base.bodyMedium),
+      bodySmall: bump(base.bodySmall),
+      labelLarge: bump(base.labelLarge),
+      labelMedium: bump(base.labelMedium),
+      labelSmall: bump(base.labelSmall),
+    );
+  }
+
+  /// Dabbler type-size scale (tuned mobile scale, px). Single source of truth
+  /// for text sizes: every TextTheme slot gets an explicit size so screens
+  /// inherit a consistent scale through Theme.of(context).textTheme. Adjust a
+  /// value here to rescale that role app-wide. Screens should consume these via
+  /// textTheme slots rather than hardcoding `fontSize`.
+  static TextTheme _applySizes(TextTheme base) {
+    return base.copyWith(
+      displayLarge: base.displayLarge?.copyWith(fontSize: 40),
+      displayMedium: base.displayMedium?.copyWith(fontSize: 32),
+      displaySmall: base.displaySmall?.copyWith(fontSize: 28),
+      headlineLarge: base.headlineLarge?.copyWith(fontSize: 24),
+      headlineMedium: base.headlineMedium?.copyWith(fontSize: 22),
+      headlineSmall: base.headlineSmall?.copyWith(fontSize: 20),
+      titleLarge: base.titleLarge?.copyWith(fontSize: 18),
+      titleMedium: base.titleMedium?.copyWith(fontSize: 16),
+      titleSmall: base.titleSmall?.copyWith(fontSize: 14),
+      bodyLarge: base.bodyLarge?.copyWith(fontSize: 16),
+      bodyMedium: base.bodyMedium?.copyWith(fontSize: 14),
+      bodySmall: base.bodySmall?.copyWith(fontSize: 12),
+      labelLarge: base.labelLarge?.copyWith(fontSize: 14),
+      labelMedium: base.labelMedium?.copyWith(fontSize: 12),
+      labelSmall: base.labelSmall?.copyWith(fontSize: 11),
+    );
+  }
+
   static ThemeData _buildTheme({
     required Brightness brightness,
     required ColorScheme colorScheme,
   }) {
-    final textTheme = _applyArabicFallback(
-      GoogleFonts.robotoTextTheme(
-        brightness == Brightness.light
-            ? ThemeData.light().textTheme
-            : ThemeData.dark().textTheme,
-      ),
-    );
+    final baseTextTheme = brightness == Brightness.light
+        ? ThemeData.light().textTheme
+        : ThemeData.dark().textTheme;
+    // iOS: keep the system font (SF Pro / SF Arabic) and add NO Tajawal
+    // fallback — a non-null fontFamilyFallback would override the null (system)
+    // fontFamily and render Tajawal instead of SF Pro. Apple's system font
+    // already covers Arabic. Other platforms: Roboto + Tajawal Arabic fallback.
+    final familyTextTheme = _isIOS
+        ? baseTextTheme
+        : _applyArabicFallback(GoogleFonts.robotoTextTheme(baseTextTheme));
+    final textTheme = _applySizes(_enforceMinWeightAndFamily(familyTextTheme));
 
     // Material 3 shape system - using rounded corners
     const shapeSmall = RoundedRectangleBorder(
@@ -1101,7 +1216,10 @@ class AppTheme {
           color: colorScheme.onInverseSurface,
         ),
         actionTextColor: colorScheme.primaryContainer,
-        behavior: SnackBarBehavior.floating,
+        // Fixed (docked) instead of floating: a floating SnackBar throws
+        // "Floating SnackBar presented off screen" on screens whose bottom
+        // nav / footer leaves no room above it. Fixed always fits.
+        behavior: SnackBarBehavior.fixed,
       ),
 
       // Floating Action Button Theme

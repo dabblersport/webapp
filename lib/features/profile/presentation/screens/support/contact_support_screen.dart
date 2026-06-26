@@ -112,9 +112,9 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildContactForm(),
-                          const SizedBox(height: 20),
-                          _buildQuickActionsSection(),
                           const SizedBox(height: 24),
+                          // Quick Actions (FAQ / Live chat / Phone) hidden until
+                          // implemented — see _buildQuickActionsSection.
                           _buildSubmitButton(),
                         ],
                       ),
@@ -321,6 +321,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildQuickActionsSection() {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;

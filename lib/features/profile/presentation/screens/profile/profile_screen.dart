@@ -1221,6 +1221,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         // Tab bar
         TabBar(
           controller: _tabController,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           labelColor: colorScheme.onSurface,
           unselectedLabelColor: colorScheme.onSurfaceVariant,
           indicatorColor: colorScheme.primary,

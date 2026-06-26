@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dabbler/core/config/notification_preference.dart';
+
 /// Mobile implementation of push notification service (Android/iOS).
 class PushNotificationService {
   PushNotificationService._internal();
@@ -250,12 +252,13 @@ class PushNotificationService {
   }
 
   /// Save user's notification permission preference
-  /// Options: 'allow', 'remind_later', 'never'
-  Future<void> saveNotificationPreference(String preference) async {
+  Future<void> saveNotificationPreference(
+    NotificationPreference preference,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_notificationPromptPreferenceKey, preference);
+    await prefs.setString(_notificationPromptPreferenceKey, preference.wireValue);
 
-    if (preference == 'remind_later') {
+    if (preference == NotificationPreference.remindLater) {
       final nextAt = DateTime.now().add(_remindLaterCooldown);
       await prefs.setInt(
         _notificationPromptNextAtKey,

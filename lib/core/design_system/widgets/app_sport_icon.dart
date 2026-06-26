@@ -39,38 +39,30 @@ class AppSportIcon extends StatelessWidget {
   /// Factory constructor for 12px emoji
   const AppSportIcon.size12({
     super.key,
-    required String emoji,
-    Color? backgroundColor,
-  }) : emoji = emoji,
-       size = AppSportIconSize.size12,
-       backgroundColor = backgroundColor;
+    required this.emoji,
+    this.backgroundColor,
+  }) : size = AppSportIconSize.size12;
 
   /// Factory constructor for 18px emoji
   const AppSportIcon.size18({
     super.key,
-    required String emoji,
-    Color? backgroundColor,
-  }) : emoji = emoji,
-       size = AppSportIconSize.size18,
-       backgroundColor = backgroundColor;
+    required this.emoji,
+    this.backgroundColor,
+  }) : size = AppSportIconSize.size18;
 
   /// Factory constructor for 24px emoji
   const AppSportIcon.size24({
     super.key,
-    required String emoji,
-    Color? backgroundColor,
-  }) : emoji = emoji,
-       size = AppSportIconSize.size24,
-       backgroundColor = backgroundColor;
+    required this.emoji,
+    this.backgroundColor,
+  }) : size = AppSportIconSize.size24;
 
   /// Factory constructor for 30px emoji
   const AppSportIcon.size30({
     super.key,
-    required String emoji,
-    Color? backgroundColor,
-  }) : emoji = emoji,
-       size = AppSportIconSize.size30,
-       backgroundColor = backgroundColor;
+    required this.emoji,
+    this.backgroundColor,
+  }) : size = AppSportIconSize.size30;
 
   @override
   Widget build(BuildContext context) {

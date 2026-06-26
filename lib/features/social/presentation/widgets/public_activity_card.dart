@@ -21,7 +21,8 @@ class PublicActivityCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
 
     final hasNewsTarget =
-        activity.activityType == 'comment' && activity.targetNewsId != null;
+        activity.activityType == PublicActivityType.comment &&
+        activity.targetNewsId != null;
     final newsTitle = activity.localizedTargetTitle(locale);
 
     return InkWell(

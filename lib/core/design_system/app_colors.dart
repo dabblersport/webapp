@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// Maps old color methods to Material Design 3 ColorScheme
 class AppColors {
   // Static colors (non-context dependent)
-  static const Color primaryPurple = Color(0xFF8B5CF6);
+  static const Color primaryPurple = Color(0xFF7328CE);
   static const Color buttonForeground = Colors.white;
   static const Color textLight70 = Color(0xB3FFFFFF);
   static const Color borderDark = Color(0xFF374151);

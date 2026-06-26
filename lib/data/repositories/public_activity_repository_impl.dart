@@ -139,7 +139,8 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
       );
 
       final parentId = activity.parentActivityId;
-      if (activity.activityType == 'comment' && parentId != null) {
+      if (activity.activityType == PublicActivityType.comment &&
+          parentId != null) {
         final news = newsById[parentId];
         if (news != null) {
           activity = activity.withTarget(

@@ -252,7 +252,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
         // Back to Sign In
         TextButton(
-          onPressed: () => context.go(RoutePaths.phoneInput),
+          onPressed: () => context.go(RoutePaths.authWelcome),
           child: Text(
             AppLocalizations.of(context).forgot_password_back_to_signin,
             style: TextStyle(

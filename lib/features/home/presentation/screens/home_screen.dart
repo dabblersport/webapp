@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
 
@@ -26,6 +27,7 @@ import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
+import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
@@ -39,6 +41,8 @@ import 'package:dabbler/features/social/providers/public_activity_providers.dart
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/data/models/profile/user_profile.dart';
+import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Modern home screen for Dabbler
@@ -52,7 +56,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with RouteAware, TickerProviderStateMixin {
   final AuthService _authService = AuthService();
-  Map<String, dynamic>? _userProfile;
+  UserProfile? _userProfile;
 
   // ── Tab controller ──────────────────────────────────────────────────────────
   late final TabController _tabController;
@@ -118,8 +122,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   Future<void> _checkNotificationPermission() async {
     // Only check on mobile platforms
-    if (!defaultTargetPlatform.toString().contains('android') &&
-        !defaultTargetPlatform.toString().contains('iOS')) {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
       return;
     }
 
@@ -156,7 +160,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             if (!mounted) return;
 
             if (granted) {
-              await notificationService.saveNotificationPreference('allow');
+              await notificationService.saveNotificationPreference(
+                NotificationPreference.allow,
+              );
               if (!mounted) return;
               ScaffoldMessenger.of(this.context).showSnackBar(
                 const SnackBar(
@@ -168,7 +174,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               // Don't mark as "allow" unless permission is actually granted.
               // Also avoid re-prompting immediately.
               await notificationService.saveNotificationPreference(
-                'remind_later',
+                NotificationPreference.remindLater,
               );
             }
           },
@@ -176,13 +182,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             Navigator.pop(context, true);
             final notificationService = PushNotificationService.instance;
             await notificationService.saveNotificationPreference(
-              'remind_later',
+              NotificationPreference.remindLater,
             );
           },
           onNoThanks: () async {
             Navigator.pop(context, true);
             final notificationService = PushNotificationService.instance;
-            await notificationService.saveNotificationPreference('never');
+            await notificationService.saveNotificationPreference(
+              NotificationPreference.never,
+            );
           },
         );
       },
@@ -194,7 +202,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (!mounted) return;
     if (didTakeAction != true) {
       await PushNotificationService.instance.saveNotificationPreference(
-        'remind_later',
+        NotificationPreference.remindLater,
       );
     }
   }
@@ -204,32 +212,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // Pass the active persona type so the avatar matches the currently
       // selected persona (player vs organiser) in multi-profile scenarios.
       final activeType = ref.read(activeProfileTypeProvider);
-      final profile = await _authService.getUserProfile(
-        personaType: activeType,
-      );
+      final raw = await _authService.getUserProfile(personaType: activeType);
+      UserProfile? parsed;
+      if (raw != null) {
+        // UserProfile.fromJson does strict non-null casts on id/user_id/
+        // created_at/updated_at; degrade gracefully on a malformed row rather
+        // than crashing the home header.
+        try {
+          parsed = UserProfile.fromJson(raw);
+        } catch (e) {
+          debugPrint('HomeScreen: failed to parse user profile: $e');
+        }
+      }
       if (mounted) {
         setState(() {
-          _userProfile = profile;
+          _userProfile = parsed;
         });
       }
-    } catch (e) {}
-  }
-
-  /// Resolves display name from raw profile map with fallback chain:
-  /// display_name → username → email prefix → 'User'
-  String _resolveDisplayName(Map<String, dynamic>? profile) {
-    if (profile == null) return 'User';
-
-    final displayName = (profile['display_name'] as String?)?.trim() ?? '';
-    if (displayName.isNotEmpty) return displayName;
-
-    final username = (profile['username'] as String?)?.trim() ?? '';
-    if (username.isNotEmpty) return username;
-
-    final email = (profile['email'] as String?)?.trim() ?? '';
-    if (email.isNotEmpty) return email.split('@').first;
-
-    return 'User';
+    } catch (e) {
+      debugPrint('HomeScreen: failed to load user profile: $e');
+    }
   }
 
   void _onTabChanged() {
@@ -456,8 +458,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                   padding: const EdgeInsets.all(2),
                   child: DSAvatar.small(
-                    imageUrl: _userProfile?['avatar_url'] as String?,
-                    displayName: _resolveDisplayName(_userProfile),
+                    imageUrl: _userProfile?.avatarUrl,
+                    displayName: _userProfile?.getFullName() ?? 'User',
                     context: AvatarContext.main,
                   ),
                 ),
@@ -655,23 +657,29 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final lavender = Color.alphaBlend(
-      cs.primary.withValues(alpha: 0.04),
-      cs.surface,
+    final isPinned = overlapsContent || shrinkOffset > 0;
+    final content = Column(
+      children: [
+        const SizedBox(height: 9),
+        Expanded(child: tabBar),
+        const SizedBox(height: 6),
+        Divider(
+          height: 1,
+          thickness: 0,
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ],
     );
-    return ColoredBox(
-      color: Colors.transparent,
-      child: Column(
-        children: [
-          const SizedBox(height: 9),
-          Expanded(child: tabBar),
-          const SizedBox(height: 6),
-          Divider(
-            height: 1,
-            thickness: 0,
-            color: cs.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ],
+    if (!isPinned) {
+      return ColoredBox(color: Colors.transparent, child: content);
+    }
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: ColoredBox(
+          color: cs.surface.withValues(alpha: 0.55),
+          child: content,
+        ),
       ),
     );
   }
@@ -943,29 +951,24 @@ class _FollowingFeedTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final postState = ref.watch(followingFeedProvider);
-    final activityState = ref.watch(followingActivitiesProvider);
     final cs = Theme.of(context).colorScheme;
 
-    final isLoading =
-        (postState.isLoading && postState.posts.isEmpty) &&
-        (activityState.isLoading && activityState.activities.isEmpty);
+    final isLoading = postState.isLoading && postState.posts.isEmpty;
 
     if (isLoading) return const _FeedSkeletonList();
 
-    // Merge posts and activities into a single time-sorted list.
-    // Each entry is either a Post or PublicActivity.
-    final merged = <({DateTime createdAt, Object item})>[
-      for (final p in postState.posts)
-        (createdAt: p.createdAt, item: p as Object),
-      for (final a in activityState.activities)
-        (createdAt: a.createdAt, item: a as Object),
+    // The Following tab shows ONLY posts and reposts from followed users.
+    // Activity-log entries (likes, comments, game/meetup creates) are
+    // intentionally excluded — followingFeedProvider already returns
+    // posts + reposts.
+    final merged = <_MergedEntry>[
+      for (final p in postState.posts) _PostEntry(p),
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     if (merged.isEmpty) {
-      final hasError = postState.error != null || activityState.error != null;
-      if (hasError) {
+      if (postState.error != null) {
         return _ErrorView(
-          message: postState.error ?? activityState.error!,
+          message: postState.error!,
           onRetry: onRetry,
         );
       }
@@ -976,7 +979,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
       );
     }
 
-    final isLoadingMore = postState.isLoadingMore || activityState.isLoadingMore;
+    final isLoadingMore = postState.isLoadingMore;
     final itemCount = merged.length + (isLoadingMore ? 1 : 0);
 
     return RefreshIndicator(
@@ -999,16 +1002,36 @@ class _FollowingFeedTabBody extends ConsumerWidget {
             );
           }
           final entry = merged[index];
-          if (entry.item is PublicActivity) {
-            return PublicActivityCard(
-              activity: entry.item as PublicActivity,
-            );
-          }
-          return resolvePostLayout(entry.item as dynamic);
+          return switch (entry) {
+            _ActivityEntry(:final activity) =>
+              PublicActivityCard(activity: activity),
+            _PostEntry(:final post) => resolvePostLayout(post),
+          };
         },
       ),
     );
   }
+}
+
+/// One entry in the merged following timeline — either a social [Post] or a
+/// [PublicActivity]. Sealed so the render switch is exhaustive (no `as dynamic`).
+sealed class _MergedEntry {
+  const _MergedEntry();
+  DateTime get createdAt;
+}
+
+final class _PostEntry extends _MergedEntry {
+  const _PostEntry(this.post);
+  final Post post;
+  @override
+  DateTime get createdAt => post.createdAt;
+}
+
+final class _ActivityEntry extends _MergedEntry {
+  const _ActivityEntry(this.activity);
+  final PublicActivity activity;
+  @override
+  DateTime get createdAt => activity.createdAt;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1058,7 +1081,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
         itemCount: itemCount,
         separatorBuilder: (_, index) {
           if (index < events.length &&
-              events[index].eventType == 'post_created') {
+              events[index] is PostCreatedEvent) {
             return Divider(
               height: 1,
               thickness: 1,

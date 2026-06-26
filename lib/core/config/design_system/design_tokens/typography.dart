@@ -1,10 +1,15 @@
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform, kIsWeb;
 import 'package:flutter/material.dart';
 
 /// Typography tokens following Ant Design hierarchy while maintaining Dabbler's brand style
 class DabblerTypography {
   // Font Families
-  static const String primaryFontFamily = 'Roboto';
-  static const String displayFontFamily = 'Roboto';
+  // On iOS, return null so Flutter falls back to the system font (SF Pro
+  // Display/Text, auto-selected by size). Android and other platforms keep Roboto.
+  static bool get _isIOS => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static String? get primaryFontFamily => _isIOS ? null : 'Roboto';
+  static String? get displayFontFamily => _isIOS ? null : 'Roboto';
 
   // Base Font Sizes (Following 8pt Grid)
   static const double _baseFontSize = 16.0;
@@ -15,10 +20,13 @@ class DabblerTypography {
   static const double _desktopScale = 1.2;
 
   // Font Weights
-  static const FontWeight light = FontWeight.w300;
-  static const FontWeight regular = FontWeight.w400;
-  static const FontWeight medium = FontWeight.w500;
-  static const FontWeight semiBold = FontWeight.w600;
+  // iOS renders SF Pro optically lighter than Android's Roboto at the same
+  // numeric weight, so on iOS the whole ramp is shifted up one step (+100),
+  // floored at w400 and capped at w700 — text never renders thin on iOS.
+  static FontWeight get light => _isIOS ? FontWeight.w400 : FontWeight.w300;
+  static FontWeight get regular => _isIOS ? FontWeight.w500 : FontWeight.w400;
+  static FontWeight get medium => _isIOS ? FontWeight.w600 : FontWeight.w500;
+  static FontWeight get semiBold => _isIOS ? FontWeight.w700 : FontWeight.w600;
   static const FontWeight bold = FontWeight.w700;
 
   // Letter Spacing

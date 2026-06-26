@@ -41,170 +41,162 @@ class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
     final tt = Theme.of(context).textTheme;
     final sportsAsync = ref.watch(widget.sportsProvider);
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.55,
-      minChildSize: 0.35,
-      maxChildSize: 0.88,
-      builder: (_, scrollController) {
-        return Column(
-          children: [
-            // Handle
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 12, 8),
-              child: Row(
-                children: [
-                  Text(
-                    'Sports',
-                    style: tt.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: cs.onSurface,
-                    ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header (the M3 drag handle comes from showAdaptiveSheet).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+            child: Row(
+              children: [
+                Text(
+                  'Sports',
+                  style: tt.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
                   ),
-                  const Spacer(),
-                  if (widget.showClear && widget.onClear != null)
-                    TextButton(
-                      onPressed: () {
-                        widget.onClear!();
-                        Navigator.pop(context);
-                      },
-                      child: Text('Clear', style: TextStyle(color: cs.primary)),
-                    ),
-                ],
-              ),
+                ),
+                const Spacer(),
+                if (widget.showClear && widget.onClear != null)
+                  TextButton(
+                    onPressed: () {
+                      widget.onClear!();
+                      Navigator.pop(context);
+                    },
+                    child: Text('Clear', style: TextStyle(color: cs.primary)),
+                  ),
+              ],
             ),
+          ),
 
-            // Category filter chips
-            sportsAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-              data: (sports) {
-                final categories = sports
-                    .where((s) => s.category != null && s.category!.isNotEmpty)
-                    .map((s) => s.category!)
-                    .toSet()
-                    .toList()
-                  ..sort();
-                if (categories.length <= 1) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: SizedBox(
-                    height: 38,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
+          // Category filter chips
+          sportsAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (sports) {
+              final categories = sports
+                  .where((s) => s.category != null && s.category!.isNotEmpty)
+                  .map((s) => s.category!)
+                  .toSet()
+                  .toList()
+                ..sort();
+              if (categories.length <= 1) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: SizedBox(
+                  height: 38,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _FilterChip(
+                        label: 'All',
+                        isSelected: _activeCategoryFilter == null,
+                        onTap: () =>
+                            setState(() => _activeCategoryFilter = null),
+                      ),
+                      const SizedBox(width: 8),
+                      for (final cat in categories) ...[
                         _FilterChip(
-                          label: 'All',
-                          isSelected: _activeCategoryFilter == null,
+                          label: _prettify(cat),
+                          isSelected: _activeCategoryFilter == cat,
                           onTap: () =>
-                              setState(() => _activeCategoryFilter = null),
+                              setState(() => _activeCategoryFilter = cat),
                         ),
                         const SizedBox(width: 8),
-                        for (final cat in categories) ...[
-                          _FilterChip(
-                            label: _prettify(cat),
-                            isSelected: _activeCategoryFilter == cat,
-                            onTap: () =>
-                                setState(() => _activeCategoryFilter = cat),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
                       ],
-                    ),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          ),
 
-            // Sports list
-            Expanded(
-              child: sportsAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (_, __) => Center(
+          // Sports list
+          Flexible(
+            child: sportsAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Center(
                   child: Text(
                     'Failed to load sports',
                     style: TextStyle(color: cs.error),
                   ),
                 ),
-                data: (sports) {
-                  var items = sports.toList();
-                  if (_activeCategoryFilter != null) {
-                    items = items
-                        .where((s) => s.category == _activeCategoryFilter)
-                        .toList();
-                  }
-                  if (items.isEmpty) {
-                    return Center(
+              ),
+              data: (sports) {
+                var items = sports.toList();
+                if (_activeCategoryFilter != null) {
+                  items = items
+                      .where((s) => s.category == _activeCategoryFilter)
+                      .toList();
+                }
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
                       child: Text(
                         'No sports available',
                         style: TextStyle(color: cs.onSurfaceVariant),
                       ),
-                    );
-                  }
-                  return ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                    itemCount: items.length,
-                    itemBuilder: (_, i) {
-                      final sport = items[i];
-                      final isSelected =
-                          sport.id == widget.selectedSport?.id;
-                      return ListTile(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        tileColor: isSelected
-                            ? cs.primaryContainer
-                            : Colors.transparent,
-                        leading: Text(
-                          sport.emoji ?? '🏅',
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        title: Text(
-                          sport.localizedName(context),
-                          style: tt.bodyMedium?.copyWith(
-                            color: isSelected
-                                ? cs.onPrimaryContainer
-                                : cs.onSurface,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                        subtitle: sport.category != null
-                            ? Text(
-                                _prettify(sport.category!),
-                                style: tt.labelSmall
-                                    ?.copyWith(color: cs.onSurfaceVariant),
-                              )
-                            : null,
-                        onTap: () {
-                          widget.onSelect(sport);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
+                    ),
                   );
-                },
-              ),
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+                  itemCount: items.length,
+                  itemBuilder: (_, i) {
+                    final sport = items[i];
+                    final isSelected = sport.id == widget.selectedSport?.id;
+                    return ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      tileColor: isSelected
+                          ? cs.primaryContainer
+                          : Colors.transparent,
+                      leading: Text(
+                        sport.emoji ?? '🏅',
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      title: Text(
+                        sport.localizedName(context),
+                        style: tt.bodyMedium?.copyWith(
+                          color: isSelected
+                              ? cs.onPrimaryContainer
+                              : cs.onSurface,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                      ),
+                      subtitle: sport.category != null
+                          ? Text(
+                              _prettify(sport.category!),
+                              style: tt.labelSmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
+                            )
+                          : null,
+                      onTap: () {
+                        widget.onSelect(sport);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 }

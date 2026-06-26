@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
-import '../../../../../themes/app_text_styles.dart';
 import '../../../../../utils/formatters/time_formatter.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
 import 'package:dabbler/data/models/authentication/user_model.dart';
@@ -126,7 +125,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
             const SizedBox(width: 8),
             Text(
               isLeft ? 'Message' : 'Remove',
-              style: AppTextStyles.bodyMedium.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: isLeft ? Colors.blue : Colors.red,
                 fontWeight: FontWeight.w600,
               ),
@@ -276,7 +275,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
             Expanded(
               child: Text(
                 widget.friend.displayName,
-                style: AppTextStyles.titleMedium.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -287,7 +286,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
         const SizedBox(height: 2),
         Text(
           widget.friend.email ?? '@unknown',
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
@@ -320,7 +319,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
           const SizedBox(width: 6),
           Text(
             'Online now',
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.green,
               fontWeight: FontWeight.w500,
             ),
@@ -331,7 +330,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
 
     return Text(
       'Last seen ${TimeFormatter.format(DateTime.now().subtract(const Duration(hours: 2)))}',
-      style: AppTextStyles.bodySmall.copyWith(
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
@@ -364,7 +363,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
           Flexible(
             child: Text(
               mockActivity['description'] ?? 'Active',
-              style: AppTextStyles.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w500,
               ),
@@ -541,7 +540,7 @@ class _FriendTileState extends ConsumerState<FriendTile>
 
         return Text(
           '${snapshot.data?.length ?? 0} mutual friends',
-          style: AppTextStyles.bodySmall.copyWith(
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         );

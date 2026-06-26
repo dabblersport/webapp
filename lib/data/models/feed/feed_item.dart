@@ -11,7 +11,10 @@ sealed class FeedItem {
   const FeedItem();
 
   static FeedItem fromFeedPostsRow(Map<String, dynamic> json) {
-    if (json['news_id'] != null) {
+    // Treat only a non-empty news_id as a news row; an empty string would
+    // otherwise route here and corrupt dedup keys downstream.
+    final newsId = json['news_id'];
+    if (newsId is String && newsId.isNotEmpty) {
       return FeedNewsItem.fromJson(json);
     }
     return FeedPostItem.fromFeedPostsRow(json);
@@ -110,8 +113,13 @@ final class FeedNewsItem extends FeedItem {
     // news_body may not exist on the VIEW — fall back to the shared `body` column.
     final rawBody = json['news_body'] ?? {'en': json['body'] ?? ''};
 
+    final newsId = json['news_id'];
+    if (newsId is! String || newsId.isEmpty) {
+      throw FormatException('FeedNewsItem requires a non-empty news_id', newsId);
+    }
+
     return FeedNewsItem(
-      newsId: json['news_id'] as String,
+      newsId: newsId,
       id: json['id'] as String,
       title: toStringMap(json['news_title']),
       body: toStringMap(rawBody),

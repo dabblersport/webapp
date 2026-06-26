@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
-import '../../../../../themes/app_text_styles.dart';
 import 'package:dabbler/data/models/social/chat_message_model.dart';
 import 'package:dabbler/data/models/authentication/user_model.dart';
 
@@ -305,7 +304,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
             ),
             title: Text(
               mention,
-              style: AppTextStyles.bodyMedium.copyWith(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -343,7 +342,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
                     children: [
                       Text(
                         'Replying to ${widget.replyToUser?.displayName ?? 'User'}',
-                        style: AppTextStyles.bodySmall.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -351,7 +350,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
                       const SizedBox(height: 2),
                       Text(
                         widget.replyToMessage?.content ?? 'Message',
-                        style: AppTextStyles.bodySmall.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
@@ -389,14 +388,14 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
               Expanded(
                 child: Text(
                   'Uploading...',
-                  style: AppTextStyles.bodySmall.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
               Text(
                 '${(widget.uploadProgress * 100).toInt()}%',
-                style: AppTextStyles.bodySmall.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
@@ -471,7 +470,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: AppTextStyles.bodyMedium.copyWith(
+          hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           border: InputBorder.none,
@@ -480,7 +479,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
             vertical: 12,
           ),
         ),
-        style: AppTextStyles.bodyMedium,
+        style: Theme.of(context).textTheme.bodyMedium,
         onSubmitted: (_) => _handleSend(),
       ),
     );
@@ -659,7 +658,7 @@ class _ChatInputWidgetState extends ConsumerState<ChatInputWidget>
           const SizedBox(height: 8),
           Text(
             label,
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),

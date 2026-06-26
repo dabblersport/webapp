@@ -72,13 +72,7 @@ class _TermsOfServiceScreenState extends ConsumerState<TermsOfServiceScreen>
           onPressed: () => context.pop(),
         ),
         elevation: _isScrolled ? 2 : 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: _shareTerms,
-            tooltip: 'Share Terms',
-          ),
-        ],
+        // Share action hidden until share is implemented.
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -317,30 +311,8 @@ class _TermsOfServiceScreenState extends ConsumerState<TermsOfServiceScreen>
                 context,
               ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: _contactSupport,
-                child: const Text('Contact Support'),
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _shareTerms() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share functionality coming soon')),
-    );
-  }
-
-  void _contactSupport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Contact support functionality coming soon'),
       ),
     );
   }

@@ -143,6 +143,7 @@ class OnboardingScreenHead extends StatelessWidget {
               subtitle!,
               style: TextStyle(
                 fontSize: 15.5,
+                fontWeight: FontWeight.w500,
                 color: colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
@@ -214,9 +215,12 @@ class OnboardingCTAButton extends StatelessWidget {
                         if (icon != null) ...[icon!, const SizedBox(width: 8)],
                         Text(
                           label,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            height: 1.0,
+                            leadingDistribution: TextLeadingDistribution.even,
                             color: disabled
                                 ? colorScheme.onPrimaryFixed.withValues(
                                     alpha: 0.4,

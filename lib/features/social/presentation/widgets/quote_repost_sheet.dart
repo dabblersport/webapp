@@ -69,7 +69,7 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: cs.onSurfaceVariant.withOpacity(0.3),
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -133,7 +133,7 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: cs.outlineVariant.withOpacity(0.4),
+                      color: cs.outlineVariant.withValues(alpha: 0.4),
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),

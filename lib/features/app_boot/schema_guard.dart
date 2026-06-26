@@ -24,7 +24,10 @@ class _BootSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const Scaffold(
+      backgroundColor: Color(0xFF7328CE),
+      body: SizedBox.expand(),
+    );
   }
 }
 

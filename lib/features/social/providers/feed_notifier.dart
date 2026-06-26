@@ -12,45 +12,82 @@ import 'post_providers.dart';
 // FEED STATE
 // =============================================================================
 
-class FeedState {
-  const FeedState({
-    this.items = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
+/// Home feed state as a sealed union so illegal flag combinations (e.g. an
+/// error while loading, or pagination flags without data) are unrepresentable.
+///
+/// Variants:
+///   [FeedLoading] — initial first load, no data yet.
+///   [FeedFailure] — initial load failed, no data.
+///   [FeedData]    — data present; carries pagination + realtime sub-state.
+///
+/// Base getters let widgets keep reading `isLoading` / `items` / `hasMore`
+/// without pattern-matching, while the notifier can only emit a valid variant.
+sealed class FeedState {
+  const FeedState();
+
+  List<FeedItem> get items => const [];
+  bool get isLoading => false;
+  bool get isLoadingMore => false;
+  bool get hasMore => false;
+  String? get error => null;
+  bool get hasNewPosts => false;
+}
+
+final class FeedLoading extends FeedState {
+  const FeedLoading();
+
+  @override
+  bool get isLoading => true;
+  @override
+  bool get hasMore => true;
+}
+
+final class FeedFailure extends FeedState {
+  const FeedFailure(this.message);
+
+  final String message;
+
+  @override
+  String? get error => message;
+}
+
+final class FeedData extends FeedState {
+  const FeedData({
+    required this.items,
     this.hasMore = true,
-    this.error,
+    this.loadingMore = false,
     this.hasNewPosts = false,
     this.cursor,
   });
 
+  @override
   final List<FeedItem> items;
-  final bool isLoading;
-  final bool isLoadingMore;
+  @override
   final bool hasMore;
-  final String? error;
+
+  final bool loadingMore;
+  @override
+  bool get isLoadingMore => loadingMore;
 
   /// True when the realtime subscription has prepended new items and the user
   /// hasn't yet acknowledged the indicator.
+  @override
   final bool hasNewPosts;
 
   /// Cursor for next page — `created_at` of last fetched row from the RPC.
   final DateTime? cursor;
 
-  FeedState copyWith({
+  FeedData copyWith({
     List<FeedItem>? items,
-    bool? isLoading,
-    bool? isLoadingMore,
     bool? hasMore,
-    Object? error = _sentinel,
+    bool? loadingMore,
     bool? hasNewPosts,
     Object? cursor = _sentinel,
   }) {
-    return FeedState(
+    return FeedData(
       items: items ?? this.items,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
-      error: error == _sentinel ? this.error : error as String?,
+      loadingMore: loadingMore ?? this.loadingMore,
       hasNewPosts: hasNewPosts ?? this.hasNewPosts,
       cursor: cursor == _sentinel ? this.cursor : cursor as DateTime?,
     );
@@ -69,7 +106,7 @@ class FeedState {
 ///   1. Opens a Realtime channel subscribed to INSERT/DELETE/UPDATE on [posts].
 ///   2. Calls [load] to fetch the initial page via [get_home_feed].
 class FeedNotifier extends StateNotifier<FeedState> {
-  FeedNotifier(this._repo, this._db) : super(const FeedState()) {
+  FeedNotifier(this._repo, this._db) : super(const FeedLoading()) {
     _subscribeRealtime();
     load();
   }
@@ -121,8 +158,10 @@ class FeedNotifier extends StateNotifier<FeedState> {
   void _onPostDeleted(PostgresChangePayload payload) {
     final postId = payload.oldRecord['id'] as String?;
     if (postId == null || !mounted) return;
-    state = state.copyWith(
-      items: state.items.where((item) {
+    final data = state;
+    if (data is! FeedData) return;
+    state = data.copyWith(
+      items: data.items.where((item) {
         if (item is FeedPostItem) return item.post.id != postId;
         return true;
       }).toList(),
@@ -143,8 +182,10 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
     result.fold((_) => null, (posts) {
       if (posts.isEmpty) return;
-      state = state.copyWith(
-        items: [FeedPostItem(posts.first), ...state.items],
+      final data = state;
+      if (data is! FeedData) return;
+      state = data.copyWith(
+        items: [FeedPostItem(posts.first), ...data.items],
         hasNewPosts: true,
       );
     });
@@ -180,9 +221,11 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
     result.fold((_) => null, (posts) {
       if (posts.isEmpty) return;
-      final newList = List<FeedItem>.from(state.items);
+      final data = state;
+      if (data is! FeedData) return;
+      final newList = List<FeedItem>.from(data.items);
       newList[idx] = FeedPostItem(posts.first);
-      state = state.copyWith(items: newList);
+      state = data.copyWith(items: newList);
     });
   }
 
@@ -190,64 +233,74 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   Future<void> load() async {
     if (!mounted) return;
-    state = state.copyWith(
-      isLoading: true,
-      error: null,
-      items: const [],
-      cursor: null,
-    );
+    state = const FeedLoading();
 
     try {
-      final items = await _fetchPage(cursor: null);
+      final page = await _fetchPage(cursor: null);
       if (!mounted) return;
-      state = state.copyWith(
-        items: items,
-        isLoading: false,
-        hasMore: items.length >= _pageSize,
+      state = FeedData(
+        items: page.items,
+        hasMore: page.items.length >= _pageSize,
+        cursor: page.cursor,
         hasNewPosts: false,
       );
     } catch (e) {
       if (!mounted) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = FeedFailure(e.toString());
     }
   }
 
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || !mounted) return;
+    final data = state;
+    if (data is! FeedData || data.loadingMore || !data.hasMore || !mounted) {
+      return;
+    }
 
-    state = state.copyWith(isLoadingMore: true);
+    state = data.copyWith(loadingMore: true);
 
     try {
-      final newItems = await _fetchPage(cursor: state.cursor);
+      final page = await _fetchPage(cursor: data.cursor);
       if (!mounted) return;
+      final current = state;
+      if (current is! FeedData) return;
 
-      if (newItems.isEmpty) {
-        state = state.copyWith(hasMore: false, isLoadingMore: false);
+      if (page.items.isEmpty) {
+        state = current.copyWith(hasMore: false, loadingMore: false);
         return;
       }
 
-      final existingIds = _itemIds(state.items);
+      final existingIds = _itemIds(current.items);
       final deduped =
-          newItems.where((i) => !existingIds.contains(_itemId(i))).toList();
+          page.items.where((i) => !existingIds.contains(_itemId(i))).toList();
 
-      state = state.copyWith(
-        items: [...state.items, ...deduped],
-        isLoadingMore: false,
-        hasMore: newItems.length >= _pageSize && deduped.isNotEmpty,
+      state = current.copyWith(
+        items: [...current.items, ...deduped],
+        loadingMore: false,
+        hasMore: page.items.length >= _pageSize && deduped.isNotEmpty,
+        cursor: page.cursor,
       );
     } catch (e) {
       if (!mounted) return;
-      state = state.copyWith(isLoadingMore: false, error: e.toString());
+      final current = state;
+      // A load-more failure keeps existing data; just stop the spinner.
+      if (current is FeedData) {
+        state = current.copyWith(loadingMore: false);
+      }
     }
   }
 
   void clearNewPostsBadge() {
-    if (state.hasNewPosts) state = state.copyWith(hasNewPosts: false);
+    final data = state;
+    if (data is FeedData && data.hasNewPosts) {
+      state = data.copyWith(hasNewPosts: false);
+    }
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  Future<List<FeedItem>> _fetchPage({required DateTime? cursor}) async {
+  Future<({List<FeedItem> items, DateTime? cursor})> _fetchPage({
+    required DateTime? cursor,
+  }) async {
     final response = await _db.rpc('get_home_feed', params: {
       'p_limit': _pageSize,
       'p_cursor': cursor?.toUtc().toIso8601String(),
@@ -257,7 +310,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
 
-    if (rows.isEmpty) return const [];
+    if (rows.isEmpty) return (items: const <FeedItem>[], cursor: cursor);
 
     // Advance cursor from the last row.
     final lastCreatedAt = rows.last['created_at'];
@@ -327,11 +380,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
       }
     }
 
-    if (newCursor != null && mounted) {
-      state = state.copyWith(cursor: newCursor);
-    }
-
-    return result;
+    return (items: result, cursor: newCursor ?? cursor);
   }
 
   static Map<String, dynamic> _normalizeNewsRow(Map<String, dynamic> row) => {

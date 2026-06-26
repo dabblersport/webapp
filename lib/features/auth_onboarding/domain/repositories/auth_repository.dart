@@ -8,7 +8,6 @@ abstract class AuthRepository {
     required String email,
     required String password,
   });
-  Future<Result<AuthSession, Failure>> signInWithPhone({required String phone});
   Future<Result<AuthSession, Failure>> signUp({
     required String email,
     required String password,
@@ -19,7 +18,7 @@ abstract class AuthRepository {
   Future<Result<void, Failure>> resetPassword({required String email});
   Future<Result<void, Failure>> updatePassword({required String newPassword});
   Future<Result<AuthSession, Failure>> verifyOTP({
-    required String phone,
+    required String email,
     required String token,
   });
 }

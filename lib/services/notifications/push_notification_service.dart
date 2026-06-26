@@ -1,5 +1,7 @@
 // Conditionally import Firebase only on mobile platforms
 // On web (dart.library.html exists), use stub. On mobile (dart.library.io exists), use mobile implementation.
+import 'package:dabbler/core/config/notification_preference.dart';
+
 import 'push_notification_service_stub.dart'
     if (dart.library.html) 'push_notification_service_stub.dart'
     if (dart.library.io) 'push_notification_service_mobile.dart'
@@ -28,7 +30,9 @@ class PushNotificationService {
   }
 
   /// Save user's notification permission preference
-  Future<void> saveNotificationPreference(String preference) async {
+  Future<void> saveNotificationPreference(
+    NotificationPreference preference,
+  ) async {
     await impl.PushNotificationService.instance.saveNotificationPreference(
       preference,
     );

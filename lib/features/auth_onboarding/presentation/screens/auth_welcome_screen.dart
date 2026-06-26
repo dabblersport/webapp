@@ -389,13 +389,24 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 14),
-                      GestureDetector(
-                        onTap: _isLoading ? null : _handleLogin,
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _isLoading ? null : _handleLogin,
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(0, 44),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
                         child: Text.rich(
                           TextSpan(
                             text: 'Already have an account? ',
-                            style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
                             children: [
                               TextSpan(
                                 text: 'Log in',

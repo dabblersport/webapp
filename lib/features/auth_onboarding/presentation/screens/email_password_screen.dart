@@ -48,11 +48,26 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     );
   }
 
+  // Forgot Password is hidden on the login screen for now.
+  static const bool _showForgotPassword = false;
+
+  // Email regex shared by the localized validator and the context-free check.
+  static final RegExp _emailRegExp = RegExp(
+    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+  );
+
+  /// Format-only validity check that does NOT touch Localizations, so it is
+  /// safe to call from initState (before dependencies are available).
+  bool _isEmailFormatValid(String? value) {
+    final email = value?.trim() ?? '';
+    return email.isNotEmpty && _emailRegExp.hasMatch(email);
+  }
+
   @override
   void initState() {
     super.initState();
     _emailController.text = widget.email;
-    _isEmailValid = _validateEmail(widget.email) == null;
+    _isEmailValid = _isEmailFormatValid(widget.email);
   }
 
   @override
@@ -66,14 +81,14 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     final l10n = AppLocalizations.of(context);
     final email = value?.trim() ?? '';
     if (email.isEmpty) return l10n.email_password_validate_email_required;
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    if (!_emailRegExp.hasMatch(email)) {
       return l10n.email_password_validate_email_invalid;
     }
     return null;
   }
 
   void _onEmailChanged(String value) {
-    final isValid = _validateEmail(value) == null;
+    final isValid = _isEmailFormatValid(value);
     if (isValid != _isEmailValid) {
       setState(() => _isEmailValid = isValid);
     }
@@ -314,27 +329,31 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                           // ),
                           // const SizedBox(height: 14),
                           _buildPasswordField(context),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: TextButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => context.go(
-                                      RoutePaths.forgotPassword,
-                                      extra: {
-                                        'email': _emailController.text.trim(),
-                                      },
-                                    ),
-                              child: Text(
-                                AppLocalizations.of(context).email_password_forgot,
-                                style: _controlTextStyle(
-                                  context,
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.primary,
+                          if (_showForgotPassword) ...[
+                            const SizedBox(height: 12),
+                            Center(
+                              child: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => context.go(
+                                        RoutePaths.forgotPassword,
+                                        extra: {
+                                          'email': _emailController.text.trim(),
+                                        },
+                                      ),
+                                child: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).email_password_forgot,
+                                  style: _controlTextStyle(
+                                    context,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.primary,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                           const SizedBox(height: 12),
                           _buildLoginButton(context),
                           const SizedBox(height: 12),

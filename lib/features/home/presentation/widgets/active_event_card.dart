@@ -7,10 +7,10 @@ import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
-import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-/// Top-level router — maps event_type to its dedicated card widget.
+/// Top-level router — dispatches each sealed [ActiveEvent] variant to its
+/// dedicated card widget. Exhaustive: a new variant is a compile error.
 class ActiveEventCard extends StatelessWidget {
   const ActiveEventCard({super.key, required this.event});
 
@@ -18,12 +18,11 @@ class ActiveEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return switch (event.eventType) {
-      'player_joined_game' => GroupedJoinCard(event: event),
-      'game_created' => GameCard(event: event),
-      'post_created' => PostCard(event: event),
-      'user_joined' => NewUserCard(event: event),
-      _ => const SizedBox.shrink(),
+    return switch (event) {
+      final PlayerJoinedEvent e => GroupedJoinCard(event: e),
+      final GameCreatedEvent e => GameCard(event: e),
+      final PostCreatedEvent e => PostCard(event: e),
+      final NewUserEvent e => NewUserCard(event: e),
     };
   }
 }
@@ -136,7 +135,7 @@ class _StackedAvatars extends StatelessWidget {
 
 class GroupedJoinCard extends StatelessWidget {
   const GroupedJoinCard({super.key, required this.event});
-  final ActiveEvent event;
+  final PlayerJoinedEvent event;
 
   @override
   Widget build(BuildContext context) {
@@ -145,25 +144,12 @@ class GroupedJoinCard extends StatelessWidget {
     final count = event.joinCount;
     final isGrouped = count > 1;
 
-    // Pull stacked avatar URLs out of metadata.user_avatars (list of strings).
-    final rawMeta = event.data['metadata'];
-    final avatarUrls = <String>[];
-    if (rawMeta is Map) {
-      final raw = rawMeta['user_avatars'];
-      if (raw is List) {
-        for (final u in raw) {
-          if (u is String && u.isNotEmpty) avatarUrls.add(u);
-        }
-      }
-    }
+    // Stacked avatar URLs are parsed into the typed variant at construction.
+    final avatarUrls = event.avatarUrls;
 
     return InkWell(
       onTap: event.gameId != null
-          ? () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => GameDetailScreen(gameId: event.gameId!),
-              ),
-            )
+          ? () => context.push(RoutePaths.gameDetail(event.gameId!))
           : null,
       child: Container(
         margin: const EdgeInsets.symmetric(
@@ -270,7 +256,7 @@ class GroupedJoinCard extends StatelessWidget {
 
 class GameCard extends StatelessWidget {
   const GameCard({super.key, required this.event});
-  final ActiveEvent event;
+  final GameCreatedEvent event;
 
   @override
   Widget build(BuildContext context) {
@@ -287,11 +273,7 @@ class GameCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: event.gameId != null
-              ? () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => GameDetailScreen(gameId: event.gameId!),
-                  ),
-                )
+              ? () => context.push(RoutePaths.gameDetail(event.gameId!))
               : null,
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -379,12 +361,8 @@ class GameCard extends StatelessWidget {
                         ),
                       ),
                       onPressed: event.gameId != null
-                          ? () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    GameDetailScreen(gameId: event.gameId!),
-                              ),
-                            )
+                          ? () =>
+                              context.push(RoutePaths.gameDetail(event.gameId!))
                           : null,
                       child: const Text('Join Game'),
                     ),
@@ -406,7 +384,7 @@ class GameCard extends StatelessWidget {
 
 class PostCard extends ConsumerWidget {
   const PostCard({super.key, required this.event});
-  final ActiveEvent event;
+  final PostCreatedEvent event;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -439,7 +417,7 @@ class PostCard extends ConsumerWidget {
 
 class NewUserCard extends StatelessWidget {
   const NewUserCard({super.key, required this.event});
-  final ActiveEvent event;
+  final NewUserEvent event;
 
   @override
   Widget build(BuildContext context) {

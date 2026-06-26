@@ -8,7 +8,7 @@
 
         <!-- Android 12+ native splash configuration -->
         <item name="android:windowSplashScreenBackground">@color/splash_purple</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo</item>
         <item name="android:windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
         <item name="android:windowSplashScreenBrandingImage">@null</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>

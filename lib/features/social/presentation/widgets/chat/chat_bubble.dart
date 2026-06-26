@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/design_system/design_system.dart' hide AppColors;
 import '../../../../../themes/app_colors.dart';
-import '../../../../../themes/app_text_styles.dart';
 import '../../../../../utils/formatters/time_formatter.dart';
 import '../../../../../utils/enums/social_enums.dart'; // For MessageType
 // Removed broken image/video widget imports
@@ -367,7 +366,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
   Widget _buildTextContent() {
     return SelectableText(
       widget.message.content,
-      style: AppTextStyles.bodyMedium.copyWith(
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
         color: _bubbleType == MessageBubbleType.sent
             ? Colors.white
             : Theme.of(context).colorScheme.onSurface,
@@ -424,7 +423,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
                   widget.message.mediaAttachments.isNotEmpty
                       ? widget.message.mediaAttachments.first.name
                       : 'File',
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: _bubbleType == MessageBubbleType.sent
                         ? Colors.white
                         : Theme.of(context).colorScheme.onSurface,
@@ -434,7 +433,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
                 if (widget.message.mediaAttachments.isNotEmpty)
                   Text(
                     _formatFileSize(widget.message.mediaAttachments.first.size),
-                    style: AppTextStyles.bodySmall.copyWith(
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: _bubbleType == MessageBubbleType.sent
                           ? Colors.white.withValues(alpha: 0.7)
                           : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -477,7 +476,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           const SizedBox(width: 8),
           Text(
             '0:00',
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: _bubbleType == MessageBubbleType.sent
                   ? Colors.white.withValues(alpha: 0.8)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -518,7 +517,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           const SizedBox(height: 8),
           Text(
             'Link Preview Title',
-            style: AppTextStyles.bodyMedium.copyWith(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: _bubbleType == MessageBubbleType.sent
                   ? Colors.white
                   : Theme.of(context).colorScheme.onSurface,
@@ -530,7 +529,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           const SizedBox(height: 4),
           Text(
             'Link description preview...',
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: _bubbleType == MessageBubbleType.sent
                   ? Colors.white.withValues(alpha: 0.7)
                   : Theme.of(context).colorScheme.onSurfaceVariant,
@@ -552,7 +551,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           if (widget.showTimestamp)
             Text(
               TimeFormatter.format(widget.message.sentAt),
-              style: AppTextStyles.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 11,
               ),
@@ -562,7 +561,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
             const SizedBox(width: 4),
             Text(
               'Read by ${widget.message.readBy.length}',
-              style: AppTextStyles.bodySmall.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 11,
               ),
@@ -599,7 +598,7 @@ class _ChatBubbleState extends ConsumerState<ChatBubble>
           ),
           child: Text(
             widget.message.content,
-            style: AppTextStyles.bodySmall.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,

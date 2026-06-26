@@ -4,18 +4,18 @@ import 'package:flutter/material.dart';
 class DabblerColors {
   // Primary Brand Colors
   static const MaterialColor primary = MaterialColor(
-    0xFF8B5CF6, // Dabbler Purple
+    0xFF7328CE, // Dabbler Purple
     {
-      50: Color(0xFFF5F3FF),
-      100: Color(0xFFEDE9FE),
-      200: Color(0xFFDDD6FE),
-      300: Color(0xFFC4B5FD),
-      400: Color(0xFFA78BFA),
-      500: Color(0xFF8B5CF6), // Primary
-      600: Color(0xFF7C3AED),
-      700: Color(0xFF6D28D9),
-      800: Color(0xFF5B21B6),
-      900: Color(0xFF4C1D95),
+      50: Color(0xFFF3EBFE),
+      100: Color(0xFFE2CCFB),
+      200: Color(0xFFC9A6F7),
+      300: Color(0xFFAC7DF1),
+      400: Color(0xFF9152E0),
+      500: Color(0xFF7328CE), // Primary
+      600: Color(0xFF5F1FAB),
+      700: Color(0xFF4B1788),
+      800: Color(0xFF380F65),
+      900: Color(0xFF24064A),
     },
   );
 

@@ -202,20 +202,11 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Recent Achievements',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => _navigateToAchievements(),
-                        child: const Text('View All'),
-                      ),
-                    ],
+                  Text(
+                    'Recent Achievements',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   ...(_recentAchievements.map(
@@ -339,15 +330,6 @@ class _ProfileRewardsWidgetState extends State<ProfileRewardsWidget> {
     } else {
       return number.toString();
     }
-  }
-
-  void _navigateToAchievements() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Achievements screen coming soon!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 }
 

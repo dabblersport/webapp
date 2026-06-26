@@ -1198,8 +1198,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
       if (mounted) {
         Navigator.of(context).pop(); // Remove loading dialog
-        // Navigate to phone input (primary auth entry) instead of legacy /login
-        context.go(RoutePaths.phoneInput);
+        context.go(RoutePaths.authWelcome);
       }
     } catch (e) {
       if (mounted) {

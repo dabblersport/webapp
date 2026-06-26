@@ -12,45 +12,65 @@ import 'post_providers.dart';
 // GENERIC TAB FEED STATE
 // =============================================================================
 
-class TabFeedState {
-  const TabFeedState({
-    this.posts = const [],
-    this.isLoading = false,
-    this.isLoadingMore = false,
+/// Generic tab feed state as a sealed union — illegal flag combinations are
+/// unrepresentable. [TabFeedData] is the loaded steady state (its presence is
+/// what `loaded` used to mean); [TabFeedLoading]/[TabFeedFailure] are the
+/// no-data states. Base getters keep widget read sites unchanged.
+sealed class TabFeedState {
+  const TabFeedState();
+
+  List<Post> get posts => const [];
+  bool get isLoading => false;
+  bool get isLoadingMore => false;
+  bool get hasMore => false;
+  String? get error => null;
+}
+
+final class TabFeedLoading extends TabFeedState {
+  const TabFeedLoading();
+
+  @override
+  bool get isLoading => true;
+  @override
+  bool get hasMore => true;
+}
+
+final class TabFeedFailure extends TabFeedState {
+  const TabFeedFailure(this.message);
+
+  final String message;
+
+  @override
+  String? get error => message;
+}
+
+final class TabFeedData extends TabFeedState {
+  const TabFeedData({
+    required this.posts,
     this.hasMore = true,
-    this.error,
-    this.loaded = false,
+    this.loadingMore = false,
   });
 
+  @override
   final List<Post> posts;
-  final bool isLoading;
-  final bool isLoadingMore;
+  @override
   final bool hasMore;
-  final String? error;
 
-  /// True once a successful first load has completed (prevents re-fetch on
-  /// tab switch).
-  final bool loaded;
+  final bool loadingMore;
+  @override
+  bool get isLoadingMore => loadingMore;
 
-  TabFeedState copyWith({
+  TabFeedData copyWith({
     List<Post>? posts,
-    bool? isLoading,
-    bool? isLoadingMore,
     bool? hasMore,
-    Object? error = _sentinel,
-    bool? loaded,
+    bool? loadingMore,
   }) {
-    return TabFeedState(
+    return TabFeedData(
       posts: posts ?? this.posts,
-      isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
-      error: error == _sentinel ? this.error : error as String?,
-      loaded: loaded ?? this.loaded,
+      loadingMore: loadingMore ?? this.loadingMore,
     );
   }
-
-  static const Object _sentinel = Object();
 }
 
 // =============================================================================
@@ -70,7 +90,7 @@ typedef _FeedFetcher =
 /// - [loadMore()] appends the next page.
 class TabFeedNotifier extends StateNotifier<TabFeedState> {
   TabFeedNotifier(this._fetcher, {bool autoLoad = true})
-    : super(const TabFeedState()) {
+    : super(const TabFeedLoading()) {
     if (autoLoad) ensureLoaded();
   }
 
@@ -80,35 +100,36 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
 
   /// Loads the first page only if not yet loaded (cache-friendly).
   Future<void> ensureLoaded() async {
-    if (state.loaded) return;
+    if (state is TabFeedData) return;
     await load();
   }
 
   /// Force-reload from first page.
   Future<void> load() async {
     if (!mounted) return;
-    state = state.copyWith(isLoading: true, error: null);
+    state = const TabFeedLoading();
     _activePage = 0;
 
     final result = await _fetcher(limit: _pageSize, offset: 0);
     if (!mounted) return;
 
     result.fold(
-      (err) => state = state.copyWith(isLoading: false, error: err.message),
-      (posts) => state = state.copyWith(
+      (err) => state = TabFeedFailure(err.message),
+      (posts) => state = TabFeedData(
         posts: posts,
-        isLoading: false,
         hasMore: posts.length >= _pageSize,
-        loaded: true,
       ),
     );
   }
 
   /// Appends the next page.
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore || !mounted) return;
+    final data = state;
+    if (data is! TabFeedData || data.loadingMore || !data.hasMore || !mounted) {
+      return;
+    }
 
-    state = state.copyWith(isLoadingMore: true);
+    state = data.copyWith(loadingMore: true);
     final nextPage = _activePage + 1;
 
     final result = await _fetcher(
@@ -117,21 +138,24 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
     );
     if (!mounted) return;
 
-    result.fold((_) => state = state.copyWith(isLoadingMore: false), (
+    final current = state;
+    if (current is! TabFeedData) return;
+
+    result.fold((_) => state = current.copyWith(loadingMore: false), (
       newPosts,
     ) {
       if (newPosts.isEmpty) {
-        state = state.copyWith(hasMore: false, isLoadingMore: false);
+        state = current.copyWith(hasMore: false, loadingMore: false);
         return;
       }
       _activePage = nextPage;
-      final existingIds = state.posts.map((p) => p.id).toSet();
+      final existingIds = current.posts.map((p) => p.id).toSet();
       final deduped = newPosts
           .where((p) => !existingIds.contains(p.id))
           .toList();
-      state = state.copyWith(
-        posts: [...state.posts, ...deduped],
-        isLoadingMore: false,
+      state = current.copyWith(
+        posts: [...current.posts, ...deduped],
+        loadingMore: false,
         hasMore: newPosts.length >= _pageSize && deduped.isNotEmpty,
       );
     });

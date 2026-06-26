@@ -351,7 +351,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 ),
               const Spacer(),
               TextButton(
-                onPressed: () => context.go(RoutePaths.phoneInput),
+                onPressed: () => context.go(RoutePaths.authWelcome),
                 child: Text(AppLocalizations.of(context).email_verify_different_account),
               ),
             ],

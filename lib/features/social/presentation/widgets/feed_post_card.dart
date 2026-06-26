@@ -603,7 +603,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                         color: Colors.transparent,
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
-                                          color: sportColor.withOpacity(0.4),
+                                          color: sportColor.withValues(alpha: 0.4),
                                         ),
                                       ),
                                       child: Text.rich(
@@ -645,7 +645,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
-                                      color: color.withOpacity(0.4),
+                                      color: color.withValues(alpha: 0.4),
                                     ),
                                   ),
                                   child: Text(

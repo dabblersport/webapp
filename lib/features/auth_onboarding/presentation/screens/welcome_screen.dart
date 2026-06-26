@@ -223,41 +223,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     ColorScheme colorScheme,
     _PersonaContent personaContent,
   ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        FutureBuilder<Map<String, dynamic>?>(
-          future: _profileFuture,
-          builder: (context, snapshot) {
-            final profile = snapshot.data;
-            final avatarUrl = profile?['avatar_url'] as String?;
-            final avatarDisplayName =
-                (profile?['display_name'] as String?) ?? widget.displayName;
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _profileFuture,
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        final avatarUrl = profile?['avatar_url'] as String?;
+        final profileName = (profile?['display_name'] as String?)?.trim();
+        final resolvedName = (profileName != null && profileName.isNotEmpty)
+            ? profileName
+            : widget.displayName;
 
-            return DSAvatar(
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DSAvatar(
               size: AvatarSize.large,
               customDimension: 80,
               imageUrl: avatarUrl,
-              displayName: avatarDisplayName,
+              displayName: resolvedName,
               context: AvatarContext.main,
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
               hasBorder: false,
-            );
-          },
-        ),
-        const SizedBox(width: AppSpacing.lg),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              widget.displayName,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSecondaryContainer,
-              ),
             ),
+            const SizedBox(width: AppSpacing.lg),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  resolvedName,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                ),
             const SizedBox(height: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -279,9 +279,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 ),
               ),
             ),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 

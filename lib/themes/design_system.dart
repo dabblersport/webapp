@@ -138,7 +138,7 @@ class DesignSystemColors {
 
   // Secondary colors
   Color get secondary => const Color(0xFF7C3AED);
-  Color get secondaryLight => const Color(0xFF8B5CF6);
+  Color get secondaryLight => const Color(0xFF7328CE);
   Color get secondaryDark => const Color(0xFF6D28D9);
 
   // Surface colors
