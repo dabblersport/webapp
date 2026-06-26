@@ -10,6 +10,11 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  errors:
+    # Freezed places @JsonKey/@Default on factory parameters, which the
+    # analyzer flags as invalid_annotation_target even though codegen handles
+    # it correctly. Silence this codegen-only noise so real issues stay visible.
+    invalid_annotation_target: ignore
   exclude:
     - archive/**
     - backups/**
