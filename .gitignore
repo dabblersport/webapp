@@ -8,6 +8,9 @@
 # Figma MCP files with secrets
 figma-mcp/
 
+# MCP server config (contains project refs / local tooling settings)
+.mcp.json
+
 # Release builds
 releases/
 

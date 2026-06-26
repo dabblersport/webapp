@@ -206,7 +206,6 @@ flutter:
     - assets/logos/
     - lib/design_system/tokens/
     - assets/logo.png
-    - .env
     - supabase/schema/schema.json
 
   # An image asset can refer to one or more resolution-specific "variants", see

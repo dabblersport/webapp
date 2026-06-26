@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/config/environment.dart';
@@ -45,10 +46,13 @@ class IpCountryDetectionService {
         },
       );
 
-      // Debug logging
-      print('IP Location Detection Response:');
-      print('  Status: ${response.statusCode}');
-      print('  Body: ${response.body}');
+      // Debug logging (suppressed in release so the IP-derived response body
+      // is never written to production logs).
+      if (kDebugMode) {
+        debugPrint('IP Location Detection Response:');
+        debugPrint('  Status: ${response.statusCode}');
+        debugPrint('  Body: ${response.body}');
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;

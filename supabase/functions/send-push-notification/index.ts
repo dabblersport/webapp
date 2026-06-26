@@ -6,6 +6,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // - FIREBASE_PROJECT_ID: Your Firebase project ID
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "dabblersportapp";
@@ -42,8 +43,47 @@ Deno.serve(async (req: Request) => {
     }
     const effectiveBody = body || title;
 
+    // Require an authenticated caller (defense in depth on top of verify_jwt).
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user: caller }, error: callerError } =
+      await callerClient.auth.getUser();
+    if (callerError || !caller) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     // Create Supabase client with service role key
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Enforce blocking server-side: a caller may not notify a user who has
+    // blocked them (or whom they have blocked). Self-notifications are exempt.
+    if (caller.id !== user_id) {
+      const { data: block } = await supabase
+        .from("user_blocks")
+        .select("id")
+        .or(
+          `and(blocker_user_id.eq.${caller.id},blocked_user_id.eq.${user_id}),` +
+          `and(blocker_user_id.eq.${user_id},blocked_user_id.eq.${caller.id})`
+        )
+        .maybeSingle();
+      if (block) {
+        return new Response(
+          JSON.stringify({ message: "Notification skipped (blocked)", sent: 0 }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    }
 
     // Get FCM tokens for the user
     let query = supabase

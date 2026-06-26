@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class Environment {
@@ -42,16 +41,19 @@ class Environment {
   );
 
   static Future<void> load() async {
-    // Web deployments should prefer `--dart-define`.
-    // Many CDNs/WAFs (e.g. Cloudflare) block `.env` paths by default,
-    // which can break runtime loading in production.
+    // Secrets are provided at build time via --dart-define (see README).
+    // `.env` is intentionally NOT bundled as a Flutter asset, so it never
+    // ships inside the APK/IPA. We still attempt a best-effort load for
+    // local developer convenience, but the app must run fine without it.
     //
-    // For localhost/dev on web, we still support `.env` to keep the
-    // developer workflow simple.
-    if (!kIsWeb) {
+    // Run locally with:  flutter run --dart-define-from-file=.env
+    try {
       await dotenv.load(fileName: '.env');
-    } else if (!kReleaseMode) {
-      await dotenv.load(fileName: '.env');
+    } catch (_) {
+      // No `.env` asset present (the normal case for release/CI builds).
+      // Initialize an empty map so dotenv.env[...] lookups don't throw;
+      // all values then come from --dart-define.
+      dotenv.testLoad(fileInput: '');
     }
     _validate();
   }

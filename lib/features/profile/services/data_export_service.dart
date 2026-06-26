@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:uuid/uuid.dart';
 // import '../domain/entities/user_profile.dart';
 // import 'package:dabbler/core/utils/logger.dart';
 // import '../../../core/error/exceptions.dart';
@@ -1447,9 +1448,9 @@ Last Updated: ${DateTime.now().toIso8601String()}
   }
 
   String _generateExportId() {
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final random = DateTime.now().microsecondsSinceEpoch % 1000000;
-    return 'gdpr_export_${timestamp}_$random';
+    // Use a cryptographically-random UUID so export ids cannot be guessed
+    // by an attacker who knows roughly when an export was requested.
+    return 'gdpr_export_${const Uuid().v4()}';
   }
 
   Future<Directory> _getSecureExportDirectory() async {

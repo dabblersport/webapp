@@ -142,11 +142,13 @@ class SupabasePaymentMethodsDataSource implements PaymentMethodsDataSource {
           .update({'is_default': false})
           .eq('user_id', userId);
 
-      // Then set the selected one as default
+      // Then set the selected one as default — scope by user_id as well as id
+      // so a caller can never set another user's payment method as default.
       await _supabaseClient
           .from('payment_methods')
           .update({'is_default': true})
-          .eq('id', paymentMethodId);
+          .eq('id', paymentMethodId)
+          .eq('user_id', userId);
     } on PostgrestException catch (e) {
       throw PaymentMethodsException('Database error: ${e.message}');
     } catch (e) {

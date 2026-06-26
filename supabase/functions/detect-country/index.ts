@@ -81,23 +81,14 @@ Deno.serve(async (req: Request) => {
       console.log("Skipping IP lookup - private/local IP detected:", clientIp);
     }
 
-    // Log all headers for debugging
-    console.log("All headers:", Object.fromEntries(req.headers.entries()));
-
     // Map country code to full country name
     const countryName = mapCountryCodeToName(countryCode);
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         country: countryName,
         city: city || null,
         countryCode: countryCode || "XX",
-        debug: {
-          cfCountry: req.headers.get("CF-IPCountry"),
-          xForwardedFor: req.headers.get("X-Forwarded-For"),
-          xRealIp: req.headers.get("X-Real-IP"),
-          detectedFrom: countryCode ? (req.headers.get("CF-IPCountry") ? "CF-IPCountry" : "ipapi.co") : "fallback",
-        }
       }),
       { 
         status: 200, 

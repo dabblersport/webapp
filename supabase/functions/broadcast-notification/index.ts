@@ -1,11 +1,51 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // NOTE: You need to set these secrets in Supabase Dashboard:
 // - FIREBASE_SERVICE_ACCOUNT: Your Firebase service account JSON (as string)
 // - FIREBASE_PROJECT_ID: Your Firebase project ID
 
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "dabblersportapp";
+
+/**
+ * Verifies the caller is an authenticated admin.
+ * Returns an error Response if not authorized, otherwise null.
+ */
+async function requireAdmin(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  // Evaluate the request in the caller's auth context (RLS + auth.uid()).
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  });
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const { data: isAdmin, error: adminError } = await supabase.rpc("is_admin");
+  if (adminError || isAdmin !== true) {
+    return new Response(
+      JSON.stringify({ error: "Forbidden" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  return null;
+}
 
 interface BroadcastPayload {
   title: string;
@@ -23,6 +63,10 @@ Deno.serve(async (req: Request) => {
         { status: 405, headers: { "Content-Type": "application/json" } }
       );
     }
+
+    // Require an authenticated admin caller — broadcasts reach all users.
+    const authError = await requireAdmin(req);
+    if (authError) return authError;
 
     // Parse request body
     const payload: BroadcastPayload = await req.json();
@@ -54,9 +98,10 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
+    // Log details server-side only; do not leak internals to the caller.
     console.error("Error in broadcast-notification:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: String(error) }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

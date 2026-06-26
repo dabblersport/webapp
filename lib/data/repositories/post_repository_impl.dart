@@ -938,13 +938,6 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
     }
 
-    print('SESSION USER ID: ${activeSession.user.id}');
-    print('ACCESS TOKEN EXISTS: ${activeSession.accessToken.isNotEmpty}');
-    print(
-      'TOKEN EXPIRES AT: ${DateTime.fromMillisecondsSinceEpoch((activeSession.expiresAt ?? 0) * 1000)}',
-    );
-    print('CURRENT TIME: ${DateTime.now()}');
-
     final isCircleVisibility = visibility == 'circle';
     final extractedTags = body != null ? extractHashtags(body) : <String>[];
     final authorUserId = activeSession.user.id;

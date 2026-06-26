@@ -140,7 +140,7 @@ class AppRouter {
     navigatorKey: _rootNavigatorKey,
     // Show landing immediately after the native splash.
     initialLocation: RoutePaths.landing,
-    debugLogDiagnostics: true, // Enable debug logging to see what's happening
+    debugLogDiagnostics: kDebugMode, // Only log navigation diagnostics in debug builds
     observers: [_routeObserver],
     errorBuilder: (context, state) => ErrorPage(message: state.error?.message),
     // Restore redirects for proper navigation flow
@@ -1566,6 +1566,11 @@ class AppRouter {
       parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.adminModerationQueue,
       redirect: (context, state) async {
+        // Gate on authentication before the admin RPC, so the route is never
+        // momentarily reachable while auth state is still hydrating.
+        if (Supabase.instance.client.auth.currentSession == null) {
+          return RoutePaths.landing;
+        }
         try {
           final response = await Supabase.instance.client.rpc('is_admin');
           if (response != true) {
@@ -1587,6 +1592,11 @@ class AppRouter {
       parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.adminSafetyOverview,
       redirect: (context, state) async {
+        // Gate on authentication before the admin RPC, so the route is never
+        // momentarily reachable while auth state is still hydrating.
+        if (Supabase.instance.client.auth.currentSession == null) {
+          return RoutePaths.landing;
+        }
         try {
           final response = await Supabase.instance.client.rpc('is_admin');
           if (response != true) {
