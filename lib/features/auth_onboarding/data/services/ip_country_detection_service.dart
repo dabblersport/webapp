@@ -63,10 +63,10 @@ class IpCountryDetectionService {
 
         // Log debug info if available
         if (debug != null) {
-          debugPrint('  Debug Info: $debug');
+          print('  Debug Info: $debug');
         }
 
-        debugPrint('  Detected Country: $country ($countryCode), City: $city');
+        print('  Detected Country: $country ($countryCode), City: $city');
 
         return IpLocationResult(
           country:
@@ -78,11 +78,11 @@ class IpCountryDetectionService {
       }
 
       // Fallback if response is invalid
-      debugPrint('  Falling back to Global');
+      print('  Falling back to Global');
       return IpLocationResult(country: 'Global');
     } catch (e) {
       // Log the error for debugging
-      debugPrint('IP Location Detection Error: $e');
+      print('IP Location Detection Error: $e');
 
       // Silently fail and return Global
       // This ensures the app continues working even if:

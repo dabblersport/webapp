@@ -982,20 +982,16 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
         _navigateNext();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error saving sports preferences: $e'),
-            backgroundColor: DesignSystem.colors.error,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving sports preferences: $e'),
+          backgroundColor: DesignSystem.colors.error,
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

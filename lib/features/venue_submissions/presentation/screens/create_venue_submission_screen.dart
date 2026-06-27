@@ -319,15 +319,13 @@ class _CreateVenueSubmissionScreenState
                                       (id) => id,
                                     );
                                     if (organiserId == null) {
-                                      if (context.mounted) {
-                                        final msg =
-                                            organiserIdRes.requireError.message;
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(content: Text(msg)),
-                                        );
-                                      }
+                                      final msg =
+                                          organiserIdRes.requireError.message;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(msg)),
+                                      );
                                       return;
                                     }
 

@@ -53,7 +53,6 @@ class RegisterScreen extends ConsumerWidget {
                                 final session = ref
                                     .read(registerControllerProvider)
                                     .session;
-                                if (!context.mounted) return;
                                 if (session != null) {
                                   Navigator.pushReplacementNamed(
                                     context,
