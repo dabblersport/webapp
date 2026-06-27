@@ -2,42 +2,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Screen for managing notification preferences
-class NotificationSettingsScreen extends ConsumerStatefulWidget {
-  const NotificationSettingsScreen({super.key});
+import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
+import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
+import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 
-  @override
-  ConsumerState<NotificationSettingsScreen> createState() =>
-      _NotificationSettingsScreenState();
+/// A row in the screen that maps a human label to one or more
+/// `notification_kinds.key`s. The toggle is ON when none of [kinds] are muted.
+class _KindToggle {
+  const _KindToggle(this.title, this.subtitle, this.icon, this.kinds);
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final List<String> kinds;
 }
 
-class _NotificationSettingsScreenState
-    extends ConsumerState<NotificationSettingsScreen> {
-  // Notification preferences
-  bool _pushNotifications = true;
-  bool _emailNotifications = true;
-  bool _smsNotifications = false;
+/// Screen for managing notification preferences, backed by
+/// `public.notification_settings`.
+class NotificationSettingsScreen extends ConsumerWidget {
+  const NotificationSettingsScreen({super.key});
 
-  // Game notifications
-  bool _gameInvites = true;
-  bool _gameReminders = true;
-  bool _gameCancellations = true;
-  bool _gameUpdates = true;
+  // ── Category → kind-key mappings (only push-capable kinds) ──────────────
 
-  // Social notifications
-  bool _newFollowers = true;
-  bool _friendRequests = true;
-  bool _messages = true;
-  bool _comments = true;
+  static const _gameToggles = <_KindToggle>[
+    _KindToggle('Game Invites & Requests', 'Invites and requests to join',
+        Icons.sports_outlined, ['game.invited', 'game.join_request']),
+    _KindToggle('Game Reminders', 'Reminders for upcoming games',
+        Icons.alarm_outlined, ['game.reminder']),
+    _KindToggle('Game Updates', 'Changes, waitlist promotions, players joining',
+        Icons.update_outlined,
+        ['game.updated', 'game.waitlist_promoted', 'game.player_joined']),
+    _KindToggle('Booking Payments', 'When a booking needs payment',
+        Icons.payment_outlined, ['arena.payment_required']),
+  ];
 
-  // System notifications
-  bool _accountActivity = true;
-  bool _promotions = false;
-  bool _newsletter = false;
+  static const _socialToggles = <_KindToggle>[
+    _KindToggle('Likes & Reactions', 'Likes and reactions on your content',
+        Icons.favorite_outline,
+        ['social.post_liked', 'social.post_reacted', 'social.comment_liked']),
+    _KindToggle('Comments', 'Comments on your posts', Icons.comment_outlined,
+        ['social.post_commented']),
+    _KindToggle('Mentions', 'When someone mentions you',
+        Icons.alternate_email_outlined,
+        ['social.mentioned_in_post', 'social.mentioned_in_comment']),
+    _KindToggle('New Followers', 'When someone follows you',
+        Icons.person_add_outlined, ['social.followed']),
+  ];
+
+  static const _connectionToggles = <_KindToggle>[
+    _KindToggle('Friend Requests', 'New and accepted friend requests',
+        Icons.group_add_outlined, ['friend.requested', 'friend.accepted']),
+    _KindToggle('Squad Invites', 'Invites to join a squad',
+        Icons.shield_outlined, ['squad.invited']),
+    _KindToggle('Meetup Invites', 'Invites and players joining meetups',
+        Icons.groups_outlined, ['meetup.invited', 'meetup.player_joined']),
+  ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final state = ref.watch(notificationSettingsControllerProvider);
+
+    // Surface save/load errors without blocking the UI.
+    ref.listen<NotificationSettingsState>(
+      notificationSettingsControllerProvider,
+      (prev, next) {
+        if (next.error != null && next.error != prev?.error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not update settings: ${next.error}')),
+          );
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -47,37 +82,72 @@ class _NotificationSettingsScreenState
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            // Header
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(child: _buildHeader(context)),
             ),
-            // Hero Card
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               sliver: SliverToBoxAdapter(child: _buildHeroCard(context)),
             ),
-            // Content
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
               sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildGeneralSection(),
-                    const SizedBox(height: 20),
-                    _buildGameNotificationsSection(),
-                    const SizedBox(height: 20),
-                    _buildSocialNotificationsSection(),
-                    const SizedBox(height: 20),
-                    _buildSystemNotificationsSection(),
-                  ],
-                ),
+                child: _buildBody(context, ref, state),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationSettingsState state,
+  ) {
+    final settings = state.settings;
+    if (settings == null) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 48),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final controller = ref.read(notificationSettingsControllerProvider.notifier);
+    final pushOn = settings.pushEnabled;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildGeneralSection(context, settings, controller),
+        const SizedBox(height: 20),
+        _buildQuietHoursSection(context, settings, controller),
+        const SizedBox(height: 20),
+        // Per-kind sections only gate push, so dim them when push is off.
+        Opacity(
+          opacity: pushOn ? 1 : 0.5,
+          child: IgnorePointer(
+            ignoring: !pushOn,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildKindSection(
+                    context, 'Game Notifications', _gameToggles, settings,
+                    controller),
+                const SizedBox(height: 20),
+                _buildKindSection(
+                    context, 'Social Notifications', _socialToggles, settings,
+                    controller),
+                const SizedBox(height: 20),
+                _buildKindSection(context, 'Connections', _connectionToggles,
+                    settings, controller),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -98,17 +168,12 @@ class _NotificationSettingsScreenState
         ),
         const SizedBox(width: 16),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Notifications',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
+          child: Text(
+            'Notifications',
+            style: textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
       ],
@@ -160,7 +225,120 @@ class _NotificationSettingsScreenState
     );
   }
 
-  Widget _buildGeneralSection() {
+  Widget _buildGeneralSection(
+    BuildContext context,
+    NotificationSettings settings,
+    NotificationSettingsController controller,
+  ) {
+    return _buildCard(
+      context,
+      'General Preferences',
+      [
+        _buildSwitchItem(
+          context,
+          'Push Notifications',
+          'Receive notifications on this device',
+          Icons.notifications_outlined,
+          settings.pushEnabled,
+          controller.setPushEnabled,
+        ),
+        const Divider(height: 24),
+        _buildSwitchItem(
+          context,
+          'Email Notifications',
+          'Receive notifications via email',
+          Icons.email_outlined,
+          settings.emailEnabled,
+          controller.setEmailEnabled,
+        ),
+        const Divider(height: 24),
+        _buildSwitchItem(
+          context,
+          'SMS Notifications',
+          'Receive important updates via SMS',
+          Icons.sms_outlined,
+          settings.smsEnabled,
+          controller.setSmsEnabled,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuietHoursSection(
+    BuildContext context,
+    NotificationSettings settings,
+    NotificationSettingsController controller,
+  ) {
+    final enabled = settings.hasQuietHours;
+    return _buildCard(
+      context,
+      'Quiet Hours',
+      [
+        _buildSwitchItem(
+          context,
+          'Mute during quiet hours',
+          enabled
+              ? 'No push between ${_fmt(context, settings.quietStartMin!)} and ${_fmt(context, settings.quietEndMin!)}'
+              : 'Pause push notifications overnight',
+          Icons.bedtime_outlined,
+          enabled,
+          (value) {
+            if (value) {
+              // Sensible default window: 22:00 → 08:00.
+              controller.setQuietHours(22 * 60, 8 * 60);
+            } else {
+              controller.clearQuietHours();
+            }
+          },
+        ),
+        if (enabled) ...[
+          const Divider(height: 24),
+          _buildTimeRow(context, 'Start', settings.quietStartMin!,
+              (m) => controller.setQuietHours(m, settings.quietEndMin!)),
+          const SizedBox(height: 12),
+          _buildTimeRow(context, 'End', settings.quietEndMin!,
+              (m) => controller.setQuietHours(settings.quietStartMin!, m)),
+          const Divider(height: 24),
+          _buildSwitchItem(
+            context,
+            'Allow urgent notifications',
+            'High-priority alerts still come through during quiet hours',
+            Icons.priority_high_outlined,
+            settings.allowHighPriorityOverride,
+            controller.setAllowHighPriorityOverride,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildKindSection(
+    BuildContext context,
+    String title,
+    List<_KindToggle> toggles,
+    NotificationSettings settings,
+    NotificationSettingsController controller,
+  ) {
+    final children = <Widget>[];
+    for (var i = 0; i < toggles.length; i++) {
+      final t = toggles[i];
+      final on = !t.kinds.any(settings.isKindMuted);
+      if (i > 0) children.add(const Divider(height: 24));
+      children.add(
+        _buildSwitchItem(
+          context,
+          t.title,
+          t.subtitle,
+          t.icon,
+          on,
+          (value) => controller.setKindsEnabled(t.kinds, value),
+        ),
+      );
+    }
+    return _buildCard(context, title, children);
+  }
+
+  Widget _buildCard(BuildContext context, String title, List<Widget> children) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -174,220 +352,60 @@ class _NotificationSettingsScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'General Preferences',
+              title,
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
-            _buildSwitchItem(
-              context,
-              'Push Notifications',
-              'Receive notifications on this device',
-              Icons.notifications_outlined,
-              _pushNotifications,
-              (value) => setState(() => _pushNotifications = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Email Notifications',
-              'Receive notifications via email',
-              Icons.email_outlined,
-              _emailNotifications,
-              (value) => setState(() => _emailNotifications = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'SMS Notifications',
-              'Receive important updates via SMS',
-              Icons.sms_outlined,
-              _smsNotifications,
-              (value) => setState(() => _smsNotifications = value),
-            ),
+            ...children,
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGameNotificationsSection() {
+  Widget _buildTimeRow(
+    BuildContext context,
+    String label,
+    int minutes,
+    ValueChanged<int> onPicked,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Game Notifications',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSwitchItem(
-              context,
-              'Game Invites',
-              'When someone invites you to a game',
-              Icons.sports_outlined,
-              _gameInvites,
-              (value) => setState(() => _gameInvites = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Game Reminders',
-              'Reminders for upcoming games',
-              Icons.alarm_outlined,
-              _gameReminders,
-              (value) => setState(() => _gameReminders = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Game Cancellations',
-              'When a game is cancelled',
-              Icons.cancel_outlined,
-              _gameCancellations,
-              (value) => setState(() => _gameCancellations = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Game Updates',
-              'Changes to game details',
-              Icons.update_outlined,
-              _gameUpdates,
-              (value) => setState(() => _gameUpdates = value),
-            ),
-          ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(label, style: textTheme.bodyLarge),
         ),
-      ),
+        TextButton(
+          onPressed: () async {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+            );
+            if (picked != null) {
+              onPicked(picked.hour * 60 + picked.minute);
+            }
+          },
+          style: TextButton.styleFrom(
+            backgroundColor: colorScheme.surfaceContainerHighest,
+            foregroundColor: colorScheme.onSurface,
+          ),
+          child: Text(_fmt(context, minutes)),
+        ),
+      ],
     );
   }
 
-  Widget _buildSocialNotificationsSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Social Notifications',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSwitchItem(
-              context,
-              'New Followers',
-              'When someone follows you',
-              Icons.person_add_outlined,
-              _newFollowers,
-              (value) => setState(() => _newFollowers = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Friend Requests',
-              'New friend requests',
-              Icons.group_add_outlined,
-              _friendRequests,
-              (value) => setState(() => _friendRequests = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Messages',
-              'New direct messages',
-              Icons.message_outlined,
-              _messages,
-              (value) => setState(() => _messages = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Comments',
-              'Comments on your posts',
-              Icons.comment_outlined,
-              _comments,
-              (value) => setState(() => _comments = value),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSystemNotificationsSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'System Notifications',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSwitchItem(
-              context,
-              'Account Activity',
-              'Important account updates',
-              Icons.security_outlined,
-              _accountActivity,
-              (value) => setState(() => _accountActivity = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Promotions',
-              'Special offers and promotions',
-              Icons.local_offer_outlined,
-              _promotions,
-              (value) => setState(() => _promotions = value),
-            ),
-            const Divider(height: 24),
-            _buildSwitchItem(
-              context,
-              'Newsletter',
-              'Weekly newsletter updates',
-              Icons.newspaper_outlined,
-              _newsletter,
-              (value) => setState(() => _newsletter = value),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Minutes-since-midnight → localized time string.
+  String _fmt(BuildContext context, int minutes) {
+    final t = TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+    return t.format(context);
   }
 
   Widget _buildSwitchItem(
@@ -396,7 +414,7 @@ class _NotificationSettingsScreenState
     String subtitle,
     IconData icon,
     bool value,
-    Function(bool) onChanged,
+    ValueChanged<bool> onChanged,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
