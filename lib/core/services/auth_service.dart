@@ -11,7 +11,6 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'default_avatar_service.dart';
 import '../config/environment.dart';
-import '../config/supabase_config.dart';
 import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';

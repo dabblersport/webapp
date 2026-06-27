@@ -406,14 +406,14 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
         resolution: 'Resolved via moderation queue',
       );
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Report resolved successfully')),
         );
         ref.invalidate(moderationQueueProvider);
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to resolve report: $e')));
@@ -495,7 +495,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
         reason: 'Action taken from moderation queue',
       );
 
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -506,7 +506,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
         ref.invalidate(moderationQueueProvider);
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Failed to take action: $e')));
