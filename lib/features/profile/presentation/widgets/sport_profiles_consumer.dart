@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/sport_profile.dart';
 
-import 'providers.dart';
+import '../providers/sport_profiles_providers.dart';
 
 /// Minimal showcase widget for sport profile providers.
 class SportProfilesConsumer extends StatelessWidget {

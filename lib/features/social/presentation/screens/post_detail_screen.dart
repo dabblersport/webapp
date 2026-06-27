@@ -16,7 +16,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
-import 'package:dabbler/features/places/presentation/widgets/place_picker_sheet.dart';
+import 'package:dabbler/features/venues/presentation/widgets/place_picker_sheet.dart';
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';

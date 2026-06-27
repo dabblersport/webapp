@@ -4,7 +4,7 @@ export 'core/providers/locale_provider.dart';
 export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/profile/providers.dart';
-export 'features/sport_profiles/providers.dart';
+export 'features/profile/presentation/providers/sport_profiles_providers.dart';
 export 'features/venues/providers.dart';
 export 'features/venue_submissions/providers.dart';
 export 'features/misc/data/datasources/supabase_remote_data_source.dart';
@@ -16,7 +16,7 @@ export 'features/social/providers/post_composer_providers.dart';
 export 'features/social/providers/tab_feed_notifier.dart';
 export 'features/social/providers/active_feed_notifier.dart';
 export 'features/social/providers/public_activity_providers.dart';
-export 'features/places/providers/place_providers.dart';
+export 'features/venues/presentation/providers/place_providers.dart';
 export 'features/location/providers/location_providers.dart';
 export 'features/home/presentation/providers/home_providers.dart';
 

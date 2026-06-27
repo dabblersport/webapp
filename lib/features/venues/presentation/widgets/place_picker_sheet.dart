@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dabbler/data/models/place.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:dabbler/features/places/providers/place_providers.dart';
+import 'package:dabbler/features/venues/presentation/providers/place_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
