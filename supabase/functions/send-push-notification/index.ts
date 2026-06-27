@@ -11,6 +11,10 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "dabblersportapp";
 
+// Cached shared secret used to recognise trusted calls from the DB push
+// trigger. Fetched once per warm instance via the service_role-only RPC.
+let cachedTriggerSecret: string | null = null;
+
 interface NotificationPayload {
   user_id: string;
   title: string;
@@ -43,7 +47,6 @@ Deno.serve(async (req: Request) => {
     }
     const effectiveBody = body || title;
 
-    // Require an authenticated caller (defense in depth on top of verify_jwt).
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -51,37 +54,58 @@ Deno.serve(async (req: Request) => {
         { status: 401, headers: { "Content-Type": "application/json" } }
       );
     }
-    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: caller }, error: callerError } =
-      await callerClient.auth.getUser();
-    if (callerError || !caller) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
 
-    // Create Supabase client with service role key
+    // Service-role client: used for the trusted-call check, token lookup, and
+    // (further down) invalid-token cleanup.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Enforce blocking server-side: a caller may not notify a user who has
-    // blocked them (or whom they have blocked). Self-notifications are exempt.
-    if (caller.id !== user_id) {
-      const { data: block } = await supabase
-        .from("user_blocks")
-        .select("id")
-        .or(
-          `and(blocker_user_id.eq.${caller.id},blocked_user_id.eq.${user_id}),` +
-          `and(blocker_user_id.eq.${user_id},blocked_user_id.eq.${caller.id})`
-        )
-        .maybeSingle();
-      if (block) {
+    // Trusted server call? The notifications push trigger
+    // (trg_push_on_notification_insert) sends a shared secret in
+    // x-trigger-secret. When it matches, this is a fan-out from a notification
+    // row that already targeted the correct recipient, so we skip the per-user
+    // auth + block checks. The anon-key bearer it also sends only exists to
+    // satisfy the platform's verify_jwt gate.
+    const triggerSecret = req.headers.get("x-trigger-secret");
+    let trusted = false;
+    if (triggerSecret) {
+      const expected = await getTriggerSecret(supabase);
+      if (expected && constantTimeEqual(triggerSecret, expected)) {
+        trusted = true;
+      }
+    }
+
+    if (!trusted) {
+      // Per-user path: require an authenticated caller (defense in depth on top
+      // of verify_jwt) and enforce blocking.
+      const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: { user: caller }, error: callerError } =
+        await callerClient.auth.getUser();
+      if (callerError || !caller) {
         return new Response(
-          JSON.stringify({ message: "Notification skipped (blocked)", sent: 0 }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
         );
+      }
+
+      // A caller may not notify a user who has blocked them (or whom they have
+      // blocked). Self-notifications are exempt.
+      if (caller.id !== user_id) {
+        const { data: block } = await supabase
+          .from("user_blocks")
+          .select("id")
+          .or(
+            `and(blocker_user_id.eq.${caller.id},blocked_user_id.eq.${user_id}),` +
+            `and(blocker_user_id.eq.${user_id},blocked_user_id.eq.${caller.id})`
+          )
+          .maybeSingle();
+        if (block) {
+          return new Response(
+            JSON.stringify({ message: "Notification skipped (blocked)", sent: 0 }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
       }
     }
 
@@ -116,24 +140,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Send notification to each token
-    const results = await Promise.allSettled(
-      tokens.map(({ token }) => sendFCMNotification(token, title, effectiveBody, data))
+    // Send notification to each token. Each send resolves to a per-token
+    // outcome so we can prune tokens FCM reports as permanently invalid.
+    const outcomes = await Promise.all(
+      tokens.map(async ({ token }) => {
+        try {
+          await sendFCMNotification(token, title, effectiveBody, data);
+          return { token, ok: true, invalid: false };
+        } catch (e) {
+          return { token, ok: false, invalid: isInvalidTokenError(e) };
+        }
+      })
     );
 
-    // Count successes and failures
-    const successful = results.filter(r => r.status === "fulfilled").length;
-    const failed = results.filter(r => r.status === "rejected").length;
+    const successful = outcomes.filter(o => o.ok).length;
+    const failed = outcomes.filter(o => !o.ok).length;
 
-    // Log failed tokens (could be used to clean up invalid tokens)
-    const failedTokens = results
-      .map((r, idx) => ({ result: r, token: tokens[idx].token }))
-      .filter(({ result }) => result.status === "rejected")
-      .map(({ token }) => token);
-
-    if (failedTokens.length > 0) {
-      console.log("Failed to send to tokens:", failedTokens);
-      // TODO: Clean up invalid tokens from database
+    // Prune tokens FCM rejected as unregistered / malformed so they don't
+    // accumulate and waste sends on every future notification.
+    const invalidTokens = outcomes.filter(o => o.invalid).map(o => o.token);
+    if (invalidTokens.length > 0) {
+      const { error: cleanupError } = await supabase
+        .from("fcm_tokens")
+        .delete()
+        .in("token", invalidTokens);
+      if (cleanupError) {
+        console.error("Failed to prune invalid FCM tokens:", cleanupError);
+      } else {
+        console.log(`Pruned ${invalidTokens.length} invalid FCM token(s)`);
+      }
     }
 
     return new Response(
@@ -160,6 +195,48 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+/**
+ * Fetch the push-trigger shared secret via the service_role-only RPC.
+ * Cached per warm instance to avoid a DB round-trip on every push.
+ */
+// deno-lint-ignore no-explicit-any
+async function getTriggerSecret(supabase: any): Promise<string | null> {
+  if (cachedTriggerSecret) return cachedTriggerSecret;
+  const { data, error } = await supabase.rpc("get_push_trigger_secret");
+  if (error || !data) {
+    console.error("Failed to fetch push trigger secret:", error);
+    return null;
+  }
+  cachedTriggerSecret = data as string;
+  return cachedTriggerSecret;
+}
+
+/** Constant-time string comparison to avoid leaking the secret via timing. */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Whether an FCM send error indicates a permanently invalid token that should
+ * be pruned (unregistered device, malformed token). Transient errors (5xx,
+ * quota) are NOT treated as invalid so we don't delete healthy tokens.
+ */
+function isInvalidTokenError(e: unknown): boolean {
+  const msg = String(e instanceof Error ? e.message : e);
+  return (
+    msg.includes(" 404 ") ||
+    msg.includes("UNREGISTERED") ||
+    msg.includes("registration-token-not-registered") ||
+    msg.includes("INVALID_ARGUMENT") ||
+    msg.includes("invalid-argument")
+  );
+}
 
 /**
  * Get OAuth2 access token for FCM HTTP v1 API
