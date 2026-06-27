@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dabbler/design_system/theme/app_theme.dart';
+import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {

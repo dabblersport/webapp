@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/material.dart';
-import 'package:dabbler/design_system/theme/app_theme.dart';
+import 'package:dabbler/themes/app_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -11,7 +11,7 @@ import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/design_system/theme/app_theme.dart';
+import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
 import 'package:firebase_messaging/firebase_messaging.dart';

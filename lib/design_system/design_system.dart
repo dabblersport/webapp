@@ -4,7 +4,7 @@
 /// underlying implementations can be swapped/removed without touching the app.
 library;
 
-export 'theme/app_theme.dart';
-export 'theme/material3_extensions.dart';
-export 'theme/color_token_extensions.dart';
-export 'theme/dynamic_color_scheme_loader.dart';
+export '../themes/app_theme.dart';
+export '../themes/material3_extensions.dart';
+export '../core/theme/color_token_extensions.dart';
+export '../core/theme/dynamic_color_scheme_loader.dart';
