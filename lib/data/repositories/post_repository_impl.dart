@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -1024,7 +1025,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (gameId != null) 'game_id': gameId,
       };
 
-      print('INSERT PAYLOAD: $data');
+      debugPrint('INSERT PAYLOAD: $data');
 
       final row = await _db.from(SupabaseConfig.postsTable).insert(data).select().single();
       final post = Post.fromJson(row);
@@ -1257,7 +1258,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         }
         // Best-effort per tag — don't fail post creation.
         // ignore: avoid_print
-        print('[PostRepo] _linkHashtags warning for "$tag": $e');
+        debugPrint('[PostRepo] _linkHashtags warning for "$tag": $e');
       }
     }
   }

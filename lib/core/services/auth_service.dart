@@ -882,7 +882,7 @@ class AuthService {
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
-        print('Warning: Failed to create sport_profile: $e');
+        debugPrint('Warning: Failed to create sport_profile: $e');
       }
 
       // 3️⃣ Create persona-specific profile based on persona_type
@@ -907,7 +907,7 @@ class AuthService {
           }
         } catch (e) {
           // Log but don't fail completely
-          print('Warning: Failed to create player record: $e');
+          debugPrint('Warning: Failed to create player record: $e');
         }
       } else if (personaType == 'organiser') {
         // Create organiser table for organisers
@@ -932,7 +932,7 @@ class AuthService {
           }
         } catch (e) {
           // Log but don't fail completely
-          print('Warning: Failed to create organiser record: $e');
+          debugPrint('Warning: Failed to create organiser record: $e');
         }
       } else if (personaType == 'hoster') {
         // Create host_profiles table for hosters
@@ -955,7 +955,7 @@ class AuthService {
           }
         } catch (e) {
           // Log but don't fail completely
-          print('Warning: Failed to create hoster record: $e');
+          debugPrint('Warning: Failed to create hoster record: $e');
         }
       }
       // Note: 'socialiser' persona type does NOT create a persona-specific table
@@ -990,11 +990,11 @@ class AuthService {
             });
           }
         } else {
-          print('Warning: No default tier found in tiers table');
+          debugPrint('Warning: No default tier found in tiers table');
         }
       } catch (e) {
         // Log but don't fail - tier assignment is important but not critical for onboarding
-        print('Warning: Failed to assign default tier: $e');
+        debugPrint('Warning: Failed to assign default tier: $e');
       }
     } catch (e) {
       throw Exception('Failed to complete onboarding: ${e.toString()}');

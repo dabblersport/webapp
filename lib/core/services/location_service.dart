@@ -55,32 +55,32 @@ class LocationService extends ChangeNotifier {
     notifyListeners();
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-      print('Location permission status: $permission');
+      debugPrint('Location permission status: $permission');
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-        print('Permission after request: $permission');
+        debugPrint('Permission after request: $permission');
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         _permissionDenied = true;
         _isLoading = false;
         notifyListeners();
-        print('Location permission denied');
+        debugPrint('Location permission denied');
         return;
       }
       _permissionDenied = false;
-      print('Getting current position...');
+      debugPrint('Getting current position...');
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      print(
+      debugPrint(
         'Position obtained: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
       );
       await _reverseGeocode(_currentPosition!);
-      print('Current area: $_currentArea');
+      debugPrint('Current area: $_currentArea');
       await _cacheLocation(_currentPosition!, _currentArea);
     } catch (e) {
-      print('Location fetch error: $e');
+      debugPrint('Location fetch error: $e');
       _isLoading = false;
       notifyListeners();
       return;

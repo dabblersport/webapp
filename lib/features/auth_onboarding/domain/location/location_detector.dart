@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:dabbler/features/auth_onboarding/data/services/ip_country_detection_service.dart';
 
 /// Result from location detection
@@ -41,8 +42,8 @@ class LocationDetector {
   /// Example usage:
   /// ```dart
   /// final result = await LocationDetector.detectUserLocation();
-  /// print(result.country); // "United Arab Emirates" or "Global"
-  /// print(result.city);    // "Dubai" or null
+  /// debugPrint(result.country); // "United Arab Emirates" or "Global"
+  /// debugPrint(result.city);    // "Dubai" or null
   /// ```
   static Future<LocationDetectionResult> detectUserLocation() async {
     try {
@@ -52,7 +53,7 @@ class LocationDetector {
         final ipResult = await ipService.detectLocationFromIp();
 
         if (ipResult.country != 'Global') {
-          print(
+          debugPrint(
             'Location detected from IP: ${ipResult.country}, ${ipResult.city}',
           );
           return LocationDetectionResult(
@@ -61,7 +62,7 @@ class LocationDetector {
           );
         }
       } catch (e) {
-        print('IP detection failed: $e');
+        debugPrint('IP detection failed: $e');
       }
 
       // Step 2: Fallback to device locale country (no city available)
@@ -71,7 +72,7 @@ class LocationDetector {
       if (countryCode != null && countryCode.isNotEmpty) {
         final countryName = _countryCodeToName(countryCode);
         if (countryName != null) {
-          print(
+          debugPrint(
             'Country detected from device locale: $countryName ($countryCode)',
           );
           return LocationDetectionResult(country: countryName);
@@ -79,10 +80,10 @@ class LocationDetector {
       }
 
       // Step 3: Fallback to "Global"
-      print('Falling back to Global');
+      debugPrint('Falling back to Global');
       return LocationDetectionResult(country: 'Global');
     } catch (e) {
-      print('Location detection error: $e');
+      debugPrint('Location detection error: $e');
       return LocationDetectionResult(country: 'Global');
     }
   }

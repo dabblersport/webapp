@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/repositories/friends_repository_impl.dart';
 import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
@@ -22,12 +23,12 @@ final friendsListProvider =
 
       return switch (result) {
         Ok(:final value) => () {
-          print('DEBUG: Got ${value.length} friends from RPC');
-          print('DEBUG: Friends data: $value');
+          debugPrint('DEBUG: Got ${value.length} friends from RPC');
+          debugPrint('DEBUG: Friends data: $value');
           return value;
         }(),
         Err(:final error) => () {
-          print('DEBUG: Error getting friends: ${error.message}');
+          debugPrint('DEBUG: Error getting friends: ${error.message}');
           return <Map<String, dynamic>>[];
         }(),
         _ => <Map<String, dynamic>>[],
