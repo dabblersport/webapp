@@ -45,22 +45,6 @@ export 'widgets/app_tab.dart';
 export 'widgets/app_step.dart';
 export 'widgets/app_steps.dart';
 
-// Deprecated Widgets - Use Native Material 3 Instead
-@Deprecated('Use FilledButton, OutlinedButton, or TextButton')
-export 'widgets/app_button.dart';
-
-@Deprecated('Use Card.filled() or Card.outlined()')
-export 'widgets/app_card.dart';
-
-@Deprecated('Use TextField or TextFormField')
-export 'widgets/app_input_field.dart';
-
-@Deprecated('Use FilterChip or ActionChip')
-export 'widgets/app_chip.dart';
-
-@Deprecated('Use FilterChip')
-export 'widgets/app_filter_chip.dart';
-
 // Legacy Widgets (Consider removing)
 export 'widgets/app_search_input.dart';
 export 'widgets/design_system_button.dart';
