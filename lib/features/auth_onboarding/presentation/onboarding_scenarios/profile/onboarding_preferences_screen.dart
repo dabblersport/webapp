@@ -1019,16 +1019,20 @@ class _OnboardingPreferencesScreenState
         _navigateNext();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving preferences: $e'),
-          backgroundColor: DesignSystem.colors.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving preferences: $e'),
+            backgroundColor: DesignSystem.colors.error,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

@@ -2,6 +2,8 @@ import 'dart:developer' as dev;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/config/supabase_config.dart';
+
 import 'models/notification_model.dart';
 
 /// Callback signature for new realtime notifications.
@@ -64,7 +66,7 @@ class NotificationRealtimeService {
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
-          table: 'notifications',
+          table: SupabaseConfig.notificationsTable,
           filter: PostgresChangeFilter(
             type: PostgresChangeFilterType.eq,
             column: 'to_user_id',

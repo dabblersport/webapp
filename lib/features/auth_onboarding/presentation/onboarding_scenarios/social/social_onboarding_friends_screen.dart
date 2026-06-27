@@ -84,23 +84,29 @@ class _SocialOnboardingFriendsScreenState
       // In a real app, you would load actual contacts here
       await Future.delayed(const Duration(seconds: 2));
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Contacts synced successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Contacts synced successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error accessing contacts. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error accessing contacts. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoadingContacts = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingContacts = false;
+        });
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 
@@ -17,7 +18,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
 
   // ── Table constant ───────────────────────────────────────────────────
 
-  static const _table = 'notifications';
+  static const _table = SupabaseConfig.notificationsTable;
 
   // ── Read ─────────────────────────────────────────────────────────────
 
@@ -73,23 +74,13 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   @override
   Future<Result<void, Failure>> markClicked(String id) {
     return Result.guard(() async {
-      // First fetch current interaction_count so we can increment it.
-      // (Supabase PostgREST doesn't support `column = column + 1` natively.)
-      final row = await _client
-          .from(_table)
-          .select('interaction_count')
-          .eq('id', id)
-          .maybeSingle();
-
-      final currentCount = (row?['interaction_count'] as int?) ?? 0;
-
-      await _client
-          .from(_table)
-          .update({
-            'clicked_at': DateTime.now().toUtc().toIso8601String(),
-            'interaction_count': currentCount + 1,
-          })
-          .eq('id', id);
+      // Atomic `clicked_at = now(), interaction_count = interaction_count + 1`
+      // via RPC — PostgREST can't express `column = column + 1`, and a
+      // read-then-write would under-count concurrent taps.
+      await _client.rpc(
+        SupabaseConfig.incrementNotificationInteractionFn,
+        params: {'p_id': id},
+      );
     }, Failure.from);
   }
 

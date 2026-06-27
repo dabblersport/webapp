@@ -122,6 +122,8 @@ class SupabaseConfig {
   static const String moderationFlagsTable = 'moderation_flags';
   static const String moderationReportsTable = 'moderation_reports';
   static const String moderationTicketsTable = 'moderation_tickets';
+  static const String notificationKindsTable = 'notification_kinds';
+  static const String notificationSettingsTable = 'notification_settings';
   static const String notificationsTable = 'notifications';
   static const String payoutsTable = 'payouts';
   static const String postCirclesTable = 'post_circles';
@@ -226,6 +228,8 @@ class SupabaseConfig {
   static const String deleteMyAccountFn = 'delete_my_account';
   static const String getDataSourceMetricsFn = 'get_data_source_metrics';
   static const String getHomeFeedFn = 'get_home_feed';
+  static const String incrementNotificationInteractionFn =
+      'increment_notification_interaction';
   static const String processQueuedEventsFn = 'process_queued_events';
   static const String rpcCreateGameFn = 'rpc_create_game';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';

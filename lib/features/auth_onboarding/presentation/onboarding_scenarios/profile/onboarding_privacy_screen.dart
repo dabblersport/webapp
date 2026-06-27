@@ -811,18 +811,22 @@ class _OnboardingPrivacyScreenState
       await controller.completeOnboarding();
 
       // Navigate to completion screen
-      context.go(RoutePaths.onboardingCompletion);
+      if (mounted) context.go(RoutePaths.onboardingCompletion);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error completing onboarding: $e'),
-          backgroundColor: DesignSystem.colors.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error completing onboarding: $e'),
+            backgroundColor: DesignSystem.colors.error,
+          ),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
