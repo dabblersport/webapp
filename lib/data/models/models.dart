@@ -70,7 +70,3 @@ export 'rewards/user_progress_model.dart';
 // Payments models
 export 'payments/payment_method.dart';
 export 'payments/payment_method_model.dart';
-
-// Notifications models
-export 'notifications/notification.dart';
-export 'notifications/notification_model.dart';
