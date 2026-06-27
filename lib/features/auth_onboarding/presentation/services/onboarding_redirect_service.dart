@@ -19,6 +19,7 @@ class OnboardingRedirectService {
     // Trigger resume check
     await ref.read(onboardingControllerProvider.notifier).checkResumeState();
 
+    if (!context.mounted) return false;
     final state = ref.read(onboardingControllerProvider);
 
     return _handleOnboardingState(context, state);
