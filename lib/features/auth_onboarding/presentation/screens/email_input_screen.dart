@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:dabbler/widgets/legal_doc_sheet.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -593,8 +593,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               color: colorScheme.primary,
             ),
             recognizer: TapGestureRecognizer()
-              ..onTap = () =>
-                  _openExternalUrl('https://www.dabbler.pro/terms.html'),
+              ..onTap = () => showTermsSheet(context),
           ),
           TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
           TextSpan(
@@ -604,20 +603,12 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               color: colorScheme.primary,
             ),
             recognizer: TapGestureRecognizer()
-              ..onTap = () =>
-                  _openExternalUrl('https://www.dabbler.pro/privacy.html'),
+              ..onTap = () => showPrivacySheet(context),
           ),
           const TextSpan(text: '.'),
         ],
       ),
     );
-  }
-
-  Future<void> _openExternalUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   void _goToLogin() {

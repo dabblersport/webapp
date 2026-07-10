@@ -11,9 +11,12 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/post_location_chip.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -149,6 +152,77 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
           ],
         ),
       ),
+    );
+  }
+
+  // ── Report / Block (Guideline 1.2 — UGC moderation controls) ────────
+
+  void _showMoreMenu({required bool isAuthor}) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showAdaptiveSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(Iconsax.flag_copy, color: cs.error),
+              title: Text('Report post', style: tt.bodyLarge),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                showDialog(
+                  context: context,
+                  builder: (_) => ReportDialog(
+                    targetType: ReportTargetType.post,
+                    targetId: post.id,
+                    targetUserId: post.authorUserId,
+                  ),
+                );
+              },
+            ),
+            if (!isAuthor)
+              ListTile(
+                leading: Icon(Iconsax.user_remove_copy, color: cs.error),
+                title: const Text('Block user'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _blockAuthor();
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _blockAuthor() async {
+    final targetUserId = post.authorUserId;
+    final result = await ref
+        .read(blockRepositoryProvider)
+        .blockUser(targetUserId);
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to block user: ${failure.message}')),
+        );
+      },
+      (_) {
+        // Blocking must instantly remove this user's content from the
+        // current feed — filter the already-loaded feed locally instead of
+        // a full network refetch; invalidate the cached block set so future
+        // loads reflect it too.
+        ref.invalidate(blockedUserIdsProvider);
+        ref.read(feedNotifierProvider.notifier).removePostsByAuthor(targetUserId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User blocked. Their content is now hidden.')),
+        );
+      },
     );
   }
 
@@ -766,6 +840,19 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                                 color: cs.onSurfaceVariant,
                                 tt: tt,
                               ),
+
+                            // Report / Block — every post has a control to
+                            // flag it as objectionable (Guideline 1.2).
+                            const Spacer(),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _showMoreMenu(isAuthor: isAuthor),
+                              child: Icon(
+                                Iconsax.more_copy,
+                                size: 18,
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
                           ],
                         ),
                       ),

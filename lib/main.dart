@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/services/eula_service.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
@@ -108,6 +109,11 @@ Future<void> main() async {
 
       try {
         await Environment.load();
+
+        // Preload EULA/Terms-of-Use acceptance state synchronously so the
+        // router's redirect gate (Guideline 1.2) has a value on the very
+        // first navigation, before login/registration is reachable.
+        await EulaService.preload();
 
         // Register background message handler (must be before Firebase.initializeApp)
         if (!kIsWeb) {

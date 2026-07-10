@@ -156,6 +156,21 @@ class FeedNotifier extends StateNotifier<FeedState> {
         });
   }
 
+  /// Removes all posts by [authorUserId] from the currently-loaded feed
+  /// without a network round trip — used right after blocking a user so
+  /// their content disappears instantly instead of waiting on a full
+  /// [load] refetch.
+  void removePostsByAuthor(String authorUserId) {
+    final data = state;
+    if (data is! FeedData) return;
+    state = data.copyWith(
+      items: data.items.where((item) {
+        if (item is FeedPostItem) return item.post.authorUserId != authorUserId;
+        return true;
+      }).toList(),
+    );
+  }
+
   void _onPostDeleted(PostgresChangePayload payload) {
     final postId = payload.oldRecord['id'] as String?;
     if (postId == null || !mounted) return;

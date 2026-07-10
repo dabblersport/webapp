@@ -1,2 +1,6 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+// Secrets from .env, base64-encoded into DART_DEFINES by scripts/gen_dart_defines.sh.
+// Optional include (?) so a checkout without the generated file still builds.
+// Placed AFTER Generated.xcconfig so its `$(inherited)` picks up Flutter's defines.
+#include? "DartDefines.xcconfig"

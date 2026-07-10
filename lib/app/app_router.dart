@@ -78,6 +78,8 @@ import 'package:dabbler/features/profile/presentation/screens/support/bug_report
 import 'package:dabbler/features/profile/presentation/screens/about/terms_of_service_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/privacy_policy_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/licenses_screen.dart';
+import 'package:dabbler/features/profile/presentation/screens/about/eula_gate_screen.dart';
+import 'package:dabbler/core/services/eula_service.dart';
 
 // Add Persona screens (using consolidated onboarding screens with mode parameter)
 // No longer need separate add_persona_* imports - using unified screens
@@ -227,6 +229,20 @@ class AppRouter {
         return null;
       }
 
+      // ─── EULA / TERMS OF USE GATE (Guideline 1.2) ───
+      // Must run before every other check so it blocks all paths into
+      // registration/login, including the landing page and OAuth callback
+      // handling. Does not touch auth/demo-account logic — it only decides
+      // whether to show the acceptance screen first.
+      if (FeatureFlags.requireEulaAcceptance &&
+          !EulaService.hasAccepted &&
+          loc != RoutePaths.eulaGate &&
+          loc != RoutePaths.aboutTerms &&
+          loc != RoutePaths.aboutPrivacy) {
+        logRoute('redirect (eula not accepted) -> ${RoutePaths.eulaGate}');
+        return RoutePaths.eulaGate;
+      }
+
       // PRIORITY CHECK: Check Supabase auth state directly (may be updated before provider)
       // This catches OAuth callbacks where auth state might not be reflected in provider yet
       // Also ensures ALL authenticated users have a profile before accessing protected routes
@@ -271,6 +287,7 @@ class AppRouter {
           loc != RoutePaths.welcome &&
           loc != RoutePaths.authWelcome &&
           loc != RoutePaths.emailVerification &&
+          loc != RoutePaths.eulaGate &&
           !isOnboardingPage) {
         logRoute('redirect (post-login welcome) -> ${RoutePaths.welcome}');
         return RoutePaths.welcome;
@@ -335,8 +352,18 @@ class AppRouter {
 
       // If not authenticated, always stay on onboarding/auth screens
       if (!isAuthenticated) {
+        // Public pre-auth pages that must NOT be bounced to landing — the
+        // EULA gate and the legal docs it links to. Without this exemption
+        // the EULA redirect (landing -> eula-gate) and this landing bounce
+        // (eula-gate -> landing) form an infinite redirect loop for any user
+        // who hasn't accepted yet (e.g. a fresh install on a real device).
+        const publicPreAuthPaths = <String>{
+          RoutePaths.eulaGate,
+          RoutePaths.aboutTerms,
+          RoutePaths.aboutPrivacy,
+        };
         // If not on an auth page, redirect to landing page first
-        if (!isOnAuthPage) {
+        if (!isOnAuthPage && !publicPreAuthPaths.contains(loc)) {
           logRoute('redirect (unauth) -> ${RoutePaths.landing}');
           return RoutePaths.landing;
         }
@@ -1268,10 +1295,20 @@ class AppRouter {
       ),
     ),
 
+    // EULA / Terms-of-Use acceptance gate — shown before login/registration.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: RoutePaths.eulaGate,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const EulaGateScreen(),
+      ),
+    ),
+
     // About routes
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
-      path: '/about/terms',
+      path: RoutePaths.aboutTerms,
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
         child: const TermsOfServiceScreen(),
@@ -1280,7 +1317,7 @@ class AppRouter {
 
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
-      path: '/about/privacy',
+      path: RoutePaths.aboutPrivacy,
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
         child: const PrivacyPolicyScreen(),

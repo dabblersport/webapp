@@ -8,7 +8,9 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:dabbler/widgets/legal_doc_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -153,6 +155,45 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   void _handleEmail() => context.go(RoutePaths.emailInput);
   void _handleLogin() => context.go(RoutePaths.enterPassword);
 
+  Widget _buildTermsText(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final linkStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+      color: colorScheme.primary,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          height: 1.35,
+        ),
+        children: [
+          const TextSpan(
+            text:
+                'By Continue, you are indicating that you have read and agree to the ',
+          ),
+          TextSpan(
+            text: 'Terms of Service',
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => showTermsSheet(context),
+          ),
+          const TextSpan(text: ' & '),
+          TextSpan(
+            text: 'Privacy Policy',
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => showPrivacySheet(context),
+          ),
+          const TextSpan(text: '.'),
+        ],
+      ),
+      textAlign: TextAlign.center,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final countryState = ref.watch(selectedCountryProvider);
@@ -228,7 +269,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
+                          // padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(999),
                             color: colorScheme.primaryContainer,
@@ -236,12 +277,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Iconsax.verify, size: 13, color: colorScheme.primary),
+                              // Icon(Iconsax.verify, size: 13, color: colorScheme.primary),
                               const SizedBox(width: 6),
                               Text(
                                 'BUILT FOR TRUST',
                                 style: TextStyle(
-                                  fontSize: 10.5,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                   color: colorScheme.primary,
                                   letterSpacing: 0.8,
@@ -263,32 +304,32 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 32,
-                                      height: 32,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(10),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: colorScheme.primary.withValues(
-                                              alpha: 0.4,
-                                            ),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        e.value.icon,
-                                        size: 17,
-                                        color: colorScheme.onPrimary,
-                                      ),
-                                    ),
+                                    // Container(
+                                    //   width: 32,
+                                    //   height: 32,
+                                    //   decoration: BoxDecoration(
+                                    //     borderRadius: BorderRadius.circular(10),
+                                    //     gradient: LinearGradient(
+                                    //       begin: Alignment.topLeft,
+                                    //       end: Alignment.bottomRight,
+                                    //       colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
+                                    //     ),
+                                    //     boxShadow: [
+                                    //       BoxShadow(
+                                    //         color: colorScheme.primary.withValues(
+                                    //           alpha: 0.4,
+                                    //         ),
+                                    //         blurRadius: 8,
+                                    //         offset: const Offset(0, 3),
+                                    //       ),
+                                    //     ],
+                                    //   ),
+                                    //   child: Icon(
+                                    //     e.value.icon,
+                                    //     size: 17,
+                                    //     color: colorScheme.onPrimary,
+                                    //   ),
+                                    // ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Padding(
@@ -316,10 +357,11 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 ),
 
                 const Spacer(),
+                      // const SizedBox(height: 16),
 
                 // CTAs
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                   child: Column(
                     children: [
                       _OutlineButton(
@@ -396,8 +438,8 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                         style: TextButton.styleFrom(
                           minimumSize: const Size(0, 44),
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
+                            horizontal: 24,
+                            vertical: 18,
                           ),
                           shape: const StadiumBorder(),
                         ),
@@ -423,6 +465,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                     ],
                   ),
                 ),
+const Spacer(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                  child: _buildTermsText(context),
+                ),
+const Spacer(),
 
                 // Country / Language pills
                 Padding(

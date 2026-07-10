@@ -11,6 +11,10 @@ class FeatureFlags {
   // ============================================================================
 
   /// Authentication
+  /// App Store Guideline 1.2: users must view & accept the Terms of Use
+  /// before registering or logging in. Must stay `true` for App Store
+  /// compliance — do not disable without an equivalent gate in place.
+  static const bool requireEulaAcceptance = true;
   static const bool enablePhoneAuth = true;
   static const bool enableEmailAuth = true;
   static const bool enableGoogleAuth = true; // Future

@@ -9,6 +9,9 @@ class RoutePaths {
   // dabbler://app/create-game  → /create-game (already top-level, works directly)
 
   // Landing & Authentication
+  static const String eulaGate = '/eula-gate';
+  static const String aboutTerms = '/about/terms';
+  static const String aboutPrivacy = '/about/privacy';
   static const String landing = '/landing';
   static const String emailInput = '/email_input';
   static const String otpVerification = '/otp_verification';
