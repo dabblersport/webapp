@@ -635,6 +635,6 @@ class _AchievementCardState extends State<AchievementCard>
         ? 'I just unlocked the "${widget.achievement.name}" achievement in Dabbler! 🏆'
         : 'Working on the "${widget.achievement.name}" achievement in Dabbler! ${_progress.toStringAsFixed(0)}% complete 💪';
 
-    Share.share(text);
+    SharePlus.instance.share(ShareParams(text: text));
   }
 }

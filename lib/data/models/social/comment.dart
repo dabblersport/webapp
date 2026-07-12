@@ -8,7 +8,7 @@ part 'comment.g.dart';
 class PostComment with _$PostComment {
   const factory PostComment({
     required String id,
-    @JsonKey(name: 'post_id') required String postId,
+    @JsonKey(name: 'parent_activity_id') required String postId,
     @JsonKey(name: 'author_user_id') required String authorUserId,
     @JsonKey(name: 'author_profile_id') required String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,

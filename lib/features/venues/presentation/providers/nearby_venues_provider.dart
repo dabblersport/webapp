@@ -26,6 +26,9 @@ final nearbyVenueSortProvider = StateProvider<NearbySortOrder>(
   (ref) => NearbySortOrder.nearest,
 );
 
+/// Whether the "nearby" distance filter is active on the venues list.
+final nearbyVenuesFilterEnabledProvider = StateProvider<bool>((ref) => false);
+
 // =============================================================================
 // PARAMS
 // =============================================================================

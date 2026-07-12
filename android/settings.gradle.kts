@@ -22,7 +22,10 @@ plugins {
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version("4.3.15") apply false
     // END: FlutterFire Configuration
-    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    // Not applied by the app (built-in Kotlin) — pinned so plugins that still
+    // apply KGP themselves resolve a supported version instead of an old one
+    // leaked from their own buildscripts.
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
 }
 
 include(":app")

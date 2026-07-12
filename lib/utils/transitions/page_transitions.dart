@@ -357,6 +357,10 @@ class _AdaptiveModalFrame extends StatelessWidget {
       );
     }
 
+    // Keep the drawer below the status bar: cap its height so a gap of at
+    // least the top safe area (plus a small breathing margin) stays exposed.
+    final topGap = MediaQuery.paddingOf(context).top + 12;
+
     return Material(
       type: MaterialType.transparency,
       child: Align(
@@ -367,7 +371,10 @@ class _AdaptiveModalFrame extends StatelessWidget {
           ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: size.height * mobileHeightFactor,
+              maxHeight: (size.height * mobileHeightFactor).clamp(
+                0.0,
+                size.height - topGap,
+              ),
             ),
             child: Material(
               color: sheetColor,

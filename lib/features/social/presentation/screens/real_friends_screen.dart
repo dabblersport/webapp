@@ -1029,11 +1029,12 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
     try {
       final supabase = Supabase.instance.client;
       if (isCurrentlyFollowing) {
-        await supabase
-            .from(SupabaseConfig.profileFollowsTable)
-            .delete()
-            .eq('follower_profile_id', widget.currentProfileId)
-            .eq('following_profile_id', _targetProfileId);
+        // User-level unfollow: removes every follow edge between the two
+        // users' persona profiles, not just the active-profile pair.
+        await supabase.rpc(
+          SupabaseConfig.rpcUnfollowUserFn,
+          params: {'p_target_profile_id': _targetProfileId},
+        );
       } else {
         await supabase.from(SupabaseConfig.profileFollowsTable).insert({
           'follower_profile_id': widget.currentProfileId,

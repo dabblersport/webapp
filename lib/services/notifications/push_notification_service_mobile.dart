@@ -20,6 +20,7 @@ class PushNotificationService {
 
   bool _initialized = false;
   StreamSubscription<String>? _tokenRefreshSub;
+  StreamSubscription<AuthState>? _authStateSub;
 
   /// Callback invoked when user taps a notification.
   /// Receives the action_route string from the notification data payload.
@@ -40,10 +41,31 @@ class PushNotificationService {
     await _logFcmToken();
     await _subscribeToTopics();
     _listenTokenRefresh();
+    _listenAuthState();
     await _handleInitialMessage();
     _listenMessageOpenedApp();
 
     _initialized = true;
+  }
+
+  /// Re-save the FCM token whenever the user signs in. On a fresh install
+  /// init() runs before authentication, so the launch-time save is skipped
+  /// (no auth user) — without this listener the device would never get an
+  /// fcm_tokens row and would receive no pushes. Upsert is idempotent, so
+  /// overlapping saves are harmless.
+  void _listenAuthState() {
+    _authStateSub?.cancel();
+    _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (state) async {
+        final signedIn = state.event == AuthChangeEvent.signedIn ||
+            (state.event == AuthChangeEvent.initialSession &&
+                state.session != null);
+        if (signedIn) {
+          await _logFcmToken();
+        }
+      },
+      onError: (e) => debugPrint('Auth-state FCM token sync error: $e'),
+    );
   }
 
   /// Subscribe to Firebase topics for broadcast notifications
@@ -70,19 +92,43 @@ class PushNotificationService {
       sound: true,
     );
 
-    // Initialize local notifications for foreground display
-    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const darwinInit = DarwinInitializationSettings();
-    const initSettings = InitializationSettings(
-      android: androidInit,
-      iOS: darwinInit,
-      macOS: darwinInit,
-    );
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Android: foreground messages are displayed via flutter_local_notifications.
+      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initSettings = InitializationSettings(android: androidInit);
 
-    await _localNotificationsPlugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: _onLocalNotificationTap,
-    );
+      await _localNotificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onLocalNotificationTap,
+      );
+
+      // Create the channel up front so background FCM messages (routed here via
+      // the default_notification_channel_id manifest meta-data) land in it with
+      // max importance instead of falling back to FCM's own low-priority channel.
+      const channel = AndroidNotificationChannel(
+        'default_channel',
+        'General',
+        description: 'General notifications',
+        importance: Importance.max,
+      );
+      await _localNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(channel);
+    } else {
+      // iOS/macOS: DO NOT initialize flutter_local_notifications here — it
+      // takes over the UNUserNotificationCenter delegate and swallows the
+      // notification taps firebase_messaging needs for onMessageOpenedApp
+      // (deep links stop working). Instead let FCM present foreground
+      // notifications natively; taps then flow through onMessageOpenedApp
+      // for foreground and background alike.
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
   }
 
   /// Called when user taps a local notification (foreground-displayed).
@@ -102,6 +148,11 @@ class PushNotificationService {
 
   Future<void> _configureForegroundHandling() async {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      // iOS/macOS present foreground notifications natively (see
+      // setForegroundNotificationPresentationOptions) — showing a local
+      // notification too would duplicate the banner.
+      if (defaultTargetPlatform != TargetPlatform.android) return;
+
       final notification = message.notification;
       if (notification == null) return;
 
@@ -131,7 +182,13 @@ class PushNotificationService {
       priority: Priority.high,
     );
 
-    const darwinDetails = DarwinNotificationDetails();
+    // Explicit presentation options — without these iOS may not show a
+    // banner for notifications displayed while the app is in the foreground.
+    const darwinDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBanner: true,
+      presentSound: true,
+    );
 
     const details = NotificationDetails(
       android: androidDetails,
@@ -211,7 +268,10 @@ class PushNotificationService {
         'platform': defaultTargetPlatform.name,
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'user_id,platform');
-    } catch (e) {}
+      debugPrint('FCM token saved for user $userId');
+    } catch (e) {
+      debugPrint('Failed to save FCM token to Supabase: $e');
+    }
   }
 
   /// Check if we should show the notification permission prompt

@@ -13,15 +13,18 @@ import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/services/notifications/push_notification_service.dart'
+    as push_facade;
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
-import 'url_strategy_stub.dart'
-    if (dart.library.html) 'url_strategy_web.dart';
+import 'url_strategy_stub.dart' if (dart.library.html) 'url_strategy_web.dart';
 import 'app/app_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/responsive_app_shell.dart';
@@ -30,10 +33,35 @@ import 'widgets/responsive_app_shell.dart';
 // This function must be a top-level function (not in a class)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Background messages run in their own isolate — Firebase must be
+  // initialized here independently of the main isolate.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Handle background messages here
   // You can show local notifications, update badge counts, etc.
   // Note: Avoid heavy processing here
   debugPrint('Background message received: ${message.messageId}');
+}
+
+/// Navigate to a notification's deep-link route, waiting for the navigator to
+/// be ready. On a cold start (app launched by a notification tap) the callback
+/// can fire before the first frame; a fixed delay was racy, so retry briefly.
+void _pushNotificationRoute(String route) {
+  var attempts = 0;
+  void tryPush() {
+    final navigatorReady =
+        appRouter.routerDelegate.navigatorKey.currentContext != null;
+    if (navigatorReady) {
+      debugPrint('Notification tap → navigating to $route');
+      appRouter.push(route);
+    } else if (attempts < 20) {
+      attempts++;
+      Future.delayed(const Duration(milliseconds: 250), tryPush);
+    } else {
+      debugPrint('Notification tap: navigator never became ready ($route)');
+    }
+  }
+
+  Future.delayed(const Duration(milliseconds: 300), tryPush);
 }
 
 // Feature flags for future functionality
@@ -115,7 +143,12 @@ Future<void> main() async {
         // first navigation, before login/registration is reachable.
         await EulaService.preload();
 
-        // Register background message handler (must be before Firebase.initializeApp)
+        // Initialize Firebase before any FirebaseMessaging usage — without
+        // this every FirebaseMessaging.instance access throws [core/no-app].
+        // On web there is no native init, so Dart must do it.
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
         if (!kIsWeb) {
           FirebaseMessaging.onBackgroundMessage(
             _firebaseMessagingBackgroundHandler,
@@ -157,17 +190,15 @@ Future<void> main() async {
         // foreground handling, token refresh, and notification tap listeners.
         // Wire the tap callback BEFORE init so getInitialMessage can use it.
         if (!kIsWeb) {
-          push_mobile
-              .PushNotificationService
-              .instance
-              .onNotificationTap = (route) {
-            // Delay slightly to ensure router/navigator is mounted on cold start
-            Future.delayed(const Duration(milliseconds: 500), () {
-              appRouter.push(route);
-            });
-          };
+          push_mobile.PushNotificationService.instance.onNotificationTap =
+              _pushNotificationRoute;
           // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
           unawaited(push_mobile.PushNotificationService.instance.init());
+        } else {
+          // Web push: wires token save + refresh if permission is already
+          // granted; the permission prompt itself comes from the Home drawer
+          // or onboarding. Taps deep-link via the service worker (URL).
+          unawaited(push_facade.PushNotificationService.instance.init());
         }
 
         // Log the Supabase authorization token (JWT) after initialization and sign-in
@@ -255,7 +286,9 @@ class MyApp extends ConsumerWidget {
             //       – English / default → Roboto (already applied via AppTheme)
             TextTheme? overrideTextTheme;
             if (base.platform == TargetPlatform.iOS) {
-              overrideTextTheme = base.textTheme.apply(fontFamily: '.SF Pro Text');
+              overrideTextTheme = base.textTheme.apply(
+                fontFamily: '.SF Pro Text',
+              );
             } else if (locale.languageCode == 'ar') {
               // Arabic readability: floor every weight at 500 (Medium).
               final readex = GoogleFonts.readexProTextTheme(base.textTheme);
@@ -266,22 +299,23 @@ class MyApp extends ConsumerWidget {
                     ? s
                     : s.copyWith(fontWeight: FontWeight.w500);
               }
+
               overrideTextTheme = TextTheme(
-                displayLarge:  bump(readex.displayLarge),
+                displayLarge: bump(readex.displayLarge),
                 displayMedium: bump(readex.displayMedium),
-                displaySmall:  bump(readex.displaySmall),
+                displaySmall: bump(readex.displaySmall),
                 headlineLarge: bump(readex.headlineLarge),
                 headlineMedium: bump(readex.headlineMedium),
-                headlineSmall:  bump(readex.headlineSmall),
-                titleLarge:  bump(readex.titleLarge),
+                headlineSmall: bump(readex.headlineSmall),
+                titleLarge: bump(readex.titleLarge),
                 titleMedium: bump(readex.titleMedium),
-                titleSmall:  bump(readex.titleSmall),
-                bodyLarge:   bump(readex.bodyLarge),
-                bodyMedium:  bump(readex.bodyMedium),
-                bodySmall:   bump(readex.bodySmall),
-                labelLarge:  bump(readex.labelLarge),
+                titleSmall: bump(readex.titleSmall),
+                bodyLarge: bump(readex.bodyLarge),
+                bodyMedium: bump(readex.bodyMedium),
+                bodySmall: bump(readex.bodySmall),
+                labelLarge: bump(readex.labelLarge),
                 labelMedium: bump(readex.labelMedium),
-                labelSmall:  bump(readex.labelSmall),
+                labelSmall: bump(readex.labelSmall),
               );
             }
             final wrapped = ResponsiveAppShell(child: child);

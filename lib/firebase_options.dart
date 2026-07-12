@@ -60,11 +60,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAsU0fMA0L_BmHzHOkS-whgs0KpDnemaq8',
-    appId: '1:836345375454:ios:f999ace6319832debf304f',
+    appId: '1:836345375454:ios:6a9f21bbdcdff4e9bf304f',
     messagingSenderId: '836345375454',
     projectId: 'dabblersportapp',
     storageBucket: 'dabblersportapp.firebasestorage.app',
-    iosBundleId: 'com.example.dabbler',
+    iosBundleId: 'app.dabbler.pro',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(

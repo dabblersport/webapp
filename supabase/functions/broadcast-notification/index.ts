@@ -7,6 +7,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "dabblersportapp";
 
@@ -83,10 +84,32 @@ Deno.serve(async (req: Request) => {
     // Send notification to topic
     await sendTopicNotification(topic, title, body, data);
 
+    // Persist the broadcast into the in-app feed (one row per active user).
+    // Uses the 'system.announcement' kind, which is inapp-only — the push
+    // already went out via the FCM topic, so the per-notification push
+    // trigger deliberately does not fire for these rows.
+    let inAppCount = 0;
+    try {
+      const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const { data: inserted, error: rpcError } = await admin.rpc(
+        "rpc_broadcast_inapp_notification",
+        { p_title: title, p_body: body, p_route: data?.action_route ?? null }
+      );
+      if (rpcError) {
+        console.error("broadcast in-app persistence failed:", rpcError);
+      } else {
+        inAppCount = inserted ?? 0;
+      }
+    } catch (persistError) {
+      // Push already went out — don't fail the request over feed persistence.
+      console.error("broadcast in-app persistence error:", persistError);
+    }
+
     return new Response(
       JSON.stringify({
         message: `Broadcast notification sent to topic: ${topic}`,
         topic: topic,
+        in_app_rows: inAppCount,
       }),
       { 
         status: 200,

@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
+import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
+import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
+import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 
@@ -58,29 +63,73 @@ String _sportEmoji(String? key) {
 }
 
 class GameDetailScreen extends ConsumerStatefulWidget {
-  const GameDetailScreen({super.key, required this.gameId});
+  const GameDetailScreen({
+    super.key,
+    required this.gameId,
+    this.focusRequests = false,
+  });
   final String gameId;
+
+  /// When true (join-request notification deep link), auto-scrolls to the
+  /// Players section once the game has loaded.
+  final bool focusRequests;
 
   @override
   ConsumerState<GameDetailScreen> createState() => _GameDetailScreenState();
 }
 
-class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
+class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scroll = ScrollController();
+  final GlobalKey _playersKey = GlobalKey();
+  bool _didFocusScroll = false;
   late final String _previousCategory;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _previousCategory = AppTheme.activeCategory;
     AppTheme.setActiveCategory('sports');
+    // The controller is autoDispose.family but survives while an earlier
+    // instance of this screen is in the nav stack (e.g. arriving again via a
+    // notification tap). Reload so this entry never shows stale data.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(gameViewControllerProvider(widget.gameId).notifier).refresh();
+      }
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Websockets are suspended in the background, so realtime events (host
+    // approving a request, roster changes) are missed — resync on resume.
+    if (state == AppLifecycleState.resumed && mounted) {
+      ref.read(gameViewControllerProvider(widget.gameId).notifier).resync();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     AppTheme.setActiveCategory(_previousCategory);
     _scroll.dispose();
     super.dispose();
+  }
+
+  void _shareGame(GameView game) {
+    final when = DateFormat('EEE, MMM d · h:mm a').format(game.startAt);
+    final where = [game.venueName, game.areaName].whereType<String>().join(', ');
+    SharePlus.instance.share(
+      ShareParams(
+        text: [
+          'Join me for ${game.title} on Dabbler!',
+          when,
+          if (where.isNotEmpty) where,
+        ].join('\n'),
+      ),
+    );
   }
 
   @override
@@ -124,6 +173,23 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
     final game       = state.game!;
     final sportColor = _sportColor(game.sportKey);
 
+    // Notification deep link: scroll to the Players / requests section once
+    // the first full load has settled.
+    if (widget.focusRequests && !_didFocusScroll && !state.isLoading) {
+      _didFocusScroll = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _playersKey.currentContext;
+        if (ctx != null && mounted) {
+          Scrollable.ensureVisible(
+            ctx,
+            duration: const Duration(milliseconds: 550),
+            curve: Curves.easeOutCubic,
+            alignment: 0.08,
+          );
+        }
+      });
+    }
+
     return Stack(
       children: [
         CustomScrollView(
@@ -151,7 +217,10 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
                     const SizedBox(height: 18),
                     _DetailsChips(game: game),
                     const SizedBox(height: 18),
-                    _RosterSection(state: state, sportColor: sportColor),
+                    KeyedSubtree(
+                      key: _playersKey,
+                      child: _RosterSection(state: state, sportColor: sportColor, ctrl: ctrl),
+                    ),
                     SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
                   ],
                 ),
@@ -167,7 +236,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
             children: [
               _GlassBtn(icon: Iconsax.arrow_left_copy, onTap: () => context.pop()),
               const Spacer(),
-              _GlassBtn(icon: Iconsax.refresh_copy, onTap: ctrl.refresh),
+              _GlassBtn(icon: Iconsax.share_copy, onTap: () => _shareGame(game)),
             ],
           ),
         ),
@@ -224,11 +293,12 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: isHost
+              child: isHost && !isCancelled && !isEnded
                   ? _CtaButton(
-                      label: 'Your game', icon: Iconsax.crown_copy,
+                      label: 'Edit game', icon: Iconsax.edit_copy,
                       bg: cs.primary.withValues(alpha: 0.08), fg: cs.primary,
-                      border: cs.primary.withValues(alpha: 0.3), enabled: false,
+                      border: cs.primary.withValues(alpha: 0.3),
+                      onTap: () => _openEditGame(game.id, ctrl),
                     )
                   : isCancelled || isEnded
                       ? _CtaButton(
@@ -284,6 +354,14 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen> {
   String _joiningLabel(String policy) => policy == 'request' ? 'Requesting…' : 'Joining…';
 
   IconData _joinIcon(String policy) => policy == 'request' ? Iconsax.send_copy : Iconsax.tick_circle_copy;
+
+  Future<void> _openEditGame(String gameId, GameViewController ctrl) async {
+    final updated = await context.pushNamed(
+      RouteNames.editGame,
+      pathParameters: {'gameId': gameId},
+    );
+    if (updated == true) await ctrl.refresh();
+  }
 
   Future<void> _confirmLeave() async {
     final confirmed = await showDialog<bool>(
@@ -545,8 +623,7 @@ class _HostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs      = Theme.of(context).colorScheme;
-    final name    = game.creatorDisplayName ?? game.creatorUsername ?? 'Host';
-    final initials = _initials(name);
+    final name    = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -554,20 +631,19 @@ class _HostCard extends StatelessWidget {
         border: Border.all(color: cs.outlineVariant, width: 1.5),
       ),
       child: Row(children: [
-        Container(
-          width: 42, height: 42,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [cs.primary, _kPink]),
-          ),
-          child: game.creatorAvatarUrl != null
-              ? ClipOval(child: Image.network(game.creatorAvatarUrl!, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)))))
-              : Center(child: Text(initials, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16))),
+        // DSAvatar resolves storage paths and ds: seed references the same
+        // way the profile screen does, so the picture always matches.
+        DSAvatar(
+          size: AvatarSize.small,
+          customDimension: 42,
+          imageUrl: game.creatorAvatarUrl,
+          displayName: name,
+          context: AvatarContext.sports,
+          hasBorder: false,
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Hosted by', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+          Text('Created by', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
           const SizedBox(height: 1),
           Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
         ])),
@@ -575,12 +651,6 @@ class _HostCard extends StatelessWidget {
     );
   }
 
-  String _initials(String n) {
-    final p = n.trim().split(' ');
-    if (p.isEmpty) return '?';
-    if (p.length == 1) return p[0][0].toUpperCase();
-    return '${p[0][0]}${p[1][0]}'.toUpperCase();
-  }
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
@@ -741,16 +811,16 @@ class _VenueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(0),
       decoration: BoxDecoration(
         color: cs.surface, borderRadius: BorderRadius.circular(16),
         border: Border.all(color: cs.outlineVariant, width: 1.5),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Venue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
+        // Text('Venue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
         const SizedBox(height: 14),
         if (game.venueName != null)
-          _InfoRow(icon: Iconsax.buildings_copy, iconColor: cs.primary, label: 'NAME', value: game.venueName!),
+          _InfoRow(icon: Iconsax.buildings_copy, iconColor: cs.primary, label: 'VENUE', value: game.venueName!),
         if (game.venueSpaceName != null) ...[
           Divider(height: 20, color: cs.outlineVariant.withValues(alpha: 0.6)),
           _InfoRow(icon: Iconsax.location_copy, iconColor: cs.primary, label: 'SPACE', value: game.venueSpaceName!),
@@ -774,7 +844,18 @@ class _DetailsChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs    = Theme.of(context).colorScheme;
     final chips = [
-      (label: game.isPublic ? 'Public' : 'Private', icon: game.isPublic ? Iconsax.eye_copy : Iconsax.lock_copy),
+      (
+        label: switch (game.listingVisibility) {
+          'followers' => 'Followers',
+          'private' => 'Private',
+          _ => 'Public',
+        },
+        icon: switch (game.listingVisibility) {
+          'followers' => Iconsax.people_copy,
+          'private' => Iconsax.lock_copy,
+          _ => Iconsax.eye_copy,
+        },
+      ),
       (label: _policyLabel(game.joinPolicy), icon: _policyIcon(game.joinPolicy)),
       if (game.minSkill != null && game.maxSkill != null)
         (label: 'Skill ${game.minSkill}–${game.maxSkill}', icon: Iconsax.star_copy),
@@ -842,8 +923,13 @@ class _DetailChip extends StatelessWidget {
 // ── Roster ────────────────────────────────────────────────────────────────────
 
 class _RosterSection extends StatelessWidget {
-  const _RosterSection({required this.state, required this.sportColor});
+  const _RosterSection({
+    required this.state,
+    required this.sportColor,
+    required this.ctrl,
+  });
   final GameViewState state; final Color sportColor;
+  final GameViewController ctrl;
 
   @override
   Widget build(BuildContext context) {
@@ -851,6 +937,14 @@ class _RosterSection extends StatelessWidget {
     final roster   = state.roster;
     final waitlist = state.waitlist;
     final game     = state.game!;
+    // Pending join requests are host-managed; RLS only returns the full
+    // list to the host, but gate on isHost anyway so a requester viewing
+    // their own row never sees approve/deny controls.
+    final requests = ctrl.isHost ? state.pendingRequests : const <GameJoinRequestEntry>[];
+    // Creator can drop players from upcoming games (never themselves).
+    final canManagePlayers = ctrl.isHost &&
+        !game.isCancelled &&
+        game.endAt.isAfter(DateTime.now());
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
@@ -862,6 +956,33 @@ class _RosterSection extends StatelessWidget {
           Text('${game.spotsLeft} spots left', style: TextStyle(fontSize: 12, color: sportColor, fontWeight: FontWeight.w700)),
       ]),
       const SizedBox(height: 10),
+      if (requests.isNotEmpty) ...[
+        Container(
+          decoration: BoxDecoration(
+            color: sportColor.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: sportColor.withValues(alpha: 0.3), width: 1.5),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+              child: Text(
+                '${requests.length} join ${requests.length == 1 ? 'request' : 'requests'}',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: sportColor, letterSpacing: 0.2),
+              ),
+            ),
+            ...requests.asMap().entries.map((e) => _RequestRow(
+                  request: e.value,
+                  sportColor: sportColor,
+                  enabled: !state.isActing,
+                  showDivider: e.key != requests.length - 1,
+                  onApprove: () => ctrl.decideJoinRequest(e.value.id, true),
+                  onDeny: () => ctrl.decideJoinRequest(e.value.id, false),
+                )),
+          ]),
+        ),
+        const SizedBox(height: 8),
+      ],
       if (roster.isEmpty && waitlist.isEmpty)
         Container(
           padding: const EdgeInsets.all(20),
@@ -874,13 +995,32 @@ class _RosterSection extends StatelessWidget {
           child: Column(children: [
             ...roster.asMap().entries.map((e) {
               final isLast = e.key == roster.length - 1 && waitlist.isEmpty;
-              return _PlayerRow(name: e.value.displayName, avatarUrl: e.value.avatarUrl, isHost: e.value.isHost, badge: e.value.isHost ? 'Host' : null, showDivider: !isLast);
+              return _PlayerRow(
+                name: e.value.displayName, avatarUrl: e.value.avatarUrl,
+                isHost: e.value.isHost, badge: e.value.isHost ? 'Creator' : null,
+                isMe: e.value.userId == ctrl.currentUserId,
+                showDivider: !isLast,
+                onTap: () => context.push(
+                  '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
+                ),
+                onRemove: canManagePlayers && !e.value.isHost && !state.isActing
+                    ? () => _confirmRemove(context, e.value)
+                    : null,
+              );
             }),
             if (waitlist.isNotEmpty) ...[
               const _WaitlistDivider(),
               ...waitlist.asMap().entries.map((e) {
                 final isLast = e.key == waitlist.length - 1;
-                return _PlayerRow(name: e.value.displayName, avatarUrl: e.value.avatarUrl, isHost: false, badge: '#${e.value.position}', showDivider: !isLast, isWaitlisted: true);
+                return _PlayerRow(
+                  name: e.value.displayName, avatarUrl: e.value.avatarUrl,
+                  isHost: false, badge: '#${e.value.position}',
+                  isMe: e.value.userId == ctrl.currentUserId,
+                  showDivider: !isLast, isWaitlisted: true,
+                  onTap: () => context.push(
+                    '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
+                  ),
+                );
               }),
             ],
           ]),
@@ -890,6 +1030,28 @@ class _RosterSection extends StatelessWidget {
         _OpenSpotsCard(spotsLeft: game.spotsLeft, sportColor: sportColor),
       ],
     ]);
+  }
+
+  Future<void> _confirmRemove(BuildContext context, GameRosterEntry player) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Remove ${player.displayName}?'),
+        content: const Text(
+          'They will lose their spot and be notified. If the game has a '
+          'waitlist, the first player in line takes their place.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await ctrl.removePlayer(player.profileId);
   }
 }
 
@@ -946,37 +1108,168 @@ class _WaitlistDivider extends StatelessWidget {
   }
 }
 
+/// Pending join request row — avatar + name with approve / deny actions.
+/// Rendered only for the host.
+class _RequestRow extends StatelessWidget {
+  const _RequestRow({
+    required this.request,
+    required this.sportColor,
+    required this.enabled,
+    required this.showDivider,
+    required this.onApprove,
+    required this.onDeny,
+  });
+  final GameJoinRequestEntry request;
+  final Color sportColor;
+  final bool enabled;
+  final bool showDivider;
+  final VoidCallback onApprove;
+  final VoidCallback onDeny;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(children: [
+          // Avatar + name open the requester's profile so the host can vet
+          // them before deciding; the trailing buttons keep approve/deny.
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => context.push(
+                '${RoutePaths.userProfile}/${request.userId}?profileId=${request.profileId}',
+              ),
+              child: Row(children: [
+                DSAvatar(
+                  size: AvatarSize.small,
+                  customDimension: 38,
+                  imageUrl: request.avatarUrl,
+                  displayName: request.displayName,
+                  context: AvatarContext.sports,
+                  hasBorder: false,
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(request.displayName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  Text('Wants to join', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+                ])),
+              ]),
+            ),
+          ),
+          _RequestActionButton(
+            icon: Iconsax.tick_circle_copy,
+            color: sportColor,
+            filled: true,
+            semanticLabel: 'Approve ${request.displayName}',
+            onTap: enabled ? onApprove : null,
+          ),
+          const SizedBox(width: 8),
+          _RequestActionButton(
+            icon: Iconsax.close_circle_copy,
+            color: cs.error,
+            filled: false,
+            semanticLabel: 'Deny ${request.displayName}',
+            onTap: enabled ? onDeny : null,
+          ),
+        ]),
+      ),
+      if (showDivider)
+        Divider(height: 1, indent: 64, color: cs.outlineVariant.withValues(alpha: 0.6)),
+    ]);
+  }
+}
+
+class _RequestActionButton extends StatelessWidget {
+  const _RequestActionButton({
+    required this.icon,
+    required this.color,
+    required this.filled,
+    required this.semanticLabel,
+    required this.onTap,
+  });
+  final IconData icon;
+  final Color color;
+  final bool filled;
+  final String semanticLabel;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      enabled: onTap != null,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 34, height: 34,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: filled ? color.withValues(alpha: onTap == null ? 0.06 : 0.12) : Colors.transparent,
+            border: Border.all(color: color.withValues(alpha: onTap == null ? 0.2 : 0.4), width: 1.5),
+          ),
+          child: Icon(icon, size: 17, color: color.withValues(alpha: onTap == null ? 0.4 : 1)),
+        ),
+      ),
+    );
+  }
+}
+
 class _PlayerRow extends StatelessWidget {
   const _PlayerRow({
     required this.name, required this.isHost,
     this.avatarUrl, this.badge, this.showDivider = true, this.isWaitlisted = false,
+    this.isMe = false, this.onTap, this.onRemove,
   });
   final String name; final String? avatarUrl;
   final bool isHost; final String? badge;
   final bool showDivider; final bool isWaitlisted;
 
+  /// Adds a "You" pill so the viewer can spot themselves in the list.
+  final bool isMe;
+
+  /// Opens the player's profile.
+  final VoidCallback? onTap;
+
+  /// Creator-only: drops this player from the game (with confirmation).
+  final VoidCallback? onRemove;
+
   @override
   Widget build(BuildContext context) {
     final cs       = Theme.of(context).colorScheme;
-    final initials = _initials(name);
     return Column(children: [
-      Padding(
+      GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(children: [
-          Container(
-            width: 38, height: 38,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary.withValues(alpha: 0.10)),
-            child: avatarUrl != null
-                ? ClipOval(child: Image.network(avatarUrl!, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Center(child: Text(initials, style: TextStyle(fontSize: 13, color: cs.primary, fontWeight: FontWeight.w700)))))
-                : Center(child: Text(initials, style: TextStyle(fontSize: 13, color: cs.primary, fontWeight: FontWeight.w700))),
+          // DSAvatar resolves storage paths and ds: seed references the same
+          // way the profile screen does, so the picture always matches.
+          DSAvatar(
+            size: AvatarSize.small,
+            customDimension: 38,
+            imageUrl: avatarUrl,
+            displayName: name,
+            context: AvatarContext.sports,
+            hasBorder: false,
           ),
           const SizedBox(width: 12),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(name, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cs.onSurface)),
             if (isHost || isWaitlisted)
-              Text(isHost ? 'Organizer' : 'Waitlisted', style: TextStyle(fontSize: 11, color: isHost ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
+              Text(isHost ? 'Creator' : 'Waitlisted', style: TextStyle(fontSize: 11, color: isHost ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ])),
+          if (isMe) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: _kGreen.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
+              child: Text('You', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _kGreen, letterSpacing: 0.3)),
+            ),
+            if (badge != null || isWaitlisted) const SizedBox(width: 6),
+          ],
           if (badge != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -985,17 +1278,29 @@ class _PlayerRow extends StatelessWidget {
             )
           else if (isWaitlisted)
             Icon(Iconsax.clock_copy, size: 16, color: cs.onSurfaceVariant),
+          if (onRemove != null) ...[
+            const SizedBox(width: 8),
+            Semantics(
+              label: 'Remove $name from game',
+              button: true,
+              child: GestureDetector(
+                onTap: onRemove,
+                child: Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: cs.error.withValues(alpha: 0.35), width: 1.5),
+                  ),
+                  child: Icon(Iconsax.trash_copy, size: 15, color: cs.error),
+                ),
+              ),
+            ),
+          ],
         ]),
+        ),
       ),
       if (showDivider) Divider(height: 1, indent: 64, endIndent: 14, color: cs.outlineVariant.withValues(alpha: 0.5)),
     ]);
-  }
-
-  String _initials(String n) {
-    final p = n.trim().split(' ');
-    if (p.isEmpty) return '?';
-    if (p.length == 1) return p[0][0].toUpperCase();
-    return '${p[0][0]}${p[1][0]}'.toUpperCase();
   }
 }
 

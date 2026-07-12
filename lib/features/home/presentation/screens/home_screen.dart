@@ -121,8 +121,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _checkNotificationPermission() async {
-    // Only check on mobile platforms
-    if (defaultTargetPlatform != TargetPlatform.android &&
+    // Mobile and web (Chrome) both support push now.
+    if (!kIsWeb &&
+        defaultTargetPlatform != TargetPlatform.android &&
         defaultTargetPlatform != TargetPlatform.iOS) {
       return;
     }

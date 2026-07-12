@@ -22,7 +22,7 @@ PostComment _$PostCommentFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$PostComment {
   String get id => throw _privateConstructorUsedError;
-  @JsonKey(name: 'post_id')
+  @JsonKey(name: 'parent_activity_id')
   String get postId => throw _privateConstructorUsedError;
   @JsonKey(name: 'author_user_id')
   String get authorUserId => throw _privateConstructorUsedError;
@@ -71,7 +71,7 @@ abstract class $PostCommentCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'post_id') String postId,
+    @JsonKey(name: 'parent_activity_id') String postId,
     @JsonKey(name: 'author_user_id') String authorUserId,
     @JsonKey(name: 'author_profile_id') String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
@@ -204,7 +204,7 @@ abstract class _$$PostCommentImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    @JsonKey(name: 'post_id') String postId,
+    @JsonKey(name: 'parent_activity_id') String postId,
     @JsonKey(name: 'author_user_id') String authorUserId,
     @JsonKey(name: 'author_profile_id') String authorProfileId,
     @JsonKey(name: 'author_display_name') String? authorDisplayName,
@@ -329,7 +329,7 @@ class __$$PostCommentImplCopyWithImpl<$Res>
 class _$PostCommentImpl implements _PostComment {
   const _$PostCommentImpl({
     required this.id,
-    @JsonKey(name: 'post_id') required this.postId,
+    @JsonKey(name: 'parent_activity_id') required this.postId,
     @JsonKey(name: 'author_user_id') required this.authorUserId,
     @JsonKey(name: 'author_profile_id') required this.authorProfileId,
     @JsonKey(name: 'author_display_name') this.authorDisplayName,
@@ -352,7 +352,7 @@ class _$PostCommentImpl implements _PostComment {
   @override
   final String id;
   @override
-  @JsonKey(name: 'post_id')
+  @JsonKey(name: 'parent_activity_id')
   final String postId;
   @override
   @JsonKey(name: 'author_user_id')
@@ -475,7 +475,7 @@ class _$PostCommentImpl implements _PostComment {
 abstract class _PostComment implements PostComment {
   const factory _PostComment({
     required final String id,
-    @JsonKey(name: 'post_id') required final String postId,
+    @JsonKey(name: 'parent_activity_id') required final String postId,
     @JsonKey(name: 'author_user_id') required final String authorUserId,
     @JsonKey(name: 'author_profile_id') required final String authorProfileId,
     @JsonKey(name: 'author_display_name') final String? authorDisplayName,
@@ -498,7 +498,7 @@ abstract class _PostComment implements PostComment {
   @override
   String get id;
   @override
-  @JsonKey(name: 'post_id')
+  @JsonKey(name: 'parent_activity_id')
   String get postId;
   @override
   @JsonKey(name: 'author_user_id')

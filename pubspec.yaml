@@ -123,12 +123,14 @@ dependencies:
 
   # Local notifications for foreground & scheduled notifications
   flutter_local_notifications: ^17.2.1
+  # Timezone-aware scheduling for zonedSchedule
+  timezone: ^0.9.4
 
   # Shimmer effects for loading states
   shimmer: ^3.0.0
   
   # Sharing
-  share_plus: ^10.0.2
+  share_plus: ^13.2.0
   
   # URL launcher for opening external apps and links
   url_launcher: ^6.3.0
@@ -154,7 +156,7 @@ dependencies:
   flutter_web_auth_2: ^5.0.0
 
   # Sign in with Apple (iOS) — required for App Store when Google sign-in is offered
-  sign_in_with_apple: ^6.1.4
+  sign_in_with_apple: ^8.1.0
   random_avatar: ^0.0.8
   mapbox_search: ^4.4.0
 
@@ -162,6 +164,21 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
   flutter_slidable: ^4.0.3
+dependency_overrides:
+  # share_plus 13.2+ declares win32 ^6 but file_picker 8 only compiles against
+  # win32 5. Pinned down — win32 code paths only run on Windows desktop builds,
+  # which we do not ship.
+  win32: 5.15.0
+  # Vendored copies of the pub releases (sign_in_with_apple 8.1.0,
+  # flutter_web_auth_2 5.0.3) with one gradle line patched: they no longer
+  # apply the Kotlin Gradle Plugin themselves, so Flutter's built-in Kotlin
+  # takes over and the "plugins that apply KGP" build warning goes away.
+  # Drop these overrides once upstream publishes migrated releases.
+  sign_in_with_apple:
+    path: packages/sign_in_with_apple
+  flutter_web_auth_2:
+    path: packages/flutter_web_auth_2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

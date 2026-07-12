@@ -24,8 +24,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
   // ── Category → kind-key mappings (only push-capable kinds) ──────────────
 
   static const _gameToggles = <_KindToggle>[
-    _KindToggle('Game Invites & Requests', 'Invites and requests to join',
-        Icons.sports_outlined, ['game.invited', 'game.join_request']),
+    _KindToggle('Game Invites & Requests', 'Invites, join requests, approvals',
+        Icons.sports_outlined,
+        ['game.invited', 'game.join_request', 'game.join_accepted']),
     _KindToggle('Game Reminders', 'Reminders for upcoming games',
         Icons.alarm_outlined, ['game.reminder']),
     _KindToggle('Game Updates', 'Changes, waitlist promotions, players joining',
@@ -306,6 +307,15 @@ class NotificationSettingsScreen extends ConsumerWidget {
             Icons.priority_high_outlined,
             settings.allowHighPriorityOverride,
             controller.setAllowHighPriorityOverride,
+          ),
+          const Divider(height: 24),
+          _buildSwitchItem(
+            context,
+            'Allow all notifications',
+            'Every push still comes through during quiet hours',
+            Icons.notifications_active_outlined,
+            settings.allowAllOverride,
+            controller.setAllowAllOverride,
           ),
         ],
       ],

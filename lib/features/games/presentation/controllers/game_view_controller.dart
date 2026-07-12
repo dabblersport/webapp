@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -63,6 +65,38 @@ class GameWaitlistEntry {
           profile['username'] as String? ??
           'Player',
       avatarUrl: profile['avatar_url'] as String?,
+    );
+  }
+}
+
+class GameJoinRequestEntry {
+  const GameJoinRequestEntry({
+    required this.id,
+    required this.profileId,
+    required this.userId,
+    required this.displayName,
+    this.avatarUrl,
+    this.username,
+  });
+
+  final String id;
+  final String profileId;
+  final String userId;
+  final String displayName;
+  final String? avatarUrl;
+  final String? username;
+
+  factory GameJoinRequestEntry.fromJson(Map<String, dynamic> j) {
+    final profile = j['profiles'] as Map<String, dynamic>? ?? {};
+    return GameJoinRequestEntry(
+      id: j['id'] as String,
+      profileId: j['from_profile_id'] as String,
+      userId: j['from_user_id'] as String,
+      displayName: profile['display_name'] as String? ??
+          profile['username'] as String? ??
+          'Player',
+      avatarUrl: profile['avatar_url'] as String?,
+      username: profile['username'] as String?,
     );
   }
 }
@@ -204,6 +238,7 @@ class GameViewState {
     this.game,
     this.roster = const [],
     this.waitlist = const [],
+    this.pendingRequests = const [],
     this.hasPendingRequest = false,
     this.isLoading = false,
     this.isActing = false,
@@ -214,6 +249,10 @@ class GameViewState {
   final GameView? game;
   final List<GameRosterEntry> roster;
   final List<GameWaitlistEntry> waitlist;
+
+  /// Pending join requests — RLS returns all of them to the host, and only
+  /// the viewer's own row to everyone else.
+  final List<GameJoinRequestEntry> pendingRequests;
   final bool hasPendingRequest;
   final bool isLoading;
   final bool isActing;
@@ -226,6 +265,7 @@ class GameViewState {
     GameView? game,
     List<GameRosterEntry>? roster,
     List<GameWaitlistEntry>? waitlist,
+    List<GameJoinRequestEntry>? pendingRequests,
     bool? hasPendingRequest,
     bool? isLoading,
     bool? isActing,
@@ -238,6 +278,7 @@ class GameViewState {
       game: game ?? this.game,
       roster: roster ?? this.roster,
       waitlist: waitlist ?? this.waitlist,
+      pendingRequests: pendingRequests ?? this.pendingRequests,
       hasPendingRequest: hasPendingRequest ?? this.hasPendingRequest,
       isLoading: isLoading ?? this.isLoading,
       isActing: isActing ?? this.isActing,
@@ -257,18 +298,95 @@ class GameViewController extends StateNotifier<GameViewState> {
   })  : _db = supabase,
         super(const GameViewState()) {
     _load();
+    _subscribeToChanges();
   }
 
   final SupabaseClient _db;
   final String gameId;
   final String? currentUserId;
 
+  RealtimeChannel? _channel;
+  Timer? _refreshDebounce;
+
   Future<void> refresh() => _load();
+
+  /// Re-establish realtime and reload. The OS suspends websockets while the
+  /// app is backgrounded, so changes made meanwhile (e.g. the host approving
+  /// a join request) are silently missed — call this on app resume.
+  Future<void> resync() async {
+    final channel = _channel;
+    if (channel != null) {
+      _channel = null;
+      await _db.removeChannel(channel);
+    }
+    _subscribeToChanges();
+    await _load();
+  }
+
+  /// Live-updates the screen when the roster, waitlist, or join requests
+  /// change (someone joins/leaves, the host approves a request, …).
+  /// Realtime enforces each table's SELECT RLS per subscriber, so viewers
+  /// only receive events for rows they can already read. Events just
+  /// trigger a debounced reload — the fetch queries stay the single source
+  /// of truth.
+  void _subscribeToChanges() {
+    PostgresChangeFilter byGame(String column) => PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: column,
+          value: gameId,
+        );
+
+    _channel = _db.channel('game_view_$gameId')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: SupabaseConfig.gameRosterTable,
+        filter: byGame('game_id'),
+        callback: (_) => _scheduleRealtimeRefresh(),
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: SupabaseConfig.gameWaitlistTable,
+        filter: byGame('game_id'),
+        callback: (_) => _scheduleRealtimeRefresh(),
+      )
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: SupabaseConfig.gameJoinRequestsTable,
+        filter: byGame('game_id'),
+        callback: (_) => _scheduleRealtimeRefresh(),
+      )
+      ..subscribe();
+  }
+
+  /// Coalesces bursts of change events (approve = request update + roster
+  /// insert) into a single reload.
+  void _scheduleRealtimeRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) _load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshDebounce?.cancel();
+    final channel = _channel;
+    if (channel != null) _db.removeChannel(channel);
+    super.dispose();
+  }
 
   Future<void> _load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await Future.wait([_fetchGame(), _fetchRoster(), _fetchWaitlist()]);
+      await Future.wait([
+        _fetchGame(),
+        _fetchRoster(),
+        _fetchWaitlist(),
+        _fetchPendingRequests(),
+      ]);
       await _checkPendingRequest();
     } finally {
       state = state.copyWith(isLoading: false);
@@ -311,6 +429,24 @@ class GameViewController extends StateNotifier<GameViewState> {
           .order('position');
       state = state.copyWith(
         waitlist: (rows as List).map((r) => GameWaitlistEntry.fromJson(r as Map<String, dynamic>)).toList(),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _fetchPendingRequests() async {
+    try {
+      final rows = await _db
+          .from(SupabaseConfig.gameJoinRequestsTable)
+          .select(
+              'id, from_profile_id, from_user_id, profiles(display_name, username, avatar_url)')
+          .eq('game_id', gameId)
+          .eq('status', 'pending')
+          .order('created_at', ascending: true);
+      state = state.copyWith(
+        pendingRequests: (rows as List)
+            .map((r) =>
+                GameJoinRequestEntry.fromJson(r as Map<String, dynamic>))
+            .toList(),
       );
     } catch (_) {}
   }
@@ -418,10 +554,53 @@ class GameViewController extends StateNotifier<GameViewState> {
     }
   }
 
+  /// Host approves or denies a pending join request. Approval puts the
+  /// requester on the roster (or the waitlist when the game is full).
+  Future<void> decideJoinRequest(String requestId, bool approve) async {
+    if (currentUserId == null) return;
+    state = state.copyWith(isActing: true, clearError: true);
+
+    try {
+      await _db.rpc(SupabaseConfig.rpcDecideJoinRequestFn, params: {
+        'p_request_id': requestId,
+        'p_approve': approve,
+      });
+      await _load();
+      state = state.copyWith(isActing: false);
+    } catch (e) {
+      state = state.copyWith(isActing: false, error: _extractRpcError(e));
+    }
+  }
+
+  /// Creator removes an active player from the roster. The player's row is
+  /// marked 'kicked', they get an in-app/push notification, and the first
+  /// waitlisted player is promoted into the freed slot.
+  Future<void> removePlayer(String profileId) async {
+    if (currentUserId == null) return;
+    state = state.copyWith(isActing: true, clearError: true);
+
+    try {
+      await _db.rpc(SupabaseConfig.rpcRemovePlayerFn, params: {
+        'p_game_id': gameId,
+        'p_profile_id': profileId,
+      });
+      await _load();
+      state = state.copyWith(isActing: false);
+    } catch (e) {
+      state = state.copyWith(isActing: false, error: _extractRpcError(e));
+    }
+  }
+
   String _extractRpcError(Object e) {
     if (e is PostgrestException) {
       // RPC raises with message field
-      return e.message.replaceAll('P0001: ', '');
+      final msg = e.message.replaceAll('P0001: ', '');
+      return switch (msg) {
+        'not_host' => 'Only the game creator can do that.',
+        'player_not_on_roster' => 'This player is no longer on the roster.',
+        'cannot_remove_host' => 'The creator cannot be removed.',
+        _ => msg,
+      };
     }
     return e.toString();
   }

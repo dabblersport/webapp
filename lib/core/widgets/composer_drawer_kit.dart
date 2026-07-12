@@ -156,93 +156,98 @@ class ComposerDrawerShell extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final palette = ComposerPalette.of(context);
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-        child: Container(
-          decoration: BoxDecoration(
-            color: palette.drawerFill,
-            border: Border.all(color: palette.outerBorder, width: 1),
-          ),
-          child: Stack(
-            children: [
-              // Top-down primary wash — 900h, fades to transparent.
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                height: 900,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        stops: const [0.0, 0.40, 0.70],
-                        colors: [
-                          cs.primary.withValues(alpha: palette.gradientStart),
-                          cs.primary.withValues(alpha: palette.gradientMid),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              SafeArea(
-                top: false,
-                bottom: false,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const _DrawerHandle(),
-                    _DrawerHeader(title: title),
-                    if (errorMessage != null)
-                      Semantics(
-                        liveRegion: true,
-                        container: true,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          color: cs.errorContainer.withValues(alpha: 0.85),
-                          child: Text(
-                            errorMessage!,
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onErrorContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...children,
-                            SizedBox(height: bottomSpacer),
-                            // CTA lives at the end of the scrolling body so
-                            // it gets pushed up cleanly when the keyboard
-                            // opens instead of layering on top of fields.
-                            _DrawerFooter(
-                              ctaLabel: ctaLabel,
-                              onCtaTap: onCtaTap,
-                              canSubmit: canSubmit,
-                              isSubmitting: isSubmitting,
-                            ),
+    // Material(transparency) gives descendant TextFields the required
+    // Material ancestor — the shell is presented outside any Scaffold.
+    return Material(
+      type: MaterialType.transparency,
+      child: ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+          child: Container(
+            decoration: BoxDecoration(
+              color: palette.drawerFill,
+              border: Border.all(color: palette.outerBorder, width: 1),
+            ),
+            child: Stack(
+              children: [
+                // Top-down primary wash — 900h, fades to transparent.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 900,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.0, 0.40, 0.70],
+                          colors: [
+                            cs.primary.withValues(alpha: palette.gradientStart),
+                            cs.primary.withValues(alpha: palette.gradientMid),
+                            Colors.transparent,
                           ],
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+                SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const _DrawerHandle(),
+                      _DrawerHeader(title: title),
+                      if (errorMessage != null)
+                        Semantics(
+                          liveRegion: true,
+                          container: true,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            color: cs.errorContainer.withValues(alpha: 0.85),
+                            child: Text(
+                              errorMessage!,
+                              style: tt.bodySmall?.copyWith(
+                                color: cs.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ),
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.zero,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ...children,
+                              SizedBox(height: bottomSpacer),
+                              // CTA lives at the end of the scrolling body so
+                              // it gets pushed up cleanly when the keyboard
+                              // opens instead of layering on top of fields.
+                              _DrawerFooter(
+                                ctaLabel: ctaLabel,
+                                onCtaTap: onCtaTap,
+                                canSubmit: canSubmit,
+                                isSubmitting: isSubmitting,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

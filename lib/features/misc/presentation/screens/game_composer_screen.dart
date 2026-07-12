@@ -18,6 +18,7 @@ import 'package:dabbler/utils/adaptive_sheet.dart';
 
 class _ComposerState {
   const _ComposerState({
+    this.editingGameId,
     this.sports = const [],
     this.sportsLoaded = false,
     this.sportId,
@@ -48,6 +49,9 @@ class _ComposerState {
     this.isSubmitting = false,
     this.error,
   });
+
+  /// Non-null when the composer edits an existing game instead of creating.
+  final String? editingGameId;
 
   /// Sport rows loaded from `public.sports`. Cached in state so chip
   /// rendering is reactive without a separate FutureProvider.
@@ -84,6 +88,8 @@ class _ComposerState {
   final bool isSubmitting;
   final String? error;
 
+  bool get isEditing => editingGameId != null;
+
   bool get canSubmit =>
       sportId != null &&
       variantId != null &&
@@ -92,6 +98,7 @@ class _ComposerState {
       !isSubmitting;
 
   _ComposerState copyWith({
+    String? editingGameId,
     List<Map<String, dynamic>>? sports,
     bool? sportsLoaded,
     String? sportId,
@@ -128,6 +135,7 @@ class _ComposerState {
     bool clearPlayers = false,
   }) {
     return _ComposerState(
+      editingGameId: editingGameId ?? this.editingGameId,
       sports: sports ?? this.sports,
       sportsLoaded: sportsLoaded ?? this.sportsLoaded,
       sportId: sportId ?? this.sportId,
@@ -194,6 +202,85 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       state = state.copyWith(sportsLoaded: true);
     }
   }
+
+  /// Prefills the composer from an existing game (edit mode). Reads the same
+  /// `v_game_card` view the detail screen uses — the raw `games` table is not
+  /// client-readable (RLS with no policies).
+  Future<void> initForEdit(String gameId) async {
+    await ensureSports();
+    try {
+      final row = await _db
+          .from(SupabaseConfig.vGameCardTable)
+          .select()
+          .eq('id', gameId)
+          .single();
+
+      final rules =
+          (row['rules'] as Map?)?.cast<String, dynamic>() ?? const {};
+      // Round-trips the naive-local timestamps exactly as create wrote them
+      // (no toLocal — GameView parses the same way for display).
+      final startAt = DateTime.parse(row['start_at'] as String);
+      final endAt = DateTime.parse(row['end_at'] as String);
+      final duration = rules['duration_minutes'] as int? ??
+          endAt.difference(startAt).inMinutes;
+
+      // Emoji/colour aren't on the view — resolve from the loaded sports.
+      final sport = state.sports.firstWhere(
+        (s) => s['id'] == row['sport_id'],
+        orElse: () => const <String, dynamic>{},
+      );
+
+      final minSkill = row['min_skill'] as int?;
+      final maxSkill = row['max_skill'] as int?;
+      final title = (row['title'] as String?)?.trim();
+
+      state = state.copyWith(
+        editingGameId: gameId,
+        sportId: row['sport_id'] as String?,
+        sportNameEn: row['sport_name_en'] as String?,
+        sportEmoji: sport['emoji'] as String?,
+        sportColorCode: sport['color_code'] as String?,
+        variantId: row['sport_variant_id'] as String?,
+        variantKey: row['variant_key'] as String?,
+        variantNameEn: row['variant_name_en'] as String?,
+        requiredPlayers: row['required_players'] as int?,
+        selectedDate: DateTime(startAt.year, startAt.month, startAt.day),
+        selectedTime: TimeOfDay(hour: startAt.hour, minute: startAt.minute),
+        durationMinutes: duration,
+        venueSpaceId: row['venue_space_id'] as String?,
+        venueName: row['venue_name'] as String?,
+        venueSpaceName: row['venue_space_name'] as String?,
+        joinPolicy: row['join_policy'] as String? ?? 'open',
+        listingVisibility: row['listing_visibility'] as String? ?? 'public',
+        allowWaitlist: row['allows_waitlist'] as bool? ?? false,
+        allowSpectators: row['allow_spectators'] as bool? ?? false,
+        title: (title == null || title.isEmpty) ? null : title,
+        description: rules['notes'] as String?,
+        minSkill: minSkill,
+        maxSkill: maxSkill,
+        skillLevel: _skillLabelFor(minSkill, maxSkill),
+        // Create mirrors these into rules; capacity is the fallback for
+        // games created before max_players was stored there.
+        minPlayers: rules['min_players'] as int?,
+        maxPlayers: rules['max_players'] as int? ?? row['capacity'] as int?,
+      );
+
+      // Warm the picker caches so format/venue sheets open populated.
+      await loadVariants(row['sport_id'] as String);
+      await loadVenueSpaces();
+    } catch (_) {
+      state = state.copyWith(error: 'Failed to load game');
+    }
+  }
+
+  /// Reverse of [selectSkillLevel]'s (min, max) mapping.
+  String? _skillLabelFor(int? min, int? max) => switch ((min, max)) {
+        (1, 3) => 'Beginner',
+        (4, 6) => 'Intermediate',
+        (7, 8) => 'Advanced',
+        (9, 10) => 'Pro',
+        _ => null,
+      };
 
   Future<void> loadVariants(String sportId) async {
     try {
@@ -317,19 +404,22 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     state = state.copyWith(isSubmitting: true, clearError: true);
 
     try {
-      final moderation = ModerationService();
-      final cooldown = await moderation.checkAndBumpCooldown(
-        'game.create',
-        windowSeconds: 86400,
-        limitCount: 5,
-      );
-      if (!cooldown.allowed) {
-        final reset = DateFormat('MMM d, HH:mm').format(cooldown.resetAt);
-        state = state.copyWith(
-          isSubmitting: false,
-          error: 'Daily limit reached. Try again at $reset.',
+      // Creation cooldown only — editing your own game is not rate-limited.
+      if (!state.isEditing) {
+        final moderation = ModerationService();
+        final cooldown = await moderation.checkAndBumpCooldown(
+          'game.create',
+          windowSeconds: 86400,
+          limitCount: 5,
         );
-        return false;
+        if (!cooldown.allowed) {
+          final reset = DateFormat('MMM d, HH:mm').format(cooldown.resetAt);
+          state = state.copyWith(
+            isSubmitting: false,
+            error: 'Daily limit reached. Try again at $reset.',
+          );
+          return false;
+        }
       }
 
       final date = state.selectedDate!;
@@ -343,6 +433,35 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         if (state.description != null && state.description!.isNotEmpty)
           'notes': state.description,
       };
+
+      if (state.isEditing) {
+        final params = <String, dynamic>{
+          'p_game_id': state.editingGameId!,
+          'p_start_at': startAt.toIso8601String(),
+          'p_end_at': endAt.toIso8601String(),
+          'p_listing_visibility': state.listingVisibility,
+          'p_join_policy': state.joinPolicy,
+          'p_allow_spectators': state.allowSpectators,
+          'p_allows_waitlist': state.allowWaitlist,
+          'p_rules': rules,
+          if (state.title != null && state.title!.isNotEmpty)
+            'p_title': state.title,
+          if (state.venueSpaceId != null)
+            'p_venue_space_id': state.venueSpaceId
+          else
+            'p_clear_venue': true,
+          if (state.minSkill != null) 'p_min_skill': state.minSkill,
+          if (state.maxSkill != null) 'p_max_skill': state.maxSkill,
+          if (state.minSkill == null && state.maxSkill == null)
+            'p_clear_skill': true,
+          if (state.minPlayers != null) 'p_min_players': state.minPlayers,
+          if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
+        };
+
+        await _db.rpc(SupabaseConfig.rpcUpdateGameFn, params: params);
+        state = state.copyWith(isSubmitting: false);
+        return true;
+      }
 
       final params = <String, dynamic>{
         'p_actor_type': 'player',
@@ -377,6 +496,11 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         'invalid_sport_variant' => 'Invalid format for this sport.',
         'invalid_time_range' => 'End time must be after start time.',
         'creator_profile_not_found' => 'Complete your profile first.',
+        'not_host_or_not_found' => 'This game can no longer be edited.',
+        'invalid_player_range' => 'Min players cannot exceed max players.',
+        'invalid_min_players' ||
+        'invalid_max_players' =>
+          'Player counts must be at least 1.',
         _ => e.message,
       };
       state = state.copyWith(isSubmitting: false, error: msg);
@@ -399,7 +523,11 @@ final _gameComposerProvider =
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class GameComposerScreen extends ConsumerStatefulWidget {
-  const GameComposerScreen({super.key});
+  const GameComposerScreen({super.key, this.editGameId});
+
+  /// When set, the composer opens prefilled and saves changes to this game
+  /// instead of creating a new one. Sport & format are locked in edit mode.
+  final String? editGameId;
 
   @override
   ConsumerState<GameComposerScreen> createState() => _GameComposerScreenState();
@@ -409,12 +537,26 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
 
+  bool get _isEditing => widget.editGameId != null;
+
   @override
   void initState() {
     super.initState();
-    // Kick off sport load so the chips appear as soon as the drawer opens.
-    Future.microtask(
-        () => ref.read(_gameComposerProvider.notifier).ensureSports());
+    if (_isEditing) {
+      Future.microtask(() async {
+        await ref
+            .read(_gameComposerProvider.notifier)
+            .initForEdit(widget.editGameId!);
+        if (!mounted) return;
+        final s = ref.read(_gameComposerProvider);
+        _titleController.text = s.title ?? '';
+        _descController.text = s.description ?? '';
+      });
+    } else {
+      // Kick off sport load so the chips appear as soon as the drawer opens.
+      Future.microtask(
+          () => ref.read(_gameComposerProvider.notifier).ensureSports());
+    }
   }
 
   @override
@@ -433,7 +575,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       final err = ref.read(_gameComposerProvider).error;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(err ?? 'Failed to create game'),
+          content: Text(err ??
+              (_isEditing ? 'Failed to save changes' : 'Failed to create game')),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -446,8 +589,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final notifier = ref.read(_gameComposerProvider.notifier);
 
     return ComposerDrawerShell(
-      title: 'Quick Game',
-      ctaLabel: 'Create game',
+      title: _isEditing ? 'Edit Game' : 'Quick Game',
+      ctaLabel: _isEditing ? 'Save changes' : 'Create game',
       canSubmit: state.canSubmit,
       isSubmitting: state.isSubmitting,
       onCtaTap: _submit,
@@ -461,11 +604,19 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             children: [
               const ComposerSectionLabel(label: 'SPORT'),
               const SizedBox(height: 8),
-              _SportChipsRow(
-                sports: state.sports,
-                loaded: state.sportsLoaded,
-                selectedSportId: state.sportId,
-                onSelect: notifier.selectSport,
+              // Sport is locked in edit mode — capacity and the roster
+              // derive from the sport/format chosen at creation.
+              IgnorePointer(
+                ignoring: _isEditing,
+                child: Opacity(
+                  opacity: _isEditing ? 0.55 : 1,
+                  child: _SportChipsRow(
+                    sports: state.sports,
+                    loaded: state.sportsLoaded,
+                    selectedSportId: state.sportId,
+                    onSelect: notifier.selectSport,
+                  ),
+                ),
               ),
             ],
           ),
@@ -486,9 +637,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                       ? 'Select sport first'
                       : 'Select format'),
               caret: ComposerSelectCaret.right,
-              // Disabled until a sport is picked — tap is ignored and the
-              // pill renders in the faint text colour.
-              onTap: state.sportId == null
+              // Disabled until a sport is picked, and locked in edit mode —
+              // tap is ignored and the pill renders in the faint text colour.
+              onTap: (state.sportId == null || _isEditing)
                   ? null
                   : () => _openVariantPicker(context),
             ),
@@ -586,7 +737,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                 children: [
                   for (final entry in const [
                     ('public', 'Public'),
-                    ('friends', 'Friends'),
+                    ('followers', 'Followers'),
                     ('private', 'Private'),
                   ])
                     ComposerPolicyChip(

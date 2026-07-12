@@ -1,16 +1,15 @@
-// Conditionally import Firebase only on mobile platforms
-// On web (dart.library.html exists), use stub. On mobile (dart.library.io exists), use mobile implementation.
+// Conditional platform implementations: web uses the FCM web-push service
+// (VAPID + firebase-messaging-sw.js), mobile uses the full Firebase +
+// local-notifications implementation.
 import 'package:dabbler/core/config/notification_preference.dart';
 
 import 'push_notification_service_stub.dart'
-    if (dart.library.html) 'push_notification_service_stub.dart'
+    if (dart.library.html) 'push_notification_service_web.dart'
     if (dart.library.io) 'push_notification_service_mobile.dart'
     as impl;
 
 /// Handles push notification setup (Firebase Messaging + local notifications)
-/// and requests OS notification permissions on supported platforms.
-///
-/// On web, this is a no-op to avoid Firebase Messaging web compatibility issues.
+/// and requests notification permissions on supported platforms.
 class PushNotificationService {
   PushNotificationService._internal();
   static final PushNotificationService instance =

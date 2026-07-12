@@ -9,7 +9,8 @@ import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
-import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -92,14 +93,9 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
   }
 
   Future<void> _handleRefresh() async {
-    final sportId = _sportIdForTab(_tabController.index);
-    ref.invalidate(nearbyGamesProvider((
-      lat: null,
-      lng: null,
-      radiusMeters: null,
-      sportId: sportId,
-      sortOrder: NearbySortOrder.nearest,
-    )));
+    // Invalidate every family member so both the "all games" and the
+    // location-filtered variants refetch.
+    ref.invalidate(nearbyGamesProvider);
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
@@ -272,6 +268,12 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
                 pinned: true,
                 delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
               ),
+              SliverToBoxAdapter(
+                child: NearbyFilterBar(
+                  enabledProvider: nearbyGamesFilterEnabledProvider,
+                  sortProvider: nearbyGameSortProvider,
+                ),
+              ),
             ],
             body: TabBarView(
               controller: _tabController,
@@ -281,13 +283,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
                   sportId: _sportIdForTab(i),
                   scrollController: _scrollControllers[i],
                   onRefresh: _handleRefresh,
-                  onRetry: () => ref.invalidate(nearbyGamesProvider((
-                    lat: null,
-                    lng: null,
-                    radiusMeters: null,
-                    sportId: _sportIdForTab(i),
-                    sortOrder: NearbySortOrder.nearest,
-                  ))),
+                  onRetry: () => ref.invalidate(nearbyGamesProvider),
                 ),
               ),
             ),
@@ -357,24 +353,37 @@ class _GameTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final params = (
-      lat: null,
-      lng: null,
-      radiusMeters: null,
+
+    final nearbyEnabled = ref.watch(nearbyGamesFilterEnabledProvider);
+    final locState =
+        nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
+    final location =
+        locState is ActiveLocationReady ? locState.location : null;
+    final sortOrder = ref.watch(nearbyGameSortProvider);
+
+    // While the filter is on but location isn't ready yet (locating/denied),
+    // fall back to the unfiltered list; NearbyFilterBar surfaces the status.
+    final NearbyGamesParams params = (
+      lat: location?.lat,
+      lng: location?.lng,
+      radiusMeters: location?.nearbyRadiusMeters,
       sportId: sportId,
-      sortOrder: NearbySortOrder.nearest,
+      sortOrder: sortOrder,
     );
 
     final gamesAsync = ref.watch(nearbyGamesProvider(params));
+    final isFiltered = location != null;
 
     return gamesAsync.when(
       loading: () => const _GameSkeletonList(),
       error: (e, _) => _ErrorView(message: "Couldn't load games", onRetry: onRetry),
       data: (games) {
         if (games.isEmpty) {
-          return const _EmptyView(
-            message: 'No games yet',
-            hint: 'Be the first to create a game in your area!',
+          return _EmptyView(
+            message: isFiltered ? 'No games nearby' : 'No games yet',
+            hint: isFiltered
+                ? 'Try widening your search radius in the filter.'
+                : 'Be the first to create a game in your area!',
           );
         }
 
@@ -390,7 +399,8 @@ class _GameTabBody extends ConsumerWidget {
               thickness: 1,
               color: cs.outlineVariant.withValues(alpha: 0.3),
             ),
-            itemBuilder: (_, i) => _GameCard(game: games[i]),
+            itemBuilder: (_, i) =>
+                _GameCard(game: games[i], showDistance: isFiltered),
           ),
         );
       },
@@ -403,9 +413,10 @@ class _GameTabBody extends ConsumerWidget {
 // =============================================================================
 
 class _GameCard extends StatelessWidget {
-  const _GameCard({required this.game});
+  const _GameCard({required this.game, this.showDistance = false});
 
   final NearbyGameModel game;
+  final bool showDistance;
 
   @override
   Widget build(BuildContext context) {
@@ -452,7 +463,8 @@ class _GameCard extends StatelessWidget {
                   ),
                 ],
               ),
-            if (game.venueName?.isNotEmpty == true) ...[
+            if (game.venueName?.isNotEmpty == true ||
+                (showDistance && game.distanceMeters > 0)) ...[
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -460,7 +472,11 @@ class _GameCard extends StatelessWidget {
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      game.venueName!,
+                      [
+                        if (game.venueName?.isNotEmpty == true) game.venueName!,
+                        if (showDistance && game.distanceMeters > 0)
+                          game.distanceLabel,
+                      ].join('  ·  '),
                       style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

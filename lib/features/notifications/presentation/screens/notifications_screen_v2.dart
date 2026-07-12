@@ -464,12 +464,20 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       case 'game.join_request':
       case 'game.waitlist_promoted':
       case 'game.reminder':
+      case 'game.player_joined':
+      case 'game.join_accepted':
+      case 'game.removed':
+        // Game detail lives at /sports/games/:id — RoutePaths.games ('/games')
+        // has no route registered. Join requests land on the requests card.
         final id = _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'game_id');
-        if (id != null) return '${RoutePaths.games}/$id';
-        return RoutePaths.games;
+        if (id != null) {
+          final base = RoutePaths.gameDetail(id);
+          return kindKey == 'game.join_request' ? '$base?focus=requests' : base;
+        }
+        return RoutePaths.gamesTab;
       case 'arena.payment_required':
         final id = _ctxString(ctx, 'entity_id');
-        if (id != null) return '${RoutePaths.games}/$id';
+        if (id != null) return RoutePaths.gameDetail(id);
         return null;
       case 'reward.badge_awarded':
         return RoutePaths.profile;

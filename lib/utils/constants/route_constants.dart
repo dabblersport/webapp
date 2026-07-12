@@ -85,6 +85,7 @@ class RoutePaths {
 
   // Game Creation Routes
   static const String createGame = '/create-game';
+  static const String editGame = '/edit-game/:gameId';
   static const String createGameBasicInfo = '/create-game-basic-info';
   static const String createGameVenueSelection = '/create-game-venue-selection';
   static const String createGameDateTime = '/create-game-date-time';
@@ -198,6 +199,7 @@ class RouteNames {
 
   // Game Creation Routes
   static const String createGame = 'create-game';
+  static const String editGame = 'edit-game';
   static const String createGameBasicInfo = 'create-game-basic-info';
   static const String createGameVenueSelection = 'create-game-venue-selection';
   static const String createGameDateTime = 'create-game-date-time';

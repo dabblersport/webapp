@@ -88,6 +88,11 @@ class NotificationSettingsController
   Future<void> setAllowHighPriorityOverride(bool value) =>
       _mutate((s) => s.copyWith(allowHighPriorityOverride: value));
 
+  /// Allow every push through quiet hours (supersedes the high-priority-only
+  /// override in the server-side push trigger).
+  Future<void> setAllowAllOverride(bool value) =>
+      _mutate((s) => s.copyWith(allowAllOverride: value));
+
   /// Applies [change] optimistically, persists, and reverts on failure.
   Future<void> _mutate(
     NotificationSettings Function(NotificationSettings) change,

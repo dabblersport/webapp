@@ -236,5 +236,10 @@ class SupabaseConfig {
   static const String rpcJoinGameFn = 'rpc_join_game';
   static const String rpcLeaveGameFn = 'rpc_leave_game';
   static const String rpcOnboardProfileFn = 'rpc_onboard_profile';
+  static const String rpcUpdateGameFn = 'rpc_update_game';
+  static const String rpcDecideJoinRequestFn = 'rpc_decide_join_request';
+  static const String rpcRemovePlayerFn = 'rpc_remove_player';
+  static const String rpcUnfollowUserFn = 'rpc_unfollow_user';
+  static const String rpcIsFollowingUserFn = 'rpc_is_following_user';
   static const String sendBookingRemindersFn = 'send_booking_reminders';
 }

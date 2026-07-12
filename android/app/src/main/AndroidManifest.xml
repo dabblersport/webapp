@@ -51,6 +51,13 @@
                     android:host="app" />
             </intent-filter>
         </activity>
+        <!-- Route background FCM notifications into the same channel the app
+             creates at init (see push_notification_service_mobile.dart).
+             NOTE: ic_notification.png is a full-color tile, not a valid
+             status-bar silhouette, so no default icon override is set. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default_channel" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

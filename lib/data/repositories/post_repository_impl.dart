@@ -312,8 +312,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
     final rows = await query;
     final enriched = await _enrichRows(rows);
+    final hydrated = await _attachOriginalPosts(enriched);
+    final themed = await _attachPostThemes(hydrated);
     final postsById = {
-      for (final row in enriched) (row['id'] as String): Post.fromJson(row),
+      for (final row in themed) (row['id'] as String): Post.fromJson(row),
     };
 
     return postIds

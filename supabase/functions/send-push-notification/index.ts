@@ -140,21 +140,39 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // One OAuth token for the whole request (was fetched per device token).
+    const accessToken = await getAccessToken();
+
     // Send notification to each token. Each send resolves to a per-token
     // outcome so we can prune tokens FCM reports as permanently invalid.
     const outcomes = await Promise.all(
-      tokens.map(async ({ token }) => {
+      tokens.map(async ({ token, platform }) => {
         try {
-          await sendFCMNotification(token, title, effectiveBody, data);
+          await sendFCMNotification(accessToken, token, title, effectiveBody, data);
           return { token, ok: true, invalid: false };
         } catch (e) {
-          return { token, ok: false, invalid: isInvalidTokenError(e) };
+          // Surface FCM's real response in the logs — essential for
+          // diagnosing platform-specific failures (e.g. APNs auth).
+          console.error(`FCM send failed (platform=${platform}):`, String(e));
+          return {
+            token,
+            ok: false,
+            invalid: isInvalidTokenError(e),
+            errorCode: extractFcmErrorStatus(e, platform),
+          };
         }
       })
     );
 
     const successful = outcomes.filter(o => o.ok).length;
     const failed = outcomes.filter(o => !o.ok).length;
+    // FCM error STATUS codes only (e.g. "iOS:THIRD_PARTY_AUTH_ERROR") — safe
+    // to return, and the only way trigger-initiated sends (whose response
+    // lands in net._http_response) can report why a platform failed.
+    const errorCodes = outcomes
+      .filter(o => !o.ok)
+      .map(o => (o as { errorCode?: string }).errorCode)
+      .filter(Boolean);
 
     // Prune tokens FCM rejected as unregistered / malformed so they don't
     // accumulate and waste sends on every future notification.
@@ -177,6 +195,7 @@ Deno.serve(async (req: Request) => {
         sent: successful,
         failed: failed,
         total: tokens.length,
+        ...(errorCodes.length > 0 ? { error_codes: errorCodes } : {}),
       }),
       { 
         status: 200,
@@ -220,6 +239,19 @@ function constantTimeEqual(a: string, b: string): boolean {
     result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
   return result === 0;
+}
+
+/**
+ * Extract FCM's error STATUS (e.g. "UNREGISTERED", "THIRD_PARTY_AUTH_ERROR")
+ * from a failed-send error, prefixed with the platform. Status codes only —
+ * no message text, tokens, or internals.
+ */
+function extractFcmErrorStatus(e: unknown, platform: string): string {
+  const msg = String(e instanceof Error ? e.message : e);
+  const match = msg.match(/"status"\s*:\s*"([A-Z_]+)"/);
+  const httpMatch = msg.match(/FCM request failed: (\d{3})/);
+  const code = match?.[1] ?? (httpMatch ? `HTTP_${httpMatch[1]}` : "UNKNOWN");
+  return `${platform}:${code}`;
 }
 
 /**
@@ -324,13 +356,12 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
  * Send push notification via FCM HTTP v1 API
  */
 async function sendFCMNotification(
+  accessToken: string,
   token: string,
   title: string,
   body: string,
   data?: Record<string, string>
 ): Promise<void> {
-  const accessToken = await getAccessToken();
-
   const fcmPayload = {
     message: {
       token: token,
@@ -345,6 +376,12 @@ async function sendFCMNotification(
       apns: {
         headers: {
           "apns-priority": "10",
+        },
+        payload: {
+          aps: {
+            // Without a sound the iOS banner arrives silently.
+            sound: "default",
+          },
         },
       },
     },

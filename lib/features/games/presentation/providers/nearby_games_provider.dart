@@ -25,6 +25,9 @@ final nearbyGameSortProvider = StateProvider<NearbySortOrder>(
   (ref) => NearbySortOrder.nearest,
 );
 
+/// Whether the "nearby" distance filter is active on the games list.
+final nearbyGamesFilterEnabledProvider = StateProvider<bool>((ref) => false);
+
 // =============================================================================
 // PARAMS
 // =============================================================================
@@ -49,6 +52,16 @@ final nearbyGamesProvider = FutureProvider.autoDispose
     .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) async {
   final repo = ref.read(nearbyGamesRepositoryProvider);
 
-  final result = await repo.getAllGames(sportId: params.sportId);
+  final lat = params.lat;
+  final lng = params.lng;
+  final result = (lat != null && lng != null)
+      ? await repo.getNearbyGames(
+          lat: lat,
+          lng: lng,
+          radiusMeters: params.radiusMeters ?? 10000,
+          sportId: params.sportId,
+          sortOrder: params.sortOrder,
+        )
+      : await repo.getAllGames(sportId: params.sportId);
   return result.fold((f) => throw Exception(f.message), (g) => g);
 });

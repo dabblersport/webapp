@@ -16,6 +16,6 @@ metadata:
 
 `public.notification_settings` (PK = user_id, FK auth.users ON DELETE CASCADE). Columns: tz (default 'Asia/Dubai'), quiet_start_min, quiet_end_min (CHECK 0..1439), push_enabled (def true), email_enabled (def false), sms_enabled (def false), muted_kinds text[] (def {}), allow_high_priority_override, allow_all_override, created_at, updated_at.
 - RLS: ns_self_ins / ns_self_rw / ns_self_upd all auth.uid()=user_id (secure).
-- ORPHANED: NOT read/written by any client code (settings_repository updateNotificationPreferences throws UnimplementedError; notification_settings_screen is static UI). Quiet hours / muted_kinds are NOT enforced by the push trigger or edge function. There is NO SupabaseConfig constant for this table.
+- WIRED END-TO-END (since commit 3b7fd50 + enforce_notification_settings_in_push_trigger.sql): client reads/writes via NotificationSettingsRepositoryImpl (`SupabaseConfig.notificationSettingsTable = 'notification_settings'`), UI is NotificationSettingsScreen (push/email/sms toggles, quiet hours, per-kind mutes, allow_high_priority_override AND allow_all_override toggles — the latter added 2026-07-11). Server-side: trg_push_on_notification_insert enforces push_enabled, muted_kinds, and tz-aware quiet hours (with high-priority/all overrides) before dispatching push.
 
 Other settings tables exist (user_settings: push_enabled/email_enabled/quiet_start/quiet_end; user_preferences: get_updates) — overlapping/duplicate notification-preference surfaces.

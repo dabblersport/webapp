@@ -30,8 +30,8 @@ class _GameScreen4AccessRulesState
   static const _visibilityOptions = [
     ('public', 'Public', Icons.public_rounded,
         'Everyone can see this game'),
-    ('friends', 'Friends only', Icons.people_rounded,
-        'Only your friends can see it'),
+    ('followers', 'Followers only', Icons.people_rounded,
+        'Only your followers can see it'),
     ('private', 'Private', Icons.lock_rounded, 'Hidden — invite only'),
     ('link', 'Link only', Icons.link_rounded, 'Shareable link required'),
   ];

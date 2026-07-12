@@ -90,7 +90,9 @@ class ContentSharingHelper {
         return success;
       } else {
         // Share text only
-        final result = await Share.share(shareText, subject: subject);
+        final result = await SharePlus.instance.share(
+          ShareParams(text: shareText, subject: subject),
+        );
         return result.status == ShareResultStatus.success;
       }
     } catch (e) {
@@ -129,10 +131,8 @@ class ContentSharingHelper {
       await file.writeAsBytes(response.bodyBytes);
 
       // Share with image
-      final result = await Share.shareXFiles(
-        [XFile(file.path)],
-        text: text,
-        subject: subject,
+      final result = await SharePlus.instance.share(
+        ShareParams(files: [XFile(file.path)], text: text, subject: subject),
       );
 
       // Clean up temporary file
@@ -145,7 +145,9 @@ class ContentSharingHelper {
       return result.status == ShareResultStatus.success;
     } catch (e) {
       // Fallback to text-only sharing
-      final result = await Share.share(text, subject: subject);
+      final result = await SharePlus.instance.share(
+        ShareParams(text: text, subject: subject),
+      );
       return result.status == ShareResultStatus.success;
     }
   }

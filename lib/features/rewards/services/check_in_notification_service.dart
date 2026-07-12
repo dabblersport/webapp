@@ -1,7 +1,16 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
-/// Service to schedule local notifications for check-in reminders
+/// Service to schedule local notifications for check-in reminders.
+///
+/// WARNING (iOS): initializing flutter_local_notifications takes over the
+/// UNUserNotificationCenter delegate, which breaks push-notification tap
+/// deep-links (firebase_messaging's onMessageOpenedApp stops firing). The
+/// push service deliberately avoids fln on iOS for this reason
+/// (push_notification_service_mobile.dart). If this service is re-enabled,
+/// either keep it Android-only or solve the delegate conflict first.
 class CheckInNotificationService {
   static final CheckInNotificationService _instance =
       CheckInNotificationService._internal();
@@ -16,6 +25,8 @@ class CheckInNotificationService {
   /// Initialize the notification service
   Future<void> init() async {
     if (_isInitialized) return;
+
+    tz_data.initializeTimeZones();
 
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
@@ -69,14 +80,17 @@ class CheckInNotificationService {
       iOS: iosDetails,
     );
 
-    // Schedule for 24 hours from now
-    final scheduledTime = DateTime.now().add(const Duration(hours: 24));
+    // Schedule for 24 hours from now. The delay is a fixed offset from the
+    // current instant, so tz.local (even if uninitialized/UTC) yields the
+    // correct absolute fire time.
+    final scheduledTime =
+        tz.TZDateTime.now(tz.local).add(const Duration(hours: 24));
 
     await _notifications.zonedSchedule(
       0, // Notification ID
       'Don\'t lose your streak! 🔥',
       'You\'re one day closer to the Early Bird badge. Check in now!',
-      _convertToTz(scheduledTime),
+      scheduledTime,
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -87,13 +101,5 @@ class CheckInNotificationService {
   /// Cancel all pending notifications
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
-  }
-
-  /// Convert DateTime to TZDateTime (required for scheduling)
-  dynamic _convertToTz(DateTime dateTime) {
-    // This would normally use timezone package
-    // For simplicity, we'll use the DateTime directly
-    // In production, use: tz.TZDateTime.from(dateTime, tz.local);
-    return dateTime;
   }
 }

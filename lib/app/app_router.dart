@@ -812,9 +812,15 @@ class AppRouter {
       parentNavigatorKey: _rootNavigatorKey,
       pageBuilder: (context, state) {
         final gameId = state.pathParameters['gameId']!;
+        // ?focus=requests (join-request notifications) scrolls the detail
+        // screen down to the pending-requests card.
+        final focus = state.uri.queryParameters['focus'];
         return SharedAxisTransitionPage(
           key: state.pageKey,
-          child: GameDetailScreen(gameId: gameId),
+          child: GameDetailScreen(
+            gameId: gameId,
+            focusRequests: focus == 'requests',
+          ),
           type: SharedAxisType.horizontal,
         );
       },
@@ -1160,9 +1166,11 @@ class AppRouter {
         // Allow access if profile type has permission
         return null;
       },
-      pageBuilder: (context, state) => SlideTransitionPage(
+      // Drawer-style modal: leaves the top safe area exposed and lets the
+      // composer's glass surface blur the screen behind it.
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        direction: SlideDirection.fromBottom,
+        transparentSurface: true,
         child: const GameComposerScreen(),
       ),
     ),
@@ -1185,10 +1193,25 @@ class AppRouter {
         }
         return null;
       },
-      pageBuilder: (context, state) => SlideTransitionPage(
+      pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        direction: SlideDirection.fromBottom,
+        transparentSurface: true,
         child: const GameComposerScreen(),
+      ),
+    ),
+
+    // Edit an existing game — same drawer as creation, prefilled. Host-only
+    // enforcement lives in rpc_update_game; the entry button is host-gated.
+    GoRoute(
+      path: RoutePaths.editGame,
+      name: RouteNames.editGame,
+      parentNavigatorKey: _rootNavigatorKey,
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        transparentSurface: true,
+        child: GameComposerScreen(
+          editGameId: state.pathParameters['gameId']!,
+        ),
       ),
     ),
 
@@ -1338,8 +1361,11 @@ class AppRouter {
       parentNavigatorKey: _rootNavigatorKey,
       path: RoutePaths.socialCreatePost,
       name: RouteNames.socialCreatePost,
+      // transparentSurface: the composer draws its own glass panel — without
+      // it the modal frame paints a second opaque sheet behind it.
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
+        transparentSurface: true,
         child: const PostComposerScreen(),
       ),
     ),
@@ -1351,6 +1377,7 @@ class AppRouter {
       name: RouteNames.postComposer,
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
+        transparentSurface: true,
         child: const PostComposerScreen(),
       ),
     ),

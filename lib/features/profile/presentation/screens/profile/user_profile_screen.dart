@@ -1478,11 +1478,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     try {
       final supabase = Supabase.instance.client;
       if (currentlyFollowing) {
-        await supabase
-            .from(SupabaseConfig.profileFollowsTable)
-            .delete()
-            .eq('follower_profile_id', myProfileId)
-            .eq('following_profile_id', targetProfileId);
+        // User-level unfollow: removes every follow edge between the two
+        // users' persona profiles, not just the active-profile pair —
+        // otherwise followers-only content stays visible after unfollowing.
+        await supabase.rpc(
+          SupabaseConfig.rpcUnfollowUserFn,
+          params: {'p_target_profile_id': targetProfileId},
+        );
       } else {
         await supabase.from(SupabaseConfig.profileFollowsTable).insert({
           'follower_profile_id': myProfileId,

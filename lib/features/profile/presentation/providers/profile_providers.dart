@@ -753,20 +753,23 @@ final followingListProvider = FutureProvider.autoDispose
       return profiles;
     });
 
-/// Check if currentProfileId is following targetProfileId.
+/// Check if the current user follows the owner of targetProfileId.
+///
+/// User-level, not profile-pair-level: users have multiple persona profiles
+/// and followers-only visibility counts ANY edge between the two users, so
+/// the Follow/Following button must reflect the same granularity.
+/// (currentProfileId stays in the params for cache-keying compatibility.)
 final isFollowingProvider = FutureProvider.autoDispose
     .family<bool, ({String currentProfileId, String targetProfileId})>((
       ref,
       params,
     ) async {
       final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from(SupabaseConfig.profileFollowsTable)
-          .select('follower_profile_id')
-          .eq('follower_profile_id', params.currentProfileId)
-          .eq('following_profile_id', params.targetProfileId)
-          .maybeSingle();
-      return response != null;
+      final result = await supabase.rpc(
+        SupabaseConfig.rpcIsFollowingUserFn,
+        params: {'p_target_profile_id': params.targetProfileId},
+      );
+      return result == true;
     });
 
 /// Check if targetUserId is blocked (bidirectional) using unified user_blocks.

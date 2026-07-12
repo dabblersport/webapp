@@ -1,0 +1,3 @@
+- [Backend moderation infra](backend_moderation_infra.md) — Dabbler already has moderation_reports/user_blocks/delete_my_account RPCs; check before building "new" backend.
+- [EULA gate implementation](eula_gate_implementation.md) — pre-login Terms-of-Use gate: files touched, router insertion point, feature flag.
+- [App Store submission 170](app_store_submission_170.md) — resolution history for the 5.1.1 + 1.2 rejection on submission 9e8a4758-58a4-4bba-baff-960517f83e1e.

@@ -6,10 +6,13 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
+import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
+import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
-import 'package:dabbler/providers.dart';
+import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 
@@ -83,6 +86,12 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
                   tabController: _tabController,
                   sports: widget.sports,
                   ref: ref,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: NearbyFilterBar(
+                  enabledProvider: nearbyVenuesFilterEnabledProvider,
+                  sortProvider: nearbyVenueSortProvider,
                 ),
               ),
             ],
@@ -309,21 +318,88 @@ class _AllVenuesList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final nearbyEnabled = ref.watch(nearbyVenuesFilterEnabledProvider);
+    final locState =
+        nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
+    final location =
+        locState is ActiveLocationReady ? locState.location : null;
+
+    // Nearby path: PostGIS RPC filtered by the active location + radius.
+    // While the filter is on but location isn't ready (locating/denied),
+    // fall back to the unfiltered list; NearbyFilterBar surfaces the status.
+    if (location != null) {
+      final params = (
+        lat: location.lat,
+        lng: location.lng,
+        radiusMeters: location.nearbyRadiusMeters,
+        sportId: sportId,
+        sortOrder: ref.watch(nearbyVenueSortProvider),
+      );
+      final nearbyAsync = ref.watch(nearbyVenuesProvider(params));
+
+      return nearbyAsync.when(
+        loading: _buildSkeletons,
+        error: (_, __) => _buildError(context),
+        data: (venues) => venues.isEmpty
+            ? _buildEmpty(
+                context,
+                hint:
+                    'No venues within ${(location.nearbyRadiusMeters / 1000).round()} km — try widening your search radius.',
+              )
+            : _buildCards(
+                context,
+                ref,
+                venues
+                    .map((v) => _VenueCardData(
+                          id: v.id,
+                          name: v.nameEn,
+                          city: v.city,
+                          area: v.area,
+                          pricePerHour: v.pricePerHour,
+                          isIndoor: v.isIndoor,
+                          distanceLabel: v.distanceLabel,
+                        ))
+                    .toList(),
+              ),
+      );
+    }
+
     final filters = VenuesBySportFilters(sportId: sportId, isActive: true);
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
 
     return venuesAsync.when(
       loading: _buildSkeletons,
       error: (_, __) => _buildError(context),
-      data: (venues) =>
-          venues.isEmpty ? _buildEmpty(context) : _buildList(context, venues),
+      data: (venues) => venues.isEmpty
+          ? _buildEmpty(context)
+          : _buildCards(
+              context,
+              ref,
+              venues
+                  .map((v) => _VenueCardData(
+                        id: v.id,
+                        name: v.nameEn,
+                        city: v.city,
+                        area: v.area,
+                        pricePerHour: v.pricePerHour,
+                        isIndoor: v.isIndoor,
+                      ))
+                  .toList(),
+            ),
     );
   }
 
-  Widget _buildList(BuildContext context, List<VenueWithSportModel> venues) {
+  Widget _buildCards(
+    BuildContext context,
+    WidgetRef ref,
+    List<_VenueCardData> venues,
+  ) {
     final cs = Theme.of(context).colorScheme;
     return RefreshIndicator(
-      onRefresh: () async {},
+      onRefresh: () async {
+        ref.invalidate(nearbyVenuesProvider);
+        ref.invalidate(venuesBySportWithFiltersProvider);
+      },
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         physics: const AlwaysScrollableScrollPhysics(),
@@ -354,7 +430,7 @@ class _AllVenuesList extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmpty(BuildContext context) {
+  Widget _buildEmpty(BuildContext context, {String? hint}) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     return Center(
@@ -372,7 +448,7 @@ class _AllVenuesList extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Try selecting a different sport.',
+              hint ?? 'Try selecting a different sport.',
               textAlign: TextAlign.center,
               style: tt.bodyMedium?.copyWith(color: cs.outline),
             ),
@@ -409,10 +485,35 @@ class _AllVenuesList extends ConsumerWidget {
 // VENUE CARD
 // =============================================================================
 
+/// View-model for [_VenueCard] so the same card renders both the default
+/// list ([VenueWithSportModel]) and the nearby list (NearbyVenueModel).
+class _VenueCardData {
+  const _VenueCardData({
+    required this.id,
+    required this.name,
+    required this.city,
+    this.area,
+    this.pricePerHour,
+    this.isIndoor,
+    this.distanceLabel,
+  });
+
+  final String id;
+  final String name;
+  final String city;
+  final String? area;
+  final double? pricePerHour;
+  final bool? isIndoor;
+
+  /// Formatted distance (e.g. "1.2 km"); non-null only when the nearby
+  /// filter is active.
+  final String? distanceLabel;
+}
+
 class _VenueCard extends StatelessWidget {
   const _VenueCard({required this.venue});
 
-  final VenueWithSportModel venue;
+  final _VenueCardData venue;
 
   @override
   Widget build(BuildContext context) {
@@ -449,14 +550,16 @@ class _VenueCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          venue.nameEn,
+                          venue.name,
                           style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (venue.pricePerHour != null)
+                      if (venue.distanceLabel != null)
+                        _DistanceBadge(label: venue.distanceLabel!, cs: cs)
+                      else if (venue.pricePerHour != null)
                         _PriceBadge(price: venue.pricePerHour!, cs: cs),
                     ],
                   ),
@@ -475,11 +578,29 @@ class _VenueCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (venue.isIndoor != null) ...[
+                  if (venue.isIndoor != null ||
+                      (venue.distanceLabel != null &&
+                          venue.pricePerHour != null)) ...[
                     const SizedBox(height: 6),
-                    _SmallChip(
-                      label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
-                      cs: cs,
+                    Wrap(
+                      spacing: 6,
+                      children: [
+                        if (venue.isIndoor != null)
+                          _SmallChip(
+                            label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
+                            cs: cs,
+                          ),
+                        // Price moves down here when the badge slot is used
+                        // by the distance label.
+                        if (venue.distanceLabel != null &&
+                            venue.pricePerHour != null)
+                          _SmallChip(
+                            label: venue.pricePerHour! > 0
+                                ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)}/hr'
+                                : 'Free',
+                            cs: cs,
+                          ),
+                      ],
                     ),
                   ],
                 ],
@@ -487,6 +608,43 @@ class _VenueCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// DISTANCE BADGE
+// =============================================================================
+
+class _DistanceBadge extends StatelessWidget {
+  const _DistanceBadge({required this.label, required this.cs});
+
+  final String label;
+  final ColorScheme cs;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Iconsax.routing_copy, size: 12, color: cs.onPrimaryContainer),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: tt.labelSmall?.copyWith(
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
