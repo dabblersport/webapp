@@ -121,7 +121,7 @@ class _OnboardingCompletionScreenState
     final variant = controller.currentVariant ?? 'control';
 
     return Scaffold(
-      backgroundColor: DesignSystem.colors.background,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Stack(
           children: [
@@ -145,7 +145,12 @@ class _OnboardingCompletionScreenState
               ),
 
             // Content
-            _buildContent(context, variant),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: _buildContent(context, variant),
+              ),
+            ),
           ],
         ),
       ),

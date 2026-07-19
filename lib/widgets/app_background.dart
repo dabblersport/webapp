@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// AppBackground renders a full-screen gradient behind the entire app.
+import 'dynamic_background.dart';
+
+/// AppBackground renders the app-wide background behind every screen.
 ///
-/// Gradients:
-/// - Light: linear-gradient(137deg, #F5EDFF 10.52%, #EADAFF 89.32%)
-/// - Dark:  linear-gradient(137deg, #1E0E33 10.52%, #5B2B99 89.32%)
+/// It paints the same primaryContainer → surface gradient used by the Home
+/// screen ([DynamicBackground]), so all screens share the Home aesthetic.
+/// Screens that own a scroll view can still stack their own
+/// [DynamicBackground] with a controller on top to get the parallax effect.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF);
-
-    return IgnorePointer(child: Container(color: color));
+    return const IgnorePointer(child: DynamicBackground());
   }
 }

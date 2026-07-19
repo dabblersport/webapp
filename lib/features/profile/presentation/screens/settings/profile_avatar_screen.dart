@@ -1,8 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 /// Screen for managing user's profile avatar
 class ProfileAvatarScreen extends ConsumerStatefulWidget {
@@ -115,7 +118,7 @@ class _ProfileAvatarScreenState extends ConsumerState<ProfileAvatarScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final content = Scaffold(
       appBar: AppBar(
         title: const Text('Profile Avatar'),
         leading: IconButton(
@@ -162,6 +165,28 @@ class _ProfileAvatarScreenState extends ConsumerState<ProfileAvatarScreen>
               ),
             ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(
+          Theme.of(context).colorScheme.onSurface,
+          BlendMode.srcIn,
+        ),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildCurrentAvatarSection() {

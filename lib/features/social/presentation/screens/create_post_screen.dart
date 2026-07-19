@@ -244,16 +244,23 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     final isSubmitting = controllerState is AsyncLoading;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          children: [
-            _buildAppBar(cs, tt),
-            Expanded(child: _buildContentCard(cs, tt)),
-            _buildBottomBar(cs, tt, isSubmitting),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-          ],
+        // Constrain the composer to a comfortable reading width on wide
+        // (iPad/desktop) screens rather than stretching edge-to-edge.
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              children: [
+                _buildAppBar(cs, tt),
+                Expanded(child: _buildContentCard(cs, tt)),
+                _buildBottomBar(cs, tt, isSubmitting),
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+              ],
+            ),
+          ),
         ),
       ),
     );

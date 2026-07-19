@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/core/services/theme_service.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
   const ThemeSettingsScreen({super.key});
@@ -16,8 +19,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: AnimatedBuilder(
           animation: _themeService,
@@ -64,6 +67,25 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
         ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildHeader(BuildContext context) {

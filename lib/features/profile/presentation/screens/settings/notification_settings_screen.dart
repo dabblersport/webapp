@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
 import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
@@ -75,8 +78,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
       },
     );
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -101,6 +104,25 @@ class NotificationSettingsScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildBody(

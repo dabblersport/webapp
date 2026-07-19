@@ -8,12 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/features/location/providers/active_location_provider.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
-import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
+import 'package:dabbler/widgets/app_top_bar.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
@@ -429,148 +426,13 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
   // ---------------------------------------------------------------------------
 
   Widget _buildHeader(ColorScheme cs) {
-    final topPadding = MediaQuery.of(context).padding.top + 12;
     final displayName = (_userProfile?['display_name'] as String?)?.trim() ??
-        (_userProfile?['username'] as String?)?.trim() ??
-        'User';
+        (_userProfile?['username'] as String?)?.trim();
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'assets/images/dabbler_text_logo.svg',
-                  width: 100,
-                  height: 18,
-                  colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
-                ),
-                const SizedBox(height: 4),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final locAsync = ref.watch(activeLocationProvider);
-                    final locState = locAsync.valueOrNull;
-                    final locationName = locState is ActiveLocationReady
-                        ? locState.location.area.name
-                        : 'Set location';
-                    return GestureDetector(
-                      onTap: () => showAdaptiveSheet<void>(
-                        context: context,
-                        builder: (_) => DraggableScrollableSheet(
-                          initialChildSize: 0.85,
-                          minChildSize: 0.5,
-                          maxChildSize: 1.0,
-                          expand: false,
-                          builder: (ctx, sc) =>
-                              HomeLocationPickerSheet(scrollController: sc),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Iconsax.location_copy,
-                            size: 12,
-                            color: cs.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            locationName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(
-                            Iconsax.arrow_down_1_copy,
-                            size: 10,
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.socialSearch),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Iconsax.search_normal_1_copy,
-                    color: cs.primary,
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.notifications),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Iconsax.notification_copy,
-                        color: cs.primary,
-                        size: 18,
-                      ),
-                    ),
-                    const Positioned(
-                      top: -2,
-                      right: -2,
-                      child: NotificationBadge(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.profile),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      width: 2,
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: DSAvatar.small(
-                    imageUrl: _userProfile?['avatar_url'] as String?,
-                    displayName: displayName,
-                    context: AvatarContext.social,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AppTopBar(
+      avatarContext: AvatarContext.social,
+      avatarUrl: _userProfile?['avatar_url'] as String?,
+      displayName: displayName,
     );
   }
 

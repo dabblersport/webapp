@@ -78,8 +78,6 @@ import 'package:dabbler/features/profile/presentation/screens/support/bug_report
 import 'package:dabbler/features/profile/presentation/screens/about/terms_of_service_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/privacy_policy_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/licenses_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/about/eula_gate_screen.dart';
-import 'package:dabbler/core/services/eula_service.dart';
 
 // Add Persona screens (using consolidated onboarding screens with mode parameter)
 // No longer need separate add_persona_* imports - using unified screens
@@ -229,18 +227,25 @@ class AppRouter {
         return null;
       }
 
-      // ─── EULA / TERMS OF USE GATE (Guideline 1.2) ───
-      // Must run before every other check so it blocks all paths into
-      // registration/login, including the landing page and OAuth callback
-      // handling. Does not touch auth/demo-account logic — it only decides
-      // whether to show the acceptance screen first.
-      if (FeatureFlags.requireEulaAcceptance &&
-          !EulaService.hasAccepted &&
-          loc != RoutePaths.eulaGate &&
-          loc != RoutePaths.aboutTerms &&
-          loc != RoutePaths.aboutPrivacy) {
-        logRoute('redirect (eula not accepted) -> ${RoutePaths.eulaGate}');
-        return RoutePaths.eulaGate;
+      // ─── DEEP LINK RETENTION ───
+      // A shared game link (https://app.dabbler.pro/game/<id> or
+      // dabbler://app/game/<id>) tapped while logged out gets bounced through
+      // auth → onboarding. Remember the canonical target here — BEFORE the
+      // auth redirects below — and replay it once the user reaches home, so
+      // signup/login ends on the game details screen.
+      final gateBlocked = !isAuthenticated;
+      if (gateBlocked) {
+        String? deepLinkTarget;
+        if (loc.startsWith('/sports/games/')) {
+          deepLinkTarget = loc;
+        } else if (loc.startsWith('/game/')) {
+          final id = loc.substring('/game/'.length);
+          if (id.isNotEmpty) deepLinkTarget = '/sports/games/$id';
+        }
+        if (deepLinkTarget != null) {
+          routerRefreshNotifier.setPendingDeepLink(deepLinkTarget);
+          logRoute('stashed pending deep link: $deepLinkTarget');
+        }
       }
 
       // PRIORITY CHECK: Check Supabase auth state directly (may be updated before provider)
@@ -287,7 +292,6 @@ class AppRouter {
           loc != RoutePaths.welcome &&
           loc != RoutePaths.authWelcome &&
           loc != RoutePaths.emailVerification &&
-          loc != RoutePaths.eulaGate &&
           !isOnboardingPage) {
         logRoute('redirect (post-login welcome) -> ${RoutePaths.welcome}');
         return RoutePaths.welcome;
@@ -353,12 +357,8 @@ class AppRouter {
       // If not authenticated, always stay on onboarding/auth screens
       if (!isAuthenticated) {
         // Public pre-auth pages that must NOT be bounced to landing — the
-        // EULA gate and the legal docs it links to. Without this exemption
-        // the EULA redirect (landing -> eula-gate) and this landing bounce
-        // (eula-gate -> landing) form an infinite redirect loop for any user
-        // who hasn't accepted yet (e.g. a fresh install on a real device).
+        // legal docs, reachable pre-auth via direct navigation.
         const publicPreAuthPaths = <String>{
-          RoutePaths.eulaGate,
           RoutePaths.aboutTerms,
           RoutePaths.aboutPrivacy,
         };
@@ -398,6 +398,25 @@ class AppRouter {
           loc != RoutePaths.welcome &&
           loc != RoutePaths.authWelcome) {
         // Protected-route gating handled via onboarding step enforcement above.
+      }
+
+      // ─── DEEP LINK REPLAY ───
+      // All post-auth flows (login, signup + onboarding, post-login welcome)
+      // terminate on home. If a deep link was stashed on the way in, finish
+      // the journey on its target instead. Runs after every gate above, so
+      // it can't interrupt onboarding/welcome.
+      if (isAuthenticated && loc == RoutePaths.home) {
+        final pending = routerRefreshNotifier.consumePendingDeepLink();
+        if (pending != null) {
+          logRoute('redirect (pending deep link) -> $pending');
+          return pending;
+        }
+      }
+      // Reaching the deep-link target directly (already signed in) — drop
+      // any stale stash so it can't replay later.
+      if (isAuthenticated &&
+          routerRefreshNotifier.pendingDeepLink == loc) {
+        routerRefreshNotifier.consumePendingDeepLink();
       }
 
       logRoute('allow');
@@ -938,8 +957,15 @@ class AppRouter {
       path: RoutePaths.sportProfile,
       name: RouteNames.sportProfile,
       pageBuilder: (context, state) {
-        final args = state.extra;
-        if (args is! SportProfileRouteArgs) {
+        // extra is the in-app fast path; on web refresh / direct URL entry
+        // extra is lost, so fall back to the query parameters.
+        final extra = state.extra;
+        final args = extra is SportProfileRouteArgs
+            ? extra
+            : SportProfileRouteArgs.fromQueryParameters(
+                state.uri.queryParameters,
+              );
+        if (args == null) {
           return SharedAxisTransitionPage(
             key: state.pageKey,
             child: const ErrorPage(message: 'Missing sport profile context.'),
@@ -1315,16 +1341,6 @@ class AppRouter {
         key: state.pageKey,
         child: const BugReportScreen(),
         type: SharedAxisType.horizontal,
-      ),
-    ),
-
-    // EULA / Terms-of-Use acceptance gate — shown before login/registration.
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.eulaGate,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const EulaGateScreen(),
       ),
     ),
 

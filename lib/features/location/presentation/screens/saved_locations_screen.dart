@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dabbler/data/models/profile_location.dart';
@@ -17,7 +20,7 @@ class SavedLocationsScreen extends ConsumerWidget {
     final tt = Theme.of(context).textTheme;
     final asyncLocations = ref.watch(profileLocationNotifierProvider);
 
-    return Scaffold(
+    final content = Scaffold(
       appBar: AppBar(
         title: const Text('Saved Locations'),
         backgroundColor: cs.surface,
@@ -55,6 +58,23 @@ class SavedLocationsScreen extends ConsumerWidget {
         },
       ),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 
   Future<void> _addLocation(BuildContext context, WidgetRef ref) async {

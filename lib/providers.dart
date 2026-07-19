@@ -28,6 +28,9 @@ export 'features/auth_onboarding/data/repositories/onboarding_repository.dart';
 export 'features/explore/providers/nearby_games_providers.dart';
 export 'features/explore/providers/feed_providers.dart';
 
+// Games
+export 'features/games/providers/game_history_providers.dart';
+
 // News
 export 'features/news/providers/news_providers.dart';
 export 'features/news/providers/news_actions_provider.dart';

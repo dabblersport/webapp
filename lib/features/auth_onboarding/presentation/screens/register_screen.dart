@@ -12,7 +12,10 @@ class RegisterScreen extends ConsumerWidget {
     final controller = ref.read(registerControllerProvider.notifier);
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).register_title)),
-      body: SafeArea(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
@@ -70,6 +73,8 @@ class RegisterScreen extends ConsumerWidget {
               ),
             );
           },
+        ),
+      ),
         ),
       ),
     );

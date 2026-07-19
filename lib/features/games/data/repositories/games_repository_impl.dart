@@ -249,15 +249,19 @@ class GamesRepositoryImpl implements GamesRepository {
   Future<Either<Failure, List<Game>>> getMyGames(
     String userId, {
     String? status,
+    String? sportId,
+    bool ascending = true,
     int page = 1,
     int limit = 20,
   }) async {
     try {
       final cacheKey = _generateCacheKey(
         'my_games',
-        {'userId': userId, 'status': status},
+        {'userId': userId, 'status': status, 'sportId': sportId},
         page,
         limit,
+        'start_at',
+        ascending,
       );
 
       // Check cache first
@@ -268,6 +272,8 @@ class GamesRepositoryImpl implements GamesRepository {
       final games = await remoteDataSource.getMyGames(
         userId,
         status: status,
+        sportId: sportId,
+        ascending: ascending,
         page: page,
         limit: limit,
       );

@@ -24,15 +24,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    final backgroundColor = isDarkMode
-        ? colorScheme.surface
-        : const Color(0xFFF6F2FF);
-
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -171,6 +168,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             );
           },
+        ),
+      ),
         ),
       ),
     );

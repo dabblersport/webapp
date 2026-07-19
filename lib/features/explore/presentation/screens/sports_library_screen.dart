@@ -300,7 +300,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                   : allGames
                         .where(
                           (g) =>
-                              (g.sport as String).toLowerCase() ==
+                              g.sport.toLowerCase() ==
                               _selectedSport!.toLowerCase(),
                         )
                         .toList();
@@ -387,7 +387,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    (game.sport as String),
+                                    game.sport,
                                     style: textTheme.labelSmall?.copyWith(
                                       color: colorScheme.categoryMain,
                                       fontWeight: FontWeight.w700,

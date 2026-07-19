@@ -14,6 +14,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/post_location_chip.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
@@ -320,16 +321,6 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     return Color(0xFF000000 | value);
   }
 
-  String? _firstImageUrl(List<dynamic> media) {
-    if (media.isEmpty) return null;
-    final first = media.first;
-    if (first is Map) {
-      return (first['url'] ?? first['uri'] ?? first['src'])?.toString();
-    }
-    if (first is String && first.startsWith('http')) return first;
-    return null;
-  }
-
   Widget _dotSep(TextTheme tt, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
@@ -373,8 +364,7 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
     final timeAgo = _relativeTime(post.createdAt);
     final typeLabel = _postTypeLabel(post.postType, l10n);
     final originLabel = _originLabel(post.originType, l10n);
-    final imageUrl = _firstImageUrl(post.media);
-    final hasImage = imageUrl != null;
+    final hasImage = PostMediaCarousel.imageUrls(post.media).isNotEmpty;
     final expiryText = _expiryLabel(post.expiresAt, l10n);
     final hasLocation = post.areaId != null;
     final canRepost = post.allowReposts && post.originType != OriginType.repost;
@@ -597,27 +587,18 @@ class _FeedPostCardState extends ConsumerState<FeedPostCard> {
                         ],
                       ),
 
-                      // ═══ Image ═══
+                      // ═══ Media (single image or Threads-style carousel) ═══
+                      // Bleeds over the avatar indent so it spans the full
+                      // card width; embedded reposts keep the plain strip.
                       if (hasImage)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: AspectRatio(
-                              aspectRatio: 16 / 9,
-                              child: Image.network(
-                                imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
-                                  color: cs.surfaceContainerHigh,
-                                  child: Icon(
-                                    Iconsax.gallery_slash_copy,
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: widget.isEmbedded
+                              ? PostMediaCarousel(
+                                  media: post.media,
+                                  borderRadius: 12,
+                                )
+                              : _FullBleedMedia(media: post.media),
                         ),
 
                       // ═══ Body text ═══
@@ -1439,6 +1420,58 @@ class _ActionItem extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Escapes the avatar/content indent so post media spans the full card width.
+/// A single image rests one gutter from each screen edge. A multi-image
+/// carousel's viewport is edge-to-edge, but its leading content padding
+/// matches the text-column indent, so at rest the first image lines up with
+/// the text above and images float under the screen edges while scrolling,
+/// Threads-style.
+class _FullBleedMedia extends StatelessWidget {
+  const _FullBleedMedia({required this.media});
+
+  final List<dynamic> media;
+
+  // Distance from the card's left edge to the content column (16 card
+  // padding + 48 avatar + 10 gap) and the card's right padding.
+  static const double _leftInset = 74;
+  static const double _rightInset = 16;
+  static const double _gutter = 16;
+
+  @override
+  Widget build(BuildContext context) {
+    final urls = PostMediaCarousel.imageUrls(media);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fullWidth = constraints.maxWidth + _leftInset + _rightInset;
+        final height = urls.length == 1
+            ? (fullWidth - _gutter * 2) * 9 / 16
+            : 240.0; // PostMediaCarousel's default carouselHeight
+        return SizedBox(
+          height: height,
+          child: OverflowBox(
+            alignment: Alignment.centerLeft,
+            minWidth: fullWidth,
+            maxWidth: fullWidth,
+            child: Transform.translate(
+              offset: const Offset(-_leftInset, 0),
+              child: PostMediaCarousel(
+                media: media,
+                borderRadius: 12,
+                padding: urls.length == 1
+                    ? const EdgeInsets.symmetric(horizontal: _gutter)
+                    : const EdgeInsets.only(
+                        left: _leftInset,
+                        right: _gutter,
+                      ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

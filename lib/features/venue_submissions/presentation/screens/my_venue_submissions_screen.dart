@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/providers.dart';
@@ -22,8 +25,8 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(myVenueSubmissionsProvider);
@@ -220,6 +223,23 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    if (isWide) {
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 }
 

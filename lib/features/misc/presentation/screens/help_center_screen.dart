@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 class HelpCenterScreen extends StatelessWidget {
   const HelpCenterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    final content = Scaffold(
       appBar: AppBar(
         title: const Text('Help Center'),
         backgroundColor: Colors.transparent,
@@ -30,5 +36,22 @@ class HelpCenterScreen extends StatelessWidget {
         ),
       ),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 }

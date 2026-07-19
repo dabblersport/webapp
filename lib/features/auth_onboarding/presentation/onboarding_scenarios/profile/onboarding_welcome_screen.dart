@@ -156,11 +156,16 @@ class _ProfileOnboardingWelcomeScreenState
     ];
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -181,6 +186,9 @@ class _ProfileOnboardingWelcomeScreenState
               for (int i = 0; i < _steps.length; i++)
                 _StepRow(step: _steps[i], label: labels[i], colorScheme: colorScheme, theme: theme),
             ],
+          ),
+              ),
+            ),
           ),
         ),
       ),

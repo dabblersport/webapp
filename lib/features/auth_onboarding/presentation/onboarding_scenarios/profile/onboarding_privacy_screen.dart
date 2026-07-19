@@ -91,7 +91,7 @@ class _OnboardingPrivacyScreenState
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -115,7 +115,10 @@ class _OnboardingPrivacyScreenState
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -159,6 +162,8 @@ class _OnboardingPrivacyScreenState
                 ),
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),

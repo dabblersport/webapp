@@ -188,8 +188,8 @@ class OnboardingCTAButton extends StatelessWidget {
               : [
                   BoxShadow(
                     color: colorScheme.primary.withValues(alpha: 0.5),
-                    blurRadius: 20,
-                    offset: const Offset(0, 6),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
         ),

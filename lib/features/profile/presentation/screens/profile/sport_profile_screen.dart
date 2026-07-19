@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/features/profile/presentation/widgets/sport_achievements_section.dart';
+import 'package:dabbler/features/profile/presentation/widgets/sport_activity_section.dart';
+import 'package:dabbler/features/profile/presentation/widgets/sport_game_history_section.dart';
+import 'package:dabbler/features/profile/presentation/widgets/sport_profile_section_widgets.dart';
 
 class SportProfileScreen extends ConsumerWidget {
   const SportProfileScreen({super.key, required this.args});
@@ -19,240 +25,151 @@ class SportProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final view = ref.watch(sportProfileViewProvider(args));
+    final core = ref.watch(sportProfileCoreProvider(args));
+    final isOwnProfile =
+        Supabase.instance.client.auth.currentUser?.id == args.userId;
 
-    return Scaffold(
+    // The page paints immediately; each section resolves independently so a
+    // slow query (e.g. post enrichment) never blocks the header/scoreboard.
+    final content = Scaffold(
       appBar: AppBar(title: Text(args.sportName)),
-      body: view.when(
-        data: (data) => ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _HeaderCard(args: args, data: data),
-            const SizedBox(height: 16),
-            _SectionCard(
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          core.when(
+            data: (data) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _HeaderCard(args: args, data: data),
+                const SizedBox(height: 16),
+                SportSectionCard(
+                  title: 'Scoreboard',
+                  child: data.metrics.isEmpty
+                      ? const SportEmptySection(
+                          icon: Icons.leaderboard_outlined,
+                          message: 'No scoreboard data yet.',
+                        )
+                      : _ScoreboardGrid(metrics: data.metrics),
+                ),
+                // Per-sport preferences (own profile only — private settings)
+                if (isOwnProfile)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: _SportPreferencesSection(args: args, data: data),
+                  ),
+              ],
+            ),
+            loading: () => const SportSectionCard(
               title: 'Scoreboard',
-              child: data.metrics.isEmpty
-                  ? _EmptySection(
-                      icon: Icons.leaderboard_outlined,
-                      message: 'No scoreboard data yet.',
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: data.metrics.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 1.5,
-                          ),
-                      itemBuilder: (context, index) {
-                        final metric = data.metrics[index];
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Icon(metric.icon, color: colorScheme.primary),
-                              Text(
-                                metric.value,
-                                style: textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.onSurface,
-                                ),
-                              ),
-                              Text(
-                                metric.label,
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+              child: SportSectionLoading(),
             ),
-            // Per-sport preferences (own profile only)
-            if (Supabase.instance.client.auth.currentUser?.id == args.userId)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: _SportPreferencesSection(args: args, data: data),
+            error: (error, _) => Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Failed to load sport profile: $error',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
               ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: 'Achievements',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (data.badges.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: data.badges
-                          .map(
-                            (badge) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                badge.name.isEmpty ? badge.key : badge.name,
-                                style: textTheme.labelLarge?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  if (data.badges.isNotEmpty && data.recentEvents.isNotEmpty)
-                    const SizedBox(height: 16),
-                  if (data.recentEvents.isNotEmpty)
-                    ...data.recentEvents.map(
-                      (event) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: Icon(
-                          Icons.workspace_premium_outlined,
-                          color: colorScheme.primary,
-                        ),
-                        title: Text(
-                          _formatEventType(event.eventType),
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          _formatEventData(event.eventData),
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (data.badges.isEmpty && data.recentEvents.isEmpty)
-                    const _EmptySection(
-                      icon: Icons.emoji_events_outlined,
-                      message: 'No sport achievements yet.',
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            _SectionCard(
-              title: 'Sport Activity',
-              child: data.activity.isEmpty
-                  ? const _EmptySection(
-                      icon: Icons.article_outlined,
-                      message: 'No sport-related posts yet.',
-                    )
-                  : Column(
-                      children: data.activity.map((item) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: item.sources
-                                    .map(
-                                      (source) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.secondaryContainer,
-                                          borderRadius: BorderRadius.circular(
-                                            999,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _sourceLabel(source),
-                                          style: textTheme.labelMedium
-                                              ?.copyWith(
-                                                color: colorScheme
-                                                    .onSecondaryContainer,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                              const SizedBox(height: 8),
-                              FeedPostCard(post: item.post),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-            ),
-          ],
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text(
-              'Failed to load sport profile: $error',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
             ),
           ),
-        ),
+          // Game history — shown on every profile; the provider only
+          // returns games the viewer is allowed to see.
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: SportGameHistorySection(args: args),
+          ),
+          const SizedBox(height: 16),
+          SportAchievementsSection(args: args),
+          const SizedBox(height: 16),
+          SportActivitySection(args: args),
+        ],
       ),
     );
-  }
 
-  static String _sourceLabel(SportActivitySource source) {
-    switch (source) {
-      case SportActivitySource.authored:
-        return 'Authored';
-      case SportActivitySource.commented:
-        return 'Commented';
-      case SportActivitySource.reacted:
-        return 'Reacted';
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
     }
+    return content;
   }
+}
 
-  static String _formatEventType(String type) {
-    if (type.isEmpty) {
-      return 'Sport milestone';
-    }
-    return type
-        .split('_')
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
-  }
+class _ScoreboardGrid extends StatelessWidget {
+  const _ScoreboardGrid({required this.metrics});
 
-  static String _formatEventData(Map<String, dynamic> eventData) {
-    if (eventData.isEmpty) {
-      return 'Recent progress in this sport.';
-    }
-    final entries = eventData.entries
-        .take(2)
-        .map((entry) => '${entry.key}: ${entry.value}');
-    return entries.join(' • ');
+  final List<SportProfileMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: metrics.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.5,
+      ),
+      itemBuilder: (context, index) {
+        final metric = metrics[index];
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          // The grid tile has a fixed aspect ratio, so scale the content
+          // down instead of letting the column overflow on small widths
+          // or large text scales.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(metric.icon, color: colorScheme.primary),
+                const SizedBox(height: 8),
+                Text(
+                  metric.value,
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  metric.label,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -260,7 +177,7 @@ class _HeaderCard extends StatelessWidget {
   const _HeaderCard({required this.args, required this.data});
 
   final SportProfileRouteArgs args;
-  final SportProfileViewData data;
+  final SportProfileCoreData data;
 
   @override
   Widget build(BuildContext context) {
@@ -391,80 +308,12 @@ class _HeaderChip extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptySection extends StatelessWidget {
-  const _EmptySection({required this.icon, required this.message});
-
-  final IconData icon;
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(icon, size: 36, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// Editable per-sport preferences: skill level and preferred position.
 class _SportPreferencesSection extends ConsumerStatefulWidget {
   const _SportPreferencesSection({required this.args, required this.data});
 
   final SportProfileRouteArgs args;
-  final SportProfileViewData data;
+  final SportProfileCoreData data;
 
   @override
   ConsumerState<_SportPreferencesSection> createState() =>
@@ -559,8 +408,8 @@ class _SportPreferencesSectionState
             .eq('sport', widget.args.sportKey.toLowerCase());
       }
 
-      // Invalidate provider so the screen refreshes.
-      ref.invalidate(sportProfileViewProvider(widget.args));
+      // Invalidate the core provider; achievements re-derives from it.
+      ref.invalidate(sportProfileCoreProvider(widget.args));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

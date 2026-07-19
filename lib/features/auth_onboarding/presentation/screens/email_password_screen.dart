@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
@@ -10,6 +10,7 @@ import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/widgets/legal_doc_sheet.dart';
 
 import '../providers/auth_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -267,19 +268,76 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     }
   }
 
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final authService = ref.read(authServiceProvider);
+
+      final signedIn = await authService.signInWithApple();
+      if (!signedIn) return; // User cancelled the Apple sheet.
+
+      final result = await authService.handleAppleSignInFlow();
+      if (!mounted) return;
+
+      switch (result) {
+        case GoogleSignInResultGoToOnboarding():
+          ref.read(onboardingDataProvider.notifier).initWithEmail(result.email);
+          context.go(RoutePaths.createUserInfo, extra: {'email': result.email});
+          break;
+        case GoogleSignInResultGoToSetUsername():
+          ref.read(onboardingDataProvider.notifier).initWithEmail(result.email);
+          context.go(
+            RoutePaths.setUsername,
+            extra: {
+              'email': result.email,
+              'suggestedUsername': result.suggestedUsername,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToPhoneOtp():
+          context.push(
+            RoutePaths.otpVerification,
+            extra: {
+              'phone': result.phone,
+              'email': result.email,
+              'userExistsBeforeOtp': false,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToHome():
+          context.go(RoutePaths.home);
+          break;
+        case GoogleSignInResultRequirePassword():
+          _emailController.text = result.email;
+          _onEmailChanged(result.email);
+          break;
+        case GoogleSignInResultError():
+          setState(() => _errorMessage = result.message);
+          break;
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Apple sign-in failed: $e');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    final backgroundColor = isDarkMode
-        ? colorScheme.surface
-        : const Color(0xFFF6F2FF);
-
     return Scaffold(
-      backgroundColor: backgroundColor,
-      body: SafeArea(
+      backgroundColor: Colors.transparent,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -386,6 +444,10 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                             const SizedBox(height: 14),
                             _buildAppleButton(context),
                           ],
+                          const SizedBox(height: 12),
+                          _buildSignUpRedirect(context),
+                          const SizedBox(height: 16),
+                          _buildTermsFooter(context),
                         ],
                       ),
                     ),
@@ -394,6 +456,8 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
               ),
             );
           },
+        ),
+      ),
         ),
       ),
     );
@@ -568,10 +632,10 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SvgPicture.asset(
-                  'assets/icons/google.svg',
-                  width: 22,
-                  height: 22,
+                Icon(
+                  Iconsax.google_1,
+                  size: 22,
+                  color: colorScheme.onSurface,
                 ),
                 const SizedBox(width: 12),
                 Text(
@@ -589,13 +653,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
   Widget _buildAppleButton(BuildContext context) {
     return FilledButton(
-      onPressed: _isLoading
-          ? null
-          : () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(AppLocalizations.of(context).email_password_apple_soon)),
-              );
-            },
+      onPressed: _isLoading ? null : _handleAppleSignIn,
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(56),
         shape: const StadiumBorder(),
@@ -605,11 +663,10 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SvgPicture.asset(
-            'assets/icons/apple.svg',
-            width: 22,
-            height: 22,
-            colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          const Icon(
+            Iconsax.apple,
+            size: 22,
+            color: Colors.white,
           ),
           const SizedBox(width: 12),
           Text(
@@ -622,6 +679,70 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSignUpRedirect(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: TextButton(
+        onPressed: _isLoading
+            ? null
+            : () => context.go(RoutePaths.emailInput),
+        child: Text.rich(
+          TextSpan(
+            text: 'Not a user? ',
+            style: TextStyle(
+              fontSize: 14,
+              color: colorScheme.onSurfaceVariant,
+            ),
+            children: [
+              TextSpan(
+                text: 'Sign up',
+                style: TextStyle(
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsFooter(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final linkStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: colorScheme.primary,
+    );
+
+    return Text.rich(
+      TextSpan(
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          height: 1.35,
+        ),
+        children: [
+          TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
+          TextSpan(
+            text: AppLocalizations.of(context).email_input_terms_link,
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => showTermsSheet(context),
+          ),
+          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
+          TextSpan(
+            text: AppLocalizations.of(context).email_input_privacy_link,
+            style: linkStyle,
+            recognizer: TapGestureRecognizer()
+              ..onTap = () => showPrivacySheet(context),
+          ),
+          const TextSpan(text: '.'),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

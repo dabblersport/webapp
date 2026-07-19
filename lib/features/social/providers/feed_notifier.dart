@@ -256,7 +256,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
       if (!mounted) return;
       state = FeedData(
         items: page.items,
-        hasMore: page.items.length >= _pageSize,
+        hasMore: page.rawCount >= _pageSize,
         cursor: page.cursor,
         hasNewPosts: false,
       );
@@ -275,26 +275,42 @@ class FeedNotifier extends StateNotifier<FeedState> {
     state = data.copyWith(loadingMore: true);
 
     try {
-      final page = await _fetchPage(cursor: data.cursor);
-      if (!mounted) return;
-      final current = state;
-      if (current is! FeedData) return;
+      // A raw page can merge down to zero NEW visible items (unsupported
+      // activity types, unfetchable posts, duplicates) while more pages still
+      // exist. Keep walking the cursor until something new arrives, the feed
+      // is truly exhausted, or a safety cap is hit.
+      var cursor = data.cursor;
+      for (var attempt = 0; attempt < 5; attempt++) {
+        final page = await _fetchPage(cursor: cursor);
+        if (!mounted) return;
+        final current = state;
+        if (current is! FeedData) return;
 
-      if (page.items.isEmpty) {
-        state = current.copyWith(hasMore: false, loadingMore: false);
+        final rawHasMore = page.rawCount >= _pageSize;
+        final existingIds = _itemIds(current.items);
+        final deduped =
+            page.items.where((i) => !existingIds.contains(_itemId(i))).toList();
+
+        if (deduped.isEmpty && rawHasMore) {
+          cursor = page.cursor; // full page, nothing new visible — continue
+          continue;
+        }
+
+        state = current.copyWith(
+          items: [...current.items, ...deduped],
+          loadingMore: false,
+          hasMore: rawHasMore,
+          cursor: page.cursor,
+        );
         return;
       }
 
-      final existingIds = _itemIds(current.items);
-      final deduped =
-          page.items.where((i) => !existingIds.contains(_itemId(i))).toList();
-
-      state = current.copyWith(
-        items: [...current.items, ...deduped],
-        loadingMore: false,
-        hasMore: page.items.length >= _pageSize && deduped.isNotEmpty,
-        cursor: page.cursor,
-      );
+      // Safety cap reached — stop the spinner but leave hasMore so a later
+      // scroll can resume from the advanced cursor.
+      final current = state;
+      if (current is FeedData) {
+        state = current.copyWith(loadingMore: false, cursor: cursor);
+      }
     } catch (e) {
       if (!mounted) return;
       final current = state;
@@ -314,7 +330,11 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  Future<({List<FeedItem> items, DateTime? cursor})> _fetchPage({
+  /// [rawCount] is the number of rows the RPC returned BEFORE client-side
+  /// merging drops unsupported activity types or unfetchable posts. Pagination
+  /// (`hasMore`) must be judged on rawCount — a full raw page can merge down to
+  /// fewer visible items without meaning the feed is exhausted.
+  Future<({List<FeedItem> items, DateTime? cursor, int rawCount})> _fetchPage({
     required DateTime? cursor,
   }) async {
     final response = await _db.rpc(SupabaseConfig.getHomeFeedFn, params: {
@@ -326,7 +346,9 @@ class FeedNotifier extends StateNotifier<FeedState> {
         .map((e) => Map<String, dynamic>.from(e as Map))
         .toList();
 
-    if (rows.isEmpty) return (items: const <FeedItem>[], cursor: cursor);
+    if (rows.isEmpty) {
+      return (items: const <FeedItem>[], cursor: cursor, rawCount: 0);
+    }
 
     // Advance cursor from the last row.
     final lastCreatedAt = rows.last['created_at'];
@@ -396,7 +418,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
       }
     }
 
-    return (items: result, cursor: newCursor ?? cursor);
+    return (items: result, cursor: newCursor ?? cursor, rawCount: rows.length);
   }
 
   static Map<String, dynamic> _normalizeNewsRow(Map<String, dynamic> row) => {

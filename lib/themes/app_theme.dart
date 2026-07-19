@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../core/theme/dynamic_color_scheme_loader.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'material3_extensions.dart' as material3_extensions;
 export 'material3_extensions.dart';
 export '../core/theme/color_token_extensions.dart';
@@ -715,61 +714,6 @@ class AppTheme {
   }
 
   /// Build Material 3 theme with comprehensive tokens
-  /// Applies Tajawal as the Arabic-script fallback font to every [TextStyle]
-  /// in [base]. When a glyph is not found in the primary font (e.g. an Arabic
-  /// character), Flutter will automatically use this fallback instead.
-  static TextTheme _applyArabicFallback(TextTheme base) {
-    final arabicFamily = GoogleFonts.tajawal().fontFamily!;
-    TextStyle withFallback(TextStyle? style) {
-      if (style == null) {
-        return TextStyle(fontFamilyFallback: [arabicFamily]);
-      }
-      return style.copyWith(
-        fontFamilyFallback: [arabicFamily, ...?style.fontFamilyFallback],
-      );
-    }
-
-    return base.copyWith(
-      displayLarge: withFallback(base.displayLarge),
-      displayMedium: withFallback(base.displayMedium),
-      displaySmall: withFallback(base.displaySmall),
-      headlineLarge: withFallback(base.headlineLarge),
-      headlineMedium: withFallback(base.headlineMedium),
-      headlineSmall: withFallback(base.headlineSmall),
-      titleLarge: withFallback(base.titleLarge),
-      titleMedium: withFallback(base.titleMedium),
-      titleSmall: withFallback(base.titleSmall),
-      bodyLarge: withFallback(base.bodyLarge),
-      bodyMedium: withFallback(base.bodyMedium),
-      bodySmall: withFallback(base.bodySmall),
-      labelLarge: withFallback(base.labelLarge),
-      labelMedium: withFallback(base.labelMedium),
-      labelSmall: withFallback(base.labelSmall),
-    );
-  }
-
-  /// Shifts every TextStyle in [base] one weight step heavier (w100 → w200,
-  /// w200 → w300, …, w800 → w900; w900 is the ceiling). Also re-asserts
-  /// `fontFamily: 'Roboto'` so the family survives downstream `copyWith(...)`
-  /// calls.
-  static const List<FontWeight> _weightLadder = [
-    FontWeight.w100,
-    FontWeight.w200,
-    FontWeight.w300,
-    FontWeight.w400,
-    FontWeight.w500,
-    FontWeight.w600,
-    FontWeight.w700,
-    FontWeight.w800,
-    FontWeight.w900,
-  ];
-
-  static FontWeight _heavier(FontWeight w) {
-    final idx = _weightLadder.indexOf(w);
-    if (idx == -1 || idx == _weightLadder.length - 1) return w;
-    return _weightLadder[idx + 1];
-  }
-
   /// iOS uses the system font (SF Pro). We keep the system family (never force
   /// Roboto) and use each style's natural/default weight — no iOS weight bump
   /// (SF Pro renders at its designed weight now that the font resolves
@@ -781,13 +725,10 @@ class AppTheme {
     TextStyle? bump(TextStyle? s) {
       if (s == null) return null;
       final w = s.fontWeight ?? FontWeight.w400;
-      if (!_isIOS) {
-        return s.copyWith(fontWeight: _heavier(w), fontFamily: 'Roboto');
-      }
-      // iOS: system font (SF Pro), weight floored at w400, normal letter
-      // spacing (0) and default line height. `height` cannot be reset to null
-      // via copyWith, so we rebuild the style while preserving the Arabic
-      // fontFamilyFallback and omitting fontFamily to keep the system font.
+      // iOS-only (Android returns the base theme untouched upstream): system
+      // font (SF Pro) at natural weight, normal letter spacing (0) and default
+      // line height. `height` cannot be reset to null via copyWith, so we
+      // rebuild the style, omitting fontFamily to keep the system font.
       return TextStyle(
         inherit: s.inherit,
         color: s.color,
@@ -840,6 +781,11 @@ class AppTheme {
   /// value here to rescale that role app-wide. Screens should consume these via
   /// textTheme slots rather than hardcoding `fontSize`.
   static TextTheme _applySizes(TextTheme base) {
+    // The tuned scale below is calibrated for SF Pro's larger x-height and is
+    // iOS-only. On Android (and web/desktop) keep Material 3's default sizes —
+    // Roboto at the tuned sizes reads noticeably smaller than other Android
+    // apps, especially on devices with small font/display settings.
+    if (!_isIOS) return base;
     return base.copyWith(
       displayLarge: base.displayLarge?.copyWith(fontSize: 40),
       displayMedium: base.displayMedium?.copyWith(fontSize: 32),
@@ -866,14 +812,17 @@ class AppTheme {
     final baseTextTheme = brightness == Brightness.light
         ? ThemeData.light().textTheme
         : ThemeData.dark().textTheme;
-    // iOS: keep the system font (SF Pro / SF Arabic) and add NO Tajawal
-    // fallback — a non-null fontFamilyFallback would override the null (system)
-    // fontFamily and render Tajawal instead of SF Pro. Apple's system font
-    // already covers Arabic. Other platforms: Roboto + Tajawal Arabic fallback.
-    final familyTextTheme = _isIOS
-        ? baseTextTheme
-        : _applyArabicFallback(GoogleFonts.robotoTextTheme(baseTextTheme));
-    final textTheme = _applySizes(_enforceMinWeightAndFamily(familyTextTheme));
+    // Every platform renders its OS system font, exactly like other apps:
+    //   • iOS     → SF Pro / SF Arabic, plus the tuned size scale and
+    //               normalized spacing (approved — do not change).
+    //   • Android → the device's system font stack (Roboto on Pixel, OEM
+    //               fonts on Samsung/Xiaomi/etc., Noto for Arabic) at pure
+    //               Material 3 metrics. No forced family, weights, or sizes —
+    //               system fonts are hinted per device and adapt correctly to
+    //               the user's font-size/display-size settings (WCAG resize).
+    final textTheme = _isIOS
+        ? _applySizes(_enforceMinWeightAndFamily(baseTextTheme))
+        : baseTextTheme;
 
     // Material 3 shape system - using rounded corners
     const shapeSmall = RoundedRectangleBorder(

@@ -9,6 +9,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/ui_constants.dart';
 import 'package:dabbler/widgets/adaptive_auth_shell.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -52,13 +53,21 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     return AdaptiveAuthShell(
       backgroundColor: colorScheme.surface,
-      containerColor: colorScheme.secondaryContainer,
+      // Match the home screen background: the DynamicBackground gradient is
+      // layered behind the content, so the card fill is the gradient's base
+      // surface colour rather than the secondaryContainer.
+      containerColor: colorScheme.surface,
       maxCardWidth: isWide ? 960 : 520,
       // WelcomeScreen manages its own two-column desktop layout internally.
       splitWideLayout: false,
-      child: isWide
-          ? _buildDesktopLayout(context, theme, colorScheme, personaContent)
-          : _buildMobileLayout(context, theme, colorScheme, personaContent),
+      child: Stack(
+        children: [
+          const Positioned.fill(child: DynamicBackground()),
+          isWide
+              ? _buildDesktopLayout(context, theme, colorScheme, personaContent)
+              : _buildMobileLayout(context, theme, colorScheme, personaContent),
+        ],
+      ),
     );
   }
 

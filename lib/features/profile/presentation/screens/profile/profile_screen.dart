@@ -458,6 +458,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         context,
                         profileState,
                         sportsState,
+                        showActions: true,
                       ),
                     ),
                   ),
@@ -492,7 +493,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     return SizedBox.expand(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        child: _buildProfileHeroCard(context, profileState, sportsState),
+        child: _buildProfileHeroCard(
+          context,
+          profileState,
+          sportsState,
+          showActions: true,
+        ),
       ),
     );
   }
@@ -569,8 +575,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   Widget _buildProfileHeroCard(
     BuildContext context,
     ProfileState profileState,
-    SportsProfileState sportsState,
-  ) {
+    SportsProfileState sportsState, {
+    bool showActions = false,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final profile = profileState.profile;
@@ -582,6 +589,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
+
+          // ── Actions: wide layouts only (mobile shows these in the header) ──
+          if (showActions)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton.filledTonal(
+                  onPressed: () => _showManageProfiles(),
+                  icon: const Icon(Iconsax.convert_copy),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
+                    foregroundColor: colorScheme.onSurface,
+                    minimumSize: const Size(48, 48),
+                  ),
+                  tooltip: AppLocalizations.of(context)
+                      .profile_btn_manage_profiles_tooltip,
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  onPressed: () => context.push('/settings'),
+                  icon: const Icon(Iconsax.setting_copy),
+                  style: IconButton.styleFrom(
+                    backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
+                    foregroundColor: colorScheme.onSurface,
+                    minimumSize: const Size(48, 48),
+                  ),
+                ),
+              ],
+            ),
 
           // ── Avatar + Name/Pills/Location row ──
           Row(
@@ -1121,24 +1157,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                                   personaType != 'organiser')
                           ? null
                           : () {
+                              final args = SportProfileRouteArgs(
+                                profileId: profileId,
+                                userId: userId,
+                                displayName: profile?.displayName ?? '',
+                                personaType: personaType,
+                                sportId: sport.id,
+                                sportKey:
+                                    sport.sportKey ??
+                                    sport.nameEn.toLowerCase().replaceAll(
+                                      ' ',
+                                      '_',
+                                    ),
+                                sportName: sport.nameEn,
+                                avatarUrl: profile?.avatarUrl,
+                                sportEmoji: sport.emoji,
+                              );
+                              // Query params keep the route alive across web
+                              // refresh; extra stays as the fast path.
                               context.push(
-                                RoutePaths.sportProfile,
-                                extra: SportProfileRouteArgs(
-                                  profileId: profileId,
-                                  userId: userId,
-                                  displayName: profile?.displayName ?? '',
-                                  personaType: personaType,
-                                  sportId: sport.id,
-                                  sportKey:
-                                      sport.sportKey ??
-                                      sport.nameEn.toLowerCase().replaceAll(
-                                        ' ',
-                                        '_',
-                                      ),
-                                  sportName: sport.nameEn,
-                                  avatarUrl: profile?.avatarUrl,
-                                  sportEmoji: sport.emoji,
-                                ),
+                                Uri(
+                                  path: RoutePaths.sportProfile,
+                                  queryParameters: args.toQueryParameters(),
+                                ).toString(),
+                                extra: args,
                               );
                             },
                       child: Container(

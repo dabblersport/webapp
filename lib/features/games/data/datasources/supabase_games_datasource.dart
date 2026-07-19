@@ -493,6 +493,8 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Future<List<GameModel>> getMyGames(
     String userId, {
     String? status,
+    String? sportId,
+    bool ascending = true,
     int page = 1,
     int limit = 20,
   }) async {
@@ -502,7 +504,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       final hostedGamesQuery = _supabaseClient
           .from(SupabaseConfig.gamesTable)
           .select('id')
-          .eq('host_user_id', userId);
+          .eq('creator_user_id', userId);
 
       // Also get games where user is in game_roster
       final joinedGamesResponse = await _supabaseClient
@@ -534,6 +536,10 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
           .select('*')
           .inFilter('id', allGameIds.toList());
 
+      if (sportId != null && sportId.isNotEmpty) {
+        query = query.eq('sport_id', sportId);
+      }
+
       // MVP Fix: Map status to is_cancelled and filter by date
       if (status != null) {
         if (status == 'upcoming' || status == 'active') {
@@ -551,7 +557,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Use 'start_at' instead of legacy scheduled_date
       final response = await query
-          .order('start_at', ascending: true)
+          .order('start_at', ascending: ascending)
           .range((page - 1) * limit, page * limit - 1);
 
       if (response.isNotEmpty) {}

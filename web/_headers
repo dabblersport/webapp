@@ -1,0 +1,6 @@
+# Cloudflare Pages headers. apple-app-site-association has no extension, so
+# without this it's served as octet-stream and iOS may reject it.
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+/.well-known/assetlinks.json
+  Content-Type: application/json

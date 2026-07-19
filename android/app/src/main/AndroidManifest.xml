@@ -50,6 +50,17 @@
                     android:scheme="dabbler"
                     android:host="app" />
             </intent-filter>
+            <!-- HTTPS App Links (universal links). Verified against
+                 https://app.dabbler.pro/.well-known/assetlinks.json -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="app.dabbler.pro"
+                    android:pathPrefix="/game" />
+            </intent-filter>
         </activity>
         <!-- Route background FCM notifications into the same channel the app
              creates at init (see push_notification_service_mobile.dart).

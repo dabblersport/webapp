@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dabbler/widgets/legal_doc_sheet.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:flutter/gestures.dart';
@@ -130,9 +130,12 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: true,
-      body: SafeArea(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: Column(
           children: [
             OnboardingTopBar(
@@ -236,6 +239,8 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           ],
         ),
       ),
+        ),
+      ),
     );
   }
 
@@ -264,10 +269,10 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SvgPicture.asset(
-                    'assets/icons/google.svg',
-                    width: 20,
-                    height: 20,
+                  Icon(
+                    Iconsax.google_1,
+                    size: 20,
+                    color: colorScheme.onSurface,
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -289,17 +294,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       width: double.infinity,
       height: 52,
       child: OutlinedButton(
-        onPressed: _isLoading
-            ? null
-            : () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppLocalizations.of(context).auth_welcome_apple_soon,
-                    ),
-                  ),
-                );
-              },
+        onPressed: _isLoading ? null : _handleAppleSignIn,
         style: OutlinedButton.styleFrom(
           backgroundColor: const Color(0xFF2C2A33),
           side: BorderSide.none,
@@ -309,14 +304,10 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/icons/apple.svg',
-              width: 20,
-              height: 20,
-              colorFilter: const ColorFilter.mode(
-                Colors.white,
-                BlendMode.srcIn,
-              ),
+            const Icon(
+              Iconsax.apple,
+              size: 20,
+              color: Colors.white,
             ),
             const SizedBox(width: 10),
             Text(
@@ -331,6 +322,71 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final authService = ref.read(authServiceProvider);
+
+      final signedIn = await authService.signInWithApple();
+      if (!signedIn) return; // User cancelled the Apple sheet.
+
+      final result = await authService.handleAppleSignInFlow();
+      if (!mounted) return;
+
+      switch (result) {
+        case GoogleSignInResultGoToOnboarding():
+          ref.read(onboardingDataProvider.notifier).initWithEmail(result.email);
+          context.go(RoutePaths.createUserInfo, extra: {'email': result.email});
+          break;
+        case GoogleSignInResultGoToSetUsername():
+          ref.read(onboardingDataProvider.notifier).initWithEmail(result.email);
+          context.go(
+            RoutePaths.setUsername,
+            extra: {
+              'email': result.email,
+              'suggestedUsername': result.suggestedUsername,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToPhoneOtp():
+          context.push(
+            RoutePaths.otpVerification,
+            extra: {
+              'phone': result.phone,
+              'email': result.email,
+              'userExistsBeforeOtp': false,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToHome():
+          context.go(RoutePaths.home);
+          break;
+        case GoogleSignInResultRequirePassword():
+          context.push(
+            RoutePaths.enterPassword,
+            extra: {'email': result.email},
+          );
+          break;
+        case GoogleSignInResultError():
+          setState(() => _errorMessage = result.message);
+          break;
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Apple sign-in failed: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _handleGoogleSignIn() async {

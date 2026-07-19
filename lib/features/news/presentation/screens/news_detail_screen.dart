@@ -1,11 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_comment_tile.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_label_badge.dart';
@@ -93,8 +96,8 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     final dateStr = DateFormat('MMM d, yyyy').format(item.createdAt.toLocal());
     final commentsAsync = ref.watch(newsCommentsProvider(item.newsId));
 
-    return Scaffold(
-      backgroundColor: cs.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -238,6 +241,23 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         onSubmit: _submitComment,
       ),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 0,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 0),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 }
 

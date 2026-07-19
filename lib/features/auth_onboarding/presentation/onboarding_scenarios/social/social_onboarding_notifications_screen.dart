@@ -54,7 +54,10 @@ class _SocialOnboardingNotificationsScreenState
           onPressed: () => context.pop(),
         ),
       ),
-      body: Padding(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -104,6 +107,8 @@ class _SocialOnboardingNotificationsScreenState
               child: const Text('Maybe Later'),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

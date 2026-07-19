@@ -978,21 +978,27 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                   (personaType != 'player' && personaType != 'organiser')
               ? null
               : () {
+                  final args = SportProfileRouteArgs(
+                    profileId: profileId,
+                    userId: userId,
+                    displayName: profile?.displayName ?? '',
+                    personaType: personaType,
+                    sportId: sport.id,
+                    sportKey:
+                        sport.sportKey ??
+                        sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+                    sportName: sport.nameEn,
+                    avatarUrl: profile?.avatarUrl,
+                    sportEmoji: sport.emoji,
+                  );
+                  // Query params keep the route alive across web refresh;
+                  // extra stays as the fast path.
                   context.push(
-                    RoutePaths.sportProfile,
-                    extra: SportProfileRouteArgs(
-                      profileId: profileId,
-                      userId: userId,
-                      displayName: profile?.displayName ?? '',
-                      personaType: personaType,
-                      sportId: sport.id,
-                      sportKey:
-                          sport.sportKey ??
-                          sport.nameEn.toLowerCase().replaceAll(' ', '_'),
-                      sportName: sport.nameEn,
-                      avatarUrl: profile?.avatarUrl,
-                      sportEmoji: sport.emoji,
-                    ),
+                    Uri(
+                      path: RoutePaths.sportProfile,
+                      queryParameters: args.toQueryParameters(),
+                    ).toString(),
+                    extra: args,
                   );
                 },
           child: Container(

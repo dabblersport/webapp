@@ -385,28 +385,36 @@ class AuthService {
   /// an identity token bound to the hashed nonce, then exchanges the token with
   /// Supabase using `signInWithIdToken`. Supabase verifies the nonce against
   /// the hashed value Apple signed.
-  Future<AuthResponse> signInWithApple() async {
+  /// Returns false if the user cancelled the Apple sign-in sheet.
+  Future<bool> signInWithApple() async {
     final rawNonce = _generateRawNonce();
     final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
 
-    final credential = await SignInWithApple.getAppleIDCredential(
-      scopes: const [
-        AppleIDAuthorizationScopes.email,
-        AppleIDAuthorizationScopes.fullName,
-      ],
-      nonce: hashedNonce,
-    );
+    final AuthorizationCredentialAppleID credential;
+    try {
+      credential = await SignInWithApple.getAppleIDCredential(
+        scopes: const [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        nonce: hashedNonce,
+      );
+    } on SignInWithAppleAuthorizationException catch (e) {
+      if (e.code == AuthorizationErrorCode.canceled) return false;
+      rethrow;
+    }
 
     final idToken = credential.identityToken;
     if (idToken == null) {
       throw Exception('Apple Sign In returned no identity token.');
     }
 
-    return _supabase.auth.signInWithIdToken(
+    await _supabase.auth.signInWithIdToken(
       provider: OAuthProvider.apple,
       idToken: idToken,
       nonce: rawNonce,
     );
+    return true;
   }
 
   String _generateRawNonce([int length = 32]) {
@@ -421,21 +429,30 @@ class AuthService {
 
   /// Handle Google sign-in flow and determine the correct path for the user
   /// This should be called AFTER OAuth completes (e.g., from auth state listener)
-  Future<GoogleSignInResult> handleGoogleSignInFlow() async {
+  Future<GoogleSignInResult> handleGoogleSignInFlow() =>
+      _handleOAuthSignInFlow('google');
+
+  /// Handle Apple sign-in flow — same routing as Google, checking the
+  /// `apple` identity provider instead.
+  Future<GoogleSignInResult> handleAppleSignInFlow() =>
+      _handleOAuthSignInFlow('apple');
+
+  Future<GoogleSignInResult> _handleOAuthSignInFlow(String provider) async {
+    final providerLabel = provider == 'apple' ? 'Apple' : 'Google';
     try {
       // Get the authenticated user (should be set after OAuth completes)
       final user = _supabase.auth.currentUser;
       if (user == null) {
-        return const GoogleSignInResultError(
-          message: 'Please complete Google sign-in and try again.',
+        return GoogleSignInResultError(
+          message: 'Please complete $providerLabel sign-in and try again.',
         );
       }
 
       // Step 3: Derive provider flags
       final email = user.email;
       if (email == null || email.isEmpty) {
-        return const GoogleSignInResultError(
-          message: 'Google account does not have an email address.',
+        return GoogleSignInResultError(
+          message: '$providerLabel account does not have an email address.',
         );
       }
 
@@ -444,13 +461,13 @@ class AuthService {
       final phoneValue =
           phone ?? ''; // Extract non-null value for use in branches
 
-      // Check if user has Google as provider
+      // Check if user signed in with this provider before
       final identities = user.identities;
       final hasGoogleProvider =
           (identities != null &&
               identities.isNotEmpty &&
-              identities.any((identity) => identity.provider == 'google')) ||
-          (user.appMetadata['provider'] == 'google');
+              identities.any((identity) => identity.provider == provider)) ||
+          (user.appMetadata['provider'] == provider);
 
       // Step 4: Query profile store by user_id (since profiles don't store email)
       final profile = await getUserProfile(fields: ['id', 'user_id']);
@@ -479,7 +496,7 @@ class AuthService {
       }
     } catch (e) {
       return GoogleSignInResultError(
-        message: 'Google sign-in failed: ${e.toString()}',
+        message: '$providerLabel sign-in failed: ${e.toString()}',
       );
     }
   }

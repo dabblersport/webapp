@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:dabbler/services/moderation_service.dart';
@@ -41,8 +44,8 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     final isAdminAsync = ref.watch(isAdminProvider);
     final queueAsync = ref.watch(moderationQueueProvider);
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Moderation Queue'),
         actions: [
@@ -192,6 +195,23 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
             Center(child: Text('Failed to check admin status: $error')),
       ),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildReportCard(

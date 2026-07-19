@@ -24,6 +24,7 @@ import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 // Composer drawer chrome + glass palette is shared via composer_drawer_kit.dart.
 
@@ -623,7 +624,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final tt = Theme.of(context).textTheme;
     final composerState = ref.watch(postComposerProvider);
 
-    return ComposerDrawerShell(
+    final shell = ComposerDrawerShell(
       title: 'Create Post',
       ctaLabel: 'Post',
       canSubmit: composerState.canSubmit,
@@ -656,6 +657,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         _buildOptionsSection(cs, tt, composerState),
       ],
     );
+
+    // On wide (iPad/desktop) screens, constrain the composer drawer to a
+    // comfortable width and align it to the bottom rather than stretching
+    // edge-to-edge. A side nav would fight the composer UX here.
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: shell,
+        ),
+      );
+    }
+    return shell;
   }
 
   // ═══════════════════════════════════════════════════════════════════════

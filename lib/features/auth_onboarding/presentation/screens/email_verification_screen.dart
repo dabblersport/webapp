@@ -275,7 +275,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         title: Text(AppLocalizations.of(context).email_verify_appbar),
         automaticallyImplyLeading: false,
       ),
-      body: SafeArea(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -356,6 +359,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               ),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );

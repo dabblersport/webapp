@@ -36,12 +36,10 @@ class SportActivityItem {
   final Set<SportActivitySource> sources;
 }
 
-class SportProfileViewData {
-  const SportProfileViewData({
+/// Fast-path data needed to paint the header and scoreboard (1-2 round trips).
+class SportProfileCoreData {
+  const SportProfileCoreData({
     required this.metrics,
-    required this.activity,
-    required this.badges,
-    required this.recentEvents,
     this.playerProfile,
     this.playerTier,
     this.organiserProfile,
@@ -51,104 +49,146 @@ class SportProfileViewData {
   final advanced_tier.SportProfileTier? playerTier;
   final OrganiserProfile? organiserProfile;
   final List<SportProfileMetric> metrics;
-  final List<advanced_badge.SportProfileBadge> badges;
-  final List<SportProfileEvent> recentEvents;
-  final List<SportActivityItem> activity;
 }
 
-final sportProfileViewProvider = FutureProvider.autoDispose
-    .family<SportProfileViewData, SportProfileRouteArgs>((ref, args) async {
+/// Badges + recent events for the Achievements section.
+class SportAchievementsData {
+  const SportAchievementsData({
+    required this.badges,
+    required this.recentEvents,
+  });
+
+  final List<advanced_badge.SportProfileBadge> badges;
+  final List<SportProfileEvent> recentEvents;
+}
+
+/// Core sport profile (header + scoreboard). Kept intentionally small so the
+/// top of the screen paints without waiting for achievements/posts.
+final sportProfileCoreProvider = FutureProvider.autoDispose
+    .family<SportProfileCoreData, SportProfileRouteArgs>((ref, args) async {
       final sportProfileService = ref.watch(sportProfileServiceProvider);
-      final postRepository = ref.watch(postRepositoryProvider);
       final supabase = ref.watch(supabaseProvider);
 
-      advanced_profile.SportProfile? playerProfile;
-      advanced_tier.SportProfileTier? playerTier;
-      List<advanced_badge.SportProfileBadge> badges =
-          const <advanced_badge.SportProfileBadge>[];
-      List<SportProfileEvent> recentEvents = const <SportProfileEvent>[];
-      OrganiserProfile? organiserProfile;
-
       if (args.isOrganiserPersona) {
-        final organiserRow = await supabase
+        // Organiser profile row and hosted-games rows are independent —
+        // start both requests before awaiting either so they run in parallel.
+        final Future<dynamic> organiserRowFuture = supabase
             .from(SupabaseConfig.organiserTable)
             .select()
             .eq('profile_id', args.profileId)
             .eq('sport', args.sportKey)
-            .maybeSingle();
-        if (organiserRow != null) {
-          organiserProfile = OrganiserProfile.fromJson(
-            Map<String, dynamic>.from(organiserRow as Map),
-          );
-        }
-      } else {
+            .maybeSingle()
+            .then<dynamic>((row) => row);
+        final hostedGamesFuture = _fetchHostedGameRows(
+          supabase: supabase,
+          args: args,
+        );
+
+        final organiserRow = await organiserRowFuture;
+        final hostedGames = await hostedGamesFuture;
+
+        final organiserProfile = organiserRow == null
+            ? null
+            : OrganiserProfile.fromJson(
+                Map<String, dynamic>.from(organiserRow as Map),
+              );
+
+        return SportProfileCoreData(
+          organiserProfile: organiserProfile,
+          metrics: _buildOrganiserMetricsFrom(
+            hostedGames: hostedGames,
+            organiserProfile: organiserProfile,
+          ),
+        );
+      }
+
+      advanced_profile.SportProfile? playerProfile;
+      advanced_tier.SportProfileTier? playerTier;
+      try {
+        playerProfile = await sportProfileService.getSportProfile(
+          args.profileId,
+          args.sportKey,
+        );
+      } catch (_) {
+        playerProfile = null;
+      }
+
+      if (playerProfile != null) {
         try {
-          playerProfile = await sportProfileService.getSportProfile(
-            args.profileId,
-            args.sportKey,
+          playerTier = await sportProfileService.getTierById(
+            playerProfile.tierId,
           );
         } catch (_) {
-          playerProfile = null;
-        }
-
-        if (playerProfile != null) {
-          try {
-            badges = await sportProfileService.getPlayerBadges(
-              args.profileId,
-              args.sportKey,
-            );
-          } catch (_) {
-            badges = const <advanced_badge.SportProfileBadge>[];
-          }
-          try {
-            playerTier = await sportProfileService.getTierById(
-              playerProfile.tierId,
-            );
-          } catch (_) {
-            playerTier = null;
-          }
-          try {
-            recentEvents = await sportProfileService
-                .getRecentSportProfileEvents(
-                  args.profileId,
-                  args.sportKey,
-                  limit: 5,
-                );
-          } catch (_) {
-            recentEvents = const <SportProfileEvent>[];
-          }
+          playerTier = null;
         }
       }
 
-      final authoredPostsResult = await postRepository.getUserPostsBySport(
-        profileId: args.profileId,
-        sportId: args.sportId,
-        limit: 20,
+      return SportProfileCoreData(
+        playerProfile: playerProfile,
+        playerTier: playerTier,
+        metrics: _buildPlayerMetrics(playerProfile),
       );
-      final commentedPostsResult = await postRepository
-          .getCommentedPostsBySport(
-            profileId: args.profileId,
-            sportId: args.sportId,
-            limit: 20,
-          );
-      final reactedPostsResult = await postRepository.getReactedPostsBySport(
-        profileId: args.profileId,
-        sportId: args.sportId,
-        limit: 20,
-      );
+    });
 
-      final authoredPosts = authoredPostsResult.fold(
-        (_) => const <Post>[],
-        (posts) => posts,
+/// Badges + recent events (player personas only), fetched in parallel after
+/// the core profile resolves.
+final sportAchievementsProvider = FutureProvider.autoDispose
+    .family<SportAchievementsData, SportProfileRouteArgs>((ref, args) async {
+      const empty = SportAchievementsData(
+        badges: <advanced_badge.SportProfileBadge>[],
+        recentEvents: <SportProfileEvent>[],
       );
-      final commentedPosts = commentedPostsResult.fold(
-        (_) => const <Post>[],
-        (posts) => posts,
+      if (args.isOrganiserPersona) {
+        return empty;
+      }
+
+      final core = await ref.watch(sportProfileCoreProvider(args).future);
+      if (core.playerProfile == null) {
+        return empty;
+      }
+
+      final sportProfileService = ref.watch(sportProfileServiceProvider);
+      final results = await Future.wait([
+        sportProfileService
+            .getPlayerBadges(args.profileId, args.sportKey)
+            .catchError((_) => const <advanced_badge.SportProfileBadge>[]),
+        sportProfileService
+            .getRecentSportProfileEvents(args.profileId, args.sportKey, limit: 5)
+            .catchError((_) => const <SportProfileEvent>[]),
+      ]);
+
+      return SportAchievementsData(
+        badges: results[0] as List<advanced_badge.SportProfileBadge>,
+        recentEvents: results[1] as List<SportProfileEvent>,
       );
-      final reactedPosts = reactedPostsResult.fold(
-        (_) => const <Post>[],
-        (posts) => posts,
-      );
+    });
+
+/// Sport-tagged social activity (authored/commented/reacted posts), fetched
+/// in parallel and merged.
+final sportActivityProvider = FutureProvider.autoDispose
+    .family<List<SportActivityItem>, SportProfileRouteArgs>((ref, args) async {
+      final postRepository = ref.watch(postRepositoryProvider);
+
+      final results = await Future.wait([
+        postRepository.getUserPostsBySport(
+          profileId: args.profileId,
+          sportId: args.sportId,
+          limit: 20,
+        ),
+        postRepository.getCommentedPostsBySport(
+          profileId: args.profileId,
+          sportId: args.sportId,
+          limit: 20,
+        ),
+        postRepository.getReactedPostsBySport(
+          profileId: args.profileId,
+          sportId: args.sportId,
+          limit: 20,
+        ),
+      ]);
+
+      List<Post> unwrap(int index) =>
+          results[index].fold((_) => const <Post>[], (posts) => posts);
 
       final activityByPostId = <String, SportActivityItem>{};
 
@@ -169,32 +209,14 @@ final sportProfileViewProvider = FutureProvider.autoDispose
         }
       }
 
-      addPosts(authoredPosts, SportActivitySource.authored);
-      addPosts(commentedPosts, SportActivitySource.commented);
-      addPosts(reactedPosts, SportActivitySource.reacted);
+      addPosts(unwrap(0), SportActivitySource.authored);
+      addPosts(unwrap(1), SportActivitySource.commented);
+      addPosts(unwrap(2), SportActivitySource.reacted);
 
-      final activity = activityByPostId.values.toList()
+      return activityByPostId.values.toList()
         ..sort(
           (left, right) => right.post.createdAt.compareTo(left.post.createdAt),
         );
-
-      final metrics = args.isOrganiserPersona
-          ? await _buildOrganiserMetrics(
-              supabase: supabase,
-              args: args,
-              organiserProfile: organiserProfile,
-            )
-          : _buildPlayerMetrics(playerProfile);
-
-      return SportProfileViewData(
-        playerProfile: playerProfile,
-        playerTier: playerTier,
-        organiserProfile: organiserProfile,
-        metrics: metrics,
-        badges: badges,
-        recentEvents: recentEvents,
-        activity: activity,
-      );
     });
 
 List<SportProfileMetric> _buildPlayerMetrics(
@@ -232,18 +254,22 @@ List<SportProfileMetric> _buildPlayerMetrics(
   ];
 }
 
-Future<List<SportProfileMetric>> _buildOrganiserMetrics({
+Future<List<Map<String, dynamic>>> _fetchHostedGameRows({
   required dynamic supabase,
   required SportProfileRouteArgs args,
-  required OrganiserProfile? organiserProfile,
 }) async {
   final hostedRows = await supabase
       .from(SupabaseConfig.gamesTable)
       .select('id, is_cancelled, start_at')
-      .eq('host_user_id', args.userId)
-      .eq('sport', args.sportKey);
+      .eq('creator_user_id', args.userId)
+      .eq('sport_id', args.sportId);
+  return (hostedRows as List).cast<Map<String, dynamic>>();
+}
 
-  final hostedGames = (hostedRows as List).cast<Map<String, dynamic>>();
+List<SportProfileMetric> _buildOrganiserMetricsFrom({
+  required List<Map<String, dynamic>> hostedGames,
+  required OrganiserProfile? organiserProfile,
+}) {
   final totalHosted = hostedGames.length;
   final activeHosted = hostedGames
       .where((game) => game['is_cancelled'] != true)

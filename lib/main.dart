@@ -3,11 +3,9 @@ import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'package:google_fonts/google_fonts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/core/services/eula_service.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
@@ -137,11 +135,6 @@ Future<void> main() async {
 
       try {
         await Environment.load();
-
-        // Preload EULA/Terms-of-Use acceptance state synchronously so the
-        // router's redirect gate (Guideline 1.2) has a value on the very
-        // first navigation, before login/registration is reachable.
-        await EulaService.preload();
 
         // Initialize Firebase before any FirebaseMessaging usage — without
         // this every FirebaseMessaging.instance access throws [core/no-app].
@@ -281,41 +274,15 @@ class MyApp extends ConsumerWidget {
             final base = Theme.of(context);
             // Font strategy:
             //   • iOS  → Apple's San Francisco (SF Pro) — covers Latin + Arabic.
-            //   • Other platforms (Android / web / desktop):
-            //       – Arabic locale → Readex Pro
-            //       – English / default → Roboto (already applied via AppTheme)
+            //   • Android / web / desktop → the platform's own system font
+            //     stack at Material 3 metrics (set in AppTheme). No family
+            //     overrides: the system font matches other apps, is hinted per
+            //     device, covers Arabic natively (Noto), and adapts to the
+            //     user's font-size / display-size accessibility settings.
             TextTheme? overrideTextTheme;
             if (base.platform == TargetPlatform.iOS) {
               overrideTextTheme = base.textTheme.apply(
                 fontFamily: '.SF Pro Text',
-              );
-            } else if (locale.languageCode == 'ar') {
-              // Arabic readability: floor every weight at 500 (Medium).
-              final readex = GoogleFonts.readexProTextTheme(base.textTheme);
-              TextStyle? bump(TextStyle? s) {
-                if (s == null) return null;
-                final w = s.fontWeight ?? FontWeight.w400;
-                return w.value >= FontWeight.w500.value
-                    ? s
-                    : s.copyWith(fontWeight: FontWeight.w500);
-              }
-
-              overrideTextTheme = TextTheme(
-                displayLarge: bump(readex.displayLarge),
-                displayMedium: bump(readex.displayMedium),
-                displaySmall: bump(readex.displaySmall),
-                headlineLarge: bump(readex.headlineLarge),
-                headlineMedium: bump(readex.headlineMedium),
-                headlineSmall: bump(readex.headlineSmall),
-                titleLarge: bump(readex.titleLarge),
-                titleMedium: bump(readex.titleMedium),
-                titleSmall: bump(readex.titleSmall),
-                bodyLarge: bump(readex.bodyLarge),
-                bodyMedium: bump(readex.bodyMedium),
-                bodySmall: bump(readex.bodySmall),
-                labelLarge: bump(readex.labelLarge),
-                labelMedium: bump(readex.labelMedium),
-                labelSmall: bump(readex.labelSmall),
               );
             }
             final wrapped = ResponsiveAppShell(child: child);

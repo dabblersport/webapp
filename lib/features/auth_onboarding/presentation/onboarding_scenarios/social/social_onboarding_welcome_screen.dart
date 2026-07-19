@@ -12,7 +12,10 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: SafeArea(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -87,6 +90,8 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
               _buildProgressIndicator(context, 0, 4),
             ],
           ),
+        ),
+      ),
         ),
       ),
     );

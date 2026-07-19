@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/utils/constants/route_constants.dart';
+
 class ErrorPage extends StatelessWidget {
   final String? message;
 
@@ -37,7 +39,9 @@ class ErrorPage extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               FilledButton(
-                onPressed: () => context.pop(),
+                onPressed: () => context.canPop()
+                    ? context.pop()
+                    : context.go(RoutePaths.home),
                 child: const Text('Retry'),
               ),
             ],

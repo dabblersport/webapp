@@ -12,7 +12,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/widgets/legal_doc_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
@@ -144,12 +143,61 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     }
   }
 
-  void _handleApple() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context).auth_welcome_apple_soon),
-      ),
-    );
+  Future<void> _handleApple() async {
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    try {
+      final authService = ref.read(authServiceProvider);
+      final signedIn = await authService.signInWithApple();
+      if (!signedIn) return; // User cancelled the Apple sheet.
+      final result = await authService.handleAppleSignInFlow();
+      if (!mounted) return;
+      switch (result) {
+        case GoogleSignInResultGoToOnboarding():
+          context.go(RoutePaths.createUserInfo, extra: {'email': result.email});
+          break;
+        case GoogleSignInResultGoToSetUsername():
+          context.go(
+            RoutePaths.setUsername,
+            extra: {
+              'email': result.email,
+              'suggestedUsername': result.suggestedUsername,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToPhoneOtp():
+          context.push(
+            RoutePaths.otpVerification,
+            extra: {
+              'phone': result.phone,
+              'email': result.email,
+              'userExistsBeforeOtp': false,
+            },
+          );
+          break;
+        case GoogleSignInResultGoToHome():
+          context.go(RoutePaths.home);
+          break;
+        case GoogleSignInResultRequirePassword():
+          context.push(
+            RoutePaths.enterPassword,
+            extra: {'email': result.email},
+          );
+          break;
+        case GoogleSignInResultError():
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(result.message)));
+          break;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Apple sign-in failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _handleEmail() => context.go(RoutePaths.emailInput);
@@ -159,7 +207,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final linkStyle = theme.textTheme.bodyMedium?.copyWith(
-      fontWeight: FontWeight.w800,
+      // fontWeight: FontWeight.w800,
       color: colorScheme.primary,
     );
 
@@ -170,19 +218,16 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
           height: 1.35,
         ),
         children: [
-          const TextSpan(
-            text:
-                'By Continue, you are indicating that you have read and agree to the ',
-          ),
+          TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
           TextSpan(
-            text: 'Terms of Service',
+            text: AppLocalizations.of(context).email_input_terms_link,
             style: linkStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () => showTermsSheet(context),
           ),
-          const TextSpan(text: ' & '),
+          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
           TextSpan(
-            text: 'Privacy Policy',
+            text: AppLocalizations.of(context).email_input_privacy_link,
             style: linkStyle,
             recognizer: TapGestureRecognizer()
               ..onTap = () => showPrivacySheet(context),
@@ -206,7 +251,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Stack(
           children: [
@@ -220,9 +265,17 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
               left: -100,
               child: GradientBlob(color: kObPink, size: 280, opacity: 0.18),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                 // Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
@@ -263,7 +316,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
                 // Glassmorphic trust card
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 0),
                   child: GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,14 +461,10 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SvgPicture.asset(
-                                'assets/icons/apple.svg',
-                                width: 20,
-                                height: 20,
-                                colorFilter: const ColorFilter.mode(
-                                  Colors.white,
-                                  BlendMode.srcIn,
-                                ),
+                              const Icon(
+                                Iconsax.apple,
+                                size: 20,
+                                color: Colors.white,
                               ),
                               const SizedBox(width: 10),
                               Text(
@@ -439,7 +488,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           minimumSize: const Size(0, 44),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
-                            vertical: 18,
+                            vertical: 24,
                           ),
                           shape: const StadiumBorder(),
                         ),
@@ -447,7 +496,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           TextSpan(
                             text: 'Already have an account? ',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 16,
                               color: colorScheme.onSurfaceVariant,
                             ),
                             children: [
@@ -492,7 +541,13 @@ const Spacer(),
                     ],
                   ),
                 ),
-              ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+              ),
             ),
           ],
         ),

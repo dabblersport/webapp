@@ -29,6 +29,8 @@ import 'package:dabbler/core/utils/sport_id_mapping.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart'
     show sportsSubTabProvider;
 import 'package:dabbler/widgets/dynamic_background.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 IconData _sportIconFor(String sport) {
   switch (sport.toLowerCase()) {
@@ -935,7 +937,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       });
     }
 
-    return Scaffold(
+    final content = Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
@@ -989,6 +991,24 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     ],
   ),
 );
+
+    if (isWide) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
 }
 
   Widget _buildGamesTabContent() {
@@ -1773,8 +1793,8 @@ class FavoriteVenuesScreen extends ConsumerWidget {
     );
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -1955,6 +1975,24 @@ class FavoriteVenuesScreen extends ConsumerWidget {
         ],
       ),
     );
+
+    if (isWide) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 }
 

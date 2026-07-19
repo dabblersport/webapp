@@ -7,7 +7,7 @@ class LegalSection {
   final String content;
 }
 
-const String kLegalLastUpdated = 'January 25, 2025';
+const String kLegalLastUpdated = 'July 17, 2026';
 
 const String kTermsIntro =
     'Please read these terms carefully before using our service.';
@@ -80,7 +80,7 @@ const List<LegalSection> kTermsOfServiceSections = [
   ),
   LegalSection(
     '13. Governing Law',
-    'These Terms shall be governed by and construed in accordance with the laws of [Jurisdiction], without regard to its conflict of law provisions.',
+    'These Terms shall be governed by and construed in accordance with the laws of the United Arab Emirates, without regard to its conflict of law provisions.',
   ),
   LegalSection(
     '14. Changes to Terms',
@@ -89,8 +89,7 @@ const List<LegalSection> kTermsOfServiceSections = [
   LegalSection(
     'Questions about these Terms?',
     'If you have any questions about these Terms of Service, please contact us at:\n'
-        'Email: legal@dabbler.com\n'
-        'Address: [Company Address]',
+        'Email: legal@dabbler.com',
   ),
 ];
 
@@ -192,9 +191,7 @@ const List<LegalSection> kPrivacyPolicySections = [
   LegalSection(
     'Privacy Questions?',
     'If you have any questions about this Privacy Policy or our privacy practices, please contact us:\n'
-        'Email: privacy@dabbler.com\n'
-        'Address: [Company Address]\n'
-        'Data Protection Officer: [DPO Contact]',
+        'Email: privacy@dabbler.com',
   ),
 ];
 

@@ -43,9 +43,13 @@ abstract class GamesRepository {
 
   /// Retrieves games for a specific user
   /// Status can filter by: 'upcoming', 'completed', 'cancelled', etc.
+  /// [sportId] filters by the sport UUID stored in games.sport_id.
+  /// [ascending] orders by start_at; pass false for most-recent-first.
   Future<Either<Failure, List<Game>>> getMyGames(
     String userId, {
     String? status,
+    String? sportId,
+    bool ascending = true,
     int page = 1,
     int limit = 20,
   });

@@ -8,7 +8,10 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
@@ -198,6 +201,8 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );

@@ -149,7 +149,10 @@ class _SocialOnboardingFriendsScreenState
           ),
         ],
       ),
-      body: Padding(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,6 +281,8 @@ class _SocialOnboardingFriendsScreenState
             // Progress indicator
             _buildProgressIndicator(context, 1, 4),
           ],
+        ),
+      ),
         ),
       ),
     );

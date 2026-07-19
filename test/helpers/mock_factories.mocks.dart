@@ -325,6 +325,8 @@ class MockGamesRepository extends _i1.Mock implements _i8.GamesRepository {
   _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>> getMyGames(
     String? userId, {
     String? status,
+    String? sportId,
+    bool? ascending = true,
     int? page = 1,
     int? limit = 20,
   }) =>
@@ -332,7 +334,13 @@ class MockGamesRepository extends _i1.Mock implements _i8.GamesRepository {
             Invocation.method(
               #getMyGames,
               [userId],
-              {#status: status, #page: page, #limit: limit},
+              {
+                #status: status,
+                #sportId: sportId,
+                #ascending: ascending,
+                #page: page,
+                #limit: limit,
+              },
             ),
             returnValue:
                 _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>>.value(
@@ -341,7 +349,13 @@ class MockGamesRepository extends _i1.Mock implements _i8.GamesRepository {
                     Invocation.method(
                       #getMyGames,
                       [userId],
-                      {#status: status, #page: page, #limit: limit},
+                      {
+                        #status: status,
+                        #sportId: sportId,
+                        #ascending: ascending,
+                        #page: page,
+                        #limit: limit,
+                      },
                     ),
                   ),
                 ),

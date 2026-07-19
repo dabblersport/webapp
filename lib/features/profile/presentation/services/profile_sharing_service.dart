@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:dabbler/utils/constants/route_constants.dart';
+
 /// Service for handling profile sharing functionality
 class ProfileSharingService {
   static const String _logTag = 'ProfileSharingService';
-  static const String _baseUrl =
-      'https://dabbler.app'; // Replace with actual domain
+  static const String _baseUrl = RoutePaths.webLinkBase;
 
   /// Generate shareable profile link
   static String generateProfileLink(String userId) {

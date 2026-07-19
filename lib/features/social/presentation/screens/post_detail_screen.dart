@@ -14,6 +14,7 @@ import 'package:dabbler/data/models/place.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/reaction_picker_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/features/venues/presentation/widgets/place_picker_sheet.dart';
@@ -21,6 +22,9 @@ import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/social/utils/post_sport_label.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   const PostDetailScreen({super.key, required this.postId});
@@ -529,8 +533,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final postAsync = ref.watch(postDetailProvider(widget.postId));
     final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
 
-    return Scaffold(
-      backgroundColor: cs.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: _buildAppBar(cs, tt, postAsync.valueOrNull, myProfileId),
       body: postAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -543,6 +547,23 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         ),
       ),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 4,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 4),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 
   AppBar _buildAppBar(
@@ -839,33 +860,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   // ── Media ───────────────────────────────────────────────────────────────────
 
   Widget _buildMedia(Post post, ColorScheme cs) {
-    final first = post.media.first;
-    String? url;
-    if (first is Map) {
-      url = (first['url'] ?? first['uri'] ?? first['src'])?.toString();
-    } else if (first is String && first.startsWith('http')) {
-      url = first;
-    }
-    if (url == null) return const SizedBox.shrink();
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: cs.surfaceContainerHighest,
-              child: Icon(
-                Iconsax.gallery_slash_copy,
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ),
+      child: PostMediaCarousel(
+        media: post.media,
+        borderRadius: 16,
+        carouselHeight: 280,
       ),
     );
   }

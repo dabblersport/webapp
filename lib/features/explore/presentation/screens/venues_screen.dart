@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
+import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
@@ -12,6 +12,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
+import 'package:dabbler/widgets/app_top_bar.dart';
 import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
@@ -72,7 +73,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
           const Positioned.fill(child: DynamicBackground()),
@@ -108,64 +109,26 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen>
   }
 
   Widget _buildHeader() {
-    final cs = Theme.of(context).colorScheme;
-    final topPadding = MediaQuery.of(context).padding.top + 12;
     final profileState = ref.watch(profileControllerProvider);
     final isOrganiser = profileState.profile?.profileType == 'organiser';
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            child: SvgPicture.asset(
-              'assets/images/dabbler_text_logo.svg',
-              width: 100,
-              height: 18,
-              colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
+    return AppTopBar(
+      avatarContext: AvatarContext.main,
+      extraActions: [
+        if (isOrganiser)
+          AppTopBarButton(
+            icon: Iconsax.add_copy,
+            onTap: () => context.push(RoutePaths.createVenueSubmission),
+          ),
+        AppTopBarButton(
+          icon: Iconsax.archive_copy,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
             ),
           ),
-          const Spacer(),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isOrganiser) ...[
-                GestureDetector(
-                  onTap: () => context.push(RoutePaths.createVenueSubmission),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: cs.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Iconsax.add_copy, color: cs.primary, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              GestureDetector(
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
-                  ),
-                ),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Iconsax.archive_copy, color: cs.primary, size: 18),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

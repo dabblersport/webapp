@@ -80,7 +80,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         elevation: 0,
       ),
       body: SafeArea(
-        child: Padding(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Padding(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -213,6 +216,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
               const SizedBox(height: 32),
             ],
+          ),
+        ),
           ),
         ),
       ),

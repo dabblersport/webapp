@@ -42,6 +42,19 @@ class RouterRefreshNotifier extends ChangeNotifier {
   void notifyAuthStateChanged() {
     notifyListeners();
   }
+
+  /// Deep link (e.g. `/sports/games/{id}`) captured while the user was logged
+  /// out. The router replays it once the user lands on home after
+  /// login/signup + onboarding. No notifyListeners —
+  /// it's only consulted inside the redirect handler.
+  String? _pendingDeepLink;
+  String? get pendingDeepLink => _pendingDeepLink;
+  void setPendingDeepLink(String location) => _pendingDeepLink = location;
+  String? consumePendingDeepLink() {
+    final link = _pendingDeepLink;
+    _pendingDeepLink = null;
+    return link;
+  }
 }
 
 // Global instance for easier access

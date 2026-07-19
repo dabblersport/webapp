@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
 import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
@@ -121,13 +123,19 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   void _shareGame(GameView game) {
     final when = DateFormat('EEE, MMM d · h:mm a').format(game.startAt);
     final where = [game.venueName, game.areaName].whereType<String>().join(', ');
+    final headline = [
+      'Join me for ${game.title} on Dabbler!',
+      when,
+      if (where.isNotEmpty) where,
+    ].join(' · ');
+    // share_plus: uri and text are mutually exclusive — sharing the uri makes
+    // the game link a first-class URL attachment (rich preview in messengers)
+    // instead of plain text. The headline rides along as title/subject.
     SharePlus.instance.share(
       ShareParams(
-        text: [
-          'Join me for ${game.title} on Dabbler!',
-          when,
-          if (where.isNotEmpty) where,
-        ].join('\n'),
+        uri: Uri.parse(RoutePaths.gameLink(game.id)),
+        title: headline,
+        subject: headline,
       ),
     );
   }
@@ -196,11 +204,22 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
           controller: _scroll,
           physics: const BouncingScrollPhysics(),
           slivers: [
+            // Mobile browser (link opened without the native app): offer to
+            // open/install the app. Native builds never show this.
+            if (kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.iOS ||
+                    defaultTargetPlatform == TargetPlatform.android))
+              SliverToBoxAdapter(
+                child: _OpenInAppBanner(gameId: game.id, top: top),
+              ),
             SliverToBoxAdapter(
               child: _HeroSection(game: game, sportColor: sportColor, top: top),
             ),
             SliverToBoxAdapter(
-              child: Padding(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 700),
+                  child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -223,6 +242,8 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
                     ),
                     SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
                   ],
+                ),
+              ),
                 ),
               ),
             ),
@@ -624,30 +645,39 @@ class _HostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs      = Theme.of(context).colorScheme;
     final name    = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: cs.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-      ),
-      child: Row(children: [
-        // DSAvatar resolves storage paths and ds: seed references the same
-        // way the profile screen does, so the picture always matches.
-        DSAvatar(
-          size: AvatarSize.small,
-          customDimension: 42,
-          imageUrl: game.creatorAvatarUrl,
-          displayName: name,
-          context: AvatarContext.sports,
-          hasBorder: false,
+    final creatorUserId = game.creatorUserId;
+    return GestureDetector(
+      onTap: creatorUserId == null
+          ? null
+          : () => context.push(
+                '${RoutePaths.userProfile}/$creatorUserId'
+                '${game.creatorProfileId != null ? '?profileId=${game.creatorProfileId}' : ''}',
+              ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: cs.surface, borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: cs.outlineVariant, width: 1.5),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Created by', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
-          const SizedBox(height: 1),
-          Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
-        ])),
-      ]),
+        child: Row(children: [
+          // DSAvatar resolves storage paths and ds: seed references the same
+          // way the profile screen does, so the picture always matches.
+          DSAvatar(
+            size: AvatarSize.small,
+            customDimension: 42,
+            imageUrl: game.creatorAvatarUrl,
+            displayName: name,
+            context: AvatarContext.sports,
+            hasBorder: false,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Created by', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
+            const SizedBox(height: 1),
+            Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
+          ])),
+        ]),
+      ),
     );
   }
 
@@ -664,28 +694,32 @@ class _StatsRow extends StatelessWidget {
     final cs   = Theme.of(context).colorScheme;
     final fill = game.capacity > 0 ? (game.rosterCount / game.capacity).clamp(0.0, 1.0) : 0.0;
     final mins = game.endAt.difference(game.startAt).inMinutes;
-    return Row(children: [
-      Expanded(flex: 115, child: _StatCard(
-        icon: Iconsax.people_copy, iconColor: sportColor,
-        value: '${game.rosterCount}/${game.capacity}', label: 'Players',
-        progress: fill, progressColor: sportColor,
-        sub: game.isFull ? 'Full' : '${game.spotsLeft} spots left',
-        subColor: game.isFull ? cs.error : sportColor,
-      )),
-      const SizedBox(width: 8),
-      Expanded(flex: 100, child: _StatCard(
-        icon: Iconsax.money_copy, iconColor: _kGreen,
-        value: game.isFree ? 'Free' : game.costCover.replaceAll('_', ' ').capitalize(),
-        label: 'Entry', valueColor: game.isFree ? _kGreen : null,
-        sub: game.isFree ? 'No fees' : null,
-      )),
-      const SizedBox(width: 8),
-      Expanded(flex: 100, child: _StatCard(
-        icon: Iconsax.timer_copy, iconColor: cs.primary,
-        value: _fmtDur(mins), label: 'Duration',
-        sub: '${DateFormat('h a').format(game.startAt)}–${DateFormat('h a').format(game.endAt)}',
-      )),
-    ]);
+    // IntrinsicHeight + stretch keeps all three cards the same height (the
+    // tallest wins); equal flex keeps them the same width.
+    return IntrinsicHeight(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Expanded(child: _StatCard(
+          icon: Iconsax.people_copy, iconColor: sportColor,
+          value: '${game.rosterCount}/${game.capacity}', label: 'Players',
+          progress: fill, progressColor: sportColor,
+          sub: game.isFull ? 'Full' : '${game.spotsLeft} spots left',
+          subColor: game.isFull ? cs.error : sportColor,
+        )),
+        const SizedBox(width: 8),
+        Expanded(child: _StatCard(
+          icon: Iconsax.money_copy, iconColor: _kGreen,
+          value: game.isFree ? 'Free' : game.costCover.replaceAll('_', ' ').capitalize(),
+          label: 'Entry', valueColor: game.isFree ? _kGreen : null,
+          sub: game.isFree ? 'No fees' : null,
+        )),
+        const SizedBox(width: 8),
+        Expanded(child: _StatCard(
+          icon: Iconsax.timer_copy, iconColor: cs.primary,
+          value: _fmtDur(mins), label: 'Duration',
+          sub: '${DateFormat('h a').format(game.startAt)}–${DateFormat('h a').format(game.endAt)}',
+        )),
+      ]),
+    );
   }
 
   String _fmtDur(int m) {
@@ -921,6 +955,74 @@ class _DetailChip extends StatelessWidget {
 }
 
 // ── Roster ────────────────────────────────────────────────────────────────────
+
+/// Mobile-web banner: deep-link into the installed app, or point at the
+/// store listing (buttons appear once RoutePaths.appStoreUrl/playStoreUrl
+/// are filled in).
+class _OpenInAppBanner extends StatefulWidget {
+  const _OpenInAppBanner({required this.gameId, required this.top});
+  final String gameId;
+  final double top;
+
+  @override
+  State<_OpenInAppBanner> createState() => _OpenInAppBannerState();
+}
+
+class _OpenInAppBannerState extends State<_OpenInAppBanner> {
+  bool _dismissed = false;
+
+  String get _storeUrl => defaultTargetPlatform == TargetPlatform.iOS
+      ? RoutePaths.appStoreUrl
+      : RoutePaths.playStoreUrl;
+
+  Future<void> _openInApp() async {
+    // Custom scheme: opens the installed app straight on this game; the
+    // browser shows its own "open in Dabbler?" prompt. No-op if missing.
+    final uri = Uri.parse('${RoutePaths.deepLinkPrefix}/game/${widget.gameId}');
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_dismissed) return const SizedBox.shrink();
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, widget.top + 8, 8, 10),
+      color: cs.primaryContainer,
+      child: Row(children: [
+        Text('⚡', style: TextStyle(fontSize: 20)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Dabbler is better in the app',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: cs.onPrimaryContainer,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: _openInApp,
+          child: const Text('Open app'),
+        ),
+        if (_storeUrl.isNotEmpty)
+          TextButton(
+            onPressed: () => launchUrl(
+              Uri.parse(_storeUrl),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: const Text('Install'),
+          ),
+        IconButton(
+          icon: Icon(Icons.close, size: 18, color: cs.onPrimaryContainer),
+          onPressed: () => setState(() => _dismissed = true),
+          tooltip: 'Dismiss',
+        ),
+      ]),
+    );
+  }
+}
 
 class _RosterSection extends StatelessWidget {
   const _RosterSection({

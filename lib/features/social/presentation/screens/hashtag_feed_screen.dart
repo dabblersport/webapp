@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
 /// Shows posts that contain a specific hashtag.
 class HashtagFeedScreen extends ConsumerStatefulWidget {
@@ -128,12 +131,32 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
         ? '${widget.initialPostCount} posts'
         : '${_posts.length} posts';
 
-    return Scaffold(
+    final content = Scaffold(
       appBar: AppBar(title: Text('#${widget.hashtagSlug}')),
       body: _isInitialLoading
           ? const Center(child: CircularProgressIndicator())
           : _buildBody(theme, totalLabel),
     );
+
+    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 4,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 4),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(
+            theme.colorScheme.onSurface,
+            BlendMode.srcIn,
+          ),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildBody(ThemeData theme, String totalLabel) {

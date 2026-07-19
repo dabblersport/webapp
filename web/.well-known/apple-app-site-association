@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["J5636UH8V8.app.dabbler.pro"],
+        "components": [
+          {
+            "/": "/game/*",
+            "comment": "Open game detail in the Dabbler app"
+          }
+        ]
+      }
+    ]
+  }
+}

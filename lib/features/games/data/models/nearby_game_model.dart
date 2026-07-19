@@ -16,6 +16,10 @@ class NearbyGameModel {
     this.playerCount,
     this.spotsRemaining,
     required this.isPublic,
+    this.isCreated = false,
+    this.isJoined = false,
+    this.minSkill,
+    this.maxSkill,
   });
 
   final String id;
@@ -35,6 +39,18 @@ class NearbyGameModel {
   final int? spotsRemaining;
   final bool isPublic;
 
+  /// Viewer-relative flags from v_game_card (is_creator / is_joined) —
+  /// drive the pinned "My games" section. Always false on the RPC path,
+  /// which doesn't return them.
+  final bool isCreated;
+  final bool isJoined;
+
+  /// Skill range (1-10) the game targets; null = open to any level.
+  final int? minSkill;
+  final int? maxSkill;
+
+  bool get isMine => isCreated || isJoined;
+
   factory NearbyGameModel.fromJson(Map<String, dynamic> json) {
     return NearbyGameModel(
       id: json['id'] as String,
@@ -52,6 +68,10 @@ class NearbyGameModel {
       playerCount: json['player_count'] as int?,
       spotsRemaining: json['spots_remaining'] as int?,
       isPublic: json['is_public'] as bool? ?? true,
+      isCreated: json['is_creator'] as bool? ?? false,
+      isJoined: json['is_joined'] as bool? ?? false,
+      minSkill: json['min_skill'] as int?,
+      maxSkill: json['max_skill'] as int?,
     );
   }
 

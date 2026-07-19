@@ -6,6 +6,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'post_providers.dart';
 
 // =============================================================================
@@ -189,34 +190,54 @@ final followingFeedProvider =
 final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
   (ref) {
     final repo = ref.watch(postRepositoryProvider);
-    return _buildNearbyNotifier(repo);
+    // Rebuild (and thus refetch on next view) when the app-level location
+    // selection changes. select() on the coordinates avoids rebuilds for
+    // loading-state churn.
+    final coords = ref.watch(
+      activeLocationProvider.select((async) {
+        final s = async.valueOrNull;
+        return s is ActiveLocationReady
+            ? (lat: s.location.lat, lng: s.location.lng)
+            : null;
+      }),
+    );
+    return _buildNearbyNotifier(repo, coords);
   },
 );
 
-TabFeedNotifier _buildNearbyNotifier(PostRepository repo) {
-  // Location is resolved lazily inside the fetcher so permission dialogs
-  // don't fire on app launch.
+TabFeedNotifier _buildNearbyNotifier(
+  PostRepository repo,
+  ({double lat, double lng})? appLocation,
+) {
   return TabFeedNotifier(({required limit, required offset}) async {
-    double? lat;
-    double? lng;
+    // Prefer the app-level location selection (GPS / saved / manual area).
+    double? lat = appLocation?.lat;
+    double? lng = appLocation?.lng;
 
-    try {
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        await Geolocator.requestPermission();
+    // Fallback: raw GPS, resolved lazily inside the fetcher so permission
+    // dialogs don't fire on app launch.
+    if (lat == null || lng == null) {
+      try {
+        final permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          await Geolocator.requestPermission();
+        }
+        final pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.low,
+          timeLimit: const Duration(seconds: 5),
+        );
+        lat = pos.latitude;
+        lng = pos.longitude;
+      } catch (_) {
+        // Location unavailable — backend will fall back to recency.
       }
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-        timeLimit: const Duration(seconds: 5),
-      );
-      lat = pos.latitude;
-      lng = pos.longitude;
-    } catch (_) {
-      // Location unavailable — backend will fall back to recency.
     }
 
     return repo.getNearbyFeed(lat: lat, lng: lng, limit: limit, offset: offset);
-  }, autoLoad: false);
+    // With app-level coordinates the initial fetch can't trigger a GPS
+    // permission prompt, so load eagerly — this also covers notifier
+    // recreation after a location change while the Nearby tab is visible.
+  }, autoLoad: appLocation != null);
 }
 
 // =============================================================================

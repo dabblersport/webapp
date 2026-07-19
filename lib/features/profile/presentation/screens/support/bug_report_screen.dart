@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io' show Platform;
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 /// Screen for reporting bugs and issues
 class BugReportScreen extends ConsumerStatefulWidget {
@@ -87,7 +90,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final content = Scaffold(
       appBar: AppBar(
         title: const Text('Report a Bug'),
         leading: IconButton(
@@ -120,6 +123,28 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
         ),
       ),
     );
+
+    final width = MediaQuery.of(context).size.width;
+    if (width >= AdaptiveBreakpoints.compact) {
+      final logoWidget = SvgPicture.asset(
+        'assets/images/dabbler_text_logo.svg',
+        width: 100,
+        height: 18,
+        colorFilter: ColorFilter.mode(
+          Theme.of(context).colorScheme.onSurface,
+          BlendMode.srcIn,
+        ),
+      );
+      return AdaptiveScaffold(
+        currentIndex: 6,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+        headerWidget: logoWidget,
+        body: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildHeaderSection() {

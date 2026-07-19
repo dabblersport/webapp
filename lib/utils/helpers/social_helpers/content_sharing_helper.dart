@@ -4,10 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:dabbler/utils/constants/route_constants.dart';
+
 /// Helper class for content sharing operations
 /// Handles text generation, deep linking, and social sharing
 class ContentSharingHelper {
-  static const String baseUrl = 'https://dabbler.app';
+  static const String baseUrl = RoutePaths.webLinkBase;
   static const int maxShareTextLength = 200;
 
   /// Generates appropriate share text based on content type

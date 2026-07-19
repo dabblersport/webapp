@@ -110,7 +110,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     if (_isLoadingData) {
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: Colors.transparent,
         body: Center(
           child: CircularProgressIndicator(color: colorScheme.primary),
         ),
@@ -118,9 +118,12 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
           children: [
             OnboardingTopBar(onBack: () => context.pop()),
             Expanded(
@@ -171,6 +174,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
               ),
             ),
           ],
+            ),
+          ),
         ),
       ),
     );

@@ -369,7 +369,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         : const Duration(milliseconds: 200);
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
@@ -387,7 +387,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             left: -60,
             child: GradientBlob(color: kObPink, size: 280, opacity: 0.14),
           ),
-          SafeArea(
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SafeArea(
             child: Column(
               children: [
                 OnboardingTopBar(onBack: () => context.pop()),
@@ -592,6 +595,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               ],
             ),
           ),
+              ),
+            ),
         ],
       ),
     );

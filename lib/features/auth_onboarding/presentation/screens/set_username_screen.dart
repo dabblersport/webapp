@@ -519,9 +519,12 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
-        child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
           children: [
             OnboardingTopBar(onBack: () => context.pop()),
             Expanded(
@@ -682,6 +685,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               ),
             ),
           ],
+            ),
+          ),
         ),
       ),
     );

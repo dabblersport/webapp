@@ -117,7 +117,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
 
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Stack(
           children: [
@@ -139,7 +139,10 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                 opacity: 0.18,
               ),
             ),
-            Column(
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
@@ -224,6 +227,8 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                   ),
                 ),
               ],
+            ),
+              ),
             ),
           ],
         ),

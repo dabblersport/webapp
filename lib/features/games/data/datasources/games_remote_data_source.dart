@@ -79,6 +79,8 @@ abstract class GamesRemoteDataSource {
   Future<List<GameModel>> getMyGames(
     String userId, {
     String? status,
+    String? sportId,
+    bool ascending = true,
     int page = 1,
     int limit = 20,
   });

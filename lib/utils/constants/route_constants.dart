@@ -3,13 +3,26 @@ class RoutePaths {
   // Deep Link Configuration
   static const String deepLinkPrefix = 'dabbler://app';
 
+  /// Public web origin for shareable universal links (game/venue/profile).
+  /// The Flutter web app is deployed here, so the same host serves the
+  /// .well-known association files AND renders the link in a browser when
+  /// the native app isn't installed. On devices with the app, the OS opens
+  /// /game/:id natively via the same redirect as dabbler://app/game/:id.
+  static const String webLinkBase = 'https://app.dabbler.pro';
+  static String gameLink(String gameId) => '$webLinkBase/game/$gameId';
+
+  /// Store listings for the "get the app" banner on mobile web.
+  /// Empty until the apps are published — the banner hides install buttons
+  /// when these are empty.
+  static const String appStoreUrl = '';
+  static const String playStoreUrl = '';
+
   // ── Deep Link entry paths (top-level, redirect into the shell) ──
   // dabbler://app/game/:gameId  → /sports/games/:gameId
   static const String deepLinkGame = '/game/:gameId';
   // dabbler://app/create-game  → /create-game (already top-level, works directly)
 
   // Landing & Authentication
-  static const String eulaGate = '/eula-gate';
   static const String aboutTerms = '/about/terms';
   static const String aboutPrivacy = '/about/privacy';
   static const String landing = '/landing';

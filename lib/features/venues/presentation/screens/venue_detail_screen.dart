@@ -103,7 +103,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     final sports = venue.supportedSports.isNotEmpty ? venue.supportedSports : ['sport'];
     final isOpen = venue.isOpenAt(DateTime.now());
 
-    return CustomScrollView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 700),
+        child: CustomScrollView(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       slivers: [
@@ -215,6 +218,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           child: SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
         ),
       ],
+        ),
+      ),
     );
   }
 

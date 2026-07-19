@@ -435,7 +435,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 0, bottom: 12),
+          padding: const EdgeInsets.only(left: 9, bottom: 12),
           child: Text(
             section.title,
             style: textTheme.titleSmall?.copyWith(
@@ -594,7 +594,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 0, bottom: 12),
+            padding: const EdgeInsets.only(left: 9, bottom: 12),
             child: Text(
               'Profiles',
               style: textTheme.titleSmall?.copyWith(

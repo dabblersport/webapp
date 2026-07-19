@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
+
+import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/data/models/nearby/nearby.dart';
@@ -72,8 +76,8 @@ class _ExploreNearbyScreenState extends ConsumerState<ExploreNearbyScreen> {
     final tt = Theme.of(context).textTheme;
     final sportsScheme = context.getCategoryTheme('main');
 
-    return Scaffold(
-      backgroundColor: cs.surface,
+    final content = Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: cs.surface,
         surfaceTintColor: Colors.transparent,
@@ -148,6 +152,23 @@ class _ExploreNearbyScreenState extends ConsumerState<ExploreNearbyScreen> {
         ],
       ),
     );
+
+    if (MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.compact) {
+      return AdaptiveScaffold(
+        currentIndex: 2,
+        destinations: kAdaptiveDestinations,
+        onDestinationSelected: (i) =>
+            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
+        headerWidget: SvgPicture.asset(
+          'assets/images/dabbler_text_logo.svg',
+          width: 100,
+          height: 18,
+          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
+        ),
+        body: content,
+      );
+    }
+    return content;
   }
 }
 

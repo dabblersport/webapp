@@ -186,7 +186,7 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -210,7 +210,10 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -264,6 +267,8 @@ class _OnboardingSportsScreenState extends ConsumerState<OnboardingSportsScreen>
                 ),
               ),
             ],
+          ),
+            ),
           ),
         ),
       ),

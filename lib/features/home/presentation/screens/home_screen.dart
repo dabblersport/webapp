@@ -6,11 +6,9 @@ import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -20,8 +18,7 @@ import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/core/widgets/shimmer_loading.dart';
-import 'package:dabbler/features/location/providers/active_location_provider.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/widgets/app_top_bar.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
@@ -31,7 +28,6 @@ import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
-import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
@@ -315,160 +311,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildHeader() {
-    final cs = Theme.of(context).colorScheme;
-    final topPadding = MediaQuery.of(context).padding.top + 12;
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, topPadding, 20, 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Left: wordmark + location row
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset(
-                  'assets/images/dabbler_text_logo.svg',
-                  width: 100,
-                  height: 18,
-                  colorFilter: ColorFilter.mode(cs.primary, BlendMode.srcIn),
-                ),
-                const SizedBox(height: 4),
-                // Location row — inline Consumer, tappable to open picker
-                Consumer(
-                  builder: (context, ref, _) {
-                    final locAsync = ref.watch(activeLocationProvider);
-                    final locState = locAsync.valueOrNull;
-                    final locationName = locState is ActiveLocationReady
-                        ? locState.location.area.name
-                        : 'Set location';
-                    return GestureDetector(
-                      onTap: () => showModalBottomSheet(
-                        context: context,
-                        useRootNavigator: true,
-                        isScrollControlled: true,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                        ),
-                        builder: (_) => DraggableScrollableSheet(
-                          initialChildSize: 0.85,
-                          minChildSize: 0.5,
-                          maxChildSize: 1.0,
-                          expand: false,
-                          builder: (ctx, sc) =>
-                              HomeLocationPickerSheet(scrollController: sc),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Iconsax.location_copy,
-                            size: 12,
-                            color: cs.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            locationName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(
-                            Iconsax.arrow_down_1_copy,
-                            size: 10,
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          // Right: action buttons + avatar
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Search button
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.socialSearch),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Iconsax.search_normal_1_copy,
-                    color: cs.primary,
-                    size: 18,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Notification button with badge
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.notifications),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: cs.primary.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Iconsax.notification_copy,
-                        color: cs.primary,
-                        size: 18,
-                      ),
-                    ),
-                    const Positioned(
-                      top: -2,
-                      right: -2,
-                      child: NotificationBadge(),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Avatar
-              GestureDetector(
-                onTap: () => context.push(RoutePaths.profile),
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.2),
-                      width: 2,
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: DSAvatar.small(
-                    imageUrl: _userProfile?.avatarUrl,
-                    displayName: _userProfile?.getFullName() ?? 'User',
-                    context: AvatarContext.main,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+    return AppTopBar(
+      avatarContext: AvatarContext.main,
+      avatarUrl: _userProfile?.avatarUrl,
+      displayName: _userProfile?.getFullName(),
+      showGlobalActions: true,
     );
   }
 
