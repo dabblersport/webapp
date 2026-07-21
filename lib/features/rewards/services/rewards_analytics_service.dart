@@ -988,7 +988,7 @@ class RewardsAnalyticsService extends ChangeNotifier {
           ? DateTime.now().difference(_sessionStartTime!).inMilliseconds
           : 0,
       'platform': 'mobile',
-      'appVersion': '1.0.5',
+      'appVersion': '1.7.7',
       'timestamp': DateTime.now().toIso8601String(),
     };
   }

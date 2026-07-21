@@ -47,7 +47,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final String _appVersion = '1.6.1';
+  final String _appVersion = '1.7.7';
 
   final List<SettingsSection> _allSections = [
     SettingsSection(
