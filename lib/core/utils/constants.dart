@@ -4,7 +4,7 @@ class AppConstants {
   // App Info
   static const String appName = 'Dabbler Player';
   static const String appVersion = '1.7.7';
-  static const String appBuildNumber = '172';
+  static const String appBuildNumber = '173';
 
   // API Constants
   static const String apiBaseUrl = 'https://api.dabbler.com';
