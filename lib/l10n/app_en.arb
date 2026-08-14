@@ -209,7 +209,7 @@
       "age": { "type": "int" }
     }
   },
-  "create_info_gender": "Gender",
+  "create_info_gender": "Gender (optional)",
   "create_info_continue": "Continue",
   "create_info_error_fill_required": "Please fill in all required fields correctly",
   "create_info_error_select_birth": "Please select your birth date",
@@ -530,6 +530,7 @@
   "nav_community": "Community",
   "nav_venues": "Venues",
   "nav_games": "Games",
+  "nav_meetups": "Meetups",
   "nav_create_post": "Create Post",
   "nav_create_game": "Create Game",
   "nav_create_meetup": "Create Meetup",

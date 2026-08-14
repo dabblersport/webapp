@@ -540,7 +540,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get create_info_gender => 'Gender';
+  String get create_info_gender => 'Gender (optional)';
 
   @override
   String get create_info_continue => 'Continue';
@@ -1308,6 +1308,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nav_games => 'Games';
+
+  @override
+  String get nav_meetups => 'Meetups';
 
   @override
   String get nav_create_post => 'Create Post';

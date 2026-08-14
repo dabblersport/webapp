@@ -149,7 +149,7 @@ class OnboardingRepository {
     required String username,
     required String displayName,
     required int age,
-    required String gender,
+    String? gender,
     String? city,
     String? country,
     String? language,

@@ -5,6 +5,7 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/presentation/widgets/activity_event_card.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// **Activities Screen** - RPC-based Activity Feed
 ///
@@ -85,10 +86,9 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
   @override
   Widget build(BuildContext context) {
     final user = _authService.getCurrentUser();
-    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: user == null
             ? _buildSignInPrompt(context)

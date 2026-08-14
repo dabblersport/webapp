@@ -340,9 +340,9 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   Widget _buildWideLayout(SearchState state) {
     final cs = Theme.of(context).colorScheme;
     return AdaptiveScaffold(
-      currentIndex: 3,
+      currentIndex: 4,
       onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 3),
+          onAdaptiveDestinationSelected(context, i, activeIndex: 4),
       destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',

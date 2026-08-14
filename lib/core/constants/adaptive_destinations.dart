@@ -28,6 +28,11 @@ const List<AdaptiveDestination> kAdaptiveDestinations = [
     label: 'Sports',
   ),
   AdaptiveDestination(
+    icon: Iconsax.category_2_copy,
+    selectedIcon: Iconsax.category_2,
+    label: 'Games',
+  ),
+  AdaptiveDestination(
     icon: Iconsax.search_normal_1_copy,
     selectedIcon: Iconsax.search_normal_1,
     label: 'Search',
@@ -70,18 +75,21 @@ void onAdaptiveDestinationSelected(
       context.push(RoutePaths.socialCreatePost);
       break;
     case 2:
-      context.go(RoutePaths.sports);
+      context.go(RoutePaths.venuesTab);
       break;
     case 3:
-      context.push(RoutePaths.socialSearch);
+      context.go(RoutePaths.gamesTab);
       break;
     case 4:
-      context.push(RoutePaths.socialFriends);
+      context.push(RoutePaths.socialSearch);
       break;
     case 5:
-      context.push(RoutePaths.notifications);
+      context.push(RoutePaths.socialFriends);
       break;
     case 6:
+      context.push(RoutePaths.notifications);
+      break;
+    case 7:
       context.go(RoutePaths.profile);
       break;
   }

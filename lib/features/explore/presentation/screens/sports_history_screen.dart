@@ -11,6 +11,7 @@ import 'package:dabbler/utils/helpers/date_formatter.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// A completed game the viewer took part in (created it or was on the
 /// roster). Exposes exactly the fields the history cards render.
@@ -132,7 +133,7 @@ class _SportsHistoryScreenState extends ConsumerState<SportsHistoryScreen> {
     );
 
     final content = Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [

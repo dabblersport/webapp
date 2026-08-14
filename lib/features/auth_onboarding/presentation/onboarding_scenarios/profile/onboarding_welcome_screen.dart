@@ -84,7 +84,7 @@ class _ProfileOnboardingWelcomeScreenState
         displayName: data.displayName ?? '',
         username: data.username ?? '',
         age: data.age ?? 18,
-        gender: data.gender ?? 'other',
+        gender: data.gender,
         intention: data.intention ?? 'player',
         preferredSport: data.preferredSport ?? '',
         interests: data.interests,

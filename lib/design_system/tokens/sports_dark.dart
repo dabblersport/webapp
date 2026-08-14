@@ -4,7 +4,7 @@ const theme = (
   sports: (
     primary: Color(0xFF79FFC3),
     onPrimary: Color(0xFF003820),
-    primaryContainer: Color(0xFF348638),
+    primaryContainer: Color(0xFF2D7331),
     onPrimaryContainer: Color(0xFF98FFD4),
     secondary: Color(0xFF00E6CB),
     onSecondary: Color(0xFF003732),
@@ -31,7 +31,7 @@ const theme = (
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFE1E4DD),
     inverseOnSurface: Color(0xFF2F312E),
-    inversePrimary: Color(0xFF348638),
+    inversePrimary: Color(0xFF2D7331),
     primaryFixed: Color(0xFFB6F2B5),
     onPrimaryFixed: Color(0xFF002108),
     primaryFixedDim: Color(0xFF8ED68A),

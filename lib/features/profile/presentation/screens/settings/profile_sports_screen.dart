@@ -390,10 +390,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
         ),
       );
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: logoWidget,
         body: content,
       );

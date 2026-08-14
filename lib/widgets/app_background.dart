@@ -16,3 +16,10 @@ class AppBackground extends StatelessWidget {
     return const IgnorePointer(child: DynamicBackground());
   }
 }
+
+/// Transparent scaffold background so the app-wide [AppBackground] (the
+/// shared aurora from the Pencil design — light node b68fG, dark node N4ZNP)
+/// shows through on every screen in both brightnesses.
+extension ScaffoldBackgroundX on BuildContext {
+  Color get appScaffoldBackground => Colors.transparent;
+}

@@ -331,21 +331,6 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       return;
     }
 
-    if (_selectedGender.isEmpty) {
-      final colorScheme = Theme.of(context).colorScheme;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).create_info_error_select_gender,
-          ),
-          backgroundColor: colorScheme.error,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -367,7 +352,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       }
 
       // Store user info in provider
-      onboardingNotifier.setUserInfo(age: ageValue, gender: _selectedGender);
+      // Gender is optional — store null when nothing was selected.
+      onboardingNotifier.setUserInfo(
+        age: ageValue,
+        gender: _selectedGender.isEmpty ? null : _selectedGender,
+      );
 
       // Navigate to intention selection screen
       if (mounted) {
@@ -412,9 +401,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   /// Get a random avatar URL based on selected gender
   // (Removed unused _getRandomAvatarUrl helper after refactor; default avatar remains constant.)
 
-  /// Check if all required fields are filled and valid
+  /// Check if all required fields are filled and valid (gender is optional)
   bool _areAllFieldsValid() {
-    return _selectedBirthDate != null && _selectedGender.isNotEmpty;
+    return _selectedBirthDate != null;
   }
 
   /// Show native date picker
@@ -656,7 +645,10 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
               child: Padding(
                 padding: EdgeInsets.only(right: value != 'other' ? 8 : 0),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedGender = value),
+                  // Tapping the selected option clears it — gender is optional.
+                  onTap: () => setState(
+                    () => _selectedGender = selected ? '' : value,
+                  ),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.symmetric(vertical: 16),

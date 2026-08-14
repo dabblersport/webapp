@@ -64,7 +64,8 @@ class OnboardingData with _$OnboardingData {
   const OnboardingData._();
 
   /// Check if basic info is complete
-  bool get hasBasicInfo => age != null && gender != null;
+  /// Gender is optional, so it is not part of this check.
+  bool get hasBasicInfo => age != null;
 
   /// Check if persona is selected
   bool get hasPersona => personaType != null;

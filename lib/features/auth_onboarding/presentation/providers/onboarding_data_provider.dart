@@ -48,13 +48,14 @@ class OnboardingData {
     String? country,
     bool? getUpdates,
     String? preferredSportName,
+    bool clearGender = false,
   }) {
     return OnboardingData(
       email: email ?? this.email,
       phone: phone ?? this.phone,
       displayName: displayName ?? this.displayName,
       age: age ?? this.age,
-      gender: gender ?? this.gender,
+      gender: clearGender ? null : (gender ?? this.gender),
       intention: intention ?? this.intention,
       preferredSport: preferredSport ?? this.preferredSport,
       interests: interests ?? this.interests,
@@ -104,7 +105,8 @@ class OnboardingData {
   }
 
   /// Check if user info screen is complete
-  bool get hasUserInfo => age != null && age! >= 16 && gender != null;
+  /// Gender is optional, so it is not part of this check.
+  bool get hasUserInfo => age != null && age! >= 16;
 
   /// Check if intention is selected
   bool get hasIntention => intention != null;
@@ -138,10 +140,15 @@ class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
   void setUserInfo({
     String? displayName,
     required int age,
-    required String gender,
+    String? gender,
   }) {
     if (state == null) return;
-    state = state!.copyWith(displayName: displayName, age: age, gender: gender);
+    state = state!.copyWith(
+      displayName: displayName,
+      age: age,
+      gender: gender,
+      clearGender: gender == null,
+    );
   }
 
   /// Update intention (Screen 2)

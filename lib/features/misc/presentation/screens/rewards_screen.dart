@@ -24,10 +24,10 @@ class RewardsScreen extends StatelessWidget {
 
     if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: SvgPicture.asset(
           'assets/images/dabbler_text_logo.svg',
           width: 100,

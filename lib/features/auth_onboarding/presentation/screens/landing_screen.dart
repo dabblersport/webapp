@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,8 @@ import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
 
 const _kTestimonials = [
@@ -103,8 +106,11 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   }
 
   void _openLanguagePicker() {
+    final darkScheme = AppTheme.darkTheme.colorScheme;
     showAdaptiveSheet<void>(
       context: context,
+      colorSchemeOverride: darkScheme,
+      backgroundColor: darkScheme.surfaceContainerHigh,
       builder: (ctx) => _LandingLanguagePickerSheet(ref: ref),
     );
   }
@@ -115,122 +121,172 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
     final t = _kTestimonials[_idx];
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: -80,
-              right: -60,
-              child: GradientBlob(
-                color: t.accentColor,
-                size: 360,
-                opacity: 0.33,
+    // The landing screen is always dark, regardless of the device theme.
+    final darkTheme = AppTheme.darkTheme;
+    final colorScheme = darkTheme.colorScheme;
+    return Theme(
+      data: darkTheme,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: colorScheme.surface,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Positioned.fill(
+                child: IgnorePointer(child: DynamicBackground()),
               ),
-            ),
-            Positioned(
-              bottom: 80,
-              left: -100,
-              child: GradientBlob(
-                color: t.accentColor,
-                size: 320,
-                opacity: 0.18,
-              ),
-            ),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  child: SvgPicture.asset(
-                    'assets/images/dabbler_text_logo.svg',
-                    height: 22,
-                    colorFilter: ColorFilter.mode(
-                      colorScheme.primary,
-                      BlendMode.srcIn,
+              SafeArea(
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: -80,
+                      right: -60,
+                      child: GradientBlob(
+                        color: t.accentColor,
+                        size: 360,
+                        opacity: 0.33,
+                      ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(28, 32, 28, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 500),
-                          child: _UserIdentityRow(key: ValueKey(_idx), t: t),
-                        ),
-                        const SizedBox(height: 28),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 500),
-                          child: _QuoteText(key: ValueKey('q$_idx'), t: t),
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: List.generate(_kTestimonials.length, (i) {
-                            final active = i == _idx;
-                            return GestureDetector(
-                              onTap: () => setState(() => _idx = i),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 400),
-                                margin: const EdgeInsets.only(right: 6),
-                                width: active ? 24 : 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(999),
-                                  color: active ? t.accentColor : colorScheme.outline,
+                    Positioned(
+                      bottom: 80,
+                      left: -100,
+                      child: GradientBlob(
+                        color: t.accentColor,
+                        size: 320,
+                        opacity: 0.18,
+                      ),
+                    ),
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                              child: SvgPicture.asset(
+                                'assets/images/dabbler_text_logo.svg',
+                                height: 22,
+                                colorFilter: ColorFilter.mode(
+                                  colorScheme.primary,
+                                  BlendMode.srcIn,
                                 ),
                               ),
-                            );
-                          }),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  28,
+                                  32,
+                                  28,
+                                  0,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      child: _UserIdentityRow(
+                                        key: ValueKey(_idx),
+                                        t: t,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 28),
+                                    AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 500,
+                                      ),
+                                      child: _QuoteText(
+                                        key: ValueKey('q$_idx'),
+                                        t: t,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Row(
+                                      children: List.generate(
+                                        _kTestimonials.length,
+                                        (i) {
+                                          final active = i == _idx;
+                                          return GestureDetector(
+                                            onTap: () =>
+                                                setState(() => _idx = i),
+                                            child: AnimatedContainer(
+                                              duration: const Duration(
+                                                milliseconds: 400,
+                                              ),
+                                              margin: const EdgeInsets.only(
+                                                right: 6,
+                                              ),
+                                              width: active ? 24 : 8,
+                                              height: 8,
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                                color: active
+                                                    ? t.accentColor
+                                                    : colorScheme.outline,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                24,
+                                20,
+                                24,
+                                16,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Dabbler connects players, captains, and venues — so you can stop searching and start playing.',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      height: 1.45,
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  OnboardingCTAButton(
+                                    label: AppLocalizations.of(
+                                      context,
+                                    ).landing_continue,
+                                    onPressed: () =>
+                                        context.go(RoutePaths.authWelcome),
+                                    // icon: const Icon(Icons.arrow_forward,
+                                    //     size: 20, color: Colors.white),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Center(
+                                    child: GlassPill(
+                                      icon: Icons.language_rounded,
+                                      label: langLabel,
+                                      onTap: _openLanguagePicker,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Dabbler connects players, captains, and venues — so you can stop searching and start playing.',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          height: 1.45,
-                          color: colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      OnboardingCTAButton(
-                        label: AppLocalizations.of(context).landing_continue,
-                        onPressed: () => context.go(RoutePaths.authWelcome),
-                        // icon: const Icon(Icons.arrow_forward,
-                        //     size: 20, color: Colors.white),
-                      ),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: GlassPill(
-                          icon: Icons.language_rounded,
-                          label: langLabel,
-                          onTap: _openLanguagePicker,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

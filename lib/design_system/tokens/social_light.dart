@@ -2,15 +2,15 @@ import 'dart:ui' show Color;
 
 const theme = (
   social: (
-    primary: Color(0xFF3473D7),
+    primary: Color(0xFF2762C5),
     onPrimary: Color(0xFFFFFFFF),
     primaryContainer: Color(0xFFA6DCFF),
     onPrimaryContainer: Color(0xFF001B3D),
-    secondary: Color(0xFF65A8FF),
-    onSecondary: Color(0xFF002C60),
+    secondary: Color(0xFF005EDE),
+    onSecondary: Color(0xFFFFFFFF),
     secondaryContainer: Color(0xFFE5F5FF),
     onSecondaryContainer: Color(0xFF001B3D),
-    tertiary: Color(0xFF855BE2),
+    tertiary: Color(0xFF7445DF),
     onTertiary: Color(0xFFFFFFFF),
     tertiaryContainer: Color(0xFFE7DEFF),
     onTertiaryContainer: Color(0xFF270057),
@@ -26,7 +26,7 @@ const theme = (
     onSurfaceVariant: Color(0xFF44474F),
     outline: Color(0xFF74777F),
     outlineVariant: Color(0xFFC4C6D0),
-    surfaceTint: Color(0xFF3473D7),
+    surfaceTint: Color(0xFF2762C5),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFF303034),

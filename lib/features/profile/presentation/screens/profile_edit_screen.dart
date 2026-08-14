@@ -17,6 +17,7 @@ import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -1389,7 +1390,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     );
 
     final content = Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1630,10 +1631,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final width = MediaQuery.of(context).size.width;
     if (width >= AdaptiveBreakpoints.compact) {
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: logoWidget,
         body: content,
       );

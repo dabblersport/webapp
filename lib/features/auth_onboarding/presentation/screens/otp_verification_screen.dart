@@ -468,11 +468,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                   right: index == 5 ? 0 : 5,
                                 ),
                                 child: SizedBox(
-                                  height: 56,
+                                  height: 46,
                                   child: AnimatedContainer(
                                     duration: duration,
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(12),
                                       color: isFilled
                                           ? colorScheme.primaryContainer
                                           : colorScheme.surfaceContainerLowest,
@@ -505,7 +505,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                                         FilteringTextInputFormatter.digitsOnly,
                                       ],
                                       style: TextStyle(
-                                        fontSize: 26,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.w800,
                                         color: colorScheme.primary,
                                       ),

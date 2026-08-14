@@ -1,11 +1,11 @@
 {
   "sportsLight": {
-    "primary": "#348638",
+    "primary": "#2D7331",
     "onPrimary": "#FFFFFF",
     "primaryContainer": "#79FFC3",
     "onPrimaryContainer": "#002108",
-    "secondary": "#6CBD6A",
-    "onSecondary": "#003911",
+    "secondary": "#357233",
+    "onSecondary": "#FFFFFF",
     "secondaryContainer": "#E5FFF4",
     "onSecondaryContainer": "#002204",
     "tertiary": "#0050B6",
@@ -24,7 +24,7 @@
     "onSurfaceVariant": "#414941",
     "outline": "#727970",
     "outlineVariant": "#C1C9BE",
-    "surfaceTint": "#348638",
+    "surfaceTint": "#2D7331",
     "shadow": "#000000",
     "scrim": "#000000",
     "inverseSurface": "#2F312E",

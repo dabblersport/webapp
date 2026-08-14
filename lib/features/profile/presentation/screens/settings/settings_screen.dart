@@ -15,6 +15,7 @@ import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 // ─── Supported options ────────────────────────────────────────────────────────
 
@@ -216,7 +217,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
 
     final content = Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -247,10 +248,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final width = MediaQuery.of(context).size.width;
     if (width >= AdaptiveBreakpoints.compact) {
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: logoWidget,
         body: content,
       );

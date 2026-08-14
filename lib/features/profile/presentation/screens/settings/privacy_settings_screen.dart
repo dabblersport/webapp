@@ -148,10 +148,10 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
         colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
       );
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: logoWidget,
         body: content,
       );

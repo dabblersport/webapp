@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/providers.dart';
@@ -10,11 +12,18 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemUiOverlayStyle;
+import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/widgets/legal_doc_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
+
+// ── Design tokens from Pencil node fRSW7 (Welcome — Dark) ────────────────────
+const _kText = Color(0xFFE6E0E9);
+const _kTextMuted = Color(0xFFCAC4CF);
+const _kLavender = Color(0xFFC18FFF);
 
 class AuthWelcomeScreen extends ConsumerStatefulWidget {
   const AuthWelcomeScreen({super.key});
@@ -54,16 +63,22 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
   Future<void> _openLanguagePicker() async {
     final current = ref.read(localeProvider);
+    final darkScheme = AppTheme.darkTheme.colorScheme;
     await showAdaptiveSheet<void>(
       context: context,
+      colorSchemeOverride: darkScheme,
+      backgroundColor: darkScheme.surfaceContainerHigh,
       builder: (context) => _LanguagePickerSheet(currentLocale: current),
     );
   }
 
   Future<void> _openCountryPicker() async {
     final selected = ref.read(selectedCountryProvider).valueOrNull;
+    final darkScheme = AppTheme.darkTheme.colorScheme;
     final picked = await showAdaptiveSheet<String>(
       context: context,
+      colorSchemeOverride: darkScheme,
+      backgroundColor: darkScheme.surfaceContainerHigh,
       builder: (context) => _CountryPickerSheet(
         countries: _countries,
         loading: _countriesLoading,
@@ -192,9 +207,9 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Apple sign-in failed: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Apple sign-in failed: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -204,19 +219,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   void _handleLogin() => context.go(RoutePaths.enterPassword);
 
   Widget _buildTermsText(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final linkStyle = theme.textTheme.bodyMedium?.copyWith(
-      // fontWeight: FontWeight.w800,
-      color: colorScheme.primary,
-    );
+    // Terms Notice — node Cqdmf: 13px, #CAC4CF, line-height 1.45, centered.
+    const linkStyle = TextStyle(color: _kLavender);
 
     return Text.rich(
       TextSpan(
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          height: 1.35,
-        ),
+        style: const TextStyle(fontSize: 13, color: _kTextMuted, height: 1.45),
         children: [
           TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
           TextSpan(
@@ -249,366 +257,495 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     final locale = ref.watch(localeProvider);
     final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: -120,
-              right: -80,
-              child: GradientBlob(color: colorScheme.primary, size: 320, opacity: 0.25),
-            ),
-            Positioned(
-              bottom: 200,
-              left: -100,
-              child: GradientBlob(color: kObPink, size: 280, opacity: 0.18),
-            ),
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: LayoutBuilder(
-              builder: (context, constraints) => SingleChildScrollView(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
-                        children: [
-                          Text(
-                            'Welcome',
-                            style: TextStyle(
-                              fontSize: 44,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1.6,
-                              color: colorScheme.onSurface,
-                              height: 1,
-                            ),
+    // Always dark, matching Pencil node fRSW7 (Welcome — Dark).
+    final darkTheme = AppTheme.darkTheme;
+    return Theme(
+      data: darkTheme,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: darkTheme.colorScheme.surface,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              const Positioned.fill(
+                child: IgnorePointer(child: DynamicBackground()),
+              ),
+              SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
                           ),
-                          const SizedBox(width: 8),
-                          const Text('👋', style: TextStyle(fontSize: 36)),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        "We're stoked to have you. Create an account and start dabbling in local sports.",
-                        style: TextStyle(
-                          fontSize: 15.5,
-                          height: 1.5,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Glassmorphic trust card
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 0),
-                  child: GlassCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          // padding: const EdgeInsets.fromLTRB(8, 4, 10, 4),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: colorScheme.primaryContainer,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Icon(Iconsax.verify, size: 13, color: colorScheme.primary),
-                              const SizedBox(width: 6),
-                              Text(
-                                'BUILT FOR TRUST',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w800,
-                                  color: colorScheme.primary,
-                                  letterSpacing: 0.8,
-                                ),
+                          child: IntrinsicHeight(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        ..._kTrustItems.asMap().entries.map((e) {
-                          return Column(
-                            children: [
-                              if (e.key > 0)
-                                Divider(height: 1, color: colorScheme.outlineVariant),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Container(
-                                    //   width: 32,
-                                    //   height: 32,
-                                    //   decoration: BoxDecoration(
-                                    //     borderRadius: BorderRadius.circular(10),
-                                    //     gradient: LinearGradient(
-                                    //       begin: Alignment.topLeft,
-                                    //       end: Alignment.bottomRight,
-                                    //       colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
-                                    //     ),
-                                    //     boxShadow: [
-                                    //       BoxShadow(
-                                    //         color: colorScheme.primary.withValues(
-                                    //           alpha: 0.4,
-                                    //         ),
-                                    //         blurRadius: 8,
-                                    //         offset: const Offset(0, 3),
-                                    //       ),
-                                    //     ],
-                                    //   ),
-                                    //   child: Icon(
-                                    //     e.value.icon,
-                                    //     size: 17,
-                                    //     color: colorScheme.onPrimary,
-                                    //   ),
-                                    // ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(top: 6),
-                                        child: Text(
-                                          e.value.text,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 20),
+                                  // Welcome Header — node V0fBC
+                                  const Text(
+                                    'Welcome 👋',
+                                    style: TextStyle(
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w700,
+                                      color: _kText,
+                                      height: 1.05,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  const Text(
+                                    "We're stoked to have you. Create an account and start dabbling in local sports.",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      height: 1.5,
+                                      color: _kTextMuted,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const _TrustBenefitsCard(),
+                                  const Spacer(),
+
+                                  // Continue Actions — node cI24o (gap 12)
+                                  _GlassButton(
+                                    // Glass Button / Dark — node Pnlba
+                                    fill: const Color(0xA8241631),
+                                    blur: 18,
+                                    borderGradient: const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0x80FFFFFF),
+                                        Color(0x8CC18FFF),
+                                        Color(0x1FFFFFFF),
+                                      ],
+                                      stops: [0.0, 0.5, 1.0],
+                                    ),
+                                    shadows: const [
+                                      BoxShadow(
+                                        color: Color(0x66000000),
+                                        blurRadius: 24,
+                                        offset: Offset(0, 10),
+                                      ),
+                                      BoxShadow(
+                                        color: Color(0x33C18FFF),
+                                        blurRadius: 5,
+                                        offset: Offset(0, 1),
+                                      ),
+                                    ],
+                                    onTap: _isLoading ? null : _handleGoogle,
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Iconsax.google_1,
+                                          size: 20,
+                                          color: _kText,
+                                        ),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          'Continue with Google',
                                           style: TextStyle(
-                                            fontSize: 13.5,
-                                            height: 1.4,
-                                            color: colorScheme.onSurface,
-                                            fontWeight: FontWeight.w500,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: _kText,
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _GlassButton(
+                                    // Continue with Email — Glass, node MYbIU
+                                    fill: const Color(0x66C18FFF),
+                                    blur: 20,
+                                    borderGradient: const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xB3FFFFFF),
+                                        Color(0xCCC18FFF),
+                                        Color(0x26FFFFFF),
+                                      ],
+                                      stops: [0.0, 0.48, 1.0],
+                                    ),
+                                    shadows: const [
+                                      BoxShadow(
+                                        color: Color(0x52C18FFF),
+                                        blurRadius: 20,
+                                        offset: Offset(0, 8),
+                                      ),
+                                      BoxShadow(
+                                        color: Color(0x55000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                    onTap: _isLoading ? null : _handleEmail,
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Color(0xFFFBF6FF),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Iconsax.sms,
+                                                size: 19,
+                                                color: Color(0xFFFBF6FF),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                ).auth_welcome_btn_email,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFFFBF6FF),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                  if (!kIsWeb &&
+                                      defaultTargetPlatform ==
+                                          TargetPlatform.iOS) ...[
+                                    const SizedBox(height: 12),
+                                    _GlassButton(
+                                      // Continue with Apple — Black, node LQcOo
+                                      fill: const Color(0xFF09090B),
+                                      blur: 16,
+                                      borderColor: const Color(0x54FFFFFF),
+                                      shadows: const [
+                                        BoxShadow(
+                                          color: Color(0x99000000),
+                                          blurRadius: 18,
+                                          offset: Offset(0, 8),
+                                        ),
+                                        BoxShadow(
+                                          color: Color(0x12FFFFFF),
+                                          blurRadius: 2,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                      onTap: _isLoading ? null : _handleApple,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Iconsax.apple,
+                                            size: 20,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            ).auth_welcome_btn_apple,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: _kText,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
-                                ),
-                              ),
-                            ],
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
 
-                const Spacer(),
-                      // const SizedBox(height: 16),
+                                  // Existing Account — node tXd9H
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 47,
+                                    child: TextButton(
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _handleLogin,
+                                      style: TextButton.styleFrom(
+                                        shape: const StadiumBorder(),
+                                      ),
+                                      child: const Text.rich(
+                                        TextSpan(
+                                          text: 'Already have an account? ',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: _kTextMuted,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: 'Log in',
+                                              style: TextStyle(
+                                                color: _kLavender,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  _buildTermsText(context),
+                                  const SizedBox(height: 16),
 
-                // CTAs
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                  child: Column(
-                    children: [
-                      _OutlineButton(
-                        onPressed: _isLoading ? null : _handleGoogle,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Iconsax.google_1,
-                              size: 20,
-                              color: colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                fontSize: 15.5,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSurface,
+                                  // Locale Controls — node ll0Ws
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _LocalePill(
+                                        icon: Iconsax.global,
+                                        label: countryName,
+                                        onTap: _isLoading
+                                            ? () {}
+                                            : _openCountryPicker,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _LocalePill(
+                                        icon: Iconsax.language_square,
+                                        label: langLabel,
+                                        onTap: _isLoading
+                                            ? () {}
+                                            : _openLanguagePicker,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      OnboardingCTAButton(
-                        label: AppLocalizations.of(
-                          context,
-                        ).auth_welcome_btn_email,
-                        onPressed: _isLoading ? null : _handleEmail,
-                        isLoading: _isLoading,
-                        icon: Icon(
-                          Iconsax.sms,
-                          size: 20,
-                          color: colorScheme.onPrimary,
-                        ),
-                      ),
-                      if (!kIsWeb &&
-                          defaultTargetPlatform == TargetPlatform.iOS) ...[
-                        const SizedBox(height: 12),
-                        _OutlineButton(
-                          onPressed: _handleApple,
-                          bgColor: const Color(0xFF2C2A33),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Iconsax.apple,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                AppLocalizations.of(
-                                  context,
-                                ).auth_welcome_btn_apple,
-                                style: const TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      TextButton(
-                        onPressed: _isLoading ? null : _handleLogin,
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 24,
-                          ),
-                          shape: const StadiumBorder(),
-                        ),
-                        child: Text.rich(
-                          TextSpan(
-                            text: 'Already have an account? ',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'Log in',
-                                style: TextStyle(
-                                  color: colorScheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                  child: _buildTermsText(context),
-                ),
-const Spacer(),
-
-                // Country / Language pills
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GlassPill(
-                        icon: Iconsax.global,
-                        label: countryName ?? 'Global',
-                        onTap: _isLoading ? () {} : _openCountryPicker,
-                      ),
-                      const SizedBox(width: 8),
-                      GlassPill(
-                        icon: Iconsax.language_square,
-                        label: langLabel,
-                        onTap: _isLoading ? () {} : _openLanguagePicker,
-                      ),
-                    ],
-                  ),
-                ),
-                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _TrustItem {
-  final IconData icon;
-  final String text;
-  const _TrustItem(this.icon, this.text);
-}
+// ── Trust Benefits card — node jOETk ─────────────────────────────────────────
 
-const _kTrustItems = [
-  _TrustItem(
-    Iconsax.medal_star,
-    'Reviewed players, verified memberships, rated venues',
-  ),
-  _TrustItem(
-    Iconsax.setting_3,
-    'Connections and recommendations personalised to your sports',
-  ),
-  _TrustItem(Iconsax.lock, "We don't sell your data — privacy-first by design"),
+const _kTrustBenefits = [
+  'Reviewed players, verified memberships, rated venues',
+  'Connections and recommendations personalised to your sports',
+  "We don't sell your data — privacy-first by design",
 ];
 
-class _OutlineButton extends StatelessWidget {
-  const _OutlineButton({required this.child, this.onPressed, this.bgColor});
-  final Widget child;
-  final VoidCallback? onPressed;
-  final Color? bgColor;
+class _TrustBenefitsCard extends StatelessWidget {
+  const _TrustBenefitsCard();
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xEE15101E),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: const Color(0x12FFFFFF)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Trust Badge — node KmmCd
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B48E8),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: const Text(
+                  'BUILT FOR TRUST',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFEADDFF),
+                  ),
+                ),
+              ),
+              for (var i = 0; i < _kTrustBenefits.length; i++) ...[
+                if (i > 0) Container(height: 1, color: const Color(0x24FFFFFF)),
+                Container(
+                  constraints: BoxConstraints(minHeight: i == 0 ? 50 : 48),
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    _kTrustBenefits[i],
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: _kText,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Glass CTA button — nodes Pnlba / MYbIU / LQcOo ───────────────────────────
+
+class _GlassButton extends StatelessWidget {
+  const _GlassButton({
+    required this.fill,
+    required this.blur,
+    required this.shadows,
+    required this.onTap,
+    required this.child,
+    this.borderGradient,
+    this.borderColor,
+  });
+
+  final Color fill;
+  final double blur;
+  final List<BoxShadow> shadows;
+  final VoidCallback? onTap;
+  final Widget child;
+  final Gradient? borderGradient;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(22);
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 58,
       child: DecoratedBox(
+        decoration: BoxDecoration(borderRadius: radius, boxShadow: shadows),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+            child: CustomPaint(
+              foregroundPainter: _GradientBorderPainter(
+                gradient: borderGradient,
+                color: borderColor,
+                radius: 22,
+              ),
+              child: Material(
+                color: fill,
+                child: InkWell(
+                  onTap: onTap,
+                  child: Center(child: child),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Paints a 1px inner-aligned rounded-rect stroke with a gradient (Flutter's
+/// [Border] can't do gradient strokes).
+class _GradientBorderPainter extends CustomPainter {
+  const _GradientBorderPainter({
+    required this.radius,
+    this.gradient,
+    this.color,
+  });
+
+  final double radius;
+  final Gradient? gradient;
+  final Color? color;
+
+  static const double width = 1;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width;
+    if (gradient != null) {
+      paint.shader = gradient!.createShader(rect);
+    } else {
+      paint.color = color ?? const Color(0x00000000);
+    }
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        rect.deflate(width / 2),
+        Radius.circular(radius - width / 2),
+      ),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GradientBorderPainter oldDelegate) =>
+      oldDelegate.gradient != gradient ||
+      oldDelegate.color != color ||
+      oldDelegate.radius != radius;
+}
+
+// ── Locale pill — nodes FJ3ef / ZMZ1P ────────────────────────────────────────
+
+class _LocalePill extends StatelessWidget {
+  const _LocalePill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(999),
-          color: bgColor ?? colorScheme.surfaceContainerLowest,
-          border: bgColor == null
-              ? Border.all(color: colorScheme.outlineVariant, width: 1.5)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+          color: const Color(0xE617121E),
+          border: Border.all(color: const Color(0x33FFFFFF)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: _kText),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: _kText,
+              ),
             ),
           ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(999),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: onPressed,
-            child: Center(child: child),
-          ),
         ),
       ),
     );

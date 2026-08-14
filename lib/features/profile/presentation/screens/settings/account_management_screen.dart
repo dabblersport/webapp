@@ -8,6 +8,7 @@ import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// Screen for managing account settings like email, password, and security
 class AccountManagementScreen extends ConsumerStatefulWidget {
@@ -146,7 +147,7 @@ class _AccountManagementScreenState
     );
 
     final content = Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -220,10 +221,10 @@ class _AccountManagementScreenState
     final width = MediaQuery.of(context).size.width;
     if (width >= AdaptiveBreakpoints.compact) {
       return AdaptiveScaffold(
-        currentIndex: 6,
+        currentIndex: 7,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
         headerWidget: logoWidget,
         body: content,
       );

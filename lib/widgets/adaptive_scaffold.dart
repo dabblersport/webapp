@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// Breakpoints for the adaptive layout, modelled after Twitter/X web.
 class AdaptiveBreakpoints {
@@ -91,6 +92,11 @@ class AdaptiveScaffold extends StatelessWidget {
         final bool showRightPanel =
             width >= AdaptiveBreakpoints.medium && rightPanel != null;
 
+        // Tablet range (e.g. iPad portrait): rail only — let the content
+        // column stretch to fill the screen instead of centring a narrow
+        // fixed-width column between dead margins.
+        final bool stretchContent = width < AdaptiveBreakpoints.medium;
+
         // ── Desktop / Tablet: side rail + content + optional right panel ──
         return _DesktopLayout(
           body: body,
@@ -99,6 +105,7 @@ class AdaptiveScaffold extends StatelessWidget {
           onDestinationSelected: onDestinationSelected,
           showLabels: showLabels,
           showRightPanel: showRightPanel,
+          stretchContent: stretchContent,
           rightPanel: rightPanel,
           maxContentWidth: maxContentWidth,
           headerWidget: headerWidget,
@@ -136,6 +143,7 @@ class _DesktopLayout extends StatelessWidget {
     required this.onDestinationSelected,
     required this.showLabels,
     required this.showRightPanel,
+    required this.stretchContent,
     required this.maxContentWidth,
     this.rightPanel,
     this.headerWidget,
@@ -147,6 +155,7 @@ class _DesktopLayout extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final bool showLabels;
   final bool showRightPanel;
+  final bool stretchContent;
   final Widget? rightPanel;
   final double maxContentWidth;
   final Widget? headerWidget;
@@ -167,10 +176,12 @@ class _DesktopLayout extends StatelessWidget {
         (showRightPanel ? 1 + 340 : 0); // right divider + panel
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: totalMaxWidth),
+          constraints: BoxConstraints(
+            maxWidth: stretchContent ? double.infinity : totalMaxWidth,
+          ),
           child: Row(
             children: [
               // ── Left navigation rail / sidebar ──
@@ -223,8 +234,11 @@ class _DesktopLayout extends StatelessWidget {
               ),
 
               // ── Centre content — fills remaining space within the
-              //    constrained group, no extra gaps ──
-              Expanded(child: body),
+              //    constrained group, no extra gaps. Top SafeArea keeps
+              //    content clear of the status bar on tablets. ──
+              Expanded(
+                child: SafeArea(bottom: false, child: body),
+              ),
 
               // ── Right panel ──
               if (showRightPanel) ...[
@@ -297,49 +311,58 @@ class _SideNavItemState extends State<_SideNavItem> {
           : null;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: EdgeInsets.symmetric(
-              horizontal: widget.showLabel ? 16 : 12,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Row(
-              mainAxisSize: widget.showLabel
-                  ? MainAxisSize.max
-                  : MainAxisSize.min,
-              children: [
-                Icon(widget.icon, size: 26, color: iconColor),
-                if (widget.showLabel) ...[
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      widget.label,
-                      style: textTheme.titleSmall?.copyWith(
-                        color: iconColor,
-                        fontWeight: widget.isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+    final borderRadius = BorderRadius.circular(28);
+
+    Widget item = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHover: (hovered) => setState(() => _hovered = hovered),
+        borderRadius: borderRadius,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.showLabel ? 16 : 12,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(color: bgColor, borderRadius: borderRadius),
+          child: Row(
+            mainAxisSize: widget.showLabel ? MainAxisSize.max : MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 26, color: iconColor),
+              if (widget.showLabel) ...[
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: iconColor,
+                      fontWeight: widget.isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
               ],
-            ),
+            ],
           ),
         ),
+      ),
+    );
+
+    // Icon-only rail (tablet): expose the label via tooltip + semantics.
+    if (!widget.showLabel) {
+      item = Tooltip(message: widget.label, child: item);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Semantics(
+        selected: widget.isSelected,
+        button: true,
+        label: widget.label,
+        child: item,
       ),
     );
   }

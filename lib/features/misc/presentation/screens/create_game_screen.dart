@@ -11,6 +11,7 @@ import 'package:dabbler/features/misc/presentation/screens/venue_slot_step.dart'
 import 'package:dabbler/routes/route_arguments.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/widgets/app_button.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 class CreateGameScreen extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -126,7 +127,7 @@ class _CreateGameScreenState extends State<CreateGameScreen> {
       animation: _viewModel,
       builder: (context, child) {
         return Scaffold(
-          backgroundColor: context.colors.surface,
+          backgroundColor: context.appScaffoldBackground,
           body: SafeArea(
             child: Column(
               children: [

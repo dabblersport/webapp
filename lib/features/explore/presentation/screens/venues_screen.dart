@@ -1,5 +1,10 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 
@@ -156,7 +161,7 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final isLight = Theme.of(context).brightness == Brightness.light;
 
     return ColoredBox(
       color: Colors.transparent,
@@ -171,80 +176,71 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: sports.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     final sport = sports[index];
                     final isSelected = tabController.index == index;
+                    final emoji = sport.emoji ?? '';
 
-                    int venueCount = 0;
-                    if (isSelected) {
-                      venueCount = ref
-                          .watch(venuesBySportWithFiltersProvider(
-                            VenuesBySportFilters(
-                              sportId: sport.id,
-                              isActive: true,
-                            ),
-                          ))
-                          .maybeWhen(
-                            data: (v) => v.length,
-                            orElse: () => 0,
-                          );
-                    }
-
-                    return GestureDetector(
-                      onTap: () => tabController.animateTo(index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? cs.primary
-                              : cs.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (sport.emoji != null)
-                              Text(
-                                sport.emoji!,
-                                style: const TextStyle(fontSize: 15),
-                              ),
-                            if (sport.emoji != null) const SizedBox(width: 5),
-                            Text(
-                              sport.localizedName(context),
-                              style: tt.labelLarge?.copyWith(
-                                color: isSelected ? cs.onPrimary : cs.onSurface,
-                                fontWeight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
-                            ),
-                            if (isSelected) ...[
-                              const SizedBox(width: 5),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 1,
+                    // iOS-style filter capsules — same treatment as the
+                    // games screen tabs: frosted system material with a
+                    // hairline; selected = flat primary capsule.
+                    return Center(
+                      child: GestureDetector(
+                        onTap: () => tabController.animateTo(index),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(19),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOut,
+                              height: 38,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? cs.primary
+                                    : isLight
+                                        ? Colors.white.withValues(alpha: 0.55)
+                                        : Colors.white.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(19),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? Colors.transparent
+                                      : isLight
+                                          ? Colors.black
+                                              .withValues(alpha: 0.08)
+                                          : Colors.white
+                                              .withValues(alpha: 0.12),
+                                  width: 1,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: cs.onPrimary.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  '$venueCount',
-                                  style: tt.labelSmall?.copyWith(
-                                    color: cs.onPrimary,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 10,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (emoji.isNotEmpty) ...[
+                                    Text(emoji,
+                                        style: const TextStyle(fontSize: 15)),
+                                    const SizedBox(width: 6),
+                                  ],
+                                  Text(
+                                    sport.localizedName(context),
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      letterSpacing: -0.2,
+                                      fontWeight: isSelected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : cs.onSurface,
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ],
+                            ),
+                          ),
                         ),
                       ),
                     );
@@ -274,6 +270,25 @@ class _SportTabBarDelegate extends SliverPersistentHeaderDelegate {
 // ALL VENUES LIST
 // =============================================================================
 
+/// venue_id → upcoming games happening there. One lightweight query over
+/// v_game_card (visibility-gated per viewer) shared by every tab.
+final _upcomingGamesByVenueProvider =
+    FutureProvider.autoDispose<Map<String, int>>((ref) async {
+  final rows = await Supabase.instance.client
+      .from(SupabaseConfig.vGameCardTable)
+      .select('venue_id')
+      .eq('is_cancelled', false)
+      .gt('end_at', DateTime.now().toUtc().toIso8601String())
+      .not('venue_id', 'is', null)
+      .limit(300) as List<dynamic>;
+  final counts = <String, int>{};
+  for (final r in rows) {
+    final id = (r as Map)['venue_id'] as String?;
+    if (id != null) counts[id] = (counts[id] ?? 0) + 1;
+  }
+  return counts;
+});
+
 class _AllVenuesList extends ConsumerWidget {
   const _AllVenuesList({required this.sportId});
 
@@ -286,6 +301,8 @@ class _AllVenuesList extends ConsumerWidget {
         nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
     final location =
         locState is ActiveLocationReady ? locState.location : null;
+    final gameCounts =
+        ref.watch(_upcomingGamesByVenueProvider).valueOrNull ?? const {};
 
     // Nearby path: PostGIS RPC filtered by the active location + radius.
     // While the filter is on but location isn't ready (locating/denied),
@@ -321,6 +338,7 @@ class _AllVenuesList extends ConsumerWidget {
                           pricePerHour: v.pricePerHour,
                           isIndoor: v.isIndoor,
                           distanceLabel: v.distanceLabel,
+                          gamesCount: gameCounts[v.id] ?? 0,
                         ))
                     .toList(),
               ),
@@ -346,6 +364,7 @@ class _AllVenuesList extends ConsumerWidget {
                         area: v.area,
                         pricePerHour: v.pricePerHour,
                         isIndoor: v.isIndoor,
+                        gamesCount: gameCounts[v.id] ?? 0,
                       ))
                   .toList(),
             ),
@@ -362,6 +381,7 @@ class _AllVenuesList extends ConsumerWidget {
       onRefresh: () async {
         ref.invalidate(nearbyVenuesProvider);
         ref.invalidate(venuesBySportWithFiltersProvider);
+        ref.invalidate(_upcomingGamesByVenueProvider);
       },
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -459,6 +479,7 @@ class _VenueCardData {
     this.pricePerHour,
     this.isIndoor,
     this.distanceLabel,
+    this.gamesCount = 0,
   });
 
   final String id;
@@ -471,6 +492,9 @@ class _VenueCardData {
   /// Formatted distance (e.g. "1.2 km"); non-null only when the nearby
   /// filter is active.
   final String? distanceLabel;
+
+  /// Upcoming games happening at this venue (0 when none/unknown).
+  final int gamesCount;
 }
 
 class _VenueCard extends StatelessWidget {
@@ -542,12 +566,34 @@ class _VenueCard extends StatelessWidget {
                     ],
                   ),
                   if (venue.isIndoor != null ||
+                      venue.gamesCount > 0 ||
                       (venue.distanceLabel != null &&
                           venue.pricePerHour != null)) ...[
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 6,
                       children: [
+                        if (venue.gamesCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: cs.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              venue.gamesCount == 1
+                                  ? '1 upcoming game'
+                                  : '${venue.gamesCount} upcoming games',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
                         if (venue.isIndoor != null)
                           _SmallChip(
                             label: venue.isIndoor! ? 'Indoor' : 'Outdoor',

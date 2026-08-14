@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,6 +63,9 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
 
   int get _tabCount => widget.sports.length + 1; // +1 for "All"
 
+  /// Filters (Nearby bar + chips) are tucked behind the top-bar filter icon.
+  bool _filtersVisible = false;
+
   @override
   void initState() {
     super.initState();
@@ -102,14 +107,50 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
   // ── Header ────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
-    return const AppTopBar(avatarContext: AvatarContext.main);
+    final cs = Theme.of(context).colorScheme;
+    // Dot on the filter icon whenever any filter narrows the list.
+    final filtersActive = ref.watch(nearbyGamesFilterEnabledProvider) ||
+        ref.watch(gamesDateFilterProvider) != GamesDateFilter.any ||
+        ref.watch(gamesSkillFilterProvider) != GamesSkillFilter.any ||
+        ref.watch(gamesOpenSpotsOnlyProvider);
+
+    return AppTopBar(
+      avatarContext: AvatarContext.main,
+      extraActions: [
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            AppTopBarButton(
+              icon: Iconsax.setting_4_copy,
+              onTap: () => setState(() => _filtersVisible = !_filtersVisible),
+            ),
+            if (filtersActive)
+              Positioned(
+                top: 2,
+                right: 2,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: cs.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cs.surface, width: 1.5),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   // ── Tab bar ───────────────────────────────────────────────────────────────
 
   Widget _buildTabBar() {
     final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final isLight = Theme.of(context).brightness == Brightness.light;
 
     return AnimatedBuilder(
       animation: _tabController,
@@ -120,7 +161,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             itemCount: _tabCount,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final isSelected = _tabController.index == index;
               final String label;
@@ -135,22 +176,60 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
                 emoji = sport.emoji ?? '';
               }
 
-              return GestureDetector(
-                onTap: () => _tabController.animateTo(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? cs.primary
-                        : cs.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    emoji.isEmpty ? label : '$emoji $label',
-                    style: tt.labelLarge?.copyWith(
-                      color: isSelected ? cs.onPrimary : cs.onSurface,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              // iOS-style filter capsules: frosted system material with a
+              // single hairline; selected = flat primary capsule. No
+              // gradients, sheens, or glows.
+              return Center(
+                child: GestureDetector(
+                  onTap: () => _tabController.animateTo(index),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(19),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOut,
+                        height: 38,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? cs.primary
+                              : isLight
+                                  ? Colors.white.withValues(alpha: 0.55)
+                                  : Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(19),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.transparent
+                                : isLight
+                                    ? Colors.black.withValues(alpha: 0.08)
+                                    : Colors.white.withValues(alpha: 0.12),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (emoji.isNotEmpty) ...[
+                              Text(emoji,
+                                  style: const TextStyle(fontSize: 15)),
+                              const SizedBox(width: 6),
+                            ],
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 15,
+                                letterSpacing: -0.2,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                                color:
+                                    isSelected ? Colors.white : cs.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -184,13 +263,17 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
                 pinned: true,
                 delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
               ),
-              SliverToBoxAdapter(
-                child: NearbyFilterBar(
-                  enabledProvider: nearbyGamesFilterEnabledProvider,
-                  sortProvider: nearbyGameSortProvider,
+              // Filters live behind the top-bar filter icon on mobile; the
+              // wide layout has no top bar, so they stay visible there.
+              if (_filtersVisible || isWide) ...[
+                SliverToBoxAdapter(
+                  child: NearbyFilterBar(
+                    enabledProvider: nearbyGamesFilterEnabledProvider,
+                    sortProvider: nearbyGameSortProvider,
+                  ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: _GamesFilterChips()),
+                const SliverToBoxAdapter(child: _GamesFilterChips()),
+              ],
             ],
             body: TabBarView(
               controller: _tabController,
@@ -359,38 +442,58 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final fg = selected ? cs.onPrimaryContainer : cs.onSurfaceVariant;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final fg = selected ? Colors.white : cs.onSurface;
+
+    // Same iOS frosted-capsule language as the sport tabs, one size down.
     return Semantics(
       button: true,
       selected: selected,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? cs.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected
-                  ? cs.primary.withValues(alpha: 0.4)
-                  : cs.outlineVariant,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: fg),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: fg,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: selected
+                    ? cs.primary
+                    : isLight
+                        ? Colors.white.withValues(alpha: 0.55)
+                        : Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: selected
+                      ? Colors.transparent
+                      : isLight
+                          ? Colors.black.withValues(alpha: 0.08)
+                          : Colors.white.withValues(alpha: 0.12),
+                  width: 1,
                 ),
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 14, color: fg),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      letterSpacing: -0.1,
+                      fontWeight:
+                          selected ? FontWeight.w600 : FontWeight.w400,
+                      color: fg,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

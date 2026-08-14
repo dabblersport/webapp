@@ -4,7 +4,7 @@ const theme = (
   activity: (
     primary: Color(0xFFFCDEE8),
     onPrimary: Color(0xFF5C002C),
-    primaryContainer: Color(0xFFCF3989),
+    primaryContainer: Color(0xFFB52C76),
     onPrimaryContainer: Color(0xFFFFD8E6),
     secondary: Color(0xFFFED3F9),
     onSecondary: Color(0xFF5A004A),
@@ -31,7 +31,7 @@ const theme = (
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFE6E1E6),
     inverseOnSurface: Color(0xFF323034),
-    inversePrimary: Color(0xFFCF3989),
+    inversePrimary: Color(0xFFB52C76),
     primaryFixed: Color(0xFFFFD8E6),
     onPrimaryFixed: Color(0xFF3A0026),
     primaryFixedDim: Color(0xFFFFAFCE),

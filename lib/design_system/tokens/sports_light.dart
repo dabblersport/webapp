@@ -2,12 +2,12 @@ import 'dart:ui' show Color;
 
 const theme = (
   sports: (
-    primary: Color(0xFF348638),
+    primary: Color(0xFF2D7331),
     onPrimary: Color(0xFFFFFFFF),
     primaryContainer: Color(0xFF79FFC3),
     onPrimaryContainer: Color(0xFF002108),
-    secondary: Color(0xFF6CBD6A),
-    onSecondary: Color(0xFF003911),
+    secondary: Color(0xFF357233),
+    onSecondary: Color(0xFFFFFFFF),
     secondaryContainer: Color(0xFFE5FFF4),
     onSecondaryContainer: Color(0xFF002204),
     tertiary: Color(0xFF0050B6),
@@ -26,7 +26,7 @@ const theme = (
     onSurfaceVariant: Color(0xFF414941),
     outline: Color(0xFF727970),
     outlineVariant: Color(0xFFC1C9BE),
-    surfaceTint: Color(0xFF348638),
+    surfaceTint: Color(0xFF2D7331),
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFF2F312E),

@@ -248,8 +248,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       return;
     }
 
+    // Gender is optional and intentionally not checked here.
     if (onboardingData.age == null ||
-        onboardingData.gender == null ||
         onboardingData.intention == null ||
         onboardingData.preferredSport == null) {
       ScaffoldMessenger.of(context).showSnackBar(

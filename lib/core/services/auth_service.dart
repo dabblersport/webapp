@@ -1023,7 +1023,7 @@ class AuthService {
     required String displayName,
     required String username,
     required int age,
-    required String gender,
+    String? gender,
     required String intention,
     required String preferredSport,
     List<String>? interests,

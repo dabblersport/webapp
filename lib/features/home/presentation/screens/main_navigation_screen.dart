@@ -211,46 +211,38 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  bool get _isOnSportsPage =>
-      _currentIndex == NavigationBranch.venues.shellIndex ||
+  /// The bar has two groups: [Feeds, Venues] and [Games, Meet-ups].
+  /// The Games group is shown while the Games branch is active.
+  bool get _isOnGamesGroup =>
       _currentIndex == NavigationBranch.games.shellIndex;
 
   void _goBranch(NavigationBranch branch) =>
       widget.navigationShell.goBranch(branch.shellIndex);
 
+  // Nav item indices 0–3 map 1:1 to shell branch indices so selection checks
+  // (`_currentIndex == index`) stay trivial. Higher indices are actions.
+  static const int _kItemCreate = 4;
+  static const int _kItemMeetups = 5;
+
   void _onItemTapped(int index) {
-    if (_isOnSportsPage) {
-      // Sports-mode nav: [Home(0), Venues(1), Games(2), Create(3)]
-      switch (index) {
-        case 0: // Home icon → go back to feeds
-          _goBranch(NavigationBranch.home);
-          return;
-        case 1: // Venues
-          _goBranch(NavigationBranch.venues);
-          return;
-        case 2: // Games
-          _goBranch(NavigationBranch.games);
-          return;
-        case 3: // Create
-          _showCreateMenu();
-          return;
-      }
-    } else {
-      // Home-mode nav: [Feeds(0), Community(1), Sports icon(2), Create(3)]
-      switch (index) {
-        case 0: // Feeds
-          _goBranch(NavigationBranch.home);
-          return;
-        case 1: // Community
-          _goBranch(NavigationBranch.community);
-          return;
-        case 2: // Sports icon → Venues by default
-          _goBranch(NavigationBranch.venues);
-          return;
-        case 3: // Create
-          _showCreateMenu();
-          return;
-      }
+    switch (index) {
+      case 0: // Feeds
+        _goBranch(NavigationBranch.home);
+      case 1: // Community (desktop side-nav only)
+        _goBranch(NavigationBranch.community);
+      case 2: // Venues
+        _goBranch(NavigationBranch.venues);
+      case 3: // Games
+        _goBranch(NavigationBranch.games);
+      case _kItemCreate:
+        _showCreateMenu();
+      case _kItemMeetups:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).nav_meetups_coming_soon),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
     }
   }
 
@@ -430,11 +422,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         destIndex = 0; // Home
         break;
       case 1:
-        destIndex = 4; // Community
+        destIndex = 5; // Community
         break;
       case 2:
+        destIndex = 2; // Sports (Venues)
+        break;
       case 3:
-        destIndex = 2; // Sports (Venues or Games)
+        destIndex = 3; // Games
         break;
       default:
         destIndex = 0;
@@ -463,19 +457,22 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       case 1: // Create
         _showCreateMenu();
         break;
-      case 2: // Sports
+      case 2: // Sports (Venues)
         _onItemTapped(2);
         break;
-      case 3: // Search
+      case 3: // Games
+        _onItemTapped(3);
+        break;
+      case 4: // Search
         context.push(RoutePaths.socialSearch);
         break;
-      case 4: // Community
+      case 5: // Community
         _onItemTapped(1); // navigate to community page
         break;
-      case 5: // Notifications
+      case 6: // Notifications
         context.push(RoutePaths.notifications);
         break;
-      case 6: // Profile
+      case 7: // Profile
         context.push(RoutePaths.profile);
         break;
     }
@@ -511,20 +508,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     .clamp(0.0, 420.0)
                     .toDouble();
             final cs = Theme.of(context).colorScheme;
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final foregroundColor = cs.onPrimaryContainer;
-            final foregroundColorInactive = foregroundColor.withValues(alpha: 0.65);
-
-            // Primary-tinted liquid glass colors
-            final glassColor = isDark
-                ? cs.primary.withValues(alpha: 0.18)
-                : cs.primaryContainer.withValues(alpha: 0.55);
-            final glassBorderColor = isDark
-                ? cs.primary.withValues(alpha: 0.32)
-                : cs.primary.withValues(alpha: 0.22);
-            final glowColor = isDark
-                ? cs.primary.withValues(alpha: 0.22)
-                : cs.primary.withValues(alpha: 0.14);
+            // Per the Pencil spec (nodes r2mU7 / r5GzG): unselected labels and
+            // icons use onSurface in both themes; selected labels use primary.
+            final foregroundColor = cs.onSurface;
+            final foregroundColorInactive = cs.onSurface.withValues(alpha: 0.90);
 
             return Align(
               alignment: Alignment.bottomCenter,
@@ -565,8 +552,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                         fit: BoxFit.scaleDown,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: _isOnSportsPage
-                              ? _buildSportsNavItems(
+                          children: _isOnGamesGroup
+                              ? _buildGamesNavItems(
                                   foregroundColor,
                                   foregroundColorInactive,
                                 )
@@ -587,7 +574,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
-  /// Home-mode nav items: [Feeds (pill)] [Community (text)]  ...  [🎮 icon] [⊕ icon]
+  /// Feeds-group nav items: [Feeds | Venues (segmented)]  [▦ icon → Games] [⊕]
   List<Widget> _buildHomeNavItems(
     Color foregroundColor,
     Color foregroundColorInactive,
@@ -597,15 +584,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         foregroundColor: foregroundColor,
         children: [
           _buildTextNavItem(
-            index: 0,
+            index: NavigationBranch.home.shellIndex,
             label: AppLocalizations.of(context).nav_feeds,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
           ),
           _buildTextNavItem(
-            index: 1,
-            label: AppLocalizations.of(context).nav_community,
+            index: NavigationBranch.venues.shellIndex,
+            label: AppLocalizations.of(context).nav_venues,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
@@ -614,15 +601,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
       SizedBox(width: _navItemGap(context) * 2),
       _buildIconNavItem(
-        index: 2,
-        outlineIcon: Iconsax.game_copy,
-        bulkIcon: Iconsax.game,
+        index: NavigationBranch.games.shellIndex,
+        outlineIcon: Iconsax.category_2_copy,
+        bulkIcon: Iconsax.category_2,
         foregroundColor: foregroundColor,
         foregroundColorInactive: foregroundColorInactive,
+        forceUnselected: true,
       ),
       SizedBox(width: _navItemGap(context) * 2),
       _buildIconNavItem(
-        index: 3,
+        index: _kItemCreate,
         outlineIcon: Iconsax.add_circle_copy,
         bulkIcon: Iconsax.add_circle,
         foregroundColor: foregroundColor,
@@ -632,17 +620,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ];
   }
 
-  /// Sports-mode nav items: [🏠 icon] [Venues (pill)]  ...  [Games (text)] [⊕ icon]
-  List<Widget> _buildSportsNavItems(
+  /// Games-group nav items: [🏠 icon → Feeds]  [Games (segmented)] [⊕]
+  List<Widget> _buildGamesNavItems(
     Color foregroundColor,
     Color foregroundColorInactive,
   ) {
-    final isGamesSelected = _currentIndex == 3;
-    final isVenuesSelected = _currentIndex == 2;
-
     return [
       _buildIconNavItem(
-        index: 0,
+        index: NavigationBranch.home.shellIndex,
         outlineIcon: Iconsax.home_2_copy,
         bulkIcon: Iconsax.home_2,
         foregroundColor: foregroundColor,
@@ -653,28 +638,20 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       _buildSegmentedNavGroup(
         foregroundColor: foregroundColor,
         children: [
-          _buildSportsTextNavItem(
-            index: 1,
-            label: AppLocalizations.of(context).nav_venues,
-            isSelected: isVenuesSelected,
-            foregroundColor: foregroundColor,
-            foregroundColorInactive: foregroundColorInactive,
-            inSegmentedGroup: true,
-          ),
-          _buildSportsTextNavItem(
-            index: 2,
+          _buildTextNavItem(
+            index: NavigationBranch.games.shellIndex,
             label: AppLocalizations.of(context).nav_games,
-            isSelected: isGamesSelected,
             foregroundColor: foregroundColor,
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
           ),
+          // Meetups hidden until the feature ships — restore the
+          // _kItemMeetups text item here to bring it back.
         ],
       ),
-
       SizedBox(width: _navItemGap(context) * 2),
       _buildIconNavItem(
-        index: 3,
+        index: _kItemCreate,
         outlineIcon: Iconsax.add_circle_copy,
         bulkIcon: Iconsax.add_circle,
         foregroundColor: foregroundColor,
@@ -684,60 +661,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ];
   }
 
-  /// Text nav item for sports mode — uses explicit [isSelected] instead of _currentIndex.
-  Widget _buildSportsTextNavItem({
-    required int index,
-    required String label,
-    required bool isSelected,
-    required Color foregroundColor,
-    required Color foregroundColorInactive,
-    bool inSegmentedGroup = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.symmetric(
-          horizontal: _navLabelHorizontalPadding(context),
-          vertical: _navLabelVerticalPadding(context),
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? colorScheme.onPrimary : foregroundColorInactive,
-            fontSize: _navLabelFontSize(context),
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            letterSpacing: isSelected ? -0.2 : 0,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Text-based nav item with pill background when selected (Feeds, Community)
+  /// Text-based nav item. Selected state matches the Pencil design: a light
+  /// surface chip with primary-colored label sitting on the glass group pill.
   Widget _buildTextNavItem({
     required int index,
     required String label,
@@ -747,6 +672,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }) {
     final isSelected = _currentIndex == index;
     final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Design chip fills: #ffffff73 (light) / #121117cc (dark) —
+    // surfaceContainerLowest is white/near-black in the respective schemes.
+    final chipColor = colorScheme.surfaceContainerLowest.withValues(
+      alpha: isDark ? 0.80 : 0.85,
+    );
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
@@ -758,31 +689,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           vertical: _navLabelVerticalPadding(context),
         ),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary : colorScheme.primaryContainer.withValues(alpha:0.70),
+          color: isSelected ? chipColor : Colors.transparent,
           borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.25),
+                    color: colorScheme.primary.withValues(alpha: 0.20),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
-              : [
-                  BoxShadow(
-                    color: Colors.transparent,
-                    blurRadius: 0,
-                    offset: const Offset(0, 0),
-                  ),
-                ],
+              : const [],
         ),
         child: Text(
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? colorScheme.onPrimary : foregroundColorInactive,
+            color: isSelected ? colorScheme.onSurface : colorScheme.onPrimary,
             fontSize: _navLabelFontSize(context),
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w800,
             letterSpacing: isSelected ? -0.2 : 0,
           ),
         ),
@@ -804,41 +729,45 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final buttonSize = _isCompactNavWidth(context) ? 44.0 : 48.0;
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final circleBg = isDark
-        ? cs.primary.withValues(alpha: 0.22)
-        : cs.primaryContainer.withValues(alpha: 0.50);
-    final circleBorder = isDark
-        ? cs.primary.withValues(alpha: 0.40)
-        : cs.primary.withValues(alpha: 0.28);
+    // Same primary-tinted glass as the segmented group pill.
+    final circleBg = cs.primary.withValues(alpha: isDark ? 0.80 : 0.80);
+    final circleBorder = Colors.white.withValues(alpha: isDark ? 0.50 : 0.65);
 
     return GestureDetector(
       onTap: () => _onItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        width: buttonSize,
-        height: buttonSize,
-        decoration: BoxDecoration(
-          color: cs.primaryContainer,
-          shape: BoxShape.circle,
-          border: Border.all(color: circleBorder, width: 0.9),
-          boxShadow: [
-            BoxShadow(
-              color: cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-              blurRadius: 14,
-              spreadRadius: -2,
-              offset: const Offset(0, 4),
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: kIsWeb
+              ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+              : ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            width: buttonSize,
+            height: buttonSize,
+            decoration: BoxDecoration(
+              color: circleBg,
+              shape: BoxShape.circle,
+              border: Border.all(color: circleBorder, width: 0.9),
+              boxShadow: [
+                BoxShadow(
+                  color: cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+                  blurRadius: 14,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: AnimatedRotation(
-          turns: isMenuOpen ? 0.125 : 0,
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          child: Icon(
-            isSelected ? bulkIcon : outlineIcon,
-            color: isSelected ? foregroundColor : foregroundColorInactive,
-            size: _navIconSize(context),
+            child: AnimatedRotation(
+              turns: isMenuOpen ? 0.125 : 0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOut,
+              child: Icon(
+                isSelected ? bulkIcon : outlineIcon,
+                color: isSelected ? cs.onPrimary : cs.onPrimary,
+                size: _navIconSize(context),
+              ),
+            ),
           ),
         ),
       ),
@@ -851,29 +780,35 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }) {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final pillBg = isDark
-        ? cs.primary.withValues(alpha: 0.16)
-        : cs.primaryContainer.withValues(alpha: 0.38);
-    final pillBorder = isDark
-        ? cs.primary.withValues(alpha: 0.28)
-        : cs.primary.withValues(alpha: 0.18);
+    // Design pill: primary-tinted glass (#7229cc33 light; lavender in dark
+    // via a stronger #c18fff overlay) with a white specular border highlight.
+    final pillBg = cs.primary.withValues(alpha: isDark ? 0.80 : 0.80);
+    final pillBorder = Colors.white.withValues(alpha: isDark ? 0.50 : 0.65);
 
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: pillBorder, width: 0.8),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primary.withValues(alpha: isDark ? 0.20 : 0.10),
-            blurRadius: 16,
-            spreadRadius: -2,
-            offset: const Offset(0, 4),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: kIsWeb
+            ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
+            : ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: pillBg,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: pillBorder, width: 0.8),
+            boxShadow: [
+              BoxShadow(
+                color: cs.primary.withValues(alpha: isDark ? 0.40 : 0.10),
+                blurRadius: 16,
+                spreadRadius: -2,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Row(mainAxisSize: MainAxisSize.min, children: children),
+        ),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
 }

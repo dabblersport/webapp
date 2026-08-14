@@ -12,6 +12,7 @@ import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 class SportsLibraryScreen extends StatefulWidget {
   const SportsLibraryScreen({super.key, this.initialTabIndex = 0});
@@ -46,7 +47,7 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
     );
 
     final content = Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         child: Column(
           children: [

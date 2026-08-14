@@ -14,6 +14,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// Community screen with Following, Followers, and People (discover) tabs.
 /// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
@@ -179,9 +180,9 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
 
   Widget _buildWideLayout(BuildContext context, ColorScheme colorScheme) {
     return AdaptiveScaffold(
-      currentIndex: 4, // Community
+      currentIndex: 5, // Community
       onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 4),
+          onAdaptiveDestinationSelected(context, i, activeIndex: 5),
       destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',
@@ -197,7 +198,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
   /// Center column on wide screens: Community header + Following/Followers.
   Widget _buildWideCommunityBody(ColorScheme colorScheme) {
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
@@ -241,7 +242,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     final profileId = _resolvedProfileId;
     final socialScheme = context.getCategoryTheme('main');
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),

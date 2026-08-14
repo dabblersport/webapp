@@ -140,10 +140,10 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
 
     if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
       return AdaptiveScaffold(
-        currentIndex: 4,
+        currentIndex: 5,
         destinations: kAdaptiveDestinations,
         onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 4),
+            onAdaptiveDestinationSelected(context, i, activeIndex: 5),
         headerWidget: SvgPicture.asset(
           'assets/images/dabbler_text_logo.svg',
           width: 100,

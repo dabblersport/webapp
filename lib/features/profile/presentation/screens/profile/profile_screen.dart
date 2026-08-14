@@ -41,6 +41,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 /// Provider that checks if a profile is under takedown
 /// Uses autoDispose.family to cache per profileId and clean up when not needed
@@ -299,7 +300,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       );
       if (isTakedown) {
         return Scaffold(
-          backgroundColor: colorScheme.surface,
+          backgroundColor: context.appScaffoldBackground,
           body: SafeArea(
             child: _buildTakedownPlaceholder(context, colorScheme),
           ),
@@ -310,7 +311,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     // Loading spinner while takedown check is in flight
     if (profileId != null && takedownAsync is AsyncLoading) {
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: context.appScaffoldBackground,
         body: const SafeArea(child: Center(child: CircularProgressIndicator())),
       );
     }
@@ -398,9 +399,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     required bool showRightPanel,
   }) {
     return AdaptiveScaffold(
-      currentIndex: 6, // Profile is index 6
+      currentIndex: 7, // Profile
       onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 6),
+          onAdaptiveDestinationSelected(context, i, activeIndex: 7),
       destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',

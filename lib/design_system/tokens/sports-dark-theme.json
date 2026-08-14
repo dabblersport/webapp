@@ -2,7 +2,7 @@
   "sportsDark": {
     "primary": "#79FFC3",
     "onPrimary": "#003820",
-    "primaryContainer": "#348638",
+    "primaryContainer": "#2D7331",
     "onPrimaryContainer": "#98FFD4",
     "secondary": "#00E6CB",
     "onSecondary": "#003732",
@@ -29,7 +29,7 @@
     "scrim": "#000000",
     "inverseSurface": "#E1E4DD",
     "inverseOnSurface": "#2F312E",
-    "inversePrimary": "#348638",
+    "inversePrimary": "#2D7331",
     "primaryFixed": "#B6F2B5",
     "onPrimaryFixed": "#002108",
     "primaryFixedDim": "#8ED68A",

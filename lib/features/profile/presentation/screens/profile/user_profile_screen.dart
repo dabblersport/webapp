@@ -31,6 +31,7 @@ import 'package:dabbler/features/social/presentation/widgets/public_activity_car
 import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
@@ -145,7 +146,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     // Show loading state
     if (profileState.isLoading) {
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: context.appScaffoldBackground,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -153,7 +154,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     // Show error state
     if (profileState.errorMessage != null && profileState.profile == null) {
       return Scaffold(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: context.appScaffoldBackground,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -200,7 +201,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     }
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: CustomScrollView(
@@ -303,7 +304,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   /// Center column on wide screens: tabbed posts.
   Widget _buildWideBody(BuildContext context, ColorScheme colorScheme) {
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: CustomScrollView(

@@ -17,6 +17,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/notifications/utils/notification_localizer.dart';
 import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
+import 'package:dabbler/widgets/app_background.dart';
 
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
@@ -91,9 +92,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     return AdaptiveScaffold(
-      currentIndex: 5,
+      currentIndex: 6,
       onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 5),
+          onAdaptiveDestinationSelected(context, i, activeIndex: 6),
       destinations: kAdaptiveDestinations,
       headerWidget: SvgPicture.asset(
         'assets/images/dabbler_text_logo.svg',
@@ -125,7 +126,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     dynamic activityState,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: context.appScaffoldBackground,
       body: SafeArea(
         bottom: false,
         child: _buildScrollBody(userId, notificationState, activityState),

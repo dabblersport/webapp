@@ -209,7 +209,7 @@
       "age": { "type": "int" }
     }
   },
-  "create_info_gender": "الجنس",
+  "create_info_gender": "الجنس (اختياري)",
   "create_info_continue": "متابعه",
   "create_info_error_fill_required": "إملا كل الحقول المطلوبة صح",
   "create_info_error_select_birth": "اختار تاريخ ميلادك",
@@ -530,6 +530,7 @@
   "nav_community": "المجتمع",
   "nav_venues": "الملاعب",
   "nav_games": "الماتشات",
+  "nav_meetups": "اللمّات",
   "nav_create_post": "بوست جديد",
   "nav_create_game": "ماتش جديد",
   "nav_create_meetup": "لمّة جديدة",

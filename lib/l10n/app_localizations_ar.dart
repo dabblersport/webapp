@@ -526,7 +526,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get create_info_gender => 'الجنس';
+  String get create_info_gender => 'الجنس (اختياري)';
 
   @override
   String get create_info_continue => 'متابعه';
@@ -1279,6 +1279,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get nav_games => 'الماتشات';
+
+  @override
+  String get nav_meetups => 'اللمّات';
 
   @override
   String get nav_create_post => 'بوست جديد';

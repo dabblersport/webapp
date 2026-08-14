@@ -179,7 +179,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   /// STEP 2: Collect Basic Info
   /// ═══════════════════════════════════════════════════════════════
 
-  void setBasicInfo({required int age, required String gender}) {
+  void setBasicInfo({required int age, String? gender}) {
     state = state.copyWith(
       data: state.data.copyWith(age: age, gender: gender),
     );
@@ -187,7 +187,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
   void nextFromBasicInfo() {
     if (!state.data.hasBasicInfo) {
-      state = state.setError('Please provide age and gender');
+      state = state.setError('Please provide your age');
       routerRefreshNotifier.notifyAuthStateChanged();
       return;
     }
@@ -252,7 +252,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       username: state.data.username!,
       displayName: state.data.displayName!,
       age: state.data.age!,
-      gender: state.data.gender!,
+      gender: state.data.gender,
       city: state.data.city,
       country: state.data.country,
       language: state.data.language,

@@ -1055,7 +1055,7 @@ abstract class AppLocalizations {
   /// No description provided for @create_info_gender.
   ///
   /// In en, this message translates to:
-  /// **'Gender'**
+  /// **'Gender (optional)'**
   String get create_info_gender;
 
   /// No description provided for @create_info_continue.
@@ -2401,6 +2401,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Games'**
   String get nav_games;
+
+  /// No description provided for @nav_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get nav_meetups;
 
   /// No description provided for @nav_create_post.
   ///
