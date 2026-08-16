@@ -157,6 +157,26 @@ Then run `dart run build_runner build -d`. No tests exist yet — start with rep
 - **Avoid** raw `MaterialPage` — use transition wrappers.
 - **Avoid** throwing exceptions from repositories.
 
+## Deployment & Release Topology
+
+Repo: `dabblersport/webapp`. Hosting: Cloudflare Pages, project `webapp`. Build command `bash scripts/cloudflare-build.sh`, output `build/web`.
+
+### Branches
+
+- **`main`** is the Cloudflare Pages production branch and deploys straight to https://app.dabbler.pro. Pushing to main ships to real users immediately. **Never push directly to main** — always open a PR from `Canary`.
+- **`Canary`** (capital C) is the default working branch and deploys to https://canary.dabbler.pro.
+- Flow: commit → push to `Canary` → wait for the Cloudflare build → verify on canary.dabbler.pro → only then open a PR into `main`. A successful push is not a successful deploy — verify the deployment itself.
+
+### Build Variables
+
+Cloudflare Pages keeps **two separate variable environments, Production and Preview**. They do not share values. Any new build variable must be added to **BOTH** — a variable set only in Production will hard-fail every `Canary` preview build. Preview sat empty for months and silently broke every Canary deploy.
+
+Required by the build script: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_NAME`, `ENVIRONMENT` (plus `GOOGLE_WEB_CLIENT_ID`).
+
+### Supabase Project
+
+The Supabase project is `wtncuzcskpigqpmnxwws` (org: Onebrain). Another unrelated Supabase project exists on the same account — **never use it**.
+
 ## Onebrain Agent Team
 
 ### Agent Roles
