@@ -25,7 +25,7 @@ releases/
 .buildlog/
 .history
 .svn/
-node_modules/**/node_modules/
+node_modules/
 
 # Project-specific build artifacts and vendor directories
 .claude/worktrees/
