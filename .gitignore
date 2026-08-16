@@ -29,6 +29,7 @@ node_modules/
 
 # Project-specific build artifacts and vendor directories
 .claude/worktrees/
+.claude-flow/
 build/
 .dart_tool/
 ios/Pods/
