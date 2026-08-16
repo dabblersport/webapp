@@ -28,6 +28,7 @@ releases/
 node_modules/**/node_modules/
 
 # Project-specific build artifacts and vendor directories
+.claude/worktrees/
 build/
 .dart_tool/
 ios/Pods/
