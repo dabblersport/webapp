@@ -1,0 +1,5 @@
+- [Governance docs system](governance-docs-system.md) — docs/ is the authority; precedence order, what I may write, and the rule that new rules go in files not chat
+- [Audit baseline 2026-08-26](audit-baseline-2026-08-26.md) — run-1 headline numbers; report deltas against these, never restate
+- [Audit false positives](audit-false-positives.md) — verified non-findings + the three scanner bugs that generate them
+- [Confirmed dead code](confirmed-dead-code.md) — ~27k LOC verified unreachable; which parts are unblocked vs waiting on a PO decision
+- [Jira tracking convention](jira-tracking-convention.md) — audit work is tracked as child Tasks under an epic; transition IDs and the key-numbering trap
