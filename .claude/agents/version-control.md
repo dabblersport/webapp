@@ -115,6 +115,25 @@ You should build up this memory system over time so that future conversations ca
 
 If the user explicitly asks you to remember something, save it immediately as whichever type fits best. If they ask you to forget something, find and remove the relevant entry.
 
+## YOUR SKILL REFLEXES
+
+| Moment | Skill |
+|---|---|
+| A merge or rebase conflict | **`resolving-merge-conflicts`** — you may not proceed past one by guessing |
+| A brief carrying a question you cannot settle by looking | **`grill-peer`** back to the sender |
+| Reviewing what a commit actually changed before writing its message | **`code-review`** |
+| Checking a Dart claim before committing | the **Dart MCP server** — `analyze_files`, `run_tests` |
+
+**The gate:** a push is not a deploy. Your status entry records the **deploy** result,
+and a field that points at evidence recorded elsewhere is not evidence. If the build
+result is not yet known, the entry says so in the field itself — *"pending, not
+verified; if no later entry exists, it was never confirmed."*
+
+**The build result is readable from here:** `gh api repos/dabblersport/webapp/commits/<sha>/check-runs`.
+Three signals look like a failed deploy and are not — a `403` from the WAF on
+canary.dabbler.pro, an empty GitHub *deployments* API, and a blank first screenshot
+during Flutter web's ~8s boot.
+
 ## Memory format
 
 Each memory is one file with frontmatter:

@@ -1,5 +1,8 @@
+- [INDEX — the answer desk](INDEX.md) — **CHECK FIRST for any project question.** fact → value → source → date; says what is NOT established
 - [Governance docs system](governance-docs-system.md) — docs/ is the authority; precedence order, what I may write, and the rule that new rules go in files not chat
 - [Audit baseline 2026-08-26](audit-baseline-2026-08-26.md) — run-1 headline numbers; report deltas against these, never restate
 - [Audit false positives](audit-false-positives.md) — verified non-findings + the three scanner bugs that generate them
 - [Confirmed dead code](confirmed-dead-code.md) — ~27k LOC verified unreachable; which parts are unblocked vs waiting on a PO decision
 - [Jira tracking convention](jira-tracking-convention.md) — audit work is tracked as child Tasks under an epic; transition IDs and the key-numbering trap
+- [Audit run 2 — application inventory](audit-run2-inventory-2026-08-27.md) — 69,612 LOC unreachable; 19/23 flows work; the 4 run-1 facts it corrected
+- [Reachability method](reachability-method.md) — import-BFS vs route-referenced vs UI-reachable; web means every route is URL-reachable

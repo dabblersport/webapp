@@ -507,3 +507,113 @@ reported and stopped per CONTRACT §8, and supplied the append-ready text so the
 without me writing it. It since has: **LEARN.md:201** now carries *"In a codebase where identifiers
 are never inlined, grepping for a literal proves nothing"*, appended by master-analyst. That is the
 correct resolution — the content landed, the boundary held, and I did not have to choose between them.
+
+## 2026-08-27 — KAN-8 — PASS (second rework)
+**Gate 1:** `:152` TA now **R** on LEARN.md — and the fix went beyond the cell: the rule text
+carries the reasoning **and the resolution procedure** ("hands the append-ready text to
+master-analyst, who appends it. That is not a workaround; the content lands and the boundary
+holds"). That answers the question that would otherwise recur. Verified there is no second
+hole: exactly three TA write cells exist — own memory (:140), own status file (:158), Jira
+In Review (:172) — all correct. `:105` now "71 views"; every doc in `docs/` now carries 71.
+Zero blank cells.
+**Gate 2:** DECISIONS 017 now implemented rather than contradicted. **First time I can say
+CONTRACT.md contradicts no ACTIVE decision without a caveat.**
+**Verdict:** Done. This file has been wrong three times and corrected three times, and every
+correction was found by someone checking rather than re-reading.
+
+## 2026-08-27 — KAN-5 (epic) — FAIL
+**Gate 1:** **All six of the epic's own criteria PASS**, checked independently: one banner left
+in `docs/` (BRIEF, correctly `AWAITING PO INPUT`); zero blank cells in CONTRACT; DECISIONS
+seeded (now 20); LEARN seeded; **README index tested against the tree and it agrees**; and a
+full credential scan of `docs/` came back **clean** across ~3,000 lines that repeatedly discuss
+secrets and a live leak without reproducing one.
+**FAILED** only on child status — KAN-8 and KAN-17 were in To Do at verdict time. The summary's
+"All 12 children Done" was true when written at 00:01 and stale by the review pass.
+**Verdict:** Back to To Do. KAN-8 has since passed; **KAN-17 is the only remaining blocker.**
+**Note:** failing an epic on child status is not a verdict on the work. This system caught its
+own errors twice today — the definer-view miscount and the schema-history claim — because the
+documents could finally be checked against each other and the database.
+
+## 2026-08-27 — KAN-21 — PASS (recused in part)
+**RECUSED** from the `docs/status/task-auditor.md` portion: my own output, and this ticket
+defines the spec it is graded against. PO reviewed that portion separately (PASS, two gaps).
+I reached this verdict without relying on it.
+**Gate 1:** STATUS.md 103 lines, no banner, **three** real entries (two required). Per-agent
+scopes confirmed **independently** — diffed each status SCOPE against its `.claude/agents/*.md`
+definition; every term present, no drift either direction.
+**The banner deviation is correct, and events proved it:** master-analyst declined to remove
+three agents' banners because CONTRACT §3 gives it `R` on those files.
+`docs/status/version-control.md` is now 102 lines with its banner removed **by its owner** —
+exactly the mechanism the deviation predicted. The AC's plural asks master-analyst to write
+files the contract forbids; the contract wins, and the deviation was declared, not silent.
+Recommend amending the AC.
+**On the PO's two gaps:** agree with both, agree with not failing. On gap 1 I went further —
+between STATUS and a per-agent file a disagreement about *outcome* is a defect, not a tie;
+precedence would route around the inconsistency instead of surfacing it.
+
+## 2026-08-27 — KAN-16 — PASS
+**Gate 1:** All **five** agents documented with identical structure — the ticket named four;
+`task-auditor` was created after it was written and is documented anyway, closing the staleness
+gap I raised on KAN-8 and KAN-13 without being asked. Skills marked recommendation vs installed
+across four subsections. No permission matrix (stated at :9, verified absent). v0.1 changelog
+superseded, not deleted.
+**Earns it:** the 14-agent recommendation **withdrawn in writing** with the reasoning, while
+keeping the v0.1 argument as input to the open decision. §1 draws the empty platform tier and
+says so. §4's identity test names what *not* to ask.
+**Independence:** §2 documents me; I verified its accuracy against CONTRACT rather than judging
+whether it flattered the role.
+**Eighth instrument error, mine:** grepped "4 agents" and matched the substring inside
+"14 agents", nearly reporting a stale count. §1 says "Five agents exist."
+
+## 2026-08-27 — KAN-17 — FAIL
+**Gate 1:** Three of four criteria pass — 10 sections, rules-only, banner removed, and the
+counts are **correct and more granular than the source** (233 with per-slice split, 31/124 with
+four mixed slices, 44 empty catches, and it uses **140** rather than its own ticket's stale 143).
+Both code citations exact. **FAILED** on the pointer half of "violations noted with counts **and
+a pointer**": `grep -c "PROJECT_STATE" docs/CONVENTIONS.md` → **0**. Five counts with no
+provenance.
+**Why it is more than bookkeeping:** that is a fifth unsourced copy of the audit's figures, and
+unsourced copies are exactly how the definer-view error reached eight documents.
+**Verdict:** Back to To Do — five cross-references at :77, :97, :102, :138, :184.
+
+## 2026-08-27 — KAN-23 — PASS
+**Gate 1:** The test was whether product intent had been inferred from a year-old codebase full
+of abandoned directions. **It has not been, anywhere.** Exactly one filled item, correctly
+attributed to the PO. Everywhere the code could have been mined, the file states the observation
+then names its limit — §2 "that establishes the model exists; it does not establish which
+archetype the product is actually for"; §6 headed "observed constraints, not inferred intent".
+10 `NEEDS PO INPUT`; §2's archetype table left visibly blank rather than filled with filler.
+**Banner correctly retained** — its AC is conditional on PO input, which is not in; relabelled
+`AWAITING PO INPUT` rather than deleted to tick a box.
+**Gate 2:** **first verdict I have written where every governance document I needed was filled.**
+**Verdict:** Done — "correctly structured and correctly incomplete". The only deliverable in the
+epic whose remaining work is genuinely the PO's.
+
+## 2026-08-27 — KAN-18 / KAN-19 / KAN-20 / KAN-22 — PASS (reworks)
+All four single-item fixes landed and verified.
+**KAN-19:** all 71 views diffed against §2, **zero missing**; the 19 EXPOSED an exact set match;
+`notifications` as `anon` → **0** confirming RLS works and the views bypass it.
+**KAN-20:** **11 of 11** top-level dirs now present (was 10), `lib/core/design_system/` (22 files)
+now named, and it goes further than asked — **three** design-system surfaces rather than two.
+`lib/core/feed/` (3 files, 128 LOC) still absent; **named, not failed** — no confusable twin, no
+navigation trap, and failing a third time on it would enforce the letter past where it serves the
+reader. The durable fix — generate the map from `ls` — was not taken and will keep producing this.
+**KAN-22:** Wave 4+ gained Scope and Dependencies as well as the exit criterion I asked for.
+**KAN-18:** W5's table splits the conditional branch into 2a/2b; "never claims a fix it cannot
+evidence" is a real gate on an outward-facing artefact.
+
+## NOTE ON THE FULL QUEUE (9 tickets)
+
+**7 PASS · 2 FAIL**, and KAN-8 then passed on resubmission — so **8 of 9 closed**, with KAN-17
+the only open item and KAN-5 waiting on it.
+
+The passes outnumbering the failures matters. Earlier batches ran 4-for-4 against, and the risk
+in a review function is that failing becomes its default rather than its finding. Every pass here
+was measured, not conceded: I diffed 71 views, 113 flags, 11 directories, two agent scopes, and a
+full credential sweep of `docs/`.
+
+**Where I declined to fail:** `lib/core/feed/` on KAN-20, W4's justified exemption on KAN-18, the
+banner deviation on KAN-21, and the conditional banner on KAN-23. In each case the substance was
+met and the residual misleads nobody. **Materiality is the line I have applied all session** — an
+unowned SQL directory, a halved security surface, a false statement of fact and a permission cell
+that fired were material; a 3-file directory and a stale skill count are not.
