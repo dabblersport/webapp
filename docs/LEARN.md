@@ -81,6 +81,39 @@ starts, connects to nothing, and fails in a way that looks like an auth problem.
 Related: **only the exact filename `.mcp.json` is gitignored.** A variant name —
 `.mcp.local.json`, `mcp.json` — will be committed, credentials and all.
 
+## Verifying the Canary deploy: three signals that look like failure and are not
+
+2026-08-27. Confirming a `Canary` deploy produced three misleading readings in a row, each
+of which independently resembles a broken build:
+
+1. **`WebFetch` on canary.dabbler.pro returns 403.** The WAF blocks automated fetchers.
+   This is the WAF working, not the site being down. Inconclusive — never a failed deploy.
+2. **The GitHub deployments API returns nothing for this repo.** Cloudflare Pages does not
+   post *deployment* objects to GitHub. An empty list is an absent channel, not a negative
+   result.
+3. **The first screenshot is a blank white page.** Flutter web takes **~8 seconds** to boot
+   on this app. Screenshotting before that reports a healthy deploy as broken. Wait for the
+   app to self-route to `/landing` before judging anything.
+
+**The authoritative signal is the GitHub check run, and it is reachable without any
+Cloudflare credentials:**
+
+```
+gh api repos/dabblersport/webapp/commits/<sha>/check-runs \
+  --jq '.check_runs[]|"\(.name) \(.status) \(.conclusion) \(.output.title)"'
+```
+
+Cloudflare Pages posts a `Cloudflare Pages` **check run** — `in_progress` → `completed`
+with `conclusion=success` and title `Deployed successfully` — plus a dashboard link
+containing the deployment id. This supersedes the older standing belief that the build
+result could not be read from here and the PO had to open the dashboard. It can. A
+docs-only build took **3m36s** end to end.
+
+**Generalises:** when a verification channel goes quiet, establish whether it is reporting
+a negative or is simply not wired up. Absence of a signal and a negative signal look
+identical and mean opposite things — and one absent channel does not mean every channel is
+absent, so enumerate them before concluding you are blind.
+
 ---
 
 # PART 2 — THE AGENT SYSTEM ITSELF
@@ -242,6 +275,44 @@ correction has one place to land instead of eight.
 A corollary worth its own line: **a correct sentence in a document nobody treats as the
 source is not protection.** W2 was right the whole time and it saved nothing, because the
 other seven documents were not reading it.
+
+## Adding a column to a matrix silently changes every row
+
+`CONTRACT.md`'s `docs/LEARN.md` row read `A | A | A | A` — append for all four agents. When
+the `task-auditor` column was inserted, a mechanical edit made it `A | A | A | A | A`.
+
+**Nobody decided the fifth `A`.** It was pattern-fill. And it granted the reviewer append
+access to a governance file it reviews — contradicting four separate passages of prose in
+the same document, one of which explicitly pre-empts the argument that its `R`s are a gap to
+be filled later.
+
+**Generalises:** widening a table is not a formatting change, it is N new decisions where N
+is the number of rows. The dangerous rows are the **uniform** ones — `A A A A`, `R R R R` —
+because a pattern-fill extends them plausibly and the result looks deliberate. A row with
+mixed values makes you stop and think; a uniform row does not.
+
+**So: when a matrix gains a participant, re-read the uniform rows first.** They are where a
+mechanical edit hides.
+
+## When prose and a table disagree, say which wins — do not just fix one
+
+The prose in `CONTRACT.md` said `task-auditor` writes exactly one file, in four places, with
+the reasoning. The table said it could append to a fifth. Both were in the same document,
+committed together.
+
+**The prose usually holds the reasoning; the table usually holds the typo.** Prose is
+written deliberately and read linearly; a table cell is often filled by alignment with its
+neighbours. So when they conflict, the prose is the better guide to what was *intended* —
+but that is a heuristic, not a rule, and it is not the important part.
+
+**The important part: a reader who consults only one of them never learns there was a
+conflict.** Someone checking "may `task-auditor` append?" reads the row, gets `A`, and
+proceeds — the four paragraphs saying otherwise are three sections away and they had no
+reason to look.
+
+**So state precedence explicitly in any document that carries both.** `CONTRACT.md`'s
+format note now says which wins and that the loser is corrected in the same session. Fixing
+the cell quietly would have left the next contradiction just as invisible.
 
 ## Tooling produces false positives in both directions, so verify both ways
 
