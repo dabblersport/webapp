@@ -50,6 +50,14 @@ of them to reconcile this one, and **never writes into another agent's file.**
 
 # LOG
 
+## 2026-08-27 — KAN-8 — Leadership layer added; ownership split with cpo/cto
+**Agent:** master-analyst
+**Outcome:** `CONTRACT.md` gains `CP`/`CT` columns (zero blank cells) and a new §9 for the split. `BRIEF.md`+`ROADMAP.md` → cpo; `ARCHITECTURE.md`+`CONVENTIONS.md`+`SCHEMA.md` §11 → cto; `DECISIONS.md` prefixed `G-`/`T-`/`P-`. `DECISIONS.md` 021 logs the org structure. `AGENTS.md` → v0.4, roster 5 → 7.
+**Evidence:** Both agent definitions read directly (`cto.md`, `cpo.md`), not summarised. `cto.md:20` — *"read PROJECT_STATE.md rather than re-measuring"* — is the line the split turns on.
+**I agreed with the boundary except in one place, and raised one new risk:** `SCHEMA.md` §§1–8 are a measurement, not a decision, so they are split by section rather than handed over — a decision-maker has no reason to re-run the census and this file has already been wrong twice. And the split creates a **new closed-loop violation**: the CTO would own the standard (`CONVENTIONS.md`) that Gate 2 judges its own directed work against. Guarded by requiring a numbered `T-nnn` decision for any convention change.
+**Not verified:** whether the CPO's 26-document Notion corpus actually covers `BRIEF.md`'s seven questions — that is the CPO's to establish.
+**Next:** `BRIEF.md` is unblocked for the first time — the CPO has a source I never had. Skills have grown 34 → 72 and no agent has a front door (`RESEARCH.md`); that is the next structural problem.
+
 ## 2026-08-27 — KAN-7 / KAN-14 / KAN-2 — Two false findings corrected after review
 **Agent:** master-analyst
 **Outcome:** `task-auditor` failed three tickets. Both headline claims were wrong and I verified both independently before correcting.

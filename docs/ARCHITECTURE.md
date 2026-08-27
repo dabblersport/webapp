@@ -147,6 +147,61 @@ Nothing watches `gamesControllerProvider` outside `games_providers.dart` itself.
 
 ---
 
+## 3b. THE TWO CORE PRODUCT FLOWS
+
+Measured 2026-08-27. Both were previously undocumented.
+
+### Game creation — one live path, one dead 7-step wizard
+
+**LIVE:** `game_composer_screen.dart` (1,685 LOC), routed at `app_router.dart:1200, 1225, 1238`.
+Reads `sportsTable`, `sportVariantsTable`, `venueSpacesTable`, `vGameCardTable`; writes via
+`rpc_create_game` and `rpc_update_game`. **This is the only path that can create a game.**
+
+**DEAD — the entire 7-step wizard, 4,340 LOC + a 632-LOC `.broken` twin:**
+
+```
+create_game_screen.dart          763 LOC   0 importers, NOT routed
+  ├─ sport_format_step.dart    1,179       imported ONLY by create_game_screen
+  ├─ venue_slot_step.dart        525               "
+  ├─ player_invitation_step      571               "
+  ├─ participation_payment_step  515               "
+  └─ review_confirmation_step    749               "
+rebook_flow.dart                  38 LOC   0 importers
+```
+
+**This is transitive deadness and the original audit missed it.** Each step reported
+"imported from 1 place", which read as reachable — but that one place is
+`create_game_screen.dart`, which nothing imports and no route reaches. A one-level
+importer check is not a reachability check.
+
+**It was also never finished.** The whole wizard's only database call is a read of
+`usersTable`. It never calls `rpc_create_game` — it is a UI shell that cannot create a game.
+
+**Corrected dead-code figure:** `PROJECT_STATE.md` DEAD-05 recorded 763 LOC for
+`create_game_screen.dart` alone. The real orphaned total for this flow is **4,972 LOC**
+including the `.broken` twin.
+
+**And it lives in `lib/features/misc/`** — the core product loop, in a directory named
+`misc`, alongside `transactions_screen` (1,134 LOC, routed) and `activities_screen_v2`
+(624, routed). `misc/` is not a feature slice; it is four unrelated things sharing a folder.
+
+### Auth and onboarding — healthy
+
+**All 16 screens under `lib/features/auth_onboarding/**/screens/` are routed.** No orphans.
+`welcome_screen.dart` is referenced 4× in the router (multiple entry points); the other 15
+once each.
+
+Route constants driving the flow: `authWelcome` → `emailInput` → `otpVerification` /
+`emailVerification` → `createUserInfo` → `onboardingPersonaSelection` →
+`onboardingPrimarySport` → `onboardingInterestsSelection` → `onboardingSports` →
+`onboardingPreferences` → `onboardingPrivacy` → `onboardingCompletion` → `welcome`.
+
+Gating is centralised in `_handleRedirect`. Auth is passwordless by design (decision 002) —
+OTP only, password optional.
+
+**This is the counter-example to `misc/`:** 17,471 LOC, 16 screens, zero orphans, one
+coherent flow. When the audit says the codebase is uneven, this is the good end.
+
 ## 4. NAVIGATION
 
 - One router: `lib/app/app_router.dart`. Route constants in
@@ -278,3 +333,88 @@ Pointers, not restatements. Full evidence in `PROJECT_STATE.md`.
 **The healthiest slice is `notifications`** — every non-generated file has an importer, the
 provider chain is complete, the database triggers fan out correctly, and the push path works
 on all three platforms. When a new slice needs a model to copy, copy that one.
+
+---
+
+## 10. THE SECURITY ARCHITECTURE — where authorization actually lives
+
+*Owner: `cto`. Established during the KAN-39 launch-readiness assessment, 2026-08-27.
+Decisions `T-001`–`T-011` in `DECISIONS.md` are the normative statements; this section is
+the map.*
+
+### 10.1 The model is sound; one layer on top of it is not
+
+Dabbler defers **all** authorization to Postgres RLS. That decision (`014`) held on the
+client side and was verified independently: there are **no client-side authorization
+decisions anywhere** in `lib/` — no owner/creator identity comparisons, no `canEdit` /
+`isOwner` getters gating access. Admin routes call the `is_admin` RPC and redirect home on
+*any* exception (`app_router.dart:1648-1670`, `:1674-1696`), and the admin screens re-check
+independently. Deep links do **not** bypass the gate: `_handleRedirect`
+(`app_router.dart:155`) is default-deny by construction — an allowlist, with unauthenticated
+traffic bounced at `:357-372` and the intended destination stashed and replayed after auth
+(`:236-251`, `:404-412`).
+
+The failure is one layer above the model:
+
+```
+client ──► PostgREST ──► VIEW ──► TABLE
+                          ▲          ▲
+                          │          └── RLS: correct. notifications → 0 rows as anon.
+                          └── SECURITY DEFINER, no predicate: 609 rows as anon.
+```
+
+**A definer view is a hole punched through RLS at the schema level.** The base table's
+policy is never consulted, because the view runs as its owner. 19 anon-readable views have
+this shape; 5 are confirmed leaking. `T-001` closes the class by making
+`security_invoker = true` the default; `T-002` keeps it closed with a catalogue test.
+
+**The ordering constraint that governs the fix:** flipping a view to `security_invoker`
+makes the caller's RLS apply — so a view over a table with *no usable policy* starts
+returning 0 rows. `public.games` has RLS enabled with **zero policies**. Base-table policies
+must therefore land **before** the invoker flip, or live screens go blank. This is the one
+place in the remediation where sequence matters.
+
+### 10.2 The four trust boundaries
+
+| Boundary | Control | State |
+|---|---|---|
+| Client → Postgres | RLS on base tables | **Correct**, and bypassed by definer views (`T-001`) |
+| Client → Edge function | JWT verification | Present; **authorization scope missing** on `send-push-notification` (`T-009`) |
+| Client → Storage | Bucket policies | Live paths correct; one wrong constant, zero call sites (`T-007`) |
+| Device → Network | TLS, ATS, no cleartext | **Clean.** Pinning deliberately rejected (`T-006`) |
+
+The client is **not** a trust boundary. Anything enforced only in Dart is a UX affordance,
+not a control.
+
+### 10.3 On-device state is the weakest surface
+
+Transport and authorization are in better shape than local state. Session tokens sit in
+plaintext `SharedPreferences` (the supabase_flutter default) — acceptable in itself, but
+Android Auto Backup is **on by default** at `targetSdk 35` with no exclusion rules, so a
+long-lived refresh token syncs to Google Drive (`T-005`). And logout tears down nothing:
+no cache is cleared and the FCM token is never revoked, so a signed-out device keeps
+receiving the previous account's pushes (`T-004`).
+
+**Local state has no teardown contract.** Every cache was added independently and none
+registers with logout. `T-004` makes that contract explicit — the architectural point is
+that a new cache must join it, not merely that today's three need clearing.
+
+### 10.4 Standing positions
+
+- **`security_invoker = true` is the default for every view.** Definer is an exception with a
+  written reason in `SCHEMA.md` §2.
+- **A view never carries an `auth.uid()` predicate.** Authorization is expressed once, on the
+  table.
+- **Authenticating a caller is not authorizing it.** An edge function acting on a body-supplied
+  `user_id` proves the caller's relationship to it.
+- **No credential is ever a literal in a tracked file** (`T-003`).
+- **No certificate pinning** (`T-006`) — recorded so it is not reopened each audit.
+- **Population counts come from the catalogue, never a scanner's finding count** (decision
+  `020`) — the advisor undercounted this leak by more than half.
+
+### 10.5 Known-broken, filed, not blocking
+
+`public.v_space_slots_today` raises `42P01` for **every** caller — its `find_slots(uuid,
+date, integer)` function queries `public.venue_opening_hours`, which does not exist.
+Reproduced as `anon` 2026-08-27. It is broken rather than leaky, so it is not a promotion
+blocker, but it means any venue-slot surface built on it has never worked.

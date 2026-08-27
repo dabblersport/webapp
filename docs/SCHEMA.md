@@ -289,8 +289,63 @@ callable.** Nothing was dropped. An agent picking by name alone will pick wrong.
 | — | `geo_nearby_venues` | `(in_lat, in_lng, in_radius_m, in_limit, in_offset)` | Separate lineage, `in_` prefix |
 | — | `rpc_nearby_users` | `(p_lat, p_lng, p_delta, p_limit)` | Uses a bounding delta, not a radius |
 
-**Use generation 4.** Do not add a sixth. Retiring generations 1–3 needs a ticket of its own
-— they may still have callers, and that must be checked before dropping anything.
+**Use generation 4.** Do not add a sixth.
+
+### Which generation each caller actually uses — measured 2026-08-27
+
+Callers extracted with a **multiline-safe** parse (`\.rpc\(\s*'name'`). A single-line grep
+misses these: the RPC name sits on the line *after* `.rpc(` throughout this codebase.
+
+| RPC | Gen | Called from | Reachable? |
+|---|:--:|---|---|
+| `rpc_get_nearby_games` | **4** | `features/games/data/datasources/nearby_games_datasource.dart` | **LIVE** → `games_screen.dart` (routed, `app_router.dart:51`) |
+| `rpc_get_nearby_venues` | **4** | `features/venues/data/datasources/nearby_venues_datasource.dart` | **LIVE** → `venues_screen.dart` (routed, `app_router.dart:55`) |
+| `get_nearby_games` | 2 | `data/repositories/nearby_games_repository_impl.dart` · `features/games/data/datasources/supabase_games_datasource.dart` | **DEAD** — consumers are `explore_nearby_screen.dart` (orphan) and the dead games stack |
+| `get_nearby_venues` | 2 | same, plus `features/games/data/datasources/venues_datasource.dart` | **DEAD** on the `nearby_games_repository_impl` path |
+| `get_nearby_posts` | 2 | `nearby_games_repository_impl.dart` · **`data/repositories/feed_repository_impl.dart`** | **feed path is LIVE** — reached via `explore/providers/feed_providers.dart` |
+| `get_nearby_profiles` | 2 | `nearby_games_repository_impl.dart` | **DEAD** |
+| `geo_nearby_venues` | — | `data/repositories/geo_repository_impl.dart` | **LIVE** — reached via `core/providers/geo_providers.dart` |
+| gen 1 (`getnearbygames`, `getnearbyvenues`, `getnearbymeetups`) | 1 | **nothing in `lib/`** | **DEAD — no caller at all** |
+| gen 3 (`nearby_games`, `nearby_venues`, `nearby_posts`) | 3 | **nothing in `lib/`** | **DEAD — no caller at all** |
+| `rpc_nearby_users` | — | nothing in `lib/` | **DEAD — no caller** |
+
+**Safe to drop after a caller re-check: generations 1 and 3, and `rpc_nearby_users`** —
+nine functions with zero references in the client. Generation 2 cannot be dropped wholesale:
+`get_nearby_posts` and `geo_nearby_venues` are both on live paths.
+
+### Two hazards in this area
+
+**1. `get_nearby_games` has two overloads** — `p_radius integer` and `p_radius double
+precision`. `nearby_games_repository_impl.dart` passes a Dart `num` as `p_radius`, so which
+overload resolves depends on the serialised JSON type. Anything relying on it is relying on
+an accident. Another reason to finish moving to generation 4.
+
+**2. Generation 2 calls bypass `SupabaseConfig`.** `nearby_games_repository_impl.dart` calls
+`'get_nearby_games'`, `'get_nearby_venues'`, `'get_nearby_posts'`, `'get_nearby_profiles'`
+as **string literals** — a violation of `MANIFESTO.md` R3, which the audit measured at 0
+violations for tables and buckets but did not check for RPCs. `SupabaseConfig` declares
+`getNearbyVenuesFunction = 'get_nearby_venues'` (line 24) and **nothing uses it.**
+
+### The name collision worth knowing about
+
+`nearbyGamesProvider` is declared **three times** and `nearbyVenuesProvider` **three times**:
+
+| Provider | Declared at | Generation |
+|---|---|:--:|
+| `nearbyGamesProvider` | `features/games/presentation/providers/nearby_games_provider.dart:125` | **4 — live** |
+| `nearbyGamesProvider` | `features/explore/providers/nearby_games_providers.dart:62` | 2 |
+| `nearbyGamesProvider` | `features/games/providers/games_providers.dart:190` | dead stack |
+| `nearbyVenuesProvider` | `features/venues/presentation/providers/nearby_venues_provider.dart:70` | **4 — live** |
+| `nearbyVenuesProvider` | `features/explore/providers/nearby_games_providers.dart:76` | 2 |
+| `nearbyVenuesProvider` | `features/games/providers/games_providers.dart:319` | dead stack |
+
+Live code already works around this: `games_screen.dart:17` and `venues_screen.dart:21` both
+import `package:dabbler/providers.dart` **`hide nearbyGamesProvider`** / **`hide
+nearbyVenuesProvider`** to stop the export hub's version shadowing the one they want.
+
+**A `hide` clause in a screen import is a symptom, not a style choice.** Anyone adding a
+nearby feature will import the wrong one by default, because the export hub gives them
+generation 2.
 
 ### Other duplicated RPCs
 

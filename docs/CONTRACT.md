@@ -68,7 +68,18 @@ any time. The closed loop constrains agents, not the person they work for.
 `W` = may write · `R` = read only · `A` = append only · `—` = no access beyond reading
 
 Agents: **MA** master-analyst · **NS** notifications-specialist · **VC** version-control ·
-**AS** app-store-submission-fixer · **TA** task-auditor
+**AS** app-store-submission-fixer · **TA** task-auditor · **CP** cpo · **CT** cto
+
+**Leadership vs executive.** `cpo` and `cto` sit in the leadership layer with delegated
+authority from the PO: they **decide**, and may reject an executive's work with reasons and
+direct the fix. They do not write feature code, and **neither writes to production**
+(decision 019). The structure is the permission — they act inside it, not outside it.
+
+**The line that decides who owns a document:** master-analyst establishes **what is true**;
+`cpo` and `cto` decide **what should be true next**. A file recording measurements stays
+with the measurer, because a decision-maker has no reason to re-run the query and the file
+rots. A file recording intent goes to the decider. Where one file holds both, it is split by
+section, not handed over whole — see `SCHEMA.md` below.
 
 **On `task-auditor`:** it reads everything and writes **one file** —
 `docs/status/task-auditor.md`. Its column is `R` on every other row in this document, and
@@ -78,20 +89,20 @@ in this matrix where "no write access anywhere" is the design rather than a gap.
 
 ### Application code
 
-| Path | MA | NS | VC | AS | TA | Owner / rule |
-|---|:--:|:--:|:--:|:--:|:--:|---|
-| `lib/features/notifications/**` | R | **W** | — | — | R | notifications-specialist |
-| `lib/services/notifications/**` | R | **W** | — | — | R | notifications-specialist |
-| `lib/features/<any other slice>/**` | R | — | — | — | R | **UNOWNED — nobody writes it.** No feature agent has been hired for these 23 slices. A slice gets a writer when an agent is hired for it and this table is amended. Until then, work on them is done by the PO or by an agent the PO spawns for a named task. |
-| `lib/core/**` (except the four contended files) | R | R | — | — | R | **UNOWNED — nobody writes it.** Cross-cutting; changing it changes every slice. Needs a platform owner. |
-| `lib/data/**` | R | R | — | — | R | **UNOWNED — nobody writes it.** Holds the live repositories; see the audit finding that three parallel profile stacks exist here. |
-| `lib/app/app_router.dart` | R | R | — | R | R | **CONTENDED — see §4.** |
-| `lib/providers.dart` | R | R | — | R | R | **CONTENDED — see §4.** |
-| `lib/core/config/feature_flags.dart` | R | R | — | R | R | **CONTENDED — see §4.** |
-| `lib/core/config/supabase_config.dart` | R | R | — | R | R | **CONTENDED — see §4.** |
-| `lib/themes/**`, `lib/design_system/**`, `lib/utils/**`, `lib/widgets/**` | R | R | — | — | R | **UNOWNED — nobody writes it.** Design-system ownership is unresolved; see the two-design-systems open question in `PROJECT_STATE.md`. |
-| `lib/main.dart`, `lib/firebase_options.dart` | R | R | — | R | R | **UNOWNED — nobody writes it,** except AS for iOS bootstrap requirements raised by an actual App Review rejection. |
-| `lib/l10n/**`, all `*.g.dart`, all `*.freezed.dart` | — | — | — | — | — | **UNOWNED — generated.** Never hand-edited by anyone. Regenerate with `dart run build_runner build -d`. |
+| Path | MA | NS | VC | AS | TA | CP | CT | Owner / rule |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| `lib/features/notifications/**` | R | **W** | — | — | R | R | R | notifications-specialist |
+| `lib/services/notifications/**` | R | **W** | — | — | R | R | R | notifications-specialist |
+| `lib/features/<any other slice>/**` | R | — | — | — | R | R | R | **UNOWNED — nobody writes it.** No feature agent has been hired for these 23 slices. A slice gets a writer when an agent is hired for it and this table is amended. Until then, work on them is done by the PO or by an agent the PO spawns for a named task. |
+| `lib/core/**` (except the four contended files) | R | R | — | — | R | R | R | **UNOWNED — nobody writes it.** Cross-cutting; changing it changes every slice. Needs a platform owner. |
+| `lib/data/**` | R | R | — | — | R | R | R | **UNOWNED — nobody writes it.** Holds the live repositories; see the audit finding that three parallel profile stacks exist here. |
+| `lib/app/app_router.dart` | R | R | — | R | R | R | R | **CONTENDED — see §4.** |
+| `lib/providers.dart` | R | R | — | R | R | R | R | **CONTENDED — see §4.** |
+| `lib/core/config/feature_flags.dart` | R | R | — | R | R | R | R | **CONTENDED — see §4.** |
+| `lib/core/config/supabase_config.dart` | R | R | — | R | R | R | R | **CONTENDED — see §4.** |
+| `lib/themes/**`, `lib/design_system/**`, `lib/utils/**`, `lib/widgets/**` | R | R | — | — | R | R | R | **UNOWNED — nobody writes it.** Design-system ownership is unresolved; see the two-design-systems open question in `PROJECT_STATE.md`. |
+| `lib/main.dart`, `lib/firebase_options.dart` | R | R | — | R | R | R | R | **UNOWNED — nobody writes it,** except AS for iOS bootstrap requirements raised by an actual App Review rejection. |
+| `lib/l10n/**`, all `*.g.dart`, all `*.freezed.dart` | — | — | — | — | — | — | — | **UNOWNED — generated.** Never hand-edited by anyone. Regenerate with `dart run build_runner build -d`. |
 
 ### Backend
 
@@ -99,20 +110,20 @@ in this matrix where "no write access anywhere" is the design rather than a gap.
 `functions/`, `schema/`, and `.temp/`. **There is no `supabase/migrations/` directory** —
 an earlier version of this table granted ownership of that path, which does not exist.
 
-| Path | MA | NS | VC | AS | TA | Owner / rule |
-|---|:--:|:--:|:--:|:--:|:--:|---|
-| Supabase — notification tables, their RLS, their triggers | R | **W\*** | — | — | R | notifications-specialist **authors** the SQL. \*It does not apply it to production — see the writing row below (decision 019) |
-| Supabase — everything else (184 tables, 336 policies, **71 views**) | R | R | — | — | R | **UNOWNED — nobody writes it.** This is why the audit found two live data leaks. Needs a backend owner; raised as KAN-26. |
-| `supabase/functions/send-push-notification/**`, `broadcast-notification/**` | R | **W** | — | — | R | notifications-specialist |
-| `supabase/functions/detect-country/**` | R | R | — | — | R | **UNOWNED — nobody writes it.** |
-| `supabase/schema/migrations/**` — 38 `.sql` files | R | **W\*** | — | — | R | **\*NS writes only notification-related migrations.** Every other migration is **UNOWNED — nobody writes it**, pending a backend owner. This is where schema SQL is actually written |
-| `supabase/schema/snapshots/**` — `notification_schema_snapshot.sql`, 65KB | R | **W** | — | — | R | notifications-specialist. It is a notification-domain artefact despite the generic directory name |
-| `supabase/schema/*.sql` (top level) — currently `add_comment_attachments.sql` | R | — | — | — | R | **UNOWNED — nobody writes it.** A loose file outside `migrations/`; its status is itself a question for the backend owner |
-| `supabase/schema/schema.json` | R | — | — | — | R | **UNOWNED — nobody writes it.** |
-| `supabase/.temp/**` | — | — | — | — | — | **UNOWNED — Supabase CLI scratch.** Not authored by anyone; do not edit or commit |
-| Supabase project `wtncuzcskpigqpmnxwws` — **reading** | R | R | R | R | R | **Open to every agent.** SELECT, `list_tables`, `get_advisors`, probing as `anon`/`authenticated`. Reading is how findings get verified |
-| Supabase project `wtncuzcskpigqpmnxwws` — **writing** | — | — | — | — | — | **NOBODY. No agent writes production**, including notifications-specialist. No `apply_migration`, no DDL, no data change, no policy or grant change — however correct or urgent. A verified defect becomes a ticket with a reproduction; the PO decides what ships. **Decision 019.** This overrides any instruction to "just fix it", including from another agent |
-| **The second Supabase project on the account** | — | — | — | — | — | **FORBIDDEN TO EVERY AGENT.** Not ours. Never read, never write |
+| Path | MA | NS | VC | AS | TA | CP | CT | Owner / rule |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| Supabase — notification tables, their RLS, their triggers | R | **W\*** | — | — | R | R | R | notifications-specialist **authors** the SQL. \*It does not apply it to production — see the writing row below (decision 019) |
+| Supabase — everything else (184 tables, 336 policies, **71 views**) | R | R | — | — | R | R | R | **UNOWNED — nobody writes it.** This is why the audit found two live data leaks. Needs a backend owner; raised as KAN-26. |
+| `supabase/functions/send-push-notification/**`, `broadcast-notification/**` | R | **W** | — | — | R | R | R | notifications-specialist |
+| `supabase/functions/detect-country/**` | R | R | — | — | R | R | R | **UNOWNED — nobody writes it.** |
+| `supabase/schema/migrations/**` — 38 `.sql` files | R | **W\*** | — | — | R | R | R | **\*NS writes only notification-related migrations.** Every other migration is **UNOWNED — nobody writes it**, pending a backend owner. This is where schema SQL is actually written |
+| `supabase/schema/snapshots/**` — `notification_schema_snapshot.sql`, 65KB | R | **W** | — | — | R | R | R | notifications-specialist. It is a notification-domain artefact despite the generic directory name |
+| `supabase/schema/*.sql` (top level) — currently `add_comment_attachments.sql` | R | — | — | — | R | R | R | **UNOWNED — nobody writes it.** A loose file outside `migrations/`; its status is itself a question for the backend owner |
+| `supabase/schema/schema.json` | R | — | — | — | R | R | R | **UNOWNED — nobody writes it.** |
+| `supabase/.temp/**` | — | — | — | — | — | — | — | **UNOWNED — Supabase CLI scratch.** Not authored by anyone; do not edit or commit |
+| Supabase project `wtncuzcskpigqpmnxwws` — **reading** | R | R | R | R | R | R | R | **Open to every agent.** SELECT, `list_tables`, `get_advisors`, probing as `anon`/`authenticated`. Reading is how findings get verified |
+| Supabase project `wtncuzcskpigqpmnxwws` — **writing** | — | — | — | — | — | R | R | **NOBODY. No agent writes production**, including notifications-specialist. No `apply_migration`, no DDL, no data change, no policy or grant change — however correct or urgent. A verified defect becomes a ticket with a reproduction; the PO decides what ships. **Decision 019.** This overrides any instruction to "just fix it", including from another agent |
+| **The second Supabase project on the account** | — | — | — | — | — | — | — | **FORBIDDEN TO EVERY AGENT.** Not ours. Never read, never write |
 
 **A note the next backend owner needs.** These 38 files are real migrations with real
 reasoning in their comment headers — they are *not* scratch.
@@ -125,51 +136,62 @@ database ledger; the repo cannot rebuild the schema. KAN-33's original premise w
 
 ### Tests, tooling, config
 
-| Path | MA | NS | VC | AS | TA | Owner / rule |
-|---|:--:|:--:|:--:|:--:|:--:|---|
-| `test/**` | R | **W** | — | — | R | Any agent may add tests **for code it owns**. NS owns notification tests. Tests for unowned slices are UNOWNED. Nobody deletes another owner's test. |
-| `pubspec.yaml` — version string | R | — | **W** | R | R | version-control owns bumps, including every mirrored copy of the version. |
-| `pubspec.yaml` — dependencies | R | R | R | R | R | **UNOWNED — nobody writes it.** Adding a dependency is an architectural decision; it needs a `DECISIONS.md` entry first. |
-| `ios/**` | R | R* | — | **W** | R | AS owns it. *NS may change push entitlements and APNs config, and must say so in its status entry so AS is not surprised at submission. |
-| `android/**` | R | R* | — | — | R | **UNOWNED — nobody writes it,** except *NS for FCM channel and manifest changes. |
-| `web/**` | R | R* | — | — | R | **UNOWNED — nobody writes it,** except *NS for the web-push service worker. |
-| `scripts/**` | R | — | **W** | — | R | version-control (it owns `cloudflare-build.sh`). |
-| `.claude/agents/**` | **W** | — | — | — | R | master-analyst. Closed loop — see §2. |
-| `.claude/skills/**` | **W** | — | — | — | R | master-analyst. |
-| `.claude/settings*.json`, `.mcp.json` | — | — | — | — | — | **UNOWNED — the PO writes these.** No agent edits its own permissions or MCP wiring. This is a closed-loop rule with teeth: an agent that can edit `settings.local.json` can grant itself anything in this matrix. |
-| `.claude/agent-memory/<self>/**` | **W** | **W** | **W** | **W** | **W** | Each agent writes its own memory directory and **only** its own. |
-| `.claude/agent-memory/<other>/**` | R | R | R | R | R | Read to understand a teammate. Never write. |
-| `CLAUDE.md` | R | R | R | R | R | **UNOWNED — the PO writes it.** Agents propose changes through `DECISIONS.md`; they do not edit it. |
+| Path | MA | NS | VC | AS | TA | CP | CT | Owner / rule |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| `test/**` | R | **W** | — | — | R | R | R | Any agent may add tests **for code it owns**. NS owns notification tests. Tests for unowned slices are UNOWNED. Nobody deletes another owner's test. |
+| `pubspec.yaml` — version string | R | — | **W** | R | R | R | R | version-control owns bumps, including every mirrored copy of the version. |
+| `pubspec.yaml` — dependencies | R | R | R | R | R | R | R | **UNOWNED — nobody writes it.** Adding a dependency is an architectural decision; it needs a `DECISIONS.md` entry first. |
+| `ios/**` | R | R* | — | **W** | R | R | R | AS owns it. *NS may change push entitlements and APNs config, and must say so in its status entry so AS is not surprised at submission. |
+| `android/**` | R | R* | — | — | R | R | R | **UNOWNED — nobody writes it,** except *NS for FCM channel and manifest changes. |
+| `web/**` | R | R* | — | — | R | R | R | **UNOWNED — nobody writes it,** except *NS for the web-push service worker. |
+| `scripts/**` | R | — | **W** | — | R | R | R | version-control (it owns `cloudflare-build.sh`). |
+| `.claude/agents/**` | **W** | — | — | — | R | R | R | master-analyst. Closed loop — see §2. |
+| `.claude/skills/**` | **W** | — | — | — | R | R | R | master-analyst. |
+| `.claude/settings*.json`, `.mcp.json` | — | — | — | — | — | — | — | **UNOWNED — the PO writes these.** No agent edits its own permissions or MCP wiring. This is a closed-loop rule with teeth: an agent that can edit `settings.local.json` can grant itself anything in this matrix. |
+| `.claude/agent-memory/<self>/**` | **W** | **W** | **W** | **W** | **W** | **W** | **W** | Each agent writes its own memory directory and **only** its own. |
+| `.claude/agent-memory/<other>/**` | R | R | R | R | R | R | R | Read to understand a teammate. Never write. |
+| `CLAUDE.md` | R | R | R | R | R | R | R | **UNOWNED — the PO writes it.** Agents propose changes through `DECISIONS.md`; they do not edit it. |
 
 ### Docs
 
-| Path | MA | NS | VC | AS | TA | Owner / rule |
-|---|:--:|:--:|:--:|:--:|:--:|---|
-| `docs/README.md` | **W** | R | R | R | R | master-analyst. The index. It must be corrected whenever a file's state changes — a stale index is the first thing a new agent reads |
-| `docs/MANIFESTO.md`, `CONTRACT.md`, `AGENTS.md`, `WORKFLOWS.md`, `DECISIONS.md`, `CONVENTIONS.md` | **W** | R | R | R | R | master-analyst. Closed loop — see §2. **TA reads these to run Gate 2 and may never write them** |
-| `docs/BRIEF.md` | **W** | R | R | R | R | master-analyst transcribes; **content comes from the PO only.** Never inferred from code. |
-| `docs/ARCHITECTURE.md`, `SCHEMA.md`, `ROADMAP.md`, `PROJECT_STATE.md` | **W** | R | R | R | R | master-analyst |
-| `docs/LEARN.md` | **A** | **A** | **A** | **A** | **R** | **Append-only by every agent — with one exception: `task-auditor` is `R`.** `LEARN.md` is a governance document it reviews (it graded KAN-15, a `LEARN.md` ticket). Appending there would make the reviewer an author of what it later approves — the failure §2 names. **When it has a lesson, it hands the append-ready text to master-analyst, who appends it.** That is not a workaround; the content lands and the boundary holds. See §6. |
-| `docs/STATUS.md` | **W** | R | R | R | R | master-analyst reconciles it. **This is the channel the PO reads.** |
-| `docs/status/master-analyst.md` | **W** | R | R | R | R | Own status only |
-| `docs/status/notifications-specialist.md` | R | **W** | R | R | R | Own status only |
-| `docs/status/version-control.md` | R | R | **W** | R | R | Own status only |
-| `docs/status/app-store-submission-fixer.md` | R | R | R | **W** | R | Own status only |
-| `docs/status/task-auditor.md` | R | R | R | R | **W** | **The only file `task-auditor` writes in this repo.** Own status only |
-| `docs/NOTIFICATIONS.md` | R | **W** | R | R | R | notifications-specialist. Drifted — its subject was rewritten after it was written |
-| `docs/LOCATION.md` | R | — | — | — | R | **UNOWNED — nobody writes it.** |
-| `docs/screen-report.md`, `docs/agents/` | **W** | — | — | — | R | master-analyst. Both currently untracked by git — see KAN-14. |
+| Path | MA | NS | VC | AS | TA | CP | CT | Owner / rule |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| `docs/README.md` | **W** | R | R | R | R | R | R | master-analyst. The index. It must be corrected whenever a file's state changes — a stale index is the first thing a new agent reads |
+| `docs/MANIFESTO.md`, `CONTRACT.md`, `AGENTS.md`, `WORKFLOWS.md` | **W** | R | R | R | R | R | R | master-analyst. Closed loop — see §2. **TA reads these to run Gate 2 and may never write them** |
+| `docs/DECISIONS.md` — governance entries (unprefixed, 001–020) | **W** | R | R | R | R | R | R | master-analyst |
+| `docs/DECISIONS.md` — technical entries (`T-nnn`) | R | R | R | R | R | R | **A** | **cto**, append-only. See the numbering rule in §9 |
+| `docs/DECISIONS.md` — product entries (`P-nnn`) | R | R | R | R | R | **A** | R | **cpo**, append-only |
+| `docs/BRIEF.md` | R | R | R | R | R | **W** | R | **cpo.** Filled from the 26-document business corpus in Notion — a real source, which is why this file was held empty until now. Never inferred from code |
+| `docs/PROJECT_STATE.md` | **W** | R | R | R | R | R | R | **master-analyst.** The measured record. `cto.md:20` instructs the CTO to read it rather than re-measure |
+| `docs/ROADMAP.md` | R | R | R | R | R | **W** | R | **cpo.** Waves and priorities are product calls — Wave 4+'s exit criterion is `NEEDS PO INPUT` for exactly this reason |
+| `docs/ARCHITECTURE.md` | R | R | R | R | R | R | **W** | **cto.** Target technical direction. **§3b's measured flow-reachability data is master-analyst's** and is re-measured by it — the CTO decides direction, not what the tree currently contains |
+| `docs/SCHEMA.md` §§1–8, §10 — **the measured census** | **W** | R | R | R | R | R | R | **master-analyst. SPLIT — see §9 below.** RLS positions for 184 tables, the 71-view anon-exposure census, the RPC caller map, ~200 triggers, the errata log. Every line carries a verification date and a regeneration query |
+| `docs/SCHEMA.md` §11 — **target state and standards** | R | R | R | R | R | R | **W** | **cto.** What the schema *should* be: the RLS standard, the `security_invoker` default, which `nearby` generation is canonical, whether the 30 zero-policy tables are intentional |
+| `docs/CONVENTIONS.md` | R | R | R | R | R | R | **W** | **cto**, with a guard — see §9. A convention change requires a numbered `DECISIONS.md` entry so a loosened standard is visible as a dated decision, not a silent edit |
+| `docs/LEARN.md` | **A** | **A** | **A** | **A** | **R** | R | R | **Append-only by every agent — with one exception: `task-auditor` is `R`.** `LEARN.md` is a governance document it reviews (it graded KAN-15, a `LEARN.md` ticket). Appending there would make the reviewer an author of what it later approves — the failure §2 names. **When it has a lesson, it hands the append-ready text to master-analyst, who appends it.** That is not a workaround; the content lands and the boundary holds. See §6. |
+| `docs/STATUS.md` | **W** | R | R | R | R | R | R | master-analyst reconciles it. **This is the channel the PO reads.** |
+| `docs/status/master-analyst.md` | **W** | R | R | R | R | R | R | Own status only |
+| `docs/status/notifications-specialist.md` | R | **W** | R | R | R | R | R | Own status only |
+| `docs/status/version-control.md` | R | R | **W** | R | R | R | R | Own status only |
+| `docs/status/app-store-submission-fixer.md` | R | R | R | **W** | R | R | R | Own status only |
+| `docs/status/task-auditor.md` | R | R | R | R | **W** | R | R | **The only file `task-auditor` writes in this repo.** Own status only |
+| `docs/status/cpo.md` | R | R | R | R | R | **W** | R | Own status only |
+| `docs/status/cto.md` | R | R | R | R | R | R | **W** | Own status only |
+| `docs/NOTIFICATIONS.md` | R | **W** | R | R | R | R | R | notifications-specialist. Drifted — its subject was rewritten after it was written |
+| `docs/LOCATION.md` | R | — | — | — | R | R | R | **UNOWNED — nobody writes it.** |
+| `docs/RESEARCH.md` | **W** | R | R | R | R | **A** | **A** | **UNOWNED-BY-DEFAULT → master-analyst curates.** The single living research file; `docs/research/` was removed by the PO. `cpo`/`cto` append findings in their domain |
+| `docs/screen-report.md`, `docs/agents/` | **W** | — | — | — | R | R | R | master-analyst. Both currently untracked by git — see KAN-14. |
 
 ### Release
 
-| Path | MA | NS | VC | AS | TA | Owner / rule |
-|---|:--:|:--:|:--:|:--:|:--:|---|
-| Git — commit, branch, merge, tag, push | R | — | **W** | — | R | **version-control only.** No other agent runs a write git command. |
-| Branch `main` | — | — | R | — | — | **Nobody pushes it directly, version-control included.** It deploys straight to app.dabbler.pro. Reached only by PR from `Canary`. |
-| Cloudflare Pages project `webapp` | — | — | **W** | — | — | version-control |
-| App Store Connect | — | — | R | **W** | — | app-store-submission-fixer |
-| Google Play Console | — | — | **W** | — | — | version-control |
-| Jira — the `In Review` column: verdict comment + transition to Done or To Do | R | R | R | R | **W** | **task-auditor only.** Its authority is on the board, not in the tree. master-analyst may transition its own tickets **as far as In Review and no further** |
+| Path | MA | NS | VC | AS | TA | CP | CT | Owner / rule |
+|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|---|
+| Git — commit, branch, merge, tag, push | R | — | **W** | — | R | R | R | **version-control only.** No other agent runs a write git command. |
+| Branch `main` | — | — | R | — | — | — | — | **Nobody pushes it directly, version-control included.** It deploys straight to app.dabbler.pro. Reached only by PR from `Canary`. |
+| Cloudflare Pages project `webapp` | — | — | **W** | — | — | — | — | version-control |
+| App Store Connect | — | — | R | **W** | — | — | — | app-store-submission-fixer |
+| Google Play Console | — | — | **W** | — | — | — | — | version-control |
+| Jira — the `In Review` column: verdict comment + transition to Done or To Do | R | R | R | R | **W** | R | R | **task-auditor only.** Its authority is on the board, not in the tree. master-analyst may transition its own tickets **as far as In Review and no further** |
 
 ---
 
@@ -307,3 +329,84 @@ amends the matrix, logs the amendment in `DECISIONS.md`, and updates `Last updat
 **When a new agent is hired**, this matrix is amended *before* the agent runs, not after.
 An agent whose paths are not in the matrix has no scope, and an agent with no scope
 writes wherever it likes — which is the situation this file exists to prevent.
+
+---
+
+## 9. THE LEADERSHIP SPLIT — three rules it needs to hold
+
+Added 2026-08-27 with `cpo` and `cto`. The split is right in principle; these three guards
+are what stop it creating new failures.
+
+### 9.1 `SCHEMA.md` is split by section, not handed over whole
+
+**Why.** `cto.md:20` tells the CTO to *"read `PROJECT_STATE.md` rather than re-measuring —
+the Analyst establishes what is true; you decide what should be true."* **`SCHEMA.md` §§1–8
+are the same kind of artefact as `PROJECT_STATE.md`** — a census of what the database
+currently contains, every figure carrying a verification date and a regeneration query.
+
+If a decision-maker owns a measurement file, one of two things happens: it inherits a
+re-measurement duty its own charter tells it not to perform, or nobody re-runs the queries
+and the file rots. **This specific file has already been wrong twice** — 49 views that were
+71, and "no schema history" against a 237-row ledger — and only re-measurement caught either.
+
+So: **§§1–8 and §10 stay with master-analyst. §11 (target state and standards) is the
+CTO's.** The CTO decides the RLS standard, the `security_invoker` default, which `nearby`
+generation is canonical, and whether the 30 zero-policy tables are intentional. The Analyst
+reports what is there.
+
+Same logic for `ARCHITECTURE.md` §3b, whose flow-reachability figures are measured: the CTO
+owns the file and its direction; the measured numbers inside it are re-measured by
+master-analyst and must not be hand-edited.
+
+### 9.2 A CTO convention change requires a numbered decision
+
+**The closed-loop problem the split creates.** `task-auditor` runs Gate 2 against
+`CONVENTIONS.md` and `ARCHITECTURE.md`. If the CTO owns those **and** directs the executive
+work being judged, the CTO can edit the standard its own directed work is graded against.
+
+That cannot happen today: master-analyst owns those files and is read-only over code, so it
+gains nothing from loosening a rule. **A CTO gains something — its executives' work passes.**
+This is precisely the failure §2 exists to prevent, and it is new.
+
+**Not a blocker; a guard.** A CTO change to `CONVENTIONS.md` or `ARCHITECTURE.md` **must
+carry a numbered `T-nnn` entry in `DECISIONS.md`**, and `task-auditor`'s Gate 2 reads the
+decision log alongside the convention file. A relaxed standard then appears as a dated
+decision with reasoning a reviewer can question — not a silent edit that turns yesterday's
+violation into today's compliance.
+
+### 9.3 `DECISIONS.md` numbering — prefixes, because three writers will collide
+
+One sequence with three appenders produces two agents both writing `021` in parallel
+sessions. From 2026-08-27:
+
+| Prefix | Owner | Domain |
+|---|---|---|
+| *(unprefixed)* `001`–`021` | master-analyst | the existing governance sequence, now closed |
+| `G-nnn` | master-analyst | governance, process, the agent system |
+| `T-nnn` | cto | architecture, schema, stack, engineering standards |
+| `P-nnn` | cpo | product, scope, roadmap, monetisation |
+
+Each agent numbers within its own prefix, so no coordination is needed and the prefix names
+the domain at a glance. **Precedence is unchanged: the newest dated ACTIVE entry wins,
+regardless of prefix.** A cross-domain supersede needs both owners to agree, or the PO decides.
+
+---
+
+## 10. WHAT THIS FILE HAS BEEN WRONG ABOUT
+
+Kept deliberately. A permission matrix that silently corrects itself teaches readers to
+trust it more than it has earned.
+
+| Date | Error | Correction |
+|---|---|---|
+| 2026-08-26 → corrected 2026-08-27 | Granted `supabase/migrations/**` to notifications-specialist and called it "currently empty". **The directory does not exist.** The real tree is `supabase/schema/**` and had no row at all | Phantom row replaced with four real rows, verified against the tree |
+| 2026-08-26 → corrected 2026-08-27 | `docs/README.md` had no row, and there is no catch-all | Row added under Docs |
+| 2026-08-26 → corrected 2026-08-27 | No column for `task-auditor` | Column added to all five tables |
+| 2026-08-27 → corrected same day | The `docs/LEARN.md` row read `A A A A **A**` — `task-auditor` granted append on a file it reviews, contradicting §2, the §1 note and §6. **A column-width artefact**: a uniform row gained a fifth `A` when the column was inserted, rather than a deliberate `R` | Cell set to `R`, with the exception and its routing stated |
+| 2026-08-26 → corrected 2026-08-27 | "49 views" in the Supabase row | **71.** The 71/49/19 correction reached `SCHEMA.md` and `PROJECT_STATE.md` but not this file |
+| 2026-08-27 | Sole ownership of `ARCHITECTURE.md`, `SCHEMA.md`, `CONVENTIONS.md`, `ROADMAP.md`, `BRIEF.md` and all of `DECISIONS.md` sat with master-analyst — **one agent holding both measurement and decision authority** | Split with `cpo`/`cto` per §9. `SCHEMA.md` divided by section rather than handed over whole, plus two structural guards |
+
+**How the phantom path survived being written and self-reviewed:** nothing in the loop was
+required to look at the filesystem. The row was internally consistent, plausibly worded, and
+cited a real ticket. It was caught by a reviewer who ran `ls`. **A document can be coherent
+and still be wrong about the tree** — the check that catches it has to touch reality.

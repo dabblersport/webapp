@@ -6,7 +6,13 @@
 a logged decision in `DECISIONS.md`.
 
 This file states rules. The reasoning lives in `DECISIONS.md`; the non-negotiables live in
-`MANIFESTO.md`. Where a convention is widely violated in existing code, the row says so —
+`MANIFESTO.md`.
+
+**Every violation count below cites its finding in `docs/PROJECT_STATE.md`.** That is not
+bookkeeping: a number with no source cannot be re-checked when the source changes, and it
+changed twice on 2026-08-27. `PROJECT_STATE.md` is the measured record and this file is a
+consumer of it — **if a count here disagrees with `PROJECT_STATE.md`, that file wins** and
+this one is corrected in the same session. Where a convention is widely violated in existing code, the row says so —
 **a convention binds the code you write, not the code you pass through** (`MANIFESTO.md` R8).
 
 ---
@@ -74,7 +80,8 @@ screens do not exist yet produces exactly what this codebase already has too muc
 - **Every provider is exported from `lib/providers.dart`.** Append your export; do not
   reorder the file (`CONTRACT.md` §4).
 - A provider that nothing watches is dead. Before adding one, know which widget will
-  consume it — **113 of 400 providers in this codebase are currently orphaned.**
+  consume it — **113 of 400 providers in this codebase are currently orphaned**
+  (`PROJECT_STATE.md` PROV-01).
 - A provider must not throw at construction. `authRepositoryProvider`
   (`auth_providers.dart:265`) throws `UnimplementedError` and is defused only because
   nothing watches it. Return an `Err` or do not declare the provider.
@@ -94,12 +101,17 @@ screens do not exist yet produces exactly what this codebase already has too muc
 - **Never throw across a layer boundary.** A repository that throws is a bug.
 - Failure types live in `lib/core/errors/`.
 - **Never write an empty catch block.** If an error is genuinely ignorable, say so in a
-  comment naming why. There are 44 empty catches in the tree; 7 of them silently swallow
+  comment naming why. There are 44 empty catches in the tree (`PROJECT_STATE.md` ERR-01);
+  7 of them silently swallow
   failures on the live onboarding path.
+- **Never use `print()` in production code — use `debugPrint`.** 26 `print()` calls remain
+  (`PROJECT_STATE.md` STYLE-02); the zone guards in `main.dart` and `lib/utils/logger.dart`
+  are intentional, but `post_repository_impl.dart`'s `print('INSERT PAYLOAD: $data')` logs
+  request bodies and should be deleted, not converted.
 - **Never write `on UnimplementedError catch`.** Catching your own unfinished work makes
   it invisible (`settings_screen.dart:1194`).
 
-**Legacy `Either` — migration status.** 31 files still use `Either<Failure, T>` from
+**Legacy `Either` — migration status** (`PROJECT_STATE.md` ARCH-03). 31 files still use `Either<Failure, T>` from
 `fpdart` against 124 on `Result`. Both appear *inside* four slices: `profile` (12/3),
 `games` (11/5), `social` (2/10), `auth_onboarding` (1/7). `lib/data/` is nearly done (2/68).
 
@@ -135,7 +147,8 @@ Miss one and the palette disagrees with itself depending on the surface. There i
 generator; the sync is manual (decision 008).
 `lib/design_system/JSONS/` is **dead** — 0 references — and is not a fourth copy.
 
-**Existing violations: 233** hardcoded `Color(0x…)` in `lib/features/` — `auth_onboarding`
+**Existing violations: 233** hardcoded `Color(0x…)` in `lib/features/`
+(`PROJECT_STATE.md` STYLE-01) — `auth_onboarding`
 97, `rewards` 65, `venues` 20, `social` 20, `games` 13, `profile` 11. Binding on new code;
 not an invitation to fix the old.
 
@@ -181,7 +194,8 @@ convention count in this file.
 
 ## 8. FILE SIZE
 
-**Target: 500 lines.** This is guidance with a target, not a rule of engagement — 140
+**Target: 500 lines.** This is guidance with a target, not a rule of engagement
+(`PROJECT_STATE.md` ARCH-01) — 140
 non-generated files currently exceed it and no mechanism enforces it (`MANIFESTO.md` §1).
 
 - **New files stay under 500 lines.**
@@ -216,7 +230,8 @@ non-generated files currently exceed it and no mechanism enforces it (`MANIFESTO
   `test/features/games/domain/usecases/join_game_usecase_test.dart`.
 - Mocks: `@GenerateMocks([MyRepository])`, then `dart run build_runner build -d`.
   `mockito ^5.4.4` is already a dev dependency.
-- **Test reachable code.** All 66 current tests pass and every one targets a stack no route
+- **Test reachable code** (`PROJECT_STATE.md` TEST-01, TEST-02). All 66 current tests pass
+  and every one targets a stack no route
   reaches — a green suite that protects nothing. Before writing a test, confirm a route
   reaches the code under test.
 - An agent may add tests for code it owns. **Nobody deletes another owner's test.**

@@ -37,7 +37,7 @@ edit a file, read `CONTRACT.md`.
                              and Done. Before QA.
 ```
 
-**Five agents exist.** Three tiers are named because the shape matters for hiring, not
+**Seven agents exist**, across three layers. Three tiers are named because the shape matters for hiring, not
 because the boxes are full. **The platform tier is empty**, which is why `lib/core/**`,
 `lib/data/**` and the design system are UNOWNED in `CONTRACT.md`, and why the whole of
 Supabase outside notifications had no watcher when two live data leaks appeared.
@@ -63,6 +63,44 @@ Everything routes through master-analyst. **Agents do not brief each other** —
 
 **Its constraint is real, not decorative: read-only over all code.** If it could both declare
 a finding and fix it, nobody would review either (decision 017).
+
+### `cto` — Chief Technology Officer, leadership layer
+
+| | |
+|---|---|
+| **Charter** | Decide technical direction and hold the standard. Architecture, schema shape, stack, engineering standards, build-vs-buy |
+| **Owns** | `ARCHITECTURE.md` · `CONVENTIONS.md` · `SCHEMA.md` **§11 only** (target state) · `T-nnn` entries in `DECISIONS.md` · `docs/status/cto.md` |
+| **Does NOT own** | `PROJECT_STATE.md`, and `SCHEMA.md` §§1–8/§10 — the measured census. Its own definition says *read it rather than re-measuring* |
+| **In Supabase** | **Reads freely; never writes** (decision 019). Decides the fix, does not apply it |
+| **Escalation** | The PO |
+| **Done when** | The decision is recorded as a `T-nnn` entry with reasoning and consequence, and the executive who will build it knows what to build |
+
+**Authority to reject.** May reject an executive's work with reasons and direct the fix. It
+decides; executives build. It does not write feature code — that boundary is what makes the
+rejection meaningful rather than a preference.
+
+**The guard on that authority** (`CONTRACT.md` §9.2): a change to `CONVENTIONS.md` or
+`ARCHITECTURE.md` requires a numbered `T-nnn` decision, because the CTO owns the standard
+its own directed work is judged against by Gate 2. The decision log makes a loosened
+standard visible instead of silent.
+
+### `cpo` — Chief Product Officer, leadership layer
+
+| | |
+|---|---|
+| **Charter** | **Product and protect.** Judge every idea, feature, scope change or pivot against committed strategy — the **26 business documents in Notion** — and say whether it serves the business, contradicts something already committed, or is a distraction |
+| **Owns** | `BRIEF.md` · `ROADMAP.md` · `P-nnn` entries in `DECISIONS.md` · `docs/status/cpo.md` |
+| **Source of truth** | The Notion business corpus. **Reads it; never edits it** |
+| **Escalation** | The PO, who may overrule — *"he owns the product; you own the reasoning"* |
+| **Done when** | The verdict names the document the proposal serves or conflicts with, and a rejection carries the alternative |
+
+**Why this unblocks `BRIEF.md`.** master-analyst held that file deliberately empty because
+product intent cannot be inferred from a codebase carrying a year of abandoned directions.
+The CPO has what the Analyst lacked: **a written strategy corpus to fill it from.** That is
+the clearest case in the whole split for the measurement/decision distinction being real.
+
+**Never invents strategy to fill a gap.** Where the corpus is silent, it says what it would
+take to decide and hands it to the PO.
 
 ### `task-auditor` — owns the In Review column
 
@@ -318,5 +356,6 @@ working record until it is populated.
 |---|---|
 | 2026-08-26 | v0.1 — inventory audited, market researched, 14-agent roster proposed |
 | 2026-08-26 | v0.1.1 — corrected test count (5, not 0); added Either/Result and hardcoded-colour counts |
+| 2026-08-27 | **v0.4** — added the **leadership layer**: `cto` and `cpo`. Roster 5 → 7. Ownership of `ARCHITECTURE`/`CONVENTIONS`/`SCHEMA §11` → cto, `BRIEF`/`ROADMAP` → cpo, `DECISIONS.md` split by prefix. Records the reject-with-reasons authority and the §9.2 guard on it. Decision 021 |
 | 2026-08-27 | **v0.3** — added `task-auditor` (KAN-8 rework): charter, the two gates, position before QA, the never-reviews-own-work rule, and why its write surface is one file. Roster 4 → 5. `task-review` reassigned from master-analyst to its actual owner |
 | 2026-08-26 | **v0.2 — restructured into the constitution** (KAN-16). Agent count corrected 3 → 4 (`master-analyst` added). Permission matrix removed; it now lives in `CONTRACT.md`. Added: the shape diagram, per-agent charters with done-criteria, verbatim standing rules, the registry-scoping trap, the nesting constraint, the hiring rule. The 14-agent proposal is superseded by open decision 1 — **not deleted**, because the reasoning behind it is still the input to that decision. Skills research preserved and marked recommendation vs installed. Open decision 5 marked RESOLVED |

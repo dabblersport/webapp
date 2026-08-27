@@ -314,6 +314,146 @@ reason to look.
 format note now says which wins and that the loser is corrected in the same session. Fixing
 the cell quietly would have left the next contradiction just as invisible.
 
+## A one-level importer check is not a reachability check
+
+The audit measured each game-creation wizard step as "imported from 1 place" and read that
+as reachable. All five were imported by `create_game_screen.dart` — which has **0 importers
+and no route**. The whole 7-step flow, **4,972 LOC**, was dead, and the audit had recorded
+only the 763-line entry file.
+
+**Generalises:** reachability is transitive. "X has an importer" answers nothing unless you
+also ask whether *that importer* is reachable, and so on up to a route. A file with one
+importer is more suspicious than a file with ten, not less — a single importer is exactly
+what a dead cluster looks like from inside.
+
+**The check that works:** walk up from the file to `app_router.dart`. If the walk does not
+terminate at a registered route, the file is dead however many importers it had.
+
+A corollary that made this one obvious in hindsight: **the wizard never called
+`rpc_create_game`.** A flow that cannot perform its own core action was never finished. When
+judging whether a feature is live, ask what it *writes* — a UI shell with no write path is
+a strong signal regardless of the import graph.
+
+## "I cannot verify this" is itself a claim
+
+I declined to repeat a colleague's "nine months of exposure" figure because local git
+history had been re-initialised and, I said, could not settle it. **Refusing to repeat an
+unverified number was right. My reason was wrong** — the commit in question was dated
+*after* the re-init, so local history had covered it the whole time.
+
+The actual failure was the query. `git log --reverse -- <file> | head -1` returns **when the
+file was first touched**, not **when this content appeared**. I read the first as an answer
+to the second, got a date that predated the claim, and concluded the evidence was missing
+when only my question was.
+
+**Generalises:** an assertion of *unverifiability* has the same burden of proof as an
+assertion of fact, and it is the more dangerous of the two — a wrong fact invites challenge,
+whereas "we can't know that" closes the question and nobody looks again.
+
+**So state the limit and the command that hit it**, together. "Not reproducible from here"
+is an opinion; "not reproducible from here — `git log --reverse -- <file>` returns only the
+re-init commit" is a claim someone can correct in one line. Which is exactly what happened.
+
+## A filter that looks right is the most expensive kind of wrong
+
+Counting `throw UnimplementedError` in one file with
+`grep -c 'UnimplementedError' | grep 'throw'` returned **25**. The real number is **24**.
+The extra was a doc comment: `/// (notifications, themes, accessibility, etc.) throw
+[UnimplementedError]` — it contains the word `throw`, so it survives a filter built around
+that word.
+
+The same day, in the same file, a colleague's colour count and mine differed because we had
+each written a plausible filter and neither had recorded it.
+
+**Generalises, and it sharpens the recorded-method rule rather than repeating it:** writing
+the command down is necessary and not sufficient. **A recorded method that measures the
+wrong thing is reproducible and still wrong** — and reproducibility makes it *more*
+persuasive, not less.
+
+The check that catches this: after writing the filter, ask what would be caught that
+shouldn't be, and go look at one. Every one of these errors was visible in a single line of
+output that nobody printed.
+
+## A record is not self-certifying, and its errors cost more than anyone else's
+
+`PROJECT_STATE.md` WIRE-10 said a "Coming Soon" placeholder sat on `/settings/language`. The
+placeholder was real. The route was not — `:590` is `/language_selection`, an orphan nothing
+navigates to, while `/settings/language` renders a working 226-line screen. Language
+switching has worked the whole time.
+
+The `cpo` read that entry, escalated it to a launch-gate P0, and did not open the screen —
+**because its own definition tells it to source code facts from the record rather than
+re-measure.** That instruction is correct; it is the entire point of having a record. Which
+is exactly why an error in it does not stay one error.
+
+**Generalises: the more a document is trusted by design, the more expensive its defects
+are.** A wrong line in a scratch note costs the person who reads it. A wrong line in the
+record everyone is told to trust costs whatever gets built on it — and it propagates
+*through* the readers who are behaving correctly.
+
+**And a record that is wrong in a specific, plausible way is more dangerous than one that is
+vague.** WIRE-10 named a file, a line and a route. It survived exactly the kind of careful
+reading it was written to receive, because there was nothing in it to doubt.
+
+## A finding that names a route or a line must carry the check that confirms the attribution
+
+WIRE-10 got the *observation* right — a placeholder exists at `app_router.dart:590` — and
+the *attribution* wrong. Those are separate claims and only the first was verified.
+"Placeholder at line 590" is a fact about a line. "`/settings/language` is a placeholder" is
+a fact about a route, and it needs a second check: **which route owns this line, and does
+anything navigate to it?**
+
+The lesson is not "be careful with line numbers". It is that **an observation and its
+attribution are two findings, and citing a line number makes it look like one.**
+
+**The sibling rule that follows, and it is the part that paid.** When one attribution turns
+out wrong, re-check every finding that makes the same *class* of claim — not the same
+subject. Re-checking WIRE-10's siblings found that WIRE-09's six placeholder routes are
+**also all orphans**: every owning `RoutePaths` constant is referenced only by its own
+declaration, so no user can reach any of them either. I had described them as routes users
+hit. One correction surfaced six more.
+
+**A single wrong attribution is rarely single.** It usually indicates a check that was
+skipped for a whole category, not a slip on one line.
+
+## Check whether cheapness, not danger, is doing the work in a severity
+
+The CTO classified a plaintext keystore password as a launch blocker. Then applied a test to
+its own call: **if rotating the key took three weeks instead of an afternoon, would I still
+hold launch for it?** No — it would rotate on a deadline and ship. So the thing driving
+"blocker" was that the fix was easy, not that the harm was severe. It downgraded its own
+most alarming finding on that basis.
+
+**Generalises:** a cheap fix and an urgent one feel identical from the inside. Both produce
+"we should just do this now." Only one of them justifies stopping everything else, and the
+cheap-and-alarming finding is the one most likely to be misfiled — it is *satisfying* to
+call it a blocker, because you can close it.
+
+**The test is one question: would this still be a blocker if it were expensive?** If not,
+sequence it first and call it what it is — a prerequisite, not a blocker.
+
+And the reason the distinction is worth defending rather than being pedantry: **an
+overstated blocker gets discounted once, and then the real one gets discounted with it.** A
+gate with a wrong item on it teaches people to read past the gate.
+
+## Ask what a change multiplies, not just what it exposes
+
+The same pass downgraded one finding and promoted another. The promoted one — an edge
+function that authenticates but does not authorize, letting any account send arbitrary
+first-party push — was originally ranked below the keystore.
+
+What moved it was not new evidence about the function. It was a second fact from elsewhere
+in the system: **signup is passwordless, so an account is free.** Launch therefore scales the
+*attacker* pool and the *target* pool at the same time.
+
+**Generalises: severity is not a property of a defect alone.** It is a property of the defect
+times its reachability times whatever the next planned change does to both. A finding that
+is stable today can be the worst one on the list the moment something adjacent changes — and
+the adjacent fact usually lives in a different document, which is why nobody joins them.
+
+**So when ranking, ask what the next milestone multiplies.** Not "how bad is this now" but
+"what does shipping do to it."
+
 ## Tooling produces false positives in both directions, so verify both ways
 
 The audit scanner's own defects, found by checking its output rather than trusting it:
@@ -331,6 +471,31 @@ a file that looks dead may be the live one. Both errors are equally available, a
 one of them feels like caution.
 
 ---
+
+## One living document per subject, never a dated snapshot per session
+
+Research was first written to `docs/research/2026-08-27-leadership-agent-skills.md`.
+The PO stopped it: **"we don't create a file with a name with a date or number for
+each research session."**
+
+A dated file answers *what did we think on that day*. Nobody asks that. The question
+is always *what do we know now* — and a folder of dated files cannot answer it without
+reading all of them and guessing which is current. The second file is where the rot
+starts: two documents, both plausible, no rule saying which wins.
+
+**So: one file per subject, edited in place, with a changelog row recording what
+changed.** `docs/RESEARCH.md` holds both halves — agent research and product research.
+When a finding is superseded, the finding is rewritten, not appended beside its
+predecessor.
+
+**Generalises past research files.** The same instinct produces `NOTES-v2.md`,
+`schema-final.sql`, and `create_game_screen.dart.broken` — all of which exist in this
+repo. Appending a new artefact feels safe because nothing is destroyed; editing feels
+risky because something is. But the cost lands on every future reader who now has to
+work out which one is live. **Prefer the edit. Git holds the history.**
+
+The exception is a genuine log — `STATUS.md`, `DECISIONS.md`, this file — where the
+sequence itself is the content and superseding is done by an explicit entry.
 
 # PART 3 — THIS CODEBASE'S RECURRING BUG CLASSES
 
@@ -454,3 +619,90 @@ prose. Reconstructing them cost a full task; several rationales could only be in
 
 **Session end is not a valid resting place for a rule.** If a session ends without it being
 written into `docs/`, it did not survive — however clearly it was stated in chat.
+
+## An agent is reliable inside its evidence domain and unreliable outside it
+
+On 2026-08-27 the CPO delivered the KAN-39 launch-readiness assessment. The corpus half —
+26 Notion documents, quoted with citations — held up completely under review. The code half
+did not: three claims were wrong, and one of them (*"users cannot switch to Arabic"*) was
+**false**, was ranked a promotion blocker, and was dispatched to `cto` as a ticket to build
+a screen that already works.
+
+The errors were not randomly distributed. **Every one of them was a code measurement taken
+by an agent whose evidence domain is business documents.**
+
+**Why this is hard to catch: the reasoning quality does not drop when the evidence does.**
+The prose was equally confident, equally specific and equally well-cited in both halves —
+`file:line` references and all. There was no tonal signal, no hedge, nothing a reader could
+use to tell the well-grounded half from the ungrounded one. An agent cannot feel itself
+leaving its domain, and the output gives the reader no warning either.
+
+Two compounding causes, because the fix needs both:
+
+1. **Reading the shared record is necessary but not sufficient.** `PROJECT_STATE.md` WIRE-10
+   attributed a "Coming Soon" placeholder to `/settings/language`; the placeholder actually
+   belongs to `/language_selection`, a different, orphaned route. The CPO repeated the
+   record faithfully and was still wrong. A record is a snapshot by another agent under its
+   own time pressure — it inherits that agent's error bars.
+2. **A finding was silently upgraded into a blocker.** WIRE-10 was logged MED/small by the
+   agent that measured it. It arrived in the assessment as a launch-gate P0. Nobody
+   re-checked it at the higher stakes, and the promotion did not go back to its owner.
+
+**Generalises:**
+
+- **Judge in your domain; source facts from the domain's owner.** Every seat has an evidence
+  domain — the corpus for `cpo`, the codebase for `master-analyst`, the schema and stack for
+  `cto`. Outside it, take the fact from the owner rather than measuring it yourself.
+- **Escalation demands re-verification.** When a finding logged at MED by someone else is
+  about to become a P0, a blocker, or a ticket, confirm it with whoever measured it — and
+  require the command, not the conclusion. `grill-peer` exists for exactly this.
+- **Attribute measured claims.** "Per `PROJECT_STATE.md` WIRE-10" is checkable in seconds;
+  the same sentence stated flatly is not, and it launders someone else's error bars into
+  your authority.
+- **Verify before you dispatch.** A wrong finding in a document costs a correction. The same
+  finding in a ticket sends an agent to build something that exists — and it is the
+  dispatching that makes the error expensive.
+- **The correction is cheap and the reflex should be to invite it.** All three errors were
+  caught by one reviewer running four commands. Ask for that check on the half of your work
+  that sits outside your domain, before it ships rather than after.
+
+## A correction is a claim, and it inherits the burden of the claim it replaces
+
+*Added 2026-08-27 by `master-analyst`, after `cpo` caught the WIRE-09 re-correction.*
+
+Correcting WIRE-10 sent me to re-check its siblings — which was right. On WIRE-09 I
+checked the reachability of the placeholder routes and wrote **"all six are orphans."**
+Five were. `socialChat` has a live, unconditional Message button on every user profile.
+
+The failure was not the missed grep. It was writing one sentence over six objects when
+the check was run per object and one object disagreed. A finding that says *all N* is a
+stronger claim than N findings that each say *this one* — it forecloses the exceptions
+rather than listing them. **A blanket only earns its scope if every member was checked
+and every member agreed; if you cannot name the check that covered the whole set, write
+the members you verified and stop there.**
+
+Two things made it expensive rather than merely wrong:
+
+- **It contradicted my own record and I did not notice.** `INDEX.md` §11b ranked this
+  exact button #1 in "Worst 5" (INV-01). A correction that disagrees with a live entry in
+  the same file is a signal, not a coincidence. **Before publishing a correction, grep
+  your own documents for the thing you are about to contradict.**
+- **It moved in the direction of relief.** Retiring six findings feels like progress, so
+  it draws less scrutiny than adding six. `cpo` named the reciprocal rule and it is the
+  one worth keeping: **a correction that softens a finding earns the same check as one
+  that hardens it.** The morning's error escalated a MED to a P0; the afternoon's would
+  have dropped a real blocker. Same mechanism, opposite sign.
+
+## Check whether a guard is closed, not just whether it exists
+
+*Added 2026-08-27 by `master-analyst`.*
+
+Two of the six placeholder routes carry `redirect` guards, which reads as protection.
+Both guards test flags that are `true` (`feature_flags.dart:53-54`), so neither fires.
+A guard on an open flag is a comment.
+
+**"Flag-gated" is not a state; `flag == false` is.** Any finding that rests on a route,
+widget or branch being gated must cite the flag's current value at a line, not the
+presence of the gate. On a web build the same applies to reachability itself: a route
+with no in-app navigation is still URL-reachable, so "nothing links it" bounds discovery,
+not access.

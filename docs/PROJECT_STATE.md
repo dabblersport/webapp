@@ -135,7 +135,7 @@ Status is judged on **reachability**, not file count.
 | SEC-03 | Security | db: `public.v_mod_queue_open` — **KAN-38** | CRITICAL | S | 9 open moderation tickets readable by `anon`. Screen is gated (`moderation_queue_screen.dart:22`), data is not | Wrap in `is_admin()` check or revoke `anon`/`authenticated` SELECT |
 | SEC-04 | Security | db: `public.v_safety_overview` | HIGH | S | Admin safety metrics readable by `anon` | Revoke `anon`, `authenticated`; keep for service role / admin RPC |
 | SEC-05 | Security | db: `public.v_circle_feed` | HIGH | S | 6 rows returned to `anon`; circle feeds are scoped content | Add membership predicate; set `security_invoker = true` |
-| SEC-06 | Security | db: 49 views, `reloptions IS NULL` | **CRITICAL** | M | **CORRECTED 2026-08-27 — original figures were ~2× understated.** Measured live: **71 views total** (not 49), **49 `SECURITY DEFINER`** (not 25), **19 anon-readable with no `auth.uid()` predicate** (not 8). The original 25 was the Supabase advisor's *finding count* used as a *population count* | Triage all 19 — 2 are PostGIS metadata, 5 are confirmed leaking, 12 unexamined. Per-view census now in `SCHEMA.md` §2. Default every new view to `security_invoker = true`. KAN-26 |
+| SEC-06 | Security | db: 49 views, `reloptions IS NULL` | **CRITICAL** | M | **CORRECTED 2026-08-27 — original figures were ~2× understated.** Measured live: **71 views total** (not 49), **49 `SECURITY DEFINER`** (not 25), **19 anon-readable with no `auth.uid()` predicate** (not 8). The original 25 was the Supabase advisor's *finding count* used as a *population count* | Triage all 19 — **2 are PostGIS system views (`geography_columns`, `geometry_columns`) — extension-owned metadata, NOT defects; do not re-flag**, 5 are confirmed leaking, 12 unexamined. Per-view census now in `SCHEMA.md` §2. Default every new view to `security_invoker = true`. KAN-26 |
 | SEC-07 | Security | db: `public.games` | HIGH | M | RLS enabled, **zero policies**. `select count(*)` as `authenticated` → 0. All reads flow through definer views instead | Decide explicitly: either write policies on `games`, or delete the direct-table code paths that can never work |
 | SEC-08 | Security | db: 30 tables | MED | M | RLS on, no policies: `squad_members`, `squad_invites`, `moderation_tickets`, `game_invites`, `game_link_tokens`, `admins`, `app_admins`, +23 | Triage: tables only reached via definer RPCs are intentional — document that; the rest need policies |
 | SEC-09 | Security | Supabase Auth settings | MED | S | Leaked-password protection (HaveIBeenPwned) disabled | Enable in dashboard. Note accounts are passwordless by default (`trg_strip_signup_password`), so blast radius is the optional-password path only |
@@ -170,20 +170,29 @@ Status is judged on **reachability**, not file count.
 | WIRE-06 | Incomplete | `lib/features/auth_onboarding/presentation/providers/auth_providers.dart:289` | MED | S | `registerControllerProvider` throws before returning | Delete |
 | WIRE-07 | Incomplete | `lib/features/rewards/data/repositories/rewards_repository_impl.dart:40` | MED | S | `throw UnimplementedError('Not implemented')` | Covered by the DEAD-01 decision |
 | WIRE-08 | Incomplete | `lib/features/games/providers/games_providers.dart:95-121` | LOW | S | `createGameUseCaseProvider` and `cancelGameUseCaseProvider` commented out entirely | Delete the commented blocks |
-| WIRE-09 | Incomplete | `lib/app/app_router.dart:1573,1587,1601,1617,1630,1640` | MED | M | 6 registered routes render `_PlaceholderScreen(… ) → "Coming Soon"`: Chat List, Social Notifications, Messages, Edit Post, Social Analytics | Either build them or unregister the routes — a route that resolves to "Coming Soon" is worse than a 404 |
-| WIRE-10 | Incomplete | `lib/app/app_router.dart:590` | MED | S | `/settings/language` renders inline `Text('Language Selection - Coming Soon')` while full en/ar l10n exists (489 keys each) | Wire the existing locale switcher |
+| WIRE-09 | Incomplete | `app_router.dart:1607-1622` (reachable) · `1569, 1579, 1593, 1626, 1636` + `590` (orphans) | **MED** | S | **RE-CORRECTED 2026-08-27 — my 2026-08-27 correction over-generalised and the `cpo` caught it.** I verified five and asserted six. **`socialChat` is reachable and its guard does not fire.** Chain verified end to end: `user_profile_screen.dart:1094` Message button, `onPressed: () => _sendMessage(context)`, **no flag and no condition on the button** → `:1475` `context.push('${RoutePaths.socialChat}/$userId')` → route `app_router.dart:1607` → guard `:1611 if (!FeatureFlags.messaging) return RoutePaths.home` → `feature_flags.dart:53 messaging = true`, **so the guard is open** → `:1617` `_PlaceholderScreen(title: 'Chat: …')`. `UserProfileScreen` is routed at `:1463`. **Corrected population: 7 placeholder routes · 1 reachable in-app · 6 orphans.** And the six are *not* protected: `socialNotifications` (`:1579`) and `socialMessages` (`:1593`) carry guards, but `FeatureFlags.notifications` and `FeatureFlags.messaging` are **both `true`** (`feature_flags.dart:53-54`) — **no placeholder route in the app is behind a closed flag.** `socialChatList` (`:1569`), `socialEditPost` (`:1626`), `socialAnalytics` (`:1636`) and `/language_selection` (`:590`) have no guard at all. On a web build every one is URL-reachable. `socialChat`'s only distinction is that a button pushes it | **Two separable jobs.** (1) The Message button is the launch-facing half — either hide it until chat exists or build chat; this is the finding `cpo` carries as B4. (2) Delete the six orphan routes and their constants (6 of the 54 unused constants in FLAG-02). Owner: a Flutter agent. Re-check: `grep -rn "socialChat\|socialChatList\|socialMessages\|socialEditPost\|socialAnalytics\|language_selection" lib --include='*.dart' | grep -v route_constants.dart | grep -v app_router.dart` |
+| WIRE-10 | Incomplete | `app_router.dart:590` | **LOW** | S | **CORRECTED 2026-08-27 — the original misattributed the route.** `:590` is **`/language_selection`**, an **orphan route nothing navigates to** (`grep -rn 'language_selection' lib --include='*.dart'` outside the router → empty). It was reported as `/settings/language`. **`/settings/language` is at `:1287` and renders the real 226-line `LanguageSelectionScreen`.** Language switching **works today**: `settings_screen.dart:1064` → `:1072 _showLanguagePicker()` → writes `localeProvider` → `main.dart:254` watches, `:268` passes `locale:` | **Delete the dead route.** Not a launch blocker and it does not touch `/settings/language` |
 | WIRE-11 | Incomplete | `lib/core/services/analytics/analytics_service.dart:11-219` | HIGH | M | **18 `TODO: implement …`** — every tracking method is an empty body. `main.dart:78` calls `trackEvent` for the flags snapshot into a no-op | Either wire a provider or delete the service and its call sites; right now the app believes it has analytics |
 | BUG-01 | Bug | `lib/core/config/supabase_config.dart:4` | HIGH | S | `venueImagesBucket = 'venue-images'` — **no such bucket**. Actual bucket is `venue`, which has **0 storage policies** of any kind | Rename the constant to `'venue'` and add INSERT + SELECT policies; unused today, so it is a trap not an outage |
 | BUG-02 | Bug | `lib/features/profile/data/datasources/supabase_profile_datasource.dart:16` | MED | S | `final String _avatarBucket = 'avatars';` — bucket does not exist (real name `Avatar`). Live uploads go through `ImageUploadService` which uses `SupabaseConfig.avatarsBucket` correctly | Delete the hardcode; route through `SupabaseConfig` |
 | BUG-03 | Bug | db: bucket `dabbler-news` | MED | S | INSERT policy exists, **no SELECT policy**. Public bucket so CDN reads work, but authenticated list/read-back fails — the recurring Dabbler bug class | Add a SELECT policy |
 | BUG-04 | Bug | db: bucket `venue` | MED | S | Zero policies. Uploads impossible | Add INSERT + SELECT |
+| SEC-11 | Security | `android/app/build.gradle.kts:36,38` | **HIGH** (was CRITICAL) | S | Play upload keystore `storePassword`/`keyPassword` in plaintext in a tracked file. **Exposure window verified: `ebaf9b8`, 2025-11-22 → 9 months.** **Downgraded 2026-08-27 on a bound the CTO and I each verified independently: the signing artifact has never been in the repo in any form.** No `.jks`/`.keystore`/`.p12`/`.pfx`/`.pepk` was **ever added on any ref in any history**; no base64 blob in `android/`, `.github/` or `scripts/`; **no workflow references signing at all** (`deploy-web.yml` is web-only, so Android signing never runs in CI); `storeFile = file("upload-keystore.jks")` resolves to a file that is **0 tracked / present only on the maintainer's machine** | Rotate the upload key, move both values to gitignored `key.properties` or CI secrets, purge from history. **The PO-facing sentence is "a credential is exposed, the signing artifact is not."** Pre-promotion requirement, **not a launch blocker** — no user is harmed today. KAN-57 |
+| SEC-12 | Security | `lib/core/services/auth_service.dart:261-267` | HIGH | S | **Logout does not clean up.** `signOut()` is six lines: it calls `_supabase.auth.signOut()` and nothing else — **no local cache clear, no `fcm_tokens` row delete.** A signed-out device keeps receiving the previous account's pushes, with content in the notification body | Delete the device's `fcm_tokens` row and clear cached profile state on sign-out. **KAN-58** |
+| SEC-13 | Security | `supabase/functions/send-push-notification` | **CRITICAL** (promoted 2026-08-27) | M | **Authenticates but does not authorize.** `user_id`, `title` and `body` are all caller-supplied — no relationship check between caller and recipient, no rate limit. Any registered account can deliver arbitrary text as a **trusted first-party push**. **Promoted because signup is passwordless (decision 002), so obtaining an account is free: launch multiplies the target pool and the attacker pool simultaneously** | Verify the caller may notify the recipient; add a rate limit. **Launch blocker.** KAN-59 |
+| SEC-14 | Security | `android/app/src/main/AndroidManifest.xml` | MED | S | **Android Auto Backup is on by default at targetSdk 35 with no exclusion rules**, so the Supabase refresh token syncs to the user's Google Drive | Add `android:dataExtractionRules` / `android:fullBackupContent` excluding auth storage. **KAN-60** |
+| BUG-05 | Bug | db: `public.v_space_slots_today` | MED | S | **Raises 42P01 for every caller.** `find_slots()` queries `public.venue_opening_hours` — verified 2026-08-27 via `to_regclass`: **that table does not exist.** Broken, not leaky. **A table named `opening_hours` does exist** — this looks like a rename that missed the function | Point `find_slots()` at `opening_hours`, or restore the expected name. Verify with a call, not a read of the definition |
+| BUG-06 | Bug | `web/.well-known/assetlinks.json:7` | MED | S | **`REPLACE_WITH_SHA256_FROM_PLAY_CONSOLE_APP_SIGNING` placeholder still present** while `AndroidManifest.xml:55` declares `android:autoVerify="true"` — **Android App Links do not resolve**; deep links fall back to the chooser | Paste the SHA-256 from Play Console app signing. Verified 2026-08-27 |
+| BUG-07 | Bug | `lib/features/profile/presentation/screens/profile/user_profile_screen.dart:1467-1476` | LOW | S | **The Message button silently does nothing while the block-status provider is loading or errored.** `_sendMessage` wraps the navigation in `ref.read(isUserBlockedProvider(userId)).whenData((blocked) { … context.push(…); })` — `whenData` runs the callback only in the data state, so loading and error produce no navigation and no feedback. Independent of chat existing; found by `cpo` on the WIRE-09 path | Handle all three `AsyncValue` states explicitly — block on error, spinner or disabled button while loading. Owner: a Flutter agent |
+| BUG-08 | Bug | `lib/app/app_router.dart:1618` | LOW | S | `_PlaceholderScreen(title: 'Chat: ${conversationId.substring(0, 8)}...')` — `substring(0, 8)` **throws `RangeError` on any id shorter than 8 characters.** Not triggered by the in-app push (`:1475` passes a 36-char UUID) but this is a web app and the path segment is user-supplied via URL. Found by `cpo` | Dies with the route when the six orphans are deleted; if the chat route survives to real implementation, clamp the length. Owner: a Flutter agent |
+| STYLE-03 | Convention | 8 files, 13 sites | MED | M | **Decision 010 held — 0 raw `MaterialPage`** — but a violation the convention does not name: **13 `MaterialPageRoute` sites across 8 files** bypass GoRouter via imperative `Navigator.push`, **5 of them in `sports_screen.dart`**. Verified 2026-08-27 | Extend the convention to name `MaterialPageRoute` and imperative navigation, then migrate. A rule that names only one of two ways to do the wrong thing catches only half |
 | TEST-01 | Tests | `test/` | HIGH | L | 5 test files / 783 lib files. 66 tests, all passing, **all against unreachable code** (games usecases, `RegisterUseCase`) | Write the first test against the live path: `game_view_controller.dart` join/leave, and the notification repository |
 | TEST-02 | Tests | `test/features/` | HIGH | L | 22 of 25 slices have no test directory at all — including `social` (28,827 LOC) and `notifications` | Start with `notifications` — it is the cleanest slice and the highest-value regression target |
 | ARCH-01 | Architecture | 140 non-generated files >500 LOC | MED | L | Top offenders: `post_composer_screen.dart` (2,996), `profile_edit_screen.dart` (2,914), `social_search_screen.dart` (2,892), `post_detail_screen.dart` (2,304), `sports_screen.dart` (2,303). `CLAUDE.md` sets a 500-line limit | Split the top 5 only; a blanket campaign is not worth it |
 | ARCH-02 | Architecture | `lib/app/app_router.dart` (1,745 LOC) | MED | M | Single file holds all routes, redirect logic, an inline placeholder widget, and two `rpc('is_admin')` calls (lines 1656, 1682) | Extract route groups per feature; keep `_handleRedirect` central |
-| ARCH-03 | Consistency | 31 files on `Either<>` vs 124 on `Result<>` | MED | L | Mixed **inside** slices, against `CLAUDE.md`: `games` (11 Either / 5 Result), `profile` (12/3), `social` (2/10), `auth_onboarding` (1/7) | Convert per-slice, `social` and `auth_onboarding` first — they are closest to done |
+| ARCH-03 | Consistency | `lib/core/utils/either.dart` + 31 files | MED | L | **EXPANDED 2026-08-27 (cto, verified).** Not two error conventions but **three**: `Result` (124 files) · `fpdart` `Either` · **a hand-written `Either` in `lib/core/utils/either.dart` used by 13 files** — all of `profile` (12) plus `auth_onboarding/application/location/location_controller.dart`. It is **not type-compatible with fpdart**. `CLAUDE.md`'s "legacy uses fpdart" is half-right, which is worse than wrong: it stops people looking. **Two files mix conventions inside one class** — `games_repository_impl.dart`, `venues_controller.dart` | Convert `social`/`auth_onboarding` first. Treat the hand-written `Either` as its own migration, not part of the fpdart one |
 | ARCH-04 | Architecture | `lib/features/profile/` | MED | L | 3 parallel profile repository stacks. Live one is `lib/data/repositories/profiles_repository_impl.dart` (221 LOC); the `features/profile/data/` stack (2,534 LOC) is reachable but built on `UnimplementedError` | Collapse to one after WIRE-01/03/04 |
-| STYLE-01 | Convention | 233 `Color(0x…)` in `lib/features/` | MED | M | `auth_onboarding` 97, `rewards` 65, `venues` 20, `social` 20. `CLAUDE.md` forbids hardcoded colours | Fix `auth_onboarding` (live, 97 sites); `rewards`' 65 disappear with DEAD-01 |
+| STYLE-01 | Convention | `lib/features/` + 43 files repo-wide | MED | M | **CORRECTED 2026-08-27 (cto, verified by master-analyst).** Was "233 hardcoded colours" — reproducible only under an unrecorded filter (`Color(0x` substring, `lib/features/` only). **The defensible figure is 317 across 43 files**, command below. `auth_onboarding` remains the largest concentration | Fix `auth_onboarding` first. **Command:** `grep -rEo "Color\(0x[0-9a-fA-F]{8}\)" lib --include='*.dart' \| grep -vE "^lib/(themes/\|core/theme/\|core/design_system/\|design_system/\|core/config/design_system/)" \| wc -l` — the exclusions matter: counting all of `lib/` returns 1,611 because it counts the palette definitions as violations of themselves |
 | STYLE-02 | Convention | 26 `print()` calls | LOW | S | `lib/utils/logger.dart` (5), `lib/main.dart` (8 — zone/error handlers), `post_repository_impl.dart:` `print('INSERT PAYLOAD: $data')` logs request bodies | Convert to `debugPrint`; the `INSERT PAYLOAD` line should go entirely |
 | ERR-01 | Error handling | 44 `empty_catches` from `flutter analyze` | MED | M | Concentrated in `rewards/services/` (18) and `profile/services/onboarding_controller.dart` (6 — lines 104, 160, 172, 190, 235, 317) | Fix the 6 in `onboarding_controller.dart` (live path); the rewards ones die with DEAD-01 |
 | DEP-01 | Dependency | `pubspec.yaml:40-43` | MED | S | `dabbler_design_system` is a **git dependency** on `github.com/MoatazMu/dabbler-design-system@main` with **0 imports** in `lib/`. Every clean build clones it | Remove from `pubspec.yaml`. `lib/design_system/design_system.dart:1` calls itself "(temporary)" — decide adoption or drop |
@@ -514,5 +523,348 @@ Do not open tickets for these.
 
 | Date | Run | Summary |
 |---|---|---|
+| 2026-08-27 | 1f (WIRE-09 re-correction) | **My own correction was wrong, in the direction of relief.** Yesterday's 1d pass downgraded WIRE-09 to LOW on the claim that *all six* placeholder routes are orphans. **Five are. `socialChat` is not.** A live, unconditional Message button on every user profile (`user_profile_screen.dart:1094` → `:1475`) pushes it, and its `FeatureFlags.messaging` guard is open (`feature_flags.dart:53 = true`), so the user lands on "Coming Soon". This contradicted `INDEX.md` §11b's own INV-01, which was right, and the blanket claim would have retired a real `cpo` blocker (B4). Caught by `cpo`, verified independently here. **WIRE-09 restored to MED** with the population corrected to **7 placeholder routes · 1 reachable · 6 orphans**, and with the further finding that **no placeholder route is behind a closed flag** — the two that carry guards have open ones. Two new defects on the same path adopted from `cpo`: BUG-07 (`whenData` swallows loading/error, button does nothing) and BUG-08 (`substring(0, 8)` `RangeError` on a short URL id). |
+| 2026-08-27 | 1e (severity re-sort) | **SEC-11 downgraded CRITICAL → HIGH; SEC-13 promoted to CRITICAL.** The keystore bound was verified independently by the CTO and me and is stronger than first stated: **no signing artifact has ever existed in the repo on any ref, and Android signing never runs in CI** — so a credential is exposed and the artifact is not. SEC-13 promoted on the interaction the original assessment missed: passwordless signup makes an account free, so **launch scales the attacker pool and the target pool at once.** Exposure window for SEC-11 now verified at 9 months (`ebaf9b8`, 2025-11-22). |
+| 2026-08-27 | 1d (attribution audit) | **WIRE-10 was wrong and the error reached a launch-gate P0 before anyone caught it.** `:590` is `/language_selection` — an orphan route — not `/settings/language`, which is at `:1287` and renders a working 226-line screen. **Language switching works today.** The `cpo` sourced the claim from this record, as its definition instructs, and escalated MED → P0 without opening the screen; it has retracted. **Re-checked every sibling `WIRE-` entry that names a route or line, which is how WIRE-09 was caught: all six of its placeholder routes are also orphans** — every owning `RoutePaths` constant is referenced only by its own declaration. Both downgraded to LOW with disposition *delete the dead route*. WIRE-02/05/06/11 line citations re-verified and hold. |
+| 2026-08-27 | 1c (cto reconciliation) | **CTO ran an independent pass (KAN-39/KAN-64) and we converged on the leak, the 19-view population, `flutter analyze` and `flutter test` — measured separately before either read the other.** Four deltas resolved: 143 vs 140 god files (mine excludes generated l10n — CTO agreed, `T-010`); **STYLE-01 corrected 233 → 317 with the command recorded**, because 233 was reproducible only under a filter I never wrote down; **ARCH-03 expanded — three error conventions, not two**, incl. a hand-written `Either` in `lib/core/utils/either.dart` used by 13 files and not fpdart-compatible; decision 010 held but STYLE-03 added for 13 `MaterialPageRoute` sites. **Six new findings adopted after independent verification:** SEC-11 keystore plaintext, SEC-12 logout leaves FCM token, SEC-13 push authz, SEC-14 Android Auto Backup, BUG-05 `v_space_slots_today` 42P01, BUG-06 assetlinks placeholder. PostGIS views marked do-not-re-flag in SEC-06. |
 | 2026-08-27 | 1b (corrections) | **Two findings corrected after independent review.** SEC-06 understated the definer-view problem ~2×: **71 views / 49 definer / 19 anon-exposed**, not 49/25/8 — the original took the Supabase advisor's finding count for a population count, and 11 exposed views went unexamined as a result. Severity raised to **CRITICAL**. CFG-02 corrected **twice**: `supabase/migrations/` does not exist *and* `supabase_migrations.schema_migrations` holds **237 applied migrations** — the surviving finding is reproducibility (1 of 38 tracked `.sql` files has `CREATE TABLE`), not missing history. Live leaks re-filed as KAN-36/37/38. New governance: DECISIONS 019 (no agent writes production), 020 + MANIFESTO R15 (count populations, never infer). `SCHEMA.md` §2 now carries a per-view anon-exposure position for all 71 views. |
 | 2026-08-26 | 1 (baseline) | First audit. 25 slices classified: 12 SHIPPED · 6 PARTIAL · 1 SCAFFOLD · 6 DEAD. 62 findings logged (10 security, 20 dead code, 11 incompleteness, 4 bugs, 2 tests, 4 architecture, 2 style, 2 dependency, 4 docs, 2 config, 1 provider). **CRITICAL:** unauthenticated read of 609 notifications across 49 users via `v_notifications_feed`/`v_notifications_ranked`; moderation queue and safety overview equally open. Headline numbers: 98/113 dead flags · 113/400 orphan providers · 21 orphan screen classes / 6,213 LOC in 10 files · 140 non-generated files >500 LOC · 22/25 features with no test dir · 5 test files vs 783 lib files (all 66 tests cover unreachable code) · 31 `Either` vs 124 `Result` files · 233 hardcoded colours · 26 `print()` · 44 empty catches · 44 `UnimplementedError` sites · 54/133 unused route constants · 0 migration files. `flutter analyze`: 0 errors. |
+
+---
+
+# PART II — APPLICATION INVENTORY
+
+**Inventory run:** 2026-08-27 · **Branch:** `Canary` · **HEAD:** `5f92904`
+**Scope:** the shipped application surface — every screen, every flow, every affordance.
+**Method:** static reachability only. No runtime testing, no manual QA. Three measures are
+used and must not be confused:
+
+1. **Import-reachable** — a file-level BFS over `import`/`export`/`part` edges starting at
+   `lib/main.dart`. A file outside this set is not compiled into the app at all.
+2. **Route-referenced** — the screen class appears in `lib/app/app_router.dart`.
+3. **UI-reachable** — some widget the user can actually see navigates there.
+
+A screen can be route-referenced and still never reachable by tapping. **Dabbler ships as
+Flutter Web on Cloudflare Pages (`app.dabbler.pro`), so every registered route path is
+reachable by typing a URL**, whether or not a button points at it. That distinction is
+load-bearing for several findings below.
+
+Reproduce: `/Users/moatazmustapha/.claude/jobs/*/tmp/reach.py` (import BFS) and
+`census.sh` (class census).
+
+## 13. The headline number
+
+**69,612 lines across 267 non-generated Dart files are not import-reachable from
+`lib/main.dart`.** They are in the repository and not in the app.
+
+| Measure | Value |
+|---|---|
+| Dart files under `lib/` | 835 (incl. generated) |
+| Import-reachable from `main.dart` | 558 |
+| **Unreachable, non-generated** | **267 files / 69,612 LOC** |
+| Screen/page/view classes | 101 |
+| — referenced in `app_router.dart` | 74 |
+| — pushed from a routed screen, not routed themselves | 2 (`SavedLocationsScreen`, `SportsLibraryScreen`) |
+| — orphaned public screens | 7 |
+| — private helper views (`_ErrorView`, `_EmptyView`, …) | 18 |
+| `GoRoute` declarations | 90 |
+| `RoutePaths` constants | 99 declared · **21 referenced nowhere** |
+| `RouteNames` constants | 96 declared · **44 referenced nowhere** |
+
+**Correction to run 1.** The baseline logged "21 orphan screen classes / 6,213 LOC in 10
+files" and "54/133 unused route constants". Both were narrower measures than the population.
+The dead surface is **~11× larger** than the orphan-screen figure suggested, and the route
+constants are **195 declared / 65 unused**, not 133/54.
+
+## 14. Screen inventory
+
+### 14a. Orphaned public screens — 7
+
+Zero references outside their own file, not import-reachable.
+
+| Screen | File | LOC |
+|---|---|---:|
+| `CreatePostScreen` | `lib/features/social/presentation/screens/create_post_screen.dart:21` | 1,196 |
+| `ExploreNearbyScreen` | `lib/features/explore/presentation/screens/explore_nearby_screen.dart:22` | 864 |
+| `CreateGameScreen` | `lib/features/misc/presentation/screens/create_game_screen.dart:16` | 763 |
+| `GamesNearbyScreen` | `lib/features/games/presentation/screens/games_nearby_screen.dart:22` | 722 |
+| `VenuesNearbyScreen` | `lib/features/venues/presentation/screens/venues_nearby_screen.dart:23` | 619 |
+| `SportsHistoryScreen` | `lib/features/explore/presentation/screens/sports_history_screen.dart:102` | — |
+| `FavoriteVenuesScreen` | `lib/features/explore/presentation/screens/sports_screen.dart:1782` | — |
+
+`CreatePostScreen` is **superseded, not missing**: the live composer is
+`PostComposerScreen` (`lib/features/social/presentation/screens/post_composer_screen.dart`,
+2,996 LOC), routed at `lib/app/app_router.dart:1376-1386`. Two full post composers exist;
+one is wired.
+
+### 14b. Routes that render a placeholder — 6
+
+`_PlaceholderScreen` (`lib/app/app_router.dart:1715-1745`) renders a construction icon and
+the text **"<title>\nComing Soon"**.
+
+| Route | Line | Linked from live UI? |
+|---|---|---|
+| `socialChat/:userId` — "Chat: …" | `app_router.dart:1617` | **YES** — see 16a |
+| `socialChatList` — "Chat List" | `app_router.dart:1573` | no |
+| `socialMessages` — "Messages" | `app_router.dart:1601` | no |
+| `socialNotifications` — "Social Notifications" | `app_router.dart:1587` | no |
+| `socialEditPost` — "Edit Post" | `app_router.dart:1630` | no |
+| `socialAnalytics` — "Social Analytics" | `app_router.dart:1640` | no |
+
+A seventh construction screen is inlined directly in the router:
+`/language_selection` → `Text('Language Selection - Coming Soon')`
+(`lib/app/app_router.dart:590`).
+
+### 14c. Route-registered but no UI navigates there — 31 `RoutePaths`
+
+Reachable by URL on web, invisible in the app. Includes `rewards`, `adminModerationQueue`,
+`adminSafetyOverview`, `socialEditPost`, `socialAnalytics`, `register`,
+`onboardingPersonaSelection`, and the four `socialOnboarding*` screens. The tab routes
+(`community`, `venuesTab`, `gamesTab`, `sportsExplore`, `activities`) are **not** in this
+category despite appearing router-only — they are entered via
+`StatefulNavigationShell.goBranch(index)`
+(`lib/features/home/presentation/screens/main_navigation_screen.dart:219-236`), which is
+correct and not a finding.
+
+## 15. Flow traces — what a user can actually do
+
+| # | Flow | Verdict | Breaks at |
+|---|---|---|---|
+| 1 | Cold start / redirect | **WORKS** | — |
+| 2 | Sign up / sign in (OTP, passwordless) | **WORKS** (happy path) | crash path, see 16b |
+| 3 | Onboarding completion | **WORKS, silently partial** | see 16c |
+| 4 | Profile view / edit / real avatar / sport profiles | **WORKS** | — |
+| 5 | Sign out · account deletion | **WORKS** | — |
+| 6 | Game creation (live composer) | **WORKS** | — |
+| 7 | Game discovery (nearby, filters) | **WORKS** | — |
+| 8 | Join / leave / waitlist / join-request | **WORKS** | — |
+| 9 | Game detail + host actions | **WORKS** | no cancel-game action exists |
+| 10 | Venues browse / detail / favourite | **WORKS** | share → "Sharing coming soon" |
+| 11 | Venue submission | **WORKS** | — |
+| 12 | Social feed (For You / Following / News) | **WORKS** | — |
+| 13 | Create a post | **WORKS** | Circle visibility, see 16d |
+| 14 | Follow / unfollow | **WORKS** | — |
+| 15 | Social search | **WORKS** | — |
+| 16 | Notifications + FCM + preferences | **WORKS** | — |
+| 17 | News browse + detail | **WORKS** | — |
+| 18 | Admin moderation / safety | **WORKS** for an admin | no in-app link; URL only |
+| 19 | **Chat / messaging** | **NOT SHIPPED, ADVERTISED** | see 16a |
+| 20 | **Circles** | **NOT REACHABLE** | see 16d |
+| 21 | **Rewards / check-in** | **NOT REACHABLE** | flag off, see 16e |
+| 22 | Game creation (7-step wizard) | **DEAD** | see 16f |
+| 23 | Explore search | **WORKS as a local filter only** | see 16g |
+
+**Key hop citations.** Game creation: `GameComposerScreen`
+(`lib/features/misc/presentation/screens/game_composer_screen.dart:525`) → `submit()`
+`:402-515` → `rpc_create_game` at `:490` / `rpc_update_game` at `:461`; errors surfaced at
+`:493-513` and `:569-584`. Join: `game_detail_screen.dart:355` →
+`game_view_controller.dart:481-518` → `rpc_join_game`. Post: `PostComposerScreen` →
+`post_composer_providers.dart:502,611` → `post_repository_impl.dart:1058` → `posts`.
+Follow: `real_friends_screen.dart:888-917` → `profile_follows`. Notifications:
+`notifications_screen_v2.dart:66` → `notifications_repository_impl.dart:26-42`; FCM token
+upsert at `push_notification_service_mobile.dart:254-271`.
+
+## 16. Findings — the promise gap
+
+Measured over **import-reachable files only**. The same patterns in dead files are excluded
+because they cannot affect a user.
+
+| Pattern | Live | Dead |
+|---|---:|---:|
+| `UnimplementedError` | 30 | 21 |
+| `TODO`/`FIXME` | 25 | 1 |
+| "coming soon" in user-visible text | 12 | 3 |
+| "not implemented"/"under development" | 8 | 20 |
+| Simulated / mock data | 8 | 57 |
+| Empty `onPressed: () {}` | 5 | 1 |
+| Empty `onTap: () {}` | 1 | 1 |
+
+### 16a. INV-01 — CRITICAL: a live button leads to "Coming Soon"
+
+`user_profile_screen.dart:1094` renders a **"Message"** button on the routed
+`UserProfileScreen` (`lib/app/app_router.dart:1463`). It checks block status, then
+`context.push('${RoutePaths.socialChat}/$userId')` (`:1475`). That route resolves to
+`_PlaceholderScreen(title: 'Chat: …')` at `lib/app/app_router.dart:1617` — a construction
+icon and the words "Coming Soon".
+
+A full chat implementation exists and is not wired:
+`chat_controller.dart` (741 LOC) and `chat_input_widget.dart` (695 LOC) are both
+import-unreachable with zero references outside their own files.
+
+**This is the single most visible broken promise in the app.** It is on the profile of
+every other user.
+
+### 16b. INV-02 — HIGH: a redirect target that has no route
+
+`RoutePaths.onboardingPersonaSelection` (`lib/utils/constants/route_constants.dart:46`,
+**declared twice** — also at `:169`) is used as a redirect destination at three places in
+`lib/app/app_router.dart` — `:194`, `:211`, `:329`. Verified:
+
+```
+grep -n "onboarding-persona-selection" lib/app/app_router.dart   → no match
+```
+
+**No `GoRoute` registers this path.** Any redirect that resolves to it falls through to
+`errorBuilder` (`lib/app/app_router.dart:146`) and the user lands on the error page. The
+live trigger is the DB resume path: `onboarding_controller.dart:154-155` ("Unknown state —
+restart from persona selection") → `app_router.dart:329`, evaluated on every authenticated
+app load whose onboarding step is `checking`.
+
+Dormant for a clean first-time signup. Not dormant for a user whose profile row does not
+match the three recognised completion shapes.
+
+### 16c. INV-03 — HIGH: onboarding can complete with its dependent rows missing
+
+`rpc_onboard_profile` sets `profiles.onboard = true` atomically
+(`auth_service.dart:1052-1063`). The persona-table insert and the `sport_profiles` insert
+are **separate, non-transactional calls whose failures are swallowed**:
+`auth_service.dart:1081-1082`, `:1090-1091`, `:1099-1100` are all empty `catch (_) {}`.
+
+Result: `onboard = true` with no `player`/`organiser`/`hoster` row and no sport profile. The
+router treats that user as fully onboarded and admits them to the app. There is no
+reconciliation or repair path. This is also the most likely producer of the INV-02 crash.
+
+### 16d. INV-04 — HIGH: two settings screens report success without saving anything
+
+**Avatar upload at `/profile/photo`** —
+`lib/features/profile/presentation/screens/settings/profile_avatar_screen.dart:624-660`:
+
+```dart
+await Future.delayed(const Duration(seconds: 2)); // Simulate upload
+...
+const SnackBar(content: Text('Avatar uploaded successfully!'), backgroundColor: Colors.green)
+```
+
+No storage call, no repository call, nothing persisted. Routed at
+`lib/app/app_router.dart:1063-1070`. A *real* avatar upload exists on a different route,
+`/profile/edit` (`profile_edit_screen.dart:914-922` → `image_upload_service.dart:122-211`).
+Two entry points for the same action; one lies.
+
+**Availability preferences** —
+`lib/features/profile/presentation/screens/preferences/availability_preferences_screen.dart:1045-1059`:
+`_saveSettings()` is a `SnackBar('Availability settings saved!')` and nothing else. The file
+contains no `.from()`, no `.rpc()`, no repository call. Routed at
+`lib/app/app_router.dart:1311`. Mitigating: the settings menu entry that pointed at it is
+commented out (`settings_screen.dart:88`), so it is currently URL-only.
+
+**Circle visibility.** `PostComposerScreen` offers "Circle — shared with a specific circle"
+in its visibility picker (`post_composer_screen.dart:1105-1140`) but contains no circle
+picker; `grep -n "circleId" post_composer_screen.dart` returns nothing. Selecting it and
+submitting always fails validation at `post_composer_providers.dart:514`: *"Select a circle
+to post to."* The real picker (`CirclePickerSheet` → `CircleManagementSheet`, 740 LOC) is
+wired only into the dead `create_post_screen.dart`. **Circles has no live entry point at
+all** while the composer advertises it.
+
+### 16e. INV-05 — MEDIUM: `/transactions` shows fabricated money
+
+`lib/features/misc/presentation/screens/transactions_screen.dart:51` — `_transactions` is a
+hardcoded list: `'Football Game Payment'`, `'amount': 150.00`, `'currency': 'AED'`, comment
+*"Mock transaction data - Replace with real data from repository"*. The screen is routed at
+`lib/app/app_router.dart:1165`, gated on `FeatureFlags.enablePayments`, which is **`true`**
+(`feature_flags.dart:132`). Two of its buttons are `onPressed: () {}` (`:1021`, `:1032`).
+
+No in-app link points at `/transactions` — but it is a live route on a web app, and it
+displays invented financial records.
+
+Same class of finding: `SocialOnboardingFriendsScreen` is routed
+(`lib/app/app_router.dart:1487`) and shows fabricated friend suggestions — "John Smith",
+avatars fetched from the external placeholder service `i.pravatar.cc` — plus a faked
+contacts-permission request (`social_onboarding_friends_screen.dart:31,77`).
+
+### 16f. INV-06 — MEDIUM: linked stub screens in Settings
+
+`settings_screen.dart:294` is a live info-circle button that pushes `/help/center` →
+`HelpCenterScreen` → **"This screen is under development"**
+(`lib/features/misc/presentation/screens/help_center_screen.dart:32`).
+
+`ContactSupportScreen` (`/help/contact`, routed at `lib/app/app_router.dart:1332`) offers
+three list rows whose entire handler is a SnackBar: *"FAQ section coming soon"* (`:388`),
+*"Live chat coming soon"* (`:414`), *"Phone call functionality coming soon"* (`:441`).
+
+`RewardsScreen` (`lib/features/misc/presentation/screens/rewards_screen.dart:22`) is
+`Text('Rewards Screen - Under Construction')`.
+
+Venue share: `venue_detail_screen.dart:922` → `_snack('Sharing coming soon')`.
+
+### 16g. INV-07 — MEDIUM: the dead game-creation wizard designed three shipped-nothing capabilities
+
+The 7-step wizard under `lib/features/misc/presentation/screens/` is confirmed unreachable —
+only `create_game_screen.dart:6-10` imports the five steps, and nothing imports
+`create_game_screen.dart`. What it was built to do that the live composer cannot:
+
+- **Payments** — payment split host-pays / split-evenly / custom, per-player AED cost
+  (`participation_payment_step.dart:396-414`, `:91-208`, `_calculateCostPerPlayer:420-432`).
+  The live composer has no cost field at all.
+- **Venue slot booking** — a dedicated search/filter venue-slot UI
+  (`venue_slot_step.dart:16-51`).
+- **Player invitations** — invite from contacts / recent teammates / search with a custom
+  message (`player_invitation_step.dart:20-33`) — itself backed by `_loadMockData()` (`:34`,
+  `:44`), so it was never functional either.
+
+`rebook_flow.dart:26-27` is a stub reading "This screen is under development".
+
+### 16h. INV-08 — LOW: search is a client-side filter, not a search
+
+`ExploreScreen` (class in `sports_screen.dart:378`, routed at `lib/app/app_router.dart:899`)
+has a search field at `sports_screen.dart:1555-1599` that substring-filters the already
+fetched in-memory list (`:1046-1059`). There is no server-side search RPC or full-text
+query. A user searching for a sport or venue outside the loaded page gets no results.
+
+## 17. Corrections to the record
+
+Four established facts were wrong and are corrected here.
+
+| Was recorded | Actually | Evidence |
+|---|---|---|
+| Live composer at `lib/features/games/.../game_composer_screen.dart` | It is at **`lib/features/misc/`** — the `games/` path does not exist | `find lib -name game_composer_screen.dart` |
+| `get_nearby_posts` LIVE via `feed_repository_impl.dart` | **Dead.** `feedRepositoryProvider` / `nearbyRpcFeedProvider` are referenced only inside `feed_providers.dart` itself. The live feed is `TabFeedNotifier` → `post_repository_impl.dart:449-507`, a direct bounding-box query on `posts`, no RPC | `grep -rn "nearbyRpcFeedProvider\|feedRepositoryProvider" lib` |
+| rewards: "only check-in (~985 LOC) live" | **Nothing in rewards is live.** `FeatureFlags.enableRewards = false` (`feature_flags.dart:57`) gates both the route (`app_router.dart:932`) and the check-in modal trigger (`main_navigation_screen.dart:81,96`). The implementation is complete and switched off | `grep -n enableRewards` |
+| 54 of 133 route constants unused | **65 of 195.** `RoutePaths` 99 declared / 21 unused; `RouteNames` 96 declared / 44 unused | census script §13 |
+
+## 18. Looks bad but is actually fine
+
+Mandatory section. Each of these trips a scanner and is not a finding.
+
+- **`route: ''` on two Settings items** (`settings_screen.dart:107,114`, Language and App
+  Country). Reads as a navigation to nowhere. `_navigateToSetting` (`:1062-1070`)
+  special-cases both by title and opens a picker sheet. Correct behaviour.
+- **Help Center / Contact Support / Availability removed from the Settings list**
+  (`settings_screen.dart:88,127,134,141` are commented out). The team already hid the stubs.
+  Only the stray info button at `:294` still reaches one.
+- **Rewards hidden cleanly.** No nav destination references `RoutePaths.rewards` and no
+  routed screen mentions rewards. The flag hides an unfinished feature properly — this is
+  the pattern the other stubs should follow.
+- **`notifications_screen_v2.dart` / `activities_screen_v2.dart`** are the live routed
+  screens, not abandoned rewrites. Unchanged from run 1.
+- **Tab routes appearing "router-only"** — entered via `goBranch(index)`, not by path.
+- **`_ErrorView` / `_EmptyView` counted as orphan classes** — private per-file helpers, 18
+  of the 25 non-routed classes. Not screens.
+- **`onPressed: null`** on a disabled button is a valid Flutter idiom for the disabled
+  state, not a dead handler.
+- **`UnimplementedError` in `settings_repository_impl.dart`** (25 sites) — the class doc at
+  `:14-15` declares them deliberate. The notification/theme/accessibility methods are not
+  called by any reachable UI; those screens use `notificationSettingsControllerProvider`
+  instead. Only the privacy methods are wired, and those are implemented.
+- **18 of the 44 `UnimplementedError` sites from run 1** live in
+  `lib/features/profile/data/providers/profile_providers.dart` and the two stub repos it
+  instantiates — that file is imported by nothing. Dead, not broken.
+
+## 19. Handoff
+
+| Finding | Owner | First action |
+|---|---|---|
+| INV-01 chat button → Coming Soon | Flutter feature agent | Hide the Message button behind a flag, or wire `chat_controller.dart`. Hiding is one line |
+| INV-02 missing `onboardingPersonaSelection` route | Flutter feature agent | Register the route or change the three redirect targets. Also de-duplicate the constant declared at `route_constants.dart:46` and `:169` |
+| INV-03 non-transactional onboarding | `cto` decides, then Supabase agent | Either fold persona + sport insert into `rpc_onboard_profile`, or stop swallowing the catches |
+| INV-04 fake-success saves | Flutter feature agent | Delete `/profile/photo` (a real one exists at `/profile/edit`); make availability write or remove the route. Remove the Circle option from the composer until a picker exists |
+| INV-05 fabricated transactions + fake friends | `cpo` decides, then Flutter agent | Flip `enablePayments` off or delete the route; same for `SocialOnboardingFriendsScreen` |
+| INV-06 linked stub screens | Flutter feature agent | Remove `settings_screen.dart:294`; hide `/help/contact` rows |
+| INV-07 dead wizard (4,972 LOC) | `cpo` | Payments, venue-slot booking and invitations are unbuilt product, not just dead code. Decide before deleting |
+| INV-08 client-side search | `cto` | Decide whether server-side search is in launch scope |
+| 69,612 LOC unreachable | `cpo` + `cto` | Supersedes the run-1 deletion list. Needs a decision, not a campaign |
+
+## 20. Changelog
+
+| Date | Run | Summary |
+|---|---|---|
+| 2026-08-27 | 2 (application inventory) | **Full map of the shipped surface at `5f92904`.** 267 non-generated files / **69,612 LOC** not import-reachable from `main.dart` — ~11× the run-1 orphan-screen figure. 101 screen classes: 74 route-referenced, 2 push-only, 7 orphaned public, 18 private helpers. **19 of 23 user flows complete end to end.** Four do not: chat is advertised by a live button and lands on "Coming Soon" (INV-01), Circles has no entry point while the composer offers it, rewards is complete but flagged off, the 7-step game wizard is dead. Two settings screens report success without writing (INV-04). `/transactions` shows fabricated AED amounts on a live route (INV-05). One redirect target has no registered route (INV-02). Onboarding can set `onboard = true` with dependent rows missing (INV-03). **Four record corrections:** composer lives in `misc/` not `games/`; `get_nearby_posts` is dead not live; nothing in rewards is live; route constants are 65/195 unused not 54/133. |

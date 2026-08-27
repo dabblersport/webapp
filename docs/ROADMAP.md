@@ -63,6 +63,46 @@ prefixes, or a decision records why they stay where they are.
 
 **Nothing ships to production until this passes** (`MANIFESTO.md` §4.4).
 
+### Wave P — The promotion gate (added 2026-08-27 by `cpo`, decision P-004)
+
+**This wave is not about shipping — the app is already live on both stores. It is about
+whether we are allowed to *promote* it.** Nothing here is a CPO preference; every item is
+a criterion the business corpus already wrote down as binding.
+
+> "The go/no-go gate (Section C) is binding. If a P0 criterion is red, you hold the launch.
+> No exceptions, no 'we'll fix it live.'" — `13b launch runbook and day-0 operations`
+
+**Scope — four blockers** (B3 retracted 2026-08-27; numbering kept so ticket references
+resolve). No acquisition spend, no press, no venue partner pack and no founding-cohort
+outreach until all four close. **B1 and B2 carry the hold on their own.**
+
+| | Blocker | Gate it fails | Ticket |
+|---|---|---|---|
+| B1 | Unauthenticated cross-tenant data leak | `13b` P0-9 | KAN-36 · KAN-37 · KAN-38 |
+| B2 | PDPL data export unreachable | `13b` P0-6, `14` D8 | KAN-52 |
+| ~~B3~~ | ~~Users cannot switch to Arabic~~ — **RETRACTED, claim was false** | — | KAN-53 closed |
+| B4 | "Message" button on every profile → "Coming Soon" | `14` H6 | KAN-45 |
+| B5 | Analytics sink is 4 empty methods — the app emits nothing | `08` Part 2 §A.2 | KAN-51 |
+
+**Two further holds, both PO calls rather than engineering work:** KAN-54 (the cricket-first
+wedge has no cricket feature) and KAN-55 (the venue partner pack contracts deliverables the
+product does not have).
+
+**Dependencies:** B1 is Wave 0 work and blocks this wave the same way it blocks every other.
+B2 and B5 are independent of each other and can run in parallel. **B5 is smaller than first
+scoped** — the ~14 tracking methods are already written and call `trackEvent`; only the
+four-method static sink is empty, so this is wiring a provider, not building instrumentation.
+
+**Why B5 ranks where it does.** B1 is the more serious defect. B5 is the one that makes the
+$200–225K acquisition budget in `08` unspendable: the growth loops it funds are defined
+entirely by numbers the product does not emit, so money spent before B5 closes buys users
+and learns nothing.
+
+**Exit criterion:** all five closed and verified *in production*, not in code — `13b` P0-6
+is explicit about that. Then the promotion decision returns to the PO.
+
+**Full reasoning:** `docs/BRIEF.md` §10.
+
 ### Wave 1 — Decide what exists
 
 **Scope:** the two frozen questions and the ownership gap.
