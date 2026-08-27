@@ -1,0 +1,531 @@
+# docs/SCHEMA.md — Supabase Schema
+
+**Owner:** master-analyst (write) · all agents (read)
+**Project:** `wtncuzcskpigqpmnxwws` (org: Onebrain)
+**Verified live via Supabase MCP:** 2026-08-26. Not transcribed from Dart models.
+
+> **A second, unrelated project exists on this account. Never read or write it.**
+
+**No credentials or connection strings appear in this file, and none may be added.**
+
+---
+
+## SCOPE OF THIS DOCUMENT — read before relying on it
+
+The `public` schema has **184 tables**, **~180 RPCs**, **~200 triggers** and **71 views**.
+Column-level documentation of all 184 tables would be tens of thousands of lines, would
+drift within a week, and would compete with the database itself as a source of truth.
+
+**So this file documents what cannot be discovered quickly, and points at the database for
+what can:**
+
+- **Every table's RLS position** — stated for all 184, none blank. This is the security
+  surface and it is not obvious from any query an agent thinks to run.
+- **The RPC generations** — where several coexist for the same job and only one is current.
+- **The triggers** — grouped, with the ones that carry business rules named.
+- **Known mismatches** — where the app expects something the database does not have.
+
+**For columns, types, nullability and foreign keys, query the live database.** Use
+`list_tables` with `verbose: true`, or `information_schema.columns`. That is authoritative;
+this file would only be a stale copy of it.
+
+---
+
+## 1. RLS POSITION — ALL 184 TABLES
+
+**Summary:** 184 tables · 183 RLS-enabled · 153 with policies · 336 policies total.
+
+### 1a. RLS ENABLED, ZERO POLICIES — 30 tables
+
+**These deny all access to `anon` and `authenticated`.** A query against one returns an
+empty result, not an error, so client code reading them appears to work and silently gets
+nothing. Verified: `select count(*) from games` as `authenticated` returns **0**.
+
+```
+admins                app_admins            blackouts             challenge_fixtures
+challenge_invites     challenge_squads      challenge_stages      challenge_types
+content_drafts        context_rating_config game_invites          game_link_tokens
+games                 meetup_invites        meetup_link_tokens    moderation_ban_terms
+moderation_tickets    reputation_config     reuse_fingerprints    reuse_user_stats
+safety_blocklist_terms safety_takedowns     space_slot_holds      squad_invites
+squad_join_requests   squad_link_tokens     squad_members         surface_catalog
+user_hidden_modes     vibes_reco_config
+```
+
+**Each needs one of two verdicts, and neither has been given.** Either the table is reached
+only through `SECURITY DEFINER` RPCs — in which case that is a legitimate design and must be
+**documented as such** so the next audit does not re-flag it — or it is missing policies.
+Triage is KAN-26.
+
+**`games` is the consequential one.** It is the core domain table, it has no policies, and
+`lib/features/games/data/datasources/supabase_games_datasource.dart` issues 20 direct
+`.from(gamesTable)` queries against it. Every one returns nothing. The live game path
+avoids this by reading the `v_game_card` view and calling RPCs instead.
+
+### 1b. RLS DISABLED — 1 table
+
+`spatial_ref_sys` — **not a finding.** PostGIS system table, owned by the extension. RLS
+cannot be enabled on it and it holds no application data.
+
+### 1c. RLS ENABLED WITH POLICIES — 153 tables
+
+Policy counts, grouped by domain. A high count is not automatically good — `profiles` has 13
+policies, which is a complexity worth understanding before adding a fourteenth.
+
+**Identity & profile:** `profiles` 13 · `sport_profiles` 9 · `privacy_settings` 3 ·
+`profile_follows` 4 · `profile_locations` 4 · `profile_circles` 1 · `profile_circle_members` 1 ·
+`profile_tiers` 2 · `profile_verifications` 1 · `player` 3 · `host` 3 · `organiser` 6 ·
+`user_settings` 4 · `user_preferences` 1 · `user_status` 3 · `user_actor_pref` 1 ·
+`consent_records` 4 · `roles` 1 · `role_grants` 2 · `restrictions` 1
+
+**Usernames & display names:** `username_registry` 3 · `username_changes` 2 ·
+`username_attempts` 2 · `username_banned` 2 · `username_reserved` 2 · `display_name_banned` 2
+
+**Social:** `posts` 5 · `comments` 4 · `likes` 4 · `reactions` 4 · `post_media` 2 ·
+`post_mentions` 5 · `comment_mentions` 3 · `post_hashtags` 2 · `hashtags` 2 · `post_views` 2 ·
+`post_reposts` 3 · `post_hides` 4 · `post_circles` 1 · `post_squads` 2 · `post_themes` 1 ·
+`circles` 6 · `circle_members` 5 · `feed_items` 1 · `feed_rank_config` 1 ·
+`public_activities` 2 · `activity_events` 1 · `activity_log` 2 · `user_blocks` 3 ·
+`user_hashtag_preferences` 2 · `friend_requests_audit` 1
+
+**Games & meetups:** `game_roster` 4 · `game_waitlist` 3 · `game_join_requests` 3 ·
+`game_rating_events` 1 · `game_rating_aggregate` 1 · `game_rating_dimensions` 1 ·
+`game_settlements` 1 · `meetups` 2 · `meetup_attendees` 6 · `meetup_rsvps` 1 · `challenges` 4 ·
+`squads` 3
+
+**Venues:** `venues` 3 · `venue_spaces` 3 · `venue_bookings` 5 · `venue_members` 4 ·
+`venue_favorites` 3 · `venue_photos` 1 · `venue_blackouts` 2 · `venue_price_rules` 2 ·
+`venue_submissions` 7 · `venue_submission_sports` 1 · `venue_rating_events` 1 ·
+`venue_rating_aggregate` 1 · `venue_rating_dimensions` 1 · `venue_payouts` 1 ·
+`space_prices` 1 · `space_slot_grid` 2 · `opening_hours` 1 · `amenities_catalog` 1
+
+**Notifications:** `notifications` 4 · `notification_settings` 3 ·
+`notification_user_preferences` 2 · `notification_deliveries` 2 · `notification_kinds` 1 ·
+`notification_scores` 1 · `notification_aggregates` 1 · `notification_aggregation_rules` 1 ·
+`notification_hourly_caps` 1 · `fcm_tokens` 4
+
+**Rewards & reputation:** `badges` 2 · `badge_rules` 2 · `user_badges` 1 ·
+`sport_profile_badges` 1 · `sport_profile_profile_badges` 1 · `sport_profile_tiers` 1 ·
+`sport_profile_events` 1 · `point_ledger` 1 · `reward_rules` 1 · `levels` 1 · `tiers` 1 ·
+`user_reputation_events` 1 · `user_reputation_aggregate` 1 · `reputation_dimensions` 1 ·
+`user_check_ins` 3 · `check_in_logs` 2
+
+**Money:** `wallets` 2 · `wallet_ledger` 2 · `payment_intents` 1 · `payouts` 5 ·
+`payout_beneficiaries` 4 · `financial_ledger` 1 · `commission_rules` 2 ·
+`subscription_plans` 1 · `subscription_features` 1 · `user_subscriptions` 1
+
+**Moderation & safety:** `moderation_reports` 2 · `moderation_actions` 1 ·
+`moderation_flags` 1 · `safety_cooldowns` 2 · `user_freezes` 2 · `rating_reports` 1 ·
+`ratings` 1 · `audit_events` 1
+
+**Geography:** `geo_locations` 2 · `areas` 1 · `location_tags` 3 · `ref_countries` 1 ·
+`ref_regions` 1 · `ref_cities` 1
+
+**Sports reference:** `sports` 2 · `sport_variants` 2 · `sport_aliases` 1 ·
+`sport_skill_levels` 1 · `sportskilllevels` 1 · `sport_governing_bodies` 2 ·
+`sport_governing_body_links` 2 · `sport_popularity_countries` 1 · `sport_popularity_regions` 1 ·
+`sport_primary_sport_countries` 1
+
+**Vibes:** `vibes` 1 · `vibe_collections` 1 · `vibe_collection_items` 1 · `visibility_scopes` 1
+
+**Other:** `news` 1 · `briefs` 1 · `demo_content` 4 · `analytics_events` 2 ·
+`content_draft_events` 1 · `reuse_global_stats` 1
+
+---
+
+## 2. VIEWS — FULL ANON-EXPOSURE CENSUS
+
+**Verified 2026-08-27. 71 views in `public`** — not 49, which is what an earlier version of
+this file said. See §10 for how that number was wrong.
+
+| Position | Count | Meaning |
+|---|---:|---|
+| **EXPOSED** | **19** | `SECURITY DEFINER` + anon-selectable + **no `auth.uid()` predicate**. Bypasses RLS for an unauthenticated caller |
+| definer + uid | 8 | `SECURITY DEFINER` but filters on `auth.uid()` — safe by predicate |
+| anon-revoked | 23 | `anon` has no SELECT grant — safe by grant |
+| invoker | 21 | `security_invoker = true` — the underlying table's RLS applies |
+| **Total** | **71** | |
+
+**Every view has a stated position. That is the point of this section** — the previous
+version gave counts without a per-view verdict, and that gap is exactly why two live leaks
+went unnoticed.
+
+### 2a. EXPOSED — 19 views readable by `anon` with no uid predicate
+
+**Confirmed leaking real user data — CRITICAL:**
+
+| View | Rows to `anon` | Exposure |
+|---|---:|---|
+| `v_notifications_feed` | **609** | `to_user_id`, `title`, `body`, `action_route`, `context` across **49 distinct recipients**. KAN-36 |
+| `v_notifications_ranked` | **609** | Same base table, same exposure. KAN-37 |
+| `v_mod_queue_open` | 9 | Open moderation tickets. KAN-38 |
+| `v_safety_overview` | 1 | Admin safety metrics. KAN-38 |
+| `v_circle_feed` | 6 | Scoped circle content |
+
+**The base table is not the problem.** `select count(*) from notifications` as `anon`
+returns **0** — RLS on `notifications` works correctly. Two `SECURITY DEFINER` views route
+around it. That distinction matters: this is not "RLS is missing", it is "RLS is bypassed".
+
+**Reproduction — run this before and after any fix:**
+```sql
+set local role anon;
+select count(*) as rows, count(distinct to_user_id) as recipients
+  from public.v_notifications_feed;          -- currently 609 / 49; must become 0
+select count(*) from public.notifications;   -- 0 — the control. If this is ever
+                                             -- non-zero, the base RLS broke too
+```
+A probe without a control proves nothing. `v_my_drafts` returning 0 under the same role is
+the second control that shows the method discriminates.
+
+**Not yet probed for row counts — each needs the same treatment (KAN-26):**
+`v_challenge_standings` · `v_circle_feed_visible` · `v_comments` · `v_game_rating` ·
+`v_meetup_counts` · `v_post_comments` · `v_potential_vibes_default` ·
+`v_recreate_quickpicks` · `v_space_slots_today` · `v_user_badges_summary` ·
+`v_user_reputation` · `username_registry_public`
+
+Some are probably intended to be public — `v_comments`, `v_game_rating`,
+`v_user_badges_summary` plausibly are. **"Probably public" is not a security position.**
+Each needs an explicit verdict recorded here.
+
+**Not a finding — PostGIS extension metadata:** `geography_columns`, `geometry_columns`.
+They describe geometry columns, hold no application data, and are owned by the extension.
+They are in the 19 by measurement and excluded from the work.
+
+**So: 19 exposed → 2 are PostGIS → 17 app views need a verdict → 5 already confirmed
+leaking.**
+
+### 2b. Definer but safe — 8 views filtering on `auth.uid()`
+
+`v_challenge_card` · `v_game_card` · `v_hidden_list` · `v_meetup_list` · `v_my_drafts` ·
+`v_my_games` · `v_rateable_after_game` · `v_recreate_candidates`
+
+These are the pattern to copy. `v_game_card` is also the live game path
+(`game_view_controller.dart:399`).
+
+### 2c. Anon-revoked — 23 views safe by grant
+
+`any_user_id` · `v_admin_overview` · `v_any_author` · `v_autocomplete_debug_prefix` ·
+`v_autocomplete_internal_checks` · `v_bench_status` · `v_frozen_users` ·
+`v_host_weekly_metrics` · `v_moderation_metrics` · `v_needs_organiser` ·
+`v_posts_integrity_violations` · `v_posts_time_preview` · `v_reliable_teammate_candidates` ·
+`v_reputation_leaderboard` · `v_rewards_summary` · `v_sport_profiles_with_user` ·
+`v_top_hosts_week` · `v_top_venue_lighting_by_district` · `v_user_balance` ·
+`v_venue_balance` · `v_venue_dimension_by_district` · `v_wallet_admin_overview` ·
+`v_wallet_balance`
+
+Note the financial and admin views are correctly in this group.
+
+### 2d. Invoker — 21 views where RLS applies normally
+
+**Bucket precedence, so the arithmetic reconciles.** A direct count of
+`reloptions is not null` returns **22** explicit `security_invoker` views, not 21. The
+difference is `v_rewards_summary`, which is *both* invoker **and** anon-revoked. **Each view
+appears in exactly one bucket, and revocation is checked first** — a view `anon` cannot
+select is safe by grant regardless of its invoker setting, so it is listed in §2c. Hence
+22 invoker − 1 also-revoked = **21 here**, and the four buckets still sum to 71.
+
+Precedence order: **anon-revoked → EXPOSED → definer+uid → invoker.**
+
+`published_news` · `v_access_matrix` · `v_activity_inbox` · `v_actor_context` ·
+`v_collection_vibes` · `v_location_suggestions` · `v_my_actors` · `v_people_search` ·
+`v_potential_vibes_candidates` · `v_profile_editable` · `v_profile_public` ·
+`v_profile_verification` · `v_public_collections` · `v_public_vibes` · `v_space_card` ·
+`v_squad_card` · `v_squad_detail` · `v_unread_counts` · `v_user_badges_public` ·
+`v_venue_rating` · `v_venues_with_sports`
+
+### 2e. Regenerating this census
+
+```sql
+select c.relname,
+  case when c.reloptions is null then 'DEFINER' else 'invoker' end as mode,
+  has_table_privilege('anon', c.oid,'SELECT') as anon,
+  (pg_get_viewdef(c.oid) ilike '%auth.uid()%') as uid_filter
+from pg_class c join pg_namespace n on n.oid=c.relnamespace
+where n.nspname='public' and c.relkind='v' order by 1;
+```
+
+**Do not substitute the Supabase advisor's `security_definer_view` count for this.** The
+advisor returned 25; the real number is 49. An advisor reports what it flags, not what
+exists — see §10.
+
+**Rule going forward:** new views are created `security_invoker = true`.
+
+## 3. STORAGE BUCKETS — 4
+
+| Bucket | Public | SELECT | INSERT | UPDATE | DELETE | State |
+|---|:--:|:--:|:--:|:--:|:--:|---|
+| `Avatar` | yes | 1 | 1 | 1 | 1 | Healthy |
+| `post-media` | yes | 1 | 1 | 1 | 1 | Healthy |
+| `dabbler-news` | yes | **0** | 1 | 0 | 0 | **Broken read-back** |
+| `venue` | yes | **0** | **0** | 0 | 0 | **No policies at all — uploads impossible** |
+
+**The SELECT-for-read-back rule.** An upload is not a write-only operation: the client reads
+the object back after writing it. A bucket with INSERT and no SELECT produces an upload that
+appears to fail or a broken image, with no error at the write. This is a recurring bug class
+in this project — grant for the whole round trip, not for the verb in the function name.
+
+**Bucket names in code that do not exist:**
+
+| Code | Names | Reality |
+|---|---|---|
+| `lib/core/config/supabase_config.dart:4` | `venueImagesBucket = 'venue-images'` | **No such bucket.** Real name is `venue` |
+| `lib/features/profile/data/datasources/supabase_profile_datasource.dart:16` | `_avatarBucket = 'avatars'` | **No such bucket.** Real name is `Avatar`, already correct in `SupabaseConfig.avatarsBucket` |
+
+Both sit in dead code paths today, which makes them traps rather than outages. KAN-27.
+
+---
+
+## 4. RPCs — FIVE GENERATIONS OF `nearby`
+
+The proximity search has been rewritten five times and **every generation is still
+callable.** Nothing was dropped. An agent picking by name alone will pick wrong.
+
+| Gen | Functions | Signature shape | Status |
+|---|---|---|---|
+| 1 | `getnearbygames`, `getnearbyvenues`, `getnearbymeetups` | `(p_lat, p_lng, p_radius double)` | **Legacy** — no underscores, no filters |
+| 2 | `get_nearby_games` ×2, `get_nearby_venues`, `get_nearby_posts`, `get_nearby_profiles` | `(p_lat, p_lng, p_radius)` — `get_nearby_games` exists as **both** `integer` and `double precision` overloads | **Legacy** |
+| 3 | `nearby_games`, `nearby_venues`, `nearby_posts` | `(p_lat, p_lng, p_radius int, p_sport, p_limit, p_offset)` | **Legacy** |
+| 4 | `rpc_get_nearby_games`, `rpc_get_nearby_venues` | `(p_lat, p_lng, p_radius_meters int, p_sport_id uuid, p_sort text)` | **CURRENT** — matches the `rpc_` convention, takes `sport_id` not a text key, supports sort |
+| — | `geo_nearby_venues` | `(in_lat, in_lng, in_radius_m, in_limit, in_offset)` | Separate lineage, `in_` prefix |
+| — | `rpc_nearby_users` | `(p_lat, p_lng, p_delta, p_limit)` | Uses a bounding delta, not a radius |
+
+**Use generation 4.** Do not add a sixth. Retiring generations 1–3 needs a ticket of its own
+— they may still have callers, and that must be checked before dropping anything.
+
+### Other duplicated RPCs
+
+Several functions exist as multiple overloads that are not obviously versions of each other.
+Check the signature, not just the name:
+
+`is_admin()` and `is_admin(p_user uuid)` · `rpc_block_user(p_peer)` and
+`rpc_block_user(p_peer, p_block boolean)` · `rpc_get_friends()` and
+`rpc_get_friends(p_user_id)` · `rpc_hide_user(target_user)` and
+`rpc_hide_user(p_peer, p_hide)` · `rpc_meetup_create` ×2 (a 4-arg and an 14-arg form) ·
+`rpc_meetup_rsvp` ×2 · `rpc_potential_vibes` ×2 (one takes `p_me`) ·
+`rpc_squad_respond_invite` ×2 (`p_action` vs `p_decision`)
+
+Also near-duplicates by name: `rpc_admin_revoke_venue` and
+`rpc_admin_revoke_venue_submission`; `rpc_freeze_user` / `rpc_admin_freeze_user` and
+`rpc_unfreeze_user` / `rpc_admin_unfreeze_user`.
+
+### RPC families (~180 total)
+
+**Games:** `rpc_create_game` (23 params), `rpc_update_game`, `rpc_cancel_game`,
+`rpc_reschedule_game`, `rpc_join_game`, `rpc_leave_game`, `rpc_remove_player`,
+`rpc_decide_join_request`, `rpc_invite_user`, `rpc_mint_join_link`, `rpc_recreate_from_game`,
+`rpc_recreate_suggestions`
+**Meetups:** `rpc_create_meetup`, `rpc_meetup_rsvp`, `rpc_meetup_cancel`,
+`rpc_meetup_attendees`, `rpc_meetup_card`, `rpc_meetup_mint_link`, `rpc_meetup_my`,
+`rpc_meetup_visible`, `rpc_meetup_invite_user`, `rpc_meetup_set_attendee`, `rpc_meetup_unrsvp`
+**Social:** `rpc_create_post`, `rpc_delete_post`, `rpc_add_comment`, `rpc_toggle_like`,
+`rpc_repost_post`, `rpc_hide_post`, `rpc_report_post`, `rpc_feed_ranked`,
+`rpc_trending_posts`, `rpc_search_posts`, `rpc_toggle_post_vibe`, `rpc_set_post_primary_vibe`
+**Friends:** `rpc_friend_request_send/accept/reject`, `rpc_friend_remove`, `rpc_friend_unfriend`,
+`rpc_friend_requests_inbox/outbox`, `rpc_get_friends`, `rpc_get_friend_suggestions`,
+`rpc_get_friendship_status`
+**Squads & challenges:** `rpc_squad_create`, `rpc_create_squad`, `rpc_squad_add_member`,
+`rpc_squad_invite`, `rpc_squad_request_join`, `rpc_squad_respond_invite`,
+`rpc_squad_set_captain`, `rpc_squad_remove_member`, `rpc_challenge_create`,
+`rpc_challenge_add_squad`, `rpc_challenge_generate_fixtures`, `rpc_challenge_record_result`,
+`rpc_challenge_spawn_game`, `rpc_challenge_invite_squad`, `rpc_challenge_respond_invite`,
+`rpc_challenge_set_status`
+**Identity:** `rpc_create_profile`, `rpc_ensure_profile`, `rpc_onboard_profile`,
+`rpc_profile_update_basic`, `rpc_profile_search`, `rpc_act_as`, `rpc_set_actor`,
+`rpc_post_as`, `rpc_create_sport_profile`, `rpc_verify_profile`, `rpc_unverify_profile`
+**Usernames:** `rpc_username_availability`, `rpc_username_claim`, `rpc_username_release`,
+`rpc_username_suggest`, `rpc_ban_username`, `rpc_ban_display_name`, `list_active_usernames`
+**Moderation:** `rpc_flag_content`, `rpc_report_rating`, `rpc_review_report`,
+`rpc_moderation_take_ticket`, `rpc_moderation_resolve_ticket`, `rpc_admin_hide_post`,
+`rpc_shadow_hide`, `rpc_shadow_unhide`, `rpc_takedown`, `rpc_freeze_user`,
+`rpc_admin_freeze_user`, `rpc_expire_freezes`, `rpc_ban_term_upsert`, `rpc_restrict_set/clear`
+**Venue submissions:** `rpc_submit_venue_submission`, `rpc_admin_approve_venue_submission`,
+`rpc_admin_reject_venue_submission`, `rpc_admin_return_venue_submission`,
+`rpc_admin_revoke_venue_submission`, `rpc_submission_approval_state`,
+`rpc_submission_audit_timeline`, `rpc_admin_submission_action_state`,
+`rpc_my_venue_permissions`
+**Bookings:** `rpc_booking_hold_for_game`, `rpc_booking_hold_for_meetup`, `rpc_booking_cancel`
+**Ratings:** `rpc_rate_game`, `rpc_rate_user`, `rpc_rate_venue`
+**Drafts:** `rpc_draft_create/update/archive`, `rpc_draft_publish_game/meetup/challenge`
+**Search:** `rpc_search_entities`, `rpc_search_users`, `rpc_unified_search_sectioned`,
+`rpc_autocomplete_entities`, `rpc_autocomplete_people`
+**Notifications:** `rpc_mark_all_read`, `rpc_notification_clicked`,
+`rpc_broadcast_inapp_notification`
+**Bench mode:** `rpc_toggle_bench`, `rpc_end_bench`, `rpc_get_my_status`
+**Misc:** `rpc_track_event`, `rpc_get_activity_feed`, `rpc_circle_list`,
+`rpc_rewards_apply_event`, `rpc_test_ping`
+
+---
+
+## 5. TRIGGERS — ~200
+
+Grouped by what they do. The ones carrying business rules are the ones to know about.
+
+**Auth / account creation**
+- `trg_strip_signup_password` on `auth.users` → `strip_signup_password()` — **forces
+  `encrypted_password` NULL on every insert.** This is decision 002; a NULL password is
+  correct, not a bug.
+- `trg_create_default_privacy_settings` on `auth.users`
+- `trg_user_created` on `profiles` → `handle_user_created`
+- `trg_welcome_notify` on `profiles`
+- `trg_set_default_avatar` on `profiles`
+
+**Geo inheritance** — a row's location is derived, not supplied
+- `trg_games_inherit_geo`, `trg_games_inherit_venue_geo`, `trg_meetups_inherit_geo`
+- `trg_games_sync_geo`, `trg_meetups_sync_geo`, `trg_venues_sync_geo`,
+  `trg_profile_locations_sync_geo` — all → `fn_sync_geo_fields`
+- `trg_posts_set_geo` on `posts`
+- `trg_set_geohash` on `geo_locations` → `set_geohash_before_insert`
+- `trg_normalize_area_location` on `areas` → `fn_normalize_area_location`
+
+**Notification fan-out** — this is why the notification system works without app-side polling
+- `trg_push_on_notification_insert` on `notifications` — fires the push edge function
+- `trg_friend_request_notify`, `trg_game_invite_notify`, `trg_game_join_request_notify`,
+  `trg_game_updated_notify`, `trg_game_waitlist_promoted_notify`, `trg_squad_invite_notify`,
+  `trg_meetup_invite_notify`, `trg_circle_join_notify`, `trg_post_comment_notify`,
+  `trg_post_mention_notify`, `trg_comment_mention_notify`, `trg_post_reaction_notify`,
+  `trg_profile_follow_notify`, `trg_badge_awarded_notify`, `tr_likes_notify`,
+  `tr_public_activities_notify`, `trg_notify_admins_of_report`, `trg_notify_admins_of_block`
+
+**Activity feed sync** — `tr_*_activity_sync` on `posts`, `comments`, `reactions`,
+`post_reposts`, `games`, `game_roster`, `meetups`, `meetup_rsvps`, `news`, `profile_follows`,
+`user_badges`; plus `tr_feed_items_fanout` and `tr_activity_log_sync` on `public_activities`
+
+**Freeze / safety guards** — block writes from frozen users
+- On `games`, `game_roster`, `game_waitlist`, `game_invites`, `game_join_requests`
+- **Note the ordering-hack prefixes:** `trg_90_waitlist_block_frozen` and
+  `trg_zz_waitlist_block_frozen`, `trg_zz_invite_recipient_not_frozen`. Postgres fires
+  triggers in name order, so `90_` and `zz_` are being used to force these last. That is a
+  real constraint: **renaming one of these changes when it fires.**
+
+**Profile field guards** — reject updates to fields the client must not change:
+`trg_block_profile_type_updates`, `trg_block_profile_verified_updates`,
+`trg_block_profile_skill_level_updates`, `trg_block_legacy_persona_updates`,
+`trg_limit_active_profiles`, `trg_validate_persona_compatibility`
+
+**Denormalisation / counters** — `trg_comment_counter`, `trg_repost_count`,
+`trg_increment_view`, `trg_hashtag_usage`, `trg_reaction_insert/update/delete` →
+`sync_reaction_breakdown`, plus `trg_post_reaction_breakdown`
+
+**Search vectors** — `*_search_tsv` on `posts`, `comments`, `games`, `meetups`, `squads`,
+`venues`, `profiles`, `hashtags`, `challenges`
+
+**Sport-profile derived stats** — `trg_update_sport_profiles_xp`,
+`trg_update_sport_profiles_form`, `trg_update_sport_profiles_reliability`,
+`trg_update_overall_level`, `trg_assign_sport_profile_tier`, `trg_sport_profiles_level_event`
+
+**`sport_id` backfill** — `trgfn_set_*_sport_id` on `posts`, `badges`, `squads`,
+`challenges`, `venue_spaces`, `sport_profiles`, `user_badges`, `point_ledger`,
+`sport_profile_profile_badges`
+
+**`updated_at` touches** — ~25 triggers, several naming conventions in parallel
+(`trg_touch_updated_at`, `touch_updated_at`, `_touch_updated_at`, `_set_updated_at`,
+`fn_set_updated_at`, `set_current_timestamp_updated_at`, `update_updated_at_column`).
+
+**Suspected duplicates — verify before touching, do not assume**
+- `trg_squads_owner_default` **and** `trg_squads_owner_defaults` — both on `squads`
+- `trg_meetups_touch` **and** `trg_meetups_updated` — both touch `updated_at` on `meetups`
+- `trg_roster_set_user` **and** `trg_roster_set_user_and_guard` — both on `game_roster`
+- `trg_roster_block_frozen` **and** `trg_roster_block_frozen_guard`
+- `trg_invite_block_frozen` **and** `trg_invite_block_frozen_guard`
+- `trg_joinreq_block_frozen` **and** `trg_joinreq_block_frozen_guard`
+
+These pairs look like a refactor that added the `_guard` form without removing the original.
+**Not confirmed** — each needs its function body read before anything is dropped. Dropping a
+freeze guard that turns out to be load-bearing re-opens a safety hole.
+
+---
+
+## 6. EDGE FUNCTIONS — 3
+
+| Function | Purpose | Notes |
+|---|---|---|
+| `send-push-notification` | Delivers FCM push, fired by `trg_push_on_notification_insert` | Fetches the push-trigger shared secret via a `service_role`-only RPC, once per warm instance. Fetching it per request caused a 401 (fixed in `09ca8fe`) |
+| `broadcast-notification` | Bulk/broadcast notification send | Handles a service-account private key |
+| `detect-country` | IP → country for onboarding | `ip_country_detection_service.dart:34` carries `// TODO: Disable JWT verification in Supabase dashboard for this function` — a config change never made |
+
+`service_role` inside `supabase/functions/**` is **server-side and correct.** It appears
+nowhere in `lib/`.
+
+---
+
+## 7. EXTENSIONS
+
+| Schema | Extensions |
+|---|---|
+| `public` | `postgis`, `citext`, `pg_trgm`, `btree_gin`, `btree_gist`, `cube`, `earthdistance`, `unaccent` |
+| `extensions` | `pg_net`, `pg_stat_statements`, `pgcrypto`, `pgtap`, `uuid-ossp` |
+| `pg_catalog` | `pg_cron`, `plpgsql` |
+| `vault` | `supabase_vault` |
+
+The 8 in `public` are flagged `extension_in_public` by the Supabase advisor. **Not
+actionable** — Supabase installs them there by default and relocating `postgis` would break
+every geo query. Ignore the warning.
+
+`pgtap` is installed, so database-level tests are possible. Nothing uses it.
+
+---
+
+## 8. KNOWN MISMATCHES — where the app expects what the database does not have
+
+> **Mismatch 7 below is the single authoritative statement of the migration situation.**
+> Every other document points here rather than restating it — `CONTRACT.md`,
+> `ARCHITECTURE.md`, `WORKFLOWS.md` W2, `MANIFESTO.md` §6. That rule exists because this
+> fact was wrong in up to eight documents simultaneously, twice, each copy re-derived
+> instead of read. If you need to state it somewhere new, link here instead.
+
+| # | The app expects | The database has | Impact |
+|---|---|---|---|
+| 1 | `venue-images` bucket (`supabase_config.dart:4`) | Bucket named `venue` | Dormant — constant unused. Trap |
+| 2 | `avatars` bucket (`supabase_profile_datasource.dart:16`) | Bucket named `Avatar` | Dormant — dead path. Live uploads use `ImageUploadService` correctly |
+| 3 | Readable `games` table — 20 `.from(gamesTable)` calls | RLS on, **zero policies** → 0 rows | The whole `games` clean-arch datasource returns nothing |
+| 4 | `dabbler-news` readable after upload | INSERT policy, no SELECT | Read-back fails |
+| 5 | `venue` bucket writable | No policies at all | Uploads impossible |
+| 6 | Working analytics (`rpc_track_event` exists) | RPC exists; **the client never calls it** — `analytics_service.dart` is 18 empty `// TODO` bodies | The database is ready; the app sends nothing |
+| 7 | A reproducible schema from the repo | **`supabase_migrations.schema_migrations` holds 237 applied migrations** (`20251113222001` → `20260720192127`). Separately, 38 `.sql` files are tracked at `supabase/schema/`, of which **exactly 1 contains `CREATE TABLE`** | Schema **history exists** — in the ledger. What does not exist is a repo-authored way to *rebuild* the schema. KAN-33 |
+| 8 | One `nearby` implementation | Five generations, all callable | Wrong-generation calls are easy and silent |
+
+**Mismatch 6 is worth a second look.** `rpc_track_event(_event_name, _properties)` exists
+server-side and `analytics_events` has policies. The gap is entirely client-side — every
+`AnalyticsService` method is an empty body. Whoever picks up analytics does not need to build
+the backend; it is already there.
+
+---
+
+## 9. HOW TO VERIFY ANY CLAIM IN THIS FILE
+
+Do not trust this document over the database. It is a snapshot dated 2026-08-26.
+
+```sql
+-- RLS position for one table
+select relrowsecurity from pg_class where relname = 'your_table';
+select * from pg_policies where tablename = 'your_table';
+
+-- What a role can actually see  (the only question that settles it)
+set local role anon;             -- or authenticated
+select count(*) from public.your_table;
+```
+
+**Always pair a probe with a control** — a query that *should* return 0. If the control
+returns rows, the probe is not testing what you think it is.
+
+
+---
+
+## 10. WHAT THIS FILE HAS BEEN WRONG ABOUT
+
+Kept deliberately. A schema document that silently self-corrects earns unearned trust.
+
+| Date | Error | Correction |
+|---|---|---|
+| 2026-08-26 → corrected 2026-08-27 | "49 views, 25 `SECURITY DEFINER`, 8 anon-exposed" | **71 views, 49 definer, 19 anon-exposed.** Two conflations in one line: the reported *total* (49) was actually the definer count, and the reported *definer* count (25) was the number of `security_definer_view` rows the Supabase advisor returned |
+| 2026-08-26 → corrected 2026-08-27 | "No schema history exists" | **237 rows in `supabase_migrations.schema_migrations`.** One location was checked — the filesystem — and "nowhere" concluded |
+
+**How the view miscount happened, because it generalises.** The advisor was asked for
+security findings and returned 25 `security_definer_view` advisories. That number was then
+used as *the number of definer views in the database*. **An advisor reports what it flags,
+not what exists** — it may cap results, skip system objects, or apply its own relevance
+filter. The population must be counted with a query against the catalogue, and the advisory
+count treated only as "at least this many are worth looking at".
+
+The practical consequence was that **11 anon-exposed views were never examined**, because
+the audit believed it had already covered the whole set.
