@@ -37,6 +37,100 @@ gets an entry — those are the ones most likely to be skipped and most needed.
 
 ## LOG — newest first
 
+## 2026-08-27 — no ticket — Commit the leadership layer to Canary — deploy VERIFIED GREEN
+**Task:** Commit the leadership-layer build and the launch-readiness assessment
+to `Canary` as three separate commits, keeping pre-existing WIP out, then
+verify the Cloudflare Pages deploy.
+
+**Did:** Three commits, staged explicitly by path — never `git add -A`.
+- `89595b2` — `feat(agents)`: the new `cpo` and `cto` agents, their seeded
+  agent-memory stores (6 + 7 files), skill-reflex tables and the
+  three-outputs contract added to the five existing agents, plus
+  master-analyst's `INDEX.md`, run-2 inventory and reachability method.
+  27 paths.
+- `63bc020` — `feat(skills)`: 38 new directories under `.claude/skills/` —
+  the cpo/cto advisors, the grilling set, the OWASP MASVS mobile-security
+  set, and the engineering skills sourced from `mattpocock/skills`. Plus
+  `.claude/settings.json` (project-scoped plugin enablement for
+  `dart-flutter`, `pm-skills`, `wondelai-skills`) and `skills-lock.json`.
+  81 files.
+- `a50181e` — `docs(assessment)`: `docs/RESEARCH.md` new, plus 11 modified
+  governance docs. 2729 insertions, 198 deletions.
+
+Identity verified before the first commit: `dabblersport
+<244900353+dabblersport@users.noreply.github.com>`. No `Co-Authored-By`
+trailer — `.claude/settings.json` has no `attribution.commit`, and
+`CLAUDE.md` forbids it absent that setting.
+
+**`flutter analyze`: 157 issues, 0 errors** (55 warnings, 102 info) — all
+pre-existing in `lib/features/**`. No Dart changed today; identical to the
+count on the previous commit. Note `flutter analyze` exits 1 whenever any
+issue exists, so the exit code is not the gate — the error count is. Piping
+it through `tail` masks this by reporting the pipe's exit code instead.
+
+**Secret check — clean.** `.env` is gitignored and untracked.
+`android/app/build.gradle.kts` was **not modified and is in none of the
+three commits**; its plaintext `storePassword`/`keyPassword` remain a
+pre-promotion item needing a Play Console key rotation, not a commit.
+Separately verified that the **literal credential value does not appear
+anywhere in the committed set** — grepped for the actual string across
+`docs/` and `.claude/`, zero hits. Every regex match in the docs is prose
+*describing* the finding, never quoting it. The Supabase project ref
+`wtncuzcskpigqpmnxwws` is a public identifier.
+
+**Deploy — VERIFIED SUCCESSFUL.** This is the deploy result, not the push
+result.
+- Pushed `5f92904..a50181e` to `Canary`.
+- Check run `Cloudflare Pages`: `status=completed`, **`conclusion=success`**,
+  title `Deployed successfully`, completed `2026-08-27T17:33:49Z` (~4m from
+  push). Its summary names `a50181e` as the deployed commit, so the verdict
+  is bound to this commit and not a neighbouring build.
+- Corroborated at the CDN: `flutter_bootstrap.js` moved
+  `0b7303c94186` → `28a8092eb3f0` and held stable across four polls at
+  HTTP 200. canary.dabbler.pro is serving this build, not a cached prior
+  one.
+- Booting past Supabase init means the **Preview environment variables are
+  intact** — the failure that silently broke every Canary build for months.
+- Deployment: `506e444c-e311-4233-93e9-5f58385e4f10`.
+
+**Did not:** No PR into `main`; this stops at `Canary`. `main` confirmed
+untouched at `a150190` — Canary is now 16 ahead. Left uncommitted, all
+pre-existing WIP per the brief: four `.claude/helpers/*` files,
+`.claude/proven-config.json`, `.claude/.proven-config-version`,
+`.claude/helpers/.helpers-version`, `.claude/helpers/helpers.manifest.json`,
+`docs/screen-report.md`.
+
+**Two paths in neither list — one decided, one open.**
+- `skills-lock.json` (tracked, modified): its entire diff is additions
+  naming exactly the skills in `63bc020`. **I included it** — committing the
+  skills while leaving their lockfile behind would leave the manifest
+  describing a state the repo does not have.
+- `.agents/` (untracked): a **byte-identical duplicate** of 12 of the
+  `.claude/skills/` directories, same installer run, not symlinks.
+  **Left uncommitted** — unasked-for and redundant. **Open question put to
+  the team lead and unanswered at the time of writing: does any runtime
+  actually read from `.agents/skills/`?** If yes, the committed state is
+  incomplete for a fresh clone and this needs a follow-up commit. If no, it
+  should be gitignored. Not resolved here.
+
+**Count correction:** the brief said 34 new directories under
+`.claude/skills/` and 76 uncommitted paths. Actual: **38** directories, 78
+paths. I followed the written instruction ("all new directories under
+`.claude/skills/`") over the number and committed all 38.
+
+**Not verified:** Whether the governance docs are *correct* — only that they
+shipped. No browser render check of canary.dabbler.pro was performed; the
+check run plus the changed fingerprint are the evidence, and Flutter web's
+~8s boot makes an early screenshot unreliable anyway.
+
+**Learned:** Recorded to agent memory as `skills-install-three-locations` —
+installing an external skill writes to three places (`.claude/skills/`,
+`.agents/skills/`, `skills-lock.json`), so any brief naming only the first
+is structurally incomplete.
+
+**Handoff:** none. A PR into `main` is the PO's call and has not been opened.
+
+
 ## 2026-08-27 — no ticket — Canary deploy of `1d9360f` VERIFIED GREEN
 **Task:** Close out the deploy question left open by the entry below, which
 recorded the build as still in progress.
