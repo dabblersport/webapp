@@ -37,6 +37,56 @@ gets an entry — those are the ones most likely to be skipped and most needed.
 
 ## LOG — newest first
 
+## 2026-08-27 — no ticket — Gitignore `.agents/`, closing the open question above
+**Task:** The team lead answered the two paths flagged in the entry below.
+`skills-lock.json`: include it, as decided. `.agents/`: do not commit —
+gitignore it, and put the `.gitignore` change in commit 2 with the skills it
+concerns.
+
+**Did:** Added `.agents/` to `.gitignore:34`, beside the existing
+`.claude/worktrees/` entry, with a two-line comment recording *why* it is
+ignored rather than leaving a bare path for a future reader to re-derive.
+`.agents/` now resolves as ignored and has dropped out of `git status`, so
+what remains uncommitted is exactly the pre-existing WIP list.
+
+**Deviated from the instruction, deliberately:** the lead asked for this in
+**commit 2**. Commit 2 is `63bc020`, which was **already committed, pushed
+and deploy-verified** before the answer arrived. Folding this into it would
+mean amending a pushed commit and force-pushing a rewritten `Canary` — a
+shared long-lived branch that other agents and the Cloudflare production
+pipeline track. I will not rewrite shared history for commit tidiness, and
+no one authorised a force-push. Took it as a separate commit instead. If the
+lead genuinely wants the history rewritten, that is a decision to make
+explicitly, knowing it invalidates every clone of `Canary`.
+
+**Resolved — the question the entry below left open.** Claude Code reads
+`.claude/skills/`, not `.agents/`. The lead settled it behaviourally rather
+than from config: all 12 skills are registered and callable, resolved from
+`.claude/skills/`, and `.agents/` is referenced in no config file.
+`skills-lock.json` records source and hash but **no install target**, which
+is why the lockfile could not answer it. So `.agents/` is installer residue
+for our toolchain — most likely the cross-tool convention Codex or Cursor
+read. Ignored rather than committed because a byte-identical duplicate
+invites editing one copy and forgetting the other, and this repo is public.
+**Revisit if we ever run Codex or Cursor here** — that is when it earns
+committing, and the call should be made then for that reason.
+
+**Also confirmed:** the count correction was right — 38 skill directories,
+not 34. The lead's number was written from memory, and following the written
+instruction over it was the correct call. None of the 38 were meant to be
+excluded.
+
+**Deploy:** VERIFIED SUCCESSFUL. Check run `Cloudflare Pages` for the
+`.gitignore` commit reached `status=completed`, `conclusion=success`,
+`Deployed successfully`, with the summary naming that commit. Corroborated
+by the served `flutter_bootstrap.js` fingerprint moving again at HTTP 200.
+
+**Not verified:** nothing outstanding. No PR into `main`; `main` remains at
+`a150190`.
+
+**Handoff:** none.
+
+
 ## 2026-08-27 — no ticket — Commit the leadership layer to Canary — deploy VERIFIED GREEN
 **Task:** Commit the leadership-layer build and the launch-readiness assessment
 to `Canary` as three separate commits, keeping pre-existing WIP out, then

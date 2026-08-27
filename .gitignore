@@ -29,6 +29,9 @@ node_modules/
 
 # Project-specific build artifacts and vendor directories
 .claude/worktrees/
+# Installer residue: byte-identical duplicate of .claude/skills/, which is what
+# Claude Code actually reads. Kept on disk for other agent runners, out of history.
+.agents/
 .claude-flow/
 build/
 .dart_tool/
