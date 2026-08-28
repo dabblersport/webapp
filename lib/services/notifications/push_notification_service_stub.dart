@@ -35,4 +35,9 @@ class PushNotificationService {
   Future<bool> requestNotificationPermission() async {
     return false;
   }
+
+  /// Web stub - no-op (nothing was registered)
+  Future<void> revokeToken() async {
+    // No-op: this platform never has a fcm_tokens row to revoke.
+  }
 }

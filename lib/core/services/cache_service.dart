@@ -66,12 +66,6 @@ class CacheService {
     await _initialize();
     return _prefs.getKeys().toList();
   }
-
-  /// Clear all cache
-  Future<void> clear() async {
-    await _initialize();
-    await _prefs.clear();
-  }
 }
 
 /// Simple analytics service for tracking events

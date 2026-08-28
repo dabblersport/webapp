@@ -7,7 +7,6 @@ import '../controllers/auth_controller.dart';
 import '../controllers/register_controller.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
-import '../../domain/usecases/logout_usecase.dart';
 import 'package:dabbler/data/models/authentication/user.dart';
 import 'package:dabbler/data/models/authentication/auth_session.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -269,11 +268,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final getCurrentUserUseCaseProvider = Provider<GetCurrentUserUseCase>((ref) {
   final repository = ref.read(authRepositoryProvider);
   return GetCurrentUserUseCase(repository);
-});
-
-final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {
-  final repository = ref.read(authRepositoryProvider);
-  return LogoutUseCase(repository);
 });
 
 // Controller providers

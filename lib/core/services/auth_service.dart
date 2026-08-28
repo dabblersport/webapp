@@ -10,7 +10,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'default_avatar_service.dart';
+import 'location_service.dart';
+import 'profile_cache_service.dart';
+import 'user_service.dart';
 import '../config/environment.dart';
+import '../../features/profile/data/datasources/profile_data_sources.dart';
+import '../../services/notifications/push_notification_service.dart';
 import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
@@ -257,8 +262,100 @@ class AuthService {
     return 'Verification failed. Please try again.';
   }
 
-  /// Sign out user
+  /// Sign out user — orchestrated teardown per T-004. Order matters: the FCM
+  /// token revoke needs `auth.uid()` to still resolve (RLS), so it must run
+  /// before `supabase.auth.signOut()`; local caches are cleared before the
+  /// Supabase sign-out too, so no UI can read stale cross-account data in
+  /// the moment between cache-clear and session end. Every step is
+  /// best-effort except the final Supabase sign-out: a failed token revoke
+  /// or cache clear must never leave the user stuck signed in — the token
+  /// revoke self-heals on next login.
+  ///
+  /// T-004's 2026-08-28 amendment requires every SharedPreferences/Hive/
+  /// FlutterSecureStorage user in `lib/` (`grep -rln "SharedPreferences\|
+  /// Hive\.\|FlutterSecureStorage" lib`, 19 files at time of writing) to be
+  /// classified session-scoped vs preference-scoped, so a cache added later
+  /// has something to check itself against. Classification below; wire any
+  /// new session-scoped cache into this method.
+  ///
+  /// SESSION-SCOPED — wired here: [UserService], [ProfileCacheService],
+  /// [LocationService] (GPS fix + area only — `location_prompt_preference`
+  /// is a device permission-prompt cooldown, left alone, see preference
+  /// list below), and `features/profile/data/datasources/
+  /// profile_data_sources.dart`'s `ProfileLocalDataSourceImpl` — an
+  /// in-memory, userId-keyed cache of profile/sports/stats data. Live: its
+  /// Riverpod provider (`profileLocalDataSourceProvider`) is read in
+  /// `settings_screen.dart:707-711` to clear the *current* user's entry on
+  /// a persona switch. It was first classified DEAD here by only grepping
+  /// for `ProfileLocalDataSourceImpl(`/`ProfileLocalDataSource(` and
+  /// missing the provider name itself — corrected 2026-08-28. Converted to
+  /// the same singleton pattern as the other three so this method can reach
+  /// the identical instance Riverpod hands out and clear every user's
+  /// entry on logout, not just the outgoing one's.
+  ///
+  /// SESSION-SCOPED — not wired here, tracked separately:
+  /// - `lib/features/notifications/presentation/providers/
+  ///   notification_center_badge_providers.dart` (`LastSeenActivityAtController`)
+  ///   — a per-user "last seen notification" marker. Lives in
+  ///   `lib/features/notifications/**`, owned by `notifications-specialist`,
+  ///   not this agent's contract boundary — flagged to them rather than
+  ///   edited here.
+  /// - `lib/features/auth_onboarding/presentation/screens/
+  ///   email_verification_screen.dart` (`pending_email_onboarding_data`) —
+  ///   holds a *new, not-yet-verified* signup's chosen fields, not an
+  ///   existing account's data. Already self-clears on successful
+  ///   verification. Not wired here because doing so would mean this
+  ///   `core/services` file importing a `presentation/screens` widget —
+  ///   backwards layering. Residual risk is low and accepted.
+  /// - `lib/features/profile/services/onboarding_controller.dart`
+  ///   (`onboarding_progress`/`onboarding_session`/`onboarding_analytics`/
+  ///   `ab_test_variant`) — onboarding-wizard progress, not namespaced by
+  ///   user id. Low-severity (wizard step + A/B bucket, no PII); deferred
+  ///   rather than wired for the same layering reason as above.
+  /// - `lib/features/rewards/services/progress_tracking_service.dart` and
+  ///   `rewards_analytics_service.dart` — already namespace every
+  ///   SharedPreferences key with `$_currentUserId`
+  ///   (`daily_goals_$_currentUserId` etc.), so a different signed-in user
+  ///   cannot read a previous user's rewards data through these keys — no
+  ///   cross-account leak today. Full purge on logout deferred: `PLAN.md`/
+  ///   `T-010` explicitly carve the rewards slice out of this month's
+  ///   Flutter capacity as largely-unreachable code.
+  ///
+  /// PREFERENCE-SCOPED — deliberately survive logout: [ThemeService],
+  /// `core/providers/locale_provider.dart`,
+  /// `core/services/mock_localization_service.dart` (legacy/duplicate
+  /// language preference), `core/config/notification_preference.dart` (enum
+  /// only, no storage of its own),
+  /// `features/auth_onboarding/presentation/providers/
+  /// selected_country_provider.dart` (region default, no PII — same class
+  /// as locale, also used from Settings as a general app preference),
+  /// `features/profile/presentation/providers/profile_providers.dart`
+  /// (`last_active_profile_type` — the file's own doc comment says this is
+  /// designed to survive logout so the user "returns to the same profile"),
+  /// and the notification-prompt cooldown in
+  /// `services/notifications/push_notification_service_mobile.dart`/
+  /// `_web.dart` (separate from the FCM token itself, which *is* revoked
+  /// above).
+  ///
+  /// DEAD — zero call sites outside their own file, verified by grep,
+  /// nothing to clear: `core/analytics/analytics_storage.dart`,
+  /// `core/services/cache_service.dart`'s generic `CacheService`.
   Future<void> signOut() async {
+    try {
+      await PushNotificationService.instance.revokeToken();
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+
+    try {
+      await UserService().clearUserData();
+      await ProfileCacheService().clearAll();
+      await LocationService().clearLocation();
+      await ProfileLocalDataSourceImpl().clearCache();
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+
     try {
       await _supabase.auth.signOut();
     } catch (e) {
