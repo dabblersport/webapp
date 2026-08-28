@@ -141,7 +141,8 @@ this file said. See §10 for how that number was wrong.
 | Position | Count | Meaning |
 |---|---:|---|
 | **EXPOSED** | **19** | `SECURITY DEFINER` + anon-selectable + **no `auth.uid()` predicate**. Bypasses RLS for an unauthenticated caller |
-| definer + uid | 8 | `SECURITY DEFINER` but filters on `auth.uid()` — safe by predicate |
+| definer + anon-granted, returns rows | **2** | **CORRECTED 2026-08-28 — `v_game_card` (216 rows) and `v_meetup_list` (1 row) are readable by `anon`.** Not an RLS bypass of private data — both return only `listing_visibility = 'public'` rows — but both expose `creator_user_id`, `creator_username`, `creator_display_name`, `creator_avatar_url`, start time and venue to an unauthenticated caller. See SEC-15 |
+| definer + anon-granted, returns 0 | 6 | Empty for `anon`, **verified by query, not by reading the definition** |
 | anon-revoked | 23 | `anon` has no SELECT grant — safe by grant |
 | invoker | 21 | `security_invoker = true` — the underlying table's RLS applies |
 | **Total** | **71** | |
@@ -194,13 +195,40 @@ They are in the 19 by measurement and excluded from the work.
 **So: 19 exposed → 2 are PostGIS → 17 app views need a verdict → 5 already confirmed
 leaking.**
 
-### 2b. Definer but safe — 8 views filtering on `auth.uid()`
+### 2b. Definer + anon-granted — 8 views, **2 of which return rows**
 
-`v_challenge_card` · `v_game_card` · `v_hidden_list` · `v_meetup_list` · `v_my_drafts` ·
-`v_my_games` · `v_rateable_after_game` · `v_recreate_candidates`
+**CORRECTED 2026-08-28. The previous version of this section was wrong and it was wrong in
+the way this file keeps warning other people about: I classified these 8 by reading their
+definitions for `auth.uid()` instead of querying them as `anon`.** Six are empty. Two are not.
 
-These are the pattern to copy. `v_game_card` is also the live game path
-(`game_view_controller.dart:399`).
+| View | Rows to `anon` | Position |
+|---|---:|---|
+| `v_game_card` | **216** | Only `listing_visibility = 'public'` rows. Filter is the visibility column, **not** `auth.uid()` |
+| `v_meetup_list` | **1** | Same — `listing_visibility = 'public'` only |
+| `v_challenge_card` | 0 | Empty for `anon` |
+| `v_hidden_list` | 0 | Empty for `anon` |
+| `v_my_drafts` | 0 | Empty for `anon` |
+| `v_my_games` | 0 | Empty for `anon` |
+| `v_rateable_after_game` | 0 | Empty for `anon` |
+| `v_recreate_candidates` | 0 | Empty for `anon` |
+
+Control in the same transaction: `select count(*) from public.games` as `anon` returns **0**,
+so the 216 rows from `v_game_card` are a genuine definer-view read over a table whose RLS
+denies `anon` directly.
+
+**These two are not in the same class as the §2a leaks and must not be filed with them.**
+Every row they return is one the visibility model marks public, so this is consistent with
+public game discovery without an account — plausibly the intended product behaviour. The
+open question is the *columns*, not the rows: an unauthenticated caller gets
+`creator_user_id` (the `auth.users` UUID), username, display name, avatar, exact start time
+and venue. That is `SEC-15`, a **MED** privacy finding needing a PO decision, not a blocker.
+
+`v_game_card` is also the live game path (`game_view_controller.dart:399`), so it cannot
+simply be revoked.
+
+**Do not cite the old "safe by predicate" line.** Six of these are safe by *outcome*, two are
+filtered by a *different* mechanism than the one this file claimed, and none of that was
+knowable from the definition text.
 
 ### 2c. Anon-revoked — 23 views safe by grant
 
@@ -584,3 +612,83 @@ count treated only as "at least this many are worth looking at".
 
 The practical consequence was that **11 anon-exposed views were never examined**, because
 the audit believed it had already covered the whole set.
+
+### §10 errata — added 2026-08-28
+
+**"8 definer views, safe by `auth.uid()` predicate" was wrong.** I assigned that position by
+reading each view's definition for the string `auth.uid()` and never queried one. Probing all
+eight as `anon` on 2026-08-28: six return zero rows, **`v_game_card` returns 216 and
+`v_meetup_list` returns 1**. Their filter is `listing_visibility = 'public'` — the right
+outcome for the row set, reached by a mechanism this file misnamed, and two views recorded as
+safe are in fact readable.
+
+The general rule this file should have followed, and now does: **a view's position is
+established by querying it as `anon` with a control query in the same transaction, never by
+reading its definition.** §2b now carries a per-view row count. Regenerate with §2e.
+
+## 11. THE DEFINER-VIEW PROBLEM IS ALSO A WRITE PROBLEM
+
+*Added 2026-08-28. Raised by `cto-4`, every link re-verified here. See `PROJECT_STATE.md` SEC-16.*
+
+§2 of this file censused all 71 views for **read** exposure and stopped there. That framing
+was incomplete, and the gap was not small: **a `SECURITY DEFINER` view can be writable, and
+when it is, the base table's RLS is not evaluated.**
+
+### The mechanism, in the order it has to be checked
+
+1. **Is the view auto-updatable?** `information_schema.views.is_insertable_into`. Simple
+   single-table views are; **aggregates are not** — which is why only
+   `v_notifications_feed` is writable and `v_mod_queue_open` / `v_safety_overview` are not,
+   despite carrying the same wide grants.
+2. **Does an untrusted role hold the DML grant?** `has_table_privilege('anon', v, 'INSERT')`.
+   A `SELECT`-only census will never see this.
+3. **Are the NOT NULL, no-default columns exposed in the view?** If not, no row can be
+   constructed. For `notifications` these are `to_user_id`, `kind_key`, `title` — all three
+   are in the view.
+4. **Does the base table's RLS actually run?** This is the one that catches people, and
+   there are **two independent ways for the answer to be no**. Test both.
+   - **Owner path.** If the view and the table share an owner and the view is not
+     `security_invoker`, the base table is accessed **as its own owner**, and Postgres skips
+     RLS for a table's owner unless `relforcerowsecurity` is set. A perfectly correct
+     `WITH CHECK (false)` policy is simply never evaluated.
+   - **`rolbypassrls` path.** The executing role may carry `rolbypassrls`, which skips RLS
+     regardless of ownership **and defeats `FORCE ROW LEVEL SECURITY` too.** `postgres` has
+     it (`pg_roles.rolbypassrls = true`); `anon` does not. So a definer view owned by
+     `postgres` over a table owned by *someone else* still bypasses — which is exactly
+     `v_needs_organiser` over `auth.users`, and why FORCE RLS would not have closed it.
+     **Only the revoked grant closes that one.**
+
+   ```sql
+   SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname IN ('postgres','anon','authenticated');
+   ```
+
+   A check that tests only `relforcerowsecurity` passes the `rolbypassrls` case silently.
+5. **Does an INSERT trigger reach outside the database?** `notifications` has
+   `trg_push_on_notification_insert`, which posts attacker-controlled `title`/`body` to an
+   edge function over the trusted `x-trigger-secret` path.
+
+### The rule
+
+**`security_invoker` governs reads. It says nothing about a DML grant, and nothing about
+owner-equals-owner.** Any catalogue check that asserts only on anon-reachability and invoker
+status **passes with this hole wide open** — `cto-4` flagged that its own `T-002` test spec
+had exactly that gap, and the corrected spec must also assert on grants and on
+`relforcerowsecurity`.
+
+### Reproduction (read-only; do not attempt the insert)
+
+```sql
+SELECT v.table_name,
+       v.is_insertable_into,
+       has_table_privilege('anon', 'public.'||v.table_name, 'INSERT') AS anon_insert,
+       c.relforcerowsecurity
+FROM information_schema.views v
+JOIN pg_class c ON c.relname = v.table_name
+JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+WHERE v.table_schema = 'public';
+```
+
+**Verifying preconditions is the whole job here. Neither `cto-4` nor `master-analyst`
+attempted the insert, and nobody should** — this is production, and `DECISIONS.md` 019 bars
+every agent from writing it. The catalogue establishes the vulnerability; a write would only
+establish it a second time, destructively.

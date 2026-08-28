@@ -1,6 +1,7 @@
-- [KAN-39 launch-readiness verdict](kan39-launch-readiness.md) — do not promote: blockers KAN-56/58/59, pre-promotion KAN-57; harm-a-user vs embarrass-us is the line
+- [KAN-39 launch-readiness verdict](kan39-launch-readiness.md) — do not promote: blockers KAN-67/56/58/59 (67 first), pre-promotion KAN-57; harm-a-user vs embarrass-us is the line
 - [Load-bearing measurements](load-bearing-measurements.md) — verified numbers with their commands; which quoted figures are unreproducible
 - [Confirmed false positives](confirmed-false-positives.md) — PostGIS views, public-by-design keys, no-pinning; never re-flag these
 - [Analyst reconciliation](analyst-reconciliation.md) — where the CTO and master-analyst reads converged and the four deltas
 - [Verification lessons](verification-lessons.md) — grep traps in this repo; dead code vs landmine; bound a claim to what you measured
 - [Severity propagation protocol](severity-propagation-protocol.md) — tell master-analyst directly when a severity moves; mechanism-verified is not observation-verified
+- [Repo hygiene ruling (T-012)](repo-hygiene-ruling.md) — what went, and why macos/ + the token generator stayed; a generator is judged by its output

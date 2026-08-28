@@ -410,3 +410,58 @@ trust it more than it has earned.
 required to look at the filesystem. The row was internally consistent, plausibly worded, and
 cited a real ticket. It was caught by a reviewer who ran `ls`. **A document can be coherent
 and still be wrong about the tree** — the check that catches it has to touch reality.
+
+---
+
+## 11. OPEN PROPOSAL — the promotion gate has no permitted writer
+
+*Raised by `cto-4` 2026-08-28. Written here by `master-analyst` as a **proposal, not an
+amendment**. Nothing in §3 changes until the PO accepts one of the options below. Per §8, a
+matrix row is amended by the PO, and per `DECISIONS.md` 019 no agent writes the production
+database at all.*
+
+### The gap, stated precisely
+
+Two promotion-gate items are database work. §3 rows 116 and 119–122 make every database path
+**UNOWNED** except notification migrations. So the gate that blocks promotion cannot be
+cleared by any agent currently in the matrix. This is not an oversight to be patched quietly
+— it is the system working as designed and surfacing a hiring decision.
+
+Two agents independently reached this boundary and both stopped at it rather than granting
+themselves the path. That is §2 doing its job, and it is the right outcome: **an agent that
+can widen its own scope to clear its own gate has no gate.**
+
+### What the PO is being asked to decide
+
+| Option | What it means | Cost |
+|---|---|---|
+| **A — hire a backend owner** | A new agent owns `supabase/schema/**` and the live schema. Already raised as **KAN-26** | A seventh agent, a new column, a definition to write |
+| **B — widen `notifications-specialist`** | It already writes notification migrations and holds the only working DB-write precedent | Its name stops describing its scope, and it becomes the de facto backend owner without the review that hiring one would get |
+| **C — PO executes the SQL** | Agents write and review the migration; the PO applies it | No new agent; the PO is the bottleneck on every schema change |
+| **D — leave it UNOWNED** | The gate items are cleared by the PO or not at all | Honest, and it means the gate stays shut until the PO has time |
+
+**The strongest argument for A is structural, not throughput** *(added 2026-08-28, `cto-4`)*.
+The highest-severity finding on the board (SEC-16 / KAN-67) is one migration against
+**schema-level** configuration — table and view grants plus `ALTER DEFAULT PRIVILEGES` in
+`public`. There is no per-view `REVOKE` that fixes it. It therefore **cannot be sliced into
+anything an existing agent may author**: carving it by view ownership yields two migrations
+that each half-fix one setting, with the `pg_default_acl` half belonging to neither owner.
+That is a gap in the matrix, not a queue that is moving too slowly — and it is the version
+of this decision a PO can act on.
+
+`master-analyst`'s recommendation: **A**, and not B. B is the cheapest thing to type and the
+most expensive thing to live with — it converts a scoped agent into an unscoped one by
+accretion, and the matrix stops describing the system. If A is too much agent for the amount
+of work, **C** is the honest small answer; D is acceptable and should be chosen explicitly
+rather than arrived at by neglect.
+
+**Whoever gets the path, `DECISIONS.md` 019 still stands:** writing migration files in the
+repo and writing the production database are different permissions, and this proposal is
+only about the first.
+
+### Constraint on whoever owns it
+
+Any writer of this path inherits `SCHEMA.md` §8 mismatch 7 as the authoritative statement of
+the migration situation: **237 rows in `supabase_migrations.schema_migrations` versus 38
+tracked `.sql` files**, only one of which contains a `CREATE TABLE`. The repo is not a
+reconstruction of the live schema and must not be treated as one.

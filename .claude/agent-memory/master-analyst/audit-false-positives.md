@@ -65,3 +65,38 @@ Verified non-findings. Re-flagging any of these costs trust and buries real find
 actually fine" section — never in the findings table.
 
 See [[audit-baseline-2026-08-26]].
+
+## `public.pg_stat_statements_info` "does not exist"
+
+*Added 2026-08-28. Raised by `cto-4`; did not verify.*
+
+`to_regclass('public.pg_stat_statements_info')` is `NULL`, which reads as a dangling
+reference of the same class as `v_space_slots_today` (BUG-05). It is not. The relation lives
+in the **`extensions`** schema — `to_regclass('extensions.pg_stat_statements_info')` resolves
+— which is where Supabase installs extension objects. **Zero** functions and **zero** views in
+`public` reference it.
+
+**Do not re-flag.** Before calling a missing `public.X` a dangling reference, check the
+`extensions` schema and count actual referrers:
+
+```sql
+SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+WHERE n.nspname='public' AND p.prosrc ILIKE '%X%';
+```
+
+Related: [[reachability-method]].
+
+## SCOPED CORRECTION — 2026-08-28, from `cto`
+
+**`geometry_columns` / `geography_columns` were recorded here as confirmed false positives.
+That ruling was correct for READ and WRONG for WRITE.** `geometry_columns` is one of the 8
+live unauthenticated write paths (SEC-15a): definer, auto-updatable, `anon` holds
+INSERT/UPDATE/DELETE, and its owner `supabase_admin` is `rolsuper=true`. `anon` DELETE
+against PostGIS metadata is not harmless.
+
+**The general rule, which now governs every entry in this file:**
+**A false-positive ruling is scoped to the privilege it was made about.** "Safe to read" is
+not "safe". Any entry cleared on one access path must name that path, or the next reader
+skips the one that matters.
+
+Re-check any other entry here that was cleared without naming its privilege.

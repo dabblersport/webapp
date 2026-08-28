@@ -119,12 +119,114 @@ Source: `SCHEMA.md` §3 · 2026-08-26
 
 | Finding | Detail |
 |---|---|
-| **SEC-11** keystore | **HIGH, not a launch blocker.** Passwords plaintext in tracked `build.gradle.kts:36,38`, exposed 9 months (`ebaf9b8`, 2025-11-22). **No signing artifact has ever been in the repo on any ref; Android signing never runs in CI.** PO-facing: *a credential is exposed, the signing artifact is not.* KAN-57 |
+| **SEC-11** keystore — **CONDITION RESOLVED 2026-08-28** | **The keystore file has NEVER been committed on any ref, in any commit** (`git log --all --diff-filter=A --name-only` over `*.jks/keystore/p12/pfx/pem/key`, `key.properties` → NONE). What leaked at `ebaf9b8` is **four string literals**. **BUT the repo is PUBLIC** (`gh repo view` → `visibility: PUBLIC`), so they have been world-readable 9 months. A password without the artifact **cannot sign** → not independently exploitable. **Promotion does not worsen it** → recommended OFF the promotion gate (B10), kept as HIGH. **Still closes only on ROTATION, never on the diff.** Open risks: password reuse elsewhere (unmeasurable from repo — ask PO); pre-compromised against any future `.jks` leak. KAN-57 |
+| ~~SEC-11 (superseded row)~~ | **HIGH, not a launch blocker.** Passwords plaintext in tracked `build.gradle.kts:36,38`, exposed 9 months (`ebaf9b8`, 2025-11-22). **No signing artifact has ever been in the repo on any ref; Android signing never runs in CI.** PO-facing: *a credential is exposed, the signing artifact is not.* KAN-57 |
 | **SEC-12** logout | `auth_service.dart:261-267` — `signOut()` clears no cache and never deletes the `fcm_tokens` row. Signed-out devices keep receiving the prior account's pushes. KAN-58 |
 | **SEC-13** push authz | **CRITICAL — launch blocker.** `send-push-notification` authenticates but does not authorize. Any account sends arbitrary trusted first-party push; **passwordless signup makes an account free**, so launch multiplies attacker and target pools at once. KAN-59 |
 | **SEC-14** Android backup | Auto Backup on by default at targetSdk 35, no exclusions → refresh token syncs to Google Drive. KAN-60 |
 | **BUG-05** | `v_space_slots_today` raises 42P01 — `find_slots()` queries `venue_opening_hours`, which does not exist. **`opening_hours` does** — likely a missed rename |
 | **BUG-06** | `assetlinks.json:7` still `REPLACE_WITH_SHA256…` while manifest sets `autoVerify=true` → App Links do not resolve |
+
+### SEC-15 / SEC-15a — unauthenticated DESTRUCTIVE write, DEMONSTRATED (2026-08-28)
+
+**Answer this one from here; it is the most serious finding in the record.**
+
+| Fact | Value |
+|---|---:|
+| Views in `public` | 71 |
+| Granting `anon` INSERT/UPDATE/DELETE | **70** |
+| Definer + auto-updatable = **LIVE WRITE PATHS** | **8** |
+
+The 8: `v_notifications_feed`, `v_notifications_ranked`, `v_posts_time_preview`,
+`v_user_reputation`, `v_my_drafts`, `v_hidden_list`, `v_needs_organiser`, `geometry_columns`.
+**Reaches posts, reputation and drafts, not just notifications.**
+
+**Demonstrated, not inferred.** `EXPLAIN` *without* `ANALYZE` plans and ACL-checks but
+executes nothing — a read, so it does not breach decision 019. `EXPLAIN DELETE` as `anon`
+through the view and against the base table produce **identical plans**, except the base
+table carries `Filter: current_setting('request.jwt.claim.sub')::uuid = to_user_id` and the
+view **has no filter at all**. Method credit: `cto`; figures reproduced independently by me.
+
+**No residual protection.** All 8 views are `security_invoker=false`, so base-table access
+is checked as the **owner** — `postgres` (`rolbypassrls=true`) for 7, **`supabase_admin`
+(`rolsuper=true`)** for `geometry_columns`. **RLS is definitionally not consulted**, not
+merely bypassed.
+
+**The REVOKE is safe — verified twice over.** `grep -rnE "\.from\('v_|\.from\(\"v_" lib`
+→ 0; and **none of the 8 appears anywhere in `lib/` at all**. Zero client effect.
+**`geometry_columns` is the exception** — `supabase_admin`-owned and PostGIS-managed; it
+needs its own remediation path, not the batch.
+
+**`geometry_columns` cannot be revoked at all** (T-015, verified): migrations run as
+`postgres`, which is **not** superuser and **not** a member of the owner `supabase_admin`
+(`pg_has_role` → false). So the fix closes **7 of 8**. **Never use
+`REVOKE ... ON ALL TABLES IN SCHEMA public`** — it either halts mid-migration or skips the
+untouchable object *while reporting success*. Enumerate targets explicitly.
+
+**Fix order:** REVOKE **first**, ahead of all `security_invoker` work — destructive beats
+confidentiality. Two uid predicates alone leave `anon` holding DELETE on 8 views. One
+project-wide privilege migration, `cto`'s authorship, PO-gated. **Not yet applied.**
+
+Full detail + queries: `PROJECT_STATE.md` SEC-15a. Ticket: KAN-67, KAN-56.
+
+**Scoped-correction rule (from `cto`, 2026-08-28):** `geometry_columns`/`geography_columns`
+were do-not-re-flag false positives **for READ only** — `geometry_columns` is one of the 8.
+**A false-positive ruling is scoped to the privilege it was made about.** Check [[audit-false-positives]] carries this qualifier.
+
+### SEC-15 — the leak is not read-only (original entry, 2026-08-28)
+
+All five leaking views grant `anon` **SELECT INSERT UPDATE DELETE TRUNCATE REFERENCES
+TRIGGER**. `v_notifications_feed` and `v_notifications_ranked` are **auto-updatable**
+(`is_updatable=YES`) *and* SECURITY DEFINER *and* already proven to bypass RLS on read.
+Every precondition for unauthenticated write/delete of other users' notifications is
+present. **The write was not demonstrated** — that is a data change, decision 019. Claim
+scope: *preconditions verified, exploitation not demonstrated.* The fix has two independent
+halves: the `anon` grants and the uid-predicate. Full table + both queries:
+`PROJECT_STATE.md` SEC-15 (line 874). **Not established:** whether the full-privilege grant
+is project-wide drift across all 71 views — cheap to measure on request.
+
+**B1's honest ceiling this month** (cpo ruling 2026-08-28, verified against
+`CONTRACT.md:119,125`): **reviewed SQL for 2 of 5 views, PO-gated.** NS may author only the
+two notification views; `v_mod_queue_open` / `v_safety_overview` / `v_circle_feed` are
+UNOWNED. **No agent applies to production.** Do not repeat "B1 is owned and unblocked" —
+that was my error, corrected by cpo.
+
+### The five zero-policy orphan tables + BUG-07 (2026-08-28)
+
+**NOT a definer funnel** — all three referencing functions are `prosecdef=false` (INVOKER),
+so `cto`'s T-012 "revoke, don't add policies" ruling does **not** apply to these five. An
+invoker fn over an RLS-on zero-policy table returns **0 rows to every real caller**
+(verified `set local role authenticated`).
+
+| Table | rows | fn refs | definer | `lib/` |
+|---|---:|---:|---:|---:|
+| `challenge_types` | 8 | **0** | 0 | **0** |
+| `surface_catalog` | 30 | **0** | 0 | **0** |
+| `context_rating_config` | 2 | 1 `_get_context_config` | 0 | 0 |
+| `safety_blocklist_terms` | 2 | 1 `content_hits_blocklist` | 0 | 0 |
+| `space_slot_holds` | **0** | 1 `_slot_conflicts_hold` | 0 | 2 (const+model) |
+
+**RULED:** `challenge_types` + `surface_catalog` → **REVOKE NOW, DEFER THE DROP** (`cto`).
+T-007's deletion default **does not transfer**: dead Dart is recoverable from git, 38 rows of
+dropped config are recoverable from nothing. A table with no reader costs nothing to keep.
+**`space_slot_holds` → KEPT** (`cpo` `P-013`) — parked scaffolding for venue slot booking,
+**committed scope** Phase 1B Month 9. *Deferred product is not dead code*, same as
+`lib/features/payments/`. **Do not drop it in an orphan sweep.**
+
+**BUG-07 / KAN-68 — the blocklist fails open TWICE, but nothing calls it.**
+(1) locale predicate can never match: filters `locale='any' or locale=p_locale`; both terms
+are `locale='en'`; client defaults `'any'` (`moderation_service.dart:546,553`). Proven **as
+service role** (no RLS confound): `content_hits_blocklist('buy a fake passport here')` → **0**.
+(2) INVOKER over RLS-on/zero-policy → 0 terms as `authenticated`. Fixing (1) alone changes
+nothing. **`contentHitsBlocklist` has NO caller in `lib/`** → **a trap, not a breach** — say
+this plainly, do not report it as a live safety hole. **RULED T-016: FIX, don't delete**
+(explicit exception to T-007 — a UGC product should have a blocklist). Locale:
+`p_locale='any' or locale='any' or locale=p_locale`. RLS: make the fn **DEFINER** + **REVOKE**
+`SELECT` from `anon`/`authenticated` — **NOT a read policy**, because *a moderation control
+whose contents are visible to the people it constrains is not a control*. Same for
+`context_rating_config`. **Verify as role `authenticated`, never service role.** `moderation_service.dart` *is* live
+(game composer, report dialog, both admin screens), so it is one wiring change from trusted.
+Detail: `PROJECT_STATE.md` BUG-07.
 
 ### The live leak — KAN-36/37/38
 
@@ -265,9 +367,17 @@ Leadership may reject an executive's work with reasons; neither writes productio
 feature code.
 
 **23 of 25 slices are UNOWNED**, as is `lib/core/**`, `lib/data/**`, the design system, and
-all Supabase outside notifications. **Three design-system surfaces:**
-`lib/core/design_system/` (22 files, largest) · `lib/design_system/` (11) ·
-`dabbler_design_system` (git dep, 0 imports).
+all Supabase outside notifications. **FOUR design-system surfaces, not three — corrected by cto 2026-08-28.** My earlier
+"three" omitted the only one that is load-bearing at runtime:
+`lib/themes/` (4 files, 39 import sites) — **`main.dart:13` imports it, `:156` calls
+`AppTheme.initialize()`, `:265-266` hand `AppTheme.lightTheme/darkTheme` to `MaterialApp`.
+Every colour a user sees comes from here.** Verified independently 2026-08-28.
+Also: `lib/core/design_system/` (22 files, 74 import sites) · `lib/design_system/` (11 files,
+**77 import sites** — the most, while calling itself "temporary") · `lib/core/theme/` (2
+files, 2 sites) · `dabbler_design_system` (git dep, 0 imports).
+**cto ruling T-013:** `lib/themes/AppTheme` canonical for theming, `lib/core/design_system/`
+canonical for components, `lib/design_system/` absorbed on touch, `dabbler_design_system`
+removed now. **Import count measures entrenchment, not intent.**
 
 Source: `CONTRACT.md` §3 · `AGENTS.md` · `ARCHITECTURE.md` §2
 
@@ -312,6 +422,52 @@ Source for every row: `PROJECT_STATE.md` Part II (§13–§20).
 
 `Re-measure:` `.claude/jobs/*/tmp/reach.py` (import BFS) · `census.sh` (class census)
 
+## 11c. SEC-16 — the single highest item on the board (2026-08-28)
+
+**Unauthenticated INSERT into `notifications`, delivered as push to a chosen user.**
+`v_notifications_feed` `is_insertable_into=YES` + `anon` holds INSERT · the three NOT NULL/no-default
+columns (`to_user_id`, `kind_key`, `title`) are all in the view · `n_block_insert WITH CHECK (false)`
+exists but **never runs** — view and table both owned by `postgres`, view is not `security_invoker`,
+`relforcerowsecurity = false` · `trg_push_on_notification_insert` (`tgenabled='O'`) posts attacker-controlled
+`title`/`body` verbatim to `send-push-notification` on the `x-trigger-secret` trusted path ·
+`anon` reads `notification_kinds`, 23 of 29 active kinds carry `push` in `default_channels`.
+
+**Fix (B1a):** `REVOKE` the DML grants **and** `ALTER TABLE public.notifications FORCE ROW LEVEL SECURITY`.
+FORCE RLS is the load-bearing half. **Blocked on the `CONTRACT.md` §11 ownership decision.**
+
+**SUPERSEDED 2026-08-28: not one view — 7 app views + `geometry_columns` (PostGIS artefact).**
+Of 71 views: **70 grant anon write · 19 auto-updatable · all 19 granted · 8 definer+updatable+granted.**
+All 7 app base tables have `relforcerowsecurity=false`. **`v_notifications_ranked` is a 2nd path to `notifications`.**
+**`v_needs_organiser` targets `auth.users`** (`profiles` only in the NOT EXISTS) — established 2026-08-28.
+Bypasses via **`rolbypassrls` on `postgres`**, not owner-equals-owner; **FORCE RLS does NOT close it**, only the revoke.
+`auth.users`: RLS on, **zero policies** (deny-all), `id` the only NOT NULL/no-default col — which the view projects.
+**UNESTABLISHED and must stay so:** whether the row inserts, and whether it is useful. **Never call it account creation.**
+Not inert though — an insert fires `trg_create_default_privacy_settings` + `trg_strip_signup_password`.
+**SEC-17 call sites: 3, not 6** — 2 of the 6 query the `games` table, not the view. One filter site
+(`game_history_providers.dart:79-80`) = silently wrong game history. Identity cols: host_user_id 23 ·
+creator_user_id 6 · organizer_id 4 · **creator_profile_id 1** (the migration target).
+**Root cause `pg_default_acl`:** `ALTER DEFAULT PRIVILEGES` in `public` from postgres AND supabase_admin
+grants anon/authenticated `arwdDxtm` on every new relation — Supabase stock config, never turned off.
+**A REVOKE-only fix regresses on the next CREATE VIEW and still passes its own check.**
+Fix = REVOKE + `ALTER DEFAULT PRIVILEGES … REVOKE` (both grantors) + FORCE RLS. Low blast radius:
+nothing in the app writes through these views.
+**Never attempted, by anyone.** Catalogue-verified only. `SCHEMA.md` §11 has the reproduction.
+
+## 11d. SEC-17 — auth.users UUIDs readable with no account (2026-08-28)
+
+**61 of 240 real `auth.users` UUIDs — 25% of the user base — readable by `anon`.**
+Measured as `anon`, distinct non-null uids: `v_notifications_feed` / `v_notifications_ranked` **51** (611 rows) ·
+`v_game_card` **25** (216 rows) · `v_circle_feed` **1** (6 rows) · `v_meetup_list` **1** (1 row). Union **61**.
+All 216 `v_game_card` uids confirmed present in `auth.users`.
+Eight further anon-granted views carry an `auth.users`-shaped uuid column but return **0 rows** today.
+
+**HIGH, and not a PO question** — drop the uid from every anon-reachable projection; keep `creator_profile_id`
+and display fields. Bundle with SEC-16's migration. **SEC-15 stays MED** for the discovery exposure
+(display name, avatar, `start_at`, venue name; rows the organiser marked public; no coordinates or contact details).
+
+**Rule (`cto`):** severity attaches to the **column**, not the view. A view can be correctly public and still
+carry one field that has no business in it.
+
 ## 11b. CORRECTED FACTS — do not quote the old version
 
 | Was recorded | Truth (verified 2026-08-27) |
@@ -322,6 +478,26 @@ Source for every row: `PROJECT_STATE.md` Part II (§13–§20).
 | 25 `UnimplementedError` in settings repo | **24** — a doc comment contained the word `throw` |
 | "no schema history" | **237 applied migrations** |
 | 49 views / 25 definer / 8 exposed | **71 / 49 / 19** |
+| **"8 definer views are safe by `auth.uid()` predicate"** (mine, `SCHEMA.md` §2b) | **False for 2 of the 8.** Probed as `anon` 2026-08-28: `v_game_card` **216 rows**, `v_meetup_list` **1 row**, other six 0. Filter is `listing_visibility='public'`, not `auth.uid()`. **Position was assigned by reading the definition, never by querying.** Not the §2a leak class — rows are all public — but the columns include `creator_user_id`, username, avatar, start time, venue → **SEC-15 (MED)** |
+| **"27 anon-readable definer views"** (`cto-4`, `T-001`) | **A privilege count, not an exposure count.** 27 = definer AND `anon` holds SELECT. 6 of the 27 return zero rows. **21 return data**, of which 19 are the §2a leaks and 2 are SEC-15. Do not quote 27 as a leak figure |
+| **`public.pg_stat_statements_info` is a dangling reference** (`cto-4`) | **False.** It lives in the `extensions` schema, which is where the extension installs it. `to_regclass('public.…')` is `NULL` by design, and **zero** functions or views in `public` reference it. Not a finding |
+
+## 11c. REPO HYGIENE — run 3, 2026-08-28, commit `1b83967`
+
+Full table: `docs/PROJECT_STATE.md` §21. Answer "can we delete X" from §21b/21e, do not re-scan.
+
+| Fact | Value | Source | Measured |
+|---|---|---|---|
+| Repo hygiene — files proposed for removal | 749 files / ~6.6 MB, 73 tracked | `docs/PROJECT_STATE.md` §21h | 2026-08-28 |
+| Unused platform folders (macos/windows/linux) | 51 tracked files, 5.0 MB, no build references them | `docs/PROJECT_STATE.md` §21d | 2026-08-28 |
+| Root regenerable artifacts | 7 tracked, 1,053,654 B | `docs/PROJECT_STATE.md` §21b | 2026-08-28 |
+| Fate of the 5 root .md docs | 3 MOVE, 2 DELETE (per-doc reasoning) | `docs/PROJECT_STATE.md` §21c | 2026-08-28 |
+| Dead onboarding services (HYG-01) | 320 LOC, 0 importers | `docs/PROJECT_STATE.md` §21f | 2026-08-28 |
+| `packages/` is load-bearing, not cruft | dependency_overrides path deps | `pubspec.yaml:167-180`, §21g | 2026-08-28 |
+
+**Do not re-flag** (also in [[audit-false-positives]]): `packages/` is a load-bearing `dependency_overrides` path dep; the 5 `post_comments_*_fkey` strings are PostgREST constraint hints that resolve correctly (constraint names survived the table rename, verified via `pg_constraint`).
+
+**7 items blocked on the PO:** root PDF, untracked `upload_certificate.pem`, `macos/`, 4 zero-ref `scripts/`, `App screenshot/`, 4 zero-ref `lib/design_system/*.md`. Listed in §21b/21e.
 
 ## 12. NOT ESTABLISHED — say so, don't guess
 

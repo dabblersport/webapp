@@ -7,7 +7,12 @@ metadata:
 
 Verified non-defects. Re-flagging these wastes a review cycle each time.
 
-- **`geography_columns` / `geometry_columns`** are anon-readable definer views and **PostGIS system views**. They appear in the "19 anon-readable definer views" count. Not a defect.
+- **`geography_columns` / `geometry_columns`** are anon-**readable** definer views and PostGIS
+  system views. Not a defect **for READ**. **CORRECTED 2026-08-28 — NOT a false positive for
+  WRITE:** `geometry_columns` is one of 8 auto-updatable definer views granting `anon` DELETE,
+  and anon DELETE against PostGIS metadata is not harmless. **A false-positive ruling is scoped
+  to the privilege it was made about.** I issued this one unscoped and it would have caused a
+  reviewer to skip a live write path.
 - **Supabase anon/publishable key, Firebase client keys, `GOOGLE_WEB_CLIENT_ID`** are public by design. GitHub secret scanning's 3 open `google_api_key` alerts are all this — dismiss them. Note secret scanning did **not** catch the Play signing password, which was the real one.
 - **Absence of password rules** — accounts are passwordless by design (decision `002`).
 - **No certificate pinning** — deliberate, recorded as [[T-006]] / `DECISIONS.md` T-006. Not an open gap.

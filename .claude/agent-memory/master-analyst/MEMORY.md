@@ -6,3 +6,4 @@
 - [Jira tracking convention](jira-tracking-convention.md) — audit work is tracked as child Tasks under an epic; transition IDs and the key-numbering trap
 - [Audit run 2 — application inventory](audit-run2-inventory-2026-08-27.md) — 69,612 LOC unreachable; 19/23 flows work; the 4 run-1 facts it corrected
 - [Reachability method](reachability-method.md) — import-BFS vs route-referenced vs UI-reachable; web means every route is URL-reachable
+- [Repo hygiene 2026-08-28](repo-hygiene-2026-08-28.md) — run-3 deletion inventory: 73 tracked files / ~6.6MB; the 7 PO ASK items; packages/ and the FK-hint false positives

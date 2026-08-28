@@ -440,8 +440,8 @@ URL-reachable** — and the reachable one sits on the profile of every other use
 
 **A further correction, from `master-analyst` and verified here.** I first described
 `socialMessages` and `socialNotifications` as guarded *and* unreferenced — "belt and
-braces". They are not. `socialNotifications` (`:1580`) tests `FeatureFlags.notifications`
-and `socialMessages` (`:1594`) tests `FeatureFlags.messaging`, and **both flags are `true`**
+braces". They are not. `socialNotifications` (`:1582`) tests `FeatureFlags.notifications`
+and `socialMessages` (`:1596`) tests `FeatureFlags.messaging`, and **both flags are `true`**
 (`feature_flags.dart:53-54`). **No placeholder route in the app sits behind a closed flag.**
 Those two are unreachable for exactly the reason the unguarded three are — nothing links
 them. The guards are decorative. On a web build, where any registered route is reachable by
@@ -475,23 +475,32 @@ The gate is in the GTM playbook's own T-14 list:
 > "Analytics instrumentation verified (**PostHog/Mixpanel firing on key events**)"
 > — `08` Part 2 §A.2
 
-**The measured state — corrected 2026-08-27.** My first version said *"18 empty method
-bodies"*, quoting `PROJECT_STATE.md` WIRE-11. That number is wrong, and the truth makes
-this **sharper as a finding and smaller as a ticket**:
+**The measured state — corrected twice. Read the second correction.**
 
-`lib/core/services/analytics/analytics_service.dart` is 226 lines with 16
-`TODO: implement` comments, but only **four methods are actually empty** — the static sink:
-`trackEvent` (`:10`), `trackScreen` (`:14`), `setUser` (`:21`), `reset` (`:25`).
+*First correction (2026-08-27):* I said "18 empty method bodies". Wrong — four are empty,
+the static sink: `trackEvent` (`:10`), `trackScreen` (`:14`), `setUser` (`:21`),
+`reset` (`:25`).
 
-**The other ~14 tracking methods are fully written.** `trackGameCreated`, `trackGameJoined`,
-`trackGameSearch`, `trackCheckIn` and the rest each build a well-formed property map and
-call `trackEvent(...)`. The event names, the properties and the call sites all exist.
+*Second correction (2026-08-28, from `cto`, verified here — and it reverses my conclusion.)*
+I then said the ~14 tracking methods are "fully written, so KAN-51 is wiring a provider, not
+building instrumentation." **That is wrong, and it was the more consequential error.** The
+methods exist. **Nothing calls them.**
 
-> **One empty four-method sink silently discards every event the app already produces.**
+- **One live emission site in the entire app:** `lib/main.dart:78`,
+  `AnalyticsService.trackEvent('flags_snapshot', …)`. Fill the sink today and you get one
+  event, about feature flags. **Nothing on the games-confirmed path emits at all.**
+- The three other `trackEvent` call sites are in `lib/features/rewards/` — unreachable code
+  behind `enableRewards = false`.
+- **Two different classes are named `AnalyticsService`** — the façade at
+  `analytics_service.dart:6`, and a second at `cache_service.dart:78` which is the one
+  exposed through Riverpod. Wire a vendor into the façade and every provider-based caller
+  stays silent, invisibly.
+- `lib/core/analytics/` — ~900 lines of exactly the typed instrumentation we want,
+  including `analytics_helpers.dart` where all 31 apparent call sites live — has **zero
+  importers outside its own directory.**
 
-The force of the finding is unchanged — `main.dart:78` calls `trackEvent` into a no-op, so
-**the app emits nothing**. But KAN-51 is *wiring a provider into four methods*, not building
-instrumentation: the instrumentation is already there.
+**So B5 is not wiring; it is building the emission layer and choosing which of two classes
+survives.** It is bigger than B2 looks and it is not this month's work at current capacity.
 
 What this makes uncomputable, in one list: **"Games confirmed"** (`02`'s north star and
 `01` Truth 7's stated optimisation target) · **CSAU** (`08`'s north star) · every Month

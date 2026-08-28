@@ -8,7 +8,7 @@ metadata:
 **Verdict (2026-08-27, KAN-64):** do not promote. Gate re-sorted after `master-analyst`
 challenged it — verdict unchanged, grounds corrected.
 
-**Blockers, harm occurring or executable today:** **KAN-56** anon definer-view leak ·
+**Blockers, harm occurring or executable today:** **KAN-67** revoke `anon` write grants (FIRST — 8 live unauthenticated write paths) · **KAN-56** anon definer-view read leak ·
 **KAN-58** logout clears nothing / FCM token never revoked · **KAN-59** any account can push
 arbitrary title+body as a trusted first-party push (promoted from "strong fourth" — passwordless
 signup makes accounts free, and promotion scales targets AND attackers together).
@@ -43,5 +43,30 @@ so a view over a table with no usable policy returns 0 rows and blanks a live sc
 
 **How to apply:** if asked whether Dabbler can be promoted, this is the standing answer until
 KAN-56/57/58 close. If asked to fix any of it directly against production — no (decision `019`).
+
+See [[load-bearing-measurements]], [[confirmed-false-positives]], [[analyst-reconciliation]].
+
+**ESCALATION 2026-08-28 — KAN-56 is not a read leak.** It is **unauthenticated destructive write
+access to production**. Demonstrated without writing, via `EXPLAIN` (no `ANALYZE` — plans and
+ACL-checks, executes nothing), with a control:
+
+```sql
+SET LOCAL ROLE anon;
+EXPLAIN DELETE FROM public.v_notifications_feed WHERE id='…'::uuid;  -- NO RLS filter in plan
+EXPLAIN DELETE FROM public.notifications        WHERE id='…'::uuid;  -- RLS filter PRESENT
+```
+
+Views are owned by `postgres`, whose `rolbypassrls` is **true** — with `security_invoker=false`,
+base-table access is checked as the owner, so **RLS is definitionally not consulted**. No
+residual protection.
+
+**Drift, not five bad views:** 70 of 71 views grant `anon` INSERT/UPDATE/DELETE · 49 definer ·
+**8 auto-updatable = live write paths** (`v_notifications_feed`, `v_notifications_ranked`,
+`v_posts_time_preview`, `v_user_reputation`, `v_my_drafts`, `v_hidden_list`,
+`v_needs_organiser`, `geometry_columns`).
+
+**Fix order changed: the schema-wide `REVOKE` on `anon` comes FIRST**, ahead of all
+`security_invoker` work — destructive beats confidential. It is behaviourally free: the app never
+writes through a view (`grep -rnE "\.from\('v_|\.from\(\"v_" lib` returns nothing).
 
 See [[load-bearing-measurements]], [[confirmed-false-positives]], [[analyst-reconciliation]].

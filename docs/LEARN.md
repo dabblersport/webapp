@@ -706,3 +706,352 @@ widget or branch being gated must cite the flag's current value at a line, not t
 presence of the gate. On a web build the same applies to reachability itself: a route
 with no in-app navigation is still URL-reachable, so "nothing links it" bounds discovery,
 not access.
+
+---
+
+**2026-08-28 · master-analyst · A finding verified on a subset is a finding about that subset.**
+
+I briefed the leadership session with "B1 is SQL only, notifications-specialist owns it,
+unblocked." The first clause was true. `cpo` checked `CONTRACT.md:119` and `:125` and found
+NS may author **two of the five** leaking views — the other three are moderation, safety and
+social, all UNOWNED — and that **no agent may apply anything to production** (decision 019).
+The honest ceiling is *reviewed SQL for two of five, PO-gated*, not *closed*.
+
+This is the same failure shape as WIRE-09 the day before: one item verified, a blanket
+written over the rest, and both times the blanket read in the direction of relief.
+
+**Why:** the error is not measuring too little. It is stating a claim wider than what was
+measured. A verified subset makes the wider claim *more* plausible and therefore *less*
+likely to be re-checked by anyone downstream.
+
+**How to apply:** when a finding covers N items, either check N or name the subset checked
+in the claim itself. Never let "I confirmed one owner" become "it is owned."
+
+**What the check bought.** Verifying the correction rather than accepting it turned up that
+all five views grant `anon` INSERT/UPDATE/DELETE/TRUNCATE, and that the two notification
+views are auto-updatable — so B1 is not a read leak. One challenge found a wrong foundation
+and an unmeasured defect. Grilling that lands is cheap; the finding it surfaces is not.
+
+## Verifying one hop and inferring the chain
+
+Three code claims of mine were corrected in two days. The first two were sourcing failures —
+measuring outside my evidence domain. **The third was different and is the more useful
+lesson.**
+
+I checked that `AnalyticsService`'s ~14 tracking methods have real bodies that call
+`trackEvent`. They do. I then concluded "the instrumentation is already there — this is
+wiring, not building," and wrote that into a brief, a roadmap and a ticket, shrinking the
+estimate.
+
+**I verified the hop I looked at and inferred the one I did not.** Nothing calls those
+methods. There is one live emission site in the entire app. All 31 apparent call sites live
+in a directory with zero importers, and a second class of the same name is the one actually
+wired to Riverpod. The layer existed; the layer above it did not.
+
+**Generalises:** "X is implemented" and "X runs" are different claims needing different
+commands. For anything that emits, fires, persists or renders, the question is never *does
+the code exist* — it is **what calls it, and is the caller reachable**. One `grep` for call
+sites, filtered for reachability, separates the two.
+
+The tell is a conclusion phrased as relief — *smaller than first scoped*, *already there*,
+*just wiring*. That phrasing is where the unverified hop hides, because a shrinking estimate
+gets less scrutiny than a growing one. **When an estimate falls, check the hop you skipped.**
+
+---
+
+**2026-08-28 · master-analyst · Do not relay a number you did not measure.**
+
+I briefed leadership that the uncommitted cleanup was "16 tracked files, three platform
+folders, ~6 MB". That figure came to me in my own brief; I passed it on without running
+`git status`. `cto` ran it: **80 deletions, 16 modifications, 10 untracked** — and the
+deletions include **Dart files** (`lib/core/services/onboarding_service.dart`,
+`mock_onboarding_service.dart`). Anyone acting on my sentence would not have expected Dart
+deletions inside "16 files and three platform folders".
+
+**Why:** a number arriving in a brief carries no citation, and relaying it launders it into
+the record as though I had established it. That is exactly the failure mode `INDEX.md` was
+built to prevent, and I committed it on the one input I had not personally run.
+
+**How to apply:** an inherited figure is quoted with its source and marked unverified, or it
+is re-run before it is repeated. `git status --short` costs one command.
+
+**Also corrected this day, by `cto`:** I recorded **three** design-system surfaces. There
+are **four**, and the one I omitted — `lib/themes/` — is the only one load-bearing at
+runtime (`main.dart:13` imports it; `:156` `AppTheme.initialize()`; `:265-266` feed
+`MaterialApp`). I had this fact in personal auto-memory and never promoted it to the project
+record. **A fact in the wrong store is a fact the team does not have.**
+
+## A re-check must repeat the method, not inherit the conclusion
+
+*Added 2026-08-28 by `master-analyst`, named by `team-lead` after the WIRE-09/WIRE-10 pair.*
+
+The record was wrong about the same finding twice in two days, in **opposite directions**.
+WIRE-10 over-claimed a placeholder as live. The correction prompted a sweep of the sibling
+entries, and that sweep under-claimed a live route as dead.
+
+The sweep did not repeat WIRE-10's method — it applied WIRE-10's *result* as a rule
+("placeholder routes turn out to be orphans") across six cases. **A correction creates
+pressure toward the opposite error, and a re-check run under that pressure will find what
+the correction predicts.** The defence is to re-derive each case from evidence as though
+the first finding had never existed: same commands, per item, no shared conclusion.
+
+`team-lead` owns half of this by its own account — the instruction to sweep the siblings
+supplied the pressure. That is worth recording because it generalises: **asking an agent to
+re-check its neighbours after catching it in an error is itself a bias input**, and the ask
+should carry the method to repeat, not just the scope to cover.
+
+## Establish a position by observing behaviour, not by reading for a pattern
+
+*Added 2026-08-28 by `master-analyst`. `cto` flagged the mechanism/observation distinction
+on KAN-58 the same day; I had already broken it in `SCHEMA.md` without noticing.*
+
+`SCHEMA.md` §2 gave all 71 views a stated position — the thing that made it useful. Eight
+were filed "definer but safe, filters on `auth.uid()`". That position came from matching
+the string `auth.uid()` against each view definition. **I never queried one.**
+
+Probed as `anon`: six return zero rows, `v_game_card` returns **216**, `v_meetup_list`
+returns **1**. Their real filter is `listing_visibility = 'public'`. The row sets turned out
+defensible, so the outcome was near enough — but the stated reason was wrong for all eight,
+and two views I had certified as safe are readable by anyone.
+
+A pattern in the source tells you what the author *intended*. Only running it tells you what
+it *does*, and the gap between those is where findings live. **When a claim is about
+behaviour — who can read this, what does this return, does this fire — the evidence must be
+an execution with a control, not a grep.** `cto`'s framing is the one to keep: *mechanism
+passing as observation is how a confident claim turns out to have a gap nobody looked for.*
+
+A corollary worth its own line, because it caught two agents on the same day from opposite
+sides: **a privilege is not an exposure.** `cto-4` counted 27 views where `anon` holds
+SELECT and reported them as readable; 6 return nothing. I counted 19 that return data and
+treated the rest as settled; 2 of them return data. One of us counted the grant, the other
+trusted the predicate. **Only the query answers it.**
+
+## A census answers the question it was framed to ask, and nothing else
+
+*Added 2026-08-28 by `master-analyst`, after `cto-4` found SEC-16.*
+
+`SCHEMA.md` §2 gave all 71 views a stated position and I treated that completeness as
+coverage. It was complete **for reads**. Nobody had asked whether a definer view was
+*writable*, so nothing in two audit runs could have found that one is — with `anon` holding
+the INSERT grant, the base table's `WITH CHECK (false)` policy never evaluated because view
+and table share an owner and FORCE RLS is off, and an INSERT trigger posting
+attacker-controlled text to a push endpoint.
+
+`cto-4`'s automated check had the identical blind spot from the other side: it asserted on
+anon-reachability and `security_invoker` and **would have passed with the hole wide open**,
+because `security_invoker` governs reads and says nothing about a DML grant or about
+owner-equals-owner.
+
+**The lesson is not "check writes too" — that is this instance.** It is that *a thorough
+census is the most convincing way to be wrong*, because per-item verdicts feel like
+exhaustiveness and hide the axis nobody chose. The defence is to state the question the
+census answers, in the document, next to the counts — §2 now says it covers read exposure —
+so the next reader sees the boundary instead of inferring there isn't one.
+
+The corollary for security specifically: **an access finding has at least three axes — read,
+write, and what fires on write.** A trigger turns a database bug into a message on someone's
+phone, and no amount of read analysis reaches it.
+
+## Severity attaches to the column, not the view
+
+*Added 2026-08-28 by `master-analyst`. `cto`'s ruling on SEC-15; `cto-4` reached the same
+split independently the same hour.*
+
+I filed `v_game_card`'s anon exposure as one MED finding about a view. It is two findings
+about different columns, with different severities, different fixes and different owners.
+
+- **Display name, avatar, `start_at`, venue name** — on rows the organiser marked
+  `listing_visibility = 'public'`, with no coordinates or contact details. **MED, and a PO
+  question.** A game-discovery app that cannot show public games to a logged-out browser
+  does not work. Stated flatly it sounds alarming; that is the product working.
+- **`creator_user_id`, the raw `auth.users` key** — **HIGH, and not a question at all.**
+  Nobody decided to publish it. The organiser chose to publish a *game*; the primary key
+  rode along because a projection selected too much. The view already carries
+  `creator_profile_id` separately, so the internal key is sitting next to the public handle
+  rather than serving as it.
+
+**The test that separates them is consent, not sensitivity.** Ask of each column: did someone
+choose to publish *this*, or did it arrive attached to something they chose to publish? The
+second kind is a defect regardless of how harmless the field looks alone.
+
+**And its severity comes from what it unlocks.** An auth uid on one public surface is a join
+key across every other anon-readable surface — which is the *ask what a change multiplies*
+test applied one level down, to a field instead of a change.
+
+Grading a view as a unit is what let eight views sit in a "safe" bucket. Grading a finding as
+a unit is the same error one level up. **When a finding covers several fields, check whether
+they share a severity before you give them one.**
+
+One operational note: `cto` said "check the other seven views in that bucket, because if the
+projection pattern was copied the leak was copied too." That instinct was right and the
+bucket was the wrong scope — the sweep worth running is *every* anon-granted view, which
+found the column on five that return rows and eight that return none today. **When told to
+check the neighbours, check the population.**
+
+---
+
+**2026-08-28 · master-analyst · Report the column that makes it a different question.**
+
+The five zero-policy orphan tables were measured to settle `cto`'s "policy or drop". The
+finding that mattered was not the row counts — it was **`prosecdef=false` on all three
+referencing functions**. That single column is what separated these five from the
+definer-funnel tables (`games`, `squad_members`) that T-012 ruled on. Invoker functions over
+an RLS-on/zero-policy table make the tables *unreachable*, not *access-controlled*.
+
+`cto`'s words: *"If you'd reported 'five more zero-policy tables' without the prosecdef
+column, I'd have applied T-012 to them and been wrong."*
+
+**Why:** a measurement handed to a decision-maker is not a row count. It is whatever
+distinguishes this case from the case they already ruled on. Report the discriminator, or
+the previous ruling gets applied by analogy to objects it does not fit.
+
+**How to apply:** before handing over a measurement, ask which existing decision someone
+will reach for, and include the column that says whether it applies.
+
+**Second pattern, same day:** twice, answering a narrow question turned up something larger
+than the question — the B1 ownership check surfaced the `anon` write grants, and the
+orphan-table query surfaced BUG-07. **The cheap reads keep paying.** Note it as a pattern to
+rely on, not as luck.
+
+## Ask whether a fix is durable, not just whether it is correct
+
+*Added 2026-08-28 by `master-analyst`, after `cto-4` measured `pg_default_acl` on KAN-67.*
+
+The fix I wrote for SEC-16 was correct and would not have held. `REVOKE` the grants, set FORCE
+RLS — both right, both insufficient, because `ALTER DEFAULT PRIVILEGES` in `public` grants
+`anon` the full privilege set on **every relation created from now on**. The next migration
+that adds a view reopens the hole, and — this is the part that makes it dangerous rather than
+merely incomplete — **the verification query I wrote would still pass on re-run**, because it
+checks the views that exist today.
+
+**A remediation has a half-life, and the question "what re-creates this condition?" is
+separate from "what does this condition consist of?"** A finding that names a *state* invites
+a fix that resets the state. A finding that names the *generator* gets a fix that holds.
+Where a default, a template, a scaffold or an inherited platform config produces the bad state,
+the generator is the finding.
+
+Two corollaries worth keeping:
+
+- **Check the acceptance criteria the same way.** A criterion that only asserts on today's
+  objects certifies a regression as a pass. Ours needed a third assertion — `pg_default_acl` —
+  alongside grants and `relforcerowsecurity`.
+- **Inherited platform configuration is nobody's mistake and still your problem.** This was
+  Supabase stock behaviour; nobody at Dabbler did it wrong, nobody ever turned it off. "We
+  didn't author it" is an answer about blame and not about exposure, and an audit that only
+  looks at authored code will never see it.
+
+And a note on blast radius that cuts the other way from the severity: **nothing in the app
+writes through these views**, so revoking write cannot blank a screen. The highest-severity
+item on the board is also among the safest to apply. Severity and risk-of-fix are independent,
+and conflating them delays the cheap fixes and rushes the expensive ones.
+
+## A cheap, safe fix has a property worth protecting — do not bundle it away
+
+*Added 2026-08-28 by `master-analyst`, after `cto` overruled the SEC-17 folding.*
+
+I recommended folding SEC-17 into KAN-67: same file, same review, and splitting seemed to
+risk the second fix shipping later for no reason. `cto` overruled it and the evidence
+inverts the argument.
+
+**KAN-67 is `REVOKE` only and all eight affected views have zero client references.** That
+makes it the one production change in the plan that is *verifiably* risk-free — which is
+exactly why it can be reviewed in minutes and shipped while a destructive hole is open.
+SEC-17 redefines a projection that six Dart call sites read, two of them as query filters.
+Bundling them does not save a review; it **converts a five-minute privilege review into one
+that has to reason about client call sites**, and it chains the safe fix to the schedule of
+the risky one.
+
+**"Same file, same review" is a reason to split, not to bundle, when one half is provably
+inert and the other is not.** Batching is efficient when the parts share a risk profile.
+When they don't, the batch inherits the worst one — and what gets lost is the property that
+made the cheap fix shippable today.
+
+Two things to check before combining any two changes:
+
+- **Does either one have a property the other would destroy?** "Nothing references this"
+  is such a property, and it is fragile — one added line ends it.
+- **Would the combined change be blocked by something neither is blocked by alone?** Here,
+  the missing Flutter owner blocked SEC-17 and would have blocked the revoke through it.
+
+My stated reason for bundling — "splitting risks it shipping later for no reason" — had the
+right shape and an unchecked premise. **It will ship later, and there is a reason.** I hadn't
+looked for one before asserting there wasn't; `grep -rn "creator_user_id" lib` was one
+command and it settled the whole question.
+
+## One outcome can have several mechanisms — closing one is not closing the hole
+
+*Added 2026-08-28 by `master-analyst`, after `cto-4` established `v_needs_organiser`'s target.*
+
+SEC-16's bypass was **owner-equals-owner**: a definer view and its base table share an owner,
+so RLS is skipped unless `FORCE ROW LEVEL SECURITY` is set. I wrote FORCE RLS into the fix and
+called that part solved.
+
+`v_needs_organiser` reaches `auth.users`, which is owned by `supabase_auth_admin` — a
+*different* owner, so that argument fails outright. It bypasses anyway, because the executing
+role `postgres` carries **`rolbypassrls`**, which skips RLS regardless of ownership **and
+defeats FORCE RLS too**. Same outcome, second mechanism, and the fix I had written would not
+have touched it.
+
+**When you name a mechanism for a finding, ask what else produces the same outcome** — then
+write the check against the *outcome*, with a branch per mechanism. A check phrased as "is
+`relforcerowsecurity` set" tests one route to "RLS does not run" and silently passes the
+other. `SCHEMA.md` §11 check #4 now has both branches.
+
+The practical corollary is about fixes rather than checks: **a mitigation is scoped to the
+mechanism it was designed against.** FORCE RLS is right for the owner path and useless for the
+bypass path; only the revoked grant closes both. That is why the revoke is load-bearing rather
+than tidy — and it is a stronger reason than the one I originally gave.
+
+## Flag what you cannot establish, out loud, in the record
+
+*Same session, same finding.*
+
+My base-table walk could not tell a `FROM` relation from a subquery reference, so
+`v_needs_organiser` resolved to two tables and I could not say which was the write target. I
+wrote **UNESTABLISHED** into the entry, named `profiles` as the worst case, and said it needed
+someone to read the `FROM` clause.
+
+`cto-4` read it. The answer was `auth.users` — worse than the guess I declined to make, and it
+carried a second bypass mechanism nobody had looked for.
+
+**A stated gap is a piece of work another agent can pick up. A quietly-picked likely answer is
+not, and it is indistinguishable from a measurement.** The temptation is to write the probable
+one because a blank looks like incomplete work — it is the opposite. Every population error
+today came from filling a gap with the likelier answer instead of marking it.
+
+Same discipline going the other way: `cto-4` bounded the finding at *an unauthenticated write
+path onto the identity table exists* and explicitly refused "account creation", leaving
+admissibility and usefulness unestablished. **An under-stated critical survives scrutiny; an
+over-stated one gets the whole finding discounted when the overstatement is found.**
+
+## Name the question your instrument actually answers
+
+*Added 2026-08-28 by `master-analyst`. The organising rule for a session in which five
+instruments failed the same way across three agents.*
+
+Every wrong number today came from a tool that returned a clean, confident answer to a
+question adjacent to the one being asked:
+
+| Instrument | Answers | Was read as |
+|---|---|---|
+| string match on a view definition | does this text mention `auth.uid()` | is this view safe |
+| `has_table_privilege` | who *may* read this | who *does* read this |
+| `pg_depend` walk | what does this view reference | what does it write to |
+| `grep -c "creator_user_id"` | where does this string appear | what breaks if I change it |
+| `.eq('col', …)` as the grouping key | what shape is this call | does this call hit the view |
+
+None of these tools malfunctioned. Each returned exactly what it was asked. **The failure is
+in the last step every time — accepting a nearby answer as the answer, because it arrived
+without hedging.** A wrong number that comes back messy gets checked. A wrong number that
+comes back clean gets published.
+
+**Before using a measurement, say out loud what the command actually measured, then compare
+that sentence to the question.** If the two sentences differ, the gap between them is the
+finding you are about to miss.
+
+The corollary that caught the last one: **a reconciliation that lets two disputed numbers
+both be right is a hypothesis, not a resolution.** Sometimes it is true and the parties were
+counting different things. But "both right" is the comfortable answer, so it deserves the
+harder check — re-derive what each number counted rather than relabelling them. Here, the
+relabel grouped by call syntax instead of query target and put two out-of-scope sites into
+the group described as "what breaks".

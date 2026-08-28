@@ -1,6 +1,6 @@
 # docs/status/cto.md — CTO status
 
-**Last run:** 2026-08-27 · **Branch:** `Canary` · **Epic:** KAN-39
+**Last run:** 2026-08-28 · **Branch:** `Canary` · **Epic:** KAN-39
 
 ## Standing verdict
 
@@ -11,9 +11,13 @@ criterion being applied loosely — the verdict is unchanged, the grounds are no
 
 | | Ticket | Owner | Needs DB access |
 |---|---|---|---|
-| 1 | **KAN-56** — anon definer-view leak (609 private notifications, 49 users) | `notifications-specialist` | yes |
+| **0** | **KAN-67** — **revoke `anon` on the 8 write-path views** (7 fixable; see T-015). Live unauthenticated write onto `notifications`, `posts`, reputation and drafts. Demonstrated at plan level with a control; RLS not consulted — view owner is `postgres` with `rolbypassrls`. None of the 8 is referenced anywhere in `lib/`, so a **full** `anon` revoke on them is behaviourally free and strictly safer than a write-only one. **Do this first — destructive beats confidential.** | `cto` authors, PO gates | yes |
+| 1 | **KAN-56** — anon definer-view **read** leak (609 private notifications, 49 users) | `notifications-specialist` | yes |
 | 2 | **KAN-58** — logout clears nothing, FCM token never revoked | `notifications-specialist` | no |
-| 3 | **KAN-59** — any account can push arbitrary title/body to any user (**promoted from fourth**) | `notifications-specialist` | no |
+| 3 | **KAN-59** — any account can push arbitrary title/body to any user | `notifications-specialist` | no |
+
+**Sequence: KAN-67 → KAN-56 → KAN-58 / KAN-59.** If exactly one thing ships, it is KAN-67 —
+closing only the read path leaves `anon` holding DELETE on eight views.
 
 **Pre-promotion requirement, different grounds:**
 
@@ -84,3 +88,93 @@ the model.
 3. KAN-57 and KAN-58 can proceed in parallel; neither needs database access.
 
 **No agent writes to production** (decision `019`). Everything ships `Canary` → verify → PR.
+
+---
+
+## Rulings, 2026-08-28 (run 2, in response to `master-analyst` briefing)
+
+**T-012 — RLS-on/zero-policy tables: revoke the grant, do not add policies.** The definer
+funnel is real (`games` → 37 definer functions, found via `prosrc`; **`pg_depend` returns 0 and
+is an artifact**). But all 30 still `GRANT SELECT` to `anon`, so the only protection is an
+*absent* policy — a design that fails open on one mistake.
+
+**This corrected my own earlier instruction.** `T-001` said "base-table policies before the
+invoker flip". For definer-funnel tables that is wrong — they must not get policies.
+`v_mod_queue_open` and `v_safety_overview` are **revoked, not flipped**; flipping them would
+blank the moderation queue for admins while looking fixed. KAN-56 has the corrected sequence.
+
+**T-013 — four design-system surfaces, not three.** `lib/themes/AppTheme` is canonical for
+theming — `main.dart:156,265-266` proves it is what `MaterialApp` consumes, and it was not
+among the three offered. `lib/core/design_system/` canonical for components;
+`lib/design_system/` absorbed on touch; `dabbler_design_system` (0 imports) removed now.
+
+**T-014 — the Flutter feature agent is the first hire.** Not on throughput grounds:
+**KAN-58 is a promotion blocker nobody on the roster can finish.** Its teardown half is Dart in
+`lib/core/**`, which `CONTRACT.md` §3 leaves unowned. Its first task is that teardown — **not**
+the 69,612 dead lines, which is the riskiest work available with zero coverage on live paths.
+
+**T-003 second amendment — the `build.gradle.kts` change in the working tree does not close
+KAN-57.** It is correct and well made (fails loudly rather than debug-signing), but removing the
+literal stops only *future* exposure. **Only rotation invalidates the password.** It is also
+uncommitted and touches release signing while only web has been verified — do not commit it
+without an Android release build.
+
+## Flagged to the Analyst
+
+The working tree is **101 entries** (80 deletions, 11 modifications, 10 untracked), not the 16
+described — including deletions of `lib/core/services/onboarding_service.dart` and its mock.
+Those are safe (0 references to the `OnboardingService` symbol outside their own files), but the
+description would not lead a reader to expect Dart deletions.
+
+**T-015 — `geometry_columns` is excluded from the revoke and the migration enumerates its
+targets.** Migrations run as `postgres`, which is not superuser and not a member of
+`supabase_admin` (the owner), so `REVOKE` on it **fails**. The obvious single-statement form,
+`REVOKE … ON ALL TABLES IN SCHEMA public FROM anon`, is the trap: it either halts a security
+migration partway or skips the object and reports success. 7 of 8 close; the 8th is documented as
+platform-owned. An honest partial fix beats a blanket statement that appears total and is not.
+
+**T-016 — two rulings from the orphan-table measurement (KAN-68).**
+
+*(a) `safety_blocklist_terms` gets a DEFINER function, not a read policy.* A read policy would
+work and would be wrong: **every user could download the list of banned terms and author around
+it.** A control whose contents are visible to those it constrains is not a control. Same for
+`context_rating_config`. Note this is a genuinely different shape from `T-012`'s funnel tables —
+all three referencing functions are `prosecdef=false`, so these tables are not funnel-protected,
+they are **unreachable**. Applying `T-012` here by analogy would have been wrong; the
+`prosecdef` column is what separated them.
+
+*(b) Dead **data** is not dropped like dead **code**.* `challenge_types` and `surface_catalog`
+have no reader of any kind — revoke now, **defer the drop**. `T-007`'s deletion default does not
+transfer: dead Dart is recoverable from git in one command, 38 rows of dropped config are
+recoverable from nothing. `space_slot_holds` is left alone — it is named in
+`supabase_config.dart:141` and `slot.dart:66`, so it is parked scaffolding and a `cpo` question.
+
+**BUG-07 / KAN-68 — the content blocklist fails open, twice, independently.** The locale
+predicate can never match (`'any'` is treated as a property of the stored term, not the query),
+**and** RLS returns zero terms regardless. Either alone returns a silent `0` — a plausible
+"clean" — for every input. **Not a promotion blocker:** nothing calls
+`contentHitsBlocklist`, so no content is being let through. But `moderation_service.dart` is
+live across five screens, so it is one wiring change from a silent safety failure. Verification
+must run as role `authenticated`, **never service role** — a service-role test passes while
+production fails, which is how this survived.
+
+**T-017 — SEC-17 (`creator_user_id` exposure) is NOT folded into KAN-67.** `master-analyst`
+recommended folding; overruled on evidence. Opposite risk profiles: KAN-67 is a `REVOKE` with
+**0** client references across all 8 views; SEC-17 redefines `v_game_card`, and `creator_user_id`
+has **3 read sites on the view** — of which **exactly one is a filter**
+(`game_history_providers.dart:79-80`, applied to `.from(vGameCardTable)`), the other two being
+parses (`game_view_controller.dart:212`, `game_model.dart:81`). *Corrected 2026-08-28: the
+figure was 6 sites / 3 filters. Two of those six —`supabase_games_datasource.dart:507` and
+`sport_profile_view_provider.dart:264` — query `.from(gamesTable)`, not the view, so a view
+change does not touch them. The one filter is the site that fails as **silently wrong results**
+rather than an error, which is the whole reason this does not get bundled.*
+
+**KAN-67 is the only production change in this plan that is verifiably risk-free.** That property
+is why it ships first while a destructive hole is open, and folding a six-call-site client
+regression into it destroys exactly that. SEC-17's real fix is *migrate the call sites to
+`creator_profile_id`, then drop the uid* — a coordinated Dart + SQL change in unowned code, so it
+**sits behind the `T-014` Flutter hire** alongside KAN-58.
+
+**Scale for the PO:** 61 of 240 users — **25% of the user base** — have their raw `auth.users`
+UUID readable with no account (`master-analyst`'s sweep, reproduced on `v_game_card`: 216 of 216).
+
