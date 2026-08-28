@@ -13,7 +13,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
       'id, user_id, username, display_name, avatar_url, created_at, updated_at, bio, age, city, country, gender, profile_type, intention, preferred_sport, interests, language, verified, is_active, geo_lat, geo_lng';
   final String _sportProfilesTable = 'sport_profiles';
   // Note: user_statistics table does not exist - feature disabled for MVP1
-  final String _avatarBucket = 'avatars';
+  final String _avatarBucket = SupabaseConfig.avatarsBucket;
   final String _profileViewsTable = 'profile_views';
   // Reports now route through report_content RPC → moderation_reports
 

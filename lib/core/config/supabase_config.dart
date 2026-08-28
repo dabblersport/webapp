@@ -1,8 +1,9 @@
 class SupabaseConfig {
   // Storage bucket names
   static const String avatarsBucket = 'Avatar';
-  static const String venueImagesBucket = 'venue-images';
+  static const String venueImagesBucket = 'venue';
   static const String postMediaBucket = 'post-media';
+  static const String dabblerNewsBucket = 'dabbler-news';
 
   // Table names
   static const String usersTable =
