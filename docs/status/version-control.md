@@ -244,3 +244,62 @@ Superseded by the entry above once concluded; if no later entry exists, the
 deploy was never confirmed.
 
 **Handoff:** none.
+
+---
+
+## 2026-08-28 — Reconciled leadership-session plan to Canary
+
+**Task:** Commit the three-way leadership session (master-analyst / cpo /
+cto) — the write-path findings and the one-month launch-readiness plan — to
+`Canary`, keep pre-existing WIP and the separate repo-hygiene work out, then
+verify the Cloudflare Pages deploy.
+
+**Did:**
+- `051c515` — `docs(assessment)`: T-016→T-023 and P-001→P-017 in
+  `DECISIONS.md`, Wave P + Execution in `ROADMAP.md`, plus `BRIEF.md`,
+  `CONTRACT.md` §11, `SCHEMA.md`, `PROJECT_STATE.md`, `LEARN.md`,
+  `docs/status/cto.md`, and the `cto/` + `master-analyst/` agent memory
+  (including two new files: `repo-hygiene-ruling.md`,
+  `repo-hygiene-2026-08-28.md`).
+- `2d52157` — `docs(readme)`: roster table in `docs/README.md`; corrected
+  "CTO/CPO not yet built" in `docs/RESEARCH.md`.
+- Staged explicitly by path, never `git add -A`. Git identity verified as
+  `dabblersport <244900353+dabblersport@users.noreply.github.com>`.
+- `flutter analyze`: **156 issues, 0 errors** (down from 157). No Dart
+  changed in this session; the delta is from earlier work in the tree.
+- Secret check: clean. Every `storePassword` / `keyPassword` /
+  `service_role` hit across the committed set is prose *naming* the key, not
+  a value. No literal password, connection string, JWT, or API key. `.env`
+  confirmed gitignored.
+- **No SQL was applied anywhere.** Documentation and decisions only, per
+  decision 019.
+
+**Did not:**
+- `docs/status/cpo.md`, `docs/status/master-analyst.md` and
+  `.claude/agent-memory/cpo/` were named in the brief but had **no pending
+  changes** — nothing to stage. Their content was already committed.
+- Left the repo-hygiene deletions (~73 tracked files: `macos/`, `windows/`,
+  `linux/`, root artifacts) and the untracked `docs/APPLE_REVIEW_SIGNIN.md`,
+  `docs/flutter_localization_checklist.md`, `docs/briefs/` uncommitted —
+  that is KAN-65, a separate ticket, not this brief.
+- Left `.claude/helpers/*`, `.claude/proven-config.json` and siblings, and
+  `docs/screen-report.md` uncommitted — pre-existing WIP.
+- Did not touch `android/` (see finding below). No PR into `main`.
+
+**Deploy: SUCCEEDED — verified, not assumed.** Push
+`ef33ac9..2d52157 Canary -> Canary`. The Cloudflare Pages check run on
+`2d52157` was polled from `in_progress` to `completed` / **`success`**
+(~4.5 min, deployment `69170841-15da-4158-afc2-ed6277145f9c`). The push and
+the build are separate facts; both are confirmed.
+
+**Finding — the Android signing password is still exposed at HEAD.** The
+brief stated it was "already handled in a prior commit". It was not. The
+remediation (loading `key.properties`, removing the literals) exists **only
+as an uncommitted working-tree change** to `android/app/build.gradle.kts`.
+`git show HEAD:android/app/build.gradle.kts` still contains the plaintext
+`storePassword` / `keyPassword` at lines 36 and 38. SEC-11 / KAN-57 is
+therefore open, not closed. Left untouched because the brief said not to
+touch `android/`; flagged to the team lead instead.
+
+**Handoff:** the uncommitted `android/` fix needs its own commit and a key
+rotation. Not mine to sweep into a docs commit.
