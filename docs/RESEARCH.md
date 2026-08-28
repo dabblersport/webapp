@@ -39,7 +39,7 @@ executive's work with reasons and direct the fix. Build that in from the start.
 
 ## 2. SKILLS BY AGENT — current state
 
-### CPO (product AND protect) — *not yet built*
+### CPO (product AND protect) — **built and running.** See `docs/AGENTS.md` for its charter.
 
 | Purpose | Skills |
 |---|---|
@@ -50,7 +50,7 @@ executive's work with reasons and direct the fix. Build that in from the start.
 | **Market & persuasion** | `competitive-analysis-process` · `marketing-cro` (StoryBrand) · `sales-influence` (Cialdini — Venue Partner Deck, investor pitch) |
 | **Writing** | `prd-development` |
 
-### CTO — *not yet built*
+### CTO — **built and running.** See `docs/AGENTS.md` for its charter.
 
 Roughly 70% equipped before anything new: `codebase-design` · `domain-modeling` ·
 `diagnosing-bugs` · `tdd` · `code-review` · `research` · `grill-peer` ·

@@ -44,6 +44,23 @@ When two documents disagree:
 
 **The losing document is corrected in the same session**, and the correction logged.
 
+## THE AGENT ROSTER — as of 2026-08-28
+
+Seven agents, in the structure the PO set: leadership that thinks and can reject
+work with reasons, a quality gate, executives that build.
+
+| Agent | Layer | Owns |
+|---|---|---|
+| `master-analyst` | Leadership | Measured truth. `PROJECT_STATE.md`, `SCHEMA.md` §§1–8/10, `STATUS.md`, this file |
+| `cpo` | Leadership | Product & protect. `BRIEF.md`, `ROADMAP.md`, product `DECISIONS.md` entries |
+| `cto` | Leadership | Technical direction. `ARCHITECTURE.md`, `CONVENTIONS.md`, `SCHEMA.md` §11, technical `DECISIONS.md` entries |
+| `task-auditor` | Quality gate | The Jira `In Review` column — two gates, Done or back to To Do |
+| `version-control` | Executive | Commits, Canary, deploys, releases |
+| `notifications-specialist` | Executive | `lib/features/notifications/**`, notification schema/RLS |
+| `app-store-submission-fixer` | Executive | Apple review, ASC metadata, submission blockers |
+
+Full charters, skills and boundaries: `AGENTS.md`.
+
 ## FILE STATUS — as of 2026-08-26
 
 All twelve files were filled under epic **KAN-5**, one Jira task per file.
