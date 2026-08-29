@@ -33,13 +33,17 @@ bash scripts/ci/check_anon_allowlist_test.sh
 and on PRs into `main`, pinned to Flutter 3.38.9 to match `deploy-web.yml`. It is a gate
 only — it deploys nothing.
 
-`--fatal-infos` is **not** enabled. Measured 2026-08-29 on the local tree (Flutter 3.44.1,
-CI pins 3.38.9 so the exact count may shift slightly): `flutter analyze` already exits
-non-zero on **2 pre-existing warnings** even without `--fatal-infos` —
-`unused_local_variable` in `lib/features/social/presentation/widgets/circles/circle_picker_sheet.dart:128`
-and `dead_null_aware_expression` in `lib/features/username_engine/username_consumer.dart:19`
-— plus 144 non-fatal infos. Turning on `--fatal-infos` would add all 144 as new failures on
-day one. Neither warning was touched here: `lib/features/**` is owned by
-`flutter-feature-agent` under `docs/CONTRACT.md`, not `version-control`. **This gate will
-show red on its first run** until those two warnings are fixed — flagged in the KAN-72
-handoff rather than fixed out-of-lane.
+`--fatal-infos` is **not** enabled. **The number that matters is the one CI measured against
+the actually-committed `Canary` tree, not a local working copy** — a local sandbox in this
+repo tends to carry other agents' uncommitted in-progress fixes layered on top of the last
+commit, which understates the real count. Measured 2026-08-29 from the first real run of this
+workflow (run `33240974826`, Flutter 3.38.9, fresh checkout): `flutter analyze` exits
+non-zero with **217 issues — 55 warnings, 162 infos, 0 errors** even without `--fatal-infos`.
+(A same-day measurement against a local working tree with other agents' uncommitted fixes
+present showed only 2 warnings / 92 infos — that number was real for that tree but is not
+the number this gate actually enforces; it's left here only as a caution against trusting a
+local run over CI on this repo.) Turning on `--fatal-infos` would add all 162 as new failures
+on top of the 55. **This gate shows red on its first real run** and will keep doing so until
+the 55 warnings are fixed — out of scope for `version-control` (`lib/**` is owned by
+`flutter-feature-agent` / `backend-owner` per `docs/CONTRACT.md`), flagged in the KAN-72
+handoff instead. Full list: see the "Analyze" step of run `33240974826`.
