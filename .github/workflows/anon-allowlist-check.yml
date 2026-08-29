@@ -1,0 +1,32 @@
+name: Anon reachability allowlist
+
+# KAN-61 / docs/DECISIONS.md T-002. Fails the build if any view in `public`
+# is readable by `anon` without `security_invoker` and is not on the
+# reviewed allowlist in docs/SCHEMA.md §2f. See scripts/ci/README.md.
+
+on:
+  push:
+    branches:
+      - Canary
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  allowlist-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure psql is available
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Check anon-reachability allowlist
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/ci/check_anon_allowlist.sh

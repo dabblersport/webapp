@@ -278,6 +278,57 @@ exists — see §10.
 
 **Rule going forward:** new views are created `security_invoker = true`.
 
+### 2f. CI allowlist — machine-readable, drives KAN-61 / `T-002`
+
+**This is the enforced list, not a summary of it.** `scripts/ci/check_anon_allowlist.sh`
+parses the block below verbatim between the HTML comment markers and fails the build if any
+view in `public` is `anon`-readable and lacks `security_invoker` and is not one of these
+names. **Widening this list is how a PR shows up as a reviewable diff** — that is the
+mechanism `T-002` describes, not a separate process.
+
+Generated 2026-08-29 by re-running the §2e catalogue query live against `wtncuzcskpigqpmnxwws`
+(not transcribed from the prose above, which the same re-run showed to be stale in three
+places — `v_mod_queue_open`, `v_circle_feed` and `v_safety_overview` are no longer
+anon-exposed at all, though §2a above still describes them as CRITICAL/OPEN, written earlier
+the same day; that discrepancy is master-analyst's/cto's to reconcile in prose, not
+version-control's, and is flagged in the KAN-61 handoff rather than silently fixed here).
+Every name below was independently confirmed `anon`-readable with no `security_invoker` at
+generation time:
+
+* `geography_columns`, `geometry_columns` — PostGIS system views, allowlisted from the start
+  per the KAN-61 ticket text, never a finding.
+* `username_registry_public` — intentionally public, `T-027` (signup username availability,
+  must answer pre-session).
+* `v_potential_vibes_default`, `v_recreate_quickpicks` — intentionally public, `T-027`,
+  function-backed (`security_invoker` is a no-op on these; access control lives in the
+  function).
+* `v_challenge_card`, `v_my_games`, `v_rateable_after_game`, `v_recreate_candidates` — §2b,
+  0 rows to `anon` at last measurement, but still carry the grant.
+* `v_game_card`, `v_meetup_list` — §2b, return rows but only `listing_visibility = 'public'`
+  ones; open privacy question is the columns (`SEC-15`), not the rows, and is a PO call, not
+  a CI-gate call.
+* `v_space_slots_today` — `BUG-05`, errors for every role including `postgres`; not a
+  security finding.
+
+**Adding a name here without one of these justifications is exactly the review conversation
+`T-002` exists to force — don't add one to make the gate pass without checking why it is
+newly anon-readable.**
+
+<!-- ANON_ALLOWLIST_START -->
+geography_columns
+geometry_columns
+username_registry_public
+v_challenge_card
+v_game_card
+v_meetup_list
+v_my_games
+v_potential_vibes_default
+v_rateable_after_game
+v_recreate_candidates
+v_recreate_quickpicks
+v_space_slots_today
+<!-- ANON_ALLOWLIST_END -->
+
 ## 3. STORAGE BUCKETS — 4
 
 | Bucket | Public | SELECT | INSERT | UPDATE | DELETE | State |
