@@ -62,6 +62,65 @@ Triage is KAN-26.
 `.from(gamesTable)` queries against it. Every one returns nothing. The live game path
 avoids this by reading the `v_game_card` view and calling RPCs instead.
 
+**Independent client-side corroboration that the definer funnel is deliberate** *(added
+2026-08-28, found by `cto`)*. The zero-policy tables read as drift until you find that the
+app was written to route around them on purpose. `game_composer_screen.dart:205-207` says so
+in a doc comment:
+
+```dart
+/// Prefills the composer from an existing game (edit mode). Reads the same
+/// `v_game_card` view the detail screen uses — the raw `games` table is not
+/// client-readable (RLS with no policies).
+```
+
+Verified: `select count(*) from public.games` as `anon` returns **0**. So whoever built this
+knew the base tables deny and funnelled reads through definer views by design — which matches
+what the `prosrc` measurement showed from the database side. **Two independent sources, one
+conclusion: the definer funnel is architecture, not accident.**
+
+That does not make the funnel safe — SEC-16 exists because the same mechanism grants writes
+nobody intended — but it does mean **the remediation must preserve the read path.** Anyone
+tempted to "fix" the zero-policy tables by converting the views to `security_invoker` would
+blank the app: with no policies on the base tables, an invoker view returns nothing.
+
+**RULING (`cto` `T-024`, counts re-verified here 2026-08-28): a definer view over a
+zero-policy base table stays definer.** The constraint above turned out to expose a direct
+conflict between two earlier decisions — one said "flip the definer views to
+`security_invoker`, adding base-table policies first so screens don't blank"; the other said
+the zero-policy tables are served through the definer funnel *by design* and rejected "add
+policies to all 30". **Both cannot be executed.** The first one's safety step is the exact
+thing the second rejects.
+
+Measured policy counts on the base tables reached by definer views:
+
+| Base table | RLS | Policies |
+|---|---|---:|
+| `games` | on | **0** |
+| `content_drafts` | on | **0** |
+| `user_hidden_modes` | on | **0** |
+| `user_reputation_aggregate` | on | 1 |
+| `meetups` | on | 2 |
+| `notifications` | on | 4 |
+| `posts` | on | 5 |
+| `profiles` | on | 13 |
+
+`games` has RLS on and **zero policies**, and `v_game_card` reads it. Flipping that view to
+invoker returns **zero rows to every user, signed in or not** — explore, social feed, game
+history, nearby games, the detail screen. That is a certainty, not a risk, and it lands on
+the most-used surfaces first.
+
+**Refinement to the ruling, added here:** a non-zero policy count is **necessary but not
+sufficient** to make a view safe to flip. `notifications` has 4 policies, but the only
+INSERT policy is `n_block_insert WITH CHECK (false)` — a policy count says nothing about
+whether the policies serve the *read pattern the view depends on*. **Before flipping any
+view, check that the base table's policies admit the rows that view is expected to return
+for the roles that call it** — count first as a filter, then read the policies.
+
+**The corollary about failure modes:** "a blank screen is the correct failure, it surfaces
+the missing policy" holds where a policy is *missing*. It does not hold where the absence is
+the *design*. Shipping a blank explore tab to make a point about a table that was never meant
+to be client-readable is not a correct failure.
+
 ### 1b. RLS DISABLED — 1 table
 
 `spatial_ref_sys` — **not a finding.** PostGIS system table, owned by the extension. RLS
@@ -178,22 +237,64 @@ select count(*) from public.notifications;   -- 0 — the control. If this is ev
 A probe without a control proves nothing. `v_my_drafts` returning 0 under the same role is
 the second control that shows the method discriminates.
 
-**Not yet probed for row counts — each needs the same treatment (KAN-26):**
-`v_challenge_standings` · `v_circle_feed_visible` · `v_comments` · `v_game_rating` ·
-`v_meetup_counts` · `v_post_comments` · `v_potential_vibes_default` ·
-`v_recreate_quickpicks` · `v_space_slots_today` · `v_user_badges_summary` ·
-`v_user_reputation` · `username_registry_public`
+**CORRECTED 2026-08-29. The previous heading read "RESOLVED — all twelve now have an explicit verdict, none is outstanding." That was false, and it was false about the three worst views in the section.** `task-auditor` caught it reviewing KAN-19.
 
-Some are probably intended to be public — `v_comments`, `v_game_rating`,
-`v_user_badges_summary` plausibly are. **"Probably public" is not a security position.**
-Each needs an explicit verdict recorded here.
+**Three CRITICAL-leaking views had no verdict row and were silently deferred to KAN-25** — the deferral was real but recorded nowhere in §2a, so the section claimed completeness it did not have. **The arithmetic gives it away and I did not check it:** 19 exposed − 2 PostGIS = **17 app views needing a verdict**; the table below covers **14**. The three missing are exactly the gap.
+
+**They are live right now — re-measured as `anon` 2026-08-29, with two controls in the same transaction** (`v_notifications_feed` = 0, confirming the KAN-37 fix; `v_game_card` = 216, confirming the probe discriminates):
+
+| View | Rows to `anon` | What is exposed | Verdict |
+|---|---:|---|---|
+| `v_mod_queue_open` | **9** | `reporter_username`, `target_username`, `reason`, `details`, `target_user_id` — 7 reports on posts, 2 on users, all `status = 'open'` | **CRITICAL, OPEN.** **This deanonymises reporters to the people they reported.** Worse in kind than a data leak: it is a safety risk to the reporter, and the moderation screen is correctly gated (`moderation_queue_screen.dart:22`) while the data behind it is not. `SEC-03` |
+| `v_circle_feed` | **6** | `author_user_id` (auth UUID), `author_display_name`, `body`, `circle_name` — **all 6 rows are `visibility = 'circle'` inside `circle_type = 'private'`** | **CRITICAL, OPEN.** Private circle posts readable with no account. **Not the `v_game_card` public-listing class** — nothing here was marked public by anyone |
+| `v_safety_overview` | **1** | `reports_open`, `active_enforcements`, `takedowns_active`, `audits_24h` | **HIGH, OPEN.** Aggregate only, no per-user rows — the moderation posture of the platform, readable by anyone. Lower than the other two because it names nobody. `SEC-02` |
+
+**RESOLVED 2026-08-29 — all three, by KAN-56, applied before my flag arrived.** Re-verified here as `anon`: **`v_mod_queue_open` and `v_safety_overview` now raise `42501 permission denied`** — the SELECT grant is revoked, which is a stronger closure than returning zero rows. **`v_circle_feed` returns 0** (was 6) and `v_circle_feed_visible` 0, both flipped to invoker. Controls in the same transaction unchanged: `v_game_card` 216, `v_comments` 66 — **no cascade.** The table above is kept as the record of what was exposed and for how long; the exposure itself is closed. **My pre-flight — `v_mod_queue_open` must be revoked, not flipped, because `moderation_reports`' two policies both deny SELECT — arrived after the migration and matched the ruling that shipped.** It stands as a third independent confirmation, not a fresh finding. They were the same class KAN-37/KAN-67 closed and were left behind by both.
+
+**The other fourteen do have verdicts, and those stand:**
+
+The list below used to read *"not yet probed, deferred to KAN-26"*, with the note that
+*"probably public" is not a security position*. KAN-37 and KAN-38 ruled on all of them and
+shipped fixes for most, but §2a was never updated while §2d's counts were. **State re-measured
+rather than transcribed**; every row is a live reading, control `v_game_card` = 216 in the same
+transaction.
+
+| View | `anon` SELECT | invoker | Rows to `anon` | Verdict |
+|---|:--:|:--:|---:|---|
+| `v_challenge_standings` | **revoked** | — | n/a | **Closed** — SELECT revoked for `anon`+`authenticated`, migration `20260828193807` |
+| `v_game_rating` | **revoked** | — | n/a | **Closed** — same migration |
+| `v_user_badges_summary` | **revoked** | — | n/a | **Closed** — scoped to `WHERE user_id = auth.uid()` **and** `anon` SELECT revoked |
+| `v_notifications_feed` / `_ranked` | granted | **yes** | **0** | **Closed** — flipped to invoker; were 611 rows across 51 users. SEC-01 |
+| `v_user_reputation` | granted | **yes** | **0** | **Closed** — flipped to invoker |
+| `v_meetup_counts` | granted | **yes** | **0** | **Closed** — flipped to invoker |
+| `v_comments` | granted | **yes** | 66 | **Closed** — invoker + **LEFT JOIN** `profiles`; 67 → 66, the one leaking row was a comment on a non-public parent. The 18 null-author rows are retained deliberately |
+| `v_post_comments` | granted | **yes** | 66 | **Closed** — same migration |
+| `v_circle_feed_visible` | granted | no | **0** | **No leak.** Definer and anon-granted, but returns nothing. Left as-is |
+| `v_potential_vibes_default` | granted | no | **0** | **Intentionally public — `T-027`.** Function-backed: `security_invoker` is a **no-op** when the `FROM` is a set-returning function; access control lives inside the function. Probed, not assumed |
+| `v_recreate_quickpicks` | granted | no | **0** | **Intentionally public — `T-027`.** Same mechanism |
+| `username_registry_public` | granted | no | **0** unfiltered | **Intentionally public — `T-027`.** Backs signup username availability and **must answer before a session exists**; it is a lookup queried with a predicate |
+| `v_space_slots_today` | granted | no | **errors** | **Not a security finding — `BUG-05`.** `find_slots()` references the dropped `public.venue_opening_hours` and raises 42P01 for **every** role including `postgres`. Needs its own ticket |
+
+**Where the earlier guesses landed.** The old note guessed `v_comments`, `v_game_rating` and
+`v_user_badges_summary` were "probably public". **One of three.** `v_comments` is public and
+was also leaking one row; the other two had their `anon` grant revoked outright. That is the
+case for the rule the note stated and did not follow — a guess about intent is not a verdict,
+and two of these three would have been left open on a plausible-sounding hunch.
+
+See `DECISIONS.md` `T-027` for the five views confirmed intentionally public, and §2d for the
+reconciled aggregate counts.
 
 **Not a finding — PostGIS extension metadata:** `geography_columns`, `geometry_columns`.
 They describe geometry columns, hold no application data, and are owned by the extension.
 They are in the 19 by measurement and excluded from the work.
 
-**So: 19 exposed → 2 are PostGIS → 17 app views need a verdict → 5 already confirmed
-leaking.**
+**Arithmetic, reconciled 2026-08-29: 19 exposed → 2 PostGIS → 17 app views needing a verdict.**
+**14 are closed or accounted for. 3 remain open and leaking** (`v_mod_queue_open`,
+`v_circle_feed`, `v_safety_overview`) — see the top of this section. The earlier claim that all
+17 were resolved was wrong by exactly those three.
+Current census, reconciled with §2d: **71 views · 28 invoker · 43 definer · 45 anon-readable**,
+of which **five are confirmed intentional (`T-027`)** and the rest carry a stated position.
+**The 45 anon-readable views are not 45 findings.**
 
 ### 2b. Definer + anon-granted — 8 views, **2 of which return rows**
 
@@ -243,7 +344,15 @@ knowable from the definition text.
 
 Note the financial and admin views are correctly in this group.
 
-### 2d. Invoker — 21 views where RLS applies normally
+### 2d. Invoker — 21 views at the 2026-08-27 census; **26 as of 2026-08-28**
+
+**Updated after migration `20260828193807` (KAN-37).** Four views were flipped to
+`security_invoker`: `v_notifications_feed`, `v_notifications_ranked`, `v_user_reputation`,
+`v_meetup_counts`. **Then two more by `20260828194512` (KAN-38b):** `v_comments` and `v_post_comments`.
+Census at end of 2026-08-28: **71 total · 28 invoker · 43 definer · 45 anon-readable** (was 48;
+three SELECT revokes). Invoker = **6 flipped today** (written `security_invoker=on`) **+ 22
+pre-existing** (`=true`) — if a report says "6 invoker views", that is the count changed today,
+not the population. The list below is the 2026-08-27 set and includes none of the six.
 
 **Bucket precedence, so the arithmetic reconciles.** A direct count of
 `reloptions is not null` returns **22** explicit `security_invoker` views, not 21. The
@@ -263,14 +372,36 @@ Precedence order: **anon-revoked → EXPOSED → definer+uid → invoker.**
 
 ### 2e. Regenerating this census
 
+**CORRECTED 2026-08-28. The previous version of this query was wrong twice, and the second
+error would have reported an applied fix as unapplied.**
+
 ```sql
 select c.relname,
-  case when c.reloptions is null then 'DEFINER' else 'invoker' end as mode,
-  has_table_privilege('anon', c.oid,'SELECT') as anon,
-  (pg_get_viewdef(c.oid) ilike '%auth.uid()%') as uid_filter
-from pg_class c join pg_namespace n on n.oid=c.relnamespace
-where n.nspname='public' and c.relkind='v' order by 1;
+  case when coalesce((select option_value::boolean
+                      from pg_options_to_table(c.reloptions)
+                      where option_name = 'security_invoker'), false)
+       then 'invoker' else 'DEFINER' end as mode,
+  has_table_privilege('anon', c.oid, 'SELECT') as anon,
+  (pg_get_viewdef(c.oid) ilike '%auth.uid()%') as uid_filter_TEXT_MATCH_ONLY
+from pg_class c join pg_namespace n on n.oid = c.relnamespace
+where n.nspname = 'public' and c.relkind = 'v' order by 1;
 ```
+
+**What was wrong, both worth avoiding elsewhere:**
+
+1. `case when c.reloptions is null then 'DEFINER' else 'invoker'` treats **any** reloption as
+   invoker. A view carrying only `security_barrier=true`, or an explicit
+   `security_invoker=false`, is definer and this called it invoker. It happened to give the
+   right answer only because every non-null view here also set `security_invoker` truthy.
+2. A variant used elsewhere tested `option_value = 'true'`. **Postgres accepts `on`, `true`,
+   `yes` and `1` for a boolean reloption, and they are the same setting.** Migration
+   `20260828193807` wrote `security_invoker=on`; every earlier view was written `=true`. The
+   string test read the four newly-fixed views as still definer — **it would have reported a
+   real remediation as not applied.** `option_value::boolean` parses all four spellings.
+
+**The `uid_filter` column is a text match and is not evidence of anything** — see §2b, where
+that exact instrument certified two leaking views as safe. Use it to decide what to probe,
+never to decide what is safe.
 
 **Do not substitute the Supabase advisor's `security_definer_view` count for this.** The
 advisor returned 25; the real number is 49. An advisor reports what it flags, not what
@@ -292,8 +423,8 @@ places — `v_mod_queue_open`, `v_circle_feed` and `v_safety_overview` are no lo
 anon-exposed at all, though §2a above still describes them as CRITICAL/OPEN, written earlier
 the same day; that discrepancy is master-analyst's/cto's to reconcile in prose, not
 version-control's, and is flagged in the KAN-61 handoff rather than silently fixed here).
-Every name below was independently confirmed `anon`-readable with no `security_invoker` at
-generation time:
+Every name below was independently confirmed `anon`-readable with no
+`security_invoker` at generation time:
 
 * `geography_columns`, `geometry_columns` — PostGIS system views, allowlisted from the start
   per the KAN-61 ticket text, never a finding.
@@ -625,6 +756,19 @@ the backend; it is already there.
 
 ---
 
+**A dated, concrete instance of this class — 2026-08-29.** `kan27a_venue_dabbler_news_storage_policies.sql`
+had a `DROP` statement **added to the file after the migration was applied**, so the tracked
+file described a state production had never been in. Caught by `cto`, stripped by `team-lead`;
+verified here — the only remaining occurrence of the word is inside a comment referencing a
+separate out-of-scope fix (`T-030`/KAN-75), and no executable `DROP` remains.
+
+**Why it belongs in §8 rather than in a ticket:** the divergence this section describes is
+usually framed as *history that was never captured*. This is the other direction — **a file
+edited after the fact, drifting away from a live state that did not change.** Both produce the
+same end condition (the repo is not a reconstruction of the live schema) and only one of them
+leaves a trace in the ledger. **Reading a migration file tells you what someone wrote, not what
+the database ran.**
+
 ## 9. HOW TO VERIFY ANY CLAIM IN THIS FILE
 
 Do not trust this document over the database. It is a snapshot dated 2026-08-26.
@@ -679,7 +823,7 @@ reading its definition.** §2b now carries a per-view row count. Regenerate with
 
 ## 11. THE DEFINER-VIEW PROBLEM IS ALSO A WRITE PROBLEM
 
-*Added 2026-08-28. Raised by `cto-4`, every link re-verified here. See `PROJECT_STATE.md` SEC-16.*
+*Added 2026-08-28. Raised by `cto`, every link re-verified here. See `PROJECT_STATE.md` SEC-16.*
 
 §2 of this file censused all 71 views for **read** exposure and stopped there. That framing
 was incomplete, and the gap was not small: **a `SECURITY DEFINER` view can be writable, and
@@ -702,12 +846,27 @@ when it is, the base table's RLS is not evaluated.**
      `security_invoker`, the base table is accessed **as its own owner**, and Postgres skips
      RLS for a table's owner unless `relforcerowsecurity` is set. A perfectly correct
      `WITH CHECK (false)` policy is simply never evaluated.
-   - **`rolbypassrls` path.** The executing role may carry `rolbypassrls`, which skips RLS
-     regardless of ownership **and defeats `FORCE ROW LEVEL SECURITY` too.** `postgres` has
-     it (`pg_roles.rolbypassrls = true`); `anon` does not. So a definer view owned by
-     `postgres` over a table owned by *someone else* still bypasses — which is exactly
-     `v_needs_organiser` over `auth.users`, and why FORCE RLS would not have closed it.
-     **Only the revoked grant closes that one.**
+   - **`rolbypassrls` path — and on this project it subsumes the owner path entirely.**
+     The executing role may carry `rolbypassrls`, which skips RLS regardless of ownership
+     **and defeats `FORCE ROW LEVEL SECURITY` too.** `postgres` has it
+     (`pg_roles.rolbypassrls = true`); `anon` does not.
+
+     **CORRECTED 2026-08-28 (`cto`).** An earlier version of this section used the
+     `rolbypassrls` path only to explain `v_needs_organiser` over `auth.users`, and
+     attributed the other six views to the owner path. That was wrong. **All seven app
+     views are owned by `postgres`**, so BYPASSRLS — checked ahead of the owner/FORCE
+     logic — applies to every one of them. The owner path is a real Postgres mechanism
+     and it is not what is happening here.
+
+     **Consequence: `FORCE ROW LEVEL SECURITY` remediates nothing on any of the seven.**
+     Demonstrated on a table that already has it set — `public.sport_profiles`,
+     `relforcerowsecurity = true`, owner `postgres`: **138 rows visible, 131 admitted by
+     its policies.** Only the revoked grant closes these.
+
+     **When you check this, enumerate every policy on the table.** `cto` reported a
+     near-miss: a first pass tested only the `p.user_id = auth.uid()` policy and read
+     138 vs 0, missing the permissive `p.is_active = true` policy that admits 131. **The
+     real margin is 7, and an overstated margin is a correction waiting to happen.**
 
    ```sql
    SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname IN ('postgres','anon','authenticated');
@@ -722,7 +881,7 @@ when it is, the base table's RLS is not evaluated.**
 
 **`security_invoker` governs reads. It says nothing about a DML grant, and nothing about
 owner-equals-owner.** Any catalogue check that asserts only on anon-reachability and invoker
-status **passes with this hole wide open** — `cto-4` flagged that its own `T-002` test spec
+status **passes with this hole wide open** — `cto` flagged that its own `T-002` test spec
 had exactly that gap, and the corrected spec must also assert on grants and on
 `relforcerowsecurity`.
 
@@ -739,7 +898,7 @@ JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
 WHERE v.table_schema = 'public';
 ```
 
-**Verifying preconditions is the whole job here. Neither `cto-4` nor `master-analyst`
+**Verifying preconditions is the whole job here. Neither `cto` nor `master-analyst`
 attempted the insert, and nobody should** — this is production, and `DECISIONS.md` 019 bars
 every agent from writing it. The catalogue establishes the vulnerability; a write would only
 establish it a second time, destructively.
