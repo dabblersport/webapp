@@ -319,7 +319,6 @@ geography_columns
 geometry_columns
 username_registry_public
 v_challenge_card
-v_game_card
 v_meetup_list
 v_my_games
 v_potential_vibes_default
