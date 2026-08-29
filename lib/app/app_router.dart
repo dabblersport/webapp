@@ -618,6 +618,23 @@ class AppRouter {
       },
     ),
 
+    // DB-authoritative persona selection route (KAN-46).
+    // Reuses IntentSelectionScreen — the resume-state redirect (below) sends
+    // returning users with no persona recorded here rather than to an
+    // unregistered path and the error page.
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: RoutePaths.onboardingPersonaSelection,
+      name: RouteNames.onboardingPersonaSelection,
+      pageBuilder: (context, state) {
+        return SlideTransitionPage(
+          key: state.pageKey,
+          child: const IntentSelectionScreen(),
+          direction: SlideDirection.fromLeft,
+        );
+      },
+    ),
+
     // Set username route (for phone users)
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,

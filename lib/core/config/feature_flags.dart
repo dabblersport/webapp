@@ -100,6 +100,13 @@ class FeatureFlags {
   static const bool enableCircleFeed = true;
   static const bool enableActivityFeed = true;
 
+  /// Community tab (RealFriendsScreen) in the compact mobile bottom-nav pill.
+  /// The pill redesign (KAN-41 audit finding, 2223e77) only has room for two
+  /// segmented groups + one icon slot, so Community was left reachable via
+  /// the desktop side-nav only. Flip this on once the mobile nav has a slot
+  /// for it again (see KAN-85).
+  static const bool enableCommunityMobileNav = false;
+
   /// Squads & Teams
   static const bool enableSquads = true;
   static const bool enableCreateSquad = true;
@@ -129,7 +136,7 @@ class FeatureFlags {
   static const bool enableVenuePhotos = true;
 
   /// Payments & Bookings
-  static const bool enablePayments = true;
+  static const bool enablePayments = false;
   static const bool enableWallet = true;
   static const bool enableTransactionHistory = true;
   static const bool enableBookingFlow = true;
