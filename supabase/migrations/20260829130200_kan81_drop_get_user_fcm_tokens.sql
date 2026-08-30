@@ -1,0 +1,40 @@
+-- KAN-81 (HIGH): public.get_user_fcm_tokens(uuid) is SECURITY DEFINER with no
+-- authorization check at all -- the caller names any target_user_id and gets
+-- that user's push tokens back. Grant is via PUBLIC (anon and authenticated
+-- both show EXECUTE = true; a revoke would have to name PUBLIC, not anon), so
+-- it is reachable unauthenticated. 28 rows exist in public.fcm_tokens today;
+-- enumeration is realistic since profile/user ids are widely visible in the
+-- app's own payloads. A leaked token enables spoofed push notifications
+-- (given a server key) and is a device-correlation identifier regardless.
+--
+-- No caller anywhere: zero hits in lib/**, zero in-database callers. The only
+-- repo occurrence is a copy inside a schema snapshot artifact, not a call
+-- site. The legitimate consumer -- supabase/functions/send-push-notification --
+-- reads public.fcm_tokens directly with the service role (lines 135, 203) and
+-- does not use this RPC, so it is unaffected by the drop.
+--
+-- Per the same T-030 position as KAN-79: no caller + no reason to exist in
+-- production means drop, not revoke-and-keep. Adding an auth check to a
+-- function nobody calls is pure cost, and a dead definer function retained in
+-- the schema is a latent re-exposure this project has already been bitten by.
+--
+-- G-002: authored by backend-owner, NOT applied here. cto applies after
+-- measuring preconditions live and posting verification back to KAN-81.
+-- notifications-specialist confirms AC2 (push still sends end-to-end) on
+-- Canary before this is treated as done.
+
+DROP FUNCTION IF EXISTS public.get_user_fcm_tokens(uuid);
+
+-- ============================================================
+-- VERIFICATION (run all, all must hold)
+-- ============================================================
+-- 1. Function is gone. Expect 0.
+--    SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--    WHERE n.nspname = 'public' AND p.proname = 'get_user_fcm_tokens';
+--
+-- 2. Push notifications still send end-to-end after the drop -- confirmed by
+--    notifications-specialist exercising send-push-notification on Canary,
+--    not merely reasoned about from the code path.
+--
+-- 3. Data stays, only the function goes. Expect 28 (measured live pre-apply).
+--    SELECT count(*) FROM public.fcm_tokens;
