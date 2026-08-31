@@ -795,7 +795,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       case PersonaType.organiser:
         icon = Iconsax.calendar_edit_copy;
         break;
-      case PersonaType.hoster:
+      case PersonaType.host:
         icon = Iconsax.building_copy;
         break;
       case PersonaType.socialiser:
@@ -1197,13 +1197,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         routerRefreshNotifier.notifyAuthStateChanged();
       }
 
-      if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
-        context.go(RoutePaths.authWelcome);
-      }
+      // Both signOut paths above already call
+      // routerRefreshNotifier.notifyAuthStateChanged(), which drives GoRouter's
+      // own redirect to /landing via refreshListenable. Don't navigate
+      // manually here — that races with the router's own transition. Dismiss
+      // the loading dialog on the next frame instead of immediately, since
+      // popping while the redirect is mid-transition locks the Navigator
+      // (KAN-99: "!_debugLocked is not true").
+      _dismissLoadingDialog();
     } catch (e) {
+      _dismissLoadingDialog();
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error signing out: $e'),
@@ -1212,6 +1216,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         );
       }
     }
+  }
+
+  void _dismissLoadingDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+    });
   }
 }
 
