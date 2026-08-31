@@ -3514,3 +3514,708 @@ Proven end to end on PR #11 (closed unmerged, branch deleted) — run `332591014
 (`OK: all 12 …`), run `33259141446` red on a live catalogue read (`FAIL: … - v_game_card`),
 run `33259167876` green again. The red run is the `T-002` gate doing its job against
 production data with no DDL against `wtncuzcskpigqpmnxwws`.
+
+### T-035 — The 184-table `anon` write grant is gated by RLS, not open; severity drops to low, and it is now KAN-86
+**Date:** 2026-08-29
+**Amends:** the severity framing carried in `T-029` and in KAN-67's close-out notes. **Does not supersede** either — the measurement in both was correct; what was missing was the second half of the question.
+
+**Context.** KAN-67 revoked `anon`/`authenticated` write on the 70 postgres-owned views. Every report since has carried the same trailing sentence: *184 base tables still grant write*. That sentence was accurate and, on its own, misleading — it states a grant without stating whether anything can use it. Filing the successor forced the question.
+
+**Decision — the remainder is low-severity defence-in-depth debt, and it is filed as `KAN-86`, not left as a remembered fact.**
+
+Measured live, read-only, 2026-08-29 (`wtncuzcskpigqpmnxwws`):
+
+```sql
+SELECT count(*) FILTER (WHERE has_table_privilege('anon', c.oid,'INSERT')) AS anon_insert,
+       count(*) FILTER (WHERE c.relrowsecurity)                            AS rls_enabled,
+       count(*)                                                            AS total
+FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+WHERE n.nspname='public' AND c.relkind='r';
+-- anon_insert=184, rls_enabled=184, total=185
+```
+
+**Why the severity moves — a grant is only a door if a policy opens it.** I enumerated every *permissive* `INSERT`/`ALL` policy applicable to `anon` — both `TO anon` and bare `TO PUBLIC`, since `polroles = '{0}'` applies to every role — and read each `WITH CHECK`. All fall into four gated shapes:
+
+| Shape | Example | Effect for `anon` |
+|---|---|---|
+| Literal `false` | `n_block_insert`, `wallets_block_dml` | denies |
+| Definer-funnel | `(CURRENT_USER <> SESSION_USER)` — `game_roster`, `game_waitlist` | denies direct calls |
+| Definer-owner | `(CURRENT_USER = 'postgres')` — the five `username_*` tables | denies |
+| Owner/admin predicate | `can_write_row(owner) AND allow_social_write(owner)`; `is_admin_effective()` | `can_write_row` → `is_owner()` → `auth.uid()`, NULL for `anon` → denies |
+
+**No permissive policy admits `anon`.** The grant is redundant privilege surface — the layer that would catch the *next* mistakenly-permissive policy, not a live path today.
+
+**The measurement trap this surfaced, worth keeping.** My first census counted policies whose `polroles` *includes* `anon` and reported ~99 tables — a number that reads as alarming and means nothing. A policy applying to a role is not a policy permitting it; `TO PUBLIC ... WITH CHECK (false)` matches that filter and denies everyone. **Filter on the check expression, never on the role list alone.** This is the same shape as `T-017`'s "a count tells you policies exist; it says nothing about what they permit".
+
+**One object is genuinely open and we cannot close it.** `public.spatial_ref_sys`: `supabase_admin`-owned, **RLS not enabled**, `anon` holds INSERT/UPDATE/DELETE. `pg_has_role('postgres','supabase_admin','MEMBER') = false`, so neither `ALTER` nor `REVOKE` is available (`T-025`). It is the PostGIS spatial-reference catalogue, not Dabbler data. Recorded on KAN-86 as an explicit exclusion so a verification query is not written to fail on it, and so it is not re-discovered as a novel finding.
+
+Same constraint, same treatment: the `supabase_admin` **default-privilege rule** still carries `arwdDxtm`. **No ticket is filed for it** — a ticket for work no role in this project can perform is noise on a board. It is recorded here and as an exclusion on KAN-86. The `postgres` grantor rule, which covers everything Dabbler's own migrations create, was corrected by KAN-67.
+
+**Rejected — file the remainder as a promotion blocker.** It was drifting toward that on the strength of the raw 184 alone. RLS denies; nothing is reachable. Sequencing it ahead of KAN-56, KAN-59 or KAN-57 would spend the launch window on the layer that is already holding.
+
+**Rejected — close it as a false positive.** It is not one. The grant is real, and the argument that it is harmless rests entirely on 184 tables' policies all being correct simultaneously — an invariant nothing currently enforces. The right response is to remove the redundant privilege, on a normal schedule, behind a re-grant set derived from the code.
+
+**Consequence.** KAN-86 carries the revoke-then-re-grant work, owned by `backend-owner`. Its first acceptance criterion is that the re-grant set is derived from actual write sites resolved through `supabase_config.dart` — identifiers are never inlined in this repo, so a literal `grep` for a table name proves nothing. A blanket `REVOKE … ON ALL TABLES IN SCHEMA public` is forbidden here for `T-015`'s reason: it hits `spatial_ref_sys`, which we do not own.
+
+**Status:** ACTIVE
+
+### T-036 — SEC-17 was ruled on in `T-017` and never filed; it is now KAN-87
+**Date:** 2026-08-29
+
+**Decision — file it, and keep the two halves in one ticket because the ordering is the risk.**
+
+`T-017` decided SEC-17 out of KAN-67's scope and parked it behind the `T-014` Flutter hire. That hire was made (KAN-71). The finding then sat in `docs/status/cto.md` as prose for a day with no board presence — a decision that closes a question but produces no ticket produces nothing.
+
+**Still live, measured 2026-08-29 inside a single `DO $$ … $$` block** (a role switch split across autocommitted statements silently runs as `postgres` — KAN-67's harness lesson):
+
+```
+ANON_ROWS=217  DISTINCT_CREATOR_UUIDS=26
+```
+
+`v_game_card` exposes `creator_user_id` — a raw `auth.users` UUID — for **26 distinct users**, readable with no account. The view is *deliberately* anon-readable and is one of the 12 on `SCHEMA.md` §2f's allowlist (`T-034`); the defect is the column, not the view's exposure. `creator_profile_id` already exists on the view, so the replacement identifier is in place.
+
+**Bound this claim to what was measured.** `docs/status/cto.md` carries "61 of 240 users — 25% of the user base" from `master-analyst`'s wider sweep. I did not reproduce that figure today and it is not what KAN-87 asserts. What I measured is 26 distinct creator UUIDs on this one view.
+
+**Ordering — migrate the call sites first, drop the column second.** Verified today, the count is 3 view-reading sites, not the 6 originally reported: one **filter** (`game_history_providers.dart:79-80`, applied to `.from(SupabaseConfig.vGameCardTable)` at line 84) and two parses (`game_view_controller.dart:213`, `game_model.dart:81`). Two further hits query `.from(gamesTable)` — the base table, where the column is correct and stays.
+
+The filter is why the order is not negotiable: dropping the column first does not raise an error, it returns **silently wrong game history**. Every other site degrades to null.
+
+**Rejected — flip `v_game_card` to `security_invoker`.** It is meant to be anon-readable; the flip blanks legitimate pre-login surface. This is column exposure, not RLS bypass.
+
+**Rejected — accept the column.** A stable auth identifier for a real person, handed to anyone holding the publishable key that ships in the web bundle. `creator_profile_id` does the same job for the app.
+
+**Consequence.** KAN-87, two commits, `flutter-feature-agent` then `backend-owner`. The SQL half must confirm the view's `reloptions` after redefinition — `CREATE OR REPLACE VIEW` resets `security_invoker` (`CONVENTIONS.md` §6c) and would silently reopen anything a prior flip closed.
+
+**Status:** ACTIVE
+
+---
+
+### G-010 — `qa-tester` hired: functional QA against the running app; `task-auditor` paused until Sprint 1
+**Date:** 2026-08-29
+**Source:** PO, direct, ahead of Sprint 1 (starts Mon 2026-08-31). Answers the gap `T-026` named
+back on 2026-08-28: `task-auditor`'s two gates are both document-to-document comparisons and
+neither opens the app, so a screen could pass every acceptance criterion in prose and still be
+broken at runtime.
+
+**Decision.** `qa-tester` is hired as a new seat: functional/behavioural QA that drives the
+**running app**, not the diff. Scope, PO-set:
+
+- **Surface: Chrome only, against the Flutter web build.** Functionality is identical across
+  platforms; Chrome is what an agent can drive directly via this session's
+  `mcp__claude-in-chrome__*` tools. The PO tests iOS/Android themselves via simulator/emulator
+  when a platform-specific check is warranted — `qa-tester` does not attempt native testing.
+- **Access: full read** on the app/codebase, same as every agent (`CONTRACT.md` §1). **No
+  database access.** **No code-write access** — it files bugs with reproduction steps; it does
+  not fix them, same closed-loop reasoning as `task-auditor`.
+- **Method: user-behaviour walkthroughs.** For each feature/flow, navigate it as a real user
+  would — page to page, action to action — and report what actually happened against what was
+  supposed to happen, not just whether the code compiles or the API call succeeded.
+- **Temporary, until Sprint 1 starts:** `task-auditor` is paused. `qa-tester` covers both roles
+  — its own behavioural QA and `task-auditor`'s two review gates (AC verification, governance
+  alignment) — so nothing sits unreviewed during the transition. `qa-tester`'s first task is
+  learning the application before doing anything else.
+- **Permanent design, once Sprint 1 starts:** the two roles run side by side, not merged.
+  `task-auditor` resumes its normal review-gate duties; `qa-tester` adds the runtime-behaviour
+  check neither `task-auditor` nor CI (`T-026`'s CI gate, `KAN-72`) can perform.
+
+**Explicitly not hired now.** A **UX-auditor** role (copy/spelling correctness, spacing and
+colour-token adherence, design-system compliance) is deferred — the PO wants it once a design
+system exists to audit against. `cto` is asked to prep that role's spec now, while researching
+`qa-tester`'s, so it is ready when the PO decides to fill it. No agent file for it exists yet;
+none should be created until the PO says to hire.
+
+**Consequence.** `.claude/agents/qa-tester.md` added (assistant-authored, informed by `cto`'s
+tooling research). `CONTRACT.md` gains a `QA` column and a row noting the temporary review-gate
+absorption and its end condition (Sprint 1 start, 2026-08-31). `AGENTS.md` gains a roster entry.
+No agent is dispatched to build the UX-auditor role yet — spec only.
+**Status:** ACTIVE — PO decision
+
+---
+
+### P-020 — MVP 1 is player-only; nine areas move to MVP 1+
+
+**Date:** 2026-08-29 · **Decided by:** the PO, in negotiation with `cpo` · **Supersedes:**
+nothing in the Business docs corpus; **retires** part of the Checklist tree (see P-022).
+
+The PO ruled MVP 1 down to a **player-only app**, closing on stability rather than surface.
+Twelve rulings across two rounds:
+
+| Area | Ruling |
+|---|---|
+| Auth **and authorization** verified in production | **The named closure requirement for MVP 1** |
+| Organiser persona | **MVP 1+** — section E of the checklist is 0/20 verified |
+| Payments | **Out entirely** — not "dormant", not discussed |
+| Monitoring | **MVP 1+** — overrules `cpo`'s P0-7 recommendation |
+| Gamification / daily check-in | **Hidden for MVP 1**; revisit properly later |
+| Arabic RTL | **MVP 1+** — critical, but can wait entirely |
+| PDPL data export | **MVP 1+** — deferred, **the feature is not cancelled** |
+| Account deletion | **Already live** — see P-021 |
+| Messaging | **MVP 1+** |
+| Venue booking | **Out of MVP 1** |
+| Financial model (~$1.5M vs ~$82K) | **Post-MVP 1** — does not gate closure |
+| The 25-organiser beta | **Cancelled — deleted, not deferred.** See P-022 |
+
+**Why.** The app is already live in two stores; MVP 1 is a *retrofit* closure, not a launch.
+The PO's priority is a stable, honest, player-facing app on the stores, then MVP 1+.
+
+**How to apply.** Judge MVP-1 scope questions against the player-only boundary. Anything
+touching organiser, venue, payments, messaging or Arabic is MVP 1+ **by decision, not by
+opinion** — do not re-litigate it per-ticket.
+
+**Two consequences `cpo` recorded and the PO accepted:**
+
+1. **Deferring monitoring removes the ability to *evidence* stability.** `13b` P0-2 ("48h,
+   zero P0 bugs") and `14` J14 ("crash-free above 98%") become unmeasurable — not failed,
+   unprovable. **"Stable" for MVP 1 therefore rests on manual QA alone.** Coherent
+   pre-promotion; **not** coherent once acquisition spend starts. Monitoring leads MVP 1+.
+2. **Deferring the App Fee reschedules the `04` question, it does not retire it.** `04`
+   Art. 33.1 forbids any officer waiving a Non-Negotiable, so the App Fee ruling must land
+   **before payments are built**, not before they launch.
+
+**Status:** ACTIVE — PO decision
+
+---
+
+### P-021 — Account deletion is live and is a genuine hard delete; the "Build 174 rejection" was `cpo`'s error
+
+**Date:** 2026-08-29 · **Decided by:** the PO, verified against the repo · **Corrects:**
+`cpo`'s framing in `docs/briefs/MVP1-PLUS-LAUNCH-CHECKLIST-DRAFT.md` Part E.
+
+The PO said in-app account deletion is already live and fully deletes the account,
+contradicting `cpo`'s claim that Apple had rejected Build 174 for it and the app was
+"awaiting re-review". **Verified against the repo. The PO is right.**
+
+**What the code shows:**
+
+- Reachable with **no feature flag**: `settings_screen.dart:61` → route `app_router.dart:1247`
+  → `account_management_screen.dart:731` (danger zone rendered unconditionally at `:216`),
+  type-`DELETE` confirmation at `:1096`.
+- Calls `SupabaseConfig.deleteMyAccountFn` = `delete_my_account`
+  (`account_management_screen.dart:1155`, `supabase_config.dart:229`).
+- **Genuine hard delete.** `supabase/migrations/20260829080500_baseline_schema.sql:5303`:
+  `delete from auth.users where id = v_uid;` — scoped to `auth.uid()`, preceded by storage
+  cleanup and explicit handling of every non-CASCADE FK. No `is_active` flag, no `deleted_at`.
+
+**Where `cpo`'s claim came from, and why it was wrong.** The "Build 174 / awaiting re-review"
+line was lifted from an **HTML comment header inside the Notion checklist** and repeated
+without verification. The repo's actual evidence is a **build 170** rejection
+(`.claude/agent-memory/app-store-submission-fixer/app_store_submission_170.md`) whose root
+cause was *not* the UI but an **RPC foreign-key violation that failed silently** — fixed by
+migration `20260701170909`, now folded into the baseline. `pubspec.yaml:19` is `1.7.8+174`,
+and commit `81911a9` records 1.7.7 as already approved, so 174 reads as current-and-unsubmitted
+rather than rejected.
+
+**Lesson, and it is the general one:** `cpo` treated a document's own header as evidence. It
+was a claim. Same failure mode as the checkboxes in P-022. See
+`.claude/agent-memory/cpo/stay-in-evidence-domain.md`.
+
+**How to apply.** Account deletion **comes off the MVP 1 list**. One residual, deliberately
+kept small: nothing has ever exercised this RPC end-to-end against the live database and there
+is no test for it. It reduces to a single smoke check, not a work item.
+
+**Status:** ACTIVE — PO decision
+
+---
+
+### P-022 — The 25-organiser beta is cancelled, and the Checklist tree's checkboxes are not evidence
+
+**Date:** 2026-08-29 · **Decided by:** the PO · **Supersedes:** `13d beta cohort plan`
+(entirely) and `08 GTM playbook` where it depends on beta output.
+
+**(a) The beta is deleted, not deferred.** The PO: *"MVP 1 already happened in closed
+[testing]. No beta anymore. It was an old idea. It should be deleted entirely."*
+
+This retires `13d`'s exit criteria (≥80% of 25 organisers ran a real game; ≥60% "would use
+instead of WhatsApp") and checklist items J1–J5. **`cpo` had ranked running the beta as the
+single highest-value action available and was overruled.** Recorded, not re-argued.
+
+**Consequence to carry:** the *"would you use this instead of WhatsApp?"* question was the only
+committed instrument for testing the core substitution thesis. Retiring it does not answer the
+question — it removes the mechanism for asking it. If that thesis is ever tested, it needs a
+new instrument, and no document now specifies one.
+
+**Note:** the cancellation is independent of, but consistent with, the organiser deferral in
+P-020 — the beta required organisers to run real games, and the organiser persona is 0/20
+verified, so it could not have run as written.
+
+**(b) The Checklist tree is not part of the Business docs corpus, and its checkmarks are
+claims.** Two pages under **Dabbler** (not Business docs): **Checklist**
+`37dd4c6dd86d8039a4ddcfe48d12822c` (v1) and its child **Updated checklist**
+`399d4c6dd86d8021b719c4df6330006e` (v2, live, last edited 2026-07-18). Doc `14` is a *third*
+page id. `cpo`'s earlier "26 documents, study complete" covered Business docs only.
+
+v2 carries **42 `[x]` marks**. Work done 2026-08-27..29 disproved five of them — B14 sign-out
+(KAN-58), B7–B12 onboarding (KAN-83), D27 following (KAN-85), D33 report/block (KAN-68, still
+open), and **D9 account deletion**, whose box sat on the one item a rejection had been recorded
+against. **The boxes record intent to have built, not verified behaviour.**
+
+**How to apply.** Never cite a `[x]` in that tree as evidence a thing works. Where the tree and
+the repo disagree, the repo wins, and `master-analyst`/`cto` own the reading.
+
+**(c) One `cpo` contradiction withdrawn.** Recorded C9 ("OTP killed by `14` while the app still
+ships it") was an error — v2 separates **email OTP (kept, primary sign-up)** from **phone/SMS
+OTP (removed, Twilio cost)**. Not a contradiction. Thirteen stand.
+
+**Status:** ACTIVE — PO decision
+
+---
+
+### P-023 — KAN-49 is rewritten: venue prices are real; the live defect is social, not financial
+
+**Date:** 2026-08-29 · **Decided by:** `cpo`, on verification the PO requested ·
+**Rewrites:** KAN-49 (INV-05).
+
+KAN-49 claimed live routes display *"invented AED transactions and fake friend suggestions"*.
+The PO disputed it: venue **prices**, not transaction history, and no payments in the app at
+all. **Verified. Both the ticket and the PO were partly right, and the ticket is wrong in both
+directions.**
+
+**The PO is right on money.** Every AED string outside one screen renders real venue
+`price_per_hour` or slot price from Supabase via `get_nearby_venues`, or a cost an organiser
+typed in — `explore_nearby_screen.dart:402`, `venues_screen.dart:608,682`,
+`venues_nearby_screen.dart:467`, `review_confirmation_step.dart:379`. No charge is executed
+anywhere; `payment_sheet.dart:122` renders a caller-supplied amount. **Not a defect.**
+
+**The ticket is right that fabricated data ships — in three places, none of them the one it
+named:**
+
+| Surface | Content | Reachability |
+|---|---|---|
+| `transactions_screen.dart:52-108` | 5 invented transactions, fake card numbers (`Visa •••• 4242`), invented merchants, a fake refund | Route `/transactions` registered (`app_router.dart:1153`), **no in-app navigation** — deep link only |
+| `social_search_screen.dart:616-645,709` | Invented trending hashtags with fake engagement (`#worldcup2026, 48.2k`), hardcoded *"127 active in 5 km"* | **Reachable from the top bar and main nav** — the real live defect |
+| `social_onboarding_friends_screen.dart:27-68` | 5 invented people, pravatar stock photos, **simulated** contacts permission + "Contacts synced successfully!" that syncs nothing | Deep link only |
+
+**Two findings that outrank the original ticket:**
+
+1. **`FeatureFlags.enablePayments = true`** (`feature_flags.dart:139`) — the guard on
+   `/transactions` **passes**. Under P-020 payments are out of MVP 1 entirely, so a live
+   `true` payments flag guarding a fake-transactions screen is a direct contradiction of the
+   PO's own ruling. **Flip it to `false`** — that alone neutralises the transactions screen.
+2. **The honest headline is the inverse of the ticket's.** The financial half is real or
+   unreachable; **the social half is fabricated and reachable.**
+
+**How to apply.** KAN-49's AED framing is withdrawn. The MVP 1 item is the reachable social
+surface plus the flag flip, not a payments defect.
+
+**Status:** ACTIVE — `cpo` ruling on verified evidence
+
+---
+
+### P-024 — Daily check-in still writes to the database; it is gated, not removed
+
+**Date:** 2026-08-29 · **Decided by:** `cpo`, on verification the PO requested ·
+**Corrects:** the premise of the PO's hide-check-in ruling in P-020.
+
+The PO ruled check-in hidden for MVP 1, reasoning it *"is no longer even storing anything to
+the database."* **Verified. That premise is false — and the ruling is still fine.**
+
+**The write path is fully intact.** `check_in_controller.dart:32` →
+`check_in_repository_impl.dart:32-36` → RPC `perform_check_in`, which writes
+`user_check_ins` (`baseline_schema.sql:9376`, `:9386`) and `check_in_logs` (`:9392`).
+Nothing is commented out, no early return, tables and function all present in the baseline.
+
+**It is disabled purely by UI gating** — `FeatureFlags.enableRewards = false`
+(`feature_flags.dart:57-58`) is the *only* thing stopping it. All three entry points test it
+(`main_navigation_screen.dart:81`, `check_in_wrapper.dart:25`,
+`profile_check_in_widget.dart:14`; the latter two have no call sites at all). **Flipping that
+one `const` restores live writes immediately, with no other change.**
+
+**How to apply.** **No work is required for MVP 1** — "hidden" is already true, and no
+backend or Flutter ticket is needed. But the accurate description is *"dormant behind one
+flag"*, not *"removed"*, and that matters twice: the flag is a single edit away from writing
+to production, and the read path (`get_check_in_status`) is **not** flag-gated, so any future
+provider read would hit it. When check-in is revisited (MVP 1+, see KAN-29), it is a
+flag flip plus product work, not a rebuild.
+
+**Status:** ACTIVE — `cpo` ruling on verified evidence
+
+---
+
+### P-025 — Data export is not being built for MVP 1 or MVP 1+; the entry point stays, the mechanism does not
+
+**Date:** 2026-08-30 (PO ruling in conversation, not recorded at the time) · **Decided by:**
+PO, during the MVP 1+ scope negotiation · **Recorded:** 2026-08-31, after the gap it caused.
+
+**Decision:** The PO ruled, verbatim: *"We don't have an export, and we will not remove the
+export idea from the application. We are not exporting information."* Read precisely: the
+export *entry point/idea* stays visible in the app for a future release; the working
+*mechanism* is not being built now, for MVP 1 or MVP 1+. **KAN-52 and any ticket scoping
+actual export work is out of scope until the PO reopens this.**
+
+**Why this is being recorded a day late.** This ruling was made only in conversation and
+never written here. On 2026-08-31, sprint-2 scheduling swept KAN-52 back into active work
+purely from its `Highest` priority label in the backlog — the session doing the scheduling
+had no durable record to check it against, and pulled a P0-labeled ticket without noticing
+it had already been killed. Two agents then did real (uncommitted, unapplied) work against
+it before the PO caught it. **The lesson, not just the ruling:** a scope decision made only
+in conversation does not bind a future session, or even the same session after compaction.
+It has to land here the same session it's made, not after something built against it.
+
+**Consequence:** KAN-52 and KAN-103 (its table-triage follow-up) are labeled `descoped` and
+pulled from every sprint. Any future ticket touching `DataExportService`,
+`data_export_requests`, or the Settings export entry point must check this entry first.
+Deletion is not the disposition — the code and the Settings entry point stay in the repo,
+inert, per the PO's "will not remove the export idea" wording; only active build work is
+prohibited.
+
+**Status:** ACTIVE — PO ruling, recorded post-hoc after a scheduling gap surfaced it
+
+---
+
+### T-037 — KAN-48: extend the existing `rpc_onboard_profile` to cover persona and sport in one transaction; the second controller is dead-and-*wired*; `hoster` is not a table
+
+**Date:** 2026-08-29 · **Decided by:** `cto`, on live read-only verification ·
+**Relates:** KAN-46, KAN-92, KAN-93, `T-007`
+
+KAN-48 asked for a choice between **(a)** folding persona and sport creation into
+`rpc_onboard_profile` so completion is one transaction, and **(b)** surfacing the swallowed
+failures instead. **Ruling: (a), with (b)'s criterion kept as an additional requirement.**
+
+#### Correction to my own first pass — recorded because the error is instructive
+
+My initial ruling asserted `rpc_onboard_profile` had **zero call sites** and was not in the
+live path. **That was wrong.** It is called at `auth_service.dart:1156` — through
+`SupabaseConfig.rpcOnboardProfileFn`, never as a literal. I grepped for the string and
+concluded from its absence, which is precisely the trap recorded in my own
+`verification-lessons` memory: *in this repo identifiers are never inlined, so a literal grep
+proves nothing.* Resolve a name through its constant, or through `pg_proc`, before calling
+anything unused. KAN-48's original description was **accurate**; only its line numbers had
+drifted.
+
+#### The live path, established by reading callers rather than names
+
+`onboarding_welcome_screen.dart:_runCreation()` (`:60-120`) makes **three** calls:
+
+| Step | Method | What it does |
+|---|---|---|
+| 0 | `createProfileStep` (`auth_service.dart:1122`) | calls `rpc_onboard_profile` (`:1156`) |
+| 1 | `createPersonaProfileStep` (`:1174`) | direct client INSERT into `player`/`organiser`/`hoster` |
+| 2 | `createSportProfileStep` (`:1220`) | calls `rpc_create_sport_profile` — **only when `intention == 'player'`** (`welcome_screen:114`) |
+
+**`AuthService.completeOnboarding` (`:818-1113`) is dead** — its only caller is the unreachable
+`features/profile/services/onboarding_controller.dart:283`. Its catches log via `debugPrint`,
+which is what a reviewer reported when they said the empty catches were gone. They were reading
+the dead function. **The live `createPersonaProfileStep` has three genuinely empty
+`catch (_) {}` at `:1189`, `:1201`, `:1213.`**
+
+**`rpc_onboard_profile` is already good, and that shrinks the work.** Verified from `pg_proc`:
+it is `SECURITY DEFINER`, `SET search_path TO 'public'`, enforces
+`auth.uid() = p_user_id` (the hole in `fix_rpc_onboard_profile_missing_auth_check.sql` is
+closed), normalises **`hoster` → `host` server-side**, derives `profile_type`, sets
+`onboard = true`, and assigns the default tier — **all in one transaction**. It does *not*
+create the persona-extension row or the `sport_profiles` row. Those are the two steps that
+escaped the transaction, and they are the whole of the defect.
+
+#### The damage is already in production
+
+Read-only census, 2026-08-29 (`onboard = true`, n=154 of 156 profiles):
+
+| Persona | Missing persona-extension row | Missing `sport_profiles` |
+|---|---|---|
+| `player` (124) | **36** | 6 |
+| `organiser` (19) | **9** | 10 |
+| `host` (5) | **3** | 0 |
+| `socialiser` (6) | n/a — no extension table | 5 |
+
+**`hoster` is the mechanism behind the host column.** `SupabaseConfig.hosterTable = 'hoster'`
+(`supabase_config.dart:189`) names a relation that **does not exist** — the table is
+`public.host`. `createPersonaProfileStep:1204` inserts into it, throws *relation does not
+exist*, and the empty catch at `:1213` discards it. Note the RPC already normalises the
+persona to `host` while the client branch still tests `'hoster'`: the database and the client
+disagree about the vocabulary, and the client is the one that is wrong.
+
+The 21 missing `sport_profiles` are **mostly not a defect**: step 2 is player-gated by design,
+so `organiser`/`socialiser` rows are expected. **6 players missing a sport profile is the real
+population.**
+
+---
+
+#### Decision 1 — Extend the existing RPC. Do not write a new one.
+
+`rpc_onboard_profile` gains the persona-extension insert and the player `sport_profiles`
+insert, and **`onboard = true` moves to the end of the function**, after both. One client
+call, one transaction, one `Result`.
+
+**Why not (b).** Surfacing the failures does not fix this, it narrates it. `onboard = true` is
+set in the RPC's first statement, so by the time step 1 fails the user is already marked
+complete and there is nothing to retry into. (b) is cheaper because it does less.
+
+**But (b)'s criterion stands.** No `catch` on the onboarding write path may swallow. Three
+empty catches hid a nonexistent-table bug for the life of the feature; a fold that leaves them
+in place would hide the next one.
+
+#### Decision 2 — Persona vocabulary is the database's, and `hoster` is banned
+
+Canonical, exactly as `profiles.persona_type` holds it: **`player`, `organiser`, `host`,
+`socialiser`**. `SupabaseConfig.hosterTable` becomes `'host'`; the client stops emitting
+`hoster` so the RPC's compatibility shim becomes dead weight rather than load-bearing;
+`onboarding_repository.dart:_getPersonaTableName` returns `'host'` and **throws on an
+unrecognised persona instead of defaulting to `'player'`** — that default is why `socialiser`
+profiles get checked against the `player` table.
+
+#### Decision 3 — The second controller is dead-and-**wired**, so `T-007` applies with force
+
+`features/auth_onboarding/.../onboarding_controller.dart` is reported as unused. Its *write*
+half is (`selectPersona`, `createProfile`, `createPersonaExtension`, `createSportProfile`,
+`finalizeOnboarding` — no external call sites). Its *read* half is **load-bearing for
+production routing**: `app_router.dart:304-308` reads the provider, `:312-318` fires
+`checkResumeState()` on every authenticated load, `:322-338` maps its step to a redirect.
+Deleting it wholesale breaks routing; leaving it breaks users. It is not deferred.
+
+Its resume ladder branches on `profile_completion` (`:145`, `:151`) — **NULL on 156 of 156
+rows**, because the only writer is the unreachable repository. Both branches are dead and the
+ladder falls to the `else` at `:154-156`, the *"Unknown state"* branch that produced KAN-46.
+Replace it with the row-existence checks already computed at `:129-142`.
+
+---
+
+**Scope split.** Decisions 1 + 2 close KAN-48 (MVP 1 gate). Decision 3 is **KAN-92**. Repairing
+the ~54 damaged rows is **KAN-93** — a data change, so `cto` does not apply it; the PO decides
+and `version-control` ships it.
+
+**Status:** ACTIVE — `cto` ruling on live read-only verification, first pass self-corrected
+
+---
+
+### T-038 — The PO's two-stage onboarding is real but unreachable; `onboard` is a **completion** flag, not a resume marker; the KAN-48 migration stands
+
+**Context.** The PO stated, 2026-08-30, that `T-037`/KAN-48 was built on a wrong model:
+that onboarding is two stages — (1) initial information, (2) profile creation — and that
+`onboard = true` is set at the *end of stage 1* as a **resume marker**, so a user who closes
+the app between stages is landed back where they stopped. On that model the 48 profiles with
+`onboard = true` and no persona-extension row are not damaged; they are paused between stages,
+and the applied migration — which now refuses to set `onboard = true` until the persona and
+sport rows exist — would have broken the resume design outright. This entry is the re-audit.
+
+#### Decision 1 — The two-stage design exists in the codebase but is **not the code that runs**
+
+Verified by tracing the live flow, not by reading intent:
+
+* **The live flow is one linear pass**, and every screen in it holds its data in memory
+  (`onboardingDataProvider`) rather than writing it:
+  `createUserInfo` → `intentSelection` → `interestsSelection` → `onboardingPrimarySport` →
+  `setUsername` → `onboardingWelcome`. The only profile write in the whole journey is the
+  single call `onboarding_welcome_screen.dart:83` → `auth_service.dart:1156`.
+* **A stage-2 screen chain was built and is orphaned.** `onboarding_sports_screen` →
+  `onboarding_preferences_screen` → `onboarding_privacy_screen` →
+  `onboarding_completion_screen` link to each other and are routed in `app_router.dart:710-743`,
+  but **nothing outside the chain navigates into it** — the only inbound references are the
+  chain's own back-links. This is almost certainly the stage 2 the PO remembers. It is real,
+  it is designed, and it is unreachable.
+
+The PO's model is therefore right about the product intent and wrong about the shipped code.
+Saying so is the point of this entry: the intent is not implemented.
+
+#### Decision 2 — The resume marker is `onboard = FALSE`. The polarity is inverted from the PO's model
+
+* `rpc_onboard_profile` is the **only function in the database** that sets `onboard = true`
+  (`pg_proc` scan over every `public` function, 2026-08-30). The one other writer,
+  `OnboardingRepository.finalizeOnboarding:327`, belongs to the dead write-half of the
+  controller named in `T-037` Decision 3.
+* The "paused" state is written by `auth_service.dart:733 ensureStubProfileForCurrentUser`,
+  which creates a stub with **`'onboard': false`**.
+* `onboarding_controller.checkResumeState` routes `onboard = true` → `OnboardingStep.completed`
+  → `desired = null` → **no redirect, straight home**. Only `onboard = false` reaches
+  `_resumeFromProfile`. **No code path anywhere takes an `onboard = true` profile into any
+  further onboarding step.**
+
+So `onboard = true` cannot be a resume marker in the running app: it is the flag that ends
+resume. Live state agrees — only **2** profiles hold `onboard = false`, both created January
+2026, against 154 `onboard = true`.
+
+#### Decision 3 — The applied migration did **not** break the resume design. It does not roll back
+
+The feared regression was "stage 1 sets `onboard = true`, stage 2 happens in a later session,
+and the new RPC now demands stage 2's data up front." That regression is not possible, because
+the fold **did not move where `onboard = true` sits in the user journey**. It was always set by
+the profile-creation call, and the persona and sport writes always ran in that same screen
+seconds later — never in a later session. There was only ever one sitting. What the fold
+changed is narrow and correct: those writes now succeed or fail *together* with the flag.
+
+Rejected: **running `supabase/schema/rollback/kan48_ROLLBACK_rpc_onboard_profile.sql`.** It
+restores a version that sets `onboard = true` inline and writes no persona row — reinstating
+two defects to fix a regression that does not exist.
+
+#### Decision 4 — One genuine new failure mode, currently unreachable, and it is documented not removed
+
+The migration `RAISE`s when `persona_type = 'organiser'` and `p_preferred_sport IS NULL`,
+because `organiser.sport` is `NOT NULL`. Before the fold such a user onboarded fine. Verified
+unreachable from the live client: `primary_sport_selection_screen.dart:56` refuses to continue
+without a selection and `:201` disables the button, and every persona is routed through that
+screen unconditionally. The one organiser in production with a null `preferred_sport` predates
+this flow. Kept rather than softened — the alternative is to skip the organiser row, which is
+exactly the gap KAN-48 closed — but it is now a **client-side guarantee the RPC depends on**,
+and any future "skip" affordance on that screen breaks onboarding for organisers.
+
+Accepted trade, stated plainly: the fold converts a silent partial success into a visible,
+retryable failure. That is the right direction for integrity, and it is a live availability
+risk against a defect that is no longer occurring (Decision 5).
+
+#### Decision 5 — The 48 rows are damage, but **historical** damage. KAN-93 is not void; it is not urgent
+
+Re-derived independently, 2026-08-30, `onboard = true`, n=154: **36** of 124 players, **9** of
+19 organisers, **3** of 5 hosts have no persona-extension row — **48**; and **5** players (not
+6) have `preferred_sport` set with no `sport_profiles` row. They are not paused users:
+
+* **47 of the 48 were last seen more than a day after they were created** — they got into the
+  app and kept using it.
+* **None was created after 2026-04.** 39 of 48 are from November–December 2025.
+* **70 profiles have onboarded since 2026-05-01 with zero persona-row gaps.**
+
+A resume state nobody has entered in four months is not a resume state. These are real
+incomplete rows from an older flow, not users mid-journey — but the leak that made them closed
+itself months ago, so the backfill is a cleanup, not an incident.
+
+**Consequence.**
+
+* **KAN-48** — stands. Migration stays applied; rollback artifact retained but not to be run.
+* **KAN-92** — stands, and `T-037` Decision 3 is *strengthened*: `profile_completion` is still
+  NULL on 156 of 156 rows, so the resume ladder's two named branches remain dead. The
+  reconciliation must also decide, explicitly, whether the orphaned stage-2 chain is wired up
+  or deleted — that is a **product** question for `cpo`, not a technical one.
+* **KAN-93** — valid but downgraded to cleanup; no longer blocks anything.
+* Nothing further changes on onboarding without the PO, per their instruction.
+
+**Status:** ACTIVE — supersedes the premise of `T-037` where the two conflict; `T-037`'s
+Decisions 1–3 survive intact. `cto` ruling on live read-only verification, 2026-08-30.
+
+---
+
+### T-039 — Push is broken at the Supabase functions gateway, not in our code; `verify_jwt: false` on `send-push-notification` is correct, and it must be pinned in `config.toml`
+**Date:** 2026-08-31
+
+**Context.** Push notifications are 100% failing app-wide, every kind, every platform.
+`notifications-specialist-3` diagnosed it on KAN-81 (comment 10290): `net._http_response`
+holds 3 rows, all `401 {"code":"UNAUTHORIZED_LEGACY_JWT","message":"Invalid JWT"}` — a body
+`send-push-notification` cannot produce (its every 401 path returns `{"error":"Unauthorized"}`),
+therefore a platform-gateway rejection ahead of the function. Proposed fix: set
+`verify_jwt: false`, since the function already authenticates itself.
+
+**The diagnosis is sound and is accepted.** Re-verified independently, live, read-only:
+
+* `list_edge_functions` → `send-push-notification` `verify_jwt: true`, version 10.
+* `trg_push_on_notification_insert` sends exactly two credentials —
+  `Authorization: Bearer <vault supabase_anon_key>` and `x-trigger-secret`. There is no
+  other push path; the client-side sender was deleted 2026-07-11.
+* `POST /functions/v1/send-push-notification` with the legacy anon key →
+  `401 UNAUTHORIZED_LEGACY_JWT`. Reproduces the failure exactly.
+* Control: `detect-country` (`verify_jwt: false`) → `200`. The gateway is the variable.
+
+**Decision 1 — `verify_jwt: false` on `send-push-notification`. Approved.**
+
+**Why — the obvious alternative is empirically dead, which is the part the diagnosis did not
+prove.** "Rotate the credential the trigger sends" is the fix a reviewer reaches for first, and
+it does not work here:
+
+* Publishable key `sb_publishable_…` as Bearer → `401 UNAUTHORIZED_LEGACY_JWT`.
+* Publishable in `apikey` + either key as Bearer → same `401`.
+* Garbage bearer returns a *different* code, `UNAUTHORIZED_INVALID_JWT_FORMAT` — so the
+  gateway is classifying our real keys as legacy and refusing them by policy, not failing to
+  parse them.
+
+No static API key obtainable by a database trigger satisfies this gate. Only a JWT signed by
+the project's **current** signing key does — which is why `broadcast-notification` (real admin
+browser sessions) is unaffected and stays at `verify_jwt: true`. A trigger cannot mint one.
+Turning the gate off is the only remaining option, and it is Supabase's documented posture for
+webhook-invoked functions.
+
+**Why it is safe — the function's own lanes were checked, not assumed:**
+
+* Trusted lane: `x-trigger-secret`, vault-held, **64 characters**, constant-time compared.
+  That secret becomes the sole gate on the fan-out path; at 64 chars it carries it.
+* Per-user lane: `auth.getUser()` via an anon-key client. **This was the real risk** — if the
+  legacy anon key were dead everywhere, this lane would 401 for every caller. It is not:
+  GoTrue `/auth/v1/user` with that key returns `403 bad_jwt "missing sub claim"` (a verdict on
+  the bearer, not a rejection of the key), and PostgREST with it returns `200` with rows. The
+  rejection is **specific to the functions gateway**. Both lanes survive.
+* Unauthenticated callers keep hitting the missing-header 401, then the block check and the
+  per-caller rate limit. Nothing that `verify_jwt` was protecting is left unprotected.
+
+**Decision 2 — one required change to the proposed fix: it is not "no code change needed".**
+`supabase/config.toml` has no `[functions.*]` section at all, so `verify_jwt` exists only as
+dashboard state. A later `supabase functions deploy` would re-apply the default and silently
+re-break push, with no diff to point at. The fix must include:
+
+```toml
+[functions.send-push-notification]
+verify_jwt = false
+```
+
+This is the same failure shape as `CREATE OR REPLACE VIEW` silently resetting
+`security_invoker` (`CONVENTIONS` §6c): a platform-level flag that a routine redeploy resets.
+Config-as-state is not a fix, it is a countdown.
+
+**Rejected alternatives.**
+
+* *Rotate the vault key to a publishable key* — measured, rejected: same 401 (above).
+* *Have the trigger mint a signing-key JWT* — a `pg_crypto` signing path inside a trigger, to
+  reproduce a gate the function does not need. Cost without benefit.
+* *Dashboard toggle only* — rejected by Decision 2.
+* *Revert the platform to legacy JWT auth* — trades a working system for a deprecated one and
+  would affect the whole project, not this function.
+
+**Consequence.**
+
+* KAN-81 is **not** the home for this. Its scope is the `get_user_fcm_tokens` DROP, which is
+  applied and verified, and which the diagnosis itself rules out as a cause. The gateway
+  failure needs its **own ticket**; KAN-81's AC2 ("push still sends end-to-end") cannot be
+  satisfied until that ticket ships, and KAN-81 is blocked on it rather than owning it.
+* Per the PO, this does **not** break sprint 2's standing no-commit rule. Not applied now;
+  scheduled into the sprint-end batch.
+* When it ships, AC is a real observed send — `net._http_response` showing a non-401 — not a
+  green deploy. The whole reason this went undetected is that nobody looked at that table.
+
+**Status:** ACTIVE — `cto` ruling on independent live read-only verification, 2026-08-31.
+Fix approved with the `config.toml` amendment; NOT applied.
+
+### T-040 — Amends `T-020(a)`: a definer blocklist is an oracle, so its EXECUTE surface is part of the ruling; and `_get_context_config` does not need to become definer at all
+**Date:** 2026-08-31
+**Decision:** `T-020(a)` stands — `content_hits_blocklist` becomes `SECURITY DEFINER` and direct
+access to `safety_blocklist_terms` is revoked, no read policy. Two amendments, both from live
+measurement taken while authoring the KAN-68 migration:
+
+**(a) `content_hits_blocklist` is granted to `authenticated` only.** `EXECUTE` is revoked from
+`PUBLIC` and from `anon`.
+
+**(b) `_get_context_config` stays `SECURITY INVOKER`.** It loses its `anon` and `authenticated`
+`EXECUTE` grants instead. `context_rating_config` is still revoked from both roles as `T-020`
+ruled.
+
+**Why (a).** `T-020` ruled on the table read and did not reach the `EXECUTE` surface that its own
+remedy creates. A `SECURITY DEFINER` function returning a hit **count** is an oracle, and every
+public definer function in this project is a PostgREST RPC endpoint reachable by `anon`. Left
+anon-callable, an unauthenticated attacker recovers the banned terms by probing — reintroducing
+through the front door the exact leak `T-020` closed at the table. Narrowing to `authenticated`
+costs nothing: the only call site is a method on the live `ModerationService`, always behind a
+signed-in session. The revoke must name `PUBLIC` **and** `anon` — an anon-reachable `EXECUTE` has
+two independent sources here and revoking one leaves the other.
+
+**Why (b).** Measured 2026-08-31: `_get_context_config`'s only callers are `venue_rating_recompute`
+and `game_rating_recompute`, both `prosecdef=true`. A `SECURITY INVOKER` function called from a
+`SECURITY DEFINER` function already executes with the definer's privileges, so those two callers
+reach `context_rating_config` regardless of RLS. No Dart caller exists. Making it definer would
+therefore buy nothing and would mint a **new** anon-reachable definer RPC — the failure mode (a)
+exists to prevent. `T-020`'s goal (the config is not readable by the people it prices) is met by
+the revokes alone.
+
+**Rejected — "same treatment" applied literally.** `T-020` said "same for `context_rating_config`
+via `_get_context_config`". Symmetry is not the argument; the argument was that a control's data
+must not be readable by those it constrains. The narrower instrument satisfies it, so the wider
+one is unjustified privilege.
+
+**Rejected — a read policy for `authenticated` on either table.** Restated from `T-020` and still
+refused. This is also **not** `T-012` by analogy: `T-012`'s revoke-not-policies stance covers
+definer-*funnel* tables. Both functions here were `prosecdef=false`, so these tables were
+*unreachable*, not access-controlled. Same axis, different objects, different instrument.
+
+**Consequence.** The KAN-68 fix is SQL-only — the locale predicate corrected in the function body
+also fixes the Dart default (`locale = 'any'`), so **no Flutter change is needed** and no handoff
+to `flutter-feature-agent` is required. `is_regex = true` terms remain silently unevaluated; that
+is a separate pre-existing gap, deliberately not folded in, and needs its own decision on engine
+and timeout budget. Verification is `set local role authenticated` and must include a
+*permission denied* on the table itself — a `0` there would mean RLS is doing the hiding rather
+than the grant, which is the weaker state.
+
+**Status:** ACTIVE — authored, **not applied**. Migration
+`supabase/migrations/20260831120000_kan68_fix_safety_blocklist_fail_open.sql`. Application to
+production is PO-only (decision 019).
