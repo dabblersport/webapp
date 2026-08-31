@@ -50,7 +50,10 @@ class FeatureFlags {
   static const bool multiSport = true;
   static const bool organiserProfile = true;
   static const bool socialFeed = true; // NOW ENABLED FOR MVP
-  static const bool messaging = true;
+  // KAN-45: direct messaging / chat is not wired up — the socialChat and
+  // socialMessages routes only reach a "Coming Soon" placeholder. Keep this
+  // false until a real chat screen backs those routes.
+  static const bool messaging = false;
   static const bool notifications = true;
   static const bool squads = true;
   static const bool venuesBooking = true; // venues remain read-only

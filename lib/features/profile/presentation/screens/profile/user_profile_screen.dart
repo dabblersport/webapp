@@ -1,5 +1,6 @@
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter/material.dart';
@@ -1087,25 +1088,29 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     return Row(
       children: [
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: OutlinedButton(
-            onPressed: () => _sendMessage(context),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.zero,
-              foregroundColor: colorScheme.onSurface,
-              side: BorderSide(
-                color: colorScheme.onSurface.withValues(alpha: 0.3),
+        // KAN-45: chat isn't wired up (this route only reaches a
+        // "Coming Soon" placeholder) — hide the button until it ships.
+        if (FeatureFlags.messaging) ...[
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: OutlinedButton(
+              onPressed: () => _sendMessage(context),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                foregroundColor: colorScheme.onSurface,
+                side: BorderSide(
+                  color: colorScheme.onSurface.withValues(alpha: 0.3),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              child: const Icon(Iconsax.message_copy, size: 20),
             ),
-            child: const Icon(Iconsax.message_copy, size: 20),
           ),
-        ),
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           child: (myProfileId == null || targetProfileId == null)
                 ? OutlinedButton.icon(
