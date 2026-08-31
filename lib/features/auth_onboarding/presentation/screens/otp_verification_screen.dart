@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
@@ -221,6 +223,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
       if (response.session != null) {
         await ref.read(simpleAuthProvider.notifier).refreshAuthState();
+      }
+
+      if (widget.userExistsBeforeOtp == false) {
+        unawaited(AnalyticsService.trackEvent('signup'));
       }
 
       if (mounted) {
