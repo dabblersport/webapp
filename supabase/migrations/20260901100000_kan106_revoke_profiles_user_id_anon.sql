@@ -1,0 +1,103 @@
+-- KAN-106 (SEC-17b): public.profiles leaks 154 raw auth.users UUIDs to anon
+-- via the profiles_select_public policy (USING (is_active = true), PUBLIC
+-- role) combined with an anon column-SELECT grant on profiles.user_id.
+--
+-- Same defect class as KAN-87 (v_game_card.creator_user_id), six times the
+-- surface (154 distinct uids vs 26), on the base table rather than a view.
+-- See docs/DECISIONS.md T-041 consequence 3.
+--
+-- Measured live, read-only, 2026-08-31/2026-09-01:
+--   SET LOCAL ROLE anon; SELECT count(*), count(DISTINCT user_id)
+--     FROM public.profiles;
+--   -> ANON_PROFILE_ROWS=154 DISTINCT_AUTH_UIDS=154
+--
+-- Reachability sweep performed before writing this file (KAN-106 AC1):
+--
+-- Dart call sites. Both live profile datasources project user_id from
+-- `profiles` (lib/data/repositories/supabase_profile_repository.dart:34-35
+-- `_baseProfileColumns`; lib/features/profile/data/datasources/
+-- supabase_profile_datasource.dart uses `select('*')` on the same table).
+-- Every route that can reach either of them is behind
+-- lib/app/app_router.dart's `_handleRedirect`, which sends an unauthenticated
+-- user to the landing page before any profile fetch can run -- so in-app
+-- traffic never executes these calls as the anon Postgres role. The anon
+-- role is only reachable by a direct REST call against the publishable key,
+-- outside the app, which is exactly SEC-17's threat model (T-001/T-041) and
+-- is unaffected by revoking anon's grant: authenticated keeps SELECT on this
+-- column, so every real Dart caller (always authenticated once past the
+-- redirect gate) is unaffected.
+--
+-- Views selecting profiles.user_id (public schema, checked one by one):
+--   v_my_actors, v_actor_context, v_access_matrix, v_profile_editable
+--     -> security_invoker = true AND each filters WHERE user_id = auth.uid()
+--        (or an equivalent EXISTS keyed the same way). As anon, auth.uid()
+--        IS NULL, so these already return 0 rows regardless of the column
+--        grant on the base table. Granted to anon/authenticated but not a
+--        leak; untouched by this migration.
+--   v_profile_public
+--     -> already omits user_id from its projection. Pre-existing correct
+--        pattern; untouched.
+--   v_needs_organiser, v_sport_profiles_with_user, v_any_author,
+--   v_posts_integrity_violations
+--     -> select user_id but carry NO anon or authenticated grant at all
+--        (information_schema.role_table_grants). Unreachable, not a leak.
+--        Per T-015/T-024 (revoke-not-add-policies for a zero-policy/
+--        zero-grant surface reached deliberately through a funnel), nothing
+--        to revoke here and out of this migration's scope.
+--   v_mod_queue_open
+--     -> selects profiles via a LEFT JOIN for username display, granted to
+--        authenticated only (no anon grant). Already covered by its own
+--        `is_admin(auth.uid())` gate (KAN-56 lineage). Not in scope.
+--
+-- Definer functions. A column-level REVOKE cannot close a SECURITY DEFINER
+-- function that already selects profiles.user_id internally -- it runs with
+-- the definer's own privileges, not the caller's grants. Several
+-- anon-executable SECURITY DEFINER functions return profiles.user_id in
+-- their result set (whois, rpc_search_users, rpc_get_friends,
+-- rpc_get_friend_suggestions, rpc_friend_requests_inbox/outbox,
+-- admin_whois_profile). `whois(p_username)` in particular has no auth check
+-- of any kind and is not called anywhere in lib/ -- a live, unused,
+-- unauthenticated username -> auth.users-UUID resolver. This is a separate,
+-- more severe leak than the one this ticket scopes (a column grant on the
+-- table cannot cause it and revoking one does not fix it). Per the KAN-87/
+-- T-041 precedent ("this does not change KAN-87's scope; it gets its own
+-- ticket"), it is reported alongside this migration and NOT folded in here.
+-- Flagged to cto/PO for a follow-up ticket.
+--
+-- Fix: column-level REVOKE of SELECT on profiles.user_id from anon only.
+-- authenticated and service_role are untouched. Row-level access via
+-- profiles_select_public (is_active = true) is unchanged -- anon profile
+-- browsing keeps working, just without the raw auth.users identifier.
+--
+-- Rejected -- narrower public view instead of a column revoke. profiles is
+-- already the object anon browsing hits directly (no existing anon-facing
+-- view sits in front of it the way v_game_card sits in front of games), so
+-- introducing one now would be a second read path for the same table with
+-- its own drift risk, for no benefit over a plain column-level REVOKE.
+--
+-- Rejected -- revoking the anon INSERT/UPDATE column grants on user_id
+-- found during this sweep. Every INSERT/UPDATE policy on profiles checks
+-- user_id = auth.uid(), which anon (auth.uid() IS NULL) can never satisfy --
+-- those grants are already dead weight enforced by RLS, not a live write
+-- path. Out of scope for a SELECT-leak ticket; not touched here to keep this
+-- migration surgical.
+
+BEGIN;
+
+REVOKE SELECT (user_id) ON public.profiles FROM anon;
+
+COMMIT;
+
+-- ============================================================================
+-- VERIFICATION -- to be run by whoever applies this (cto/PO), not run here.
+-- ============================================================================
+-- 1. SET LOCAL ROLE anon; SELECT count(*) FROM public.profiles;
+--      -- must still return 154 (row-level access unchanged; a drop to 0
+--      -- would mean the policy broke, not just the column).
+-- 2. SET LOCAL ROLE anon; SELECT user_id FROM public.profiles LIMIT 1;
+--      -- must fail: ERROR 42501 permission denied for column user_id.
+-- 3. SET LOCAL ROLE anon; SELECT * FROM public.profiles LIMIT 1;
+--      -- must fail the same way (select('*') from the client hits this).
+-- 4. As a real authenticated JWT: SELECT id, user_id, username FROM
+--    public.profiles WHERE user_id = auth.uid();
+--      -- must still return the caller's own row unchanged.
