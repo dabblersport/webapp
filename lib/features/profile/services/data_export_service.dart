@@ -587,18 +587,17 @@ class DataExportService {
       final response = await _supabase
           .from(SupabaseConfig.gamesTable)
           .select('''
-            *, 
-            game_participants!inner(user_id, joined_at, status, performance_rating),
-            messages(content, sent_at, sender_id)
+            *,
+            game_roster!inner(user_id, joined_at, status, role)
           ''')
-          .eq('game_participants.user_id', userId)
+          .eq('game_roster.user_id', userId)
           .order('created_at', ascending: false);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'games, game_participants, messages tables',
+              'data_source': 'games, game_roster tables',
               'purpose': 'Game history and social interaction tracking',
               'legal_basis': 'Contract performance and legitimate interest',
             },
@@ -659,9 +658,9 @@ class DataExportService {
     try {
       final twoYearsAgo = DateTime.now().subtract(Duration(days: 730));
       final response = await _supabase
-          .from(SupabaseConfig.auditLogsTable)
+          .from(SupabaseConfig.auditEventsTable)
           .select()
-          .eq('user_id', userId)
+          .eq('actor_user_id', userId)
           .gte('created_at', twoYearsAgo.toIso8601String())
           .order('created_at', ascending: false)
           .limit(5000);
@@ -670,7 +669,7 @@ class DataExportService {
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'audit_logs table',
+              'data_source': 'audit_events table',
               'purpose': 'Security monitoring and compliance',
               'legal_basis': 'Legitimate interest (security)',
               'retention_period': '2 years',
@@ -715,10 +714,16 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getConnectionsData(String userId) async {
     try {
-      final friendships = await _supabase
-          .from(SupabaseConfig.friendshipsTable)
-          .select('*, profiles!friend_id(name, email)')
-          .or('user_id.eq.$userId,friend_id.eq.$userId');
+      // Note: exports the follow graph (who this user follows / is followed
+      // by), not circle membership. `circles`/`circle_members` is the other
+      // "connections" concept in this schema and isn't interchangeable with
+      // follows — revisit if export scope is meant to mean "my circles".
+      final follows = await _supabase
+          .from(SupabaseConfig.profileFollowsTable)
+          .select()
+          .or(
+            'follower_profile_id.eq.$userId,following_profile_id.eq.$userId',
+          );
 
       final blockedUsers = await _supabase
           .from(SupabaseConfig.userBlocksTable)
@@ -726,9 +731,7 @@ class DataExportService {
           .eq('blocker_user_id', userId);
 
       return [
-            ...friendships.map(
-              (item) => {...item, 'connection_type': 'friendship'},
-            ),
+            ...follows.map((item) => {...item, 'connection_type': 'follow'}),
             ...blockedUsers.map(
               (item) => {...item, 'connection_type': 'blocked'},
             ),
@@ -736,7 +739,7 @@ class DataExportService {
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'friendships, user_blocks tables',
+              'data_source': 'profile_follows, user_blocks tables',
               'purpose': 'Social connection management',
               'legal_basis': 'User consent and contract performance',
             },
@@ -748,6 +751,10 @@ class DataExportService {
     }
   }
 
+  // Note: private messaging isn't a built feature yet (no messages/DM/
+  // conversation table exists in production) - this returns null via the
+  // catch below, not a bug to fix, just nothing to export until that
+  // feature ships.
   Future<List<Map<String, dynamic>>?> _getMessagesData(String userId) async {
     try {
       final sentMessages = await _supabase
@@ -815,22 +822,23 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getMediaMetadata(String userId) async {
     try {
+      // Note: covers media attached to this user's posts (post_media joined
+      // via posts.author) — there is no general per-user upload library
+      // table, so media never attached to a post is out of scope here.
       final response = await _supabase
-          .from(SupabaseConfig.userMediaTable)
-          .select(
-            'file_name, file_type, file_size, uploaded_at, media_category',
-          )
-          .eq('user_id', userId);
+          .from(SupabaseConfig.postMediaTable)
+          .select('media_type, url, posts!inner(author)')
+          .eq('posts.author', userId);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'user_media table',
+              'data_source': 'post_media table (joined via posts.author)',
               'purpose': 'Profile and content management',
               'legal_basis': 'User consent',
               'note':
-                  'Only metadata included - actual files not exported for security',
+                  'Only media attached to your posts is included - metadata only, actual files not exported for security',
             },
           )
           .toList();
@@ -843,17 +851,16 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getLocationData(String userId) async {
     try {
       final response = await _supabase
-          .from(SupabaseConfig.locationDataTable)
-          .select('approximate_location, recorded_at, purpose, accuracy')
-          .eq('user_id', userId)
-          .order('recorded_at', ascending: false)
-          .limit(1000);
+          .from(SupabaseConfig.profileLocationsTable)
+          .select('lat, lng, label, area_id, geo_location_id, is_primary')
+          .eq('profile_id', userId)
+          .order('is_primary', ascending: false);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'location_data table',
+              'data_source': 'profile_locations table',
               'purpose': 'Location-based game matching and services',
               'legal_basis': 'User consent',
               'note':
@@ -871,16 +878,19 @@ class DataExportService {
     String userId,
   ) async {
     try {
+      // Note: this only covers push token + platform, not full device info
+      // (OS version, model, app version) — a real scope reduction, since no
+      // table storing that broader device detail exists.
       final response = await _supabase
-          .from(SupabaseConfig.deviceInfoTable)
-          .select('device_type, os_version, app_version, last_seen_at')
+          .from(SupabaseConfig.fcmTokensTable)
+          .select('platform, created_at, updated_at')
           .eq('user_id', userId);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'device_info table',
+              'data_source': 'fcm_tokens table',
               'purpose': 'App functionality and technical support',
               'legal_basis': 'Legitimate interest (technical support)',
             },
@@ -894,16 +904,16 @@ class DataExportService {
 
   Future<Map<String, dynamic>?> _getPaymentData(String userId) async {
     try {
+      // Note: this is the personal payment-attempt record for this user, not
+      // the organiser/settlement views (financial_ledger, wallet_ledger).
       final response = await _supabase
-          .from(SupabaseConfig.paymentRecordsTable)
-          .select(
-            'transaction_id, amount, currency, status, created_at, subscription_type',
-          )
+          .from(SupabaseConfig.paymentIntentsTable)
+          .select('booking_id, amount, currency, provider, status')
           .eq('user_id', userId);
 
       return {
         'transactions': response,
-        'data_source': 'payment_records table',
+        'data_source': 'payment_intents table',
         'purpose': 'Billing and subscription management',
         'legal_basis': 'Contract performance and legal obligation',
         'note':

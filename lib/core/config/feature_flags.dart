@@ -63,6 +63,16 @@ class FeatureFlags {
   // lib/data/models/rewards/ are unreferenced dead code, not a hidden
   // feature. Rename reflects that this flag's job is check-in-specific.
   static const bool enableEarlyBirdCheckIn = false;
+  // KAN-52/KAN-103/P-029: PDPL data export is real legal scope, not a
+  // product descope — the PO ruled it must be built, not waived. But
+  // "built" means all data categories: 5 tables it depends on
+  // (performance_metrics, user_game_statistics, messages, login_history,
+  // third_party_connections) are genuinely missing from the schema and are
+  // their own future sprint. Until then, silently omitting categories from
+  // a PDPL export is exactly the advertised-affordance-that-does-nothing
+  // pattern this flag family exists to hide (same rule as `messaging`
+  // above). Keep false until the export is actually complete.
+  static const bool enableDataExport = false;
 
   /// Game Creation Features (Split by profile type)
   static const bool enablePlayerGameCreation =
