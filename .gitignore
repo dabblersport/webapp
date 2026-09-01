@@ -202,3 +202,7 @@ figma-mcp/
 # iOS export / build artifacts
 *.ipa
 ios/Runner */
+
+# Signing certificates exported for App Links / Play verification —
+# public certs, but build scratch that does not belong in the repo
+*.der
