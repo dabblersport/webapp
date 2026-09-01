@@ -231,6 +231,11 @@ class SupabaseConfig {
   static const String deleteMyAccountFn = 'delete_my_account';
   static const String getDataSourceMetricsFn = 'get_data_source_metrics';
   static const String getHomeFeedFn = 'get_home_feed';
+  // KAN-103: SECURITY DEFINER wrappers over auth.audit_log_entries /
+  // auth.identities, scoped to auth.uid() — see
+  // 20260901170000_kan103_login_history_and_linked_identities_wrappers.sql
+  static const String getMyLoginHistoryFn = 'get_my_login_history';
+  static const String getMyLinkedIdentitiesFn = 'get_my_linked_identities';
   static const String incrementNotificationInteractionFn =
       'increment_notification_interaction';
   static const String processQueuedEventsFn = 'process_queued_events';

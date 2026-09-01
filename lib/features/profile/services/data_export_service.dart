@@ -552,23 +552,55 @@ class DataExportService {
     String userId,
   ) async {
     try {
-      final gameStats = await _supabase
-          .from(SupabaseConfig.userGameStatisticsTable)
-          .select()
-          .eq('user_id', userId);
+      // Reconciled (KAN-103): `user_game_statistics` and
+      // `performance_metrics` never existed as tables. The real gameplay
+      // performance data lives directly on `sport_profiles` (per-sport
+      // columns: matches_played, xp_*, form_score, attendance/cancellation/
+      // punctuality/teamwork/reliability scores, performance_highlights,
+      // performance_by_venue), and the cross-sport reputation aggregate
+      // lives in `user_reputation_aggregate`. This is not a rename of a
+      // missing table into an existing one used for something else — it's
+      // the actual data this category was always meant to describe.
+      final profileResponse = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select('id')
+          .eq('user_id', userId)
+          .eq('profile_type', 'personal')
+          .maybeSingle();
 
-      final performanceMetrics = await _supabase
-          .from(SupabaseConfig.performanceMetricsTable)
+      List<dynamic> perSportPerformance = const [];
+      if (profileResponse != null) {
+        final profileId = profileResponse['id'] as String;
+        perSportPerformance = await _supabase
+            .from(SupabaseConfig.sportProfilesTable)
+            .select(
+              'sport, skill_level, overall_level, xp_total, xp_level, '
+              'matches_played, form_score, form_trend, last_5_matches, '
+              'attendance_rate, cancellation_rate, punctuality_score, '
+              'teamwork_score, reliability_score, rating_count, '
+              'rating_total, performance_highlights, performance_by_venue',
+            )
+            .eq('profile_id', profileId);
+      }
+
+      final reputationAggregate = await _supabase
+          .from(SupabaseConfig.userReputationAggregateTable)
           .select()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .maybeSingle();
 
       return {
-        'game_statistics': gameStats,
-        'performance_metrics': performanceMetrics,
-        'data_source': 'user_game_statistics, performance_metrics tables',
+        'per_sport_performance': perSportPerformance,
+        'reputation_aggregate': reputationAggregate,
+        'data_source':
+            'sport_profiles (performance columns), user_reputation_aggregate tables',
         'purpose': 'Performance tracking and skill assessment',
         'legal_basis': 'User consent',
         'retention_period': '3 years or until consent withdrawal',
+        'note':
+            'There is no separate user_game_statistics/performance_metrics '
+            'table - this reflects the actual gameplay performance and '
+            'reputation data Dabbler stores about you.',
       };
     } catch (e) {
       Logger.warning('Could not fetch statistics data', e);
@@ -680,22 +712,28 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getLoginHistory(String userId) async {
     try {
-      final sixMonthsAgo = DateTime.now().subtract(Duration(days: 180));
-      final response = await _supabase
-          .from(SupabaseConfig.loginHistoryTable)
-          .select(
-            'login_at, ip_address, user_agent, device_info, location_info',
-          )
-          .eq('user_id', userId)
-          .gte('login_at', sixMonthsAgo.toIso8601String())
-          .order('login_at', ascending: false)
-          .limit(1000);
+      // Reconciled (KAN-103): `login_history` never existed as a public
+      // table. Real login events live in Supabase's own
+      // `auth.audit_log_entries`, which isn't directly client-readable
+      // (PostgREST doesn't expose `auth`, and anon/authenticated have no
+      // grants on it). This calls the `get_my_login_history` SECURITY
+      // DEFINER wrapper instead, which filters strictly to auth.uid() so
+      // only the caller's own login events ever come back - same pattern
+      // as `can_view_venue_bookings`.
+      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+      final response = await _supabase.rpc(
+        SupabaseConfig.getMyLoginHistoryFn,
+        params: {
+          'p_since': sixMonthsAgo.toIso8601String(),
+          'p_limit': 1000,
+        },
+      );
 
-      return response
+      return (response as List)
           .map<Map<String, dynamic>>(
             (item) => {
-              ...item,
-              'data_source': 'login_history table',
+              ...(item as Map<String, dynamic>),
+              'data_source': 'auth.audit_log_entries (via get_my_login_history)',
               'purpose': 'Security monitoring and fraud prevention',
               'legal_basis': 'Legitimate interest (security)',
               'retention_period': '6 months',
@@ -882,17 +920,25 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getThirdPartyData(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseConfig.thirdPartyConnectionsTable)
-          .select('provider, connected_at, permissions_granted, last_sync')
-          .eq('user_id', userId);
+      // Reconciled (KAN-103): `third_party_connections` never existed as a
+      // public table. The real record of which third-party sign-in
+      // providers are linked to this account (e.g. Google Sign-In) lives
+      // in Supabase's own `auth.identities`, which isn't directly
+      // client-readable. This calls the `get_my_linked_identities`
+      // SECURITY DEFINER wrapper instead, filtered strictly to auth.uid()
+      // - same pattern as `get_my_login_history` /
+      // `can_view_venue_bookings`. Only connection metadata comes back;
+      // OAuth tokens and provider profile payloads are never exposed.
+      final response = await _supabase.rpc(
+        SupabaseConfig.getMyLinkedIdentitiesFn,
+      );
 
-      return response
+      return (response as List)
           .map<Map<String, dynamic>>(
             (item) => {
-              ...item,
-              'data_source': 'third_party_connections table',
-              'purpose': 'Social media integration and enhanced features',
+              ...(item as Map<String, dynamic>),
+              'data_source': 'auth.identities (via get_my_linked_identities)',
+              'purpose': 'Sign-in method management and account security',
               'legal_basis': 'User consent',
               'note':
                   'Third-party data is not stored - only connection metadata',
