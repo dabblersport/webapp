@@ -91,7 +91,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with TickerProviderStateMixin, RouteAware {
   late AnimationController _animationController;
   late AnimationController _refreshController;
-  late TickerProvider _tickerProvider;
   late TabController _tabController;
   int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();

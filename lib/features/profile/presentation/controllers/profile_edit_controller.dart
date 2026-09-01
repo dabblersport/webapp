@@ -359,7 +359,6 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
         break;
 
       case 'username':
-      case 'display_name':
         if (value != null && value.toString().length > 50) {
           return '${field.replaceAll('_', ' ').titleCase} cannot exceed 50 characters';
         }

@@ -21,8 +21,13 @@ class BenchConsumer extends ConsumerWidget {
             ElevatedButton(
               onPressed: () {
                 if (isActive) {
+                  // Fire-and-forget: triggering the action provider is the
+                  // point here, the refreshed value itself isn't consumed —
+                  // the explicit invalidate() below is what drives the UI.
+                  // ignore: unused_result
                   ref.refresh(benchMyProfileProvider(profileType));
                 } else {
+                  // ignore: unused_result
                   ref.refresh(unbenchMyProfileProvider(profileType));
                 }
                 ref.invalidate(myProfileActiveProvider(profileType));

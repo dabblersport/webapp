@@ -30,7 +30,6 @@ class CheckInProgressIndicator extends StatelessWidget {
     final isWeek1 = completedDays < 7;
     final currentWeek = isWeek1 ? 1 : 2;
     final daysInCurrentWeek = isWeek1 ? completedDays : (completedDays - 7);
-    final progressValue = daysInCurrentWeek / 7;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

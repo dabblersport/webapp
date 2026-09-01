@@ -591,7 +591,6 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   Widget _buildContinueButtonPill(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final canSubmit = _isEmailValid && !_isLoading;
     return OnboardingCTAButton(
       label: AppLocalizations.of(context).email_input_continue,

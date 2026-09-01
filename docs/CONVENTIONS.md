@@ -475,3 +475,25 @@ non-generated files currently exceed it and no mechanism enforces it (`MANIFESTO
   reaches the code under test.
 - An agent may add tests for code it owns. **Nobody deletes another owner's test.**
 - Run `flutter test` before reporting a task complete.
+
+## 11. CI LINT POLICY
+
+Decided under `KAN-112` (`DECISIONS.md` `T-042` follow-up), 2026-09-01.
+
+- **`flutter analyze` warnings are fatal in CI.** `ci.yml`'s Analyze step fails the build on
+  any warning (`unused_local_variable`, `unused_field`, `unused_element`,
+  `dead_null_aware_expression`, `dead_code`, `unreachable_switch_case`,
+  `unused_result`, etc.). Fix these in code before pushing to `Canary` — don't
+  suppress them in `analysis_options.yaml`.
+- **`flutter analyze` infos are advisory, not fatal, in CI.** `ci.yml` runs
+  `flutter analyze --no-fatal-infos`. Infos (`avoid_print`, `deprecated_member_use`,
+  `empty_catches`, `use_build_context_synchronously`, `type_literal_in_constant_pattern`,
+  `unintended_html_in_doc_comment`, `collection_methods_unrelated_type`) are real findings
+  worth fixing opportunistically when touching a file, but at ~56 pre-existing infos across
+  the app (mostly `avoid_print` in early-stage services), fixing them all in one pass is a
+  much larger, lower-value task than clearing the warnings was. This is a pragmatic call,
+  not a claim that they don't matter — an agent touching a file with infos in it should
+  still clean up what's local to that file.
+- If a specific lint rule needs a permanent, deliberate waiver, waive it **per-rule with a
+  comment explaining why** in `analysis_options.yaml`. Do not add a blanket `errors: ignore`
+  block — that hid this exact gate's failures from KAN-72 to KAN-112.

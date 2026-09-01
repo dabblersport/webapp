@@ -373,8 +373,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       });
     });
 
-    final bootstrapCompleted = ref.watch(profileBootstrapCompletedProvider);
-    final isProfileInitialized = ref.watch(initializeProfileDataProvider);
+    // Watched only to trigger a rebuild when these providers change.
+    ref.watch(profileBootstrapCompletedProvider);
+    ref.watch(initializeProfileDataProvider);
 
     final colorScheme = Theme.of(context).colorScheme;
 

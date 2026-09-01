@@ -125,7 +125,6 @@ class CirclePickerSheet extends ConsumerWidget {
     WidgetRef ref,
     UserCircle? circle,
   ) async {
-    final cs = Theme.of(context).colorScheme;
     await showAdaptiveSheet<void>(
       context: context,
       builder: (_) => CircleManagementSheet(circle: circle),

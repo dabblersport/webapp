@@ -240,15 +240,6 @@ class DataRetentionService {
       final user = _supabase.auth.currentUser;
       final userEmail = user?.email ?? 'unknown@email.com';
 
-      // Get display name from profiles
-      final userResponse = await _supabase
-          .from(SupabaseConfig.usersTable)
-          .select('display_name')
-          .eq('user_id', userId)
-          .single();
-
-      final userName = userResponse['display_name'];
-
       // This would integrate with your email service (e.g., SendGrid, AWS SES, etc.)
       Logger.info(
         '$_logTag: Would send cleanup notification to $userEmail for $dataType data',
