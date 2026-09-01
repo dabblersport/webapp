@@ -24,10 +24,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/email_veri
 
 // Profile Onboarding screens
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_welcome_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_sports_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_preferences_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_privacy_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_completion_screen.dart';
 
 // New Onboarding System screens
 import 'package:dabbler/features/auth_onboarding/presentation/screens/primary_sport_selection_screen.dart';
@@ -63,13 +59,11 @@ import 'package:dabbler/features/profile/presentation/screens/profile/profile_sc
 import 'package:dabbler/features/profile/presentation/screens/profile/sport_profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile_edit_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/settings/profile_avatar_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/profile_sports_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/preferences/game_preferences_screen.dart';
-import 'package:dabbler/features/profile/presentation/screens/preferences/availability_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/language_selection_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
@@ -163,6 +157,25 @@ class AppRouter {
     }
 
     try {
+      // ─── UNREGISTERED ROUTE GUARD (KAN-110) ───
+      // A cold load / direct URL entry / page refresh on a path that
+      // matches no route (mistyped, stale, or a bookmarked dead link) must
+      // redirect immediately, independent of auth-loading state. Without
+      // this, an unmatched cold-load location falls through to the
+      // "don't redirect while auth is loading" branch below and sits with
+      // no matched route to render and nothing forcing a redirect — a
+      // permanent blank screen. In-app navigation to an unknown route
+      // doesn't hit this because auth state has already resolved by then,
+      // so the unauthenticated/authenticated branches further down redirect
+      // it correctly on their own.
+      final requestedLocation = state.matchedLocation;
+      final hasMatchingRoute =
+          router.configuration.findMatch(requestedLocation).matches.isNotEmpty;
+      if (!hasMatchingRoute) {
+        logRoute('redirect (no matching route for $requestedLocation) -> ${RoutePaths.landing}');
+        return RoutePaths.landing;
+      }
+
       // Access Riverpod container to read auth/guest state
       final container = ProviderScope.containerOf(context, listen: false);
       final isAuthenticated = container.read(isAuthenticatedProvider);
@@ -705,49 +718,6 @@ class AppRouter {
       ),
     ),
 
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.onboardingSports,
-      name: RouteNames.onboardingSports,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingSportsScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    ),
-
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.onboardingPreferences,
-      name: RouteNames.onboardingPreferences,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingPreferencesScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    ),
-
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.onboardingPrivacy,
-      name: RouteNames.onboardingPrivacy,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingPrivacyScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    ),
-
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: RoutePaths.onboardingCompletion,
-      name: RouteNames.onboardingCompletion,
-      pageBuilder: (context, state) => ScaleTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingCompletionScreen(),
-      ),
-    ),
-
     // Interests Selection Route
     // Note: This is the sports interests selection during onboarding
     GoRoute(
@@ -946,7 +916,7 @@ class AppRouter {
       path: RoutePaths.rewards,
       name: RouteNames.rewards,
       redirect: (context, state) {
-        if (!FeatureFlags.enableRewards) {
+        if (!FeatureFlags.enableEarlyBirdCheckIn) {
           return RoutePaths.home;
         }
         return null;
@@ -1074,16 +1044,6 @@ class AppRouter {
       pageBuilder: (context, state) => BottomSheetTransitionPage(
         key: state.pageKey,
         child: const ProfileEditScreen(),
-      ),
-    ),
-
-    // Profile Photo route
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/profile/photo',
-      pageBuilder: (context, state) => ScaleTransitionPage(
-        key: state.pageKey,
-        child: const ProfileAvatarScreen(),
       ),
     ),
 
@@ -1316,16 +1276,6 @@ class AppRouter {
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
         child: const GamePreferencesScreen(),
-        type: SharedAxisType.horizontal,
-      ),
-    ),
-
-    GoRoute(
-      parentNavigatorKey: _rootNavigatorKey,
-      path: '/preferences/availability',
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const AvailabilityPreferencesScreen(),
         type: SharedAxisType.horizontal,
       ),
     ),

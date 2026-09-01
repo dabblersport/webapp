@@ -124,8 +124,11 @@ class SportProfileHeaderData {
   final List<advanced_badge.SportProfileBadge> badges;
 }
 
+typedef SportProfileHeaderKey = ({String userId, String? profileId});
+
 final sportProfileHeaderProvider = FutureProvider.autoDispose
-    .family<SportProfileHeaderData?, String>((ref, userId) async {
+    .family<SportProfileHeaderData?, SportProfileHeaderKey>((ref, args) async {
+      final userId = args.userId;
       if (userId.isEmpty) {
         return null;
       }
@@ -133,7 +136,10 @@ final sportProfileHeaderProvider = FutureProvider.autoDispose
       final service = ref.watch(sportProfileServiceProvider);
 
       try {
-        final profiles = await service.getSportProfilesForUser(userId);
+        final profiles = await service.getSportProfilesForUser(
+          userId,
+          profileId: args.profileId,
+        );
         if (profiles.isEmpty) {
           return null;
         }
@@ -393,7 +399,7 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
           result['sports_profiles'] = sportProfiles
               .map((sp) => sp.toJson())
               .toList();
-        } else if (personaType == 'organiser' || personaType == 'hoster') {
+        } else if (personaType == 'organiser' || personaType == 'host') {
           final organiserResponse = await client
               .from(SupabaseConfig.organiserTable)
               .select('*')
@@ -725,7 +731,7 @@ final followersCountProvider = FutureProvider.autoDispose.family<int, String>((
 });
 
 /// Following list: full profile data for profiles this user follows.
-/// Excludes hoster profiles and blocked users (via unified user_blocks).
+/// Excludes host profiles and blocked users (via unified user_blocks).
 final followingListProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, profileId) async {
       final supabase = Supabase.instance.client;
@@ -745,7 +751,7 @@ final followingListProvider = FutureProvider.autoDispose
         final profile = row['profiles'] as Map<String, dynamic>?;
         if (profile == null) continue;
         if (profile['is_active'] != true) continue;
-        if (profile['persona_type'] == 'hoster') continue;
+        if (profile['persona_type'] == 'host') continue;
         final userId = profile['user_id'] as String?;
         if (userId != null && blockedUserIds.contains(userId)) continue;
         profiles.add(profile);
@@ -799,7 +805,7 @@ final isBlockedProvider = FutureProvider.autoDispose
     });
 
 /// Search profiles by display name or username (for People / discover tab).
-/// Excludes hosters, blocked users, and current profile.
+/// Excludes hosts, blocked users, and current profile.
 final searchProfilesProvider = FutureProvider.autoDispose
     .family<
       List<Map<String, dynamic>>,
@@ -826,7 +832,7 @@ final searchProfilesProvider = FutureProvider.autoDispose
       final List<Map<String, dynamic>> results = [];
       for (final row in (response as List)) {
         final profile = Map<String, dynamic>.from(row);
-        if (profile['persona_type'] == 'hoster') continue;
+        if (profile['persona_type'] == 'host') continue;
         final userId = profile['user_id'] as String?;
         if (userId != null && blockedUserIds.contains(userId)) continue;
         results.add(profile);
@@ -835,7 +841,7 @@ final searchProfilesProvider = FutureProvider.autoDispose
     });
 
 /// Followers list: full profile data for profiles following this user.
-/// Excludes hoster profiles and blocked users (via unified user_blocks).
+/// Excludes host profiles and blocked users (via unified user_blocks).
 final followersListProvider = FutureProvider.autoDispose
     .family<List<Map<String, dynamic>>, String>((ref, profileId) async {
       final supabase = Supabase.instance.client;
@@ -855,7 +861,7 @@ final followersListProvider = FutureProvider.autoDispose
         final profile = row['profiles'] as Map<String, dynamic>?;
         if (profile == null) continue;
         if (profile['is_active'] != true) continue;
-        if (profile['persona_type'] == 'hoster') continue;
+        if (profile['persona_type'] == 'host') continue;
         final userId = profile['user_id'] as String?;
         if (userId != null && blockedUserIds.contains(userId)) continue;
         profiles.add(profile);

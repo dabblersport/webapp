@@ -712,7 +712,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interests_title_organiser => 'What do you intend to organise?';
 
   @override
-  String get interests_title_hoster => 'Which sports do you host?';
+  String get interests_title_host => 'Which sports do you host?';
 
   @override
   String get interests_title_socialiser =>
@@ -882,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome_screen_chip_organiser => 'Games organiser';
 
   @override
-  String get welcome_screen_chip_hoster => 'Venue host';
+  String get welcome_screen_chip_host => 'Venue host';
 
   @override
   String get welcome_screen_chip_socialiser => 'Sports socialiser';
@@ -920,19 +920,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Continue only when you\'re ready!';
 
   @override
-  String get welcome_screen_hoster_guidance =>
+  String get welcome_screen_host_guidance =>
       'Help players feel welcome by keeping information accurate and spaces ready.';
 
   @override
-  String get welcome_screen_hoster_philosophy =>
+  String get welcome_screen_host_philosophy =>
       'Clear availability and smooth coordination make everyone\'s experience better.';
 
   @override
-  String get welcome_screen_hoster_reminder =>
+  String get welcome_screen_host_reminder =>
       'Keep availability and details accurate.\nUpdate information as soon as things change.';
 
   @override
-  String get welcome_screen_hoster_emphasis =>
+  String get welcome_screen_host_emphasis =>
       'Continue only when you\'re ready!';
 
   @override
@@ -959,12 +959,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_welcome_step_profile => 'Creating your profile';
-
-  @override
-  String get onboarding_welcome_step_persona => 'Setting up your persona';
-
-  @override
-  String get onboarding_welcome_step_sport => 'Adding sport profile';
 
   @override
   String get social_onboarding_welcome_title => 'Welcome to Social';
@@ -1384,7 +1378,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_settings => 'Settings';
 
   @override
-  String get persona_label_hoster => 'Host';
+  String get persona_label_host => 'Host';
 
   @override
   String get persona_label_socialiser => 'Socialiser';

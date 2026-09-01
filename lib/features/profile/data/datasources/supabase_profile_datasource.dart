@@ -10,7 +10,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
   final String _usersTable = 'profiles'; // Changed from 'users' to 'profiles'
   // Profile columns from public.profiles (no email/phone - those are in auth.users)
   static const String _baseProfileColumns =
-      'id, user_id, username, display_name, avatar_url, created_at, updated_at, bio, age, city, country, gender, profile_type, intention, preferred_sport, interests, language, verified, is_active, geo_lat, geo_lng';
+      'id, user_id, username, display_name, avatar_url, created_at, updated_at, bio, age, city, country, gender, profile_type, persona_type, intention, preferred_sport, primary_sport, interests, language, verified, is_active, geo_lat:latitude, geo_lng:longitude';
   final String _sportProfilesTable = 'sport_profiles';
   // Note: user_statistics table does not exist - feature disabled for MVP1
   final String _avatarBucket = SupabaseConfig.avatarsBucket;
@@ -174,7 +174,7 @@ class SupabaseProfileDataSource implements ProfileRemoteDataSource {
     }
 
     if (personaType != null) {
-      // Filter by persona_type (player, organiser, hoster, socialiser)
+      // Filter by persona_type (player, organiser, host, socialiser)
       query = query.eq('persona_type', personaType);
       final response = await query.maybeSingle();
       if (response == null) {

@@ -48,10 +48,6 @@ class RoutePaths {
   static const String onboardingInterestsSelection =
       '/onboarding-interests-selection';
   static const String onboardingPrimarySport = '/onboarding-primary-sport';
-  static const String onboardingSports = '/onboarding-sports';
-  static const String onboardingPreferences = '/onboarding-preferences';
-  static const String onboardingPrivacy = '/onboarding-privacy';
-  static const String onboardingCompletion = '/onboarding-completion';
   static const String profileSwitcher = '/profile-switcher';
 
   // Add Persona Flow (from Settings)
@@ -171,10 +167,6 @@ class RouteNames {
   static const String onboardingInterestsSelection =
       'onboarding-interests-selection';
   static const String onboardingPrimarySport = 'onboarding-primary-sport';
-  static const String onboardingSports = 'onboarding-sports';
-  static const String onboardingPreferences = 'onboarding-preferences';
-  static const String onboardingPrivacy = 'onboarding-privacy';
-  static const String onboardingCompletion = 'onboarding-completion';
   static const String profileSwitcher = 'profile-switcher';
 
   // Add Persona Flow Routes

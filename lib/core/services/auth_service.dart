@@ -338,8 +338,11 @@ class AuthService {
   /// above).
   ///
   /// DEAD — zero call sites outside their own file, verified by grep,
-  /// nothing to clear: `core/analytics/analytics_storage.dart`,
-  /// `core/services/cache_service.dart`'s generic `CacheService`.
+  /// nothing to clear: `core/services/cache_service.dart`'s generic
+  /// `CacheService`. (`core/analytics/analytics_storage.dart` and
+  /// `analytics_widgets.dart`, formerly listed here, were deleted under
+  /// KAN-51 — the sink is server-authoritative via `rpc_track_event`, so
+  /// local event batching had nothing to do.)
   Future<void> signOut() async {
     try {
       await PushNotificationService.instance.revokeToken();
@@ -793,8 +796,8 @@ class AuthService {
 
   /// Complete onboarding by updating profile with all user data and setting onboard=TRUE
   /// Creates sport_profiles for ALL personas and persona-specific tables
-  /// Tables: auth.users → profiles (persona_type) → sport_profiles → [player|organiser|hoster]
-  /// Persona mapping: player→player table, organiser→organiser table, hoster→hoster table, socialiser→no table
+  /// Tables: auth.users → profiles (persona_type) → sport_profiles → [player|organiser|host]
+  /// Persona mapping: player→player table, organiser→organiser table, host→host table, socialiser→no table
   /// Resolves a country value (either a name like "United Arab Emirates" or
   /// already an ISO code like "AE") to the ref_countries ISO code.
   Future<String?> _resolveCountryCode(String? country) async {
@@ -831,12 +834,12 @@ class AuthService {
       }
 
       // Persona type is already mapped in intent_selection_screen:
-      // compete → player, organise → organiser, host → hoster, socialise → socialiser
+      // compete → player, organise → organiser, host → host, socialise → socialiser
       // Database validates persona_type in triggers when inserting into persona tables
       final personaType = intention; // Already mapped to final values in UI
 
       // Map persona_type to profile_type (structural container type)
-      // player → personal, organiser → business, hoster → venue, socialiser → personal
+      // player → personal, organiser → business, host → venue, socialiser → personal
       final String profileType;
       switch (personaType) {
         case 'player':
@@ -845,7 +848,7 @@ class AuthService {
         case 'organiser':
           profileType = 'business';
           break;
-        case 'hoster':
+        case 'host':
           profileType = 'venue';
           break;
         case 'socialiser':
@@ -891,9 +894,9 @@ class AuthService {
           'age': age,
           'gender': gender.toLowerCase(),
           'profile_type':
-              profileType, // Mapped from persona: player→personal, organiser→business, hoster→venue
+              profileType, // Mapped from persona: player→personal, organiser→business, host→venue
           'persona_type':
-              personaType, // User's chosen role: player, organiser, hoster, socialiser
+              personaType, // User's chosen role: player, organiser, host, socialiser
           'intention':
               intention, // Original intention value (compete, organise, host, socialise)
           'preferred_sport': preferredSport, // UUID from sports.id
@@ -927,9 +930,9 @@ class AuthService {
           'age': age,
           'gender': gender.toLowerCase(),
           'profile_type':
-              profileType, // Mapped from persona: player→personal, organiser→business, hoster→venue
+              profileType, // Mapped from persona: player→personal, organiser→business, host→venue
           'persona_type':
-              personaType, // User's chosen role: player, organiser, hoster, socialiser
+              personaType, // User's chosen role: player, organiser, host, socialiser
           'intention':
               intention, // Original intention value (compete, organise, host, socialise)
           'preferred_sport': preferredSport, // UUID from sports.id
@@ -1047,8 +1050,8 @@ class AuthService {
           // Log but don't fail completely
           debugPrint('Warning: Failed to create organiser record: $e');
         }
-      } else if (personaType == 'hoster') {
-        // Create host_profiles table for hosters
+      } else if (personaType == 'host') {
+        // Create host_profiles table for hosts
         try {
           final hostProfileData = {
             'profile_id': profileId,
@@ -1058,17 +1061,17 @@ class AuthService {
 
           // Check if host_profile already exists
           final existingHostProfile = await _supabase
-              .from(SupabaseConfig.hosterTable)
+              .from(SupabaseConfig.hostTable)
               .select('id')
               .eq('profile_id', profileId)
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase.from(SupabaseConfig.hosterTable).insert(hostProfileData);
+            await _supabase.from(SupabaseConfig.hostTable).insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
-          debugPrint('Warning: Failed to create hoster record: $e');
+          debugPrint('Warning: Failed to create host record: $e');
         }
       }
       // Note: 'socialiser' persona type does NOT create a persona-specific table
@@ -1114,8 +1117,10 @@ class AuthService {
     }
   }
 
-  /// Step 1: Create or update the profile row + avatar.
-  /// Returns the profileId.
+  /// Create the profile, persona-extension row, and (for players) the
+  /// sport_profiles row in one transaction via `rpc_onboard_profile`
+  /// (T-037/KAN-48) — plus the avatar, which is a separate storage call
+  /// outside that transaction. Returns the profileId.
   Future<String> createProfileStep({
     required String displayName,
     required String username,
@@ -1165,73 +1170,6 @@ class AuthService {
         .ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
-  }
-
-  /// Step 2: Create the persona-specific table row (player / organiser / hoster).
-  Future<void> createPersonaProfileStep(
-    String profileId,
-    String personaType, {
-    String? sportKey,
-  }) async {
-    if (personaType == 'player') {
-      try {
-        final existing = await _supabase
-            .from(SupabaseConfig.playerTable)
-            .select('id')
-            .eq('profile_id', profileId)
-            .maybeSingle();
-        if (existing == null) {
-          await _supabase.from(SupabaseConfig.playerTable).insert({'profile_id': profileId});
-        }
-      } catch (_) {}
-    } else if (personaType == 'organiser') {
-      try {
-        final existing = await _supabase
-            .from(SupabaseConfig.organiserTable)
-            .select('id')
-            .eq('profile_id', profileId)
-            .maybeSingle();
-        if (existing == null) {
-          await _supabase.from(SupabaseConfig.organiserTable).insert({
-            'profile_id': profileId,
-            if (sportKey != null) 'sport': sportKey,
-          });
-        }
-      } catch (_) {}
-    } else if (personaType == 'hoster') {
-      try {
-        final existing = await _supabase
-            .from(SupabaseConfig.hosterTable)
-            .select('id')
-            .eq('profile_id', profileId)
-            .maybeSingle();
-        if (existing == null) {
-          await _supabase.from(SupabaseConfig.hosterTable).insert({'profile_id': profileId});
-        }
-      } catch (_) {}
-    }
-    // socialiser: no persona table
-  }
-
-  /// Step 3: Create sport_profiles row via RPC (player-only guard enforced in DB).
-  Future<void> createSportProfileStep(
-    String profileId,
-    String preferredSportUuid,
-  ) async {
-    final sportRecord = await _supabase
-        .from(SupabaseConfig.sportsTable)
-        .select('id, sport_key')
-        .eq('id', preferredSportUuid)
-        .maybeSingle();
-    if (sportRecord == null) {
-      throw Exception('Sport "$preferredSportUuid" not found');
-    }
-    await _supabase.rpc(SupabaseConfig.rpcCreateSportProfileFn, params: {
-      'p_profile_id': profileId,
-      'p_sport_id': sportRecord['id'] as String,
-      'p_sport_key': sportRecord['sport_key'] as String,
-      'p_skill_level': 1,
-    });
   }
 
   /// Check if username already exists — uses RPC to avoid btrim(uuid) when

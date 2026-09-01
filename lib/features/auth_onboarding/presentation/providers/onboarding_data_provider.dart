@@ -2,14 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Holds temporary onboarding data during registration flow
 /// Data is cleared after successful account creation
-class OnboardingData {
+class RegistrationOnboardingData {
   final String? email;
   final String? phone;
   final String? displayName;
   final int? age;
   final String? gender;
   final String?
-  intention; // persona_type: player, organiser, hoster, socialiser
+  intention; // persona_type: player, organiser, host, socialiser
   final String? preferredSport; // UUID from sports.id (= primary_sport)
   final List<String>? interests; // list of sport UUIDs
   final String? username;
@@ -17,7 +17,7 @@ class OnboardingData {
   final bool getUpdates; // Email marketing opt-in (cached, written to user_preferences after account creation)
   final String? preferredSportName; // Human-readable sport name for username suggestion engine
 
-  OnboardingData({
+  RegistrationOnboardingData({
     this.email,
     this.phone,
     this.displayName,
@@ -35,7 +35,7 @@ class OnboardingData {
          'Either email or phone must be provided',
        );
 
-  OnboardingData copyWith({
+  RegistrationOnboardingData copyWith({
     String? email,
     String? phone,
     String? displayName,
@@ -50,7 +50,7 @@ class OnboardingData {
     String? preferredSportName,
     bool clearGender = false,
   }) {
-    return OnboardingData(
+    return RegistrationOnboardingData(
       email: email ?? this.email,
       phone: phone ?? this.phone,
       displayName: displayName ?? this.displayName,
@@ -85,8 +85,8 @@ class OnboardingData {
   }
 
   /// Create from Map for receiving via GoRouter extra
-  static OnboardingData fromMap(Map<String, dynamic> map) {
-    return OnboardingData(
+  static RegistrationOnboardingData fromMap(Map<String, dynamic> map) {
+    return RegistrationOnboardingData(
       email: map['email'] as String?,
       phone: map['phone'] as String?,
       displayName: map['displayName'] as String?,
@@ -123,17 +123,17 @@ class OnboardingData {
 }
 
 /// StateNotifier to manage onboarding data
-class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
+class OnboardingDataNotifier extends StateNotifier<RegistrationOnboardingData?> {
   OnboardingDataNotifier() : super(null);
 
   /// Initialize with email
   void initWithEmail(String email) {
-    state = OnboardingData(email: email);
+    state = RegistrationOnboardingData(email: email);
   }
 
   /// Initialize with phone
   void initWithPhone(String phone) {
-    state = OnboardingData(phone: phone);
+    state = RegistrationOnboardingData(phone: phone);
   }
 
   /// Update user info (Screen 1)
@@ -196,12 +196,12 @@ class OnboardingDataNotifier extends StateNotifier<OnboardingData?> {
 
   /// Load from map (when navigating back or restoring state)
   void loadFromMap(Map<String, dynamic> map) {
-    state = OnboardingData.fromMap(map);
+    state = RegistrationOnboardingData.fromMap(map);
   }
 }
 
 /// Provider for onboarding data
 final onboardingDataProvider =
-    StateNotifierProvider<OnboardingDataNotifier, OnboardingData?>(
+    StateNotifierProvider<OnboardingDataNotifier, RegistrationOnboardingData?>(
       (ref) => OnboardingDataNotifier(),
     );

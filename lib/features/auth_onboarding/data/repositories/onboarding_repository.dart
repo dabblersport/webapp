@@ -2,7 +2,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/core/services/default_avatar_service.dart';
 
 /// Repository for onboarding-related database operations
 ///
@@ -60,7 +59,7 @@ class OnboardingRepository {
     );
   }
 
-  /// Check if persona extension exists (player, organiser, or hoster table)
+  /// Check if persona extension exists (player, organiser, or host table)
   Future<Result<bool, Failure>> personaExtensionExists({
     required String profileId,
     required String personaType,
@@ -86,7 +85,12 @@ class OnboardingRepository {
     );
   }
 
-  /// Map persona type to actual table name
+  /// Map persona type to actual table name.
+  ///
+  /// Throws on an unrecognised persona rather than defaulting to `'player'`
+  /// (T-037) — that default was why `socialiser` profiles were checked
+  /// against the `player` table instead of being recognised as having no
+  /// extension table at all.
   String _getPersonaTableName(String personaType) {
     switch (personaType.toLowerCase()) {
       case 'player':
@@ -95,10 +99,9 @@ class OnboardingRepository {
       case 'business':
         return 'organiser';
       case 'host':
-      case 'hoster':
-        return 'hoster';
+        return 'host';
       default:
-        return 'player'; // Default fallback
+        throw Exception('Unrecognised persona type: $personaType');
     }
   }
 
@@ -119,213 +122,6 @@ class OnboardingRepository {
       (error) => Failure(
         category: FailureCode.server,
         message: 'Failed to check sport profile: $error',
-        cause: error,
-      ),
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 4: Create Profile (FIRST DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  /// Create or update profile
-  /// IDEMPOTENT: If profile exists, returns existing profile
-  Future<String?> _resolveCountryCode(String? country) async {
-    if (country == null || country.isEmpty) return null;
-    if (country.length == 2) return country.toUpperCase();
-    try {
-      final rows = await _client
-          .from(SupabaseConfig.refCountriesTable)
-          .select('code')
-          .eq('name_en', country)
-          .limit(1);
-      if (rows.isNotEmpty) return rows.first['code'] as String?;
-    } catch (_) {}
-    return null;
-  }
-
-  Future<Result<Map<String, dynamic>, Failure>> createProfile({
-    required String personaType,
-    required String username,
-    required String displayName,
-    required int age,
-    String? gender,
-    String? city,
-    String? country,
-    String? language,
-    String? preferredSport,
-    String? primarySport,
-    List<String>? interestIds,
-  }) async {
-    return Result.guard(
-      () async {
-        final userId = _client.auth.currentUser?.id;
-        if (userId == null) {
-          throw Exception('User not authenticated');
-        }
-
-        // Check if profile already exists
-        final existingProfiles = await getUserProfiles();
-        final profiles = existingProfiles.fold(
-          (failure) => <Map<String, dynamic>>[],
-          (profiles) => profiles,
-        );
-
-        // If profile exists with same persona_type, return it
-        final existing = profiles
-            .where((p) => p['persona_type'] == personaType)
-            .firstOrNull;
-        if (existing != null) {
-          return existing;
-        }
-
-        // Create new profile
-        // Keep all persona types separate (player, organiser, host, socialiser)
-        final profileType = personaType;
-        final countryCode = await _resolveCountryCode(country);
-
-        final profileData = {
-          'user_id': userId,
-          'profile_type': profileType,
-          'persona_type': personaType,
-          'username': username,
-          'display_name': displayName,
-          'age': age,
-          'gender': gender,
-          'city': city,
-          'country': countryCode,
-          'language': language ?? 'en',
-          'preferred_sport': preferredSport,
-          'primary_sport': primarySport,
-          'interests': interestIds ?? [],
-          'onboard': false, // Not complete yet
-          'profile_completion': 'started',
-        };
-
-        final response = await _client
-            .from(SupabaseConfig.usersTable)
-            .insert(profileData)
-            .select()
-            .single();
-
-        final avatarService = DefaultAvatarService(client: _client);
-        response['avatar_url'] = await avatarService.ensureProfileAvatar(
-          userId: userId,
-          profileId: response['id'] as String,
-          currentAvatarUrl: response['avatar_url'] as String?,
-        );
-
-        return response;
-      },
-      (error) => Failure(
-        category: FailureCode.server,
-        message: 'Failed to create profile: $error',
-        cause: error,
-      ),
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 5: Create Persona Extension (SECOND DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  /// Create persona extension (player, organiser, or hoster table)
-  /// IDEMPOTENT: If row exists, does nothing
-  Future<Result<void, Failure>> createPersonaExtension({
-    required String profileId,
-    required String personaType,
-  }) async {
-    return Result.guard(
-      () async {
-        // Check if already exists
-        final exists = await personaExtensionExists(
-          profileId: profileId,
-          personaType: personaType,
-        );
-
-        final alreadyExists = exists.fold(
-          (failure) => false,
-          (exists) => exists,
-        );
-
-        if (alreadyExists) {
-          return; // Already created
-        }
-
-        final tableName = _getPersonaTableName(personaType);
-
-        await _client.from(tableName).insert({'profile_id': profileId});
-      },
-      (error) => Failure(
-        category: FailureCode.server,
-        message: 'Failed to create persona extension: $error',
-        cause: error,
-      ),
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 6: Create Sport Profile (THIRD DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  /// Create sport_profiles entry and update primary_sport
-  /// IDEMPOTENT: If entry exists, just updates primary_sport
-  Future<Result<void, Failure>> createSportProfile({
-    required String profileId,
-    required String sportId,
-  }) async {
-    return Result.guard(
-      () async {
-        // Check if sport_profiles entry already exists
-        final exists = await sportProfileExists(profileId: profileId);
-        final alreadyExists = exists.fold(
-          (failure) => false,
-          (exists) => exists,
-        );
-
-        if (!alreadyExists) {
-          // Create sport_profiles entry
-          await _client.from(SupabaseConfig.sportProfilesTable).insert({
-            'profile_id': profileId,
-            'sport_id': sportId,
-          });
-        }
-
-        // Update profile with primary_sport and profile_completion
-        await _client
-            .from(SupabaseConfig.usersTable)
-            .update({
-              'primary_sport': sportId,
-              'profile_completion': 'sport_added',
-            })
-            .eq('id', profileId);
-      },
-      (error) => Failure(
-        category: FailureCode.server,
-        message: 'Failed to create sport profile: $error',
-        cause: error,
-      ),
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 7: Finalize Onboarding (LAST DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  /// Mark onboarding as complete
-  Future<Result<void, Failure>> finalizeOnboarding({
-    required String profileId,
-  }) async {
-    return Result.guard(
-      () async {
-        await _client
-            .from(SupabaseConfig.usersTable)
-            .update({'onboard': true, 'profile_completion': 'complete'})
-            .eq('id', profileId);
-      },
-      (error) => Failure(
-        category: FailureCode.server,
-        message: 'Failed to finalize onboarding: $error',
         cause: error,
       ),
     );

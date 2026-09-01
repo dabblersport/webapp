@@ -693,7 +693,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get interests_title_organiser => 'إيه الرياضات اللي بتنظمها؟';
 
   @override
-  String get interests_title_hoster => 'إيه الرياضات اللي بتاستضيفها؟';
+  String get interests_title_host => 'إيه الرياضات اللي بتاستضيفها؟';
 
   @override
   String get interests_title_socialiser => 'إيه الرياضات اللي بتحبها؟';
@@ -861,7 +861,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcome_screen_chip_organiser => 'منظّم مباريات';
 
   @override
-  String get welcome_screen_chip_hoster => 'مضيف ملعب';
+  String get welcome_screen_chip_host => 'مضيف ملعب';
 
   @override
   String get welcome_screen_chip_socialiser => 'متواصل رياضي';
@@ -896,19 +896,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcome_screen_organiser_emphasis => 'كمّل بس لما تكون جاهز!';
 
   @override
-  String get welcome_screen_hoster_guidance =>
+  String get welcome_screen_host_guidance =>
       'خلّي اللاعبين يحسوا بالترحيب بإنك تخلّي المعلومات دقيقة والمساحات جاهزة.';
 
   @override
-  String get welcome_screen_hoster_philosophy =>
+  String get welcome_screen_host_philosophy =>
       'الوضوح في التوافر والتنسيم السلس بيحسّن تجربة الكل.';
 
   @override
-  String get welcome_screen_hoster_reminder =>
+  String get welcome_screen_host_reminder =>
       'خلّي التوافر والتفاصيل دايماً محدّثة.\nحدّث المعلومات فور ما أي حاجة تتغير.';
 
   @override
-  String get welcome_screen_hoster_emphasis => 'كمّل بس لما تكون جاهز!';
+  String get welcome_screen_host_emphasis => 'كمّل بس لما تكون جاهز!';
 
   @override
   String get welcome_screen_socialiser_guidance =>
@@ -933,12 +933,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_welcome_step_profile => 'بيتنشأ بروفايلك';
-
-  @override
-  String get onboarding_welcome_step_persona => 'بيتضبط دورك';
-
-  @override
-  String get onboarding_welcome_step_sport => 'بيضاف بروفايل الرياضة';
 
   @override
   String get social_onboarding_welcome_title => 'أهلاً في السوشيال';
@@ -1353,7 +1347,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_settings => 'الإعدادات';
 
   @override
-  String get persona_label_hoster => 'مضيف';
+  String get persona_label_host => 'مضيف';
 
   @override
   String get persona_label_socialiser => 'متواصل';

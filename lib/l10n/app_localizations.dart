@@ -1352,11 +1352,11 @@ abstract class AppLocalizations {
   /// **'What do you intend to organise?'**
   String get interests_title_organiser;
 
-  /// No description provided for @interests_title_hoster.
+  /// No description provided for @interests_title_host.
   ///
   /// In en, this message translates to:
   /// **'Which sports do you host?'**
-  String get interests_title_hoster;
+  String get interests_title_host;
 
   /// No description provided for @interests_title_socialiser.
   ///
@@ -1658,11 +1658,11 @@ abstract class AppLocalizations {
   /// **'Games organiser'**
   String get welcome_screen_chip_organiser;
 
-  /// No description provided for @welcome_screen_chip_hoster.
+  /// No description provided for @welcome_screen_chip_host.
   ///
   /// In en, this message translates to:
   /// **'Venue host'**
-  String get welcome_screen_chip_hoster;
+  String get welcome_screen_chip_host;
 
   /// No description provided for @welcome_screen_chip_socialiser.
   ///
@@ -1718,29 +1718,29 @@ abstract class AppLocalizations {
   /// **'Continue only when you\'re ready!'**
   String get welcome_screen_organiser_emphasis;
 
-  /// No description provided for @welcome_screen_hoster_guidance.
+  /// No description provided for @welcome_screen_host_guidance.
   ///
   /// In en, this message translates to:
   /// **'Help players feel welcome by keeping information accurate and spaces ready.'**
-  String get welcome_screen_hoster_guidance;
+  String get welcome_screen_host_guidance;
 
-  /// No description provided for @welcome_screen_hoster_philosophy.
+  /// No description provided for @welcome_screen_host_philosophy.
   ///
   /// In en, this message translates to:
   /// **'Clear availability and smooth coordination make everyone\'s experience better.'**
-  String get welcome_screen_hoster_philosophy;
+  String get welcome_screen_host_philosophy;
 
-  /// No description provided for @welcome_screen_hoster_reminder.
+  /// No description provided for @welcome_screen_host_reminder.
   ///
   /// In en, this message translates to:
   /// **'Keep availability and details accurate.\nUpdate information as soon as things change.'**
-  String get welcome_screen_hoster_reminder;
+  String get welcome_screen_host_reminder;
 
-  /// No description provided for @welcome_screen_hoster_emphasis.
+  /// No description provided for @welcome_screen_host_emphasis.
   ///
   /// In en, this message translates to:
   /// **'Continue only when you\'re ready!'**
-  String get welcome_screen_hoster_emphasis;
+  String get welcome_screen_host_emphasis;
 
   /// No description provided for @welcome_screen_socialiser_guidance.
   ///
@@ -1783,18 +1783,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creating your profile'**
   String get onboarding_welcome_step_profile;
-
-  /// No description provided for @onboarding_welcome_step_persona.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting up your persona'**
-  String get onboarding_welcome_step_persona;
-
-  /// No description provided for @onboarding_welcome_step_sport.
-  ///
-  /// In en, this message translates to:
-  /// **'Adding sport profile'**
-  String get onboarding_welcome_step_sport;
 
   /// No description provided for @social_onboarding_welcome_title.
   ///
@@ -2546,11 +2534,11 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get nav_settings;
 
-  /// No description provided for @persona_label_hoster.
+  /// No description provided for @persona_label_host.
   ///
   /// In en, this message translates to:
   /// **'Host'**
-  String get persona_label_hoster;
+  String get persona_label_host;
 
   /// No description provided for @persona_label_socialiser.
   ///
