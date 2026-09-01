@@ -4685,3 +4685,204 @@ a migration that fails partway through a privilege fix is worse than one that wa
 and leaves the generator running for tomorrow's. The `postgres` rule is where the generator
 lives for everything we author.
 **Status:** ACTIVE
+
+---
+
+### P-029 — PDPL data export is being built after all; P-025 is superseded, not amended
+
+**Date:** 2026-09-01 · **Decided by:** PO · **Supersedes:** [[P-025]] entirely — not a
+scope note on it. · **Trigger:** master-analyst-9's KAN-39 launch-readiness finding that
+`P-025` was recorded as a product descope when it should have been recorded as a legal
+risk acceptance, since PDPL is not a gate this team authored and cannot waive by product
+decision alone.
+
+**Decision:** Build the PDPL export mechanism. `P-025`'s ruling — export deferred
+indefinitely, entry point kept visible but inert — is superseded, not narrowed. The PO's
+own words on being shown this distinction: *"خلينا نبنيه طالما legal risk"* — build it,
+since it's a legal risk, not a product-priority call.
+
+**Immediate consequence:** the "Export My Data" entry point in Settings must be hidden
+again until the mechanism actually works — same standing rule as every other
+advertised-affordance-that-does-nothing finding this session (KAN-45's Message button,
+KAN-105's rewards dashboards). Do not leave it visible-and-broken while the real build is
+in progress.
+
+**What "build it" actually requires — recorded so the size of this is not discovered
+mid-sprint:** per KAN-103's earlier triage, `DataExportService`'s data-gathering code
+references 12 tables absent from production. 7 were simple renames (already fixed,
+uncommitted, currently stashed under `git stash` message "P-025 descoped: stray
+data-export UI/service work, 2026-08-31" — unstash once this decision lands and the
+sprint-end push clears). The remaining 5 (`performance_metrics`, `user_game_statistics`,
+`messages`, `login_history`, `third_party_connections`) are genuinely missing schema —
+`messages` specifically has no private-messaging feature behind it at all yet. This is not
+a quick reopen; it is real scope that needs its own sprint slot.
+
+**Consequence for KAN-52/KAN-103:** un-descope both, remove the `descoped` label, schedule
+into a coming sprint rather than treating as closed.
+
+**Status:** ACTIVE — PO ruling, recorded the same session it was made, per the pattern
+this file has now had to learn three times (P-025, P-027, this entry).
+
+---
+
+### P-030 — Standing freeze on merging into `main`; `Canary` is the operative release, not a staging step
+
+**Date:** 2026-09-01 · **Decided by:** PO · **Amends:** `CLAUDE.md` §Deployment & Release
+Topology (the "only then open a PR into `main`" flow line) · **Trigger:** PR #12 opened
+(Canary → main, 60 commits) at the close of sprint 2's push, immediately after which the
+PO issued this ruling rather than approving the merge.
+
+**Decision, verbatim:** *"Don't merge in main ever."* Followed by: *"Canary is not just a
+branch is a release so everything will be on canary."*
+
+**Reading, stated plainly so a future session does not have to reconstruct intent from two
+short sentences:** `Canary` stops being treated as a pre-`main` staging branch that
+naturally graduates once verified. It is now the branch actual work ships against and is
+judged on — the "release," in the PO's own word. `main`/app.dabbler.pro is not being
+decommissioned and the technical topology (Cloudflare project, two deploy targets, the
+never-push-main rule) is unchanged — what changes is the human decision layer above it:
+merging Canary into main is no longer a routine last step of a good push, it is a
+separate, PO-gated action with no default trigger and no implied timeline.
+
+**What does NOT change:**
+* The commit → push `Canary` → verify the Cloudflare deploy flow. Work still ships to
+  canary.dabbler.pro exactly as before.
+* The never-push-main-directly rule. A PR remains the only legal path to `main` — this
+  decision does not reopen direct pushes.
+* `version-control`'s standing instruction to open a PR once Canary is verified — opening
+  is still fine and still expected. **Merging is what stops being automatic.**
+
+**What changes:**
+* No agent — `version-control` or otherwise — merges a PR into `main` without the PO's
+  explicit, in-the-moment go-ahead on that specific PR. A prior approval to push or to
+  open a PR is not standing approval to merge; approvals do not generalise (`CLAUDE.md`'s
+  own "Executing actions with care" section already says this — this decision is the
+  concrete case it was written for).
+* PR #12 (Canary → main, opened 2026-09-01, 60 commits) is the immediate instance: it
+  stays open, unmerged, until the PO says otherwise for that PR by name.
+
+**Not ruled on, and deliberately left open:** whether this is a permanent architectural
+shift (Canary becomes the real production surface long-term, app.dabbler.pro deprecated)
+or a temporary hold (ship fast on Canary for now, resume periodic main promotions later).
+The PO's wording ("ever") reads as durable, not a one-off pause, so this file treats it as
+a standing rule rather than a single-PR exception — but if a future PO instruction resumes
+routine merges, that supersedes this entry rather than requiring it be un-read literally.
+
+**Status:** ACTIVE — PO ruling, recorded the same session it was made.
+
+---
+
+### G-011 — `lib/themes/**` and the design-system paths were UNOWNED; `flutter-feature-agent` gets them, and the two-design-systems question stays open
+**Date:** 2026-09-01
+**Source:** `task-auditor-22` returned KAN-95 (bundle `NotoEmoji-Regular.ttf` as a
+`fontFamilyFallback` so emoji stop rendering as tofu boxes) on ownership alone. The code was
+independently verified correct and working; it landed in `lib/themes/app_theme.dart`, which
+`CONTRACT.md` marked **UNOWNED — nobody writes it**, with no agent holding a `W` and no prior
+ruling opening it. The rejection was right on the letter of the table and the table was wrong.
+
+**Decision.** `flutter-feature-agent` owns `lib/themes/**`, `lib/design_system/**`,
+`lib/utils/**` and `lib/widgets/**`, in the same shape as its existing `lib/core/**` row —
+cross-cutting, so `cto` signs off on shape before a change lands. KAN-95's already-landed
+change (commit `2e6ddc3`) is covered by this row and needs no separate amnesty.
+
+**Two limits are part of the decision, not commentary.**
+1. **This does not settle which design system survives.** The row was marked UNOWNED because the
+   two-design-systems question in `PROJECT_STATE.md` is open — but that is a question about
+   *what should exist*, not about *who may type*. Leaving the write cell empty did not preserve
+   the question; it only blocked ordinary work while the question aged. So: ordinary edits are
+   now permitted, **consolidation is not.** No agent deletes, merges or migrates one design
+   system into the other without a `cto` ruling.
+2. **The colour-token triple-copy is a correctness constraint on this row.** Each palette exists
+   in three synced places — the tokens JSON, `lib/themes/app_theme.dart`, and `tokens/*.dart`.
+   A write that updates one and not the others is a defect, not a partial change. Whoever holds
+   the pen here holds all three.
+
+**What I rejected.** *Retroactive one-off approval of KAN-95 without assigning ownership* — it
+unblocks one ticket and leaves the next `lib/themes` change facing the identical rejection, which
+is how a table gap becomes a recurring tax. *A dedicated design-system agent* — same reasoning as
+`G-003`/`G-007`: a vacant cell is a seat the table already expects filled, not a permission to be
+contested, and `flutter-feature-agent` already owns the adjacent Dart surface. *Splitting the row
+so only `lib/themes/**` opens* — `lib/utils/**` holds the transition wrappers and route constants
+that `CLAUDE.md` requires every screen to use; leaving those UNOWNED reproduces this exact block
+on the next routine ticket.
+
+**Consequence:** `CONTRACT.md`'s design-system row corrected in the same session. KAN-95's
+ownership objection is closed; the change stands as committed and returns to Done on
+re-verification, not rework.
+**Status:** ACTIVE — process decision, closes the ownership half of `task-auditor-22`'s KAN-95
+finding
+
+### P-031 — KAN-26, KAN-31, KAN-32, KAN-86 deferred to sprint 3
+**Date:** 2026-09-01
+**Source:** Two PO instructions this session, in tension. Earlier: *"Don't build anything for
+sprint 3 everything should be finished today sprint 3 after moving our agent to parent one-brain
+company folder"* — an explicit, deliberate scope boundary naming sprint 3 and tying it to a
+specific gating event (the not-yet-executed move to a parent "One-Brain" company folder). Later,
+in the same session: *"You need to finish everything open all tickets in Jira should be done
+before moving forward"* — a general urgency statement, made without these four ticket numbers in
+view. A prior AskUserQuestion asking the PO to explicitly choose between building these four
+anyway, deferring them, or some other split went unanswered (conversation moved to other topics).
+
+**Decision.** Treat the earlier, specific, deliberately-scoped instruction as controlling for
+these four tickets specifically, since it named sprint 3 by number and attached a concrete
+trigger condition that has not occurred. The later "finish everything" is read as urgency about
+closing out today's actual sprint-2 review loop (the tickets sent back by task-auditor:
+KAN-94/95/97/100/101/104), not as a considered reversal of the sprint-3 boundary — the PO was not
+holding these four ticket numbers in mind when saying it.
+
+**Deferred, not started:**
+* `KAN-26` — SECURITY sweep of 49 SECURITY DEFINER views (19 anon-exposed) + RLS triage on 30
+  no-policy tables.
+* `KAN-31` — CLEANUP: delete 10 orphan screens, 5 dead slices, `.broken` file.
+* `KAN-32` — CLEANUP: delete 98 dead feature flags, 54 unused route constants, 2 unused deps.
+* `KAN-86` — SECURITY (low, defence-in-depth): 184 public base tables still grant anon
+  INSERT/UPDATE/DELETE.
+
+All four stay in Jira `To Do`, each carrying a comment recording this deferral and pointing back
+here. None are promotion blockers per their own tickets (KAN-26/86 are hardening on top of
+existing RLS gates, not open leaks; KAN-31/32 are dead-code hygiene).
+
+**This is a judgment call under acknowledged ambiguity, not a confirmed PO ruling** — flagged as
+such to the PO. If the PO meant the later instruction to override the sprint-3 boundary for these
+four specifically, say so and they start immediately.
+
+**Status:** ACTIVE — assumption made under the standing "make a reasonable call and keep
+working" instruction; reversible on PO correction.
+
+### P-032 — P-031 reversed: no ticket gets deferred to sprint 3, everything open closes today
+**Date:** 2026-09-01
+**Source:** PO, verbatim: *"اللي أقصده إنك ما تـ create شي أي tasks زيادة عن الحاجات اللي إحنا
+متفقين فيها، لكن كل الـ tickets اللي مفتوحة تتقفل... بغض النظر ما هي موجودة في sprint two ولا
+sprint three، المهم تتقفل النهاردة. يعني حتى لو هتعمل sprint three، يبقى تقفله النهاردة. عشان كده
+قلت لك ما تـ createش sprint three. اشتغل على الـ tickets ك أنهم في نفس الـ sprint ده."*
+
+**This directly overrides P-031.** The distinction P-031 drew — "don't build new sprint-3 scope"
+vs. "close every open ticket today" — was a false distinction in the PO's actual intent. The rule
+is: never *create* new tickets/scope beyond what's already agreed, but every ticket that is
+*already open*, regardless of which sprint label it carries, gets worked and closed today. A
+ticket's sprint tag does not grant it a stay of execution.
+
+**Decision.** `KAN-26`, `KAN-31`, `KAN-32`, `KAN-86` are un-deferred, effective immediately.
+Dispatching them now under this same session.
+
+**Superseded:** `P-031` in full.
+**Status:** ACTIVE — supersedes P-031.
+
+### P-033 — Data export never offers "messages": no messaging feature exists, so it is a permanent scope exclusion, not a gap
+**Date:** 2026-09-01
+**Source:** PO, verbatim: *"الرسائل، ما عندناش رسائل. إحنا ما عندناش feature الرسائل، فبالتالي مش
+معانا في الـ exporting... لو ما عندناش feature، يبقى خلاص don't offer export messages until we
+have messages."*
+
+**Decision.** `DataExportService` must never reference a `messages` table or offer a messages
+category in the exported data. This is not "one of 5 missing tables to build later" (as KAN-103's
+prior framing had it) — it is a permanent exclusion until a private-messaging feature is designed
+and shipped, at which point its export gets scoped as new work, not as closing this gap. Removing
+this from `DataExportService`'s referenced-tables list closes that specific part of KAN-52/103;
+it is not deferred, it is resolved by declaring it out of scope.
+
+The other four originally-flagged-missing categories (`performance_metrics`,
+`user_game_statistics`, `login_history`, `third_party_connections`) are unaffected by this
+decision — they remain real, in-scope gaps to close today per P-032.
+
+**Status:** ACTIVE

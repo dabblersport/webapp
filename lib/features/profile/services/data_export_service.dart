@@ -286,7 +286,7 @@ class DataExportService {
 
       // Social Connections and Interactions
       exportData.connections = await _getConnectionsData(userId);
-      exportData.messages = await _getMessagesData(userId);
+      // No messages export: Dabbler has no private-messaging feature (P-033).
       exportData.notifications = await _getNotificationsData(userId);
 
       // Content and Media (metadata only)
@@ -405,10 +405,6 @@ class DataExportService {
       csvContent.writeln(
         'Statistics,Total Game History Count,'
         '"${data.gameHistory?.length ?? 0}",N/A',
-      );
-      csvContent.writeln(
-        'Statistics,Total Messages Count,'
-        '"${data.messages?.length ?? 0}",N/A',
       );
       csvContent.writeln(
         'Statistics,Total Notifications Count,'
@@ -751,48 +747,6 @@ class DataExportService {
     }
   }
 
-  // Note: private messaging isn't a built feature yet (no messages/DM/
-  // conversation table exists in production) - this returns null via the
-  // catch below, not a bug to fix, just nothing to export until that
-  // feature ships.
-  Future<List<Map<String, dynamic>>?> _getMessagesData(String userId) async {
-    try {
-      final sentMessages = await _supabase
-          .from(SupabaseConfig.messagesTable)
-          .select('content, sent_at, game_id, recipient_id')
-          .eq('sender_id', userId)
-          .order('sent_at', ascending: false)
-          .limit(10000);
-
-      final receivedMessages = await _supabase
-          .from(SupabaseConfig.messagesTable)
-          .select('content, sent_at, game_id, sender_id')
-          .eq('recipient_id', userId)
-          .order('sent_at', ascending: false)
-          .limit(10000);
-
-      return [
-            ...sentMessages.map((item) => {...item, 'message_type': 'sent'}),
-            ...receivedMessages.map(
-              (item) => {...item, 'message_type': 'received'},
-            ),
-          ]
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'messages table',
-              'purpose': 'Communication facilitation',
-              'legal_basis': 'Contract performance',
-              'note': 'Message content may be pseudonymized for privacy',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch messages data', e);
-      return null;
-    }
-  }
-
   Future<List<Map<String, dynamic>>?> _getNotificationsData(
     String userId,
   ) async {
@@ -1003,27 +957,6 @@ class DataExportService {
     // return const ListToCsvConverter().convert(rows);
   }
 
-  // ignore: unused_element
-  String _generateMessagesCsv(List<Map<String, dynamic>> messages) {
-    if (messages.isEmpty) return '';
-
-    final rows = <List<String>>[];
-    rows.add(['Date', 'Type', 'Game ID', 'Content Length', 'Purpose']);
-
-    for (final message in messages) {
-      rows.add([
-        message['sent_at']?.toString() ?? '',
-        message['message_type']?.toString() ?? '',
-        message['game_id']?.toString() ?? '',
-        message['content']?.toString().length.toString() ?? '0',
-        message['purpose']?.toString() ?? '',
-      ]);
-    }
-
-    return 'CSV export requires csv package dependency';
-    // return const ListToCsvConverter().convert(rows);
-  }
-
   // GDPR documentation generators
   Map<String, String> _generateDataExplanations() {
     return {
@@ -1038,7 +971,6 @@ class DataExportService {
       'audit_logs':
           'Log of account activities for security purposes (last 2 years)',
       'connections': 'Your friends, blocked users, and social connections',
-      'messages': 'Messages you have sent and received through the platform',
       'notifications': 'System notifications sent to you',
       'media':
           'Metadata about files you have uploaded (actual files not included)',
@@ -1447,7 +1379,6 @@ Last Updated: ${DateTime.now().toIso8601String()}
     if (data.auditLogs?.isNotEmpty == true) types.add('audit_logs');
     if (data.loginHistory?.isNotEmpty == true) types.add('login_history');
     if (data.connections?.isNotEmpty == true) types.add('connections');
-    if (data.messages?.isNotEmpty == true) types.add('messages');
     if (data.notifications?.isNotEmpty == true) types.add('notifications');
     if (data.media?.isNotEmpty == true) types.add('media');
     if (data.locationData?.isNotEmpty == true) types.add('location_data');
@@ -1972,7 +1903,6 @@ class UserExportData {
 
   // Social and communication data
   List<Map<String, dynamic>>? connections;
-  List<Map<String, dynamic>>? messages;
   List<Map<String, dynamic>>? notifications;
 
   // Technical and system data
@@ -2005,7 +1935,6 @@ class UserExportData {
       'audit_logs': auditLogs,
       'login_history': loginHistory,
       'connections': connections,
-      'messages': messages,
       'notifications': notifications,
       'media': media,
       'location_data': locationData,
@@ -2027,7 +1956,6 @@ class UserExportData {
     if (auditLogs?.isNotEmpty == true) count++;
     if (loginHistory?.isNotEmpty == true) count++;
     if (connections?.isNotEmpty == true) count++;
-    if (messages?.isNotEmpty == true) count++;
     if (notifications?.isNotEmpty == true) count++;
     if (media?.isNotEmpty == true) count++;
     if (locationData?.isNotEmpty == true) count++;
