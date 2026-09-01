@@ -1026,8 +1026,6 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (gameId != null) 'game_id': gameId,
       };
 
-      print('INSERT PAYLOAD: $data');
-
       final row = await _db.from(SupabaseConfig.postsTable).insert(data).select().single();
       final post = Post.fromJson(row);
       if (extractedTags.isNotEmpty) {
