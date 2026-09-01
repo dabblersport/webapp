@@ -41,6 +41,15 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- Impeller (Flutter's default Android renderer) has known text-
+                 layout bugs on some real-device GPU drivers that spread out
+                 word spacing app-wide — does not reproduce on the emulator's
+                 software renderer. Force the older Skia backend until
+                 upstream fixes land. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.EnableImpeller"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
