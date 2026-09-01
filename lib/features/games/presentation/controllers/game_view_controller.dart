@@ -128,7 +128,6 @@ class GameView {
     this.sportNameEn,
     this.variantNameEn,
     this.creatorProfileId,
-    this.creatorUserId,
     this.creatorUsername,
     this.creatorDisplayName,
     this.creatorAvatarUrl,
@@ -162,7 +161,6 @@ class GameView {
   final String? sportNameEn;
   final String? variantNameEn;
   final String? creatorProfileId;
-  final String? creatorUserId;
   final String? creatorUsername;
   final String? creatorDisplayName;
   final String? creatorAvatarUrl;
@@ -210,7 +208,6 @@ class GameView {
       sportNameEn: j['sport_name_en'] as String?,
       variantNameEn: j['variant_name_en'] as String?,
       creatorProfileId: j['creator_profile_id'] as String?,
-      creatorUserId: j['creator_profile_id'] as String?,
       creatorUsername: j['creator_username'] as String?,
       creatorDisplayName: j['creator_display_name'] as String?,
       creatorAvatarUrl: j['creator_avatar_url'] as String?,
