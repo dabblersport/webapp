@@ -18,6 +18,28 @@ import 'package:dabbler/features/notifications/utils/notification_localizer.dart
 import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
 import 'package:dabbler/widgets/app_background.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show isFollowingProvider, profileIdByUserIdProvider, myProfileIdProvider;
+
+/// Whether the "Follow back" CTA should show on a follow notification —
+/// false when the recipient already follows the notification's sender.
+/// KAN-101: the CTA must not render on an already-mutual follow.
+final _followBackVisibleProvider =
+    FutureProvider.autoDispose.family<bool, String>((ref, actorUserId) async {
+      final myProfileId = await ref.watch(myProfileIdProvider.future);
+      if (myProfileId == null) return true;
+      final targetProfileId = await ref.watch(
+        profileIdByUserIdProvider(actorUserId).future,
+      );
+      if (targetProfileId == null) return true;
+      final alreadyFollowing = await ref.watch(
+        isFollowingProvider((
+          currentProfileId: myProfileId,
+          targetProfileId: targetProfileId,
+        )).future,
+      );
+      return !alreadyFollowing;
+    });
 
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
@@ -937,13 +959,13 @@ class _UnreadCounterRow extends StatelessWidget {
   }
 }
 
-class _NotificationRow extends StatelessWidget {
+class _NotificationRow extends ConsumerWidget {
   final AppNotification notification;
   final VoidCallback onTap;
   const _NotificationRow({required this.notification, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.colorScheme;
     final visual = _visualForKind(notification.kindKey, context);
     final unread = !notification.isRead;
@@ -1048,8 +1070,7 @@ class _NotificationRow extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      if (_actionLabelFor(context, notification.kindKey) != null)
-                        _quickAction(context, notification),
+                      _buildQuickAction(context, ref, notification),
                     ],
                   ),
                 ],
@@ -1078,12 +1099,46 @@ class _NotificationRow extends StatelessWidget {
     );
   }
 
-  Widget _quickAction(BuildContext context, AppNotification n) {
+  /// Returns the quick-action chip for [n], or an empty widget when no
+  /// action applies — or, for a follow notification, when the recipient
+  /// already follows the sender back (KAN-101).
+  Widget _buildQuickAction(
+    BuildContext context,
+    WidgetRef ref,
+    AppNotification n,
+  ) {
+    final label = _actionLabelFor(context, n.kindKey);
+    if (label == null) return const SizedBox.shrink();
+
+    if (n.kindKey.startsWith('social.followed')) {
+      final actorId = _actorUserId(n.payload);
+      if (actorId == null) return _quickAction(context, label);
+      final visible = ref.watch(_followBackVisibleProvider(actorId));
+      if (visible.valueOrNull != true) return const SizedBox.shrink();
+    }
+
+    return _quickAction(context, label);
+  }
+
+  String? _actorUserId(Map<String, dynamic>? ctx) {
+    if (ctx == null) return null;
+    final direct = ctx['actor_user_id'];
+    if (direct is String && direct.trim().isNotEmpty) return direct.trim();
+    for (final key in const ['follower_user_ids', 'actor_user_ids']) {
+      final list = ctx[key];
+      if (list is List && list.isNotEmpty) {
+        final first = list.first;
+        if (first is String && first.trim().isNotEmpty) return first.trim();
+      }
+    }
+    return null;
+  }
+
+  Widget _quickAction(BuildContext context, String label) {
     final cs = context.colorScheme;
     final scheme = context.getCategoryTheme('main');
-    final label = _actionLabelFor(context, n.kindKey)!;
-    final isPrimary =
-        n.kindKey.contains('invited') || n.kindKey.contains('reminder');
+    final isPrimary = notification.kindKey.contains('invited') ||
+        notification.kindKey.contains('reminder');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
