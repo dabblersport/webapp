@@ -89,7 +89,7 @@ void _logFlagsOnce() {
     'venuesBooking': FeatureFlags.venuesBooking,
     'payments': FeatureFlags.enablePayments,
     'bookingFlow': FeatureFlags.enableBookingFlow,
-    'rewards': FeatureFlags.enableRewards,
+    'rewards': FeatureFlags.enableEarlyBirdCheckIn,
   });
 }
 

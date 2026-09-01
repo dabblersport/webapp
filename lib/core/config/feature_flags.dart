@@ -57,8 +57,12 @@ class FeatureFlags {
   static const bool notifications = true;
   static const bool squads = true;
   static const bool venuesBooking = true; // venues remain read-only
-  static const bool enableRewards =
-      false; // Early Bird check-in system disabled for now
+  // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,
+  // profile check-in widget, check-in modal). There is no broader rewards
+  // system (points/badges/tiers/leaderboard) to toggle — those models under
+  // lib/data/models/rewards/ are unreferenced dead code, not a hidden
+  // feature. Rename reflects that this flag's job is check-in-specific.
+  static const bool enableEarlyBirdCheckIn = false;
 
   /// Game Creation Features (Split by profile type)
   static const bool enablePlayerGameCreation =
@@ -382,7 +386,7 @@ class FeatureFlags {
       if (enableDirectMessages) 'messaging',
       if (enablePushNotifications) 'notifications',
       if (enablePayments) 'payments',
-      if (enableRewards) 'rewards',
+      if (enableEarlyBirdCheckIn) 'rewards',
       if (enableVenueBooking) 'venue_booking',
       if (enableBenchMode) 'bench_mode',
     ];
@@ -418,7 +422,7 @@ class FeatureFlags {
       case 'venue_booking':
         return enableVenueBooking;
       case 'rewards':
-        return enableRewards;
+        return enableEarlyBirdCheckIn;
       case 'bench_mode':
         return enableBenchMode;
       default:
