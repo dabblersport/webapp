@@ -22,7 +22,6 @@ import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dabbler/features/explore/presentation/widgets/location_permission_drawer.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
-import 'package:dabbler/features/venues/providers.dart' as venues_providers;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/core/utils/sport_id_mapping.dart';

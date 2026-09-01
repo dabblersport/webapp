@@ -1,17 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
-import 'package:dabbler/utils/helpers/date_formatter.dart';
-import 'package:dabbler/themes/material3_extensions.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/app_background.dart';
 
 /// A completed game the viewer took part in (created it or was on the
 /// roster). Exposes exactly the fields the history cards render.
@@ -79,23 +70,3 @@ final pastGamesProvider =
     );
   }).toList();
 });
-
-IconData _sportIconFor(String sport) {
-  switch (sport.toLowerCase()) {
-    case 'football':
-    case 'soccer':
-      return Iconsax.medal_star_copy;
-    case 'cricket':
-      return Iconsax.game_copy;
-    case 'padel':
-    case 'tennis':
-      return Iconsax.game_copy;
-    case 'basketball':
-      return Iconsax.game_copy;
-    case 'volleyball':
-      return Iconsax.game_copy;
-    default:
-      return Iconsax.game_copy;
-  }
-}
-
