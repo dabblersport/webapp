@@ -333,6 +333,14 @@ deno_version = 2
 [functions.send-push-notification]
 verify_jwt = false
 
+# detect-country is called before a session exists (onboarding country
+# detection) and is deliberately unauthenticated. Without this entry the
+# CLI defaults verify_jwt to true, so a plain `supabase functions deploy
+# detect-country` would silently re-break it — same failure shape as the
+# send-push-notification entry above.
+[functions.detect-country]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
