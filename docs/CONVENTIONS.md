@@ -171,10 +171,249 @@ not an invitation to fix the old.
   denies everything and looks like an empty result set, not an error.
 - **New views are created `security_invoker = true`** unless a decision says otherwise. A
   `SECURITY DEFINER` view bypasses the underlying table's RLS entirely.
+- **Before flipping an existing view to `security_invoker`, run T-024's two-stage rule
+  against every relation the view touches — joins included, not just the table you
+  think of as primary.** `security_invoker` applies the caller's RLS to all of them,
+  and an INNER JOIN whose right side is filtered by RLS drops the entire row, not just
+  the joined columns. Stage 1 is "does the relation have a SELECT policy"; stage 2 is
+  "does that policy admit the rows this view is supposed to return, for the roles that
+  call it". Stage 1 alone is not enough. **Prove it with a before/after row count**
+  computed read-only, rather than reasoning about it: `v_comments` (`comments JOIN
+  profiles`) was measured at 67 rows to anon before and 48 after, where only 1 of the
+  19 lost rows was the leak being closed.
+- **New tables and views ship with their own explicit `GRANT`.** As of migration
+  `20260828160122` (KAN-67, applied 2026-08-28), `ALTER DEFAULT PRIVILEGES` for grantor
+  `postgres` in `public` no longer hands `anon` and `authenticated` write on every
+  relation created — the default is now `rxtm`, read without write. A new table the app
+  writes to gets a permission error until it is granted. That failure is loud and
+  correct; the fix is a `GRANT` in the same migration, scoped to what the app actually
+  writes, never a blanket `GRANT ALL`.
+- **Never grant `anon` or `authenticated` write on a view.** Nothing in this app writes
+  through a view, and an auto-updatable view over a definer boundary is a write path
+  around RLS (`T-018`, `T-023`, `T-025`).
 - Edge functions live in `supabase/functions/<name>/index.ts`, called via
   `supabase.functions.invoke('name', body: {...})`.
 
 ---
+
+### 6b. Every migration carries its expected values as assertions, not as a query
+
+*Written by `master-analyst` 2026-08-28, extended to census and audit queries at `cto`'s
+request, and backed by `cto` under `T-028`. Applies to migrations, and to any census or audit
+query with a known expected value.*
+
+**A verification query returns a number and waits to be believed. An assertion refuses to
+complete.** Write the expected value into the migration:
+
+```sql
+DO $$
+DECLARE n int;
+BEGIN
+  SELECT count(*) INTO n FROM public.v_comments;          -- as the role under test
+  IF n <> 66 THEN
+    RAISE EXCEPTION 'expected 66 rows, got %', n;
+  END IF;
+END $$;
+```
+
+**Why this is a convention and not a preference.** On 2026-08-28 three separate defects were
+found by comparing a number against an expectation, and **not one of them would have been
+caught by a query whose output a human read afterwards:**
+
+- A census predicate testing `option_value = 'true'` reported six genuinely-applied invoker
+  flips as **unapplied** — it would have sent someone to re-apply a landed migration.
+- The mirror-image predicate testing `= 'on'` reported the invoker **population** as 6 when it
+  was 28.
+- An `INNER JOIN` invoker flip would have dropped 18 live comments; the row count was the only
+  signal, and it was only checked because an expected value existed to compare against.
+
+**Rules:**
+
+1. **Assert the control as well as the target.** A migration that closes a leak must also
+   assert that a path which *should* still return rows still does — `v_game_card` returning
+   216 is what proves the fix did not blank the app.
+2. **Assert both directions on a scoped fix.** Zero cross-user rows *and* more than zero of
+   the caller's own. Only the first proves security; only the second proves usability.
+3. **Compare semantically, never by spelling.** `option_value::boolean`, not
+   `option_value = 'true'` — Postgres accepts `on`/`true`/`yes`/`1` as one value.
+4. **State the role.** A count means nothing without the role that produced it; run it under
+   `SET LOCAL ROLE anon` or a real JWT, and say which in the assertion message.
+
+See `PROJECT_STATE.md` changelogs 1s–1v for the three migrations this came out of.
+
+### 6c. `CREATE OR REPLACE VIEW` silently resets `security_invoker`
+
+**Every `CREATE OR REPLACE VIEW` on a view that is `security_invoker = on` MUST be
+followed, in the same transaction, by an explicit re-`ALTER VIEW ... SET
+(security_invoker = on)`.**
+
+Grants survive `CREATE OR REPLACE VIEW`. The `security_invoker` reloption does not —
+it silently reverts to off, and the view goes back to running as its owner, bypassing
+RLS on every base relation.
+
+Verified live 2026-08-29 in a rolled-back transaction against the already-flipped
+`v_circle_feed`: `reloptions` came back empty immediately after the replace.
+
+```sql
+BEGIN;
+CREATE OR REPLACE VIEW public.some_view AS SELECT ...;
+SELECT coalesce((SELECT option_value FROM pg_options_to_table(reloptions)
+                 WHERE option_name='security_invoker'), 'RESET_TO_OFF')
+FROM pg_class WHERE relname='some_view';   -- measured: RESET_TO_OFF
+ROLLBACK;
+```
+
+There is no error and no warning. A migration that edits a flipped view's body and
+omits the re-`ALTER` reopens whatever leak the flip closed, and every leak-closure
+verification that only checks row counts for a legitimate caller will still pass.
+So, per 6b, the migration must also assert the flag itself:
+
+```sql
+-- expect: 'true'
+SELECT coalesce((SELECT option_value FROM pg_options_to_table(reloptions)
+                 WHERE option_name='security_invoker'), 'false')
+FROM pg_class WHERE relname='some_view';
+```
+
+Caught by backend-owner in `kan56b_v_circle_feed_members_count_fix.sql` before it
+shipped; independently re-verified by cto under G-002. Had it been missed, the fix for
+a display bug would have re-opened the KAN-56 anon leak.
+
+**The same trap applies to functions.** `CREATE OR REPLACE FUNCTION` that omits
+`SECURITY DEFINER` resets `prosecdef` to `false`, exactly as the view form resets
+`security_invoker` — silently, with no error. Any migration that edits the body of a
+definer function MUST restate `SECURITY DEFINER` and its `SET` clauses in full, and
+assert them per 6b:
+
+```sql
+-- expect: prosecdef = true, proconfig contains search_path and row_security
+SELECT prosecdef, proconfig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = 'some_function';
+```
+
+This also constrains ordering: if two unapplied migrations both `CREATE OR REPLACE` the
+same function, the one that does *not* carry the elevation must not sort last. See
+`T-044` (`find_slots`), where an unapplied KAN-74 file and the KAN-104 elevation touch
+the same body.
+
+### 6d. A `SECURITY DEFINER` function in `public` is a public API endpoint
+
+**Every new `SECURITY DEFINER` function in `public` MUST either authorize internally
+or be `REVOKE EXECUTE ... FROM PUBLIC` in the same migration that creates it.**
+
+PostgREST exposes every function in `public` as an RPC, and Postgres grants EXECUTE to
+`PUBLIC` by default. A definer function therefore runs with the owner's privileges, for
+any anonymous caller, bypassing whatever RLS gates the same data elsewhere. "Internal
+helper" is not a property the database knows about.
+
+**Never read an ACL by eye to answer this.** Supabase's default privileges produce ACLs
+that look explicit while a `=X` PUBLIC grant does the real work:
+
+```
+{=X/postgres, postgres=X/postgres, service_role=X/postgres}   -- anon CAN execute
+```
+
+Ask Postgres instead:
+
+```sql
+SELECT p.oid::regprocedure::text,
+       has_function_privilege('anon', p.oid, 'EXECUTE') AS anon_can_execute
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = '<name>';
+```
+
+Two ways to close it, and the choice is not free:
+
+1. **Authorize inside the function** — return NULL (or an empty set) unless the caller
+   owns the row, is a member, or the row is public. Mirror the table's own RLS
+   predicate, using `auth.uid()` → `profiles`, never the legacy
+   `request.jwt.claim.*` GUC (§6c's sibling trap; see KAN-56).
+2. **`REVOKE EXECUTE ... FROM PUBLIC`** — correct for functions only a server-side
+   caller should reach. Revoking from `anon`/`authenticated` alone does nothing while
+   the PUBLIC grant stands.
+
+**Option 2 is unsafe when a `security_invoker` view calls the function**, because the
+view calls it *as the caller*: the revoke does not degrade to NULL, it raises
+`42501 permission denied` and the whole view dies for every legitimate user. Measured
+on `circle_member_count` (KAN-77). When a view depends on the function, use option 1.
+
+Established by KAN-77 and KAN-80, after `create_seed_user` was found anon-callable in
+production.
+
+### 6e. A guard added later does not protect the rows that predate it
+
+**When a control's protection depends on *when* it was installed, count the rows that
+predate it. Never reason from the guard's existence to the data's safety.**
+
+Reading a `BEFORE INSERT` trigger tells you what happens to rows written from now on.
+It tells you nothing about rows already on disk. The same applies to a `NOT VALID`
+constraint, a column default, and an RLS policy added to an already-populated table.
+
+Worked example, 2026-08-29 (KAN-78). `auth.users` carries `trg_strip_signup_password`,
+which unconditionally nulls `encrypted_password` on insert. Reading it, cto concluded
+that a seed helper writing a hardcoded password was harmless. It was not: the trigger
+was installed 2026-06-24, the seed rows were written 2026-04-29 to 05-04, and **55
+accounts still carried a working password hash** — all email-confirmed, none banned,
+52 with guessable addresses. A real credential path, missed by verifying the mechanism
+instead of the data.
+
+Verify against the rows, not the guard:
+
+```sql
+-- the guard exists and is enabled — necessary, not sufficient
+SELECT tgname, tgenabled FROM pg_trigger WHERE tgname = '<trigger>';
+
+-- what the rows actually contain, which is the question
+SELECT count(*) FROM <table> WHERE <the condition the guard is meant to prevent>;
+```
+
+**The tell to watch for.** `enforce_passwordless_signup`'s own migration note says the
+trigger "fires only on INSERT, so existing users and the Settings set-password flow (an
+UPDATE) are unaffected." That sentence was written as reassurance and read as one for
+eight weeks. It is in fact a precise description of the hole. When a guard documents its
+own blind spot, that line is the finding — not the comfort.
+
+The general form: **mechanism-verified is not observation-verified.** Both are
+required, and only the second one is evidence about production. This is the same
+failure shape as §6b's rule that a migration asserts its expected values rather than
+merely querying them — and the remedy is the same: make the check *executable*. A
+commented-out count relies on an operator reading it; a `RAISE EXCEPTION` on an
+unexpected count means the migration refuses to run against drifted state.
+
+### 6c. A table created outside a migration gets an explicit `REVOKE` before it carries data
+
+*Convention requested by `cto` and written here 2026-09-01; backed as `T-045`.*
+
+`public` carries **two** `ALTER DEFAULT PRIVILEGES` rules that auto-grant `anon` the full write
+set on every new relation. They are not equally fixable, and the split decides the convention:
+
+| Grantor | `ALTER DEFAULT PRIVILEGES FOR ROLE …` | Covers |
+|---|---|---|
+| `postgres` | **WILL RUN** — `pg_has_role(postgres,'postgres','MEMBER') = true` | **Every table any agent creates**, because our migrations run as `postgres` |
+| `supabase_admin` | **WILL FAIL** — no membership, not superuser (`T-025`, `T-045`) | Dashboard table editor, extensions, some CLI paths |
+
+**So the fix is not "per-table `REVOKE` across 184 forever."** One migration against the
+`postgres` rule closes the default permanently for the agent-authored path, which is nearly
+everything. What it cannot reach is the human path.
+
+**The convention, which is the only thing that covers the gap:**
+
+> **A table created outside a migration — dashboard table editor, extension, CLI — must get an
+> explicit `REVOKE ALL ON <table> FROM anon, authenticated;` before it carries data.**
+
+**And the only thing that will actually catch a violation is the catalogue test** (`T-002`),
+which must assert that no table in `public` carries an `anon` write grant it was not explicitly
+given. A convention nobody can verify is a preference.
+
+**Explicitly rejected, so nobody attempts it:** a single migration scoped against both grantors.
+Half of it cannot execute, and per `T-031` a migration that fails partway through a privilege
+change is worse than one never written — it leaves the schema in a state no file describes.
+
+**Current standing risk, for context rather than alarm:** 184 of 185 tables carry an `anon`
+write grant; 183 are held by RLS alone and `spatial_ref_sys` has no RLS (PostGIS). **No write
+policy admits an anonymous caller, so nothing is exploitable today.** The grant is the standing
+risk and RLS is the only thing between it and an incident — which is why the default matters
+more than any individual table does.
 
 ## 7. CODE GENERATION
 

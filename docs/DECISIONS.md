@@ -4219,3 +4219,469 @@ than the grant, which is the weaker state.
 **Status:** ACTIVE — authored, **not applied**. Migration
 `supabase/migrations/20260831120000_kan68_fix_safety_blocklist_fail_open.sql`. Application to
 production is PO-only (decision 019).
+
+---
+
+### P-026 — The orphaned stage-2 onboarding chain is deleted, not wired up
+
+**Date:** 2026-08-31 · **Decided by:** `cpo` · **Answers:** the product question `T-038`
+Consequence handed to `cpo` and that blocks **KAN-92** · **Judged against:** `P-020`
+(MVP 1 is player-only), `P-024` (gamification is gated for MVP 1), `T-037` Decision 3 and
+`T-038` Decision 1.
+
+**Verdict: CONFLICTS — delete the chain.** Wiring it up contradicts two active PO decisions
+and re-opens the exact defect KAN-92 exists to close.
+
+#### What the chain actually is
+
+`onboarding_sports_screen` → `onboarding_preferences_screen` → `onboarding_privacy_screen` →
+`onboarding_completion_screen`, under
+`lib/features/auth_onboarding/presentation/onboarding_scenarios/profile/`, routed at
+`app_router.dart:710-747`. Measured 2026-08-31:
+
+* **~4,900 lines** across the four screens (3,880), their local `onboarding_providers.dart`,
+  and the two services they alone depend on — `lib/features/profile/services/onboarding_controller.dart`
+  (581) and `onboarding_gamification.dart` (419).
+* **Zero inbound references** outside `app_router.dart` and the four unused constants in
+  `route_constants.dart:51-54, 174-177`. The only navigation into any of these screens is
+  the chain's own back-links. Nothing reachable in the app can enter it.
+* It carries a **third** onboarding controller, separate from both the live
+  `presentation/controllers/onboarding_controller.dart` and the dead write-half named in
+  `T-037` Decision 3. It writes `onboarding_progress`, `onboarding_analytics` and
+  **`user_points`**.
+
+#### Why it is refused
+
+1. **It is not in scope, and scope is settled.** `P-020` fixed MVP 1 as a player-only
+   *retrofit closure* whose named requirement is auth and authorization verified in
+   production. A second onboarding stage is not among the finalized MVP 1 items, and it is
+   not in MVP 1+ either — MVP 1+ was enumerated in `P-020` and this is not on that list.
+   `P-020` says scope questions in these areas are settled "**by decision, not by opinion —
+   do not re-litigate**". Adding a stage-2 wizard now is re-litigation.
+2. **Wiring it up would un-gate gamification.** Its completion path writes `user_points` via
+   `onboarding_gamification.dart`. `P-020` ruled gamification/daily check-in **hidden for
+   MVP 1**, and `P-024` confirmed the surviving check-in write is gated deliberately.
+   Reviving a points-writing screen chain reverses both.
+3. **It defeats KAN-92's own purpose.** KAN-92 exists to collapse onboarding to one write
+   path and make the resume ladder read facts that exist. Finishing this chain does the
+   opposite: it makes a third controller live and adds two more session boundaries at which
+   a profile can be half-written — the failure mode that produced the 48 rows in `T-038`
+   Decision 5.
+4. **The data is already collected.** Sport interests and primary sport are captured in the
+   live linear pass (`interestsSelection`, `onboardingPrimarySport`, `T-038` Decision 1).
+   The chain's sports step duplicates them, which is how two sources of truth start.
+
+**"It matches the PO's stated intent" is not sufficient.** `T-038` Decision 1 established
+that the intent was never implemented. Preserving ~4,900 unreachable lines as a placeholder
+for a design that has no ticket, no scope slot and no owner is carrying cost against a
+maybe, and it leaves four live routes that a deep link or a stray `context.go` can drop a
+user into mid-flow.
+
+#### What to build instead, if the goal returns
+
+The goal behind stage 2 is **profiles that are complete enough to match on**. The cheap
+instrument for that is a completion prompt on the existing profile surface — a nudge that
+reads what is missing and links to the settings screen that already edits it — not a
+blocking second wizard. That is an MVP 1+ roadmap item to be scoped on its merits when the
+PO asks for it, and it does not need this code to exist in the meantime. Nothing here is
+lost: the screens remain in git history and can be recovered by any future ticket.
+
+#### Consequence
+
+* **KAN-92 is unblocked.** Its scope now includes deleting the four screens, their
+  `onboarding_providers.dart`, `lib/features/profile/services/onboarding_controller.dart`,
+  `onboarding_gamification.dart`, the four `GoRoute` blocks at `app_router.dart:710-747`,
+  and the eight route constants at `route_constants.dart:51-54` and `:174-177`. Verified
+  2026-08-31: no other file references any of them, so the deletion is mechanical.
+* `onboarding_completion_screen.dart` also imports `onboarding_gamification.dart` directly —
+  it goes with the chain, and the file has no other consumer.
+* **The PO may overrule this.** If he does, the overruling decision must also say which MVP
+  slot the stage-2 flow occupies and what happens to the `user_points` write, because
+  `P-020` and `P-024` both have to move for it to ship.
+
+**Status:** ACTIVE — `cpo` ruling. Product decision; execution belongs to
+`flutter-feature-agent` under KAN-92.
+
+---
+
+### P-027 — Decisions 015/016 and P-007's freeze on KAN-29/KAN-30 is lifted; both stacks are deleted
+
+**Date:** 2026-08-30 (PO ruling in conversation and as Jira comments, not recorded at the
+time) · **Decided by:** PO · **Supersedes:** the freeze in decisions 015/016 and P-007 ·
+**Recorded:** 2026-08-31, after a second agent this session caught the same gap that
+produced `P-025`.
+
+**Decision:** The PO ruled directly on both frozen questions:
+
+* **KAN-29 (rewards):** "اتوقف، نمسح الكود" — abandoned, delete the code. Posted as a PO
+  comment on KAN-29, 2026-08-30. The ~985 LOC of live daily check-in code (`P-024`) is
+  **not** part of this deletion — it stays, gated behind its existing flag, exactly as
+  `P-024` already ruled.
+* **KAN-30 (clean-architecture stack):** "كود ميت، نمسحه" — dead code, delete it. Posted as
+  a PO comment on KAN-30, 2026-08-30.
+
+**Why this is being recorded a day late, again.** `P-007` (2026-08-28) explicitly froze
+both questions with the reasoning that answering them mid-sprint, alongside five other
+blockers, would get both done badly — a considered call, not an oversight. The PO's
+2026-08-30 ruling lifts that freeze deliberately, not by accident: both blockers it was
+protecting against were closed by the time the ruling was made. But the ruling itself
+landed only as Jira comments and conversation, the same failure mode as `P-025`. This time
+an agent (`flutter-feature-agent-21`, dispatched to execute the deletion) caught the
+conflict itself before touching any code, checked `DECISIONS.md`, found the freeze still
+on record with nothing superseding it, and stopped rather than deleting ~40k LOC against
+an active freeze on a peer's say-so. **That is the correct behavior a frozen decision
+exists to produce**, and it worked exactly as intended — the record was wrong, not the
+freeze's enforcement.
+
+**Consequence:** `lib/features/rewards/**` (except the check-in files `P-024` already
+carves out) and the clean-architecture stack named in KAN-30 (`lib/features/games/data/**`
++ `domain/usecases/**`, `lib/features/profile/data/**`, and whatever else KAN-30's ticket
+body names) are cleared for deletion. Any tests that target only the deleted stack are
+orphaned by the same deletion and should go with it, not be left referencing gone code.
+
+**Correction, 2026-08-31 — the first write of this entry dropped two clauses from the
+original ruling, and a second agent caught it the same way the first one caught the
+freeze.** The PO's actual comments on KAN-29/KAN-30 (2026-08-30) scheduled the deletion for
+**sprint 3 (week of 2026-09-07)**, not immediately, and KAN-30's specifically named a
+precondition: `master-analyst` must re-confirm the unreachable-code boundary before
+`flutter-feature-agent` executes, because the boundary was last measured *before* that
+week's onboarding/auth work landed — exactly the kind of change that can move code between
+reachable and unreachable. `flutter-feature-agent-21` stopped a second time on exactly this
+gap rather than deleting on a summary that had quietly dropped both.
+
+**Resolution:** the PO's later, separate instruction this session — "faster is better,
+work backlog/sprint-3 items now if nothing blocks them" — supersedes the sprint-3 *timing*.
+It does not supersede KAN-30's named *precondition*, which is a correctness safeguard, not
+a scheduling one, and is more load-bearing today than when it was written: KAN-92's
+deletion (`P-026`) landed in this same session, on this same day, and is precisely the kind
+of onboarding-adjacent change the precondition exists to catch. `master-analyst` re-confirms
+the boundary first; `flutter-feature-agent` executes once that lands, same day, not next
+sprint.
+
+**Status:** ACTIVE — PO ruling, recorded post-hoc a third time after the same category of
+gap recurred twice; the pattern is now: write the ruling into `DECISIONS.md` in full, with
+every clause, in the same session it's made, not summarized after the fact.
+
+---
+
+### T-041 — KAN-87's safety-action gap needs no RPC: the auth uid is already in memory on that screen, and `profiles.user_id` is anon-readable anyway
+
+**Status:** Accepted, 2026-08-31. Raised by `flutter-feature-agent` as item 4 of KAN-87 comment 10348.
+
+**The reported gap.** `user_profile_screen.dart`'s Block / Unblock / Report / Message actions all pass `widget.userId` to `BlockRepositoryImpl`, whose contract is explicit: *"All IDs are auth.users.id — never profile IDs."* KAN-87 removed `creator_user_id` from `v_game_card`, so the game-creator-card entry path now routes as `.../userProfile/$creatorProfileId?profileId=$creatorProfileId` — a profile id in the auth-uid slot. On that path the four safety actions are silently wrong or hard-fail on FK. Real, and correctly escalated rather than guessed at.
+
+**Decision.** Source the auth uid for these four actions from the **already-loaded viewed profile** — `ref.read(profileControllerProvider).profile!.userId` — not from `widget.userId`. No new RPC, no disabled actions. Guard on null profile (actions are unreachable before load anyway) and never fall back to `widget.userId`.
+
+**Why.** The screen cannot render these actions without first completing `_loadProfileData()`, which fetches the viewed profile through `supabase_profile_repository.dart:34-35` — a column projection that includes `user_id` — and `UserProfile.userId` (`lib/data/models/profile/user_profile.dart:11,371`) is a non-nullable genuine `auth.users` id. The same value is already consumed one screen over at `user_profile_screen.dart:981` for sport-profile routing. `profile_repository_impl.dart:33-42` confirms that when `profileId` is supplied — which the post-KAN-87 game-creator route always supplies — the fetch goes by profile id and still returns `user_id`. **The identifier the actions need is already in state; the bug is that they read the wrong variable.**
+
+**Rejected — a `profile_id → user_id` resolver RPC.** It would be a new definer endpoint whose entire job is to hand out an `auth.users` id, i.e. a *new* PII surface created to undo one KAN-87 just closed, in the same ticket. It is also unnecessary: the client already holds the value legitimately.
+
+**Rejected — disabling the actions on the game-creator entry path.** Blocking and reporting a game creator is exactly the moment a safety feature earns its keep — that path is where a user meets a stranger. Degrading safety surface to route around a variable-selection bug is the wrong trade, and it would leave the same latent bug for the next caller that passes a profile id.
+
+**Consequence.**
+1. `flutter-feature-agent` changes `_blockUser`, `_unblockUser`, `_reportUser`, `_sendMessage` and the `_showMoreOptions` block-state read (and `isUserBlockedProvider(...)`) to take the auth uid from the loaded profile. KAN-87 does not close until this is in.
+2. `BlockRepositoryImpl`'s docstring contract stands unchanged and is now actually honoured on every entry path — including the pre-existing ones, which were only accidentally correct.
+3. **Separate finding, filed separately.** `public.profiles` policy `profiles_select_public` (`USING (is_active = true)`, roles = PUBLIC) hands **154 distinct raw `auth.users` UUIDs to `anon`** — measured read-only 2026-08-31 via a `SET LOCAL ROLE anon` probe. That is six times the 26 uuids KAN-87 exists to remove from `v_game_card`. KAN-87 remains correct and worth shipping, but **it does not close the SEC-17 class** — the base table is the larger surface. This does not change KAN-87's scope; it gets its own ticket.
+
+
+---
+
+### P-028 — `get_profile_by_id` returns 21 named columns, and the inactive-profile bypass narrows to the profile's owner
+
+**Date:** 2026-09-01 · **Decided by:** `cpo` · **Ruling for:** KAN-100 (KAN-82 Part 2) ·
+**Builds on:** [[P-019]] · **Requested by:** team-lead, to unblock `backend-owner`
+
+**The three questions.** KAN-100 asks (1) whether `row_to_json(p.*)` becomes an explicit
+column list, (2) what an authenticated user may see on *someone else's* profile through this
+RPC, and (3) whether they may see an `is_active = false` profile at all.
+
+**Governing passage.** `04 federation & governance white paper`, Art. 11 **Right 2 —
+Privacy**: *"Privacy defaults are protective; expanded visibility requires affirmative player
+action."* This is the same clause that decided P-019, and it decides all three questions here.
+
+#### Ruling 1 — explicit allowlist. ALIGNED.
+
+`row_to_json(p.*)` is a standing commitment to expose every future column of `profiles` with
+no decision attached. That is the inverse of a protective default. Replace it with the
+named list below.
+
+#### Ruling 2 — cross-user columns: 21, the same set on every path. ALIGNED.
+
+**Visible to any authenticated caller:**
+`id`, `user_id`, `username`, `display_name`, `avatar_url`, `bio`, `age`, `city`, `country`,
+`gender`, `language`, `verified`, `is_active`, `profile_type`, `persona_type`, `intention`,
+`preferred_sport`, `primary_sport`, `interests`, `created_at`, `updated_at`.
+
+**Not a reduced set relative to the normal profile view, deliberately.** This RPC loads the
+*same screen* the non-RPC path loads; a reduced set would make one profile screen render
+differently depending on which code path reached it. Privacy belongs in `privacy_settings`,
+applied uniformly, not in one RPC's projection. The list above is the app's own already-shipped
+allowlist (`supabase_profile_datasource.dart:12` `_baseProfileColumns`), reconciled against
+the fields `UserProfile` actually consumes.
+
+**Excluded, and why — this is the substance of the ruling:**
+
+* **`latitude`, `longitude`, `last_location_updated_at`** — the most serious item currently
+  exposed. Today any authenticated caller holding a profile id receives that person's precise
+  coordinates. The shipped granularity of location on a profile is **city**. Precise
+  coordinates are expanded visibility with no affirmative action; they never appear here.
+* **`last_seen`** — presence data. The normal path already does not fetch it, so excluding it
+  is parity, not a regression.
+* **`news`** — a notification preference. Self-only.
+* **`hashtag_reputation_score`, `skill_level`, `is_player`** — internal or legacy scoring;
+  reputation surfaces through `sport_profiles`, not raw.
+* **`onboard`, `profile_completion`, `is_original`, `search_tsv`** — internal state and an
+  index artifact. Never anyone's business but the system's.
+
+**`user_id` is retained, and retained reluctantly.** It is a raw `auth.users` UUID, and it
+lets a caller correlate a user's two personas — which the persona model exists to keep apart.
+It stays for two reasons: the live caller reads it
+(`supabase_profile_datasource.dart:42` → `_enrichWithAuthData`), and per **T-041 item 3** the
+same column is *already* handed to `anon` in bulk by `profiles_select_public`. Removing it
+here would break a working path while closing nothing. It belongs to that separate filed
+finding, not to KAN-100.
+
+#### Ruling 3 — the inactive-profile bypass narrows to the owner. ALIGNED WITH CONSEQUENCE.
+
+`is_active` is the **persona selector**, not a ban flag (P-019, verified). RLS on `profiles`
+already admits `(p.user_id = auth.uid() OR p.is_active = true)` — **a user can already read
+their own benched persona without any bypass.** The `SECURITY DEFINER` escalation therefore
+buys exactly one thing: letting a *stranger* open a persona its owner has switched away from.
+
+Under Art. 11 Right 2 that is precisely expanded visibility with no affirmative action, and
+P-019 already ruled that a non-selected persona **is not the public-facing identity**. The
+function must apply the same test RLS applies:
+
+* `is_active = true` → return the 21 columns to any authenticated caller.
+* `is_active = false` → return them **only if `p.user_id = auth.uid()`**; otherwise return
+  null, exactly as for a nonexistent id.
+
+**This does change observed behaviour, and the change is named on purpose.** On 2026-08-30 the
+PO opened the inactive test account `roposox` on canary and confirmed it renders — that
+verification closed KAN-82 AC4, which asked whether the *bypass survived the migration*. It was
+not a ruling on who should hold it; KAN-82's own text deferred that question to this ticket.
+**The PO may overrule this**, in which case the corpus ambiguity flagged in P-019(b) — "hold
+two, display one" — is what needs settling first, and this entry gets superseded.
+
+**Why this does not orphan links.** P-019 already degrades a benched persona's authored content
+to a neutral, non-identifying author label with no avatar — so there is no author link for a
+stranger to follow to a benched profile. Narrowing the bypass makes the RPC agree with the
+comment view instead of contradicting it.
+
+**Consequence.**
+
+1. `backend-owner` authors the migration: named column list, plus the owner-only branch on
+   `is_active = false`. `SECURITY DEFINER` is retained — the owner-own-persona read still needs
+   it under the current policy set. `cto` applies under G-002. **`cpo` authored no SQL.**
+2. `flutter-feature-agent` designs the not-found state for a stranger following a stale link to
+   a benched profile. Per P-019(a) it is **designed, not defaulted**: a neutral "this profile
+   isn't available" surface — never a raw error, never a blank screen, and never wording that
+   asserts the account was deleted or banned, both of which are false.
+3. **Two discrepancies surfaced, neither ruled on here, both for `backend-owner` to verify.**
+   `_baseProfileColumns` requests `geo_lat, geo_lng`, but the baseline schema declares
+   `latitude, longitude` — one of the two is wrong. And that same list omits `persona_type` and
+   `primary_sport`, which `UserProfile` consumes. Verify before writing the migration; do not
+   copy the Dart list blind.
+
+**Status:** ACTIVE
+
+### T-042 — `deploy-web.yml` is deleted; and the finding that reframes it: `ci.yml` has never once passed, so `main`'s "real gate" gates nothing
+
+**Status:** Accepted, 2026-09-01. Closes KAN-73. Amends `004` (release topology).
+
+**Delegation, stated plainly.** KAN-73's acceptance criterion 3 reserved this call for the PO, on the reasoning that a deploy-topology change is not `cto`'s alone. `team-lead` delegated it to `cto` on 2026-09-01 as an architecture/CI decision. I am recording the delegation rather than quietly assuming the authority: if the PO wants criterion 3 honoured as written, this entry is the thing to overturn, and the deletion is one `git revert` away.
+
+**Decision. Delete `.github/workflows/deploy-web.yml`.** Done, uncommitted, for the sprint-end batch. `BETA` needs no separate ruling — it was only ever a trigger in that file.
+
+**Why — all three facts re-verified live on 2026-09-01, not carried over from the KAN-73 comment.**
+
+| Claim | Command | Result |
+|---|---|---|
+| `gh-pages` branch is gone | `git ls-remote --heads origin` | only `Canary`, `main` |
+| Pages is not enabled | `gh api repos/dabblersport/webapp/pages` | `404 Not Found` |
+| Red for six weeks | `gh run list --workflow=deploy-web.yml` | last success 2026-07-10; every run since 2026-07-19 failed |
+
+No branch, no Pages site, no consumer, and failing on every push to `main`. There is nothing to break.
+
+**The failure reason matters, and it is not what it looks like.** `deploy-web.yml` died at `flutter build web` with `The language version 3.11 specified for the package 'sign_in_with_apple' is too high. The highest supported language version is 3.10.` That is a **stale SDK pin, not a broken app**: the workflow pinned `flutter-version: 3.38.9`, while `scripts/cloudflare-build.sh:13` clones `-b stable --depth 1` and therefore floats to current stable (local dev is on 3.44.1). Production builds fine. **So the workflow was not carrying a real signal about `main`, and deleting it discards nothing.** I checked this specifically because a red build step on the production branch is exactly the kind of thing that is dangerous to delete on the assumption that it is dead.
+
+**Rejected — keep it and document it (KAN-73's other branch).** Documentation describes a surface for whoever depends on it. There is no dependent, no branch, and no site. Documenting it would create the false impression that a second production surface exists.
+
+**Rejected — fix the pin and keep `gh-pages` as a staging surface.** `Canary` → canary.dabbler.pro already is that surface, and it has the decisive property `gh-pages` lacks: it runs on the same platform and the same build script as production, so what passes there is evidence about what will happen on `main`. A second staging surface on a different platform with a different build path produces results that do not transfer.
+
+**Rejected — keep it as a web-build smoke test.** The intent is right and the vehicle is wrong. "Does `main` still compile for web" belongs in `ci.yml` next to analyze and test, not bolted to a publish step for a site that does not exist.
+
+---
+
+**The finding that changes the reasoning, and does not change the outcome.**
+
+The KAN-73 comment argued for deletion partly on the grounds that a permanently-red check trains everyone to ignore red checks, *now that `ci.yml` and `anon-allowlist-check.yml` are real green gates on `main`*. **That premise is false.** Measured 2026-09-01:
+
+```
+$ gh run list --workflow=ci.yml --limit 100 | awk '{print $2}' | sort | uniq -c
+  12 failure
+```
+
+**`ci.yml` has run 12 times and failed 12 times. It has never been green.** It dies at the Analyze step: `flutter analyze` exits non-zero on **55 warnings and 160 infos** (0 errors) — `unused_local_variable`, `unused_field`, `unused_element`, `dead_null_aware_expression`, `avoid_print`. `analysis_options.yaml` ignores only `invalid_annotation_target`.
+
+So the harm KAN-73 attributed to `deploy-web.yml` is real, but it was **never that workflow's doing** — and deleting it does not fix it. `T-026` said the mechanical gate must precede the reviewer. The gate was built (KAN-72) and has never once admitted a commit. **A gate that has never passed is not a gate; it is a red X everyone has already learned to route around**, which is precisely the failure mode `T-026` was written to prevent. `anon-allowlist-check.yml` is genuinely green on every run and is unaffected.
+
+**Consequence.**
+1. `.github/workflows/deploy-web.yml` is deleted. `version-control` commits it in the sprint-end batch; no PR of its own.
+2. `CLAUDE.md` §Deployment & Release Topology gains a **Deploy Targets and CI Gates** subsection: `main` has exactly one deploy target, the two remaining workflows are gates rather than targets, Cloudflare deploys on its own trigger so **a red Actions check does not block a production deploy**, and `ci.yml`'s current red state is stated outright so nobody reads "CI exists" as "CI passes."
+3. **New ticket — `ci.yml` is red on every run.** Filed separately; owner `version-control` for the workflow, `flutter-feature-agent` for the 55 warnings. Not folded into KAN-73: KAN-73 is a deploy-topology question and this is a gate-integrity question, and folding them would let the smaller one close the larger.
+4. **Recorded for whoever fixes (3):** the `flutter-version: 3.38.9` pin in `ci.yml` is the same stale pin that killed `deploy-web.yml`, and it diverges from what production actually builds on (floating stable). A gate that compiles against a different SDK than production is testing something other than production. Whatever else changes, that pin should move to match `scripts/cloudflare-build.sh` or the build script should be pinned to match it — one of the two, not neither.
+
+### T-043 — KAN-109: nullable is right, but the NOT NULL is the only thing holding an anon write path shut
+**Date:** 2026-09-01
+**Decision:** `ALTER TABLE analytics_events ALTER COLUMN user_id DROP NOT NULL` is correct **and
+must not ship alone.** The same migration adds an event-name allowlist for anonymous callers and
+a size cap on `_properties`. **KAN-75: option (a)** — leave `dabbler-news` service-role-only, add
+no INSERT policy, close the ticket noting the hole is already shut.
+
+**Why nullable, not a client gate.** `rpc_track_event` is `SECURITY DEFINER` with EXECUTE granted
+to `anon` (verified). The system already intends anonymous analytics; the `NOT NULL` contradicts
+its own RPC. And `flags_snapshot` fires from `lib/main.dart:78` — app startup, before any session
+exists — so gating the call site would suppress precisely the signal the event exists to capture,
+and would leave the inconsistency waiting for the next pre-auth event anyone adds.
+
+**Gating the Dart call site is not a security option at all.** The RPC is callable directly with
+the publishable key that ships in the web bundle. A client-side gate changes what *our* client
+sends and nothing about what an attacker can send. It is a product choice about signal, not a
+control.
+
+**The finding that changes the shape of the fix.** The function body is, in full:
+
+```sql
+INSERT INTO public.analytics_events (user_id, event_name, properties)
+VALUES (auth.uid(), _event_name, coalesce(_properties, '{}'::jsonb));
+```
+
+No rate limit, no validation, no cap on `_properties`. **So today the `NOT NULL` is the only thing
+preventing unauthenticated unbounded writes** — every anon call fails on the constraint. That is
+not a control; it is a working accident, and the bug report is a request to remove it.
+
+Dropping it alone converts "anon writes fail by luck" into "anon writes succeed without limit,
+with arbitrary JSONB, at storage cost, forever." **This is the `T-012` pattern for the third
+time: protection by an absent thing, which fails open the moment someone fixes an unrelated
+defect.** `analytics_events` holds 56 rows today, so there is no volume masking it.
+
+**Rejected — drop the constraint and address abuse later.** The window is the whole point: the
+door is currently shut, and the migration is what opens it. Replacement goes in the same change
+or the change does not go.
+**Rejected — revoke anon EXECUTE.** It closes the vector and the use case together, and the use
+case is legitimate.
+
+**KAN-75 — why (a), and why the venue precedent does not transfer.** The hole is already closed:
+zero INSERT policies means RLS default-denies `anon` and `authenticated`, while `service_role`
+writes fine by bypassing RLS. Adding an `is_admin()` INSERT policy would not be forward cover —
+**it would open a path that is currently shut, for a consumer that does not exist.** `venue` got
+policies because it had a real gap on a `public=true` bucket with an intended admin path;
+`dabbler-news` has no gap. `T-030` ruled that a policy written for an absent caller encodes a
+guess; adding one here repeats that in better syntax. When a publisher is built, its gate is
+designed against what it actually needs.
+**Status:** ACTIVE
+
+### T-044 — KAN-104: `find_slots` becomes `SECURITY DEFINER`; the boundary is justified by the *return signature*, not by the function
+**Date:** 2026-09-01
+**Decision:** **Option (a).** `public.find_slots(uuid, date, integer)` is marked `SECURITY DEFINER`,
+keeps `SET search_path = public`, and gains `SET row_security = off`. `public.v_space_slots_today`
+keeps its `anon`/`authenticated` SELECT grant and additionally gets `security_invoker = true`.
+Both land in one new migration, timestamped **after** `20260831130000_kan74_...`, restating the
+whole function body. `backend-owner-15` authors; not applied by the author (`G-002`).
+
+**Why (a) — the widening is exactly one boolean, and that is measurable, not asserted.** Verified
+live read-only on `wtncuzcskpigqpmnxwws`, 2026-09-01, for every relation the function body touches:
+
+| relation | SELECT policy | qual | roles |
+|---|---|---|---|
+| `opening_hours` | `opening_hours_read` | `true` | `anon`, `authenticated` |
+| `venue_blackouts` | `vblackouts_read` | `true` | PUBLIC |
+| `venue_price_rules` | `vprices_read` | `true` | PUBLIC |
+| `venue_spaces` | `spaces_public_read` | `is_active = true` | PUBLIC |
+| `venue_bookings` | `venue_bookings_select` | `can_view_venue_bookings(auth.uid(), …)` | PUBLIC |
+
+Four of the five are already unconditionally anon-readable. **Elevating the function therefore
+changes the visible result for `venue_bookings` and nothing else** — and `venue_bookings` reaches
+the caller only through `is_booked boolean`, never as a row, a column, a count, a status, or a
+booker identity. `price_aed` is not new exposure: `vprices_read` is `true` for PUBLIC today, so an
+anon caller can already read `venue_price_rules` directly.
+
+**The precedent is exact, not analogous.** `can_view_venue_bookings` is already `prosecdef = true`
+with `proconfig = {search_path=public, row_security=off}`, owned by `postgres`, EXECUTE to `anon` —
+a definer function that crosses the same privilege boundary over the same table and returns only a
+boolean. `T-020`'s rule is that *a control's data* is never readable by the people it constrains;
+a boolean derived from that data is not that data. Adding `row_security = off` explicitly rather
+than leaning on `postgres`'s `BYPASSRLS` attribute matches that precedent and makes the bypass a
+property of the function instead of a property of whoever happens to own it.
+
+**Rejected — (b), a narrow `anon`/`authenticated` SELECT policy on `venue_bookings`.** It cannot do
+what it claims. **An RLS policy is a row filter; it cannot restrict columns.** "Expose only the
+columns availability needs" would require a separate column-level `GRANT`, so (b) is two mechanisms
+where (a) is one — and it widens the base table on *every* access path, not just this view.
+PostgREST would immediately serve `GET /venue_bookings` to `anon` with whatever the policy admits.
+
+**Rejected — (c), revoke the grant and keep the view venue-admin-only. It does not fix the bug.**
+`find_slots` holds EXECUTE from both PUBLIC (`=X/postgres`) and explicitly `anon=X/postgres`
+(verified 2026-09-01). Revoking on the *view* leaves the *function* callable directly as a
+PostgREST RPC by any anon caller, with an arbitrary `p_venue_space_id` and date, still returning
+`is_booked = false` for every slot. (c) hides the wrong answer behind one door and leaves the other
+open. It also spends the public-availability feature the view exists for.
+
+**The condition on this ruling: the return signature is the boundary.** `SECURITY DEFINER` here is
+justified by `(slot_start, slot_end, is_booked, price_aed)` and by nothing else. **Adding any column
+to `find_slots`' return type, or any new relation to its body, requires a fresh CTO ruling** — the
+elevation is not a general licence. `is_active = true` on the `venue_spaces` lookup is the only
+thing bounding which spaces an anon caller can enumerate; it stays.
+
+**The ordering trap, and why this is a separate file rather than an edit to KAN-74's.**
+`CREATE OR REPLACE FUNCTION` that omits `SECURITY DEFINER` silently resets `prosecdef` to `false`
+— the exact analogue of the `CREATE OR REPLACE VIEW` / `security_invoker` trap in `CONVENTIONS §6c`.
+KAN-74's migration is authored but **not applied** (ledger stops at `20260829193550`). The new file
+must sort after it and restate the body in full; if the two are ever applied out of order, or KAN-74
+is re-run afterwards, the elevation is lost with no error. `CONVENTIONS §6c` is extended to cover
+functions, not just views.
+
+**Status:** ACTIVE
+
+### T-045 — The default-privilege fix splits: one rule we can change, one we cannot
+**Date:** 2026-09-01
+**Decision:** The anon default-privilege remediation is **two separate pieces of work**, not one
+migration. `ALTER DEFAULT PRIVILEGES FOR ROLE postgres` is authored and applied normally.
+The `supabase_admin` rule is **unalterable from this project's roles** and is handled by a
+standing convention plus per-table `REVOKE`, never by a migration that will fail.
+
+**Why — measured 2026-09-01, settling what I had left as "check whether it is alterable":**
+
+```sql
+SELECT current_user,                                          -- postgres
+       (SELECT rolsuper FROM pg_roles WHERE rolname=current_user),   -- FALSE
+       pg_has_role(current_user,'supabase_admin','MEMBER'),          -- FALSE
+       pg_has_role(current_user,'postgres','MEMBER');                -- TRUE
+```
+
+`ALTER DEFAULT PRIVILEGES FOR ROLE x` requires MEMBER of `x` or superuser. So:
+
+- **`FOR ROLE postgres` — WILL run.** We are a member.
+- **`FOR ROLE supabase_admin` — WILL FAIL.** Not a member, not superuser. Same boundary as
+  `T-015` (`geometry_columns`) and `T-025`.
+
+**This is better news than it sounds, and narrows the problem considerably.** Our migrations run
+as `postgres`, so **every table any agent creates picks up the `postgres` rule** — fixing that
+one rule closes the default for all agent-authored tables permanently. The `supabase_admin` rule
+only bites objects created by Supabase's own tooling: the dashboard table editor, extensions,
+some CLI paths. That is a real path, but a narrow and human-initiated one.
+
+**Consequence — the standing convention, since no migration can cover it:** a table created
+through the Supabase dashboard arrives with `anon` holding the full write set. **Any table not
+created by a migration gets an explicit `REVOKE ALL ... FROM anon` before it carries data.**
+That belongs in `CONVENTIONS.md` and in the catalogue test of `T-002`, which is the only thing
+that will actually catch it.
+
+**Rejected — scoping a single migration against both grantors.** Half of it cannot execute, and
+a migration that fails partway through a privilege fix is worse than one that was never written
+(`T-031`).
+**Rejected — per-table `REVOKE` across all 184 as the whole answer.** It treats today's tables
+and leaves the generator running for tomorrow's. The `postgres` rule is where the generator
+lives for everything we author.
+**Status:** ACTIVE

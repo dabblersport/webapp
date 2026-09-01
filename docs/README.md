@@ -71,7 +71,7 @@ All twelve files were filled under epic **KAN-5**, one Jira task per file.
 | `ARCHITECTURE.md` · `SCHEMA.md` · `ROADMAP.md` · `PROJECT_STATE.md` | **Filled** |
 | `LEARN.md` · `STATUS.md` · `status/master-analyst.md` | **Filled** |
 | `BRIEF.md` | **AWAITING PO INPUT** — structure drafted, questions listed in its §8. Nothing about product intent may be inferred from the code |
-| `status/notifications-specialist.md` · `status/version-control.md` · `status/app-store-submission-fixer.md` | **Spec only** — each belongs to its agent and is filled on that agent's first task. master-analyst never writes into them |
+| `status/notifications-specialist.md` · `status/version-control.md` · `status/app-store-submission-fixer.md` · `status/qa-tester.md` | **Spec only** — each belongs to its agent and is filled on that agent's first task. master-analyst never writes into them |
 
 **Also in this directory, outside the governance system:** `LOCATION.md` and
 `NOTIFICATIONS.md` (pre-existing domain notes — `NOTIFICATIONS.md` has drifted; its

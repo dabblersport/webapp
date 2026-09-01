@@ -200,7 +200,7 @@ this file said. See §10 for how that number was wrong.
 | Position | Count | Meaning |
 |---|---:|---|
 | **EXPOSED** | **19** | `SECURITY DEFINER` + anon-selectable + **no `auth.uid()` predicate**. Bypasses RLS for an unauthenticated caller |
-| definer + anon-granted, returns rows | **2** | **CORRECTED 2026-08-28 — `v_game_card` (216 rows) and `v_meetup_list` (1 row) are readable by `anon`.** Not an RLS bypass of private data — both return only `listing_visibility = 'public'` rows — but both expose `creator_user_id`, `creator_username`, `creator_display_name`, `creator_avatar_url`, start time and venue to an unauthenticated caller. See SEC-15 |
+| definer + anon-granted, returns rows | **2** | **CORRECTED 2026-08-28 — `v_game_card` (216 rows) and `v_meetup_list` (1 row) are readable by `anon`.** Not an RLS bypass of private data — both return only `listing_visibility = 'public'` rows — but both expose `creator_user_id`, `creator_username`, `creator_display_name`, `creator_avatar_url`, start time and venue to an unauthenticated caller. See SEC-15. **SEC-17 (KAN-87) migration drops `creator_user_id` from `v_game_card`'s SELECT list, replacing it with the already-present `creator_profile_id`** — Dart call sites migrated 2026-08-30; the SQL migration (`supabase/migrations/20260830120000_kan87_drop_creator_user_id_from_v_game_card.sql`) is authored but, as of this writing, not yet applied — `v_game_card` still returns `creator_user_id` live until it is |
 | definer + anon-granted, returns 0 | 6 | Empty for `anon`, **verified by query, not by reading the definition** |
 | anon-revoked | 23 | `anon` has no SELECT grant — safe by grant |
 | invoker | 21 | `security_invoker = true` — the underlying table's RLS applies |
@@ -212,7 +212,9 @@ went unnoticed.
 
 ### 2a. EXPOSED — 19 views readable by `anon` with no uid predicate
 
-**Confirmed leaking real user data — CRITICAL:**
+**Confirmed leaking real user data — CRITICAL when measured. All five are now CLOSED; see the
+resolution note below the table. The table is retained as the record of what was exposed, and the
+per-row verdicts are marked with their closing ticket.**
 
 | View | Rows to `anon` | Exposure |
 |---|---:|---|
@@ -245,9 +247,9 @@ the second control that shows the method discriminates.
 
 | View | Rows to `anon` | What is exposed | Verdict |
 |---|---:|---|---|
-| `v_mod_queue_open` | **9** | `reporter_username`, `target_username`, `reason`, `details`, `target_user_id` — 7 reports on posts, 2 on users, all `status = 'open'` | **CRITICAL, OPEN.** **This deanonymises reporters to the people they reported.** Worse in kind than a data leak: it is a safety risk to the reporter, and the moderation screen is correctly gated (`moderation_queue_screen.dart:22`) while the data behind it is not. `SEC-03` |
-| `v_circle_feed` | **6** | `author_user_id` (auth UUID), `author_display_name`, `body`, `circle_name` — **all 6 rows are `visibility = 'circle'` inside `circle_type = 'private'`** | **CRITICAL, OPEN.** Private circle posts readable with no account. **Not the `v_game_card` public-listing class** — nothing here was marked public by anyone |
-| `v_safety_overview` | **1** | `reports_open`, `active_enforcements`, `takedowns_active`, `audits_24h` | **HIGH, OPEN.** Aggregate only, no per-user rows — the moderation posture of the platform, readable by anyone. Lower than the other two because it names nobody. `SEC-02` |
+| `v_mod_queue_open` (**CLOSED**) | **9** | `reporter_username`, `target_username`, `reason`, `details`, `target_user_id` — 7 reports on posts, 2 on users, all `status = 'open'` | **CRITICAL when measured — RESOLVED 2026-08-29, KAN-56** (`anon` now gets `42501`). **This deanonymised reporters to the people they reported.** Worse in kind than a data leak: it is a safety risk to the reporter, and the moderation screen is correctly gated (`moderation_queue_screen.dart:22`) while the data behind it is not. `SEC-03` |
+| `v_circle_feed` (**CLOSED**) | **6** | `author_user_id` (auth UUID), `author_display_name`, `body`, `circle_name` — **all 6 rows are `visibility = 'circle'` inside `circle_type = 'private'`** | **CRITICAL when measured — RESOLVED 2026-08-29, KAN-56** (flipped to invoker, 0 rows). Private circle posts were readable with no account. **Not the `v_game_card` public-listing class** — nothing here was marked public by anyone |
+| `v_safety_overview` (**CLOSED**) | **1** | `reports_open`, `active_enforcements`, `takedowns_active`, `audits_24h` | **HIGH when measured — RESOLVED 2026-08-29, KAN-56** (`anon` now gets `42501`). Aggregate only, no per-user rows — the moderation posture of the platform, readable by anyone. Lower than the other two because it names nobody. `SEC-02` |
 
 **RESOLVED 2026-08-29 — all three, by KAN-56, applied before my flag arrived.** Re-verified here as `anon`: **`v_mod_queue_open` and `v_safety_overview` now raise `42501 permission denied`** — the SELECT grant is revoked, which is a stronger closure than returning zero rows. **`v_circle_feed` returns 0** (was 6) and `v_circle_feed_visible` 0, both flipped to invoker. Controls in the same transaction unchanged: `v_game_card` 216, `v_comments` 66 — **no cascade.** The table above is kept as the record of what was exposed and for how long; the exposure itself is closed. **My pre-flight — `v_mod_queue_open` must be revoked, not flipped, because `moderation_reports`' two policies both deny SELECT — arrived after the migration and matched the ruling that shipped.** It stands as a third independent confirmation, not a fresh finding. They were the same class KAN-37/KAN-67 closed and were left behind by both.
 
@@ -273,7 +275,7 @@ transaction.
 | `v_potential_vibes_default` | granted | no | **0** | **Intentionally public — `T-027`.** Function-backed: `security_invoker` is a **no-op** when the `FROM` is a set-returning function; access control lives inside the function. Probed, not assumed |
 | `v_recreate_quickpicks` | granted | no | **0** | **Intentionally public — `T-027`.** Same mechanism |
 | `username_registry_public` | granted | no | **0** unfiltered | **Intentionally public — `T-027`.** Backs signup username availability and **must answer before a session exists**; it is a lookup queried with a predicate |
-| `v_space_slots_today` | granted | no | **errors** | **Not a security finding — `BUG-05`.** `find_slots()` references the dropped `public.venue_opening_hours` and raises 42P01 for **every** role including `postgres`. Needs its own ticket |
+| `v_space_slots_today` | granted | no | **errors (until KAN-74 applied)** | **`BUG-05`, being fixed via KAN-74 + KAN-104.** `find_slots()` referenced the dropped `public.venue_opening_hours`; KAN-74 (`20260831130000`) corrects the reference to `opening_hours`/`day_group`. Separately, KAN-104/`T-044` found `is_booked` reads `false` for every anon/non-privileged-authenticated caller regardless of actual occupancy (RLS on `venue_bookings` denies those callers all rows, so `find_slots`'s internal EXISTS always finds none) — fixed by making `find_slots` `SECURITY DEFINER` (`20260901120000`, must apply after KAN-74, restates its body) plus `security_invoker = true` on this view. Both migrations authored, not yet applied |
 
 **Where the earlier guesses landed.** The old note guessed `v_comments`, `v_game_rating` and
 `v_user_badges_summary` were "probably public". **One of three.** `v_comments` is public and
@@ -289,9 +291,11 @@ They describe geometry columns, hold no application data, and are owned by the e
 They are in the 19 by measurement and excluded from the work.
 
 **Arithmetic, reconciled 2026-08-29: 19 exposed → 2 PostGIS → 17 app views needing a verdict.**
-**14 are closed or accounted for. 3 remain open and leaking** (`v_mod_queue_open`,
-`v_circle_feed`, `v_safety_overview`) — see the top of this section. The earlier claim that all
-17 were resolved was wrong by exactly those three.
+**All 17 are now closed or accounted for — updated 2026-08-29.** The last three
+(`v_mod_queue_open`, `v_circle_feed`, `v_safety_overview`) closed under KAN-56 and are re-verified
+as `anon` in the resolution note at the top of this section. **The history here is worth keeping:
+this line first read "all 17 resolved" (wrong by three), was corrected to "3 remain open", and is
+only now genuinely at zero — so read the date on it, not the claim.**
 Current census, reconciled with §2d: **71 views · 28 invoker · 43 definer · 45 anon-readable**,
 of which **five are confirmed intentional (`T-027`)** and the rest carry a stated position.
 **The 45 anon-readable views are not 45 findings.**
@@ -326,6 +330,43 @@ and venue. That is `SEC-15`, a **MED** privacy finding needing a PO decision, no
 
 `v_game_card` is also the live game path (`game_view_controller.dart:399`), so it cannot
 simply be revoked.
+
+**SEC-17 (KAN-87) closes the `creator_user_id` column exposure specifically.** `v_game_card`
+deliberately stays anon-readable — that is the whole point of §2b — but it should expose
+`creator_profile_id` (a `profiles.id`, opaque and already present in the view) and **not**
+`creator_user_id` (a raw `auth.users` UUID, a durable cross-surface identifier for a real
+person). The view's internal `is_creator`/ownership logic keeps comparing against
+`creator_user_id` server-side via `auth.uid()` — only the column leaves the SELECT list, not
+the authorization check. All Dart call sites were migrated to `creator_profile_id` 2026-08-30;
+the column-drop migration is written but not yet applied — see the note in §2 above.
+
+**SEC-17b (KAN-106) is the base-table version of SEC-17, and is larger.** `public.profiles`
+hands `anon` its own `user_id` column directly — no view in front of it — via the
+`profiles_select_public` policy (`USING (is_active = true)`, `polroles = NULL` i.e. PUBLIC)
+combined with an `anon` column-`SELECT` grant on `user_id`. Measured 2026-09-01:
+**154 distinct raw `auth.users` UUIDs**, six times SEC-17's 26. Same defect class, same
+reasoning: `profiles` is deliberately public pre-login browsing surface (the row policy is
+correct and untouched), the problem is one column. Fix is a column-level
+`REVOKE SELECT (user_id) ON public.profiles FROM anon` —
+`supabase/migrations/20260901100000_kan106_revoke_profiles_user_id_anon.sql`, authored,
+**not yet applied**. `authenticated` keeps the column; every in-app Dart caller runs
+authenticated (the router gates unauthenticated users to landing before any profile fetch),
+so this is a no-op for real traffic. Full reachability sweep (Dart call sites, every view
+selecting `user_id`, every anon-executable `SECURITY DEFINER` function returning it) is in
+the migration file's header comment.
+
+**Separate, more severe finding surfaced by that sweep, deliberately not folded into
+KAN-106:** `public.whois(p_username)` is `SECURITY DEFINER`, carries no auth check at all,
+is `EXECUTE`-granted to `anon`, and directly resolves any username to its raw `user_id` —
+and it is not called anywhere in `lib/`, so it is live, reachable, and dead to the app at
+the same time. A column-level `REVOKE` on `profiles.user_id` does not touch this: a definer
+function reads with its own privileges, not the caller's grants. Several other
+anon-executable definer functions (`rpc_search_users`, `rpc_get_friends`,
+`rpc_get_friend_suggestions`, `rpc_friend_requests_inbox`/`_outbox`, `admin_whois_profile`)
+also return `user_id` and were not individually audited for an auth gate here — this
+overlaps the open "SECURITY DEFINER RPC census" (61 of 303 definer functions with no visible
+auth check). Needs its own ticket; per the KAN-87/SEC-17 precedent this does not change
+KAN-106's scope.
 
 **Do not cite the old "safe by predicate" line.** Six of these are safe by *outcome*, two are
 filtered by a *different* mechanism than the one this file claimed, and none of that was
@@ -420,9 +461,10 @@ mechanism `T-002` describes, not a separate process.
 Generated 2026-08-29 by re-running the §2e catalogue query live against `wtncuzcskpigqpmnxwws`
 (not transcribed from the prose above, which the same re-run showed to be stale in three
 places — `v_mod_queue_open`, `v_circle_feed` and `v_safety_overview` are no longer
-anon-exposed at all, though §2a above still describes them as CRITICAL/OPEN, written earlier
-the same day; that discrepancy is master-analyst's/cto's to reconcile in prose, not
-version-control's, and is flagged in the KAN-61 handoff rather than silently fixed here).
+anon-exposed at all). **`version-control` flagged this discrepancy rather than silently editing
+§2a, which was the correct call — the generated block and the prose disagreed, and only one of
+them is measured. Reconciled in prose by master-analyst 2026-08-29: §2a's three rows now read
+CLOSED. This block is unchanged and remains the authority.**
 Every name below was independently confirmed `anon`-readable with no
 `security_invoker` at generation time:
 

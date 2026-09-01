@@ -821,14 +821,14 @@ an execution with a control, not a grep.** `cto`'s framing is the one to keep: *
 passing as observation is how a confident claim turns out to have a gap nobody looked for.*
 
 A corollary worth its own line, because it caught two agents on the same day from opposite
-sides: **a privilege is not an exposure.** `cto-4` counted 27 views where `anon` holds
+sides: **a privilege is not an exposure.** `cto` counted 27 views where `anon` holds
 SELECT and reported them as readable; 6 return nothing. I counted 19 that return data and
 treated the rest as settled; 2 of them return data. One of us counted the grant, the other
 trusted the predicate. **Only the query answers it.**
 
 ## A census answers the question it was framed to ask, and nothing else
 
-*Added 2026-08-28 by `master-analyst`, after `cto-4` found SEC-16.*
+*Added 2026-08-28 by `master-analyst`, after `cto` found SEC-16.*
 
 `SCHEMA.md` §2 gave all 71 views a stated position and I treated that completeness as
 coverage. It was complete **for reads**. Nobody had asked whether a definer view was
@@ -837,7 +837,7 @@ the INSERT grant, the base table's `WITH CHECK (false)` policy never evaluated b
 and table share an owner and FORCE RLS is off, and an INSERT trigger posting
 attacker-controlled text to a push endpoint.
 
-`cto-4`'s automated check had the identical blind spot from the other side: it asserted on
+`cto`'s automated check had the identical blind spot from the other side: it asserted on
 anon-reachability and `security_invoker` and **would have passed with the hole wide open**,
 because `security_invoker` governs reads and says nothing about a DML grant or about
 owner-equals-owner.
@@ -854,8 +854,8 @@ phone, and no amount of read analysis reaches it.
 
 ## Severity attaches to the column, not the view
 
-*Added 2026-08-28 by `master-analyst`. `cto`'s ruling on SEC-15; `cto-4` reached the same
-split independently the same hour.*
+*Added 2026-08-28 by `master-analyst`. the CTO's ruling on SEC-15, reached twice in independent
+passes within the same hour.*
 
 I filed `v_game_card`'s anon exposure as one MED finding about a view. It is two findings
 about different columns, with different severities, different fixes and different owners.
@@ -915,7 +915,7 @@ rely on, not as luck.
 
 ## Ask whether a fix is durable, not just whether it is correct
 
-*Added 2026-08-28 by `master-analyst`, after `cto-4` measured `pg_default_acl` on KAN-67.*
+*Added 2026-08-28 by `master-analyst`, after `cto` measured `pg_default_acl` on KAN-67.*
 
 The fix I wrote for SEC-16 was correct and would not have held. `REVOKE` the grants, set FORCE
 RLS — both right, both insufficient, because `ALTER DEFAULT PRIVILEGES` in `public` grants
@@ -980,7 +980,7 @@ command and it settled the whole question.
 
 ## One outcome can have several mechanisms — closing one is not closing the hole
 
-*Added 2026-08-28 by `master-analyst`, after `cto-4` established `v_needs_organiser`'s target.*
+*Added 2026-08-28 by `master-analyst`, after `cto` established `v_needs_organiser`'s target.*
 
 SEC-16's bypass was **owner-equals-owner**: a definer view and its base table share an owner,
 so RLS is skipped unless `FORCE ROW LEVEL SECURITY` is set. I wrote FORCE RLS into the fix and
@@ -1011,7 +1011,7 @@ My base-table walk could not tell a `FROM` relation from a subquery reference, s
 wrote **UNESTABLISHED** into the entry, named `profiles` as the worst case, and said it needed
 someone to read the `FROM` clause.
 
-`cto-4` read it. The answer was `auth.users` — worse than the guess I declined to make, and it
+`cto` read it. The answer was `auth.users` — worse than the guess I declined to make, and it
 carried a second bypass mechanism nobody had looked for.
 
 **A stated gap is a piece of work another agent can pick up. A quietly-picked likely answer is
@@ -1019,7 +1019,7 @@ not, and it is indistinguishable from a measurement.** The temptation is to writ
 one because a blank looks like incomplete work — it is the opposite. Every population error
 today came from filling a gap with the likelier answer instead of marking it.
 
-Same discipline going the other way: `cto-4` bounded the finding at *an unauthenticated write
+Same discipline going the other way: `cto` bounded the finding at *an unauthenticated write
 path onto the identity table exists* and explicitly refused "account creation", leaving
 admissibility and usefulness unestablished. **An under-stated critical survives scrutiny; an
 over-stated one gets the whole finding discounted when the overstatement is found.**
@@ -1055,3 +1055,377 @@ counting different things. But "both right" is the comfortable answer, so it des
 harder check — re-derive what each number counted rather than relabelling them. Here, the
 relabel grouped by call syntax instead of query target and put two out-of-scope sites into
 the group described as "what breaks".
+
+## A correction is an edit, and edits go stale too
+
+*Added 2026-08-28 by `master-analyst`. `cto`'s corollary, from correcting a number and
+leaving its qualifier standing.*
+
+`cto` corrected "6 read sites" to "3" and left "three of them query filters" in the same
+sentence — a figure that was only ever true of the original six. **The correction fixed the
+number and carried the stale clause through, which is a worse artifact than either the
+original error or a clean number**, because the sentence now reads as freshly verified.
+
+**When you change a figure, re-read the whole claim it sits in, not just the digits.** A
+number rarely travels alone: it has a qualifier, a unit, a scope, a "of which" clause. The
+edit pass has to cover the sentence.
+
+This was the third failure today in the **surfacing layer** rather than the finding layer —
+alongside a memory index quoting a superseded gate hours after its owner re-sorted it, and a
+measured fact sitting in personal memory instead of the shared index. In every case the
+information existed and the mechanism that should have surfaced it did not fire. **None was
+a knowledge problem.** That is `G-001` in its general form, and it means a record's failure
+modes are not the same as an investigation's: an audit gets better by measuring more, and a
+record gets better by making stale entries impossible to quote without noticing.
+
+## The narrowing axis has a wildcard case — check for it before trusting the narrowing
+
+*Added 2026-08-28 by `master-analyst`, closing `cto`'s open question on SEC-17.*
+
+The scope of SEC-17 narrowed twice, correctly each time: `.from()` decides who reads the
+*view*, then `select(...)` decides who reads the *column*. Five of eight call sites were
+excluded because their column lists don't name `creator_user_id`.
+
+**Two of the eight call bare `.select()`, which returns every column.** They have no list to
+check, so a sweep that reads `select(...)` arguments passes over precisely the sites that take
+everything.
+
+**Every filter that narrows a population has a value that means "no filter" — find it before
+you trust the narrowed number.** `select()` with no arguments, `SELECT *`, a null predicate, a
+missing `WHERE`, a default that matches all. The wildcard is invisible to the sweep that
+defines the axis, because the sweep looks for the thing the wildcard omits.
+
+It changed nothing here — neither bare-select site needed adding to the migration scope — but
+it surfaced a real fact: `game_composer_screen.dart:213` receives the `auth.users` UUID over
+the wire and never reads it. **A narrowing axis answers "who would break"; it does not answer
+"who receives it", and for an exposure finding the second question is the one that matters.**
+
+The handoff is worth as much as the finding: `cto` had been wrong twice by stopping one
+level early, so it marked the gap UNVERIFIED, named the exact check required, and passed it
+rather than producing a third number. **A precisely-scoped open question costs the next agent
+one command. A confident wrong number costs a correction cycle.**
+
+## Two correct decisions can be mutually unexecutable — check the pair, not each one
+
+*Added 2026-08-28 by `master-analyst`, after a one-line constraint exposed a conflict between
+two of `cto`'s decisions.*
+
+Both decisions were individually sound and separately reviewed. One: convert the definer
+views to `security_invoker`, adding base-table policies first so nothing blanks. Two: the
+zero-policy tables are served through the definer funnel deliberately — the instrument is
+`REVOKE`, not "add policies to all 30". **The first one's safety step is exactly what the
+second one rejects.** Executing either as written, in the presence of the other, blanks the
+most-used screens in the app.
+
+Nothing in the review of either decision would have caught it, because **the defect is not in
+a decision, it is in the pair.** A decision log accumulates entries that were each right when
+written; the interactions between them are nobody's review item by default.
+
+**When a decision constrains how another decision may be implemented, say so in both
+entries** — a one-way link leaves the conflict visible only from one side. And when adding a
+decision that forbids a remedy ("we will not add policies to these tables"), search the log
+for entries that *depend* on that remedy.
+
+The trigger here is worth noting because it was so small: a one-line implementation
+constraint — *revoke the write grants, don't touch the read mechanism* — was enough to make
+the conflict visible. **Constraints surface conflicts that reviews of the decisions
+themselves do not**, because a constraint is where two decisions finally have to be true at
+the same time.
+
+One substantive corollary: **"a blank screen is the correct failure, it surfaces the missing
+policy" holds where a policy is missing, not where the absence is the design.** Before
+treating a failure as diagnostic, establish that the thing it diagnoses is actually wrong.
+
+## A count answers "does X exist", never "is X correct"
+
+*Added 2026-08-28. `cto`'s one-line consolidation of three of its own errors and two of
+mine — the shortest usable form of the instrument rule above.*
+
+Today's wrong numbers were all counts standing in for judgements:
+
+- counted a **grant** and called it exposure (6 of the 27 return nothing)
+- counted **grep lines** and called them breakage (3 of the 6 query a different table)
+- counted **policies** and called the table safe to flip (`notifications` has 4, of which the
+  relevant one is `WITH CHECK (false)`)
+- counted **findings** from an advisor and called it the population (49 became 71)
+- matched a **string** in a view definition and called the view safe (two of eight leak)
+
+A count is cheap, exact, and answers a question of existence. Every one of these needed a
+question of *fitness* — does this grant get exercised, does this call site read this view,
+do these policies admit the rows this view must return.
+
+**Use the count as a filter and never as the answer.** It legitimately narrows the set you
+must then examine; the examination is a separate step and it is the one that gets skipped,
+because the count already produced a number and a number feels like a result.
+
+## A correct measurement can sit beside a wrong attribution and look like proof
+
+*Added 2026-08-28 by `master-analyst`, after `cto` struck FORCE RLS from the SEC-16 fix.*
+
+SEC-16 said: the base tables have `relforcerowsecurity = false`, therefore the owner path
+skips RLS, therefore set FORCE RLS. **The measurement was right, the mechanism was wrong, and
+the fix that followed from it does nothing.** All seven views are owned by `postgres`, which
+carries `rolbypassrls` — checked *ahead* of the owner/FORCE logic — so RLS was never going to
+run whatever FORCE said.
+
+The trap is that `relforcerowsecurity = false` is true, is relevant-looking, and would be the
+cause on a project where the executing role lacked BYPASSRLS. **A measurement that is accurate
+and adjacent is more dangerous than one that is wrong**, because there is nothing to catch: the
+number verifies, the reasoning reads soundly, and the remediation is derived from it.
+
+Two defences:
+
+- **State the mechanism as a claim and test it separately from the measurement that suggested
+  it.** "FORCE RLS is unset" is a fact. "Therefore setting it fixes this" is a hypothesis, and
+  the way to test it is to find a table where FORCE is already set and see whether it helps.
+  That is exactly what `cto` did, and it took one query.
+- **When a fix follows from a mechanism, the acceptance criterion belongs on the outcome, not
+  the mechanism.** "FORCE RLS is set" would have passed; "`anon` cannot write" would not have.
+
+And a note on the demonstration itself: `cto` reported its own near-miss — a first version
+tested one of the table's two policies and read a margin of 138 vs 0 instead of 138 vs 131.
+The real margin is 7. **Enumerate every policy before claiming what a table admits**, and
+prefer the smaller true margin: an overstated one is a correction waiting to happen, and it
+would have arrived attached to a finding that was otherwise right.
+
+## Correct a claim that understates your own work as fast as one that overstates it
+
+*Added 2026-08-28 by `master-analyst`, after `cto` corrected SEC-16's verification bound upward.*
+
+I recorded SEC-16's closure as *"mechanism-verified; no insert was attempted, by anyone."* An
+insert **had** been attempted — issued through the view as `anon` and refused with
+`insufficient_privilege`. The deny path was observation-verified and my entry said it wasn't.
+
+An understated bound feels safe, so it doesn't get challenged. It is still a wrong claim, and
+it costs something specific: **the first question anyone asks of a closed security finding is
+whether someone actually tried it.** An entry that says nobody did invites the finding to be
+reopened, or worse, re-proved by someone with less care about side effects.
+
+The precise form is the part worth copying: **exercised on one view, mechanism-verified on the
+remaining six** — with the reason the other six must not be exercised (`auth.users`; a push
+trigger firing over `pg_net`, which no rollback undoes). Not "verified", not "unverified", but
+a per-item statement of *how* each is known.
+
+**And the side-effect check belongs to the reader of the report, not its author.** `cto`
+said the probe left no row. It didn't — but `notifications` had gone 611 → 612 since my last
+measurement, and the honest move was to look at the row before either raising an alarm or
+waving it through. It was a real `auth.welcome` for a genuine signup. **Verify before
+reporting and before dismissing** applies hardest when the number moved for a boring reason.
+
+## An instrument that encodes one spelling of a value will miss the others
+
+*Added 2026-08-28 by `master-analyst`, after re-measuring KAN-37 found the defect in my own
+census query rather than in the migration.*
+
+My view census tested `option_value = 'true'` for `security_invoker`. Every view in the
+database had been written `security_invoker=true`, so the query was correct for months.
+Migration `20260828193807` wrote `security_invoker=on`. **Postgres accepts `on`, `true`, `yes`
+and `1` as the same boolean** — so four genuinely-fixed views read back as still broken.
+
+**The failure direction is the dangerous part: it reports an applied fix as unapplied.** I
+would have told the PO that a remediation had not landed, sent someone to re-apply it, and had
+the evidence — my own query — agreeing with me the whole way. A false negative on a fix is
+worse than a false positive on a finding, because nothing downstream questions it.
+
+**When a check compares against a literal, ask what else the system accepts as that value.**
+Booleans (`on`/`true`/`yes`/`1`/`t`), case, whitespace, synonyms, defaults that mean the same
+thing as an explicit setting. **Parse and compare semantically — `option_value::boolean` —
+rather than matching the spelling you happened to see first.**
+
+Two corollaries:
+
+- **A query that has been right for months is not therefore robust.** It may only have been
+  sampling a homogeneous population. Mine was correct on 2026-08-27 because every view had
+  been written by the same hand; it broke the first time a different hand wrote the same
+  setting a different way.
+- **The same census had a second defect nobody had hit yet:** `case when reloptions is null
+  then 'DEFINER' else 'invoker'` treats *any* reloption as invoker, so a view carrying only
+  `security_barrier=true` would be misfiled. It gave right answers only because the two
+  properties happened to co-occur. **Two latent bugs, one instrument, both invisible while the
+  data stayed uniform.**
+
+The general form, and the reason this belongs above the finding it came from: **re-measuring a
+claim you expect to confirm is how you find the defect in your own tooling.** I ran this check
+to verify someone else's migration. It verified fine. What it caught was me.
+
+## `security_invoker` subjects every relation in a view to the caller's RLS, not just the base table
+
+*Added 2026-08-28 by `master-analyst`, from `cto`'s rejected KAN-38 slice. Worked example
+also in `CONVENTIONS.md` §6.*
+
+The two-stage rule for flipping a definer view to invoker — *check the backing table carries
+policies that admit the rows the view must return* — says **"the backing table" singular**, and
+that is where it fails. `v_comments` is `comments JOIN profiles`. Flipping it subjected **both**
+relations to the caller's RLS, and because the join is INNER, a row whose `profiles` side is
+filtered out disappears entirely.
+
+Result: **67 rows for `anon` became 48.** Nineteen dropped — **eighteen** to
+`profiles.is_active = false` through the join, and **one** to a non-public parent post. Only
+that one was the leak. The other eighteen are live comments on public posts that would have
+silently vanished from the app.
+
+**Before flipping any view, enumerate every relation in its definition, not just the one it
+appears to be "about"** — and for each, ask whether the caller's RLS admits the rows the join
+depends on. An INNER JOIN turns a filtered right side into a deleted row; a LEFT JOIN turns it
+into nulls, which is different and often also wrong.
+
+This is the same failure shape as the prefix and the instrument errors of the same day:
+**judging a thing by what it resembles rather than what it is.** `v_comments` resembles a view
+over `comments`. It is a view over two tables, and the second one carries the policy that
+decides the outcome.
+
+## A visibility rule that drifts with unrelated state is broken even when today's rows are right
+
+*Added 2026-08-28 by `master-analyst`, from `cto`'s reasoning for landing KAN-38b as a LEFT
+JOIN rather than the INNER JOIN originally proposed.*
+
+The rejected version dropped 19 of 67 comment rows for `anon`. The obvious objection is the
+count — 18 of those were live comments on public posts. **But the count was the symptom.** The
+real defect: `profiles.is_active` is Dabbler's **multi-persona switch**, not a ban flag. Under
+an INNER JOIN, a comment's public visibility would change as its author switched personas —
+**no write to the comment, no moderation action, no audit trail.** Fix it on a day when every
+author happens to be active and the row count looks perfect.
+
+**Ask what a rule is keyed on, not just what it returns today.** A predicate over a field that
+changes for unrelated reasons produces correct-looking output and unstable behaviour, and the
+instability is invisible to any check that samples one moment.
+
+The tell is a field doing two jobs. `is_active` reads like "not banned" and means "this persona
+is the one currently selected". **Before using a column in a security predicate, establish what
+it actually models** — the name is a hypothesis, and here the wrong reading would have shipped
+a content outage that drifted in and out on its own.
+
+`cto`'s formulation is the one to keep: *the defect was not the row count, it was that the
+row count was not stable.*
+
+## A value with more than one spelling is the same trap as a field with two jobs
+
+*Added 2026-08-28 by `master-analyst`, jointly with `cto` — we hit the two halves of this
+within an hour of each other.*
+
+Postgres stores `security_invoker` as `on` or `true` interchangeably. Two agents wrote two
+predicates against it and both were wrong, in **opposite directions**:
+
+| Predicate | Reported |
+|---|---|
+| `option_value = 'true'` (mine) | today's six applied flips as **unapplied** |
+| `option_value = 'on'` (`cto`'s) | the invoker **population** as 6 instead of 28 |
+
+Both had been correct for months, because the data had only ever been spelled one way. Six
+migrations written in one afternoon broke the uniformity — **and broke both instruments at
+once, in mirror image.**
+
+**The pairing with `is_active` is the point.** A field doing two jobs and a value with two
+spellings are the same failure at different layers: in one, the *name* is a hypothesis; in the
+other, the *representation* is. Both produce a predicate that is correct on today's data and
+wrong about the thing it claims to test.
+
+**Compare semantically.** `option_value::boolean` covers all four spellings the database
+accepts. Any equality test against a literal deserves the question: *what else does this system
+consider equal to this?*
+
+And the asymmetry in how they surfaced is the argument for writing expectations down: **mine
+surfaced because a number I expected to move did not, and I checked instead of reporting.
+`cto`'s surfaced only because I read a figure in its comment and did not take it.** Neither
+instrument would ever have flagged itself. A query returns a number and waits to be believed —
+which is why the assertion convention (`CONVENTIONS.md` §6b) now applies to census and audit
+queries, not just migrations.
+
+## Stopping at an ownership boundary is half a handoff — name who picks it up
+
+*Added 2026-08-28 by `master-analyst`, after KAN-38 was failed on a documentation gap that
+had been found, correctly reported, and then sat.*
+
+`backend-owner` found that `SCHEMA.md` §2a still listed twelve views as "not yet probed"
+after three migrations had ruled on all of them. It **declined to fix it**, because §2a is
+`master-analyst`'s exclusive section under `CONTRACT.md` §3, and it said so in a ticket
+comment. That was exactly right — the closed-loop rule worked.
+
+Then nothing happened for two days, and a ticket failed review on it.
+
+**The boundary held; the handoff didn't exist.** "I found this and it isn't mine" is a
+complete observation and half an action. A comment on a ticket the owner isn't watching is
+not a handoff — it is a message addressed to no one.
+
+**When you stop at a boundary, name the owner and tell them directly.** Not "this belongs to
+someone else", but "this belongs to X, and I have told X." The ownership matrix says who may
+write; it does not deliver the work, and nothing else does either.
+
+The related failure in the same file: **§2d's counts were updated for those migrations and
+§2a's per-item verdicts were not**, so the document contradicted itself for two days. When a
+change touches a document, the aggregate and the detail are two edits — updating the number
+that is easy to recompute and leaving the list that has to be reasoned through is the
+predictable half to skip.
+
+**And the substantive lesson under it**, because it justified the whole exercise: §2a had
+guessed that three views were "probably intended to be public", directly beneath its own
+sentence that *"probably public" is not a security position*. **One of the three was right.**
+Two had their `anon` grant revoked outright. A rule stated and not followed in the same
+paragraph is worse than no rule — it reads as diligence.
+
+## A completeness claim is a measurement, and it needs its own check
+
+*Added 2026-08-29 by `master-analyst`, after `task-auditor` found §2a claiming a resolution it
+did not have — over three live CRITICALs.*
+
+I wrote *"RESOLVED — all twelve now have an explicit verdict, none is outstanding"* into a
+section heading. Every individual verdict under it was correct and freshly measured. **The
+heading was false**, and it was false about the three worst views in the section, which had no
+row at all.
+
+**The section contained the proof.** Its own arithmetic said 19 exposed − 2 PostGIS = **17 app
+views needing a verdict**; the table listed **14**. I wrote both numbers, on the same day, and
+never subtracted them.
+
+**"All N are handled" is a claim about a set, and a list of correct entries is not evidence for
+it.** The check is not "is each row right" — it is **"does the count of rows equal the count of
+things that should have rows."** Those are different questions, and only the second one catches
+an omission. Verifying entries feels like verifying the claim, which is why the summary line
+gets written last and checked never.
+
+This is the same failure as the WIRE-09 blanket ("all six are orphans" when five were checked),
+and it is worse here for two reasons: the heading **retired** findings rather than merely
+mis-describing them, and a reader looking for outstanding work would have stopped at the word
+RESOLVED. **A summary that overstates closure is the one kind of error that removes its own
+audience.**
+
+Practical rule: **when a section says "all", make the count explicit and put the subtraction in
+the document.** `17 needed − 14 listed = 3 missing` is a line anyone can check, including its
+author, and it would have caught this the moment it was written.
+
+---
+
+## A `file:line` you did not open is not evidence — 2026-08-29, master-analyst
+
+Both navigation dead-ends I reported in run 1x were wrong, in the direction of alarm. NAV-01
+cited `social_search_screen.dart:1811` for a broken `/games/<id>` push; that line actually reads
+`context.push(RoutePaths.gameDetail(game.id))` and resolves. NAV-02 cited
+`onboarding_sports_screen.dart:194` for a back button to an undeclared `/onboarding-basic-info`;
+that line actually reads `context.go(RoutePaths.createUserInfo)`, and the constant it named left
+that file at commit `2523def`, long before the audit.
+
+The mechanism is worth naming because it is not carelessness, it is a pipeline shape. I matched
+**constant names** in one pass and collected **`file:line` locations** in a different pass, then
+joined them. The join is where the fiction entered: every cited line was real, every constant was
+real, and the pairing between them was never checked against the file. Nothing in the output looks
+uncertain — a wrong `file:line` reads exactly like a right one.
+
+It compounded. NAV-02 was described as "on the launch-critical path", which moved a slice verdict
+and made the finding urgent. It was not on any path: `onboardingSports` → `onboardingPreferences`
+→ `onboardingPrivacy` → `onboardingCompletion` is a closed cluster whose only inbound edges come
+from inside itself, and the live onboarding chain never enters it. **A severity claim inherits the
+soundness of the location claim underneath it**, and I escalated on top of something unverified.
+
+This is the mirror of the failure already recorded above. That one overstated closure; this one
+overstated breakage. The shared root is a **summary written from a derived artefact rather than
+from the source**. Overstating closure loses the reader; overstating breakage spends other agents'
+time and, worse, teaches them to discount the next finding.
+
+Practical rule: **resolve the literal and re-read the cited line in the same pass.** If a finding
+names a `file:line`, that line must have been opened while writing the finding — not matched, not
+inferred from a second scan, opened. And when a two-pass join is unavoidable, **spot-check the
+join, not the passes**: both my passes were individually correct.
+
+Credit where it is due: `flutter-feature-agent-5` and `task-auditor-11` each caught NAV-02
+independently, and neither accepted my label because it came from the analyst. That is the
+behaviour `G-005` is for — I am a peer, and my findings take the same scrutiny as anyone's.

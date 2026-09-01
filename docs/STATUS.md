@@ -50,6 +50,89 @@ of them to reconcile this one, and **never writes into another agent's file.**
 
 # LOG
 
+> ## GAP NOTICE — 2026-08-29, raised by master-analyst
+>
+> **This log stops on 2026-08-27. The two busiest days of the project, 2026-08-28 and
+> 2026-08-29, are almost entirely absent from it** — production migrations were applied,
+> security findings were opened and closed, two seats were filled, and nine `G-`/`T-`/`P-`
+> decisions were recorded, none of which a PO reading this file would know about.
+>
+> **It is not a reconciliation backlog on my side — the source files are empty too.** Entries
+> dated 2026-08-28 or later, counted across `docs/status/`: `cpo` 1, `version-control` 1,
+> **`cto` 0, `task-auditor` 0, `notifications-specialist` 0, `app-store-submission-fixer` 0,
+> and `master-analyst` 0 until this entry.** Rule 1 above says no task is finished until its
+> entry is saved; on those two days the rule was not followed by anyone, including me.
+>
+> **I cannot close this gap myself and will not try.** Each agent owns its own file
+> (see RELATIONSHIP TO THE PER-AGENT FILES), and writing entries for work I did not do would
+> be fabrication — exactly the failure `DECISIONS.md` `G-001` and `020` exist to prevent.
+> Reconstructing them from Jira would produce plausible entries nobody can vouch for, which is
+> worse than the silence.
+>
+> **What each agent owes:** its own `docs/status/<agent>.md` entries for 2026-08-28/29, in the
+> FORMAT block above, `Not verified` filled in. I will reconcile them into this file on the next
+> pass, once they exist. **PO decision needed on one thing only:** whether the missing two days
+> get backfilled at all, or whether the log simply resumes from 2026-08-29 with this notice as
+> the record of the gap. Backfill is honest only if each agent writes its own.
+>
+> **Two further gaps, structural rather than behavioural:** `docs/status/backend-owner.md` and
+> `docs/status/flutter-feature-agent.md` **do not exist**, though both seats were filled on
+> 2026-08-28 under `G-003`. Those agents have nowhere to log. Creating them is each agent's
+> first act, not mine.
+
+## 2026-09-01 — KAN-39 — Launch-readiness refresh: PROJECT_STATE run 4
+**Agent:** master-analyst
+**Outcome:** `docs/PROJECT_STATE.md` §22 added (run 4) + §20 changelog row + header re-dated to
+`fd4df5a`. Five run-1 findings verified RESOLVED (notification leak, moderation views, rewards
+dead code, dead-code-only test suite, `/transactions`). Ten still open, logged L-01…L-10.
+**The headline is a process finding, not a code one:** the sprint-2 batch is on disk and not in
+git — 109 files in `lib/`, 594 insertions, 30,762 deletions, uncommitted. `Canary` is separately
+32 commits ahead of `main`. Everything measured from the working tree describes an undeployed build.
+**Evidence:** `git diff HEAD --stat -- lib` → 109 files changed. `lib/` = 833 `.dart` at HEAD vs
+781 in tree; rewards 36 → 4. As role `anon`: `v_notifications_feed` **0 rows** (was 609 across 49
+recipients), both views now `security_invoker=on`; `public.profiles` **154 of 154 rows with raw
+`auth.users` UUIDs** still readable (KAN-106 authored, not applied). 558 `anon` write grants.
+49 of 71 views still definer (advisor findings 49 → 15). `v_space_slots_today` errors:
+`relation "public.venue_opening_hours" does not exist`. `flutter analyze` 0 errors / 93 issues;
+`flutter test` 103 pass. `gh run list --workflow=CI` → 4 most recent runs all `failure`.
+**Not verified:** runtime behaviour of the uncommitted tree — no build was produced from it and
+no deployed artifact contains it. Cloudflare Preview/Production variable parity not checked
+(KAN-35/KAN-111 still open). The 46 modified `lib/` files were read as a diffstat, not reviewed
+line by line. cto and cpo readiness sections were requested and are attributed to them, not
+re-derived by me.
+**Next:** `version-control` commits and pushes the 109-file batch before anything else in §22 is
+acted on; `cto` applies KAN-106 to production; `v_space_slots_today`'s missing table is added to
+KAN-104 before it clears review.
+
+---
+
+**This file had no entry between 2026-08-29 and this one, across roughly 30 ticket closures on
+2026-08-31 and 2026-09-01.** Logged as finding L-10 in `PROJECT_STATE.md` §22c. Recorded here so
+the silence reads as a known gap rather than as work that never ran.
+
+---
+
+## 2026-08-29 — KAN-41 / KAN-88 — Both navigation dead-ends withdrawn; one real one found in their place
+**Agent:** master-analyst
+**Outcome:** My own run-1x navigation findings were wrong and are struck from `PROJECT_STATE.md` §14e, kept in place as the record rather than deleted. **NAV-01** (`social_search_screen.dart:1811`) and **NAV-02** (`onboarding_sports_screen.dart:194`) are both withdrawn: each cited line reads a correctly-resolving route. **NAV-01a** is new and genuine — `notifications_screen_v2.dart:518` pushes `/games/<id>`, which matches no route, on a **live bottom-nav screen**; filed as **KAN-88** for `flutter-feature-agent`. Dead-end count 2 → 1. Slice verdicts: `search` back to SHIPPED, `notifications` to PARTIAL — **totals unchanged at 12/6/1/6**. Correction commented onto KAN-41 before review, not after.
+**Evidence:** `onboarding_sports_screen.dart:194` = `context.go(RoutePaths.createUserInfo)`, declared `app_router.dart:186`. `social_search_screen.dart:1811` = `context.push(RoutePaths.gameDetail(game.id))`, declared `app_router.dart:829`. `grep -n "path: '/games" lib/app/app_router.dart` → no output. `grep -rn "'/games/" lib` → one hit, `notifications_screen_v2.dart:518`. Onboarding cluster closed: only navigator to `RoutePaths.onboardingSports` is `onboarding_preferences_screen.dart:171,298`, inside the cluster.
+**Not verified:** NAV-01a was confirmed statically only — **I did not run the app and tap the row.** The claim is "no route pattern matches this literal", not "I saw the error page". Whether any of the other 31 declared-never-navigated routes hide a similar mis-citation was **not** re-checked; only the two dead-end rows were re-derived.
+**Next:** KAN-88 for `flutter-feature-agent`. `task-auditor` should review the corrected §14e, not the delivered one — the dead-end table is the part that failed and a rework verdict on KAN-41 would be correct.
+
+## 2026-08-29 — KAN-56 follow-through — SCHEMA.md §2a's three CRITICAL/OPEN rows struck
+**Agent:** master-analyst
+**Outcome:** `SCHEMA.md` §2a described `v_mod_queue_open`, `v_circle_feed` and `v_safety_overview` as **CRITICAL/OPEN** while the resolution note directly beneath said they were closed. The row labels now read **CLOSED** with their closing ticket, and §2a's arithmetic line moves from *"3 remain open and leaking"* to zero. The exposure table itself is retained as the record of what was exposed and for how long.
+**Evidence:** `version-control` flagged the contradiction in the generated allowlist block (`SCHEMA.md` ~:420) rather than editing §2a itself — the correct call, and that note is now updated to say it was reconciled. Two independent same-day re-runs as `anon` already in the record: `v_mod_queue_open`/`v_safety_overview` raise `42501`, `v_circle_feed` returns 0 (was 6); controls `v_game_card` 216, `v_comments` 66, no cascade.
+**Not verified:** **I did not re-query the database for this pass** — I struck labels the record already showed to be closed by two independent confirmations. If the closure is load-bearing for a promotion decision, re-run §2e before relying on it.
+**Next:** None for these three. The higher items are untouched: SEC-16/SEC-15a (unauthenticated destructive write, KAN-67), SEC-13 (push authz, KAN-59), SEC-17 (`auth.users` uids).
+
+## 2026-08-29 — Answer desk — 62 prefixed decisions indexed; two stale ownership claims corrected
+**Agent:** master-analyst
+**Outcome:** `.claude/agent-memory/master-analyst/INDEX.md` gains **§9a — all 62 `G-`/`T-`/`P-` decisions** with their `DECISIONS.md` line numbers. §9 previously held only the 21 unprefixed ones, so *"what does `G-008` say?"* meant reading a 3,500-line file. Also corrected: the **"23 of 25 slices UNOWNED"** figure is superseded (`G-003` filled `backend-owner` and `flutter-feature-agent`; `G-007` added `android/**`; **9 agents, not 7**), and §11's blocking list now separates the closed §2a read leaks from what is actually still open.
+**Evidence:** `grep -n "^### [GTP]-0" docs/DECISIONS.md` → 62 headings. Line numbers drift as decisions are appended; the re-derivation command is recorded in §9a itself.
+**Not verified:** The 62 titles are indexed, **not re-read for mutual consistency**. Supersession chains are noted only where a decision names its predecessor in its own title (`T-025`→`T-018`, `T-024`→`T-001`/`T-015`, `G-009`→`G-002`); **there may be silent conflicts I have not looked for.**
+**Next:** None blocking. If the PO wants the supersession chains audited properly, that is a separate pass.
+
 ## 2026-08-27 — KAN-8 — Leadership layer added; ownership split with cpo/cto
 **Agent:** master-analyst
 **Outcome:** `CONTRACT.md` gains `CP`/`CT` columns (zero blank cells) and a new §9 for the split. `BRIEF.md`+`ROADMAP.md` → cpo; `ARCHITECTURE.md`+`CONVENTIONS.md`+`SCHEMA.md` §11 → cto; `DECISIONS.md` prefixed `G-`/`T-`/`P-`. `DECISIONS.md` 021 logs the org structure. `AGENTS.md` → v0.4, roster 5 → 7.

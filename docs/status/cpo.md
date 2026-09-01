@@ -164,3 +164,30 @@ takes 80% of the organiser uplift out of what a player pays, against `01` Perman
 **Handoff:** `cto` owns B1 (KAN-36/37/38) and the technical shape of KAN-51/52/53.
 `master-analyst` owns `PROJECT_STATE.md`, which this analysis consumed rather than
 re-measured. KAN-54 and KAN-55 are the PO's, not an agent's.
+
+---
+
+## 2026-08-29 — Backlog clearance + MVP 1+ prep
+
+**Notion corpus study: COMPLETE.** All 26 documents read and mapped (`corpus-map` memory).
+No document remains unprocessed. The container/child traps (`06`, `07`, `08`, `11`,
+financial model, Sport Reference) are all resolved to their children; `11 v2` supersedes v1.
+
+**Backlog closed:**
+- **KAN-29** (rewards) — framing posted. Verdict ALIGNED WITH CONSEQUENCE. Gamification is
+  committed (`05` slide 4, `11 v2` §F.3, `13a` Sprint 11, `14` D52–D54) so the slice cannot
+  be buried wholesale, but only the 3-tier surface is Phase 1A. Recommended: keep the ~985
+  LOC check-in surface, cut the 19,560 above it, revisit at Stage 2. Three sub-questions
+  isolated as genuinely the PO's.
+- **KAN-30** (clean architecture) — verdict NOT ESTABLISHED, **and reassigned**. The corpus
+  contains no reference to internal code architecture in any of the 26 documents. This is
+  `cto`'s under `CONTRACT.md`, not the PO's. One product constraint handed over: it must not
+  sit between now and closing the P0s.
+
+**Deliverable:** `docs/briefs/MVP1-PLUS-LAUNCH-CHECKLIST-DRAFT.md` — draft only, for a
+negotiation. Part A is the promotion gate judged against `13b`'s ten P0s (5 red, 1 amber,
+2 unverified). Part B is next-release scope. Part C is 8 open questions.
+
+**The finding I most want the PO to see:** P0-7 (monitoring) and P0-8 (rollback) are the only
+two P0 criteria with **no ticket and no owner**. They are also what makes the rest of the gate
+measurable and a bad promotion recoverable.

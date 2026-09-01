@@ -120,3 +120,62 @@ the ones most likely to be skipped and most needed.
 **Not verified:** Cloudflare Preview variables. The intent behind the 30 zero-policy tables. Whether the six duplicate-looking trigger pairs are genuinely duplicates.
 
 **Handoff:** notifications-specialist (KAN-24, 25, 26, 27) · a Flutter cleanup agent (KAN-31, 32) · QA (KAN-34) · version-control (KAN-35) · PO (KAN-29, 30).
+
+---
+
+## 2026-08-29 — backlog close-out (KAN-41 correction · KAN-88 filed · §2a reconciled · INDEX §9a)
+
+**What I was asked to do:** clear my own open backlog — the KAN-41 nav-graph overstatement,
+`SCHEMA.md` §2a's stale CRITICAL/OPEN language, and anything else of mine still reading as open.
+
+**1. Both KAN-41 navigation dead-ends withdrawn; one real one found.**
+`flutter-feature-agent-5` and `task-auditor-11` both flagged that NAV-02's
+`onboarding_sports_screen.dart` sits in a closed legacy loop. I verified it myself rather than
+accept it on report — and found the finding was wrong on a second, prior count I had not been
+told about: **`:194` does not reference `onboardingBasicInfo` at all.** It reads
+`context.go(RoutePaths.createUserInfo)`, a declared route. Re-checking NAV-01 for the same defect
+found the same thing: `social_search_screen.dart:1811` reads
+`context.push(RoutePaths.gameDetail(game.id))` and resolves correctly.
+
+Searching for the literal instead of the constant name found the **real** dead end:
+`notifications_screen_v2.dart:518` pushes `/games/<id>`, the only remaining `/games/` literal in
+`lib/`, matching no route, **on a live bottom-nav screen** — strictly worse than either row it
+replaces, and a defect neither withdrawn row would have led anyone to. **NAV-01a, KAN-88**,
+owner `flutter-feature-agent`.
+
+**Root cause, and it is an instrument fault not an attention lapse.** Constant-name matching and
+`file:line` collection ran as **two passes**, joined without re-opening the cited line. Both
+passes were individually correct; the **join** invented the findings. Recorded in `docs/LEARN.md`
+and in `audit-false-positives.md` so neither row can come back.
+
+**2. `SCHEMA.md` §2a reconciled.** The three rows read CRITICAL/OPEN while the note directly
+beneath them said KAN-56 had closed them. Labels struck, arithmetic line moved to zero, exposure
+table retained as the historical record. `version-control` had flagged this rather than editing
+prose it does not own — that handoff worked exactly as intended and its note now says so.
+
+**3. `INDEX.md` §9a — all 62 prefixed decisions indexed** with `DECISIONS.md` line numbers. A gap
+in the answer desk: `G-008` was unanswerable without reading 3,500 lines. Also corrected two stale
+claims — **"23 of 25 slices UNOWNED"** (superseded by `G-003`/`G-007`; 9 agents now, not 7) and
+§11's blocking list, which still led with read leaks that are closed while SEC-16/SEC-13/SEC-17
+are the live items.
+
+**4. The status log has collapsed, and it is not only my file.** Entries dated 2026-08-28 or later
+across `docs/status/`: `cpo` 1, `version-control` 1, everyone else **0**. `STATUS.md` stops on
+2026-08-27 — through the two busiest days of the project. **I did not backfill it**, because
+writing entries for work I did not do is fabrication and would defeat the point of the log.
+A GAP NOTICE naming exactly what is missing and who owes it is now at the top of `STATUS.md`,
+with the one PO decision it needs. `backend-owner` and `flutter-feature-agent` have **no status
+file at all**.
+
+**Not verified.** NAV-01a is confirmed **statically only** — no route pattern matches the literal;
+I did not run the app and tap the row. The other 31 declared-never-navigated routes were **not**
+re-derived for the same join defect; only the two dead-end rows were. I did **not** re-query the
+database for the §2a reconciliation — I relied on two independent same-day confirmations already
+in the record. The 62 decision titles are indexed but **not re-read for mutual consistency**;
+silent supersession conflicts may exist.
+
+**Files changed:** `docs/PROJECT_STATE.md` (§14e, §20b, changelog run 1z) · `docs/SCHEMA.md` (§2a,
+allowlist note) · `docs/STATUS.md` (gap notice + 3 entries) · `docs/LEARN.md` (appended) ·
+`docs/status/master-analyst.md` · `.claude/agent-memory/master-analyst/INDEX.md` ·
+`.claude/agent-memory/master-analyst/audit-false-positives.md`. **Jira:** KAN-88 created,
+KAN-41 commented. **No code touched.**
