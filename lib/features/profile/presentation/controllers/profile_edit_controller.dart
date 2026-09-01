@@ -207,7 +207,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
 
       final result = await _uploadAvatarUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isUploadingAvatar: false,
@@ -275,7 +275,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
 
       final result = await _updateProfileUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isSaving: false,

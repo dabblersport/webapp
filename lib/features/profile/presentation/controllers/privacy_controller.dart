@@ -129,7 +129,7 @@ class PrivacyController extends StateNotifier<PrivacyState> {
           state.settings!,
         );
 
-        return result.fold(
+        return await result.fold(
           (failure) {
             state = state.copyWith(
               isSaving: false,
@@ -185,7 +185,7 @@ class PrivacyController extends StateNotifier<PrivacyState> {
 
       final result = await _managePrivacyUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isSaving: false,

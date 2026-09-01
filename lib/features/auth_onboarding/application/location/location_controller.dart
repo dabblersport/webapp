@@ -74,7 +74,7 @@ class LocationController {
 
       final result = await _updateProfileUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           // Log the error but don't throw - return failure for graceful handling
           return Left(failure);
@@ -120,7 +120,7 @@ class LocationController {
         country: detectedCountry,
       );
 
-      return updateResult.fold(
+      return await updateResult.fold(
         (failure) => Left(failure),
         (_) => Right(detectedCountry),
       );

@@ -1278,7 +1278,10 @@ class AuthService {
         }
         await avatarQuery;
 
-        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        return await _fetchSingleProfileRow(
+          userId: user.id,
+          profileId: profileId,
+        );
       }
 
       if (!_isUpdateUserProfileRpcUnavailable) {
@@ -1386,7 +1389,10 @@ class AuthService {
       }
 
       if (updates.length <= 1) {
-        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        return await _fetchSingleProfileRow(
+          userId: user.id,
+          profileId: profileId,
+        );
       }
 
       try {
@@ -1399,7 +1405,10 @@ class AuthService {
         }
         await updateQuery;
 
-        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        return await _fetchSingleProfileRow(
+          userId: user.id,
+          profileId: profileId,
+        );
       } on PostgrestException catch (e2) {
         final isMissingColumn =
             e2.code == '42703' ||
@@ -1455,7 +1464,10 @@ class AuthService {
         }
         await altUpdateQuery;
 
-        return _fetchSingleProfileRow(userId: user.id, profileId: profileId);
+        return await _fetchSingleProfileRow(
+          userId: user.id,
+          profileId: profileId,
+        );
       }
     } catch (e) {
       throw Exception('Profile update failed: $e');
