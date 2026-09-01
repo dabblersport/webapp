@@ -5,7 +5,7 @@ metadata:
   type: project
 ---
 
-Fourteen contradictions found inside the corpus during the KAN-39 gap analysis
+Fourteen contradictions found (**C9 withdrawn 2026-08-29 — see below; thirteen stand**) inside the corpus during the KAN-39 gap analysis
 (2026-08-27). Full text with both sides quoted: `docs/BRIEF.md` §11. **None has been
 resolved** — they are the PO's to settle, and no agent may pick a side silently
 (decision `P-005`).
@@ -41,3 +41,10 @@ third-party audit function · a spent calendar (everything is written to Sept 1 
 ~36 numeric inconsistencies inside the 11/12 series · entitlements no revenue stream funds.
 
 Related: [[corpus-map]], [[launch-gate-is-13b]], [[corpus-answers-the-non-goal-forks]].
+
+## C9 WITHDRAWN (2026-08-29) — my error, not the corpus's
+
+I recorded "OTP built in 13a–13c and killed by `14` while the app still ships it." **Wrong.**
+The live checklist v2 (`399d4c6dd86d8021b719c4df6330006e`) distinguishes them cleanly:
+**email OTP is kept** (B3, the primary sign-up method); **phone/SMS OTP is removed** (B15,
+Twilio cost constraint). I conflated the two. No contradiction exists. Do not re-raise it.

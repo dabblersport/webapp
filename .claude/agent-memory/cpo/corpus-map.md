@@ -36,6 +36,20 @@ Root: **Business docs** `3c9d4c6dd86d80c08d66fd95416b23e4` (parent page: **Dabbl
 | Persona-grouped launch checklist; **claims to supersede 13a–13c on auth** | `14` checklist `37dd4c6dd86d800da6b5d8ced2e424d3` |
 | Sport list (~165), Stage-1 lanes, exclusions | Sport Reference `364d4c6dd86d8074afc8dfc8d1e1223c` (2 children) |
 
+## The Checklist tree is NOT in Business docs — read it separately
+
+Under **Dabbler** (not Business docs) sits **Checklist** `37dd4c6dd86d8039a4ddcfe48d12822c`
+(v1, includes a **GUEST section A1–A7**) with child **Updated checklist**
+`399d4c6dd86d8021b719c4df6330006e` (**v2, live, last edited 2026-07-18** — supersedes v1;
+**deletes the guest section** while still referencing guest mode in I8). Doc `14` in the table
+below is a *third* page id. **Discovered 2026-08-29 — my earlier "26 docs, study complete"
+claim covered Business docs only, not this tree.** The v2 is the PO's working checklist.
+
+**Its checkmarks are claims, not evidence.** 42 `[x]` dated 2026-07-18; at least five were
+disproved by work done 2026-08-27..29 (B14 sign-out, B7–B12 onboarding, D27 following,
+D33 report/block, and **D9 account deletion — the exact Apple 5.1.1(v) rejection reason**).
+Never read an `[x]` there as verification.
+
 ## Traps
 
 - **Several "documents" are empty containers.** `11`, `07`, `06`, `08`, `financial model`

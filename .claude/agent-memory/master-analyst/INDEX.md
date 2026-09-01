@@ -30,6 +30,52 @@ Baseline commit: **`5f92904`**, branch `Canary` (run 2, 2026-08-27; run 1 was `1
 
 ---
 
+## 0. RUN 4 — 2026-09-01, launch-readiness refresh (KAN-39). READ BEFORE §1.
+
+**These supersede §1 and every dated row below them.** Source for all: `PROJECT_STATE.md` §22.
+
+| Fact | Value | Measured |
+|---|---|---|
+| **Sprint-2 batch is UNCOMMITTED** | **109 files in `lib/`, +594 / −30,762** | 2026-09-01 |
+| `.dart` under `lib/` — HEAD vs tree | **833 vs 781** (rewards 36 → 4) | 2026-09-01 |
+| `Canary` ahead of `main` | **32 commits** | 2026-09-01 |
+| Non-generated `lib/` LOC (working tree) | **203,580** across 729 files | 2026-09-01 |
+| `flutter analyze` | **0 errors · 37 warnings · 93 total** | 2026-09-01 |
+| `flutter test` | **103 pass** — now covers the live path | 2026-09-01 |
+| Notification leak (`v_notifications_feed`/`_ranked`) | **RESOLVED** — `security_invoker=on`, **0 rows to `anon`** (was 609 / 49 recipients) | 2026-09-01 |
+| `public.profiles` to `anon` | **154 of 154 rows, raw `auth.users` UUIDs — STILL OPEN** (KAN-106 authored, not applied) | 2026-09-01 |
+| `anon` write grants across `public` | **558** (incl. INSERT/UPDATE/DELETE on `profiles`) | 2026-09-01 |
+| Views: total / invoker / definer | **71 / 22 / 49** — advisor `security_definer_view` findings **15** (was 49) | 2026-09-01 |
+| `rls_enabled_no_policy` | **30** (unchanged) | 2026-09-01 |
+| `v_space_slots_today` | **ERRORS** — `relation "public.venue_opening_hours" does not exist` | 2026-09-01 |
+| CI | **red on all 4 most recent runs**; sibling "Anon reachability allowlist" **passes** | 2026-09-01 |
+| `enablePayments` / `messaging` | **both `false`, committed at HEAD** — INV-05 and INV-01 closed | 2026-09-01 |
+| `DataExportService` importers | **0 — correct.** Descoped by `DECISIONS.md` `P-025` | 2026-09-01 |
+| `STATUS.md` gap | no entry 2026-08-29 → 2026-09-01 across ~30 closures | 2026-09-01 |
+
+**WITHDRAWN, same day: L-09 "Arabic switcher is Coming Soon".** FALSE POSITIVE, and the
+**second** time this line has been filed (first raised and retracted 2026-08-27 — §11b, WIRE-10).
+`app_router.dart:599` `/language_selection` is an **orphan** — `grep -rn language_selection lib/`
+returns only its own declaration and an unused import at `:68`. The live path is
+`settings_screen.dart:1062` → `_showLanguagePicker()` `:1073` → `ref.read(localeProvider)` `:1090`.
+**Language switching works. Do not file this a third time.** Generalise it: a "Coming Soon"
+string on a declared route proves nothing until you grep for who navigates to it — two routes can
+serve one concept, and the orphan greps first.
+
+**Also: `enablePayments` is `false`** (`:146` tree, `:142` HEAD) — `cpo`'s `true` at `:139` is a
+stale 08-26/27 read. **`anon` write grants: 558 grant-rows == `cto`'s 184 tables × ~3 verbs — the
+same fact in different units, not an escalation.**
+
+**THE MEASUREMENT TRAP — do not repeat it.** `select ... where 'security_definer=true' = any(reloptions)`
+returns **0** and looks like a clean bill of health. SECURITY DEFINER is the Postgres **default**
+for a view and stores no reloption. Correct measure: `total_views − security_invoker views`.
+Likewise, an `anon` SELECT **grant** on a view proves nothing once the view is `security_invoker` —
+**check the reloption and the empirical row count as role `anon`, never the grant alone.**
+
+`Re-measure:` `git diff HEAD --stat -- lib` · `set local role anon; select count(*) from public.profiles`
+
+---
+
 ## 1. HEADLINE SHAPE
 
 | Fact | Value | Source | Measured |
@@ -87,7 +133,7 @@ Source: `PROJECT_STATE.md` §3 · measured 2026-08-26
 | **RLS on, zero policies** | **30** — incl. `games`, `squad_members`, `moderation_tickets` | `SCHEMA.md` §1a | 2026-08-27 |
 | Views total | **71** | `SCHEMA.md` §2 | 2026-08-27 |
 | `SECURITY DEFINER` views | **49** | `SCHEMA.md` §2 | 2026-08-27 |
-| **anon-exposed (definer, no uid filter)** | **19** — 2 PostGIS, 5 confirmed leaking, 12 unexamined | `SCHEMA.md` §2a | 2026-08-27 |
+| **anon-exposed (definer, no uid filter)** | **19** as measured — 2 PostGIS, 5 confirmed leaking, 12 unexamined. **All 5 leaks now CLOSED** (KAN-36/37/38b, then KAN-56 for the last 3); §2a's rows read CLOSED as of 2026-08-29 | `SCHEMA.md` §2a | measured 2026-08-27, closed 2026-08-29 |
 | definer + uid filter (safe) | 8 | `SCHEMA.md` §2b | 2026-08-27 |
 | anon-revoked (safe by grant) | 23 | `SCHEMA.md` §2c | 2026-08-27 |
 | invoker | 21 (22 explicit − 1 also anon-revoked) | `SCHEMA.md` §2d | 2026-08-27 |
@@ -352,6 +398,84 @@ Source: `SCHEMA.md` §4 · measured 2026-08-27
 
 Source: `DECISIONS.md`
 
+## 9a. PREFIXED DECISIONS — all 62 (`G-` governance · `T-` technical · `P-` product)
+
+**Added 2026-08-29 to close a real gap in this desk.** §9 held only the 21 unprefixed decisions,
+so a question like *"what does `G-008` say?"* forced a read of a 3,500-line file. The line number
+is the `###` heading in `docs/DECISIONS.md` — **jump to it, do not grep the whole file.**
+Line numbers drift as decisions are appended; if a jump lands wrong, re-run
+`grep -n "^### [GTP]-0" docs/DECISIONS.md`.
+
+**Precedence reminder:** newest ACTIVE `DECISIONS.md` entry beats everything. Within these,
+a later entry that names an earlier one supersedes it — e.g. `T-025` supersedes `T-018` part (3),
+`T-024` resolves `T-001` vs `T-015` in `T-015`'s favour, `G-009` narrows `G-002` condition 3.
+
+| # | Decision | `DECISIONS.md` line |
+|---|---|---:|
+| `G-001` | "I cannot verify this" is itself a claim, and needs the same standard | 1250 |
+| `G-002` | `cto` gains standing authority to apply production migrations; `019` is amended, not repealed | 2578 |
+| `G-003` | Two vacant seats filled: `backend-owner` (KAN-70) and `flutter-feature-agent` (KAN-71) | 2627 |
+| `G-004` | `macos/` is deleted after all; the PO overrides `T-012`'s "macOS stays" ruling | 2928 |
+| `G-005` | `master-analyst` is a peer, not a checkpoint; stop routing tasks through it | 2958 |
+| `G-006` | Claim a ticket before applying under it; collisions between same-role instances are structural, not case-by-case | 3078 |
+| `G-007` | `android/**` was UNOWNED; `flutter-feature-agent` gets it, matching AS's `ios/**` pattern | 3339 |
+| `G-008` | Route to the owner, not through a manager. `cto` coordinates; it does not relay | 3369 |
+| `G-009` | `cto` may apply security-remediation data changes; `G-002` condition 3 is narrowed | 3415 |
+| `T-001` | A view never re-implements RLS; `security_invoker = true` is the default | 552 |
+| `T-002` | Anon reachability is an allowlist, proven by a catalogue test | 677 |
+| `T-003` | The Play upload key is compromised; signing material never lives in the repo | 705 |
+| `T-004` | Logout is a teardown contract, not a call to `signOut()` | 775 |
+| `T-005` | Session tokens stay in SharedPreferences; the control is backup exclusion | 838 |
+| `T-006` | No certificate pinning | 863 |
+| `T-007` | Dead-but-wired code is deleted, not implemented | 882 |
+| `T-008` | `Result` is the only convention; `Either` is converted on touch, never migrated | 943 |
+| `T-009` | Edge functions verify authorization scope, not just authentication | 973 |
+| `T-010` | Line count and colour literals are budgets, not defects; they do not gate launch | 1001 |
+| `T-011` | Dabbler is not promotable today; three fixes change that | 1041 |
+| `T-012` | The repo hygiene cleanup: what may go, what stays, and why `macos/` stays | 1129 |
+| `T-013` | There are four design-system surfaces, not three; `lib/themes` is canonical for theming | 1380 |
+| `T-014` | The first hire is a Flutter feature agent, because a promotion blocker is otherwise unownable | 1420 |
+| `T-015` | Definer-funnel tables are protected by a revoked grant, not by an absent policy | 1329 |
+| `T-016` | B5 is not "fill in four empty methods"; there is one emission site and two `AnalyticsService` classes | 1453 |
+| `T-017` | `security_invoker` is half the fix; owner-equals-owner defeats RLS, and one view can send push | 1629 |
+| `T-018` | The wide `anon` grant is inherited Supabase default privilege, so REVOKE alone reopens it | 1863 |
+| `T-019` | `geometry_columns` is excluded from the revoke: we cannot alter it, and it is not ours | 1781 |
+| `T-020` | A control's data is never readable by the people it constrains; and dead *data* is not dropped like dead *code* | 1916 |
+| `T-021` | B1b moves ahead of B4; SEC-17 rides in B1a's migration | 2140 |
+| `T-022` | SEC-17 is NOT folded into KAN-67: one is privilege-only, the other redefines a live view | 2058 |
+| `T-023` | `v_needs_organiser` is an anon-writable path onto `auth.users`; it goes in the first revoke | 2301 |
+| `T-024` | B1b is not a blanket invoker flip; `T-001` and `T-015` conflict, and `T-015` wins | 2438 |
+| `T-025` | `FORCE ROW LEVEL SECURITY` remediates nothing here; `T-018` part (3) is superseded | 2500 |
+| `T-026` | QA is required before promotion, not before every ticket; the missing piece is a mechanical gate, not a reviewer | 2655 |
+| `T-027` | Five `anon`-readable views in `public` are intentionally public and are not findings | 2771 |
+| `T-028` | `CONVENTIONS.md` §6b is backed: expected values ship as assertions, not as queries | 2821 |
+| `T-029` | The six remaining anon-readable definer views split 3/3 on flip-vs-revoke; and my `v_mod_queue_open` base-table claim on KAN-56 was wrong | 2867 |
+| `T-030` | A `service_role` policy is a contradiction: service_role bypasses RLS, so the fix is DROP, not rewrite | 2990 |
+| `T-031` | A migration file is immutable once applied; corrections ship as new migrations | 3027 |
+| `T-032` | KAN-33: adopt the CLI convention, but the baseline is the work and the rename is a consequence | 3117 |
+| `T-033` | Amends `T-032` step 4: seven of the 43 files are not in the ledger, and one of them was never applied | 3239 |
+| `T-034` | KAN-61's CI credential: a zero-grant Postgres login over the pooler, and why `cto` does not mint it | 3449 |
+| `P-001` | The corpus, not the codebase, is the source for `BRIEF.md` | 394 |
+| `P-002` | Four of the five open non-goal forks are settled by the corpus | 415 |
+| `P-003` | The persona rule is about game type, never about access | 441 |
+| `P-004` | Promotion is held until five blockers close | 462 |
+| `P-005` | Corpus contradictions are logged, not silently resolved | 510 |
+| `P-006` | The CPO takes code facts from the Analyst's record, never by measuring | 1220 |
+| `P-007` | SEC-13 joins the promotion gate; the gate is the month, everything else waits | 1280 |
+| `P-008` | The gate is the union of spend-risk and user-harm; B5 is larger, not smaller | 1505 |
+| `P-009` | B1 is a CIA defect, not a read leak; split it so the certain half can move | 1550 |
+| `P-010` | The one-month plan, and KAN-57 goes on the gate unless the keystore was never exposed | 1592 |
+| `P-011` | B1a is first on the gate, ahead of the hire; and it is now a live destructive exposure | 1715 |
+| `P-012` | B10 demoted from blocker to pre-promotion requirement; the password is burned everywhere | 1819 |
+| `P-013` | B10 comes off the gate entirely; `space_slot_holds` is kept as deferred product | 1978 |
+| `P-014` | B1a is schema-level and unowned; the sequencing gain is withdrawn | 2021 |
+| `P-015` | Authoring B1a is also blocked, but it is an unfilled seat, not a prohibition | 2198 |
+| `P-016` | B1b ahead of B4; SEC-17 stays out of B1a; the sequence has three tracks, not one | 2253 |
+| `P-017` | `v_needs_organiser` leads the REVOKE; and the wording is bounded deliberately | 2354 |
+| `P-018` | SEC-17's surface is three views and two base tables; the free-migration lead is dead | 2397 |
+| `P-019` | A comment outlives the persona that wrote it: degrade the author, never hide the comment | 2711 |
+
+
 ## 10. AGENTS & OWNERSHIP
 
 **7 agents, three layers** (decision 021, 2026-08-27):
@@ -366,8 +490,12 @@ state (cto). `BRIEF.md`/`ROADMAP.md` → cpo. `DECISIONS.md` prefixed `G-`/`T-`/
 Leadership may reject an executive's work with reasons; neither writes production or
 feature code.
 
-**23 of 25 slices are UNOWNED**, as is `lib/core/**`, `lib/data/**`, the design system, and
-all Supabase outside notifications. **FOUR design-system surfaces, not three — corrected by cto 2026-08-28.** My earlier
+**SUPERSEDED 2026-08-29 — do not quote the "23 of 25 UNOWNED" figure.** Two seats were filled on
+2026-08-28 (`G-003`, KAN-70/71): **`backend-owner`** takes all Supabase outside notifications, and
+**`flutter-feature-agent`** takes Dart outside notifications — the 23 slices, `lib/core/**`,
+`lib/data/**` and the design system — plus **`android/**`** (`G-007`). **9 agents now, not 7.**
+Routing rule `G-008`: **go to the owner directly; `cto` coordinates, it does not relay.**
+The original text, for the shape of what was unowned: **FOUR design-system surfaces, not three — corrected by cto 2026-08-28.** My earlier
 "three" omitted the only one that is load-bearing at runtime:
 `lib/themes/` (4 files, 39 import sites) — **`main.dart:13` imports it, `:156` calls
 `AppTheme.initialize()`, `:265-266` hand `AppTheme.lightTheme/darkTheme` to `MaterialApp`.
@@ -383,14 +511,116 @@ Source: `CONTRACT.md` §3 · `AGENTS.md` · `ARCHITECTURE.md` §2
 
 ## 11. OPEN — blocking
 
-**Live security:** KAN-36/37/38 (leaks) · KAN-26 (12 unexamined views). **Launch gate
-fails** — `MANIFESTO.md` §4.4.
+**Live security — updated 2026-08-29.** The §2a read leaks are **closed**: KAN-36/37 (notification
+views), KAN-38b (`v_comments`), KAN-56 (`v_mod_queue_open`, `v_safety_overview`, `v_circle_feed`).
+**Still open and higher than any of those:** **SEC-16/SEC-15a** — unauthenticated *destructive write*
+through 7 definer views, and the inherited `pg_default_acl` grant that reopens it (KAN-67, `T-018`);
+**SEC-13** push authorization (KAN-59); **SEC-17** `auth.users` uids in anon projections. Also open:
+KAN-26 (12 unexamined views). **Launch gate still fails** — `MANIFESTO.md` §4.4, `P-004`/`P-007`.
+
+**Newly open, code side:** **NAV-01a** (`notifications_screen_v2.dart:518`) — a dead-end tap on a
+live bottom-nav screen. Owner: `flutter-feature-agent`. Not yet ticketed.
 
 **PO decisions:** KAN-29 rewards · KAN-30 clean-arch · KAN-16 roster · KAN-22 the 62 CUTs ·
 KAN-23 `BRIEF.md`'s 7 questions · the two contradictory flags.
 
 **Not mine (read-only):** KAN-27/28/31/32/34 are code changes — need a Flutter agent.
 KAN-35 needs Cloudflare dashboard access.
+
+## 10z. VIEW EXPOSURE — FIXED DEFINITION, 2026-09-01. Quote this, not 19/21/12/6.
+
+**The only definition that survives: does the view return rows to `anon`, measured, with a control.**
+Predicate text-matching (`auth.uid()` / `is_admin` in the viewdef) is the instrument that certified
+two leaking views safe in §2b. **Do not re-derive this from a viewdef grep.**
+
+| Measure | Value |
+|---|---:|
+| Views in `public` | 71 |
+| **anon-readable** | **41** (my earlier 45 is superseded) |
+| anon-writable | **2** — `geometry_columns`, `geography_columns`, both `supabase_admin`-owned PostGIS |
+| Live anon write paths (definer + auto-updatable + grant) | **1** — PostGIS, unalterable, **accepted not open** (`T-015`) |
+| definer **and** anon-readable | **12** |
+| **of those, actually return rows to `anon`** | **2** |
+
+**The 2:** `v_game_card` **217 rows** (was 216 — a new game, so the probe is live) and
+`v_meetup_list` **1**. Both already filed as **SEC-15 (MED)** + **SEC-17 (HIGH)**, both
+`listing_visibility='public'`, both pending a PO decision. **No new exposure.**
+The other 7 probed return **0**; `v_space_slots_today` errors (**BUG-05**), not a security item.
+
+**"21 lack a predicate" does not reproduce and should not be quoted as a trend** — nor should
+my old 19. Different instruments, different populations, neither measured exposure.
+
+## 11. INVENTORY — run 3, 2026-08-29 (supersedes the run-2 figures below)
+
+| Fact | Value | Source |
+|---|---|---|
+| Screen/page/view classes | **102** — 73 ROUTED · 3 REACHED-BY-PUSH · 4 ORPHAN · 6 TRANSITIVELY DEAD · 16 private | `PROJECT_STATE.md` §14d |
+| **The run-2 "101"** | **Superseded.** Different matcher, definition never recorded — not comparable, do not reconcile the two | §14d |
+| Import-reachable files | **556 of 776** non-generated `lib/**` | §14d |
+| Declared `GoRoute`s | 90 | §14e |
+| Nav call sites outside the router | **186** — 90 `go`, 84 `push`, 12 `pushNamed`, **0** `goNamed` | §14e |
+| Declared but never navigated | **31** — URL-reachable on web, so discovery-bounded | §14e |
+| **Genuine dead-end taps** | **1** — NAV-01a, see below. **Corrected 2026-08-29: was 2, and both of those were wrong** | §14e |
+| Unused constants | `RoutePaths` 26 of 94 · `RouteNames` 58 of 110 | §14e |
+| Bottom nav | **4 shell branches, 3 rendered.** `community` has no item | §14e |
+| Slice verdicts | **12 SHIPPED · 6 PARTIAL · 1 SCAFFOLD · 6 DEAD** — totals unchanged, but on 2026-08-29 `search` returned to SHIPPED and `notifications` took its PARTIAL slot | §20b |
+
+**The one dead-end tap — lands on GoRouter's error page:**
+- **NAV-01a** `notifications_screen_v2.dart:518` → `context.push('/games/<id>')`. **No route matches
+  `/games/:id`**; the real one is `/sports/games/:gameId` (`app_router.dart:829`). It is the **only**
+  remaining `/games/` literal in `lib/`. The screen is **live and bottom-nav reachable**, so every
+  user can hit it. Fix: `RoutePaths.gameDetail(activity.subjectId)`.
+
+**BOTH ORIGINAL NAV ROWS ARE WITHDRAWN — corrected 2026-08-29. Never quote them again.**
+- ~~NAV-01~~ `social_search_screen.dart:1811` actually reads
+  `context.push(RoutePaths.gameDetail(game.id))` and **resolves correctly**. Not a defect.
+- ~~NAV-02~~ `onboarding_sports_screen.dart:194` actually reads
+  `context.go(RoutePaths.createUserInfo)` — a declared route (`app_router.dart:186`).
+  `onboardingBasicInfo` appears **nowhere in `lib/` outside `route_constants.dart:45,168`** and
+  left that file at `2523def`. **And it was never launch-critical:** `onboardingSports` →
+  `onboardingPreferences` → `onboardingPrivacy` → `onboardingCompletion` is a **closed four-screen
+  cluster whose only inbound edges come from inside itself**; the sole navigator to
+  `onboardingSports` is `onboarding_preferences_screen.dart:171,298`, in the same cluster. The live
+  chain runs `intent_selection` → `interests_selection` → `onboardingPrimarySport` and never enters
+  it. Raised by `flutter-feature-agent-5` and `task-auditor-11`, verified independently here.
+
+**Why both were wrong, and the rule that follows.** The constant-name match and the `file:line`
+came from **separate passes**, so the cited line was never re-read. **Resolve the literal and
+re-read the cited line in the same pass — a `file:line` you did not open is not evidence.** Same
+class as the 14 documented false positives, but failing the other way: inventing defects rather
+than missing them.
+
+**Do not re-derive the dead-end list by comparing constant names.** That over-reports by 14:
+path-builder functions (`RoutePaths.gameDetail(id)` is a function, not a constant), nested child
+routes (`'create'` under `/venue-submissions`), and interpolated paths. **Resolve to literal path
+strings and match against declared patterns, including children.**
+
+**`docs/INDEX.md` does not exist and will not be created — PO decision 2026-08-29, it stays here.**
+KAN-44's acceptance criterion cites the wrong path; read it as citing this file.
+
+**SEC-02/SEC-03 RESOLVED 2026-08-29** (KAN-56): `v_mod_queue_open` + `v_safety_overview` raise
+`42501 permission denied` to `anon` (revoked, not flipped — both `moderation_reports` policies deny
+SELECT, so a flip would have blanked the admin queue); `v_circle_feed` 0 rows, was 6.
+Controls held: `v_game_card` 216, `v_comments` 66.
+
+**Re-verified 2026-08-30 (KAN-42), and the closure is stronger than recorded.** `authenticated`
+*does* still hold SELECT on both views — that is not a gap, because **the gate is inside the view
+body**: `v_mod_queue_open` ends `AND is_admin(auth.uid())`, `v_safety_overview` is
+`WHERE is_admin(auth.uid())`. A logged-in non-admin gets **0 rows**, not a leak. So the fix was
+revoke-*and*-predicate, not revoke alone. **If asked "is the moderation queue exposed?" the answer
+is no, on two independent grounds.** `PROJECT_STATE.md` carried SEC-03/SEC-04 as live
+CRITICAL/HIGH for four days after they closed — now tagged RESOLVED.
+
+**Admin/moderation flow hops** (`PROJECT_STATE.md` §15b flows 19-21, 2026-08-30): queue read
+`moderation_queue_screen.dart:18` → `moderation_service.dart:818` `fetchOpenModQueue()` →
+`v_mod_queue_open` `:822-825`; safety overview `safety_overview_screen.dart:14` →
+`moderation_service.dart:858` → `v_safety_overview` `:862-866`; writes
+`moderation_queue_screen.dart:423`/`:511` → `moderation_service.dart:727`/`:768` → RPCs
+`admin_resolve_report` `:738` · `admin_take_action` `:782`. **The `is_admin` client check is at
+`moderation_queue_screen.dart:24`** — *not* `:22`, which was wrong in four places — **and there is
+also a route-level guard** at `app_router.dart:1673` (queue) and `:1699` (safety overview).
+**Claim to never repeat: "no `.rpc(` call site exists under `lib/features/admin/**`." It is false**
+— `:24` is one. That sentence cost KAN-42 two review rounds.
 
 ## 11a. APPLICATION INVENTORY — run 2, 2026-08-27, commit `5f92904`
 
@@ -422,6 +652,60 @@ Source for every row: `PROJECT_STATE.md` Part II (§13–§20).
 
 `Re-measure:` `.claude/jobs/*/tmp/reach.py` (import BFS) · `census.sh` (class census)
 
+## 11e. VIEW CENSUS — corrected instrument, 2026-08-28. USE THIS QUERY, NOT THE OLD ONE.
+
+**`security_invoker` must be parsed, not string-matched.** Postgres accepts `on`/`true`/`yes`/`1`.
+My old test `option_value='true'` read four genuinely-fixed views as still definer — **it reports an
+applied fix as unapplied.** Correct form:
+
+```sql
+coalesce((select option_value::boolean from pg_options_to_table(c.reloptions)
+          where option_name='security_invoker'), false)
+```
+
+Also wrong, same query: `case when reloptions is null then 'DEFINER' else 'invoker'` — any reloption
+(e.g. `security_barrier`) reads as invoker.
+
+**Census as of 2026-08-28, post-KAN-38b (final for the day):** 71 views · **28 invoker** · 43 definer ·
+**45 anon-readable**. Invoker = 6 flipped today (`=on`) + 22 pre-existing (`=true`).
+**"6 postgres-owned invoker views" is the count flipped today, NOT the population — the population is 28.**
+The 2026-08-27 figures (22 invoker / 49 definer / 48 readable) were correct then and are superseded.
+
+**The 45 anon-readable views are NOT 45 findings** — five are confirmed intentional (`T-027`):
+`username_registry_public` (pre-session signup check) · `geometry_columns` + `geography_columns`
+(supabase_admin-owned, unalterable) · `v_potential_vibes_default` + `v_recreate_quickpicks`
+(function-backed — `security_invoker` is a **no-op** when the `FROM` is a set-returning function).
+Both function-backed ones probed as `anon`: **0 rows each**. See `audit-false-positives.md`.
+
+**KAN-38b:** `v_comments`/`v_post_comments` 67 → **66** to `anon`, 18 null-author rows preserved
+(LEFT JOIN, not INNER — `profiles.is_active` is the persona switch, not a ban flag). 1 real leak closed.
+
+**SEC-01 RESOLVED** — `v_notifications_feed` and `v_notifications_ranked` return **0 rows** to `anon`
+(were 611 across 51 users). Controls unchanged: `v_meetup_list` 1, `v_game_card` 216 — no cascade.
+**KAN-67's write posture survived the `CREATE OR REPLACE VIEW`** — 0 postgres-owned views grant write.
+
+**KAN-38 is NOT resolved:** `v_comments`/`v_post_comments` slice rejected (invoker flip drops 19 of 67
+anon rows, 18 via `profiles.is_active=false` on an INNER JOIN — only 1 is the leak; blocked on `cpo`) ·
+five intentionally-public views need `T-027` · `v_space_slots_today` broken independent of security (BUG-05).
+
+## 11c. SEC-16 — **RESOLVED (PARTIAL) 2026-08-28**, migration `20260828160122`
+
+Verified post-state: anon/auth write on postgres-owned views **0** · all 7 paths false on INS/UPD/DEL ·
+**anon_readable_views 48, UNCHANGED** (no read path moved) · `pg_default_acl` postgres grantor `anon=rxtm`.
+**Exercised on `v_notifications_feed`** — a real INSERT as `anon` was refused with `insufficient_privilege`
+(KAN-67 comment 10100). **Mechanism-verified on the other six**, which must NOT be exercised:
+`v_needs_organiser` writes `auth.users`; the notification views fire push over `pg_net`, unrollbackable.
+**NO QA GATE EXISTS.** Nothing runs `flutter analyze` or `flutter test` — not `deploy-web.yml`,
+not `cloudflare-build.sh`; `run_integration_tests.sh` is invoked by nothing. Never call a promotion
+QA-verified until a QA seat exists and KAN-72 lands (**`T-026`** — `cto`'s ruling, `DECISIONS.md:2648`.
+**Not G-003** (that is the hiring decision) and **not G-004** (never existed past a transient renumber).
+**NOT closed, do not claim otherwise:** 184/184 base tables still grant anon+auth write ·
+`supabase_admin` default-privilege rule still `arwdDxtm` (not executable — no membership) ·
+`geography_columns`/`geometry_columns` still anon-writable (PostGIS, by design, decision 021) ·
+TRIGGER/REFERENCES still granted on the 7.
+
+Original finding, for the mechanism:
+
 ## 11c. SEC-16 — the single highest item on the board (2026-08-28)
 
 **Unauthenticated INSERT into `notifications`, delivered as push to a chosen user.**
@@ -449,7 +733,15 @@ creator_user_id 6 · organizer_id 4 · **creator_profile_id 1** (the migration t
 **Root cause `pg_default_acl`:** `ALTER DEFAULT PRIVILEGES` in `public` from postgres AND supabase_admin
 grants anon/authenticated `arwdDxtm` on every new relation — Supabase stock config, never turned off.
 **A REVOKE-only fix regresses on the next CREATE VIEW and still passes its own check.**
-Fix = REVOKE + `ALTER DEFAULT PRIVILEGES … REVOKE` (both grantors) + FORCE RLS. Low blast radius:
+**Fix = REVOKE + `ALTER DEFAULT PRIVILEGES … REVOKE`. TWO parts — FORCE RLS was struck 2026-08-28.**
+All 7 app views are owned by `postgres`, which has `rolbypassrls=true`, checked ahead of the owner/FORCE
+logic — **FORCE RLS remediates nothing on any of them.** Demo: `sport_profiles` has FORCE on, owner postgres,
+138 visible vs 131 admitted. **Do not cite `relforcerowsecurity=false` as the cause** — it is accurate and
+is not the mechanism.
+`pg_has_role('postgres','supabase_admin','MEMBER')=false` — the supabase_admin half of the default-privileges
+revoke is **not executable** from this project's roles; needs a PO decision.
+**All 184 base tables also grant anon/authenticated write** — out of KAN-67 scope; "KAN-67 applied" does NOT
+close the wide grant. Low blast radius:
 nothing in the app writes through these views.
 **Never attempted, by anyone.** Catalogue-verified only. `SCHEMA.md` §11 has the reproduction.
 
@@ -479,8 +771,8 @@ carry one field that has no business in it.
 | "no schema history" | **237 applied migrations** |
 | 49 views / 25 definer / 8 exposed | **71 / 49 / 19** |
 | **"8 definer views are safe by `auth.uid()` predicate"** (mine, `SCHEMA.md` §2b) | **False for 2 of the 8.** Probed as `anon` 2026-08-28: `v_game_card` **216 rows**, `v_meetup_list` **1 row**, other six 0. Filter is `listing_visibility='public'`, not `auth.uid()`. **Position was assigned by reading the definition, never by querying.** Not the §2a leak class — rows are all public — but the columns include `creator_user_id`, username, avatar, start time, venue → **SEC-15 (MED)** |
-| **"27 anon-readable definer views"** (`cto-4`, `T-001`) | **A privilege count, not an exposure count.** 27 = definer AND `anon` holds SELECT. 6 of the 27 return zero rows. **21 return data**, of which 19 are the §2a leaks and 2 are SEC-15. Do not quote 27 as a leak figure |
-| **`public.pg_stat_statements_info` is a dangling reference** (`cto-4`) | **False.** It lives in the `extensions` schema, which is where the extension installs it. `to_regclass('public.…')` is `NULL` by design, and **zero** functions or views in `public` reference it. Not a finding |
+| **"27 anon-readable definer views"** (`cto`, `T-001`) | **A privilege count, not an exposure count.** 27 = definer AND `anon` holds SELECT. 6 of the 27 return zero rows. **21 return data**, of which 19 are the §2a leaks and 2 are SEC-15. Do not quote 27 as a leak figure |
+| **`public.pg_stat_statements_info` is a dangling reference** (`cto`) | **False.** It lives in the `extensions` schema, which is where the extension installs it. `to_regclass('public.…')` is `NULL` by design, and **zero** functions or views in `public` reference it. Not a finding |
 
 ## 11c. REPO HYGIENE — run 3, 2026-08-28, commit `1b83967`
 
@@ -489,7 +781,7 @@ Full table: `docs/PROJECT_STATE.md` §21. Answer "can we delete X" from §21b/21
 | Fact | Value | Source | Measured |
 |---|---|---|---|
 | Repo hygiene — files proposed for removal | 749 files / ~6.6 MB, 73 tracked | `docs/PROJECT_STATE.md` §21h | 2026-08-28 |
-| Unused platform folders (macos/windows/linux) | 51 tracked files, 5.0 MB, no build references them | `docs/PROJECT_STATE.md` §21d | 2026-08-28 |
+| Unused platform folders (macos/windows/linux) | 51 tracked files, 5.0 MB, no build references them. **All three deleted — `macos/` per G-004 (PO override of `T-012`); deletion staged, folder absent from disk.** `flutter build macos` fails until `flutter create --platforms=macos .` regenerates it — accepted | `docs/PROJECT_STATE.md` §21d | 2026-08-29 |
 | Root regenerable artifacts | 7 tracked, 1,053,654 B | `docs/PROJECT_STATE.md` §21b | 2026-08-28 |
 | Fate of the 5 root .md docs | 3 MOVE, 2 DELETE (per-doc reasoning) | `docs/PROJECT_STATE.md` §21c | 2026-08-28 |
 | Dead onboarding services (HYG-01) | 320 LOC, 0 importers | `docs/PROJECT_STATE.md` §21f | 2026-08-28 |
@@ -497,7 +789,7 @@ Full table: `docs/PROJECT_STATE.md` §21. Answer "can we delete X" from §21b/21
 
 **Do not re-flag** (also in [[audit-false-positives]]): `packages/` is a load-bearing `dependency_overrides` path dep; the 5 `post_comments_*_fkey` strings are PostgREST constraint hints that resolve correctly (constraint names survived the table rename, verified via `pg_constraint`).
 
-**7 items blocked on the PO:** root PDF, untracked `upload_certificate.pem`, `macos/`, 4 zero-ref `scripts/`, `App screenshot/`, 4 zero-ref `lib/design_system/*.md`. Listed in §21b/21e.
+**6 items blocked on the PO** (was 7 — **`macos/` resolved 2026-08-28 by G-004: delete, PO overrode `T-012`**): root PDF, untracked `upload_certificate.pem`, 4 zero-ref `scripts/`, `App screenshot/`, 4 zero-ref `lib/design_system/*.md`. Listed in §21b/21e.
 
 ## 12. NOT ESTABLISHED — say so, don't guess
 

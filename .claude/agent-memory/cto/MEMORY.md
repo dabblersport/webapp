@@ -4,4 +4,35 @@
 - [Analyst reconciliation](analyst-reconciliation.md) — where the CTO and master-analyst reads converged and the four deltas
 - [Verification lessons](verification-lessons.md) — grep traps in this repo; dead code vs landmine; bound a claim to what you measured
 - [Severity propagation protocol](severity-propagation-protocol.md) — tell master-analyst directly when a severity moves; mechanism-verified is not observation-verified
-- [Repo hygiene ruling (T-012)](repo-hygiene-ruling.md) — what went, and why macos/ + the token generator stayed; a generator is judged by its output
+- [Repo hygiene ruling (T-012)](repo-hygiene-ruling.md) — what went and why; macos/ later DELETED by G-004 (PO); token generator stayed — a generator is judged by its output
+- [FORCE RLS is inert here](force-rls-is-inert-here.md) — postgres has BYPASSRLS; FORCE remediates nothing on definer views, with the read-only proof
+- [KAN-67 migration facts](kan67-migration-facts.md) — final SQL lives on the ticket; the supabase_admin membership blocker; 184 base tables still open
+- [QA & CI gate position (T-026)](qa-and-ci-gate-position.md) — QA gates promotion not tickets; AMENDED 2026-09-01: ci.yml has never passed (12/12 red, KAN-112); gh-pages workflow deleted by T-042
+- [Invoker-flip join trap](invoker-flip-join-trap.md) — security_invoker hits every joined relation; v_comments 67→48 rejection, and the still-open is_active product question
+- [View-leak triage 2026-08-29](view-leak-triage-2026-08-29.md) — 6 views left, 3/3 flip-vs-revoke (T-029); both circulating census queries undercount; 184 tables still anon-INSERT
+- [CTO ruling corrections](cto-own-ruling-corrections.md) — my KAN-56 moderation_tickets claim was wrong; resolve base relations from the catalogue, never from names
+- [JWT profile_id claim trap](jwt-profile-id-claim-trap.md) — request.jwt.claim.profile_id is a dead legacy GUC; setting it in a verification block manufactures a pass
+- [G-002 bypass, 2026-08-29](g002-bypass-2026-08-29.md) — KAN-56 reached prod without the cto apply; always check live state before reviewing a "pending" migration
+- [CREATE OR REPLACE VIEW resets security_invoker](create-or-replace-view-resets-invoker.md) — silently reopens any leak a flip closed; CONVENTIONS §6c
+- [Definer functions are anon RPCs](definer-rpc-exposure.md) — public definer helpers are PostgREST endpoints; revoking EXECUTE hard-errors invoker views that call them
+- [KAN-33 ledger reconciliation](kan33-migration-ledger-reconciliation.md) — 244/43/36/7 with commands; CLI cannot relocate its migrations dir; add_post_theme_id_and_seed_themes was never applied
+- [create_seed_user anon-callable](seed-helper-anon-callable.md) — KAN-79 (KAN-80 dup); ruling is DROP; trigger nulls the password only for NEW rows
+- [55 seed accounts shared a known password](seed-accounts-known-password.md) — KAN-78 REMEDIATED 2026-08-29 under G-009; a BEFORE INSERT guard never protects rows that predate it; its own check #3 was mis-scoped
+- [RPC 404 false-pass trap](rpc-404-false-pass-trap.md) — an empty {} body 404s whether or not the function exists; send real parameter names or the check proves nothing
+- [anon grants have two sources](anon-grant-two-sources.md) — PUBLIC (=X/) and explicit anon=X can both be present; a revoke must name both, per function
+- [CI DB credential constraints (T-034)](ci-db-credential-constraints.md) — RESOLVED; pooler + zero-grant role verified live, and how to prove a diff-shaped gate FAILS without touching prod
+- [Policy role vs check trap](policy-role-vs-check-trap.md) — polroles includes anon != permits anon; the 184-table grant is RLS-gated, LOW severity (T-035); spatial_ref_sys is the one open object
+- [Flutter web is CanvasKit — DOM is empty](qa-flutter-web-canvas-constraint.md) — QA must drive by screenshot+coords; semantics tree is 0 nodes; network capture arms only on first call
+- [SPA fallback 200 trap](spa-fallback-200-trap.md) — every unmatched path on *.dabbler.pro returns index.html; a 200 on /assets/.env proves nothing (NOT A FINDING, 2026-08-29)
+- [Onboarding write-path facts](onboarding-write-path-facts.md) — live path is 3 calls from onboarding_welcome_screen; rpc_onboard_profile IS live via a constant; completeOnboarding is dead; table is `host` not `hoster`
+- [Dead-and-wired controllers](dead-and-wired-router-controller.md) — judge dead code per-method; the router reads the "unused" onboarding controller on every load
+- [Onboarding two-stage truth](onboarding-two-stage-truth.md) — PO intent vs shipped code; onboard=TRUE is completion not resume; orphaned stage-2 chain; KAN-48 fold was not a regression
+- [Functions gateway rejects static keys](functions-gateway-rejects-static-keys.md) — legacy AND publishable both 401 UNAUTHORIZED_LEGACY_JWT; gateway-only, GoTrue/PostgREST still accept them (T-039)
+- [verify_jwt is not in config.toml](verify-jwt-not-in-config-toml.md) — no [functions.*] section; a CLI redeploy silently resets the flag, so pin it in the same change
+- [T-016 was renumbered to T-020](decision-renumbering-t016-t020.md) — grepping a decision number can make a settled ruling look unmade; grep the subject too
+- [Masked-error landmine](masked-error-landmine.md) — an early exception hides later bugs; diff competing migrations' bodies, never their authors' summaries (KAN-63/74)
+- [Same-file collisions across parallel tickets](duplicate-work-same-file-collisions.md) — later agent silently overwrites earlier; check the tree before the tickets, reconcile on merit not recency
+- [Auth uid is already in state (T-041)](auth-uid-already-in-state.md) — check what the screen already fetched before authorising a resolver RPC; profiles.user_id leaks 154 uids to anon (KAN-106)
+- ["Commit N is live" is usually false](deployed-not-committed-trap.md) — check origin/main AND origin/Canary refs; a DB-side equivalence proof is not a deployment (KAN-87)
+- [CREATE OR REPLACE FUNCTION resets SECURITY DEFINER](create-or-replace-function-resets-secdef.md) — function analogue of the view trap; T-044, CONVENTIONS §6c extended to functions
+- [RLS cannot restrict columns](rls-cannot-restrict-columns.md) — "a narrow policy exposing only column X" is not implementable; reject on feasibility before preference

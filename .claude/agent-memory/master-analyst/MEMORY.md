@@ -7,3 +7,5 @@
 - [Audit run 2 — application inventory](audit-run2-inventory-2026-08-27.md) — 69,612 LOC unreachable; 19/23 flows work; the 4 run-1 facts it corrected
 - [Reachability method](reachability-method.md) — import-BFS vs route-referenced vs UI-reachable; web means every route is URL-reachable
 - [Repo hygiene 2026-08-28](repo-hygiene-2026-08-28.md) — run-3 deletion inventory: 73 tracked files / ~6.6MB; the 7 PO ASK items; packages/ and the FK-hint false positives
+- [KAN-30 boundary correction 2026-08-31](kan30-boundary-correction-2026-08-31.md) — KAN-30 delete scope is wrong (only 501 of 8,208 LOC dead); KAN-29 rewards confirmed + 1 extra file
+- [Measure HEAD, not the worktree](measure-head-not-worktree.md) — two traps: a dirty tree makes deletions look shipped; a view's grant proves nothing without the reloption + anon row count

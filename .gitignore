@@ -5,6 +5,9 @@
 .env
 !.env.example
 
+# Agent-held local credentials — never committed (e.g. QA test-account password)
+.claude/agent-memory/*/credentials.local.md
+
 # Figma MCP files with secrets
 figma-mcp/
 

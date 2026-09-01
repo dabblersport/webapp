@@ -6,3 +6,6 @@
 - [Record the fact, not a pointer](record-the-fact-not-a-pointer.md) — never write "see below" for an unestablished fact; state the unknown in the field and say what a missing follow-up means
 - [Skills install writes three places](skills-install-three-locations.md) — .claude/skills/, .agents/skills/ and skills-lock.json; a brief naming only the first is always incomplete
 - [Android signing secret still at HEAD](android-signing-secret-still-at-head.md) — SEC-11/KAN-57 is open; the fix is uncommitted, HEAD still has the plaintext password
+- [Shared working-tree staging hazard](shared-working-tree-staging-hazard.md) — always `git diff --cached --stat` right before commit; other agents stage concurrently in the same index
+- [Hunk-level split for mixed WIP](hunk-level-split-for-mixed-wip.md) — a named file can carry a ready fix + unrelated WIP; extract wanted hunks via `git apply --cached`, don't sweep or skip
+- [Descoped feature can hide in a named file](descoped-feature-can-hide-in-a-named-file.md) — check every file's full diff before staging, even ones not explicitly excluded — an excluded feature's UI entry point may not be named

@@ -101,6 +101,35 @@ zero client references is verifiably risk-free; `CREATE OR REPLACE VIEW` droppin
 6 live read sites is not. Bundling destroys the risk-free property that let the urgent one ship
 first. "Same file, same review" is the argument *against* folding, not for it.
 
+**Protection by an ABSENT thing is the recurring defect class here — seen three times.** A
+zero-policy table (T-012), a `NOT NULL` that made every anon write fail (T-043), an absent
+INSERT policy on a bucket (T-030/KAN-75). In each, the system was safe by accident and failed
+open the moment someone corrected an unrelated defect. **Ask of any control: is this a decision
+or an accident?** If removing an unrelated constraint would open it, it is an accident.
+
+**A guard can often be tested live with zero write risk** — because it raises *before* the write.
+Verified KAN-109's allowlist and size cap directly against production; row count 56 before and
+after. This is **stronger** than a rolled-back transaction, which still fires triggers and
+consumes sequences. When the guard is the thing under test, live is the low-risk option; only
+the success path needs a rollback or a branch.
+
+**Before `CREATE OR REPLACE` on a live function, capture the current definition.**
+`pg_get_functiondef` + save to `supabase/schema/rollback/`. One query turns "we broke onboarding"
+into a one-statement restore. Also match column lists before `CREATE OR REPLACE VIEW` — it fails
+outright on a dropped/renamed/reordered column, mid-migration.
+
+**`CREATE OR REPLACE VIEW` silently resets `security_invoker` to off** (backend-owner's finding).
+Grants survive; that reloption does not. Re-`ALTER` it in the same migration or a leak reopens.
+
+**Default privileges: two grantors, only one alterable (T-045).** `ALTER DEFAULT PRIVILEGES FOR
+ROLE x` needs MEMBER of `x`. `postgres` → yes (covers everything migrations create);
+`supabase_admin` → no (`pg_has_role` MEMBER = false), so dashboard/tooling-created tables need a
+convention plus per-table `REVOKE`, never a migration that cannot run.
+
+**A migration file is immutable once applied (T-031).** Corrections ship as new migrations. Two
+pre-flights that each catch this alone: does the object it creates already exist, and is its own
+name already in the ledger.
+
 See [[load-bearing-measurements]], [[analyst-reconciliation]], [[kan39-launch-readiness]].
 **Concurrent seats collide in `DECISIONS.md` (2026-08-28).** Two CTO seats appended in one
 session and both wrote `### T-012`. Before adding an entry, `grep -n "^### T-" docs/DECISIONS.md
@@ -135,3 +164,77 @@ sites) vs 6 (grep lines) on `creator_user_id`. **Neither pair was a disagreement
 number mismatch as an error, state both units — and before amending a decision against someone else's
 figure, confirm it measures what yours does. Report as "N occurrences / M files / K call sites",
 never a bare N.
+
+**I named the 19-vs-27 trap and then walked into it one level down (2026-08-28).** Reconciled a
+6-vs-3 count as "filters vs deserializers" — grouping by **call syntax** — and labelled the filter
+group "what breaks". Two of the three queried the **base table**, which keeps the column. **The tell:
+a reconciliation where both numbers are right is sometimes true and is always the most comfortable
+conclusion available — which is exactly when it needs the most scrutiny.** I reached for it because it
+resolved a dispute without anyone being wrong. **Name the question your instrument actually answers,
+then check it against the question you asked.**
+
+**The wildcard is invisible to the sweep that defines the axis (master-analyst, 2026-08-28).** I said
+"`.from()` says who reads the view, `select()` says who reads the column" and proposed checking the
+five column-list constants. **Two of the eight call bare `.select()`** — `game_composer_screen.dart:213`
+and `game_view_controller.dart:399` — so they have no list to check and a select-list sweep passes
+over exactly the sites that take everything. **Every filter that narrows a population has a value
+meaning "no filter" — find it before you trust the narrowed number.** And for exposure work
+specifically: **a narrowing axis answers "who would break", not "who receives it"** — for a leak the
+second question is the one that matters. (`game_composer_screen.dart:213` receives the auth UUID and
+never reads it: pure exposure, closed silently by dropping it from the projection.)
+
+**Precisely-scoped open questions are cheap; confident wrong numbers are not.** Marking the five
+constants UNVERIFIED and naming the exact check cost master-analyst one command. A third guessed
+number would have cost a correction cycle *after* landing in `PROJECT_STATE.md` as settled. Same
+discipline as the KAN-69 bound and the `host_user_id` idea I declined to assert (dead, one query).
+
+**Check new decisions against the decisions you already wrote (2026-08-28).** `T-001` and `T-015` were
+both mine, both ACTIVE, and gave opposite instructions — the conflict sat unnoticed until
+`master-analyst` raised an unrelated constraint. **A decision log is not append-only in effect: each
+new entry can invalidate an older remedy.** Before ruling, grep the log for entries touching the same
+objects. Also: a test that asserts only "is this view invoker?" would flag the *correct* configuration
+as a violation and invite someone to fix it into an outage — assert the **pairing** (invoker status vs
+base-table policy count).
+
+**A count is never a configuration check (2026-08-28) — three instances in one day.** (1) counted a
+GRANT and called it exposure; (2) counted grep lines and called them breakage; (3) `T-024` first gated
+the invoker flip on "base table has policies" — but `notifications` has 4 policies whose only INSERT
+one is `WITH CHECK (false)`, the very policy SEC-16 is about. **Count = cheap filter. Then READ the
+policies against the view's read pattern and calling roles.** A count answers "does X exist", never
+"is X correct".
+
+## 2026-08-29 — I fell into this trap myself, on `T-037`
+
+Grepping `rpc_onboard_profile` across `lib/` returned only an unused constant, and I concluded
+the RPC had **zero call sites and was not in the live path**. It is called at
+`auth_service.dart:1156` — through `SupabaseConfig.rpcOnboardProfileFn`. I published the wrong
+conclusion in a ruling and had to correct it.
+
+**The rule, restated as a procedure:** before reporting any Supabase table / bucket / RPC as
+unused, resolve its name **through `supabase_config.dart`** — grep the *constant identifier*,
+not the string value — and confirm against `pg_proc` / the catalogue. `CLAUDE.md` states the
+rule ("never hardcode these strings"), which is exactly why the literal is absent. **The
+project's own convention is what makes the naive grep return a false negative.**
+
+Corollary that also bit here: a *dead* function can shadow a *live* one with a similar name.
+`AuthService.completeOnboarding` and the live `createProfileStep`/`createPersonaProfileStep`
+sequence both look like "the onboarding write path"; two reviewers reported on the dead one.
+**Establish the live path by reading the caller (the screen), not by name resemblance.**
+
+## The working tree is not the repo (2026-08-30, KAN-57)
+
+A remediation can read as complete in the working tree and be absent from every
+committed ref. KAN-57's `build.gradle.kts` fix (plaintext keystore passwords →
+`keystoreProperties` lookup) was uncommitted: ` M` in `git status`, while
+`origin/main` and `origin/Canary` both still carried `storePassword = "mo3taz51024."`
+in a PUBLIC repo.
+
+**Why:** `grep` and `cat` read the working tree. For anything whose exposure is
+*publication*, the working tree is the wrong subject entirely.
+
+**How to apply:** when verifying that a credential, secret, or any published-artifact
+defect is gone, query the ref, not the file — `git show origin/main:<path>` and
+`git status --porcelain <path>`. A clean local grep proves only that the machine is
+clean. Corollary caught the same day: a case-insensitive grep for a rotated password
+matches the *new* password when rotation only changed case (`mo3taz` → `Mo3taz`) —
+anchor the pattern or you will read a hit as a failure.

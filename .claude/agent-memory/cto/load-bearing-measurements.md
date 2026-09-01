@@ -152,9 +152,21 @@ unblocks B2/B4/B5/KAN-58 teardown. I had fused them. Also: `CONTRACT.md` §3 blo
 migrations at **authoring**, not just applying — my "option C" premise was wrong; read the row, don't
 reason from the principle. The seat is *vacant-pending-hire*, not a contested permission.
 
-**SEC-17 / `creator_user_id` — sizing settled (2026-08-28).** **11 distinct lines**: 6 snake-case JSON
-keys + 6 camelCase `creatorUserId` uses − 1 overlap (`game_view_controller.dart:212` contains both).
-Failure taxonomy if dropped naively: **3 query errors** (filters) · **2 silent identity substitutions**
+**SEC-17 / `creator_user_id` — CORRECTED 2026-08-28 by master-analyst; my first taxonomy was wrong.**
+**The axis is the query TARGET, not the call syntax.** `.eq('creator_user_id',…)` describes the call;
+`.from(…)` decides what breaks. SEC-17 removes the column from the **view projection** — `games` keeps
+it — so base-table queries are untouched:
+```
+sport_profile_view_provider.dart:262  .from(gamesTable)      OUT OF SCOPE
+supabase_games_datasource.dart:505    .from(gamesTable)      OUT OF SCOPE
+game_history_providers.dart:84        .from(vGameCardTable)  IN SCOPE (the only view filter)
+```
+**Settled: 6 occurrences · 5 files · 3 sites read `v_game_card` · 1 filter on the view.**
+11 distinct lines total (6 snake + 6 camel − 1 overlap at `game_view_controller.dart:212`).
+**UNVERIFIED:** `.from(vGameCardTable)` has **8** call sites; the other 5 are separated only by their
+`select(...)` column-list constants (`_historyColumns`, `_cardColumns`), which I never expanded. If any
+names `creator_user_id`, the in-scope count moves.
+Failure taxonomy (for in-scope sites): **silent identity substitution**
 · **1 silently dead navigation** (`game_detail_screen.dart:648-653`, uid is a route param, null-guarded
 at :650 so the organiser tap just stops working). Five of six fail *silently* — the wrong direction.
 **`games.host_user_id` DOES NOT EXIST** (0 rows in information_schema for the whole `public` schema;
@@ -163,3 +175,15 @@ the comment at `game_history_providers.dart:49` is correct). So `game_model.dart
 checks. **No free migration path.** `creator_profile_id` DOES exist on games, meetups, v_game_card,
 v_meetup_list, v_my_games — target available everywhere. **Surface is wider than v_game_card:** 3
 views + 2 base tables carry `creator_user_id`.
+
+**B1b is NOT a blanket invoker flip — `T-001` and `T-015` conflict (2026-08-28, `T-024`).**
+`T-001` said "add base-table policies, then flip to security_invoker". `T-015` said the 30 zero-policy
+tables are a deliberate definer funnel and the instrument is REVOKE, **rejecting** "add policies".
+Both cannot run. Policy counts: **games 0 · content_drafts 0 · user_hidden_modes 0** ·
+user_reputation_aggregate 1 · meetups 2 · notifications 4 · posts 5 · profiles 13.
+**`v_game_card` reads `games` (0 policies)** — flipping it to invoker returns **0 rows to every user**
+and blanks explore / social feed / game history / nearby / detail. **Ruling: a definer view over a
+zero-policy base table STAYS definer.** Check each view's base-table policy count before flipping.
+**Consequence: B1b is not a promotion blocker on its own** — the blocker is the revoke (`T-018`) +
+FORCE RLS (`T-023`). `T-001`'s "a blank screen is the correct failure" holds where a policy is
+*missing*, NOT where the absence is the design.

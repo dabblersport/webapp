@@ -65,3 +65,19 @@ the old version" table, added 2026-08-27 after several figures moved (colour cou
 settings throw count 25→24, "no schema history"→237 migrations, view census 49/25/8 →
 71/49/19, and WIRE-10). **Check it before citing anything of theirs read earlier in a
 session.** When I cite one of their numbers without re-verifying it, I say so in the text.
+
+## Two more, 2026-08-29 — both from reading a document's self-description as evidence
+
+3. **"Apple rejected Build 174 for account deletion; awaiting re-review."** I lifted this from
+   an **HTML comment header inside the Notion checklist** and repeated it as fact. Wrong: the
+   real record is a build **170** rejection, root-caused to an RPC foreign-key violation (not
+   the UI), fixed by migration `20260701170909`. Deletion is live, unflagged and a genuine hard
+   delete. (`P-021`)
+4. **"Live routes display invented AED transactions."** I carried KAN-49's headline unchecked.
+   Wrong in both directions — venue prices are real Supabase data; the fabricated content that
+   actually reaches users is **social** (`social_search_screen.dart`), not financial. (`P-023`)
+
+**The pattern in all four: a document describing itself is not evidence about the world.**
+A Notion header, a ticket title and a `[x]` are all claims. Before repeating any of them,
+delegate the check to a read-only agent or take the fact from `master-analyst`/`cto`.
+Both of these were caught only because the PO pushed back — do not rely on that.

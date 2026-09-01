@@ -1,0 +1,7 @@
+- [Navigation map (first pass)](navigation-map.md) — unauthenticated surface walk, known findings not yet filed, maestro flow inventory
+- [Environment quirks](environment-quirks.md) — scroll doesn't work on Flutter canvas (use JS WheelEvent), resize_window doesn't change real viewport, network capture can miss first POST
+- [Plus-address email validation](plus-address-email-validation.md) — /email_input Continue silently disabled for name+tag@domain.com; now filed as KAN-108
+- [2026-08-31 local dev smoke pass](2026-08-31-local-dev-smoke-pass.md) — password-field focus breaks Chrome automation tab (4x reproduced), KAN-89 still broken despite Done, KAN-108/109/110 filed
+- [2026-08-31 retest + Android attempt](2026-08-31-retest-and-android-attempt.md) — password blocker resolved on fresh Chrome; KAN-45/88/99 confirmed fixed; Android emulator blocked by Gradle-vs-JDK25 toolchain mismatch (not app bug)
+- [2026-09-01 JDK fixed, computer-use blocked](2026-09-01-android-jdk-fixed-computeruse-blocked.md) — JDK fix confirmed (build+install succeed); Android smoke pass now blocked by computer-use's Android-emulator support being rollout-flag-disabled on this machine
+- [2026-09-01 Android ADB smoke pass](2026-09-01-android-adb-smoke-pass.md) — first successful native Android pass via raw adb (route around blocked computer-use); technique + no bugs found, all nav/post/profile/settings flows confirmed working

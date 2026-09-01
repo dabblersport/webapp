@@ -44,3 +44,20 @@ run `flutter build web --release` with `--dart-define`s directly.
 **Second gotcha:** `firebase.json` declares a `macos` platform whose `fileOutput` is
 `macos/Runner/GoogleService-Info.plist`. Harmless while the folder is gone, but the next
 `flutterfire configure` writes into a directory that no longer exists.
+
+**SUPERSEDED IN PART, 2026-08-29 — `macos/` was deleted after all (`G-004`).** The PO overrode
+this ruling directly: **macOS is not a targeted platform for Dabbler**, so the bundle-ID /
+entitlements / sign-in-URL-scheme cost this ruling weighed is a cost worth paying. The technical
+analysis was not disputed — `flutter create --platforms=macos .` genuinely does not regenerate
+those — the PO accepted it knowingly.
+
+**How to apply:** do **not** cite this memory or `T-012` as "macos/ stays". Everything else in
+`T-012` still stands: the `windows/`/`linux/` approvals, the token-generator refusal, and the
+approved moves.
+
+**The lesson worth keeping, since the ruling itself was not wrong:** I weighed a real
+reversibility cost correctly and still reached the wrong answer, because I was missing one product
+fact — whether macOS is a target at all. **A cost-of-being-wrong argument is only as good as the
+premise that the thing has value.** When a keep/delete call turns on "we might need this", that is
+a product question, and it goes to the `cpo` or the PO before I rule on it — the same routing I
+insisted on for the `is_active` question in [[invoker-flip-join-trap]].

@@ -1,0 +1,14 @@
+- [DECISIONS.md amendments are silent scope creep](decisions-amend-silently.md) — always re-read the full decision text (incl. later Amendment blocks) at review time, not the ticket's own AC checklist
+- [Spot-check classification claims](spot-check-classification-claims.md) — grep the actual class/function name repo-wide, not the file's own path; "dead" labels are most likely wrong
+- [SQL-verified is not app-verified](sql-verified-app-not.md) — an AC saying "in the running app, not just in SQL" fails on a SQL-only check even if the number is right and risk is low
+- [Aggregate updated, per-item not](aggregate-updated-per-view-not.md) — a doc's summary counts can move while its per-item table (what an AC actually asked for) stays stale; check both
+- [Concurrent auditors race](concurrent-auditors-race.md) — multiple task-auditor instances can hit the same tickets/doc sections at once; re-verify final Jira state directly, flag same-day contradictory verdicts on the same doc section
+- [Contract boundary vs ticket claim](contract-boundary-vs-ticket-claim.md) — a ticket's "Owning agent" line is a claim, not fact; check CONTRACT.md matrix for both the claimed owner AND the actual editor
+- [Dart-side blocked on backend schema](dart-side-blocked-on-backend-schema.md) — honest "UI done, backend piece missing, routed to backend-owner" is still a FAIL if any AC literally needs the missing piece
+- [Git committed vs working tree](git-committed-vs-working-tree.md) — a cited DECISIONS.md/SCHEMA.md entry may exist only uncommitted; `git show HEAD:<file>` it before treating it as settled
+- [Reconciliation vs review queue](reconciliation-vs-review-queue.md) — a fully-verified comment chain with no task-auditor sign-off leaves a ticket permanently stuck; re-check live and close it
+- [Uncommitted but applied migration](uncommitted-but-applied-migration.md) — a migration can be live-verified in prod via Supabase MCP while its .sql file is still untracked in git a day later
+- [Self-contradictory trace citation](self-contradictory-trace-citation.md) — "no X exists" and a citation of X can sit one sentence apart in a finding; check both halves, not just the grep
+- [Field repurposed under old name](field-repurposed-under-old-name.md) — a migration renames a leaked column but the Dart field keeps its old name/semantics; grep the FIELD name, not just the DB column, through every downstream consumer
+- [Descope leak: check reachability](descope-leak-check-reachability.md) — a descoped feature can leak via a live UI entry point in the uncommitted working tree with zero attached ticket; grep the whole diff, not just Jira
+- [Dart fixed, SQL migration not applied](dart-fixed-sql-migration-not-applied.md) — a two-commit ticket's Dart half can get fully reworked and re-reviewed while the SQL half (the actual fix) was never applied to prod; re-run the live probe + check list_migrations every review pass

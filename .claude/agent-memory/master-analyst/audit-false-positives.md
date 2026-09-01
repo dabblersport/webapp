@@ -68,7 +68,7 @@ See [[audit-baseline-2026-08-26]].
 
 ## `public.pg_stat_statements_info` "does not exist"
 
-*Added 2026-08-28. Raised by `cto-4`; did not verify.*
+*Added 2026-08-28. Raised by `cto`; did not verify.*
 
 `to_regclass('public.pg_stat_statements_info')` is `NULL`, which reads as a dangling
 reference of the same class as `v_space_slots_today` (BUG-05). It is not. The relation lives
@@ -100,3 +100,52 @@ not "safe". Any entry cleared on one access path must name that path, or the nex
 skips the one that matters.
 
 Re-check any other entry here that was cleared without naming its privilege.
+
+## Five intentionally-public anon-readable views — do not re-flag
+
+*Added 2026-08-28. `cto`'s `T-027` (`DECISIONS.md:2764`); each verified here.*
+
+**The 45 anon-readable views in `public` are not 45 outstanding findings.** Five are deliberate:
+
+| View | Why it is public |
+|---|---|
+| `username_registry_public` | Backs signup username availability — **it must answer before a session exists.** Gating it on auth breaks registration |
+| `geometry_columns`, `geography_columns` | PostGIS, **`supabase_admin`-owned**, not alterable from this project's roles (`T-025`, decision 021) |
+| `v_potential_vibes_default`, `v_recreate_quickpicks` | Function-backed. **`security_invoker` is a no-op when the `FROM` is a set-returning function** — access control lives inside the function, not in the view |
+
+**Probed, not merely reasoned about.** `v_potential_vibes_default` exposes `user_id`, `username`,
+`display_name`; if the function did not scope to the caller that would be a live roster leak
+**and the mechanism argument would still have sounded correct.** Measured as `anon`:
+`v_potential_vibes_default` **0 rows**, `v_recreate_quickpicks` **0 rows**. Control in the same
+transaction: `v_game_card` 216.
+
+`cto` wrote the assertion into its migration rather than trusting its own reasoning — the same
+mechanism-vs-observation distinction applied in the opposite direction from SEC-16. Copy that.
+
+Related: [[reachability-method]].
+
+---
+
+## NAV-01 and NAV-02 — my own findings, withdrawn 2026-08-29
+
+**Never re-flag either. Both cited lines were re-read and neither is a defect.**
+
+| Withdrawn | What the line actually says |
+|---|---|
+| **NAV-01** `social_search_screen.dart:1811` | `context.push(RoutePaths.gameDetail(game.id))` → `/sports/games/<id>`, matches `app_router.dart:829`. The `'${RoutePaths.games}/${game.id}'` form I quoted is nowhere in that file |
+| **NAV-02** `onboarding_sports_screen.dart:194` | `context.go(RoutePaths.createUserInfo)` → declared at `app_router.dart:186`. `onboardingBasicInfo` exists **only** at `route_constants.dart:45,168` — an unused constant, and it left this file at `2523def` |
+
+**NAV-02's severity claim was also false.** `onboardingSports` → `onboardingPreferences` →
+`onboardingPrivacy` → `onboardingCompletion` is a **closed cluster**: the only navigator to
+`RoutePaths.onboardingSports` is `onboarding_preferences_screen.dart:171,298`, inside the cluster.
+The live chain is `intent_selection` → `interests_selection` → `onboardingPrimarySport`. **Nothing
+outside enters it**, so nothing there is launch-critical.
+
+**Replaced by NAV-01a — the real one:** `notifications_screen_v2.dart:518` pushes `/games/<id>`,
+matching no route, on a **live bottom-nav screen**. Only remaining `/games/` literal in `lib/`.
+KAN-88.
+
+**Why these were generated, so the instrument gets fixed and not just the rows.** Constant-name
+matching and `file:line` collection ran as **two passes**, joined without re-opening the cited
+line. Both passes were individually right; the join invented the finding. **Spot-check the join,
+not the passes.** A `file:line` you did not open is not evidence — `docs/LEARN.md`, 2026-08-29.

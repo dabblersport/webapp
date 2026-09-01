@@ -175,6 +175,21 @@ Cloudflare Pages keeps **two separate variable environments, Production and Prev
 
 Required by the build script: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_NAME`, `ENVIRONMENT` (plus `GOOGLE_WEB_CLIENT_ID`).
 
+### Deploy Targets and CI Gates
+
+**`main` has exactly one deploy target: Cloudflare Pages.** It had two until 2026-09-01, when `.github/workflows/deploy-web.yml` (a `gh-pages` publish) was deleted under `DECISIONS.md` T-042 — the branch and the Pages site were both already gone and it had been failing on every push to `main` for six weeks. If you find a second deploy path, that is a defect; there is one.
+
+The two GitHub Actions workflows that remain are **gates, not deploy targets**. Both run on push to `Canary` and on PR into `main`:
+
+| Workflow | What it gates |
+|---|---|
+| `ci.yml` | `flutter analyze` + `flutter test` (KAN-72) |
+| `anon-allowlist-check.yml` | anon-reachable view allowlist (KAN-61, `DECISIONS.md` T-002) |
+
+Neither one deploys anything. Cloudflare builds from its own trigger, independently of Actions — **a red Actions check does not stop a Cloudflare deploy**, so a green Cloudflare build is not evidence that the gates passed.
+
+**`ci.yml` is currently red on every run and has never passed** (12/12 failures as of 2026-08-30) — `flutter analyze` exits non-zero on 55 warnings and 160 infos. Until that is fixed it gates nothing. Do not read its red X as noise, and do not treat "CI exists" as "CI passes."
+
 ### Supabase Project
 
 The Supabase project is `wtncuzcskpigqpmnxwws` (org: Onebrain). Another unrelated Supabase project exists on the same account — **never use it**.
