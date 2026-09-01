@@ -78,7 +78,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   void initState() {
     super.initState();
 
-    if (FeatureFlags.enableRewards) {
+    if (FeatureFlags.enableEarlyBirdCheckIn) {
       // Register lifecycle callback
       AppLifecycleManager().onResume(_onAppResume);
 
@@ -93,7 +93,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   @override
   void dispose() {
-    if (FeatureFlags.enableRewards) {
+    if (FeatureFlags.enableEarlyBirdCheckIn) {
       AppLifecycleManager().offResume(_onAppResume);
     }
     super.dispose();
@@ -575,6 +575,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   /// Feeds-group nav items: [Feeds | Venues (segmented)]  [▦ icon → Games] [⊕]
+  ///
+  /// Community (RealFriendsScreen, branch 1) has no slot here — see
+  /// [FeatureFlags.enableCommunityMobileNav]. It stays reachable via the
+  /// desktop side-nav (`_onDesktopDestinationSelected`) until that flag
+  /// is enabled, at which point it joins this segmented group.
   List<Widget> _buildHomeNavItems(
     Color foregroundColor,
     Color foregroundColorInactive,
@@ -590,6 +595,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             foregroundColorInactive: foregroundColorInactive,
             inSegmentedGroup: true,
           ),
+          if (FeatureFlags.enableCommunityMobileNav)
+            _buildTextNavItem(
+              index: NavigationBranch.community.shellIndex,
+              label: AppLocalizations.of(context).nav_community,
+              foregroundColor: foregroundColor,
+              foregroundColorInactive: foregroundColorInactive,
+              inSegmentedGroup: true,
+            ),
           _buildTextNavItem(
             index: NavigationBranch.venues.shellIndex,
             label: AppLocalizations.of(context).nav_venues,
