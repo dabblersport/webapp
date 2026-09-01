@@ -33,13 +33,43 @@ class DataExportException implements Exception {
 }
 
 class EmailService {
+  /// Sends an email via the `send-export-email` Supabase Edge Function
+  /// (Resend under the hood). Requires an authenticated session — the
+  /// function only allows a caller to email themselves (`to` must match
+  /// their own auth email), so this is not usable as a general mailer.
+  ///
+  /// Delivery requires the `RESEND_API_KEY` Edge Function secret to be set
+  /// in the Supabase Dashboard (Project Settings -> Edge Functions ->
+  /// Secrets). Until that secret is set, the function returns a clear
+  /// "not configured" error rather than silently failing — this method
+  /// logs that as a warning and does not throw, so a missing email channel
+  /// never blocks the export itself from completing.
   static Future<void> sendEmail({
     required String to,
     required String subject,
     required String body,
     Map<String, String>? headers,
+    SupabaseClient? supabase,
   }) async {
-    Logger.info('Implement email sending to $to with subject: $subject');
+    final client = supabase ?? Supabase.instance.client;
+    try {
+      final response = await client.functions.invoke(
+        SupabaseConfig.sendExportEmailFn,
+        body: {'to': to, 'subject': subject, 'body': body},
+      );
+
+      if (response.status != 200) {
+        Logger.warning(
+          'EmailService: send-export-email returned status '
+          '${response.status} for $to: ${response.data}',
+        );
+        return;
+      }
+
+      Logger.info('EmailService: email sent to $to (subject: $subject)');
+    } catch (e) {
+      Logger.warning('EmailService: failed to send email to $to', e);
+    }
   }
 }
 
@@ -1644,16 +1674,16 @@ Last Updated: ${DateTime.now().toIso8601String()}
         '$_logTag: Sending GDPR completion email to: ${request.userEmail}',
       );
 
-      // Placeholder for email sending
-      // await EmailService.sendTemplate(
-      //   to: request.userEmail,
-      //   template: 'gdpr_export_complete',
-      //   variables: {
-      //     'export_id': request.id,
-      //     'format': request.format.toString().split('.').last,
-      //     'expires_at': request.expiresAt,
-      //   },
-      // );
+      await EmailService.sendEmail(
+        to: request.userEmail,
+        subject: 'Your Dabbler data export is ready',
+        body:
+            'Your requested data export (${request.format.toString().split('.').last.toUpperCase()} format, '
+            'request ${request.id}) has completed and is available in the app '
+            'under Settings > Export My Data. It will remain available until '
+            '${request.expiresAt.toIso8601String()}, after which it is deleted.',
+        supabase: _supabase,
+      );
     } catch (e) {
       Logger.error('$_logTag: Error sending completion email', e);
     }
@@ -1668,7 +1698,15 @@ Last Updated: ${DateTime.now().toIso8601String()}
         '$_logTag: Sending GDPR error email to: ${request.userEmail}',
       );
 
-      // Placeholder for error email sending
+      await EmailService.sendEmail(
+        to: request.userEmail,
+        subject: 'Your Dabbler data export failed',
+        body:
+            'Your requested data export (request ${request.id}) could not be '
+            'completed. Please try again from Settings > Export My Data, or '
+            'contact privacy@dabbler.app if the problem persists.',
+        supabase: _supabase,
+      );
     } catch (e) {
       Logger.error('$_logTag: Error sending error email', e);
     }

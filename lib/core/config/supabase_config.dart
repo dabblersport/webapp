@@ -251,4 +251,10 @@ class SupabaseConfig {
   static const String rpcIsFollowingUserFn = 'rpc_is_following_user';
   static const String rpcTrackEventFn = 'rpc_track_event';
   static const String sendBookingRemindersFn = 'send_booking_reminders';
+
+  // ---- Edge Functions (invoked via supabase.functions.invoke) ----
+  // KAN-52: Resend-backed export delivery. Requires RESEND_API_KEY set as
+  // an Edge Function secret; caller must be authenticated and `to` must
+  // match the caller's own auth email (self-serve only, not a mailer).
+  static const String sendExportEmailFn = 'send-export-email';
 }
