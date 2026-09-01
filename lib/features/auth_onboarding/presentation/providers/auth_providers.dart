@@ -11,6 +11,7 @@ import 'package:dabbler/data/models/authentication/user.dart';
 import 'package:dabbler/data/models/authentication/auth_session.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/auth/session_cleanup.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 // Use the working AuthService instead of unimplemented repository
 final authServiceProvider = Provider<AuthService>((ref) {
@@ -165,6 +166,11 @@ class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
         // session never shows the previous user's profile/settings.
         resetUserScopedProviders(_ref);
         routerRefreshNotifier.requirePostLoginWelcome();
+        final userId = data.session?.user.id;
+        if (userId != null) {
+          AnalyticsService.setUser(userId);
+        }
+        AnalyticsService.trackEvent('session_started');
       }
 
       if (event == supa.AuthChangeEvent.signedOut) {
@@ -173,6 +179,7 @@ class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
         // Wipe all user-scoped provider caches on logout.
         resetUserScopedProviders(_ref);
         routerRefreshNotifier.clearPostLoginWelcome();
+        AnalyticsService.reset();
         if (wasAuthenticated) {
           routerRefreshNotifier.notifyAuthStateChanged();
         }
