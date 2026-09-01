@@ -34,3 +34,35 @@ staged-but-uncommitted — actively being edited on disk), stage a composed blob
 `git hash-object -w` + `git update-index --cacheinfo` instead of editing the live working
 copy, so your hunk lands without disturbing theirs (used successfully for `docs/SCHEMA.md`
 here, which `master-analyst` was concurrently rewriting).
+
+**2026-09-01 (KAN-115) — the hazard runs in both directions.** During the
+sprint-2 batch commit it bit twice more, with me as the victim rather than the
+cause:
+
+1. A `git add` of the emoji-font files was silently **un-staged** by another
+   agent before my `git commit` ran, which failed with "no changes added to
+   commit." Nothing was lost, but a naive retry loop would have thrashed.
+2. My staged `macos/` deletions were **swept into another agent's commit**
+   (`75cb5eb`, a test-coverage commit) because they ran `git commit` with no
+   pathspec while my content sat in the shared index. The macOS removal is now
+   recorded under a message about test coverage. Caught after the fact; not
+   repaired, because by then three further commits had landed on top and
+   rewriting would have rewritten other agents' work.
+
+**Two upgrades to the rule:**
+
+- **Stage, verify and commit in a single Bash call**, never across turns. The
+  window between `git add` and `git commit` is where this happens, so make it
+  as small as possible. Guard with an explicit expected-file-list check that
+  `exit 1`s on mismatch — this caught 7 concurrently-staged test files that
+  would otherwise have landed in a macOS commit.
+- **Guard history rewrites with a HEAD assertion.** `git rev-parse HEAD` before
+  a `reset --soft` and abort if it moved; HEAD moved under me mid-operation and
+  the assertion is the only thing that stopped a rewrite on top of someone
+  else's new commit.
+
+**Worth escalating, not just working around:** `docs/CONTRACT.md:167` grants
+git write commands to `version-control` **only** — "No other agent runs a write
+git command." Every collision above was another agent running `git add` /
+`git commit` in violation of that row. The staging guards are mitigation; the
+actual fix is enforcement of the permission matrix.
