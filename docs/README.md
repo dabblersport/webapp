@@ -4,8 +4,8 @@ This repo (`dabblersport/webapp`, pushed to GitHub) holds only the Flutter app a
 technical docs that describe it. The multi-agent operation — `.claude/agents`,
 `.claude/agent-memory`, `CLAUDE.md`, and all governance docs (`DECISIONS.md`,
 `PROJECT_STATE.md`, `LEARN.md`, `CONTRACT.md`, `AGENTS.md`, `BRIEF.md`, `MANIFESTO.md`,
-`ROADMAP.md`, `WORKFLOWS.md`, `STATUS.md`, `status/`, `briefs/`) moved one level up, to
-`../` (**One Brain**), on 2026-09-02. Look there for anything about agent roles, the
+`ROADMAP.md`, `WORKFLOWS.md`, `STATUS.md`, `status/`, `briefs/`) live one level up, in
+`../dabbler-docs/` (inside **One Brain**). Look there for anything about agent roles, the
 decision log, project-state audits, or how work is coordinated.
 
 ## What's still here
@@ -22,4 +22,5 @@ decision log, project-state audits, or how work is coordinated.
 | `flutter_localization_checklist.md` | Arabic localization tracking. |
 | `screen-report.md` | A prior audit (2026-08-17). |
 
-None of these are governance documents and none of them override anything in `../docs/`.
+None of these are governance documents and none of them override anything in
+`../dabbler-docs/`.
