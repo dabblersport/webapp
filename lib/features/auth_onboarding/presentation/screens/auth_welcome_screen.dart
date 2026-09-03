@@ -821,7 +821,10 @@ class _CountryPickerSheet extends StatelessWidget {
               itemBuilder: (context, index) {
                 final name = countries[index]['name_en'] as String;
                 final arName = countries[index]['name_ar'] as String?;
-                final displayName = (languageCode == 'ar' && arName != null && arName.isNotEmpty)
+                final displayName =
+                    (languageCode == 'ar' &&
+                        arName != null &&
+                        arName.isNotEmpty)
                     ? arName
                     : name;
                 final isSelected = name == selectedCountryName;
