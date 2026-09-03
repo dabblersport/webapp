@@ -57,6 +57,37 @@ only through `SECURITY DEFINER` RPCs — in which case that is a legitimate desi
 **documented as such** so the next audit does not re-flag it — or it is missing policies.
 Triage is KAN-26.
 
+**KAN-26 triage, proposed by `backend-owner` 2026-09-01 (verify before treating as final —
+this section stays `master-analyst`'s to confirm).** Ran
+`pg_proc.prosrc ILIKE '%tablename%' AND prosecdef` across all 30 — a population count, not an
+advisor guess, per `T-020`.
+
+* **28 of 30 — intentional, RPC-only.** At least one live `SECURITY DEFINER` function
+  references the table by name. `admins`, `app_admins`, `blackouts`, `challenge_fixtures`,
+  `challenge_invites`, `challenge_squads`, `challenge_stages`, `content_drafts`,
+  `context_rating_config`, `game_invites`, `game_link_tokens`, `games`, `meetup_invites`,
+  `meetup_link_tokens`, `moderation_ban_terms`, `moderation_tickets`, `reputation_config`,
+  `reuse_fingerprints`, `reuse_user_stats`, `safety_blocklist_terms`, `safety_takedowns`,
+  `space_slot_holds`, `squad_invites`, `squad_join_requests`, `squad_link_tokens`,
+  `squad_members`, `user_hidden_modes`, `vibes_reco_config`. No policy added; deny-all at the
+  table is correct, reads go through the definer funnel by design (matches the `games`/`T-024`
+  finding above). `games` alone has 38 definer-function references — the funnel is real and
+  heavily used, not a one-off.
+* **`games`'s dead direct-table path, settled.** `lib/features/games/data/repositories/games_repository_impl.dart`
+  (`GamesRepository`, ~15.5k LOC across the slice) issues direct `.from('games')` calls and
+  would return nothing under this RLS shape — but it is never imported by any provider or
+  screen, and not in `lib/providers.dart`. **Dead, not dead-and-broken**: nothing live
+  exercises the path this deny-all would break, because nothing live calls it. A removal call
+  belongs to KAN-31/32, not this ticket.
+* **2 of 30 — genuine gap, fixed.** `challenge_types` (8 seed rows, has `is_active`) and
+  `surface_catalog` (30 seed rows) are static read-only catalog tables — same shape as
+  `sports`/`sport_variants`, which already carry a `<table>_read_active` SELECT policy +
+  `<table>_no_write` deny-all policy pair. Zero `SECURITY DEFINER` functions and zero Dart
+  callers reference either today, but both already carried pre-KAN-67 `anon`/`authenticated`
+  table-level GRANTs — the intent was public read, nobody added the RLS policy after enabling
+  RLS. Fixed in `supabase/migrations/20260901153415_kan26_definer_view_and_rls_triage.sql`
+  (authored, not applied) using the `sports`/`sport_variants` pattern exactly.
+
 **`games` is the consequential one.** It is the core domain table, it has no policies, and
 `lib/features/games/data/datasources/supabase_games_datasource.dart` issues 20 direct
 `.from(gamesTable)` queries against it. Every one returns nothing. The live game path
@@ -200,7 +231,7 @@ this file said. See §10 for how that number was wrong.
 | Position | Count | Meaning |
 |---|---:|---|
 | **EXPOSED** | **19** | `SECURITY DEFINER` + anon-selectable + **no `auth.uid()` predicate**. Bypasses RLS for an unauthenticated caller |
-| definer + anon-granted, returns rows | **2** | **CORRECTED 2026-08-28 — `v_game_card` (216 rows) and `v_meetup_list` (1 row) are readable by `anon`.** Not an RLS bypass of private data — both return only `listing_visibility = 'public'` rows — but both expose `creator_user_id`, `creator_username`, `creator_display_name`, `creator_avatar_url`, start time and venue to an unauthenticated caller. See SEC-15. **SEC-17 (KAN-87) migration drops `creator_user_id` from `v_game_card`'s SELECT list, replacing it with the already-present `creator_profile_id`** — Dart call sites migrated 2026-08-30; the SQL migration (`supabase/migrations/20260830120000_kan87_drop_creator_user_id_from_v_game_card.sql`) is authored but, as of this writing, not yet applied — `v_game_card` still returns `creator_user_id` live until it is |
+| definer + anon-granted, returns rows | **2** | **CORRECTED 2026-08-28 — `v_game_card` (216 rows) and `v_meetup_list` (1 row) are readable by `anon`.** Not an RLS bypass of private data — both return only `listing_visibility = 'public'` rows — but both expose `creator_user_id`, `creator_username`, `creator_display_name`, `creator_avatar_url`, start time and venue to an unauthenticated caller. See SEC-15. **SEC-17 (KAN-87) — RESOLVED 2026-09-01.** Dart call sites migrated 2026-08-30; the view migration (originally `20260830120000_...`, re-applied as `20260901..._kan87_drop_creator_user_id_from_v_game_card_v2` via `DROP VIEW`+`CREATE VIEW` since `CREATE OR REPLACE VIEW` cannot drop a column) is live. `v_game_card` no longer returns `creator_user_id`; only `creator_profile_id` is exposed. Verified: anon row count unchanged (217), `reloptions` unchanged (NULL) |
 | definer + anon-granted, returns 0 | 6 | Empty for `anon`, **verified by query, not by reading the definition** |
 | anon-revoked | 23 | `anon` has no SELECT grant — safe by grant |
 | invoker | 21 | `security_invoker = true` — the underlying table's RLS applies |
@@ -285,6 +316,39 @@ and two of these three would have been left open on a plausible-sounding hunch.
 
 See `DECISIONS.md` `T-027` for the five views confirmed intentionally public, and §2d for the
 reconciled aggregate counts.
+
+**KAN-26 Part 1 re-verification, `backend-owner` 2026-09-01 — all 19 confirmed closed, no new
+fix.** Re-ran the ticket's own enumeration query live. First pass used a buggy catalogue check
+(`'security_invoker=true' = any(reloptions)` — wrong spelling; Postgres stores the reloption as
+`security_invoker=on`) that produced false "still open" flags for `v_comments`, `v_circle_feed`,
+`v_meetup_counts`, `v_user_reputation`, `v_notifications_feed`/`_ranked`. Caught before authoring
+anything by reading raw `reloptions` and then empirically probing every candidate `as anon` (per
+`T-020`/the memory lesson this ticket's own text is built on: an advisor or a catalogue flag is
+not a verdict). All five actually carry `reloptions = {security_invoker=on}` live, and:
+- `v_user_reputation`, `v_meetup_counts`: 0 rows to `anon`.
+- `v_comments`: `permission denied for table profiles` to `anon` (fails closed — the LEFT JOIN
+  profiles has no `anon` grant to fall back on; a robustness wart, not a leak). 66 rows to
+  `authenticated`, matching this file's existing "67 → 66" count exactly.
+- `v_circle_feed`: also `permission denied for table profiles` to `anon`, despite the view's own
+  SELECT list never touching `profiles`. Traced to `circle_member_count(uuid)`: it is marked
+  `SECURITY DEFINER` but is `LANGUAGE sql` and trivially simple, so Postgres's planner is free to
+  **inline** it into the calling query — and an inlined SQL function does not run with the
+  definer's privileges, it runs as whatever role executes the outer query. That is why its
+  internal `profiles`-referencing subquery gets evaluated as `anon` and denied. Net effect today
+  is safe (fails closed), but `SECURITY DEFINER` on `circle_member_count` is not reliably doing
+  what its name promises — worth a future function-language fix (e.g. `plpgsql`, which is not
+  planner-inlined), not urgent since nothing is currently exploitable. Not fixed in this
+  migration; noted here for whoever next touches that function.
+- `v_notifications_feed`/`_ranked`: notification-domain (table `notifications`) — out of
+  `backend-owner`'s ownership per `CONTRACT.md`, not probed/fixed here, flagged directly to
+  `notifications-specialist` and in the KAN-26 Jira comment.
+- `v_potential_vibes_default`, `v_recreate_quickpicks`: `reloptions IS NULL` (documented no-op —
+  function-backed, `security_invoker` governs table/view access inside the view and there is
+  none to govern). 0 rows to `anon` for both, confirming the wrapped RPCs
+  (`rpc_potential_vibes`, `rpc_recreate_suggestions`) gate on auth internally. Matches `T-027`.
+
+No view/grant changes needed for Part 1 — every named view already carries a verdict, and this
+sweep re-confirmed each one live rather than trusting the date on the existing table.
 
 **Not a finding — PostGIS extension metadata:** `geography_columns`, `geometry_columns`.
 They describe geometry columns, hold no application data, and are owned by the extension.
@@ -944,3 +1008,68 @@ WHERE v.table_schema = 'public';
 attempted the insert, and nobody should** — this is production, and `DECISIONS.md` 019 bars
 every agent from writing it. The catalogue establishes the vulnerability; a write would only
 establish it a second time, destructively.
+
+## 12. BASE-TABLE WRITE GRANTS — KAN-86 (successor to KAN-67)
+
+*Added 2026-09-01 by `backend-owner`. Migration:
+`supabase/migrations/20260901170000_kan86_revoke_and_scope_anon_authenticated_table_grants.sql`
+— authored and posted to KAN-86 for `cto` to apply under `G-002`; not yet live as of this
+write.*
+
+KAN-67 (2026-08-28) closed the wide `anon`/`authenticated` write grant on all 70
+postgres-owned **views**. It explicitly did not touch base tables. KAN-86 closes the base
+table half.
+
+**Measured live 2026-09-01**, re-verified rather than trusted from the ticket's 2026-08-29
+baseline (which had drifted — two tables were added since): 187 `relkind='r'` tables in
+`public`; 186 owned by `postgres`, one (`spatial_ref_sys`) owned by `supabase_admin` and
+untouchable (`T-025` — no role membership to `ALTER`/`REVOKE` it; PostGIS catalogue, not
+Dabbler data). Of the 186, 183 held `anon` INSERT+UPDATE+DELETE=true; the other 3
+(`data_export_requests`, `export_download_logs`, `gdpr_compliance_log`) were already scoped
+down same-day by KAN-52's follow-ups.
+
+**RLS already denies `anon` on all 186** — every permissive policy reaching `anon` was
+enumerated in KAN-86's own ticket text and falls into a gated shape (literal `false`,
+definer-funnel, definer-owner, or an owner/admin predicate that resolves `auth.uid()` to
+`NULL` for `anon`). This migration closes redundant grant surface, not an open leak.
+
+### The expected re-grant set (`T-002`'s CI gate should assert against this)
+
+Derived from every `.from('<table>').insert/update/upsert/delete` call site in `lib/` and
+`supabase/functions/`, resolved through `supabase_config.dart` constants (and the handful of
+non-`SupabaseConfig` local `_table` string constants, resolved to their literal value — never
+trusted from an inline grep). `anon` gets nothing re-granted anywhere: no call site writes to
+a base table as `anon`. Edge-function writes (`send-push-notification`, `detect-country`) use
+`SUPABASE_SERVICE_ROLE_KEY` and bypass grants entirely, so they need none.
+
+| Table | `authenticated` verbs |
+| --- | --- |
+| `profiles`, `sport_profiles`, `organiser`, `circle_members`, `posts`, `likes`, `profile_locations`, `squads`, `games`, `reactions`, `moderation_ban_terms`, `fcm_tokens` | INSERT, UPDATE, DELETE |
+| `user_settings`, `moderation_tickets`, `post_hashtags`, `post_views`, `venue_spaces`, `venue_price_rules`, `venue_submissions`, `game_join_requests`, `user_preferences`, `privacy_settings`, `data_export_requests`, `notification_settings`, `comments` | INSERT, UPDATE |
+| `space_slot_holds`, `game_roster` | INSERT, DELETE |
+| `player`, `host`, `profile_tiers`, `moderation_actions`, `post_squads`, `hashtags`, `geo_locations`, `squad_invites`, `export_download_logs`, `gdpr_compliance_log`, `profile_follows` | INSERT |
+| `post_reposts` | DELETE |
+| `notifications` | UPDATE |
+
+Every other postgres-owned base table (146 of the 186) is revoke-only: no direct client
+write reaches it. Writes the app performs on those tables go through a `SECURITY DEFINER`
+RPC (e.g. `game_waitlist`, `wallets`), which runs as its owner and is unaffected by these
+grants — that is the mechanism that makes the revoke safe.
+
+### Dead-code table references found during the sweep (not fixed here)
+
+Several `SupabaseConfig` constants and one hardcoded local table name point at tables that
+**do not exist live** — grep found real call sites writing to them, but a live check
+(`information_schema.tables`) came back empty for all of:
+
+`bookings` (`bookings_datasource.dart`, 11 call sites — `venue_bookings` is likely the
+intended table), `game_ratings`, `venue_reviews`, `payment_methods`
+(`payment_methods_datasource.dart`, 5 call sites — only `payment_intents`/`payment_records`
+exist), `organiser_benefits`, `profile_views`, `venue_opening_hours` (renamed to
+`opening_hours` by a prior migration), and the entire GDPR/account-deletion surface in
+`data_retention_service.dart` — `user_retention_policies`, `scheduled_cleanup_tasks`,
+`data_cleanup_audit`, `grace_period_requests`, `messages`, `login_history`, `user_media`,
+`location_data`, `user_analytics`, `audit_logs`. None of these ten exist either. No grant is
+possible or needed on a table that doesn't exist; this migration cannot regress them further.
+Flagging for `master-analyst`/`cto` — this is a much bigger dead-code surface than this
+ticket's scope, not something to silently fold into a grants migration.

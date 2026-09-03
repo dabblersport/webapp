@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../utils/constants/route_constants.dart';
+
 /// Completion screen for social onboarding
 class SocialOnboardingCompleteScreen extends StatelessWidget {
   const SocialOnboardingCompleteScreen({super.key});
@@ -174,8 +176,8 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Navigate to main app with social tab selected
-                          context.go('/main?tab=social');
+                          // Navigate to main app with social/community tab selected
+                          context.go(RoutePaths.community);
                         },
                         child: const Text('Explore Social'),
                       ),
@@ -186,7 +188,7 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: () {
                           // Navigate to main app with home tab
-                          context.go('/main?tab=home');
+                          context.go(RoutePaths.home);
                         },
                         child: const Text('Go to Home'),
                       ),
@@ -199,7 +201,7 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
                 // Skip for now option
                 TextButton(
                   onPressed: () {
-                    context.go('/main');
+                    context.go(RoutePaths.home);
                   },
                   child: Text(
                     'I\'ll explore later',
