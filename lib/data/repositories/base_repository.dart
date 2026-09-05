@@ -2,7 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 
 abstract class BaseRepository {
   final SupabaseService svc;

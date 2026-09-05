@@ -4,8 +4,8 @@ import 'package:riverpod/riverpod.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import '../models/profile/user_profile.dart';
 import 'profile_repository.dart';
-import '../../features/misc/data/datasources/supabase_error_mapper.dart';
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_error_mapper.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 
 /// Supabase-backed implementation of the core profile repository.
 ///

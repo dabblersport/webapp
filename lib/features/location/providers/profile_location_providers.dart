@@ -6,7 +6,7 @@ import 'package:dabbler/data/repositories/profile_location_repository.dart';
 import 'package:dabbler/data/repositories/profile_location_repository_impl.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 // =============================================================================

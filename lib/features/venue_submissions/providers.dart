@@ -10,7 +10,7 @@ import 'package:dabbler/data/repositories/venue_submission_repository.dart';
 import 'package:dabbler/data/repositories/venue_submission_repository_impl.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show myProfileProvider;
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 import 'domain/usecases/create_venue_submission_usecase.dart';
 import 'domain/usecases/get_my_venue_submissions_usecase.dart';

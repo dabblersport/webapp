@@ -16,7 +16,7 @@ import 'package:dabbler/data/repositories/post_repository_impl.dart';
 import 'package:dabbler/data/repositories/sports_repository.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/data/repositories/vibes_repository.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';

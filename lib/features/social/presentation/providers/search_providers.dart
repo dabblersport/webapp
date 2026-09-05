@@ -3,7 +3,7 @@ import 'package:dabbler/core/utils/search_query_parser.dart';
 import 'package:dabbler/data/models/search/search_result_bundle.dart';
 import 'package:dabbler/data/repositories/search_repository.dart';
 import 'package:dabbler/data/repositories/search_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider

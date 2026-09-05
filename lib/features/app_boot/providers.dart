@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/data/models/schema_meta.dart';
 import '../../data/repositories/schema_meta_repository.dart';
 import '../../data/repositories/schema_meta_repository_impl.dart';

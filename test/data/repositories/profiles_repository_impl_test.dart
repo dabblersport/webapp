@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:dabbler/data/repositories/profiles_repository_impl.dart';
 import 'package:dabbler/data/models/profile.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_error_mapper.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_error_mapper.dart';
 
 import '../../helpers/supabase_test_client.dart';
 

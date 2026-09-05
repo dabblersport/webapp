@@ -6,7 +6,7 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/sport_profile.dart';
 import 'package:dabbler/data/repositories/sport_profiles_repository.dart';
 import 'package:dabbler/data/repositories/sport_profiles_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 final sportProfilesRepositoryProvider = Provider<SportProfilesRepository>((
   ref,
