@@ -305,7 +305,7 @@ transaction.
 | `v_circle_feed_visible` | granted | no | **0** | **No leak.** Definer and anon-granted, but returns nothing. Left as-is |
 | `v_potential_vibes_default` | granted | no | **0** | **Intentionally public — `T-027`.** Function-backed: `security_invoker` is a **no-op** when the `FROM` is a set-returning function; access control lives inside the function. Probed, not assumed |
 | `v_recreate_quickpicks` | granted | no | **0** | **Intentionally public — `T-027`.** Same mechanism |
-| `username_registry_public` | granted | no | **0** unfiltered | **Intentionally public — `T-027`.** Backs signup username availability and **must answer before a session exists**; it is a lookup queried with a predicate |
+| `username_registry_public` | *dropped* | n/a | n/a | **DROPPED — `KAN-141`.** The `T-027` note below ("a lookup queried with a predicate") did not match the object: the view body was `SELECT list_active_usernames()`, which returns **every** active username, and `anon` could select it unfiltered. Its `0` was an empty `username_registry`, not a control. `SECURITY DEFINER` on the function bypassed the table's own `username_registry_no_read` RLS. Dropped with the function; signup availability is served by `rpc_username_availability(text)` |
 | `v_space_slots_today` | granted | no | **errors (until KAN-74 applied)** | **`BUG-05`, being fixed via KAN-74 + KAN-104.** `find_slots()` referenced the dropped `public.venue_opening_hours`; KAN-74 (`20260831130000`) corrects the reference to `opening_hours`/`day_group`. Separately, KAN-104/`T-044` found `is_booked` reads `false` for every anon/non-privileged-authenticated caller regardless of actual occupancy (RLS on `venue_bookings` denies those callers all rows, so `find_slots`'s internal EXISTS always finds none) — fixed by making `find_slots` `SECURITY DEFINER` (`20260901120000`, must apply after KAN-74, restates its body) plus `security_invoker = true` on this view. Both migrations authored, not yet applied |
 
 **Where the earlier guesses landed.** The old note guessed `v_comments`, `v_game_rating` and
@@ -534,8 +534,10 @@ Every name below was independently confirmed `anon`-readable with no
 
 * `geography_columns`, `geometry_columns` — PostGIS system views, allowlisted from the start
   per the KAN-61 ticket text, never a finding.
-* `username_registry_public` — intentionally public, `T-027` (signup username availability,
-  must answer pre-session).
+* `username_registry_public` — **removed from this allowlist by `KAN-141`**: the view and its
+  backing `list_active_usernames()` were dropped. `T-027`'s justification for it was based on
+  an inaccurate description of the object (see §2a) and needs formal supersession by `cto`.
+  The other two `T-027` entries below are unaffected.
 * `v_potential_vibes_default`, `v_recreate_quickpicks` — intentionally public, `T-027`,
   function-backed (`security_invoker` is a no-op on these; access control lives in the
   function).
@@ -554,7 +556,6 @@ newly anon-readable.**
 <!-- ANON_ALLOWLIST_START -->
 geography_columns
 geometry_columns
-username_registry_public
 v_challenge_card
 v_game_card
 v_meetup_list
@@ -704,7 +705,8 @@ Also near-duplicates by name: `rpc_admin_revoke_venue` and
 `rpc_profile_update_basic`, `rpc_profile_search`, `rpc_act_as`, `rpc_set_actor`,
 `rpc_post_as`, `rpc_create_sport_profile`, `rpc_verify_profile`, `rpc_unverify_profile`
 **Usernames:** `rpc_username_availability`, `rpc_username_claim`, `rpc_username_release`,
-`rpc_username_suggest`, `rpc_ban_username`, `rpc_ban_display_name`, `list_active_usernames`
+`rpc_username_suggest`, `rpc_ban_username`, `rpc_ban_display_name` *(`list_active_usernames`
+dropped by `KAN-141`)*
 **Moderation:** `rpc_flag_content`, `rpc_report_rating`, `rpc_review_report`,
 `rpc_moderation_take_ticket`, `rpc_moderation_resolve_ticket`, `rpc_admin_hide_post`,
 `rpc_shadow_hide`, `rpc_shadow_unhide`, `rpc_takedown`, `rpc_freeze_user`,

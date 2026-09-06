@@ -17,7 +17,6 @@ trap 'rm -rf "$TMP"' EXIT
 cat > "$TMP/allowlist.txt" <<'EOF'
 geography_columns
 geometry_columns
-username_registry_public
 v_challenge_card
 v_game_card
 v_meetup_list

@@ -1,0 +1,120 @@
+-- KAN-141: public.username_registry_public + public.list_active_usernames()
+-- are one object in two pieces, and together they are a bulk username
+-- enumeration endpoint reachable with the publishable (anon) key.
+--
+-- The view's whole body is `SELECT list_active_usernames() AS username;` --
+-- it holds no independent access logic, so dropping the function closes the
+-- surface and the view is dropped with it as a dead shell.
+--
+-- WHY THIS IS A DEFECT (measured live 2026-09-06, backend-4/Min):
+--
+--   public.username_registry already has RLS enabled with a deny-read policy
+--   (`username_registry_no_read`). list_active_usernames() is SECURITY
+--   DEFINER, which is precisely what bypasses that gate:
+--
+--     SELECT prosecdef, proconfig, pg_get_functiondef(oid) FROM pg_proc
+--       WHERE proname = 'list_active_usernames'
+--         AND pronamespace = 'public'::regnamespace;
+--     -> prosecdef = true, SET search_path TO 'public', body is
+--        `select username from public.username_registry where released_at is null`
+--        -- no auth.uid(), no role check, no predicate of any kind beyond
+--        the release flag.
+--
+--     SELECT relacl FROM pg_class WHERE relname = 'username_registry_public';
+--     -> anon=rxtm/postgres  (anon holds SELECT)
+--     SELECT proacl FROM pg_proc WHERE proname = 'list_active_usernames';
+--     -> anon=X/postgres     (anon holds EXECUTE)
+--
+--   The audit that flagged these three views probed as anon and saw 0 rows.
+--   That 0 is NOT enforced by anything -- public.username_registry simply
+--   holds 0 rows today:
+--
+--     SELECT count(*) FROM public.username_registry;                    -> 0
+--     SELECT count(*) FROM public.username_registry WHERE released_at IS NULL; -> 0
+--
+--   The moment one username is registered, every active username in the
+--   product is readable by anyone holding the anon key. This is the
+--   "mechanism-free 0" case KAN-141 acceptance criterion 2 asks about: a
+--   coincidence of empty data, not a control.
+--
+-- REJECTED -- add a predicate and keep it (cto ruling, KAN-141).
+--   The defect is the function's SHAPE, not its audience. Username
+--   availability -- the only plausible reason to ask about usernames from
+--   the client -- already has a purpose-built definer function:
+--
+--     public.rpc_username_availability(p_username text) -- SECURITY DEFINER,
+--     returns (username_norm, available, reason); checks username_banned,
+--     username_reserved and username_registry for ONE caller-supplied
+--     string, leaking one bit about a value the caller already typed.
+--
+--   A bulk list was never needed for that. Gating list_active_usernames()
+--   on auth.uid() IS NOT NULL would still leave a bulk-enumeration endpoint
+--   available to any free account. Same ruling and same reasoning as
+--   KAN-79 (create_seed_user) and KAN-113 (whois), per T-030.
+--
+-- REACHABILITY (measured 2026-09-06, must still hold at apply time):
+--   grep -rn "list_active_usernames\|username_registry_public" lib/ supabase/functions/
+--     -> zero hits. No Dart caller, no edge-function caller.
+--   In-database dependents of the function:
+--     SELECT c.relname FROM pg_depend d JOIN pg_rewrite r ON r.oid = d.objid
+--       JOIN pg_class c ON c.oid = r.ev_class JOIN pg_proc p ON p.oid = d.refobjid
+--       WHERE p.proname = 'list_active_usernames';
+--     -> username_registry_public only. Nothing else.
+--   No other function body references either object:
+--     SELECT p.oid::regprocedure FROM pg_proc p JOIN pg_namespace n
+--       ON n.oid = p.pronamespace WHERE n.nspname NOT IN
+--       ('pg_catalog','information_schema') AND (p.prosrc ILIKE
+--       '%list_active_usernames%' OR p.prosrc ILIKE '%username_registry_public%');
+--     -> 0 rows.
+--   The live client path is unaffected: set_username_screen.dart:156 ->
+--   auth_service.dart:1177 calls rpc_username_availability, as do
+--   profile_creation_service.dart:393 and username_repository_impl.dart:181.
+--
+-- NOT IN SCOPE -- v_potential_vibes_default and v_recreate_quickpicks, the
+--   other two views KAN-141 measured, are deliberately left untouched.
+--   v_recreate_quickpicks has a real per-user gate (v_recreate_candidates
+--   filters `WHERE rus.user_id = auth.uid()`). v_potential_vibes_default
+--   returns 0 to anon because rpc_potential_vibes injects auth.uid() as
+--   p_me and `spw.user_id <> p_me` is NULL for anon -- an incidental
+--   NULL-comparison effect, not an authorization check. It MUST NOT be
+--   "tidied" into `p_me IS NULL OR spw.user_id <> p_me`: that would hand
+--   anon all 143 rows of v_sport_profiles_with_user. Recorded as a standing
+--   rule in CONVENTIONS.md 12.
+--
+-- G-002: authored by backend-4, NOT applied here. cto applies after
+-- independently re-measuring the preconditions above and posting
+-- verification back to KAN-141.
+
+BEGIN;
+
+-- View first: it depends on the function.
+DROP VIEW IF EXISTS public.username_registry_public;
+
+DROP FUNCTION IF EXISTS public.list_active_usernames();
+
+COMMIT;
+
+-- ============================================================================
+-- VERIFICATION -- to be run by whoever applies this (cto), not run here.
+-- ============================================================================
+-- 1. Both objects are gone. Expect 0 and 0.
+--    SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+--      WHERE n.nspname = 'public' AND c.relname = 'username_registry_public';
+--    SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--      WHERE n.nspname = 'public' AND p.proname = 'list_active_usernames';
+--
+-- 2. The replacement path still works and still answers correctly.
+--    SELECT * FROM public.rpc_username_availability('someunusedname');
+--    -> available = true, reason = 'available'
+--
+-- 3. username_registry itself is untouched -- this migration drops only the
+--    wrapper function and its view, never the table or its RLS.
+--    SELECT relrowsecurity FROM pg_class WHERE relname = 'username_registry';
+--    -> still true
+--    SELECT count(*) FROM public.username_registry;  -- unchanged
+--
+-- 4. The T-002 allowlist gate agrees. username_registry_public is removed
+--    from docs/SCHEMA.md 2f in this same commit, so the live set and the
+--    allowlist stay consistent:
+--    bash scripts/ci/check_anon_allowlist_test.sh   -- offline self-test
+--    bash scripts/ci/check_anon_allowlist.sh        -- needs SUPABASE_DB_URL
