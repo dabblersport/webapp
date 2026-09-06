@@ -295,198 +295,97 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           constraints: BoxConstraints(
                             minHeight: constraints.maxHeight,
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 20),
-                                // Welcome Header — node V0fBC
-                                Text(
-                                  '${AppLocalizations.of(context).auth_welcome_title} 👋',
-                                  style: const TextStyle(
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.w700,
-                                    color: _kText,
-                                    height: 1.05,
+                          child: IntrinsicHeight(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 20),
+                                  // Welcome Header — node V0fBC
+                                  Text(
+                                    '${AppLocalizations.of(context).auth_welcome_title} 👋',
+                                    style: const TextStyle(
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w700,
+                                      color: _kText,
+                                      height: 1.05,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).auth_welcome_subtitle,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    height: 1.5,
-                                    color: _kTextMuted,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _TrustBenefitsCard(
-                                  heading: AppLocalizations.of(
-                                    context,
-                                  ).auth_welcome_trust_heading.toUpperCase(),
-                                  benefits: [
+                                  const SizedBox(height: 10),
+                                  Text(
                                     AppLocalizations.of(
                                       context,
-                                    ).auth_welcome_trust_verified,
-                                    AppLocalizations.of(
-                                      context,
-                                    ).auth_welcome_trust_personalised,
-                                    AppLocalizations.of(
-                                      context,
-                                    ).auth_welcome_trust_privacy,
-                                  ],
-                                ),
-                                const Spacer(),
-
-                                // Continue Actions — node cI24o (gap 12)
-                                _GlassButton(
-                                  // Glass Button / Dark — node Pnlba
-                                  fill: const Color(0xA8241631),
-                                  blur: 18,
-                                  borderGradient: const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0x80FFFFFF),
-                                      Color(0x8CC18FFF),
-                                      Color(0x1FFFFFFF),
-                                    ],
-                                    stops: [0.0, 0.5, 1.0],
+                                    ).auth_welcome_subtitle,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      height: 1.5,
+                                      color: _kTextMuted,
+                                    ),
                                   ),
-                                  shadows: const [
-                                    BoxShadow(
-                                      color: Color(0x66000000),
-                                      blurRadius: 24,
-                                      offset: Offset(0, 10),
-                                    ),
-                                    BoxShadow(
-                                      color: Color(0x33C18FFF),
-                                      blurRadius: 5,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ],
-                                  onTap: _isLoading ? null : _handleGoogle,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(
-                                        Iconsax.google_1,
-                                        size: 20,
-                                        color: _kText,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        ).auth_welcome_btn_google,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                          color: _kText,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _GlassButton(
-                                  // Continue with Email — Glass, node MYbIU
-                                  fill: const Color(0x66C18FFF),
-                                  blur: 20,
-                                  borderGradient: const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Color(0xB3FFFFFF),
-                                      Color(0xCCC18FFF),
-                                      Color(0x26FFFFFF),
-                                    ],
-                                    stops: [0.0, 0.48, 1.0],
-                                  ),
-                                  shadows: const [
-                                    BoxShadow(
-                                      color: Color(0x52C18FFF),
-                                      blurRadius: 20,
-                                      offset: Offset(0, 8),
-                                    ),
-                                    BoxShadow(
-                                      color: Color(0x55000000),
-                                      blurRadius: 10,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                  onTap: _isLoading ? null : _handleEmail,
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 22,
-                                          height: 22,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2.5,
-                                            color: Color(0xFFFBF6FF),
-                                          ),
-                                        )
-                                      : Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                              Iconsax.sms,
-                                              size: 19,
-                                              color: Color(0xFFFBF6FF),
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              AppLocalizations.of(
-                                                context,
-                                              ).auth_welcome_btn_email,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFFFBF6FF),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                                if (!kIsWeb &&
-                                    defaultTargetPlatform ==
-                                        TargetPlatform.iOS) ...[
                                   const SizedBox(height: 12),
+                                  _TrustBenefitsCard(
+                                    heading: AppLocalizations.of(
+                                      context,
+                                    ).auth_welcome_trust_heading.toUpperCase(),
+                                    benefits: [
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_verified,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_personalised,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_privacy,
+                                    ],
+                                  ),
+                                  const Spacer(),
+
+                                  // Continue Actions — node cI24o (gap 12)
                                   _GlassButton(
-                                    // Continue with Apple — Black, node LQcOo
-                                    fill: const Color(0xFF09090B),
-                                    blur: 16,
-                                    borderColor: const Color(0x54FFFFFF),
+                                    // Glass Button / Dark — node Pnlba
+                                    fill: const Color(0xA8241631),
+                                    blur: 18,
+                                    borderGradient: const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0x80FFFFFF),
+                                        Color(0x8CC18FFF),
+                                        Color(0x1FFFFFFF),
+                                      ],
+                                      stops: [0.0, 0.5, 1.0],
+                                    ),
                                     shadows: const [
                                       BoxShadow(
-                                        color: Color(0x99000000),
-                                        blurRadius: 18,
-                                        offset: Offset(0, 8),
+                                        color: Color(0x66000000),
+                                        blurRadius: 24,
+                                        offset: Offset(0, 10),
                                       ),
                                       BoxShadow(
-                                        color: Color(0x12FFFFFF),
-                                        blurRadius: 2,
+                                        color: Color(0x33C18FFF),
+                                        blurRadius: 5,
                                         offset: Offset(0, 1),
                                       ),
                                     ],
-                                    onTap: _isLoading ? null : _handleApple,
+                                    onTap: _isLoading ? null : _handleGoogle,
                                     child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
                                         const Icon(
-                                          Iconsax.apple,
+                                          Iconsax.google_1,
                                           size: 20,
-                                          color: Colors.white,
+                                          color: _kText,
                                         ),
                                         const SizedBox(width: 10),
                                         Text(
                                           AppLocalizations.of(
                                             context,
-                                          ).auth_welcome_btn_apple,
+                                          ).auth_welcome_btn_google,
                                           style: const TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w700,
@@ -496,56 +395,164 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                       ],
                                     ),
                                   ),
-                                ],
-
-                                // Existing Account — node tXd9H
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 47,
-                                  child: TextButton(
-                                    onPressed: _isLoading ? null : _handleLogin,
-                                    style: TextButton.styleFrom(
-                                      shape: const StadiumBorder(),
+                                  const SizedBox(height: 12),
+                                  _GlassButton(
+                                    // Continue with Email — Glass, node MYbIU
+                                    fill: const Color(0x66C18FFF),
+                                    blur: 20,
+                                    borderGradient: const LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xB3FFFFFF),
+                                        Color(0xCCC18FFF),
+                                        Color(0x26FFFFFF),
+                                      ],
+                                      stops: [0.0, 0.48, 1.0],
                                     ),
-                                    child: Text(
-                                      AppLocalizations.of(
-                                        context,
-                                      ).auth_welcome_btn_login,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: _kLavender,
+                                    shadows: const [
+                                      BoxShadow(
+                                        color: Color(0x52C18FFF),
+                                        blurRadius: 20,
+                                        offset: Offset(0, 8),
+                                      ),
+                                      BoxShadow(
+                                        color: Color(0x55000000),
+                                        blurRadius: 10,
+                                        offset: Offset(0, 4),
+                                      ),
+                                    ],
+                                    onTap: _isLoading ? null : _handleEmail,
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            width: 22,
+                                            height: 22,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              color: Color(0xFFFBF6FF),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(
+                                                Iconsax.sms,
+                                                size: 19,
+                                                color: Color(0xFFFBF6FF),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Text(
+                                                AppLocalizations.of(
+                                                  context,
+                                                ).auth_welcome_btn_email,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Color(0xFFFBF6FF),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                  ),
+                                  if (!kIsWeb &&
+                                      defaultTargetPlatform ==
+                                          TargetPlatform.iOS) ...[
+                                    const SizedBox(height: 12),
+                                    _GlassButton(
+                                      // Continue with Apple — Black, node LQcOo
+                                      fill: const Color(0xFF09090B),
+                                      blur: 16,
+                                      borderColor: const Color(0x54FFFFFF),
+                                      shadows: const [
+                                        BoxShadow(
+                                          color: Color(0x99000000),
+                                          blurRadius: 18,
+                                          offset: Offset(0, 8),
+                                        ),
+                                        BoxShadow(
+                                          color: Color(0x12FFFFFF),
+                                          blurRadius: 2,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                      onTap: _isLoading ? null : _handleApple,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Iconsax.apple,
+                                            size: 20,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            AppLocalizations.of(
+                                              context,
+                                            ).auth_welcome_btn_apple,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                              color: _kText,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+
+                                  // Existing Account — node tXd9H
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 47,
+                                    child: TextButton(
+                                      onPressed: _isLoading
+                                          ? null
+                                          : _handleLogin,
+                                      style: TextButton.styleFrom(
+                                        shape: const StadiumBorder(),
+                                      ),
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        ).auth_welcome_btn_login,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: _kLavender,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(height: 24),
-                                _buildTermsText(context),
-                                const SizedBox(height: 16),
+                                  const SizedBox(height: 24),
+                                  _buildTermsText(context),
+                                  const SizedBox(height: 16),
 
-                                // Locale Controls — node ll0Ws
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    _LocalePill(
-                                      icon: Iconsax.global,
-                                      label: countryName,
-                                      onTap: _isLoading
-                                          ? () {}
-                                          : _openCountryPicker,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _LocalePill(
-                                      icon: Iconsax.language_square,
-                                      label: langLabel,
-                                      onTap: _isLoading
-                                          ? () {}
-                                          : _openLanguagePicker,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                              ],
+                                  // Locale Controls — node ll0Ws
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _LocalePill(
+                                        icon: Iconsax.global,
+                                        label: countryName,
+                                        onTap: _isLoading
+                                            ? () {}
+                                            : _openCountryPicker,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _LocalePill(
+                                        icon: Iconsax.language_square,
+                                        label: langLabel,
+                                        onTap: _isLoading
+                                            ? () {}
+                                            : _openLanguagePicker,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
                             ),
                           ),
                         ),
