@@ -3,7 +3,7 @@ import 'package:meta/meta.dart';
 @immutable
 class Wallet {
   final String? id;
-  final String? userId;
+  final String? ownerId;
   final int availableCents;
   final int pendingCents;
   final String? currency;
@@ -11,7 +11,7 @@ class Wallet {
 
   const Wallet({
     required this.id,
-    required this.userId,
+    required this.ownerId,
     required this.availableCents,
     required this.pendingCents,
     required this.currency,
@@ -25,7 +25,7 @@ class Wallet {
 
     return Wallet(
       id: m['id']?.toString(),
-      userId: m['user_id']?.toString(),
+      ownerId: m['owner_id']?.toString(),
       availableCents: readInt(m['available_cents'] ?? m['balance_cents']),
       pendingCents: readInt(m['pending_cents']),
       currency: m['currency']?.toString(),
@@ -35,7 +35,7 @@ class Wallet {
 
   Map<String, dynamic> toMap() => {
     'id': id,
-    'user_id': userId,
+    'owner_id': ownerId,
     'available_cents': availableCents,
     'pending_cents': pendingCents,
     'currency': currency,
