@@ -22,9 +22,9 @@ class FeatureFlags {
 
   // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,
   // profile check-in widget, check-in modal). There is no broader rewards
-  // system (points/badges/tiers/leaderboard) to toggle — those models under
-  // lib/data/models/rewards/ are unreferenced dead code, not a hidden
-  // feature. Rename reflects that this flag's job is check-in-specific.
+  // system (points/badges/tiers/leaderboard) behind this flag — none exists
+  // in the app, so there is nothing wider for it to toggle. The name says
+  // what it gates: the check-in surface, and only that.
   static const bool enableEarlyBirdCheckIn = false;
 
   // KAN-52/KAN-103/P-029: PDPL data export is real legal scope, not a
