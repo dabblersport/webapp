@@ -132,7 +132,7 @@ class CalculateProfileCompletionUseCase {
       'display_name': profile.displayName.isNotEmpty,
       'email': profile.email?.isNotEmpty ?? false,
       'first_name': profile.username?.isNotEmpty ?? false,
-      'last_name': profile.displayName.isNotEmpty ?? false,
+      'last_name': profile.displayName.isNotEmpty,
       'bio': profile.bio?.isNotEmpty ?? false,
       'avatar': profile.avatarUrl?.isNotEmpty ?? false,
 

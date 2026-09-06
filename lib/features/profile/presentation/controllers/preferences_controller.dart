@@ -239,7 +239,7 @@ class PreferencesController extends StateNotifier<PreferencesState> {
 
       final result = await _updatePreferencesUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isSaving: false,

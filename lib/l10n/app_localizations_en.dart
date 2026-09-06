@@ -712,7 +712,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get interests_title_organiser => 'What do you intend to organise?';
 
   @override
-  String get interests_title_hoster => 'Which sports do you host?';
+  String get interests_title_host => 'Which sports do you host?';
 
   @override
   String get interests_title_socialiser =>
@@ -882,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get welcome_screen_chip_organiser => 'Games organiser';
 
   @override
-  String get welcome_screen_chip_hoster => 'Venue host';
+  String get welcome_screen_chip_host => 'Venue host';
 
   @override
   String get welcome_screen_chip_socialiser => 'Sports socialiser';
@@ -920,19 +920,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Continue only when you\'re ready!';
 
   @override
-  String get welcome_screen_hoster_guidance =>
+  String get welcome_screen_host_guidance =>
       'Help players feel welcome by keeping information accurate and spaces ready.';
 
   @override
-  String get welcome_screen_hoster_philosophy =>
+  String get welcome_screen_host_philosophy =>
       'Clear availability and smooth coordination make everyone\'s experience better.';
 
   @override
-  String get welcome_screen_hoster_reminder =>
+  String get welcome_screen_host_reminder =>
       'Keep availability and details accurate.\nUpdate information as soon as things change.';
 
   @override
-  String get welcome_screen_hoster_emphasis =>
+  String get welcome_screen_host_emphasis =>
       'Continue only when you\'re ready!';
 
   @override
@@ -959,12 +959,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboarding_welcome_step_profile => 'Creating your profile';
-
-  @override
-  String get onboarding_welcome_step_persona => 'Setting up your persona';
-
-  @override
-  String get onboarding_welcome_step_sport => 'Adding sport profile';
 
   @override
   String get social_onboarding_welcome_title => 'Welcome to Social';
@@ -1384,7 +1378,146 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_settings => 'Settings';
 
   @override
-  String get persona_label_hoster => 'Host';
+  String get settings_header_title => 'Settings';
+
+  @override
+  String get settings_header_help_tooltip => 'Help center';
+
+  @override
+  String get settings_hero_eyebrow => 'Customize your experience';
+
+  @override
+  String get settings_hero_title => 'Tune Dabbler to match how you play';
+
+  @override
+  String get settings_hero_subtitle =>
+      'Manage your account, preferences, and notifications all in one place.';
+
+  @override
+  String get settings_search_hint => 'Search settings';
+
+  @override
+  String get settings_section_account => 'Account';
+
+  @override
+  String get settings_section_display => 'Display';
+
+  @override
+  String get settings_section_about => 'About';
+
+  @override
+  String get settings_section_profiles => 'Profiles';
+
+  @override
+  String get settings_item_account_management_title => 'Account Management';
+
+  @override
+  String get settings_item_account_management_subtitle =>
+      'Email, password, security';
+
+  @override
+  String get settings_item_privacy_settings_title => 'Privacy Settings';
+
+  @override
+  String get settings_item_privacy_settings_subtitle =>
+      'Manage privacy settings and blocked users';
+
+  @override
+  String get settings_item_theme_title => 'Theme';
+
+  @override
+  String get settings_item_theme_subtitle => 'Light, dark, or system default';
+
+  @override
+  String get settings_item_language_title => 'Language';
+
+  @override
+  String get settings_item_country_title => 'App Country';
+
+  @override
+  String get settings_item_country_default_subtitle =>
+      'Egypt · UAE · KSA · Morocco';
+
+  @override
+  String get settings_country_picker_helper =>
+      'Sets which sports and venues you see';
+
+  @override
+  String get settings_item_terms_title => 'Terms of Service';
+
+  @override
+  String get settings_item_terms_subtitle => 'Read our terms and conditions';
+
+  @override
+  String get settings_item_privacy_policy_title => 'Privacy Policy';
+
+  @override
+  String get settings_item_privacy_policy_subtitle => 'How we handle your data';
+
+  @override
+  String get settings_item_licenses_title => 'Licenses';
+
+  @override
+  String get settings_item_licenses_subtitle => 'Open source licenses';
+
+  @override
+  String get settings_sign_out_title => 'Sign out';
+
+  @override
+  String get settings_sign_out_subtitle => 'Leave your account on this device';
+
+  @override
+  String get settings_sign_out_dialog_title => 'Sign Out';
+
+  @override
+  String get settings_sign_out_dialog_body =>
+      'Are you sure you want to sign out of your account?';
+
+  @override
+  String get settings_sign_out_dialog_cancel => 'Cancel';
+
+  @override
+  String settings_sign_out_error(String error) {
+    return 'Error signing out: $error';
+  }
+
+  @override
+  String get settings_version_app_name => 'Dabbler';
+
+  @override
+  String settings_version_label(String version) {
+    return 'Version $version';
+  }
+
+  @override
+  String get settings_version_copyright =>
+      '© 2026 Dabbler. All rights reserved.';
+
+  @override
+  String settings_persona_become_title(String persona) {
+    return 'Become a $persona';
+  }
+
+  @override
+  String settings_persona_convert_title(String persona) {
+    return 'Convert to $persona';
+  }
+
+  @override
+  String settings_persona_convert_subtitle(String persona) {
+    return 'Replace your $persona profile';
+  }
+
+  @override
+  String settings_persona_convert_confirm_body(
+    String fromPersona,
+    String toPersona,
+  ) {
+    return 'This will deactivate your $fromPersona profile and create a new $toPersona profile.\n\nYour account data (age, gender) will be preserved.';
+  }
+
+  @override
+  String get persona_label_host => 'Host';
 
   @override
   String get persona_label_socialiser => 'Socialiser';

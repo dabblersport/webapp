@@ -1,5 +1,6 @@
 import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter/material.dart';
@@ -93,7 +94,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   Future<void> _checkOwnProfile() async {
     final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null || currentUser.id != widget.userId) return;
+    if (currentUser == null) return;
+
+    // NOTE: widget.userId is not always a genuine auth uid — some callers
+    // (e.g. a game creator card) only have a profile id and pass it in this
+    // slot. Never compare it against currentUser.id; determine "own profile"
+    // purely from profile ids below, which are always genuine.
 
     // A specific profileId was requested — if it is not the active profile
     // the caller explicitly wants to view an inactive persona, so stay here.
@@ -124,7 +130,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         filterActive: false,
         profileId: widget.profileId,
       ),
-      sportsController.loadSportsProfiles(widget.userId),
+      sportsController.loadSportsProfiles(
+        widget.userId,
+        profileId: widget.profileId,
+      ),
     ]);
   }
 
@@ -140,7 +149,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final sportsState = ref.watch(sportsProfileControllerProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final sportProfileHeaderAsync = ref.watch(
-      sportProfileHeaderProvider(widget.userId),
+      sportProfileHeaderProvider((
+        userId: widget.userId,
+        profileId: widget.profileId,
+      )),
     );
 
     // Show loading state
@@ -161,7 +173,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Iconsax.danger_copy, size: 64, color: colorScheme.error),
+                // Neutral, not alarming: most of the time this fires
+                // because the profile isn't visible to this viewer (a
+                // benched persona, per P-028/KAN-100), not because
+                // anything actually failed — no "deleted"/"banned"
+                // wording, no danger-red styling, no avatar.
+                Icon(
+                  Iconsax.profile_circle_copy,
+                  size: 64,
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   AppLocalizations.of(context).user_profile_error_not_found_title,
@@ -1087,25 +1108,29 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     return Row(
       children: [
-        SizedBox(
-          width: 40,
-          height: 40,
-          child: OutlinedButton(
-            onPressed: () => _sendMessage(context),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.zero,
-              foregroundColor: colorScheme.onSurface,
-              side: BorderSide(
-                color: colorScheme.onSurface.withValues(alpha: 0.3),
+        // KAN-45: chat isn't wired up (this route only reaches a
+        // "Coming Soon" placeholder) — hide the button until it ships.
+        if (FeatureFlags.messaging) ...[
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: OutlinedButton(
+              onPressed: () => _sendMessage(context),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                foregroundColor: colorScheme.onSurface,
+                side: BorderSide(
+                  color: colorScheme.onSurface.withValues(alpha: 0.3),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              child: const Icon(Iconsax.message_copy, size: 20),
             ),
-            child: const Icon(Iconsax.message_copy, size: 20),
           ),
-        ),
-        const SizedBox(width: 8),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           child: (myProfileId == null || targetProfileId == null)
                 ? OutlinedButton.icon(
@@ -1461,8 +1486,19 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     return '';
   }
 
+  /// The genuine `auth.users` id of the profile currently loaded on this
+  /// screen. `widget.userId` is NOT reliably this — some entry points (e.g. a
+  /// game creator card) only know a profile id and pass it in that slot. Any
+  /// action that writes to a user-level (not profile-level) table — block,
+  /// report, message — must resolve the real auth uid from the loaded
+  /// profile instead, and no-op if it isn't loaded yet rather than fall back
+  /// to widget.userId.
+  String? _targetAuthUserId() =>
+      ref.read(profileControllerProvider).profile?.userId;
+
   void _sendMessage(BuildContext context) {
-    final userId = widget.userId;
+    final userId = _targetAuthUserId();
+    if (userId == null) return;
     // Gate chat entry on block status
     final isBlocked = ref.read(isUserBlockedProvider(userId));
     isBlocked.whenData((blocked) {
@@ -1540,7 +1576,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     if (confirmed != true) return;
 
-    final targetUserId = widget.userId;
+    final targetUserId = _targetAuthUserId();
+    if (targetUserId == null) return;
     final repo = ref.read(blockRepositoryProvider);
     final result = await repo.blockUser(targetUserId);
 
@@ -1581,7 +1618,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 
   Future<void> _unblockUser(BuildContext context) async {
-    final targetUserId = widget.userId;
+    final targetUserId = _targetAuthUserId();
+    if (targetUserId == null) return;
     final repo = ref.read(blockRepositoryProvider);
     final result = await repo.unblockUser(targetUserId);
 
@@ -1621,21 +1659,24 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 
   void _reportUser(BuildContext context) {
+    final targetUserId = _targetAuthUserId();
+    if (targetUserId == null) return;
     showDialog(
       context: context,
       builder: (_) => ReportDialog(
         targetType: ReportTargetType.user,
-        targetId: widget.userId,
-        targetUserId: widget.userId,
+        targetId: targetUserId,
+        targetUserId: targetUserId,
       ),
     );
   }
 
   void _showMoreOptions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final targetUserId = widget.userId;
-    final isBlocked = ref.read(isUserBlockedProvider(targetUserId));
-    final blocked = isBlocked.valueOrNull ?? false;
+    final targetUserId = _targetAuthUserId();
+    final blocked = targetUserId == null
+        ? false
+        : ref.read(isUserBlockedProvider(targetUserId)).valueOrNull ?? false;
 
     showAdaptiveSheet(
       context: context,

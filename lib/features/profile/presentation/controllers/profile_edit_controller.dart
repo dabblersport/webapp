@@ -207,7 +207,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
 
       final result = await _uploadAvatarUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isUploadingAvatar: false,
@@ -275,7 +275,7 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
 
       final result = await _updateProfileUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isSaving: false,
@@ -359,7 +359,6 @@ class ProfileEditController extends StateNotifier<ProfileEditState> {
         break;
 
       case 'username':
-      case 'display_name':
         if (value != null && value.toString().length > 50) {
           return '${field.replaceAll('_', ' ').titleCase} cannot exceed 50 characters';
         }

@@ -79,7 +79,7 @@ class VenueSubmissionController
         draft: draft,
       );
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(isSaving: false, failure: failure);
           return Err(failure);
@@ -119,7 +119,7 @@ class VenueSubmissionController
 
       final result = await _submitUseCase(submissionId: submissionId);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(isSaving: false, failure: failure);
           return Err(failure);

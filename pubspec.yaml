@@ -29,7 +29,6 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   sqflite: ^2.4.2
-  cupertino_icons: ^1.0.8
   path_provider: ^2.1.2
   flutter:
     sdk: flutter
@@ -37,10 +36,6 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  dabbler_design_system:
-    git:
-      url: https://github.com/MoatazMu/dabbler-design-system
-      ref: main
   meta: ^1.12.0
 
   # Lucide Icons - Beautiful icon library
@@ -223,6 +218,11 @@ flutter:
     - lib/design_system/tokens/
     - assets/logo.png
     - supabase/schema/schema.json
+
+  fonts:
+    - family: Noto Emoji
+      fonts:
+        - asset: assets/fonts/NotoEmoji-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

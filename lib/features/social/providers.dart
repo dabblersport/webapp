@@ -7,7 +7,7 @@ import 'package:dabbler/data/models/squad_join_request.dart';
 import 'package:dabbler/data/models/squad_member.dart';
 import 'package:dabbler/data/repositories/squads_repository.dart';
 import 'package:dabbler/data/repositories/squads_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final squadsRepositoryProvider = Provider<SquadsRepository>((ref) {

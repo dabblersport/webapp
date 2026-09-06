@@ -14,7 +14,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final String displayName;
-  final String personaType; // player, organiser, hoster, socialiser
+  final String personaType; // player, organiser, host, socialiser
   final bool
   isFirstTime; // true = onboarding, false = returning user or add persona
   final bool isConversion; // true = converting from one persona type to another
@@ -305,7 +305,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Don\'t forget',
+          AppLocalizations.of(context).welcome_screen_dont_forget,
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w700,
             color: colorScheme.onSecondaryContainer,
@@ -347,73 +347,63 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   String _getWelcomeTitle() {
+    final l10n = AppLocalizations.of(context);
     if (widget.isConversion) {
-      return 'Conversion Complete! 🎉';
+      return l10n.welcome_screen_title_conversion;
     } else if (widget.isFirstTime) {
-      return 'Welcome to Dabbler 😉';
+      return l10n.welcome_screen_title_first_time;
     } else {
-      return 'Welcome Back! 👋';
+      return l10n.welcome_screen_title_returning;
     }
   }
 
   _PersonaContent _getPersonaContent(String persona) {
+    final l10n = AppLocalizations.of(context);
     switch (persona.toLowerCase()) {
       case 'player':
         return _PersonaContent(
-          chipLabel: 'Sports player',
-          guidanceText:
-              'Join games that match your level, respect the rules set by the organiser, and confirm only when you\'re ready to play.',
-          philosophyStatement: 'Your reliability builds your reputation.',
-          reminderText:
-              'Confirm only when you\'re sure you can play.\nRespect the rules, timing, and other players.',
-          finalEmphasis: 'Confirm only when you\'re ready to play',
+          chipLabel: l10n.welcome_screen_chip_player,
+          guidanceText: l10n.welcome_screen_player_guidance,
+          philosophyStatement: l10n.welcome_screen_player_philosophy,
+          reminderText: l10n.welcome_screen_player_reminder,
+          finalEmphasis: l10n.welcome_screen_player_emphasis,
         );
 
       case 'organiser':
         return _PersonaContent(
-          chipLabel: 'Games organiser',
-          guidanceText:
-              'Create games with clear rules, fair skill levels, and realistic timings.',
-          philosophyStatement:
-              'You set the tone — great games start with great organisation.',
-          reminderText:
-              'Set clear rules and realistic timings.\nCommunicate changes early and clearly.',
-          finalEmphasis: 'Continue only when you\'re ready!',
+          chipLabel: l10n.welcome_screen_chip_organiser,
+          guidanceText: l10n.welcome_screen_organiser_guidance,
+          philosophyStatement: l10n.welcome_screen_organiser_philosophy,
+          reminderText: l10n.welcome_screen_organiser_reminder,
+          finalEmphasis: l10n.welcome_screen_organiser_emphasis,
         );
 
-      case 'hoster':
+      case 'host':
         return _PersonaContent(
-          chipLabel: 'Venue host',
-          guidanceText:
-              'Help players feel welcome by keeping information accurate and spaces ready.',
-          philosophyStatement:
-              'Clear availability and smooth coordination make everyone\'s experience better.',
-          reminderText:
-              'Keep availability and details accurate.\nUpdate information as soon as things change.',
-          finalEmphasis: 'Continue only when you\'re ready!',
+          chipLabel: l10n.welcome_screen_chip_host,
+          guidanceText: l10n.welcome_screen_host_guidance,
+          philosophyStatement: l10n.welcome_screen_host_philosophy,
+          reminderText: l10n.welcome_screen_host_reminder,
+          finalEmphasis: l10n.welcome_screen_host_emphasis,
         );
 
       case 'socialiser':
         return _PersonaContent(
-          chipLabel: 'Sports socialiser',
-          guidanceText:
-              'Connect with players, spark conversations, and help games feel more human.',
-          philosophyStatement:
-              'Your presence shapes the community — friendly, inclusive, and respectful.',
-          reminderText:
-              'Be respectful and inclusive.\nAdd value without disrupting the game.',
-          finalEmphasis: 'Continue only when you\'re ready!',
+          chipLabel: l10n.welcome_screen_chip_socialiser,
+          guidanceText: l10n.welcome_screen_socialiser_guidance,
+          philosophyStatement: l10n.welcome_screen_socialiser_philosophy,
+          reminderText: l10n.welcome_screen_socialiser_reminder,
+          finalEmphasis: l10n.welcome_screen_socialiser_emphasis,
         );
 
       default:
         // Fallback to player
         return _PersonaContent(
-          chipLabel: 'Sports player',
-          guidanceText:
-              'Join games that match your level, respect the rules set by the organiser, and confirm only when you\'re ready to play.',
-          philosophyStatement: 'Your reliability builds your reputation.',
-          reminderText: 'Play fair, communicate clearly, and respect the game.',
-          finalEmphasis: 'Confirm only when you\'re ready to play',
+          chipLabel: l10n.welcome_screen_chip_player,
+          guidanceText: l10n.welcome_screen_player_guidance,
+          philosophyStatement: l10n.welcome_screen_player_philosophy,
+          reminderText: l10n.welcome_screen_player_reminder,
+          finalEmphasis: l10n.welcome_screen_player_emphasis,
         );
     }
   }

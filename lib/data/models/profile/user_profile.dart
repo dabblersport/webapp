@@ -24,7 +24,7 @@ class UserProfile {
   final String? email; // from auth.users, not profiles table
   final String? gender;
   final String? profileType; // personal/business/venue/team/organisation
-  final String? personaType; // player/organiser/hoster/socialiser
+  final String? personaType; // player/organiser/host/socialiser
   final String? intention; // organise/play
   final String? preferredSport;
   final String? primarySport;
@@ -422,10 +422,13 @@ class UserProfile {
       'age': age,
       'city': city,
       'country': country,
-      'phone_number': phoneNumber,
-      'email': email, // typically from auth.users
+      // phone_number/email are NOT profiles columns (they live in
+      // auth.users, see the fields' own doc comments above) — writing them
+      // here made every update()/insert() through this map fail with
+      // "column does not exist".
       'gender': gender,
       'profile_type': profileType,
+      'persona_type': personaType,
       'intention': intention,
       'preferred_sport': preferredSport,
       'primary_sport': primarySport,
@@ -435,8 +438,11 @@ class UserProfile {
       'is_active': isActive,
       'news': news,
       'last_seen': lastSeen?.toIso8601String(),
-      'geo_lat': geoLat,
-      'geo_lng': geoLng,
+      // profiles.latitude/longitude, not geo_lat/geo_lng (that pair is only
+      // real on posts/venues) — same bug class as the datasource's
+      // _baseProfileColumns select list.
+      'latitude': geoLat,
+      'longitude': geoLng,
     };
   }
 

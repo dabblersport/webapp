@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 /// Simple cache service using shared preferences
 class CacheService {
@@ -66,37 +67,6 @@ class CacheService {
     await _initialize();
     return _prefs.getKeys().toList();
   }
-
-  /// Clear all cache
-  Future<void> clear() async {
-    await _initialize();
-    await _prefs.clear();
-  }
-}
-
-/// Simple analytics service for tracking events
-class AnalyticsService {
-  /// Track an event
-  Future<void> trackEvent(
-    String eventName, [
-    Map<String, dynamic>? parameters,
-  ]) async {
-    // This would integrate with Firebase Analytics, Mixpanel, etc.
-  }
-
-  /// Track an error
-  Future<void> trackError(
-    String errorName, [
-    Map<String, dynamic>? parameters,
-  ]) async {
-    // This would integrate with Crashlytics, Sentry, etc.
-  }
-
-  /// Track screen view
-  Future<void> trackScreenView(
-    String screenName, [
-    Map<String, dynamic>? parameters,
-  ]) async {}
 }
 
 /// Providers
@@ -104,6 +74,9 @@ final cacheServiceProvider = Provider<CacheService>((ref) {
   return CacheService();
 });
 
+/// Exposes the real `AnalyticsService` façade (`core/services/analytics/`).
+/// A duplicate, empty `AnalyticsService` used to live here — see
+/// `docs/DECISIONS.md` T-016.
 final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
-  return AnalyticsService();
+  return const AnalyticsService();
 });

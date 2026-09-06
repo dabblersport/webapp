@@ -163,8 +163,21 @@ abstract class ProfileLocalDataSource {
   Future<void> optimizeCache();
 }
 
-/// Simple in-memory implementation for development/testing
+/// Simple in-memory implementation for development/testing.
+///
+/// Singleton (matches [UserService]/[ProfileCacheService]/[LocationService])
+/// so `AuthService.signOut()` can reach the same instance the Riverpod
+/// provider hands out and clear it on logout — this cache is keyed by
+/// userId but held in-memory for the life of the app process, so without an
+/// explicit clear it survives an in-app account switch (logout, then a
+/// different login, no app restart) and leaks the previous account's
+/// profile/sports/stats data (T-004).
 class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
+  static final ProfileLocalDataSourceImpl _instance =
+      ProfileLocalDataSourceImpl._internal();
+  factory ProfileLocalDataSourceImpl() => _instance;
+  ProfileLocalDataSourceImpl._internal();
+
   final Map<String, UserProfile> _profileCache = {};
   final Map<String, List<SportProfileModel>> _sportsCache = {};
   final Map<String, ProfileStatisticsModel> _statsCache = {};

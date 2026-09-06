@@ -47,7 +47,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     try {
       final response = await Supabase.instance.client
           .from(SupabaseConfig.refCountriesTable)
-          .select('name_en')
+          .select('name_en, name_ar')
           .eq('coverage', true)
           .order('name_en');
       if (mounted) {
@@ -83,6 +83,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
         countries: _countries,
         loading: _countriesLoading,
         selectedCountryName: selected,
+        languageCode: ref.read(localeProvider).languageCode,
       ),
     );
     if (!mounted || picked == null) return;
@@ -218,6 +219,19 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   void _handleEmail() => context.go(RoutePaths.emailInput);
   void _handleLogin() => context.go(RoutePaths.enterPassword);
 
+  /// Countries are persisted/selected by their English name (canonical id),
+  /// but displayed in the active locale when a translation is available.
+  String _localizedCountryName(String englishName, String languageCode) {
+    if (languageCode != 'ar') return englishName;
+    for (final country in _countries) {
+      if (country['name_en'] == englishName) {
+        final ar = country['name_ar'] as String?;
+        if (ar != null && ar.isNotEmpty) return ar;
+      }
+    }
+    return englishName;
+  }
+
   Widget _buildTermsText(BuildContext context) {
     // Terms Notice — node Cqdmf: 13px, #CAC4CF, line-height 1.45, centered.
     const linkStyle = TextStyle(color: _kLavender);
@@ -250,11 +264,11 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final countryState = ref.watch(selectedCountryProvider);
+    final locale = ref.watch(localeProvider);
     final countryName = countryState.maybeWhen(
-      data: (c) => c,
+      data: (c) => _localizedCountryName(c, locale.languageCode),
       orElse: () => 'Global',
     );
-    final locale = ref.watch(localeProvider);
     final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
 
     // Always dark, matching Pencil node fRSW7 (Welcome — Dark).
@@ -291,9 +305,9 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                 children: [
                                   const SizedBox(height: 20),
                                   // Welcome Header — node V0fBC
-                                  const Text(
-                                    'Welcome 👋',
-                                    style: TextStyle(
+                                  Text(
+                                    '${AppLocalizations.of(context).auth_welcome_title} 👋',
+                                    style: const TextStyle(
                                       fontSize: 42,
                                       fontWeight: FontWeight.w700,
                                       color: _kText,
@@ -301,16 +315,33 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 10),
-                                  const Text(
-                                    "We're stoked to have you. Create an account and start dabbling in local sports.",
-                                    style: TextStyle(
+                                  Text(
+                                    AppLocalizations.of(
+                                      context,
+                                    ).auth_welcome_subtitle,
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       height: 1.5,
                                       color: _kTextMuted,
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  const _TrustBenefitsCard(),
+                                  _TrustBenefitsCard(
+                                    heading: AppLocalizations.of(
+                                      context,
+                                    ).auth_welcome_trust_heading.toUpperCase(),
+                                    benefits: [
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_verified,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_personalised,
+                                      AppLocalizations.of(
+                                        context,
+                                      ).auth_welcome_trust_privacy,
+                                    ],
+                                  ),
                                   const Spacer(),
 
                                   // Continue Actions — node cI24o (gap 12)
@@ -341,19 +372,21 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                       ),
                                     ],
                                     onTap: _isLoading ? null : _handleGoogle,
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Iconsax.google_1,
                                           size: 20,
                                           color: _kText,
                                         ),
-                                        SizedBox(width: 10),
+                                        const SizedBox(width: 10),
                                         Text(
-                                          'Continue with Google',
-                                          style: TextStyle(
+                                          AppLocalizations.of(
+                                            context,
+                                          ).auth_welcome_btn_google,
+                                          style: const TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w700,
                                             color: _kText,
@@ -480,22 +513,14 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                       style: TextButton.styleFrom(
                                         shape: const StadiumBorder(),
                                       ),
-                                      child: const Text.rich(
-                                        TextSpan(
-                                          text: 'Already have an account? ',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: _kTextMuted,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'Log in',
-                                              style: TextStyle(
-                                                color: _kLavender,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                            ),
-                                          ],
+                                      child: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        ).auth_welcome_btn_login,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: _kLavender,
                                         ),
                                       ),
                                     ),
@@ -546,14 +571,11 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
 
 // ── Trust Benefits card — node jOETk ─────────────────────────────────────────
 
-const _kTrustBenefits = [
-  'Reviewed players, verified memberships, rated venues',
-  'Connections and recommendations personalised to your sports',
-  "We don't sell your data — privacy-first by design",
-];
-
 class _TrustBenefitsCard extends StatelessWidget {
-  const _TrustBenefitsCard();
+  const _TrustBenefitsCard({required this.heading, required this.benefits});
+
+  final String heading;
+  final List<String> benefits;
 
   @override
   Widget build(BuildContext context) {
@@ -579,22 +601,22 @@ class _TrustBenefitsCard extends StatelessWidget {
                   color: const Color(0xFF8B48E8),
                   borderRadius: BorderRadius.circular(7),
                 ),
-                child: const Text(
-                  'BUILT FOR TRUST',
-                  style: TextStyle(
+                child: Text(
+                  heading,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFFEADDFF),
                   ),
                 ),
               ),
-              for (var i = 0; i < _kTrustBenefits.length; i++) ...[
+              for (var i = 0; i < benefits.length; i++) ...[
                 if (i > 0) Container(height: 1, color: const Color(0x24FFFFFF)),
                 Container(
                   constraints: BoxConstraints(minHeight: i == 0 ? 50 : 48),
                   alignment: AlignmentDirectional.centerStart,
                   child: Text(
-                    _kTrustBenefits[i],
+                    benefits[i],
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
@@ -756,11 +778,13 @@ class _CountryPickerSheet extends StatelessWidget {
   final List<Map<String, dynamic>> countries;
   final bool loading;
   final String? selectedCountryName;
+  final String languageCode;
 
   const _CountryPickerSheet({
     required this.countries,
     required this.loading,
     required this.selectedCountryName,
+    required this.languageCode,
   });
 
   @override
@@ -796,10 +820,17 @@ class _CountryPickerSheet extends StatelessWidget {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final name = countries[index]['name_en'] as String;
+                final arName = countries[index]['name_ar'] as String?;
+                final displayName =
+                    (languageCode == 'ar' &&
+                        arName != null &&
+                        arName.isNotEmpty)
+                    ? arName
+                    : name;
                 final isSelected = name == selectedCountryName;
                 return ListTile(
                   title: Text(
-                    name,
+                    displayName,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: isSelected ? FontWeight.w800 : null,
                       color: colorScheme.onSurface,

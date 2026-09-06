@@ -16,7 +16,7 @@ class UsernameConsumer extends ConsumerWidget {
       data: (result) => result.match(
         (failure) => Center(child: Text('Error: ${failure.message}')),
         (profile) => ListTile(
-          title: Text(profile.username ?? '(no username)'),
+          title: Text(profile.username),
           subtitle: Text('${profile.displayName} • ${profile.profileType}'),
         ),
       ),

@@ -19,11 +19,9 @@ final onboardingControllerProvider =
 
 /// Controller for onboarding flow
 ///
-/// CRITICAL RESPONSIBILITIES:
-/// 1. Check resume state on init
-/// 2. Guide user through steps
-/// 3. Ensure idempotent DB writes
-/// 4. Handle errors gracefully
+/// The single onboarding write path is the transactional RPC from KAN-48.
+/// This controller's remaining job is narrowly to resume a legacy damaged
+/// row from before that RPC existed (T-037/T-038) — it has no write half.
 class OnboardingController extends StateNotifier<OnboardingState> {
   final OnboardingRepository _repository;
 
@@ -102,8 +100,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   /// Resume onboarding from existing incomplete profile
   Future<void> _resumeFromProfile(Map<String, dynamic> profile) async {
     final profileId = profile['id'] as String;
-    final personaType = profile['persona_type'] as String;
-    final profileCompletion = profile['profile_completion'] as String?;
+    // Nullable: `persona_type` is NULL on legacy damaged rows (T-038
+    // Decision 5). A non-nullable cast here threw inside this `unawaited`
+    // future, i.e. an unhandled async error instead of a redirect.
+    final personaType = profile['persona_type'] as String?;
 
     // Restore data from DB
     final restoredData = OnboardingData(
@@ -124,15 +124,15 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     // Determine resume point based on what's completed
     OnboardingStep resumeStep;
 
-    // Check if persona extension exists
-    final personaExists = await _repository.personaExtensionExists(
-      profileId: profileId,
-      personaType: personaType,
-    );
-    final hasPersonaExtension = personaExists.fold(
-      (_) => false,
-      (exists) => exists,
-    );
+    // Check if persona extension exists. A NULL persona_type means there
+    // is no persona table to check — treat as no extension, without
+    // throwing.
+    final hasPersonaExtension = personaType == null
+        ? false
+        : (await _repository.personaExtensionExists(
+            profileId: profileId,
+            personaType: personaType,
+          )).fold((_) => false, (exists) => exists);
 
     // Check if sport_profiles exists
     final sportExists = await _repository.sportProfileExists(
@@ -140,19 +140,20 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     );
     final hasSportProfile = sportExists.fold((_) => false, (exists) => exists);
 
-    // Resume logic
-    if (profileCompletion == 'started' && !hasPersonaExtension) {
+    // Resume logic — branches on facts (persona-extension and sport-profile
+    // existence), not `profile_completion`, which is NULL on every production
+    // row (T-038 Decision 5) and made these branches unreachable.
+    final needsSportProfile = personaType == 'player';
+
+    if (!hasPersonaExtension) {
       // Profile created but persona extension missing
       resumeStep = OnboardingStep.creatingPersonaExtension;
-    } else if (!hasSportProfile) {
-      // Persona created but sport profile missing
+    } else if (needsSportProfile && !hasSportProfile) {
+      // Persona created but sport profile missing (players only)
       resumeStep = OnboardingStep.selectingPrimarySport;
-    } else if (profileCompletion == 'sport_added') {
-      // Everything exists, just need to finalize
-      resumeStep = OnboardingStep.finalizing;
     } else {
-      // Unknown state - restart from persona selection
-      resumeStep = OnboardingStep.selectingPersona;
+      // Persona extension exists, and sport profile exists or isn't required
+      resumeStep = OnboardingStep.finalizing;
     }
 
     state = state.copyWith(
@@ -166,246 +167,5 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       isLoading: false,
     );
     routerRefreshNotifier.notifyAuthStateChanged();
-
-    // Auto-execute pending DB writes if needed
-    if (resumeStep == OnboardingStep.creatingPersonaExtension) {
-      await createPersonaExtension();
-    } else if (resumeStep == OnboardingStep.finalizing) {
-      await finalizeOnboarding();
-    }
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 2: Collect Basic Info
-  /// ═══════════════════════════════════════════════════════════════
-
-  void setBasicInfo({required int age, String? gender}) {
-    state = state.copyWith(
-      data: state.data.copyWith(age: age, gender: gender),
-    );
-  }
-
-  void nextFromBasicInfo() {
-    if (!state.data.hasBasicInfo) {
-      state = state.setError('Please provide your age');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-    state = state.nextStep(OnboardingStep.selectingPersona);
-    routerRefreshNotifier.notifyAuthStateChanged();
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 3: Select Persona
-  /// ═══════════════════════════════════════════════════════════════
-
-  void selectPersona(String personaType) {
-    if (!['player', 'organiser', 'host'].contains(personaType)) {
-      state = state.setError('Invalid persona type');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-
-    state = state.copyWith(data: state.data.copyWith(personaType: personaType));
-    routerRefreshNotifier.notifyAuthStateChanged();
-  }
-
-  /// Set additional profile data before creation
-  void setProfileData({
-    required String username,
-    required String displayName,
-    String? city,
-    String? country,
-    String? language,
-    String? preferredSport,
-    List<String>? interestIds,
-  }) {
-    state = state.copyWith(
-      data: state.data.copyWith(
-        username: username,
-        displayName: displayName,
-        city: city,
-        country: country,
-        language: language,
-        preferredSport: preferredSport,
-        interestIds: interestIds,
-      ),
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 4: Create Profile (FIRST DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  Future<void> createProfile() async {
-    if (!state.data.canCreateProfile) {
-      state = state.setError('Missing required profile data');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-
-    state = state.setLoading(true);
-    routerRefreshNotifier.notifyAuthStateChanged();
-
-    final result = await _repository.createProfile(
-      personaType: state.data.personaType!,
-      username: state.data.username!,
-      displayName: state.data.displayName!,
-      age: state.data.age!,
-      gender: state.data.gender,
-      city: state.data.city,
-      country: state.data.country,
-      language: state.data.language,
-      preferredSport: state.data.preferredSport,
-      interestIds: state.data.interestIds,
-      primarySport: state.data.primarySportId,
-    );
-
-    result.fold(
-      (failure) {
-        final failureMsg = (failure as Failure?)?.message ?? 'Unknown error';
-        state = state.setError('Failed to create profile: $failureMsg');
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-      (profile) {
-        final profileId = profile['id'] as String;
-        state = state.copyWith(
-          data: state.data.copyWith(profileId: profileId),
-          step: OnboardingStep.creatingPersonaExtension,
-          isLoading: false,
-        );
-
-        routerRefreshNotifier.notifyAuthStateChanged();
-
-        // Auto-proceed to next DB write
-        createPersonaExtension();
-      },
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 5: Create Persona Extension (SECOND DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  Future<void> createPersonaExtension() async {
-    if (state.data.profileId == null || state.data.personaType == null) {
-      state = state.setError('Missing profile ID or persona type');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-
-    state = state.setLoading(true);
-    routerRefreshNotifier.notifyAuthStateChanged();
-
-    final result = await _repository.createPersonaExtension(
-      profileId: state.data.profileId!,
-      personaType: state.data.personaType!,
-    );
-
-    result.fold(
-      (failure) {
-        final failureMsg = (failure as Failure?)?.message ?? 'Unknown error';
-        state = state.setError(
-          'Failed to create persona extension: $failureMsg',
-        );
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-      (_) {
-        state = state.copyWith(
-          data: state.data.copyWith(personaExtensionCreated: true),
-          step: OnboardingStep.selectingPrimarySport,
-          isLoading: false,
-        );
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 6: Select Primary Sport & Create Sport Profile
-  /// ═══════════════════════════════════════════════════════════════
-
-  void selectPrimarySport(String sportId) {
-    state = state.copyWith(data: state.data.copyWith(primarySportId: sportId));
-  }
-
-  Future<void> createSportProfile() async {
-    if (state.data.profileId == null || state.data.primarySportId == null) {
-      state = state.setError('Missing profile ID or sport ID');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-
-    state = state.setLoading(true);
-    routerRefreshNotifier.notifyAuthStateChanged();
-
-    final result = await _repository.createSportProfile(
-      profileId: state.data.profileId!,
-      sportId: state.data.primarySportId!,
-    );
-
-    result.fold(
-      (failure) {
-        final failureMsg = (failure as Failure?)?.message ?? 'Unknown error';
-        state = state.setError('Failed to create sport profile: $failureMsg');
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-      (_) {
-        state = state.copyWith(
-          data: state.data.copyWith(sportProfileCreated: true),
-          step: OnboardingStep.finalizing,
-          isLoading: false,
-        );
-
-        routerRefreshNotifier.notifyAuthStateChanged();
-
-        // Auto-finalize
-        finalizeOnboarding();
-      },
-    );
-  }
-
-  /// ═══════════════════════════════════════════════════════════════
-  /// STEP 7: Finalize Onboarding (LAST DB WRITE)
-  /// ═══════════════════════════════════════════════════════════════
-
-  Future<void> finalizeOnboarding() async {
-    if (state.data.profileId == null) {
-      state = state.setError('Missing profile ID');
-      routerRefreshNotifier.notifyAuthStateChanged();
-      return;
-    }
-
-    state = state.setLoading(true);
-    routerRefreshNotifier.notifyAuthStateChanged();
-
-    final result = await _repository.finalizeOnboarding(
-      profileId: state.data.profileId!,
-    );
-
-    result.fold(
-      (failure) {
-        final failureMsg = (failure as Failure?)?.message ?? 'Unknown error';
-        state = state.setError('Failed to finalize onboarding: $failureMsg');
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-      (_) {
-        state = state.copyWith(
-          step: OnboardingStep.completed,
-          isLoading: false,
-        );
-        routerRefreshNotifier.notifyAuthStateChanged();
-      },
-    );
-  }
-
-  /// Reset error state
-  void clearError() {
-    state = state.copyWith(error: null);
-  }
-
-  /// Reset entire onboarding (for testing/debugging only)
-  void reset() {
-    state = const OnboardingState();
   }
 }

@@ -693,7 +693,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get interests_title_organiser => 'إيه الرياضات اللي بتنظمها؟';
 
   @override
-  String get interests_title_hoster => 'إيه الرياضات اللي بتاستضيفها؟';
+  String get interests_title_host => 'إيه الرياضات اللي بتاستضيفها؟';
 
   @override
   String get interests_title_socialiser => 'إيه الرياضات اللي بتحبها؟';
@@ -861,7 +861,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcome_screen_chip_organiser => 'منظّم مباريات';
 
   @override
-  String get welcome_screen_chip_hoster => 'مضيف ملعب';
+  String get welcome_screen_chip_host => 'مضيف ملعب';
 
   @override
   String get welcome_screen_chip_socialiser => 'متواصل رياضي';
@@ -896,19 +896,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get welcome_screen_organiser_emphasis => 'كمّل بس لما تكون جاهز!';
 
   @override
-  String get welcome_screen_hoster_guidance =>
+  String get welcome_screen_host_guidance =>
       'خلّي اللاعبين يحسوا بالترحيب بإنك تخلّي المعلومات دقيقة والمساحات جاهزة.';
 
   @override
-  String get welcome_screen_hoster_philosophy =>
+  String get welcome_screen_host_philosophy =>
       'الوضوح في التوافر والتنسيم السلس بيحسّن تجربة الكل.';
 
   @override
-  String get welcome_screen_hoster_reminder =>
+  String get welcome_screen_host_reminder =>
       'خلّي التوافر والتفاصيل دايماً محدّثة.\nحدّث المعلومات فور ما أي حاجة تتغير.';
 
   @override
-  String get welcome_screen_hoster_emphasis => 'كمّل بس لما تكون جاهز!';
+  String get welcome_screen_host_emphasis => 'كمّل بس لما تكون جاهز!';
 
   @override
   String get welcome_screen_socialiser_guidance =>
@@ -933,12 +933,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onboarding_welcome_step_profile => 'بيتنشأ بروفايلك';
-
-  @override
-  String get onboarding_welcome_step_persona => 'بيتضبط دورك';
-
-  @override
-  String get onboarding_welcome_step_sport => 'بيضاف بروفايل الرياضة';
 
   @override
   String get social_onboarding_welcome_title => 'أهلاً في السوشيال';
@@ -1353,7 +1347,147 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_settings => 'الإعدادات';
 
   @override
-  String get persona_label_hoster => 'مضيف';
+  String get settings_header_title => 'الإعدادات';
+
+  @override
+  String get settings_header_help_tooltip => 'مركز المساعدة';
+
+  @override
+  String get settings_hero_eyebrow => 'خصص تجربتك';
+
+  @override
+  String get settings_hero_title => 'اضبط Dabbler على طريقة لعبك';
+
+  @override
+  String get settings_hero_subtitle =>
+      'تحكم في حسابك وتفضيلاتك وإشعاراتك من مكان واحد.';
+
+  @override
+  String get settings_search_hint => 'دور في الإعدادات';
+
+  @override
+  String get settings_section_account => 'الحساب';
+
+  @override
+  String get settings_section_display => 'العرض';
+
+  @override
+  String get settings_section_about => 'عن التطبيق';
+
+  @override
+  String get settings_section_profiles => 'البروفايلات';
+
+  @override
+  String get settings_item_account_management_title => 'إدارة الحساب';
+
+  @override
+  String get settings_item_account_management_subtitle =>
+      'الإيميل وكلمة السر والأمان';
+
+  @override
+  String get settings_item_privacy_settings_title => 'إعدادات الخصوصية';
+
+  @override
+  String get settings_item_privacy_settings_subtitle =>
+      'تحكم في إعدادات الخصوصية والمستخدمين المحظورين';
+
+  @override
+  String get settings_item_theme_title => 'المظهر';
+
+  @override
+  String get settings_item_theme_subtitle =>
+      'فاتح أو غامق أو حسب إعدادات الجهاز';
+
+  @override
+  String get settings_item_language_title => 'اللغة';
+
+  @override
+  String get settings_item_country_title => 'دولة التطبيق';
+
+  @override
+  String get settings_item_country_default_subtitle =>
+      'مصر · الإمارات · السعودية · المغرب';
+
+  @override
+  String get settings_country_picker_helper =>
+      'بتحدد الرياضات والأماكن اللي هتشوفها';
+
+  @override
+  String get settings_item_terms_title => 'شروط الخدمة';
+
+  @override
+  String get settings_item_terms_subtitle => 'اقرأ الشروط والأحكام بتاعتنا';
+
+  @override
+  String get settings_item_privacy_policy_title => 'سياسة الخصوصية';
+
+  @override
+  String get settings_item_privacy_policy_subtitle => 'إزاي بنتعامل مع بياناتك';
+
+  @override
+  String get settings_item_licenses_title => 'التراخيص';
+
+  @override
+  String get settings_item_licenses_subtitle => 'تراخيص المصادر المفتوحة';
+
+  @override
+  String get settings_sign_out_title => 'تسجيل الخروج';
+
+  @override
+  String get settings_sign_out_subtitle => 'هتسيب حسابك على الجهاز ده';
+
+  @override
+  String get settings_sign_out_dialog_title => 'تسجيل الخروج';
+
+  @override
+  String get settings_sign_out_dialog_body =>
+      'متأكد إنك عايز تسجل خروج من حسابك؟';
+
+  @override
+  String get settings_sign_out_dialog_cancel => 'إلغاء';
+
+  @override
+  String settings_sign_out_error(String error) {
+    return 'حصل خطأ أثناء تسجيل الخروج: $error';
+  }
+
+  @override
+  String get settings_version_app_name => 'Dabbler';
+
+  @override
+  String settings_version_label(String version) {
+    return 'الإصدار $version';
+  }
+
+  @override
+  String get settings_version_copyright =>
+      '© 2026 Dabbler. جميع الحقوق محفوظة.';
+
+  @override
+  String settings_persona_become_title(String persona) {
+    return 'بقى $persona';
+  }
+
+  @override
+  String settings_persona_convert_title(String persona) {
+    return 'تحوّل لـ $persona';
+  }
+
+  @override
+  String settings_persona_convert_subtitle(String persona) {
+    return 'هيستبدل بروفايل $persona بتاعك';
+  }
+
+  @override
+  String settings_persona_convert_confirm_body(
+    String fromPersona,
+    String toPersona,
+  ) {
+    return 'هيتعطل بروفايل $fromPersona بتاعك وهيتعمل بروفايل $toPersona جديد.\n\nبيانات حسابك (السن والنوع) هتفضل زي ما هي.';
+  }
+
+  @override
+  String get persona_label_host => 'مضيف';
 
   @override
   String get persona_label_socialiser => 'متواصل';

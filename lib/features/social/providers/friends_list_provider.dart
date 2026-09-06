@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/repositories/friends_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_error_mapper.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_error_mapper.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -5,6 +5,9 @@
 .env
 !.env.example
 
+# Agent-held local credentials — never committed (e.g. QA test-account password)
+.claude/agent-memory/*/credentials.local.md
+
 # Figma MCP files with secrets
 figma-mcp/
 
@@ -25,9 +28,14 @@ releases/
 .buildlog/
 .history
 .svn/
-node_modules/**/node_modules/
+node_modules/
 
 # Project-specific build artifacts and vendor directories
+.claude/worktrees/
+# Installer residue: byte-identical duplicate of .claude/skills/, which is what
+# Claude Code actually reads. Kept on disk for other agent runners, out of history.
+.agents/
+.claude-flow/
 build/
 .dart_tool/
 ios/Pods/
@@ -194,3 +202,7 @@ figma-mcp/
 # iOS export / build artifacts
 *.ipa
 ios/Runner */
+
+# Signing certificates exported for App Links / Play verification —
+# public certs, but build scratch that does not belong in the repo
+*.der

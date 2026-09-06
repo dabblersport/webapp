@@ -274,6 +274,36 @@ class PushNotificationService {
     }
   }
 
+  /// Revoke this device's push registration on logout: deletes the current
+  /// user's `fcm_tokens` row for this platform (RLS requires auth.uid(),
+  /// so this MUST be called before `supabase.auth.signOut()` per T-004's
+  /// teardown order — revoke server-side, then clear local caches, then
+  /// sign out) and, best-effort, invalidates the local FCM registration so
+  /// a re-login on the same device generates a fresh token rather than
+  /// silently reusing one already deleted server-side.
+  Future<void> revokeToken() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await supabase
+          .from(SupabaseConfig.fcmTokensTable)
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform', defaultTargetPlatform.name);
+      debugPrint('FCM token revoked for user $userId');
+    } catch (e) {
+      debugPrint('Failed to revoke FCM token in Supabase: $e');
+    }
+
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (e) {
+      debugPrint('Failed to delete local FCM token: $e');
+    }
+  }
+
   /// Check if we should show the notification permission prompt
   /// Returns true if user hasn't decided yet (remind later or never asked)
   Future<bool> shouldShowNotificationPrompt() async {

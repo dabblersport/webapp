@@ -5,7 +5,6 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Service for handling profile sharing functionality
 class ProfileSharingService {
-  static const String _logTag = 'ProfileSharingService';
   static const String _baseUrl = RoutePaths.webLinkBase;
 
   /// Generate shareable profile link
@@ -21,11 +20,6 @@ class ProfileSharingService {
     Rect? sharePositionOrigin,
   }) async {
     try {
-      final profileLink = generateProfileLink(userId);
-      final message =
-          customMessage ??
-          'Check out $userName\'s profile on Dabbler! $profileLink';
-
       await _trackSharingEvent('profile_shared', {
         'userId': userId,
         'userName': userName,

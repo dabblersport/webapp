@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../../core/config/notification_preference.dart';
 import '../../../../../services/notifications/push_notification_service.dart';
+import '../../../../../utils/constants/route_constants.dart';
 
 /// Onboarding step that requests OS push-notification permission.
 class SocialOnboardingNotificationsScreen extends StatefulWidget {
@@ -34,14 +35,14 @@ class _SocialOnboardingNotificationsScreenState
         const SnackBar(content: Text('Notifications enabled')),
       );
     }
-    context.push('/social/onboarding/complete');
+    context.push(RoutePaths.socialOnboardingComplete);
   }
 
   Future<void> _skip() async {
     await PushNotificationService.instance
         .saveNotificationPreference(NotificationPreference.remindLater);
     if (!mounted) return;
-    context.push('/social/onboarding/complete');
+    context.push(RoutePaths.socialOnboardingComplete);
   }
 
   @override

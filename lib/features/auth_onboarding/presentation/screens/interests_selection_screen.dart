@@ -108,7 +108,7 @@ class _InterestsSelectionScreenState
           'What do you intend to organise?',
           'You can change and add more sports later',
         ),
-        PersonaType.hoster => (
+        PersonaType.host => (
           'Which sports do you host?',
           'You can change and add more sports later',
         ),
@@ -135,7 +135,7 @@ class _InterestsSelectionScreenState
         'What do you intend to organise?',
         'You can change and add more sports later',
       ),
-      'hoster' => (
+      'host' => (
         'Which sports do you host?',
         'You can change and add more sports later',
       ),

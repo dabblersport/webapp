@@ -124,7 +124,6 @@ class UpcomingGameCard extends StatelessWidget {
 
   BorderRadius _getBorderRadius() {
     const radius = Radius.circular(12);
-    const noRadius = Radius.zero;
 
     switch (borderRadiusVariant) {
       case BorderRadiusVariant.all:

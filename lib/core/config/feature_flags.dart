@@ -1,61 +1,42 @@
 /// Feature flags for MVP launch
 ///
-/// This file controls which features are visible in the app.
-/// Features set to `false` are hidden from UI but code remains intact
-/// for future enablement.
-///
-/// MVP Strategy: Launch with core features, progressively enable advanced ones
+/// This file controls which features are gated in the app. KAN-32 removed 98
+/// flags that nothing in the codebase read — a flag that gates no code is not
+/// a feature, it's a promise nobody can verify. Every flag below is read by
+/// at least one call site; see the file history / KAN-32 for the removed list.
 class FeatureFlags {
   // ============================================================================
-  // MVP CORE FEATURES (Enabled)
+  // LIVE FEATURE GATES
   // ============================================================================
-
-  /// Authentication
-  static const bool enablePhoneAuth = true;
-  static const bool enableEmailAuth = true;
-  static const bool enableGoogleAuth = true; // Future
-  static const bool enableAppleAuth = true; // Future
-
-  /// Profile Management
-  static const bool enableBasicProfile = true;
-  static const bool enableProfileEdit = true;
-  static const bool enableAvatarUpload = true;
-  static const bool enableBioEdit = true;
-  static const bool enableLocationEdit = true;
 
   /// Games & Matches
   static const bool enableGameBrowsing = true;
-  static const bool enableGameDetails = true;
-  static const bool enableJoinGames = true;
-  static const bool enableLeaveGames = true;
-  static const bool enableMyGames = true;
-
-  /// Ratings
-  static const bool enablePlayerRatings = true;
-  static const bool enableViewRatings = true;
-
-  /// Statistics
-  static const bool enableBasicStats = true;
-
-  /// Settings
-  static const bool enableThemeSettings = true;
-  static const bool enableLanguageSettings = true;
-  static const bool enableLogout = true;
-
-  // ============================================================================
-  // HIDDEN FEATURES (Future Release)
-  // ============================================================================
 
   /// Central MVP feature flags (UI gating only; do not delete code).
-  static const bool multiSport = true;
-  static const bool organiserProfile = true;
-  static const bool socialFeed = true; // NOW ENABLED FOR MVP
-  static const bool messaging = true;
+  static const bool socialFeed = true;
+  // KAN-45: direct messaging / chat is not wired up — the socialChat and
+  // socialMessages routes only reach a "Coming Soon" placeholder. Keep this
+  // false until a real chat screen backs those routes.
+  static const bool messaging = false;
   static const bool notifications = true;
-  static const bool squads = true;
-  static const bool venuesBooking = true; // venues remain read-only
-  static const bool enableRewards =
-      false; // Early Bird check-in system disabled for now
+
+  // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,
+  // profile check-in widget, check-in modal). There is no broader rewards
+  // system (points/badges/tiers/leaderboard) behind this flag — none exists
+  // in the app, so there is nothing wider for it to toggle. The name says
+  // what it gates: the check-in surface, and only that.
+  static const bool enableEarlyBirdCheckIn = false;
+
+  // KAN-52/KAN-103/P-029: PDPL data export is real legal scope, not a
+  // product descope — the PO ruled it must be built, not waived. But
+  // "built" means all data categories: several tables it depends on are
+  // genuinely missing from the schema and are their own future sprint.
+  // Until then, silently omitting categories from a PDPL export is exactly
+  // the advertised-affordance-that-does-nothing pattern this flag family
+  // exists to hide (same rule as `messaging` above). Keep false until the
+  // export is actually complete. Gates the Settings export entry point in
+  // account_management_screen.dart.
+  static const bool enableDataExport = false;
 
   /// Game Creation Features (Split by profile type)
   static const bool enablePlayerGameCreation =
@@ -69,103 +50,31 @@ class FeatureFlags {
   static const bool enableOrganiserGameJoining =
       true; // Organisers CANNOT join games in MVP (they create/organize)
 
-  /// Game Management
-  static const bool enableGameEditing = true;
-  static const bool enableGameDeletion = true;
-  static const bool enableRecurringGames = true;
-  static const bool enablePrivateGames = true;
-  static const bool enableGameInvitations = true;
-  static const bool enableGameWaitlist = true;
-  static const bool enableGameChat = true;
-
-  /// Profile Types
-  static const bool enableOrganiserProfile = true; // NOW ENABLED FOR MVP
-  static const bool enableMultiProfile = true;
-  static const bool enableVerificationBadge = true;
-  static const bool enableProfileCompletionPercent = true;
-
-  /// Social Features
-  static const bool enableSocialFeed = true; // NOW ENABLED FOR MVP
-  static const bool enableCreatePost = true; // NOW ENABLED FOR MVP
-  static const bool enableLikePost = true; // NOW ENABLED FOR MVP
-  static const bool enableCommentPost = true; // NOW ENABLED FOR MVP
-  static const bool enableSharePost = true; // NOW ENABLED FOR MVP
-  static const bool enableFollowUsers = true; // NOW ENABLED FOR MVP
-  static const bool enableFriendRequests = true; // NOW ENABLED FOR MVP
-  static const bool enableFriendsList = true; // NOW ENABLED FOR MVP
-  static const bool enableBlockUsers =
-      true; // NOW ENABLED - Full blocking support
-  static const bool enableReportContent =
-      true; // NOW ENABLED - Content moderation
-  static const bool enableCircleFeed = true;
-  static const bool enableActivityFeed = true;
-
-  /// Squads & Teams
-  static const bool enableSquads = true;
-  static const bool enableCreateSquad = true;
-  static const bool enableJoinSquad = true;
-  static const bool enableSquadChat = true;
-  static const bool enableSquadInvites = true;
-  static const bool enableSquadStats = true;
-
-  /// Messaging
-  static const bool enableDirectMessages = true;
-  static const bool enableGroupChat = true;
-  static const bool enableChatHistory = true;
-  static const bool enableTypingIndicators = true;
-  static const bool enableReadReceipts = true;
-
-  /// Notifications
-  static const bool enablePushNotifications = true;
-  static const bool enableInAppNotifications = true;
-  static const bool enableNotificationCenter = true;
-  static const bool enableNotificationPreferences = true;
-
-  /// Venues
-  static const bool enableVenueSearch = true;
-  static const bool enableNearbyVenues = true;
-  static const bool enableVenueBooking = true;
-  static const bool enableVenueRatings = true;
-  static const bool enableVenuePhotos = true;
-
   /// Payments & Bookings
-  static const bool enablePayments = true;
-  static const bool enableWallet = true;
-  static const bool enableTransactionHistory = true;
+  static const bool enablePayments = false;
+
+  /// Community tab (RealFriendsScreen) in the compact mobile bottom-nav pill.
+  /// The pill redesign (KAN-41 audit finding, 2223e77) only has room for two
+  /// segmented groups + one icon slot, so Community was left reachable via
+  /// the desktop side-nav only. Flip this on once the mobile nav has a slot
+  /// for it again (see KAN-85).
+  static const bool enableCommunityMobileNav = false;
+
+  // ============================================================================
+  // ANALYTICS-ONLY FLAGS
+  // ============================================================================
+  // KAN-32 judgment call: these 5 are read only by the flags_snapshot
+  // analytics event in lib/main.dart:78-93. Unlike the deleted 98, that read
+  // has a real consequence — AnalyticsService.trackEvent forwards to the
+  // live `rpc_track_event` RPC, which writes into the `analytics_events`
+  // table (verified 2026-08-29/31; it is NOT the no-op the original ticket
+  // description assumed). Deleting these would silently drop real product
+  // telemetry dimensions, so they are kept rather than removed.
+  static const bool multiSport = true;
+  static const bool organiserProfile = true;
+  static const bool squads = true;
+  static const bool venuesBooking = true; // venues remain read-only
   static const bool enableBookingFlow = true;
-  static const bool enableBookingHistory = true;
-
-  /// Advanced Statistics
-  static const bool enableDetailedStats = true;
-  static const bool enableLeaderboards = true;
-  static const bool enableAchievementBadges = true;
-  static const bool enablePerformanceTrends = true;
-
-  /// Bench Mode
-  static const bool enableBenchMode = true; // Unique feature, post-MVP
-
-  /// Discovery
-  static const bool enableAdvancedSearch = true;
-  static const bool enableFilters = true; // Basic filters only
-  static const bool enableMapView = true;
-  static const bool enableRecommendations = true;
-  static const bool enableTrendingGames = true;
-
-  /// Ratings Extended
-  static const bool enableVenueRating = true;
-  static const bool enableGameRating = true;
-  static const bool enableRatingComments = true; // Stars only for MVP
-
-  /// Moderation (Backend only, no UI)
-  static const bool enableModerationUI = true; // Admin panel only
-  static const bool enableUserReports = true;
-  static const bool enableContentModeration = true;
-
-  /// Advanced Features
-  static const bool enableRealtimeSync = true; // Use polling for MVP
-  static const bool enableOfflineMode = true;
-  static const bool enableAnalytics = true;
-  static const bool enableABTesting = true;
 
   // ============================================================================
   // SPORT CONFIGURATION
@@ -268,25 +177,6 @@ class FeatureFlags {
   }
 
   // ============================================================================
-  // NAVIGATION CONFIGURATION
-  // ============================================================================
-
-  /// Bottom navigation tabs visibility
-  static const bool showHomeTab = true;
-  static const bool showSportsTab =
-      true; // NOW ENABLED FOR MVP - Sports/Games Browsing
-  static const bool showMyGamesTab = true;
-  static const bool showSocialTab = true; // NOW ENABLED FOR MVP
-  static const bool showSquadsTab = true;
-  static const bool showProfileTab = true;
-  static const bool showSettingsTab = true; // Or within profile
-
-  /// Top bar features
-  static const bool showNotificationBell = true;
-  static const bool showMessagesIcon = true;
-  static const bool showSearchIcon = true;
-
-  // ============================================================================
   // PROFILE TYPE CONFIGURATION
   // ============================================================================
 
@@ -344,73 +234,42 @@ class FeatureFlags {
   ];
 
   // ============================================================================
-  // DEVELOPMENT & DEBUGGING
-  // ============================================================================
-
-  /// Enable debug features
-  static const bool enableDebugMode = true;
-  static const bool enableFeatureFlagOverride = true; // Allow runtime toggle
-  static const bool showFeatureFlagIndicators = true; // Show "BETA" badges
-
-  // ============================================================================
   // UTILITY METHODS
   // ============================================================================
 
   /// Get all enabled feature names (for analytics/debugging)
   static List<String> getEnabledFeatures() {
     return [
-      if (enablePhoneAuth) 'phone_auth',
-      if (enableEmailAuth) 'email_auth',
       if (enableGameBrowsing) 'game_browsing',
       if (enablePlayerGameCreation) 'player_game_creation',
       if (enableOrganiserGameCreation) 'organiser_game_creation',
-      if (enableJoinGames) 'join_games',
-      if (enablePlayerRatings) 'player_ratings',
-      if (enableBasicStats) 'basic_stats',
-      if (enableSocialFeed) 'social_feed',
-      if (enableSquads) 'squads',
-      if (enableDirectMessages) 'messaging',
-      if (enablePushNotifications) 'notifications',
+      if (socialFeed) 'social_feed',
+      if (messaging) 'messaging',
+      if (notifications) 'notifications',
       if (enablePayments) 'payments',
-      if (enableRewards) 'rewards',
-      if (enableVenueBooking) 'venue_booking',
-      if (enableBenchMode) 'bench_mode',
+      if (enableEarlyBirdCheckIn) 'rewards',
     ];
   }
 
   /// Get feature flag value by name (for dynamic checking)
   static bool getFeatureFlag(String featureName) {
     switch (featureName) {
-      case 'phone_auth':
-        return enablePhoneAuth;
-      case 'email_auth':
-        return enableEmailAuth;
       case 'game_browsing':
         return enableGameBrowsing;
       case 'player_game_creation':
         return enablePlayerGameCreation;
       case 'organiser_game_creation':
         return enableOrganiserGameCreation;
-      case 'join_games':
-        return enableJoinGames;
-      case 'player_ratings':
-        return enablePlayerRatings;
       case 'social_feed':
-        return enableSocialFeed;
-      case 'squads':
-        return enableSquads;
+        return socialFeed;
       case 'messaging':
-        return enableDirectMessages;
+        return messaging;
       case 'notifications':
-        return enablePushNotifications;
+        return notifications;
       case 'payments':
         return enablePayments;
-      case 'venue_booking':
-        return enableVenueBooking;
       case 'rewards':
-        return enableRewards;
-      case 'bench_mode':
-        return enableBenchMode;
+        return enableEarlyBirdCheckIn;
       default:
         return false;
     }
@@ -418,12 +277,7 @@ class FeatureFlags {
 
   /// MVP readiness check
   static bool isMvpReady() {
-    return enablePhoneAuth &&
-        enableEmailAuth &&
-        enableGameBrowsing &&
-        enableJoinGames &&
-        enableMyGames &&
-        enableBasicProfile;
+    return enableGameBrowsing;
   }
 
   /// Get MVP version identifier
@@ -434,9 +288,8 @@ class FeatureFlags {
   /// Get feature rollout phase
   static String getPhase() {
     if (!isMvpReady()) return 'pre-mvp';
-    if (!enableSocialFeed) return 'mvp';
-    if (!enableSquads) return 'post-mvp-social';
-    if (!enablePayments) return 'post-mvp-teams';
+    if (!socialFeed) return 'mvp';
+    if (!enablePayments) return 'post-mvp-social';
     return 'full-features';
   }
 }

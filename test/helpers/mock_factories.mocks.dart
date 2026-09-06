@@ -100,19 +100,6 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
           as _i4.Future<_i2.Result<_i5.AuthSession, _i6.Failure>>);
 
   @override
-  _i4.Future<_i2.Result<void, _i6.Failure>> signOut() =>
-      (super.noSuchMethod(
-            Invocation.method(#signOut, []),
-            returnValue: _i4.Future<_i2.Result<void, _i6.Failure>>.value(
-              _FakeResult_0<void, _i6.Failure>(
-                this,
-                Invocation.method(#signOut, []),
-              ),
-            ),
-          )
-          as _i4.Future<_i2.Result<void, _i6.Failure>>);
-
-  @override
   _i4.Future<_i2.Result<_i7.User, _i6.Failure>> getCurrentUser() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentUser, []),

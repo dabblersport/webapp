@@ -49,7 +49,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     final l10n = AppLocalizations.of(context);
     final email = value?.trim() ?? '';
     if (email.isEmpty) return l10n.email_input_validate_required;
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    if (!RegExp(r'^[\w+\-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
       return l10n.email_input_validate_invalid;
     }
     return null;
@@ -591,7 +591,6 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   Widget _buildContinueButtonPill(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final canSubmit = _isEmailValid && !_isLoading;
     return OnboardingCTAButton(
       label: AppLocalizations.of(context).email_input_continue,

@@ -16,6 +16,7 @@ import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/widgets/app_background.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 // ─── Supported options ────────────────────────────────────────────────────────
 
@@ -50,20 +51,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   String _searchQuery = '';
   final String _appVersion = '1.7.8';
 
-  final List<SettingsSection> _allSections = [
+  List<SettingsSection> _allSections(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return [
     SettingsSection(
-      title: 'Account',
+      title: l10n.settings_section_account,
       items: [
         SettingsItem(
-          title: 'Account Management',
-          subtitle: 'Email, password, security',
+          id: 'account_management',
+          title: l10n.settings_item_account_management_title,
+          subtitle: l10n.settings_item_account_management_subtitle,
           icon: Iconsax.profile_circle_copy,
           route: '/settings/account',
           searchTerms: ['account', 'email', 'password', 'security', 'login'],
         ),
         SettingsItem(
-          title: 'Privacy Settings',
-          subtitle: 'Manage privacy settings and blocked users',
+          id: 'privacy_settings',
+          title: l10n.settings_item_privacy_settings_title,
+          subtitle: l10n.settings_item_privacy_settings_subtitle,
           icon: Iconsax.slash_copy,
           route: '/settings/privacy',
           searchTerms: ['blocked', 'block', 'users', 'privacy', 'safety'],
@@ -91,25 +96,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     //   ],
     // ),
     SettingsSection(
-      title: 'Display',
+      title: l10n.settings_section_display,
       items: [
         SettingsItem(
-          title: 'Theme',
-          subtitle: 'Light, dark, or system default',
+          id: 'theme',
+          title: l10n.settings_item_theme_title,
+          subtitle: l10n.settings_item_theme_subtitle,
           icon: Iconsax.colorfilter_copy,
           route: '/settings/theme',
           searchTerms: ['theme', 'dark', 'light', 'appearance'],
         ),
         SettingsItem(
-          title: 'Language',
+          id: 'language',
+          title: l10n.settings_item_language_title,
           subtitle: 'English · العربية',
           icon: Iconsax.language_square_copy,
           route: '',
           searchTerms: ['language', 'locale', 'translate', 'arabic', 'english', 'ar', 'en'],
         ),
         SettingsItem(
-          title: 'App Country',
-          subtitle: 'Egypt · UAE · KSA · Morocco',
+          id: 'app_country',
+          title: l10n.settings_item_country_title,
+          subtitle: l10n.settings_item_country_default_subtitle,
           icon: Iconsax.global_copy,
           route: '',
           searchTerms: ['country', 'region', 'egypt', 'uae', 'ksa', 'saudi', 'morocco'],
@@ -144,25 +152,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     //   ],
     // ),
     SettingsSection(
-      title: 'About',
+      title: l10n.settings_section_about,
       items: [
         SettingsItem(
-          title: 'Terms of Service',
-          subtitle: 'Read our terms and conditions',
+          id: 'terms_of_service',
+          title: l10n.settings_item_terms_title,
+          subtitle: l10n.settings_item_terms_subtitle,
           icon: Iconsax.document_text_copy,
           route: '/about/terms',
           searchTerms: ['terms', 'service', 'conditions', 'legal'],
         ),
         SettingsItem(
-          title: 'Privacy Policy',
-          subtitle: 'How we handle your data',
+          id: 'privacy_policy',
+          title: l10n.settings_item_privacy_policy_title,
+          subtitle: l10n.settings_item_privacy_policy_subtitle,
           icon: Iconsax.security_card_copy,
           route: '/about/privacy',
           searchTerms: ['privacy', 'policy', 'data', 'legal'],
         ),
         SettingsItem(
-          title: 'Licenses',
-          subtitle: 'Open source licenses',
+          id: 'licenses',
+          title: l10n.settings_item_licenses_title,
+          subtitle: l10n.settings_item_licenses_subtitle,
           icon: Iconsax.code_circle_copy,
           route: '/about/licenses',
           searchTerms: ['licenses', 'open', 'source', 'legal'],
@@ -170,6 +181,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       ],
     ),
   ];
+  }
 
   @override
   void initState() {
@@ -262,6 +274,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget _buildHeader(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Row(
       children: [
@@ -280,7 +293,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Settings',
+                l10n.settings_header_title,
                 style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   color: colorScheme.onSurface,
@@ -298,7 +311,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             foregroundColor: colorScheme.onSurface,
             minimumSize: const Size(48, 48),
           ),
-          tooltip: 'Help center',
+          tooltip: l10n.settings_header_help_tooltip,
         ),
       ],
     );
@@ -309,6 +322,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final textTheme = Theme.of(context).textTheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final profileAccent = colorScheme.categoryMain;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       width: double.infinity,
@@ -321,7 +335,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Customize your experience',
+            l10n.settings_hero_eyebrow,
             style: textTheme.labelLarge?.copyWith(
               color: profileAccent.withValues(alpha: 0.9),
               fontWeight: FontWeight.w600,
@@ -330,7 +344,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Tune Dabbler to match how you play',
+            l10n.settings_hero_title,
             style: textTheme.titleLarge?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w700,
@@ -338,7 +352,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'Manage your account, preferences, and notifications all in one place.',
+            l10n.settings_hero_subtitle,
             style: textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -362,7 +376,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           });
         },
         decoration: InputDecoration(
-          hintText: 'Search settings',
+          hintText: AppLocalizations.of(context).settings_search_hint,
           prefixIcon: const Icon(Iconsax.search_normal_copy),
           prefixIconColor: colorScheme.categoryMain,
           suffixIcon: _searchQuery.isNotEmpty
@@ -398,7 +412,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   List<Widget> _buildFilteredSectionsList(BuildContext context) {
-    final filteredSections = _getFilteredSections();
+    final filteredSections = _getFilteredSections(context);
 
     return filteredSections.map((section) {
       return Padding(
@@ -408,10 +422,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }).toList();
   }
 
-  List<SettingsSection> _getFilteredSections() {
-    if (_searchQuery.isEmpty) return _allSections;
+  List<SettingsSection> _getFilteredSections(BuildContext context) {
+    final allSections = _allSections(context);
+    if (_searchQuery.isEmpty) return allSections;
 
-    return _allSections
+    return allSections
         .map((section) {
           final filteredItems = section.items.where((item) {
             return item.title.toLowerCase().contains(_searchQuery) ||
@@ -478,14 +493,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     // Dynamic subtitle for inline-picker items
     String subtitle = item.subtitle;
-    if (item.title == 'Language') {
+    if (item.id == 'language') {
       final langCode = ref.watch(localeProvider).languageCode;
       final lang = _kSupportedLanguages.firstWhere(
         (l) => l.code == langCode,
         orElse: () => _kSupportedLanguages.first,
       );
       subtitle = '${lang.flag}  ${lang.label} · ${lang.native}';
-    } else if (item.title == 'App Country') {
+    } else if (item.id == 'app_country') {
       final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
       if (country.isNotEmpty) {
         final meta = _kSupportedCountries.where((c) => c.name.toLowerCase() == country.toLowerCase()).firstOrNull;
@@ -597,7 +612,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           Padding(
             padding: const EdgeInsets.only(left: 9, bottom: 12),
             child: Text(
-              'Profiles',
+              AppLocalizations.of(context).settings_section_profiles,
               style: textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: colorScheme.onSurfaceVariant,
@@ -689,7 +704,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                           if (context.mounted) {
                             final errorMsg =
                                 ref.read(personaServiceProvider).errorMessage ??
-                                'Failed to switch profile';
+                                AppLocalizations.of(context)
+                                    .profile_error_switch_profile_failed;
                             ScaffoldMessenger.of(
                               context,
                             ).showSnackBar(SnackBar(content: Text(errorMsg)));
@@ -784,6 +800,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final isConversion = availability.actionType == PersonaActionType.convert;
 
     // Get icon based on persona type
@@ -795,7 +812,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       case PersonaType.organiser:
         icon = Iconsax.calendar_edit_copy;
         break;
-      case PersonaType.hoster:
+      case PersonaType.host:
         icon = Iconsax.building_copy;
         break;
       case PersonaType.socialiser:
@@ -805,12 +822,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     // Title based on action type
     final title = isConversion
-        ? 'Convert to ${availability.targetPersona.displayName}'
-        : 'Become a ${availability.targetPersona.displayName}';
+        ? l10n.settings_persona_convert_title(
+            availability.targetPersona.displayName,
+          )
+        : l10n.settings_persona_become_title(
+            availability.targetPersona.displayName,
+          );
 
     // Subtitle with description
     final subtitle = isConversion
-        ? 'Replace your ${availability.convertFrom?.displayName} profile'
+        ? l10n.settings_persona_convert_subtitle(
+            availability.convertFrom?.displayName ?? '',
+          )
         : availability.targetPersona.description;
 
     return Column(
@@ -860,7 +883,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    'CONVERT',
+                    l10n.profile_persona_convert_badge.toUpperCase(),
                     style: textTheme.labelSmall?.copyWith(
                       color: colorScheme.tertiary,
                       fontWeight: FontWeight.w600,
@@ -939,21 +962,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   void _showConversionConfirmDialog(PersonaAvailability availability) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
-        title: Text('Convert to ${availability.targetPersona.displayName}?'),
+        title: Text(
+          l10n.profile_convert_to(availability.targetPersona.displayName),
+        ),
         content: Text(
-          'This will deactivate your ${availability.convertFrom?.displayName} profile and create a new ${availability.targetPersona.displayName} profile.\n\n'
-          'Your account data (age, gender) will be preserved.',
+          l10n.settings_persona_convert_confirm_body(
+            availability.convertFrom?.displayName ?? '',
+            availability.targetPersona.displayName,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.profile_btn_cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -961,7 +989,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               // Navigate to first screen of add flow
               context.push(RoutePaths.addPersonaInterests);
             },
-            child: const Text('Continue'),
+            child: Text(l10n.profile_btn_continue),
           ),
         ],
       ),
@@ -993,14 +1021,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             child: Icon(Iconsax.logout_copy, color: colorScheme.error),
           ),
           title: Text(
-            'Sign out',
+            AppLocalizations.of(context).settings_sign_out_title,
             style: textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
               color: colorScheme.error,
             ),
           ),
           subtitle: Text(
-            'Leave your account on this device',
+            AppLocalizations.of(context).settings_sign_out_subtitle,
             style: textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -1030,7 +1058,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Dabbler',
+              AppLocalizations.of(context).settings_version_app_name,
               style: textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
@@ -1039,7 +1067,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
             const SizedBox(height: 6),
             Text(
-              'Version $_appVersion',
+              AppLocalizations.of(context).settings_version_label(_appVersion),
               style: textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -1047,7 +1075,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              '© 2026 Dabbler. All rights reserved.',
+              AppLocalizations.of(context).settings_version_copyright,
               style: textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -1060,9 +1088,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   void _navigateToSetting(SettingsItem item) {
-    if (item.title == 'Language') {
+    if (item.id == 'language') {
       _showLanguagePicker();
-    } else if (item.title == 'App Country') {
+    } else if (item.id == 'app_country') {
       _showCountryPicker();
     } else {
       context.push(item.route);
@@ -1084,7 +1112,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             const SizedBox(height: 20),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Language', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+              child: Text(AppLocalizations.of(context).settings_item_language_title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
             ),
             const SizedBox(height: 16),
             ..._kSupportedLanguages.map((lang) {
@@ -1123,12 +1151,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             const SizedBox(height: 20),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('App Country', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+              child: Text(AppLocalizations.of(context).settings_item_country_title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
             ),
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Sets which sports and venues you see', style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+              child: Text(AppLocalizations.of(context).settings_country_picker_helper, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
             ),
             const SizedBox(height: 16),
             ..._kSupportedCountries.map((c) {
@@ -1157,14 +1185,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surface,
         surfaceTintColor: Colors.transparent,
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out of your account?',
+        title: Text(AppLocalizations.of(context).settings_sign_out_dialog_title),
+        content: Text(
+          AppLocalizations.of(context).settings_sign_out_dialog_body,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).settings_sign_out_dialog_cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -1172,7 +1200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               await _signOut();
             },
             style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: const Text('Sign Out'),
+            child: Text(AppLocalizations.of(context).settings_sign_out_dialog_title),
           ),
         ],
       ),
@@ -1197,21 +1225,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         routerRefreshNotifier.notifyAuthStateChanged();
       }
 
-      if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
-        context.go(RoutePaths.authWelcome);
-      }
+      // Both signOut paths above already call
+      // routerRefreshNotifier.notifyAuthStateChanged(), which drives GoRouter's
+      // own redirect to /landing via refreshListenable. Don't navigate
+      // manually here — that races with the router's own transition. Dismiss
+      // the loading dialog on the next frame instead of immediately, since
+      // popping while the redirect is mid-transition locks the Navigator
+      // (KAN-99: "!_debugLocked is not true").
+      _dismissLoadingDialog();
     } catch (e) {
+      _dismissLoadingDialog();
       if (mounted) {
-        Navigator.of(context).pop(); // Remove loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error signing out: $e'),
+            content: Text(AppLocalizations.of(context).settings_sign_out_error(e.toString())),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     }
+  }
+
+  void _dismissLoadingDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final navigator = Navigator.of(context, rootNavigator: true);
+      if (navigator.canPop()) {
+        navigator.pop();
+      }
+    });
   }
 }
 
@@ -1223,6 +1265,7 @@ class SettingsSection {
 }
 
 class SettingsItem {
+  final String id;
   final String title;
   final String subtitle;
   final IconData icon;
@@ -1230,6 +1273,7 @@ class SettingsItem {
   final List<String> searchTerms;
 
   SettingsItem({
+    required this.id,
     required this.title,
     required this.subtitle,
     required this.icon,

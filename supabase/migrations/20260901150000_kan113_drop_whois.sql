@@ -1,0 +1,88 @@
+-- KAN-113: public.whois(p_username) resolves any username to a raw
+-- auth.users UUID, SECURITY DEFINER, zero authorization check, EXECUTE
+-- granted to anon (and authenticated, and service_role). Given only a
+-- username string it hands back {user_id, profile_id, profile_type,
+-- username, display_name} -- a targeted, on-demand username -> auth.users
+-- UUID resolver callable by anyone holding the publishable (anon) key, not
+-- just this app's client. More severe than KAN-106's bulk-table leak: that
+-- one requires scanning/paginating public.profiles; this one is a single
+-- call with a guessed or harvested username as input.
+--
+-- Found by backend-owner-15 while authoring the KAN-106 migration
+-- (supabase/migrations/20260901100000_kan106_revoke_profiles_user_id_anon.sql),
+-- deliberately not folded into that ticket per the KAN-87/T-041 precedent
+-- ("this does not change [the original ticket's] scope; it gets its own
+-- ticket"). Filed as KAN-113.
+--
+-- Verified live 2026-09-01 (backend-owner):
+--   SELECT prosecdef, pg_get_functiondef(oid) FROM pg_proc
+--     WHERE proname = 'whois' AND pronamespace = 'public'::regnamespace;
+--   -> prosecdef = true, body has no auth.uid()/is_admin/role check of any
+--      kind -- pure username -> profiles row lookup, SECURITY DEFINER so it
+--      bypasses profiles' own RLS entirely.
+--
+--   SELECT grantee, privilege_type FROM information_schema.routine_privileges
+--     WHERE routine_schema = 'public' AND routine_name = 'whois';
+--   -> anon: EXECUTE, authenticated: EXECUTE, service_role: EXECUTE,
+--      postgres: EXECUTE (owner).
+--
+-- Reachability sweep:
+--   grep -rn "whois" lib/   -> zero hits. Not called anywhere in the Dart
+--   client. (`whoami_effective()` is a distinct, unrelated function --
+--   session-scoped SQL helper reading request.jwt.claim.sub, not this RPC.)
+--   No other in-database caller found (not referenced by any trigger,
+--   view, or other function definition in the schema).
+--
+-- Per T-030 (the KAN-79/KAN-81 DROP precedent, restated in KAN-81's
+-- migration header): no caller + no reason to exist in production means
+-- drop, not revoke-and-keep. Adding an auth check to a function nobody
+-- calls is pure cost, and a dead, unauthenticated definer function sitting
+-- in the schema is exactly the class of latent re-exposure this project
+-- has already been bitten by (KAN-79 create_seed_user, KAN-81
+-- get_user_fcm_tokens). If a legitimate future need for username -> id
+-- resolution shows up (e.g. server-side username-availability check), it
+-- should be a new, narrowly-scoped, explicitly-authorized function --
+-- not this one kept alive and gated after the fact.
+--
+-- Rejected -- add an auth check and keep it. Considered (gate on
+-- auth.uid() IS NOT NULL, i.e. authenticated-only). Rejected because there
+-- is still no caller to justify keeping the surface at all; an
+-- authenticated-only username->UUID resolver is still a resolver nobody
+-- asked for, and every additional live definer function is attack surface
+-- KAN-26's census has to keep re-auditing. Drop is strictly less risk here.
+--
+-- Overlaps the open "SECURITY DEFINER RPC census" (KAN-26: 61 of 303
+-- definer functions with no visible auth check). The other functions this
+-- ticket's description names as "not individually audited yet"
+-- (rpc_search_users, rpc_get_friends, rpc_get_friend_suggestions,
+-- rpc_friend_requests_inbox/_outbox, admin_whois_profile) are explicitly
+-- OUT of scope for this migration -- each needs its own reachability check
+-- (some may have legitimate live callers, unlike whois) before a fix is
+-- chosen per-function.
+--
+-- G-002: authored by backend-owner, NOT applied here. cto (or the PO)
+-- applies after independently re-measuring the preconditions below live
+-- and posting verification back to KAN-113.
+
+BEGIN;
+
+DROP FUNCTION IF EXISTS public.whois(text);
+
+COMMIT;
+
+-- ============================================================================
+-- VERIFICATION -- to be run by whoever applies this (cto/PO), not run here.
+-- ============================================================================
+-- 1. Function is gone. Expect 0.
+--    SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+--    WHERE n.nspname = 'public' AND p.proname = 'whois';
+--
+-- 2. Nothing in the client broke -- expected, since nothing called it.
+--    grep -rn "whois" lib/  -- confirm still zero hits (i.e. no new caller
+--    was added to lib/ between authoring and applying this migration).
+--
+-- 3. public.profiles and public.normalize_username are untouched -- this
+--    migration drops only the whois wrapper function, not the table or the
+--    helper function it read through.
+--    SELECT count(*) FROM public.profiles;  -- compare to pre-apply count,
+--    must be unchanged (this migration does not touch rows).

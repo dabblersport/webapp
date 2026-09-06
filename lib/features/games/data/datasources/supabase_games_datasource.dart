@@ -310,7 +310,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
       // Handle different join policies
       if (joinPolicy != null && joinPolicy == 'request') {
         // For "request" policy, create a join request instead of directly joining
-        final requestId = await requestToJoinGame(gameId, playerId);
+        await requestToJoinGame(gameId, playerId);
         return true; // Return success - request was created
       } else if (joinPolicy != null && joinPolicy != 'open') {
         throw GameServerException(

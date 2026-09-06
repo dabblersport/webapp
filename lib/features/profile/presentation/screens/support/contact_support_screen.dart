@@ -186,7 +186,6 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
   }
 
   Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 

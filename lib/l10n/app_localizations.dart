@@ -1352,11 +1352,11 @@ abstract class AppLocalizations {
   /// **'What do you intend to organise?'**
   String get interests_title_organiser;
 
-  /// No description provided for @interests_title_hoster.
+  /// No description provided for @interests_title_host.
   ///
   /// In en, this message translates to:
   /// **'Which sports do you host?'**
-  String get interests_title_hoster;
+  String get interests_title_host;
 
   /// No description provided for @interests_title_socialiser.
   ///
@@ -1658,11 +1658,11 @@ abstract class AppLocalizations {
   /// **'Games organiser'**
   String get welcome_screen_chip_organiser;
 
-  /// No description provided for @welcome_screen_chip_hoster.
+  /// No description provided for @welcome_screen_chip_host.
   ///
   /// In en, this message translates to:
   /// **'Venue host'**
-  String get welcome_screen_chip_hoster;
+  String get welcome_screen_chip_host;
 
   /// No description provided for @welcome_screen_chip_socialiser.
   ///
@@ -1718,29 +1718,29 @@ abstract class AppLocalizations {
   /// **'Continue only when you\'re ready!'**
   String get welcome_screen_organiser_emphasis;
 
-  /// No description provided for @welcome_screen_hoster_guidance.
+  /// No description provided for @welcome_screen_host_guidance.
   ///
   /// In en, this message translates to:
   /// **'Help players feel welcome by keeping information accurate and spaces ready.'**
-  String get welcome_screen_hoster_guidance;
+  String get welcome_screen_host_guidance;
 
-  /// No description provided for @welcome_screen_hoster_philosophy.
+  /// No description provided for @welcome_screen_host_philosophy.
   ///
   /// In en, this message translates to:
   /// **'Clear availability and smooth coordination make everyone\'s experience better.'**
-  String get welcome_screen_hoster_philosophy;
+  String get welcome_screen_host_philosophy;
 
-  /// No description provided for @welcome_screen_hoster_reminder.
+  /// No description provided for @welcome_screen_host_reminder.
   ///
   /// In en, this message translates to:
   /// **'Keep availability and details accurate.\nUpdate information as soon as things change.'**
-  String get welcome_screen_hoster_reminder;
+  String get welcome_screen_host_reminder;
 
-  /// No description provided for @welcome_screen_hoster_emphasis.
+  /// No description provided for @welcome_screen_host_emphasis.
   ///
   /// In en, this message translates to:
   /// **'Continue only when you\'re ready!'**
-  String get welcome_screen_hoster_emphasis;
+  String get welcome_screen_host_emphasis;
 
   /// No description provided for @welcome_screen_socialiser_guidance.
   ///
@@ -1783,18 +1783,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Creating your profile'**
   String get onboarding_welcome_step_profile;
-
-  /// No description provided for @onboarding_welcome_step_persona.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting up your persona'**
-  String get onboarding_welcome_step_persona;
-
-  /// No description provided for @onboarding_welcome_step_sport.
-  ///
-  /// In en, this message translates to:
-  /// **'Adding sport profile'**
-  String get onboarding_welcome_step_sport;
 
   /// No description provided for @social_onboarding_welcome_title.
   ///
@@ -2546,11 +2534,248 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get nav_settings;
 
-  /// No description provided for @persona_label_hoster.
+  /// No description provided for @settings_header_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings_header_title;
+
+  /// No description provided for @settings_header_help_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Help center'**
+  String get settings_header_help_tooltip;
+
+  /// No description provided for @settings_hero_eyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize your experience'**
+  String get settings_hero_eyebrow;
+
+  /// No description provided for @settings_hero_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tune Dabbler to match how you play'**
+  String get settings_hero_title;
+
+  /// No description provided for @settings_hero_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your account, preferences, and notifications all in one place.'**
+  String get settings_hero_subtitle;
+
+  /// No description provided for @settings_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search settings'**
+  String get settings_search_hint;
+
+  /// No description provided for @settings_section_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settings_section_account;
+
+  /// No description provided for @settings_section_display.
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get settings_section_display;
+
+  /// No description provided for @settings_section_about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get settings_section_about;
+
+  /// No description provided for @settings_section_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Profiles'**
+  String get settings_section_profiles;
+
+  /// No description provided for @settings_item_account_management_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Account Management'**
+  String get settings_item_account_management_title;
+
+  /// No description provided for @settings_item_account_management_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Email, password, security'**
+  String get settings_item_account_management_subtitle;
+
+  /// No description provided for @settings_item_privacy_settings_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Settings'**
+  String get settings_item_privacy_settings_title;
+
+  /// No description provided for @settings_item_privacy_settings_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage privacy settings and blocked users'**
+  String get settings_item_privacy_settings_subtitle;
+
+  /// No description provided for @settings_item_theme_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settings_item_theme_title;
+
+  /// No description provided for @settings_item_theme_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Light, dark, or system default'**
+  String get settings_item_theme_subtitle;
+
+  /// No description provided for @settings_item_language_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settings_item_language_title;
+
+  /// No description provided for @settings_item_country_title.
+  ///
+  /// In en, this message translates to:
+  /// **'App Country'**
+  String get settings_item_country_title;
+
+  /// No description provided for @settings_item_country_default_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Egypt · UAE · KSA · Morocco'**
+  String get settings_item_country_default_subtitle;
+
+  /// No description provided for @settings_country_picker_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets which sports and venues you see'**
+  String get settings_country_picker_helper;
+
+  /// No description provided for @settings_item_terms_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get settings_item_terms_title;
+
+  /// No description provided for @settings_item_terms_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Read our terms and conditions'**
+  String get settings_item_terms_subtitle;
+
+  /// No description provided for @settings_item_privacy_policy_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get settings_item_privacy_policy_title;
+
+  /// No description provided for @settings_item_privacy_policy_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How we handle your data'**
+  String get settings_item_privacy_policy_subtitle;
+
+  /// No description provided for @settings_item_licenses_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Licenses'**
+  String get settings_item_licenses_title;
+
+  /// No description provided for @settings_item_licenses_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source licenses'**
+  String get settings_item_licenses_subtitle;
+
+  /// No description provided for @settings_sign_out_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get settings_sign_out_title;
+
+  /// No description provided for @settings_sign_out_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave your account on this device'**
+  String get settings_sign_out_subtitle;
+
+  /// No description provided for @settings_sign_out_dialog_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get settings_sign_out_dialog_title;
+
+  /// No description provided for @settings_sign_out_dialog_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out of your account?'**
+  String get settings_sign_out_dialog_body;
+
+  /// No description provided for @settings_sign_out_dialog_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get settings_sign_out_dialog_cancel;
+
+  /// No description provided for @settings_sign_out_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error signing out: {error}'**
+  String settings_sign_out_error(String error);
+
+  /// No description provided for @settings_version_app_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler'**
+  String get settings_version_app_name;
+
+  /// No description provided for @settings_version_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Version {version}'**
+  String settings_version_label(String version);
+
+  /// No description provided for @settings_version_copyright.
+  ///
+  /// In en, this message translates to:
+  /// **'© 2026 Dabbler. All rights reserved.'**
+  String get settings_version_copyright;
+
+  /// No description provided for @settings_persona_become_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a {persona}'**
+  String settings_persona_become_title(String persona);
+
+  /// No description provided for @settings_persona_convert_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert to {persona}'**
+  String settings_persona_convert_title(String persona);
+
+  /// No description provided for @settings_persona_convert_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace your {persona} profile'**
+  String settings_persona_convert_subtitle(String persona);
+
+  /// No description provided for @settings_persona_convert_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This will deactivate your {fromPersona} profile and create a new {toPersona} profile.\n\nYour account data (age, gender) will be preserved.'**
+  String settings_persona_convert_confirm_body(
+    String fromPersona,
+    String toPersona,
+  );
+
+  /// No description provided for @persona_label_host.
   ///
   /// In en, this message translates to:
   /// **'Host'**
-  String get persona_label_hoster;
+  String get persona_label_host;
 
   /// No description provided for @persona_label_socialiser.
   ///

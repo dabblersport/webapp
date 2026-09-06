@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,6 +10,8 @@ import '../../../../../core/services/auth_service.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/widgets/app_background.dart';
+import 'package:dabbler/features/profile/services/data_export_service.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 /// Screen for managing account settings like email, password, and security
 class AccountManagementScreen extends ConsumerStatefulWidget {
@@ -208,6 +211,13 @@ class _AccountManagementScreenState
                         // Release 2: Security Settings
                         // const SizedBox(height: 12),
                         // _buildSecuritySection(),
+                        // KAN-52/KAN-103/P-029: hidden until the export
+                        // mechanism covers every data category — see
+                        // FeatureFlags.enableDataExport.
+                        if (FeatureFlags.enableDataExport) ...[
+                          const SizedBox(height: 12),
+                          _buildDataExportSection(),
+                        ],
                         const SizedBox(height: 12),
                         _buildDangerZone(),
                       ],
@@ -597,6 +607,85 @@ class _AccountManagementScreenState
   //     ),
   //   );
   // }
+
+  Widget _buildDataExportSection() {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.download_outlined,
+              color: colorScheme.onPrimaryContainer,
+              size: 24,
+            ),
+          ),
+          title: Text(
+            'Export My Data',
+            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            'Request a copy of your Dabbler data (PDPL data portability)',
+            style: textTheme.bodySmall,
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          onTap: _requestDataExport,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestDataExport() async {
+    final user = _authService.getCurrentUser();
+    final email = _authService.getCurrentUserEmail();
+    if (user == null || email == null) return;
+
+    try {
+      await DataExportService().requestGDPRDataExport(
+        userId: user.id,
+        format: DataExportFormat.json,
+        userEmail: email,
+      );
+      AnalyticsService.trackEvent('data_export_requested', {
+        'format': 'json',
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "We're preparing your data export. You'll be notified by email when it's ready.",
+          ),
+          backgroundColor: context.successColor,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not request data export: $e')),
+      );
+    }
+  }
 
   Widget _buildDangerZone() {
     final textTheme = Theme.of(context).textTheme;

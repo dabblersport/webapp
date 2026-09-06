@@ -1,8 +1,9 @@
 class SupabaseConfig {
   // Storage bucket names
   static const String avatarsBucket = 'Avatar';
-  static const String venueImagesBucket = 'venue-images';
+  static const String venueImagesBucket = 'venue';
   static const String postMediaBucket = 'post-media';
+  static const String dabblerNewsBucket = 'dabbler-news';
 
   // Table names
   static const String usersTable =
@@ -128,6 +129,7 @@ class SupabaseConfig {
   static const String payoutsTable = 'payouts';
   static const String postCirclesTable = 'post_circles';
   static const String postHashtagsTable = 'post_hashtags';
+  static const String postMediaTable = 'post_media';
   static const String postRepostsTable = 'post_reposts';
   static const String postSquadsTable = 'post_squads';
   static const String postThemesTable = 'post_themes';
@@ -185,13 +187,14 @@ class SupabaseConfig {
   static const String gameWaitlistTable = 'game_waitlist';
   static const String gdprComplianceLogTable = 'gdpr_compliance_log';
   static const String gracePeriodRequestsTable = 'grace_period_requests';
-  static const String hosterTable = 'hoster';
+  static const String hostTable = 'host';
   static const String locationDataTable = 'location_data';
   static const String loginHistoryTable = 'login_history';
   static const String messagesTable = 'messages';
   static const String onboardingAnalyticsTable = 'onboarding_analytics';
   static const String onboardingProgressTable = 'onboarding_progress';
   static const String organiserTable = 'organiser';
+  static const String paymentIntentsTable = 'payment_intents';
   static const String paymentMethodsTable = 'payment_methods';
   static const String paymentRecordsTable = 'payment_records';
   static const String performanceMetricsTable = 'performance_metrics';
@@ -228,6 +231,11 @@ class SupabaseConfig {
   static const String deleteMyAccountFn = 'delete_my_account';
   static const String getDataSourceMetricsFn = 'get_data_source_metrics';
   static const String getHomeFeedFn = 'get_home_feed';
+  // KAN-103: SECURITY DEFINER wrappers over auth.audit_log_entries /
+  // auth.identities, scoped to auth.uid() — see
+  // 20260901170000_kan103_login_history_and_linked_identities_wrappers.sql
+  static const String getMyLoginHistoryFn = 'get_my_login_history';
+  static const String getMyLinkedIdentitiesFn = 'get_my_linked_identities';
   static const String incrementNotificationInteractionFn =
       'increment_notification_interaction';
   static const String processQueuedEventsFn = 'process_queued_events';
@@ -241,5 +249,12 @@ class SupabaseConfig {
   static const String rpcRemovePlayerFn = 'rpc_remove_player';
   static const String rpcUnfollowUserFn = 'rpc_unfollow_user';
   static const String rpcIsFollowingUserFn = 'rpc_is_following_user';
+  static const String rpcTrackEventFn = 'rpc_track_event';
   static const String sendBookingRemindersFn = 'send_booking_reminders';
+
+  // ---- Edge Functions (invoked via supabase.functions.invoke) ----
+  // KAN-52: Resend-backed export delivery. Requires RESEND_API_KEY set as
+  // an Edge Function secret; caller must be authenticated and `to` must
+  // match the caller's own auth email (self-serve only, not a mailer).
+  static const String sendExportEmailFn = 'send-export-email';
 }

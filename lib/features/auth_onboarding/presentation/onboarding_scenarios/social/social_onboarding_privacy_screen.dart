@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../utils/constants/route_constants.dart';
+
 /// Privacy settings introduction screen for social onboarding
 class SocialOnboardingPrivacyScreen extends StatefulWidget {
   const SocialOnboardingPrivacyScreen({super.key});
@@ -150,7 +152,7 @@ class _SocialOnboardingPrivacyScreenState
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      context.push('/social/onboarding/notifications');
+                      context.push(RoutePaths.socialOnboardingNotifications);
                     },
                     child: const Text('Continue'),
                   ),

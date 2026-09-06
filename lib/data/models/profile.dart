@@ -18,15 +18,16 @@ class Profile {
   final bool? isActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
-  final String? displayNameNorm;
+  @JsonKey(name: 'latitude')
   final double? geoLat;
+  @JsonKey(name: 'longitude')
   final double? geoLng;
   // New onboarding fields
   final String? intention;
   final String? gender;
   final int? age;
   final String? preferredSport;
-  final String? interests; // comma-separated
+  final List<String>? interests;
 
   const Profile({
     required this.id,
@@ -43,7 +44,6 @@ class Profile {
     this.isActive,
     this.createdAt,
     this.updatedAt,
-    this.displayNameNorm,
     this.geoLat,
     this.geoLng,
     this.intention,

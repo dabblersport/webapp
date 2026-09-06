@@ -25,14 +25,15 @@ Profile _$ProfileFromJson(Map<String, dynamic> json) => Profile(
   updatedAt: json['updated_at'] == null
       ? null
       : DateTime.parse(json['updated_at'] as String),
-  displayNameNorm: json['display_name_norm'] as String?,
-  geoLat: (json['geo_lat'] as num?)?.toDouble(),
-  geoLng: (json['geo_lng'] as num?)?.toDouble(),
+  geoLat: (json['latitude'] as num?)?.toDouble(),
+  geoLng: (json['longitude'] as num?)?.toDouble(),
   intention: json['intention'] as String?,
   gender: json['gender'] as String?,
   age: (json['age'] as num?)?.toInt(),
   preferredSport: json['preferred_sport'] as String?,
-  interests: json['interests'] as String?,
+  interests: (json['interests'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
 );
 
 Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
@@ -50,9 +51,8 @@ Map<String, dynamic> _$ProfileToJson(Profile instance) => <String, dynamic>{
   'is_active': instance.isActive,
   'created_at': instance.createdAt?.toIso8601String(),
   'updated_at': instance.updatedAt?.toIso8601String(),
-  'display_name_norm': instance.displayNameNorm,
-  'geo_lat': instance.geoLat,
-  'geo_lng': instance.geoLng,
+  'latitude': instance.geoLat,
+  'longitude': instance.geoLng,
   'intention': instance.intention,
   'gender': instance.gender,
   'age': instance.age,

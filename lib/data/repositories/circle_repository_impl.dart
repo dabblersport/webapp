@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import '../models/circle_contact.dart';
