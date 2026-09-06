@@ -86,7 +86,10 @@ class NotificationsController extends StateNotifier<NotificationsState>
     WidgetsBinding.instance.addObserver(this);
   }
 
+  // The base signature names this parameter `state`, which would shadow
+  // StateNotifier.state inside the method body. Renamed deliberately.
   @override
+  // ignore: avoid_renaming_method_parameters
   void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
     if (lifecycleState == AppLifecycleState.resumed) {
       // Re-subscribe realtime (no-op if already connected for same user,
