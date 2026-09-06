@@ -497,3 +497,136 @@ Decided under `KAN-112` (`DECISIONS.md` `T-042` follow-up), 2026-09-01.
 - If a specific lint rule needs a permanent, deliberate waiver, waive it **per-rule with a
   comment explaining why** in `analysis_options.yaml`. Do not add a blanket `errors: ignore`
   block — that hid this exact gate's failures from KAN-72 to KAN-112.
+
+---
+
+## 12. TRAPS THAT MAKE A CORRECT MEASUREMENT WRONG
+
+Owed by `DECISIONS.md` `T-064` and `T-065`. Each entry is a case where a number or a
+check was **right when taken and wrong when read**. None of them is caught by review.
+
+### 12a. A predicate that excludes rows by NULL comparison is not an authorization check
+
+**Rule.** Where a filter's security effect depends on an argument being NULL, the
+authorization must be stated **separately and explicitly**, so that making the filter
+null-safe cannot open the data.
+
+`public.rpc_potential_vibes` filters `spw.user_id <> p_me`, and the 6-argument wrapper
+injects `auth.uid()` as `p_me`. For `anon`, `p_me` is NULL, the comparison is NULL, and
+`v_potential_vibes_default` returns zero rows. That zero is a **self-exclusion clause
+doing accidental duty as a gate**. The natural null-safe repair — `p_me IS NULL OR
+spw.user_id <> p_me` — hands `anon` every row of `v_sport_profiles_with_user`.
+
+**Do not "tidy" this predicate.** Verified still present in prod 2026-09-07 (`cto`,
+read-only, via `pg_get_functiondef`).
+
+### 12b. Concurrent seats do not share a working tree — and `git stash` is the sharpest edge
+
+Full standard in `DECISIONS.md` `T-065`. In this file, the operational form:
+
+- **A seat that writes files, or that takes a measurement it will quote, holds an
+  isolated tree.** `flutter analyze` and `flutter test` read the *working tree*, so a
+  measurement taken across another seat's in-flight edits describes a tree nobody will
+  ever see — and the report reads exactly like a correct one.
+- **`git stash`, `git stash -u`, `git checkout`, `git reset` and `git clean` are
+  forbidden in the shared `dabbler-code` checkout.** All five are repo-global: they act
+  on every other seat's uncommitted work, not just yours. `-u` additionally sweeps
+  untracked files, which are the ones no other seat can recover from reflog. A seat that
+  needs a clean tree to measure against **must not create one by clearing the shared
+  one**.
+- **The sanctioned way to take a clean-tree measurement:** measure in an isolated tree
+  and quote the sha (mechanism referred to `devops` under `T-065`); or, with no
+  isolation, **do not clean the tree — quote the sha and state that the tree was dirty**,
+  which makes the caveat visible instead of destroying someone's work to hide it.
+- **Read-only seats may share the tree.** Reading races nothing.
+- **The one path-scoped carve-out.** The `checkout`/`reset`/`clean` ban above is aimed at the
+  **repo-global** forms — `git checkout <branch>`, `git checkout .`, `git reset`, `git clean`,
+  `git stash` — every one of which acts on files you did not name. **`git restore -- <path>`
+  (equivalently `git checkout -- <path>`) naming an explicit path you authored is permitted**,
+  because its blast radius is exactly that path. Two conditions, both required: you wrote the
+  hunk, and you name the file — never `.`, never a directory, never a glob.
+- **Before discarding anything, run `git status --short` and read every line.** A tree with
+  several dirty files is usually several seats' work, or one coherent unlanded change set.
+  Discarding a file because it is *premature* rather than *wrong* destroys authored work that
+  someone must then redo. **Unlanded is not the same as incorrect**: an uncommitted edit
+  asserts nothing to anyone, so the fix for "this must not land yet" is to leave it alone and
+  commit the set together — not to discard half of it now and rewrite it later.
+- `git commit -o <path>` is a partial workaround, not the fix: it protects the committing
+  seat's own file and stops nothing else.
+
+### 12c. Every quoted measurement carries the sha it was taken at
+
+Cheap, immediate, and it works with no isolation at all — it converts a silent error into
+a detectable one. A `flutter test` count with no sha attached is a claim the reporter
+cannot support.
+
+### 12d. Where a constraint can hold an invariant, the constraint holds it and the function asserts it
+
+**Never the reverse.** Owed by `T-049` Decision 3 and `T-061`.
+
+A check inside a function body lives in the thing that the next `CREATE OR REPLACE` replaces
+whole (§6c, `T-044`) — which is how `trgfn_payment_to_ledger` acquired its defects. A
+constraint survives every rewrite of every function that touches the table.
+
+- `EXISTS` is not idempotency; a `UNIQUE` constraint plus `ON CONFLICT` is (`T-049`).
+- A defensive `IF … IS NULL THEN RAISE` is not referential integrity; a `FOREIGN KEY` is
+  (`T-061`).
+- The assertion still belongs in the function, stated so it cannot be mistaken for the
+  mechanism. `SELECT … INTO STRICT` does it in one keyword:
+
+```sql
+SELECT vs.venue_id INTO STRICT v_venue_id
+FROM public.venue_bookings vb
+JOIN public.venue_spaces vs ON vs.id = vb.venue_space_id
+WHERE vb.id = NEW.booking_id;
+```
+
+**An `INTO STRICT` written before its constraint exists asserts a guarantee nothing
+provides.** That is why `KAN-140` must not land before `KAN-145`.
+
+### 12e. A comment saying it is done is not it being done — and quoting one propagates the lie
+
+**Rule.** A Jira comment describing an edit is **evidence of intent, never of state**. Before
+asserting what a ticket says, read the **field** — the description, the status, the `due_date` —
+not a comment's account of it. When you quote board state, name which field you read.
+
+**Two measured instances, two seats, 2026-09-06/07.** `po` caught itself on `KAN-130`
+(comment 10659 said "corrected"; the description edit was never called). `KAN-140` comment
+10649 is headed *"AC addition per `T-061`"* and contains a numbered `6.` and `7.` — **and the
+description still held ACs 1–5.** The proposed ACs were never applied.
+
+**The second-order failure is the expensive one.** `cto` read 10649, quoted it to `team-lead`
+as "AC6 and AC7 were added at 20:11", and `team-lead` relayed it to `po` — a claim about board
+state that nobody had opened the board to check, inside a message whose purpose was to correct
+*someone else's* stale ticket text. It was caught only because `po` re-read the live ticket
+instead of taking the relay. **A comment is a claim by its author about their own work**, which
+is the one category of evidence this repo already distrusts everywhere else (§12c, `T-055`).
+
+**Writing side:** if you intend an AC to bind, **edit the description field**. Post the comment
+as the audit trail *after* the edit lands, and say which field you changed.
+
+### 12f. A term can go stale inside a document that is still live — and the quotation stays correct
+
+**Rule.** When a quoted rule names a **role**, check that the word still denotes what it denoted
+when the rule was written. A verbatim quote from a current decision can route work to the wrong
+seat, and nothing about the quote looks wrong.
+
+**The measured case.** `G-002` condition 3 (2026-08-28) says a user-data migration *"requires the
+**PO** to apply it personally"*, and `019` (2026-08-27) says *"only the **PO** can authorise a
+production write."* Both are ACTIVE, both are quoted accurately — and in both, "the PO" means the
+**human decision-maker**, written before `po` existed as an agent seat. `CONTRACT.md:242` is the
+same rule in current vocabulary: *"User-data mutation is **CEO-only** (`019`)."*
+
+**What it costs.** On 2026-09-07 `cto` quoted `G-002` condition 3 correctly and routed `KAN-155`'s
+apply — an `UPDATE` against 82 live `user_subscriptions` rows — to `po`, a seat with no such
+authority, which would have had to refuse it. `team-lead-4` caught it by reading `019` and
+`CONTRACT.md:242` rather than carrying the quote.
+
+**How to apply.** `CONTRACT.md` is the translation layer: where a decision's body and a
+`CONTRACT.md` row disagree on **who**, the row governs and the body is the older vocabulary. This
+is the sibling of §12e — there, a comment claimed a state it did not have; here, a live rule uses
+a word that no longer means what it says. **Both fail by being accurate.**
+
+**Not fixed at the source deliberately:** `019`/`G-002` are never edited — a decision is
+superseded, not rewritten (`DECISIONS.md` preamble), and role custody is off the seats a rule
+binds (`G-022`). So this trap is permanent and the check is the only defence.
