@@ -12,6 +12,8 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/activities/presentation/screens/activities_screen_v2.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/presentation/screens/create_venue_submission_screen.dart';
 import 'package:dabbler/features/venue_submissions/presentation/screens/my_venue_submissions_screen.dart';
@@ -143,4 +145,94 @@ RouteBase get myVenueSubmissionsRoute =>
           },
         ),
       ],
+    );
+
+// Activities route
+RouteBase get activitiesRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.activities,
+      name: RouteNames.activities,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const ActivitiesScreenV2(),
+      ),
+    );
+
+// Game Creation Routes - Differentiated by profile type
+// Organisers can create, players cannot (MVP)
+RouteBase get createGameRoute =>
+    GoRoute(
+      path: RoutePaths.createGame,
+      name: RouteNames.createGame,
+      parentNavigatorKey: rootNavigatorKey,
+      redirect: (context, state) async {
+        // Check user's profile type and apply feature flags
+        final container = ProviderScope.containerOf(context, listen: false);
+        final profileState = container.read(profileControllerProvider);
+        final profileType = profileState.profile?.profileType;
+
+        // Block players from creating games if feature disabled
+        if (profileType == 'player' && !FeatureFlags.enablePlayerGameCreation) {
+          return RoutePaths.home;
+        }
+
+        // Block organisers from creating games if feature disabled
+        if (profileType == 'organiser' &&
+            !FeatureFlags.enableOrganiserGameCreation) {
+          return RoutePaths.home;
+        }
+
+        // Allow access if profile type has permission
+        return null;
+      },
+      // Drawer-style modal: leaves the top safe area exposed and lets the
+      // composer's glass surface blur the screen behind it.
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        transparentSurface: true,
+        child: const GameComposerScreen(),
+      ),
+    );
+
+RouteBase get createGameBasicInfoRoute =>
+    GoRoute(
+      path: RoutePaths.createGameBasicInfo,
+      name: RouteNames.createGameBasicInfo,
+      parentNavigatorKey: rootNavigatorKey,
+      redirect: (context, state) async {
+        final container = ProviderScope.containerOf(context, listen: false);
+        final profileState = container.read(profileControllerProvider);
+        final profileType = profileState.profile?.profileType;
+
+        if (profileType == 'player' && !FeatureFlags.enablePlayerGameCreation) {
+          return RoutePaths.home;
+        }
+        if (profileType == 'organiser' &&
+            !FeatureFlags.enableOrganiserGameCreation) {
+          return RoutePaths.home;
+        }
+        return null;
+      },
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        transparentSurface: true,
+        child: const GameComposerScreen(),
+      ),
+    );
+
+// Edit an existing game — same drawer as creation, prefilled. Host-only
+// enforcement lives in rpc_update_game; the entry button is host-gated.
+RouteBase get editGameRoute =>
+    GoRoute(
+      path: RoutePaths.editGame,
+      name: RouteNames.editGame,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        transparentSurface: true,
+        child: GameComposerScreen(
+          editGameId: state.pathParameters['gameId']!,
+        ),
+      ),
     );
