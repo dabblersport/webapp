@@ -539,9 +539,6 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       case 'game':
         context.push(RoutePaths.gameDetail(activity.subjectId));
         break;
-      case 'booking':
-        context.push('/bookings/${activity.subjectId}');
-        break;
       case 'social':
         context.push('/profile');
         break;

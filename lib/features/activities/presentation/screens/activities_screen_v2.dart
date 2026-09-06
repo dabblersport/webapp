@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/presentation/widgets/activity_event_card.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
@@ -605,7 +606,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => context.go('/phone-input'),
+              onPressed: () => context.go(RoutePaths.authWelcome),
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: Colors.white,

@@ -9,6 +9,7 @@ import 'package:dabbler/widgets/custom_app_bar.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Professional Transactions History Screen
 ///
@@ -834,7 +835,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen>
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => context.go('/phone-input'),
+              onPressed: () => context.go(RoutePaths.authWelcome),
               style: ElevatedButton.styleFrom(
                 backgroundColor: context.colors.primary,
                 foregroundColor: Colors.white,
