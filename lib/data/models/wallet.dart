@@ -4,6 +4,9 @@ import 'package:meta/meta.dart';
 class Wallet {
   final String? id;
   final String? ownerId;
+
+  /// One of 'user', 'venue', 'platform' (wallets_owner_type_valid).
+  final String? ownerType;
   final int availableCents;
   final int pendingCents;
   final String? currency;
@@ -12,6 +15,7 @@ class Wallet {
   const Wallet({
     required this.id,
     required this.ownerId,
+    required this.ownerType,
     required this.availableCents,
     required this.pendingCents,
     required this.currency,
@@ -26,6 +30,7 @@ class Wallet {
     return Wallet(
       id: m['id']?.toString(),
       ownerId: m['owner_id']?.toString(),
+      ownerType: m['owner_type']?.toString(),
       availableCents: readInt(m['available_cents'] ?? m['balance_cents']),
       pendingCents: readInt(m['pending_cents']),
       currency: m['currency']?.toString(),
@@ -36,6 +41,7 @@ class Wallet {
   Map<String, dynamic> toMap() => {
     'id': id,
     'owner_id': ownerId,
+    'owner_type': ownerType,
     'available_cents': availableCents,
     'pending_cents': pendingCents,
     'currency': currency,
