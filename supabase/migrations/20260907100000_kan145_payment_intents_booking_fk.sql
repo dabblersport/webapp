@@ -82,16 +82,49 @@
 --   AC3 asks for ("fails at the constraint rather than downstream"). There is no
 --   ON CONFLICT clause an FK could want.
 --
--- SEQUENCING -- flagged for cto to rule on as part of confirming.
---   T-052's amendment (:7274) records KAN-128 as "authored and applied alone and
---   first", settled by pm and team-lead-4. KAN-128 is authored but NOT YET
---   APPLIED (absent from list_migrations as of 2026-09-07). The hazard that
---   sequencing exists to prevent is a whole-body CREATE OR REPLACE silently
---   reverting KAN-128's ON CONFLICT clauses (:7288). THIS MIGRATION TOUCHES NO
---   FUNCTION BODY -- it is a bare ALTER TABLE on a table KAN-128's applied half
---   does not modify -- and so cannot revert anything. team-lead-4 reached the
---   same reading on the ticket (comment 10663). Recorded here so the question is
---   answered on the record rather than assumed.
+-- THE DELETE SIDE HAS A CASCADE CHAIN ABOVE IT -- READ THIS BEFORE WRITING ANY
+-- VENUE DELETE FLOW. (Raised by cto on KAN-145 comment 10705; measured live.)
+--
+--   venues --ON DELETE CASCADE--> venue_spaces --ON DELETE CASCADE--> venue_bookings
+--
+--   ON DELETE RESTRICT binds the DELETE side, so once data exists, deleting a
+--   VENUE or a VENUE_SPACE whose booking carries a payment_intent fails with
+--   23503: the RESTRICT halts the cascade partway up. The blast radius is venue
+--   deletion, not merely booking deletion.
+--
+--   This is the correct posture, not a side effect. T-061 already implies it --
+--   "a booking carrying a payment must not be deletable" -- and P-036's
+--   retention posture reinforces it. Nothing breaks today: both tables are 0
+--   rows and nothing in lib/ or supabase/functions/ deletes venue_bookings or
+--   venue_spaces at all. But whoever authors venue management will meet it, and
+--   THE RIGHT ANSWER THERE IS ARCHIVAL OR SOFT-DELETE, NOT WEAKENING THIS FK.
+--   Written here rather than only in the ticket so it is found at the point of
+--   use instead of rediscovered as a bug.
+--
+-- SEQUENCING -- RULED by cto (KAN-145 comment 10705, 2026-09-07): KAN-128 does
+--   NOT block this migration. Recorded with the correction, because the version
+--   of this note I posted for confirmation had a factual error worth keeping
+--   visible.
+--
+--   I asked whether T-052's "authored and applied alone and first" (:7274)
+--   held this back, and said "both migrations touch payment_intents". THAT WAS
+--   WRONG. cto read 20260909090000_kan128_ledger_unique_keys_and_on_conflict.sql
+--   directly: payment_intents appears there ONLY in comments and as the
+--   trigger's source table -- no ALTER TABLE, no ADD CONSTRAINT, no CREATE INDEX
+--   against it in any form. KAN-128's DDL targets financial_ledger. The two
+--   migrations are DISJOINT AT THE OBJECT LEVEL, not merely compatible.
+--
+--   And "alone and first" governs KAN-128 versus KAN-131, whose hazard is that
+--   KAN-131 replaces trgfn_payment_to_ledger WHOLE and, if authored from the
+--   baseline dump, silently reverts KAN-128's ON CONFLICT clauses while the
+--   unique constraint stays (:7288 -- the T-044 / CONVENTIONS.md §6c
+--   whole-body-replacement trap). This migration replaces no function body, so
+--   the ordering never reached it.
+--
+--   Filename order is a non-issue: apply_migration stamps its own version at
+--   apply time, so this file being dated 20260907100000 against KAN-128's
+--   20260909090000 jumps nothing. Latest applied is 20260907052826 kan141_...;
+--   KAN-128 is absent from the applied ledger.
 --
 -- G-028 (DECISIONS.md, 2026-09-07, amending G-002): backend-4 authors AND
 -- applies; cto CONFIRMS and never runs it. NOTE: this ticket's description still
