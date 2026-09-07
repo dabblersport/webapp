@@ -911,6 +911,30 @@ all — the two records simply answer different questions, and only one of them 
 events. Raised by `backend-4` after applying `KAN-141` and `KAN-145`; recorded here rather than
 left in ticket comments, per §8's single-location rule.
 
+**And the corollary, which decides a question this project had not faced until 2026-09-07:
+`supabase db push` is never the apply mechanism here.**
+
+`KAN-155`'s migration — reserved to the CEO under `019` because it mutates 82 live
+`user_subscriptions` rows — is committed and on `Canary` while deliberately unapplied. That is
+the **correct** state: the file belongs in the repo, and being authored-but-unapplied is what
+awaiting a hand-applied action looks like. `backend-4` checked and confirmed no CI path can
+execute it: neither `ci.yml` nor `anon-allowlist-check.yml` references Supabase, and
+`scripts/cloudflare-build.sh` does not touch migrations.
+
+The residual risk is a person or agent running `supabase db push`, which applies **everything**
+in `supabase/migrations/` not already in the ledger — including a migration whose first twenty
+lines say only the CEO may apply it, because a bulk push does not open the file. That is not a
+reason to move the file out of `supabase/migrations/`: it belongs there for replay correctness,
+and a directory whose contract is "apply everything here" is exactly where a replay must find it.
+
+**The rule instead — and it is total.** Migrations in this project are applied **one at a time,
+deliberately, by the seat authorised for that specific migration**, via `apply_migration` with
+that migration's own SQL. **Never `supabase db push`, never a bulk apply, at any time, on any
+branch.** A bulk apply cannot distinguish a routine schema change from one carrying a reserved
+authority, and the authority boundaries in `019`, `G-002` and `G-028` are stated in the files
+rather than in the tooling. This rule is what makes an unapplied migration safe to commit; it is
+not a preference about ergonomics. Raised by `backend-4`, ruled by `cto` 2026-09-07.
+
 ## 9. HOW TO VERIFY ANY CLAIM IN THIS FILE
 
 Do not trust this document over the database. It is a snapshot dated 2026-08-26.

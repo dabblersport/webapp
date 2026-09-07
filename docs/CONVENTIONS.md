@@ -721,3 +721,46 @@ migration, and narrowing the pattern to dodge it could have hidden a real hit. T
 a wide sweep across every surface a literal can hide in — function bodies, view definitions,
 CHECK constraints, column defaults, RLS `USING`/`WITH CHECK`, trigger definitions — followed by
 reading each hit. Not a cleverer pattern.
+
+### 12h. A probe can fail to reach the code under test **without raising** — the silent form of the `T-055` trap
+
+*Written 2026-09-07 by `cto`, from a variant `team-lead-4` and `backend-4` found. `T-055`'s
+falsifiability condition 3 — "the target path must be shown to execute before falsifiability is
+checked" — was written against a path that **raises**. This is the form that does not.*
+
+**A before/after probe that reads "identical on both sides" has two possible causes, and they
+are indistinguishable from the result alone: the change did nothing, or the probe never reached
+the code the change touched.** Condition 3 catches the loud version — `settle_game` raising
+`42804` before the insert under test (`T-058` Decision 2). It does not catch this one:
+
+```sql
+SELECT * INTO v_rule FROM public.notification_scores WHERE kind_key = p_kind_key AND is_enabled;
+IF NOT FOUND THEN
+    RETURN 1;          -- plausible value, no error, probe never reaches the rest
+END IF;
+```
+
+`calculate_notification_score` has exactly this shape. Against an empty or non-matching
+`notification_scores`, it returns `1` — a number that looks like a result — and every line below
+the guard is unreached. A probe comparing the return value before and after a change to those
+lines sees `1` and `1`, and **reports a pass**. Nothing raises. Nothing is logged.
+
+**So condition 3 is strengthened, and the stronger form is the one to apply:**
+
+> Show that the probe reaches **the specific statements the change modifies** — not merely that
+> the function executes without error.
+
+**How to satisfy it.** Pick whichever fits the path:
+
+- Assert the guard's precondition explicitly before probing — the lookup row exists, the count is
+  non-zero, the status is the one the branch requires — and fail the probe if it does not.
+- Make the pre-change side produce a **distinguishable wrong answer**, not merely a different
+  one. `backend-4`'s `KAN-145` probe is the model: a named `RAISE` (`PROBE_RESULT=
+  INSERT_SUCCEEDED_NO_FK`) proves the insert was actually attempted and actually succeeded, so
+  the post-change `23503` means the constraint acted rather than the path having gone missing.
+- Where the early return is the whole risk, probe the guard itself as its own case.
+
+**The general rule, and it outlives this instance:** an assertion that something is *unchanged*
+proves nothing unless you have separately established that the thing was *reached*. Empty tables
+and unmatched lookups are the usual reason it was not — and this codebase is full of both, since
+most feature tables hold zero rows.
