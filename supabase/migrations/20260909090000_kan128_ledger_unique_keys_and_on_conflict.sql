@@ -1,5 +1,7 @@
 -- KAN-128 — T-049 Decision 1 + Decision 2, T-052 amendment, T-055.
--- Authored by senior-backend 2026-09-06. Applied by cto (CONTRACT.md G-002).
+-- Authored by backend-1 (Shu) 2026-09-06. Applied by backend-1 after cto's
+-- posted confirmation on KAN-128 (CONTRACT.md G-028, 2026-09-07, which amends
+-- G-002: the authoring developer applies; cto confirms and does not apply).
 --
 -- WHAT THIS DOES
 -- Installs the natural keys T-049 ruled, and pairs each one with
@@ -21,7 +23,9 @@
 --
 -- WHY NOW
 -- wallet_ledger and financial_ledger both hold 0 rows on wtncuzcskpigqpmnxwws
--- (re-measured live 2026-09-06, at authoring time). A UNIQUE index added now is
+-- (measured live 2026-09-06 at authoring time, and RE-MEASURED live 2026-09-07
+-- immediately before applying, per G-002 condition 2: both tables still 0 rows,
+-- 0 ref_id NULLs, 0 duplicates on either proposed key). A UNIQUE index now is
 -- free; after D4 executes it is a backfill, a reconciliation, and a decision
 -- about which of two conflicting credits was real. It is free once.
 --

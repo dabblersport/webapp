@@ -517,6 +517,9 @@ non-generated files currently exceed it and no mechanism enforces it (`MANIFESTO
 - **Never push `main`.** PR from `Canary` only.
 - **No `Co-Authored-By` trailer** unless `.claude/settings.json` sets `attribution.commit`.
 - Never commit: `.env`, secrets, credentials, `node_modules/`, build output, `.mcp.json`.
+- **Stage by explicit path — never `git add -A`, `git add .`, or `git commit -a`**, and read
+  `git status --short` before every commit. The tree is shared by every seat; the full rule
+  and why the failure is silent are in **§12i**.
 
 ---
 
@@ -764,3 +767,56 @@ lines sees `1` and `1`, and **reports a pass**. Nothing raises. Nothing is logge
 proves nothing unless you have separately established that the thing was *reached*. Empty tables
 and unmatched lookups are the usual reason it was not — and this codebase is full of both, since
 most feature tables hold zero rows.
+
+### 12i. In a shared tree, `git add -A` commits other seats' work under your name
+
+*Written 2026-09-07 by `cto`, from a near-miss `backend-4` found and `team-lead-4` routed.
+`12b` bans the repo-global commands that **destroy** another seat's uncommitted work. This is
+the other half: the repo-global command that **absorbs** it. Nothing in `12b` catches it,
+because nothing is destroyed — the work is committed, just not by its author and not with its
+message.*
+
+**The property.** Every seat writing to `dabbler-code` shares **one working tree**. Verified
+2026-09-07 by `cto`: `git worktree list` returns the single checkout at
+`/Users/moatazmustapha/Desktop/Thebes/Dabbler/dabbler-code` (plus one unrelated `prunable`
+scratchpad), and `git rev-parse --git-common-dir` returns `.git`. **The same holds for
+`dabbler-admin`, `dabbler-design-system`, `dabbler-docs` and `dabbler-web`** — each is a single
+tree, measured the same way, the same day. The rule below is written for `dabbler-code` because
+that is where sixteen developer seats plus `cto`, `devops` and `po` all write, but it is a
+property of every Dabbler repo, not of this one.
+
+**The rule.** **Stage by explicit path. Never `git add -A`, never `git add .`, never
+`git commit -a`.** All three stage by *tree state*, not by authorship — they cannot distinguish
+your edit from the edit another seat made ninety seconds ago. `git add <path>` and
+`git commit -o <path>` name what you wrote; use those.
+
+**And read `git status --short` before every commit.** Not as a formality — as the check. An
+`M` you did not expect is far more likely to be another seat's live work than a stray of your
+own, and in a shared tree that is the normal case rather than the surprising one.
+
+**Why this needs its own rule rather than ordinary care.** The failure is **silent and
+asymmetric**, and no error is raised anywhere in the chain:
+
+- **The sweeping seat sees a clean, plausible commit.** `git status` goes empty, the diff
+  contains its own work, the push succeeds. There is no signal that the commit is wrong.
+- **The swept seat sees its changes gone from `git status`** and has no reason to look in
+  another seat's commit for them. The likely response is to redo work that already exists —
+  and the loss may not be noticed at all.
+- **The history is wrong in a way review does not catch.** A migration commit that also
+  carries someone else's `docs/` edits reads as a single authored change under a message that
+  describes only part of it. `git blame` then attributes those lines to the wrong seat, and
+  the real author's reasoning is nowhere.
+
+**The near-miss this comes from.** On 2026-09-07, `backend-4` audited its own seven commits
+and found that for several of them `docs/SCHEMA.md` and `docs/CONVENTIONS.md` were sitting `M`
+in the shared tree — `cto`'s in-flight §8a/§6g/§12g work — while it was committing migration
+files. It had used `git add <path>` every time. **Nothing was swept, and nothing was swept by
+habit rather than by rule.** A single `-A` would have folded three of this document's sections
+into a migration commit under another seat's name. That is the gap this entry closes.
+
+**The relationship to `12b`, stated once so neither is read alone.** `12b` governs commands
+that act on files you did not name and **remove** work: `stash`, `checkout`, `reset`, `clean`.
+This governs commands that act on files you did not name and **claim** work: `add -A`,
+`add .`, `commit -a`. Same root cause — a repo-global operation in a shared tree — and the two
+opposite consequences. `12b`'s carve-out logic applies here unchanged: **name the path, and
+only for hunks you authored.**
