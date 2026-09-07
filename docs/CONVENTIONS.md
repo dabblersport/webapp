@@ -380,7 +380,12 @@ merely querying them — and the remedy is the same: make the check *executable*
 commented-out count relies on an operator reading it; a `RAISE EXCEPTION` on an
 unexpected count means the migration refuses to run against drifted state.
 
-### 6c. A table created outside a migration gets an explicit `REVOKE` before it carries data
+### 6f. A table created outside a migration gets an explicit `REVOKE` before it carries data
+
+*Renumbered from a second `6c` on 2026-09-07 by `cto`. Two sections carried that number, which
+made every `§6c` citation ambiguous. All eight existing citations — six in `DECISIONS.md`, two
+inside this file — refer to the `CREATE OR REPLACE VIEW` trap above, so that section keeps `6c`
+and this one moved. No citation needs updating.*
 
 *Convention requested by `cto` and written here 2026-09-01; backed as `T-045`.*
 
@@ -414,6 +419,59 @@ write grant; 183 are held by RLS alone and `spatial_ref_sys` has no RLS (PostGIS
 policy admits an anonymous caller, so nothing is exploitable today.** The grant is the standing
 risk and RLS is the only thing between it and an incident — which is why the default matters
 more than any individual table does.
+
+### 6g. `CREATE OR REPLACE FUNCTION` is a whole-body replacement — author it from the live catalogue
+
+*Written 2026-09-07 by `cto`. The rule existed only in `T-058`, `T-052`'s amendment and
+individual ticket ACs, so every ticket re-derived it and one citation drifted to §6c — which is
+the **view** case and only ever the analogue. This is the direct statement; cite this.*
+
+**Take the body from `pg_get_functiondef('public.fn(argtypes)'::regprocedure)` read from the
+database, and edit that. Never from the baseline dump, never from the migration file that last
+defined it.**
+
+`CREATE OR REPLACE FUNCTION` replaces the **entire** body and **every** attribute. Anything the
+new text does not restate is not patched — it is dropped, silently, with no error at apply time:
+
+| Attribute | If the replacement omits it |
+|---|---|
+| `SECURITY DEFINER` | `prosecdef` reverts to `false` (`T-044`) — the inverse also bites: an unintended `SECURITY DEFINER` turns an invoker function into a public API endpoint (§6d) |
+| `SET search_path` | the setting is lost; the function resolves names against the caller's path |
+| `STABLE` / `IMMUTABLE` | **silently becomes `VOLATILE`** — see the trap below |
+| Body edits made by an earlier migration | reverted wholesale. This is how `T-052`'s amendment describes `KAN-131` reverting `KAN-128`'s `ON CONFLICT DO NOTHING` on all three inserts while the unique constraint stayed — turning an absorbed webhook replay into a 500 the provider retries forever |
+
+So a migration that edits a function must state, in its header, that the body was taken from the
+live catalogue, and must assert the preserved attributes afterwards per §6b — not just the
+behaviour it changed.
+
+**The non-obvious half: preserving attributes verbatim means preserving an *absence*.**
+`pg_get_functiondef` emits **no volatility keyword for a `VOLATILE` function**, because `VOLATILE`
+is the default. The keyword is present only for `STABLE` and `IMMUTABLE`. Two functions edited
+side by side will therefore *look* inconsistent when they are correct:
+
+```
+calculate_notification_score   provolatile = 'v'   -- def emits NO volatility keyword
+should_bypass_quiet_hours      provolatile = 's'   -- def emits "STABLE"
+```
+
+Both measured live 2026-09-07. "Tidying" the first to match the second reads as consistency and
+is a **silent behavioural change** — it would let the planner cache a function that must be
+re-evaluated per row. Do not add a keyword the live definition did not emit, and do not remove
+one it did. If you need to know the truth rather than infer it from the text, read `provolatile`
+directly: `v` = VOLATILE, `s` = STABLE, `i` = IMMUTABLE.
+
+**Verify after applying**, per §6b:
+
+```sql
+SELECT prosecdef, provolatile, proconfig
+FROM pg_proc WHERE oid = 'public.your_fn(uuid,text)'::regprocedure;
+-- expect: exactly what it was before, except the one thing you meant to change
+```
+
+Found by `backend-4` while checking whether its own citations survived a §6c renumber — the
+citation was wrong, and the reason it was wrong was that this section did not exist.
+
+---
 
 ## 7. CODE GENERATION
 
@@ -630,3 +688,36 @@ a word that no longer means what it says. **Both fail by being accurate.**
 **Not fixed at the source deliberately:** `019`/`G-002` are never edited — a decision is
 superseded, not rewritten (`DECISIONS.md` preamble), and role custody is off the seats a rule
 binds (`G-022`). So this trap is permanent and the check is the only defence.
+
+### 12g. Retiring a value is safe where it is compared, dangerous where it is a fallback default
+
+*Written 2026-09-07 by `cto`, from the `KAN-155` review. The plan-key set will change again;
+this is the check to run when it does.*
+
+**Before deleting a value that functions reference by literal — a plan key, a role name, a
+status — sweep for it, then classify every hit by how it is used. Two shapes, one risk:**
+
+| Shape | Behaviour once the value no longer exists |
+|---|---|
+| **Compared against** — `IF v_plan = 'prime' THEN … RETURN true; END IF; RETURN false;` | **Safe.** The comparison stops matching and the function **fails closed**. The branch goes dead; nothing is granted. |
+| **Assigned as a fallback default**, feeding a lookup that **fails open** — `v_plan := 'kickoff';` then `IF v_cap IS NULL THEN RETURN true;` | **Dangerous.** The fallback points at a row that no longer exists, the lookup misses, and the fail-open branch **grants**. |
+
+`KAN-155` retired `kickoff`/`pro`/`prime`. Three functions named a retired key.
+`should_bypass_quiet_hours` and `calculate_notification_score` compare, and were never at risk.
+`can_send_notification_now` **assigns** `'kickoff'` as its no-active-subscription fallback and
+returns `true` when it finds no cap row — so deleting the key would have granted **unlimited
+notifications to every user without an active subscription**. That fix had to land in the same
+transaction as the delete, and it did.
+
+**The rule this yields:** a literal in a comparison and the same literal in an assignment are
+different risk classes, and the grep that finds them cannot tell them apart. **Read every hit;
+classify by shape, not by count.** A sweep that reports "three functions reference the key" has
+not answered the question — one of those three was the whole risk.
+
+**And sweep wide, then read.** The same `KAN-155` sweep returned `posts_mapping_check`, which
+matched on `'kickoff_at'` — a **column name** on `posts`, unrelated to plans. Both failure modes
+were live: reporting it would have added a spurious object to a hand-applied production
+migration, and narrowing the pattern to dodge it could have hidden a real hit. The discipline is
+a wide sweep across every surface a literal can hide in — function bodies, view definitions,
+CHECK constraints, column defaults, RLS `USING`/`WITH CHECK`, trigger definitions — followed by
+reading each hit. Not a cleverer pattern.

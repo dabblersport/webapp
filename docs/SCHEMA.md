@@ -877,6 +877,40 @@ same end condition (the repo is not a reconstruction of the live schema) and onl
 leaves a trace in the ledger. **Reading a migration file tells you what someone wrote, not what
 the database ran.**
 
+### 8a. Filenames and ledger versions do not match, and that is by design — not a defect
+
+**`apply_migration` stamps its own version at apply time. It does not use the filename.** So
+`supabase_migrations.schema_migrations` and `supabase/migrations/` disagree on the version of
+every migration applied through the MCP tool, permanently and correctly.
+
+Two measured instances, both 2026-09-07:
+
+| Migration | Filename version | Recorded in the ledger as |
+|---|---|---|
+| `KAN-141` drop `list_active_usernames` + view | `20260906210000` | **`20260907052826`** |
+| `KAN-145` `payment_intents` booking FK | `20260907100000` | today's apply-time stamp |
+
+**Two consequences, and both have already caused a wrong conclusion here:**
+
+1. **Filename order is not apply order, so it is not load-bearing.** A file whose timestamp
+   sorts *before* an unapplied migration has not "jumped the queue" — it will record under the
+   moment it actually ran. `backend-4` correctly declined to infer a sequencing hazard from
+   `KAN-145`'s file sorting ahead of `KAN-128`'s (`20260907100000` vs `20260909090000`); the
+   real sequencing question was about function-body replacement and is settled in `T-052`.
+   Filenames order a *fresh replay from empty*, nothing else.
+
+2. **Reconciling the two lists by name will show mismatches that are not missing migrations.**
+   Anyone diffing `list_migrations` against the directory will find names that do not line up
+   and can reasonably read that as a failed, skipped or lost migration. It is not. **The ledger
+   is authoritative for what ran; the directory is authoritative for what a replay would do.**
+   Neither is a check on the other, and a name-based diff between them proves nothing.
+
+This is the same lesson as the paragraph above it, from the opposite end: there, a file was
+edited after the fact and drifted from a live state that never changed. Here, nothing drifts at
+all — the two records simply answer different questions, and only one of them is a record of
+events. Raised by `backend-4` after applying `KAN-141` and `KAN-145`; recorded here rather than
+left in ticket comments, per §8's single-location rule.
+
 ## 9. HOW TO VERIFY ANY CLAIM IN THIS FILE
 
 Do not trust this document over the database. It is a snapshot dated 2026-08-26.
