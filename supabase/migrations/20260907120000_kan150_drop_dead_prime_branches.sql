@@ -62,14 +62,16 @@
 -- a stale SECURITY DEFINER or search_path), reinforced by T-052's amendment
 -- (a CREATE OR REPLACE is a whole-body replacement, not a patch).
 --
---   CITATION PRECISION, checked rather than copied: AC4 cites "T-044 /
---   CONVENTIONS.md 6c, extended to functions", and the "extended to" is doing
---   real work -- CONVENTIONS.md 6c is titled "CREATE OR REPLACE VIEW silently
---   resets security_invoker" and is about VIEWS. It is the correct ANALOGUE,
---   not a direct citation, and I have written it as such rather than dropping
---   the qualifier. (Note also that CONVENTIONS.md was renumbered on 2026-09-07
---   after cto found two sections both numbered 6c; the REVOKE convention became
---   6f and 6c keeps the security_invoker trap. Verify the number before citing.)
+--   CITE CONVENTIONS.md 6g, NOT 6c. AC4 cites "T-044 / CONVENTIONS.md 6c,
+--   extended to functions" and the "extended to" was doing real work: 6c is
+--   titled "CREATE OR REPLACE VIEW silently resets security_invoker" and is
+--   the VIEW case -- only ever the analogue for functions. cto wrote the
+--   direct rule as 6g on 2026-09-07 ("CREATE OR REPLACE FUNCTION is a
+--   whole-body replacement -- author it from the live catalogue") precisely
+--   because it had lived only in T-058, T-052's amendment and scattered ACs,
+--   so every ticket re-derived it and this citation drifted. 6g is the one to
+--   cite. (CONVENTIONS.md was also renumbered the same day -- two sections
+--   were both 6c; the REVOKE convention became 6f. Check the number.)
 --
 -- NOTE THE ASYMMETRY -- it is easy to flatten in a rewrite:
 --   calculate_notification_score  prosecdef=false, provolatile='v' (VOLATILE)
@@ -226,10 +228,28 @@ CREATE OR REPLACE FUNCTION public.should_bypass_quiet_hours(p_user_id uuid, p_pr
 AS $function$
 BEGIN
 
-    -- KAN-150: the `-- Only Prime can bypass` branch was removed here. The
-    -- `prime` plan key is retired (P-039) with no replacement and 12a commits
-    -- no notification-priority product, so nothing bypasses quiet hours. The
-    -- v_plan lookup went with the branch -- it had no other consumer.
+    -- DORMANT, NOT ABANDONED. Nothing bypasses quiet hours right now because
+    -- the RULE WAS DELETED, not because anyone evaluated the question and
+    -- answered no. A bare `RETURN false` cannot tell those apart, so:
+    --
+    --   WHY: this function's only predicate was `v_plan = 'prime' AND
+    --   p_priority = 'high'`. P-039 retired the `prime` plan key with no
+    --   replacement (KAN-155 deletes the row); KAN-150 removed the now-dead
+    --   predicate, and `v_plan` went with it as its only consumer.
+    --
+    --   WHAT WOULD RESTORE IT: a ruled entitlement saying some plan may
+    --   deliver through quiet hours. None exists -- 12a commits no
+    --   notification-delivery product to any persona (P-041, checked across
+    --   all six), and 11b Feature 431 is the USER configuring quiet hours,
+    --   which is the opposite of the system overriding them (P-042).
+    --
+    --   IF THAT ENTITLEMENT IS EVER RULED, DO NOT HARDCODE A PLAN KEY HERE.
+    --   `subscription_features` already holds `quiet_override_all` and
+    --   `quiet_override_high` -- this concept AS DATA, per plan. Naming
+    --   'prime' in the body always duplicated what the entitlement table
+    --   already knew, which is why retiring one key broke it. The correct
+    --   shape reads the feature flag and names no plan key at all.
+    --   (cto, KAN-150 comment 10716. Not this ticket's to build.)
     RETURN false;
 
 END;
