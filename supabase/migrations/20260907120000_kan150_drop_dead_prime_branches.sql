@@ -56,8 +56,22 @@
 -- 'kickoff' because it enumerates the COLUMN `kickoff_at` on posts (a match
 -- start time) beside start_at/start_time/game_time. Unrelated to plans.
 --
--- Measured attributes, to be restated exactly and NOT inferred (AC4, T-044 /
--- CONVENTIONS.md 6c). NOTE THE ASYMMETRY -- it is easy to flatten in a rewrite:
+-- Measured attributes, to be restated exactly and NOT inferred. The governing
+-- rule for FUNCTIONS is T-058 (author a replacement from pg_get_functiondef on
+-- the live catalogue, because it emits attributes verbatim and cannot reproduce
+-- a stale SECURITY DEFINER or search_path), reinforced by T-052's amendment
+-- (a CREATE OR REPLACE is a whole-body replacement, not a patch).
+--
+--   CITATION PRECISION, checked rather than copied: AC4 cites "T-044 /
+--   CONVENTIONS.md 6c, extended to functions", and the "extended to" is doing
+--   real work -- CONVENTIONS.md 6c is titled "CREATE OR REPLACE VIEW silently
+--   resets security_invoker" and is about VIEWS. It is the correct ANALOGUE,
+--   not a direct citation, and I have written it as such rather than dropping
+--   the qualifier. (Note also that CONVENTIONS.md was renumbered on 2026-09-07
+--   after cto found two sections both numbered 6c; the REVOKE convention became
+--   6f and 6c keeps the security_invoker trap. Verify the number before citing.)
+--
+-- NOTE THE ASYMMETRY -- it is easy to flatten in a rewrite:
 --   calculate_notification_score  prosecdef=false, provolatile='v' (VOLATILE)
 --                                 search_path = public, pg_temp
 --     pg_get_functiondef emits NO volatility keyword for VOLATILE because it is
