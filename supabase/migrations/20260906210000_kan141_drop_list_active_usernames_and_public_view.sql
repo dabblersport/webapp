@@ -21,9 +21,18 @@
 --        the release flag.
 --
 --     SELECT relacl FROM pg_class WHERE relname = 'username_registry_public';
---     -> anon=rxtm/postgres  (anon holds SELECT)
+--     -> {postgres=arwdDxtm/postgres, anon=rxtm/postgres,
+--         authenticated=rxtm/postgres, service_role=arwdDxtm/postgres}
 --     SELECT proacl FROM pg_proc WHERE proname = 'list_active_usernames';
---     -> anon=X/postgres     (anon holds EXECUTE)
+--     -> {postgres=X/postgres, anon=X/postgres,
+--         authenticated=X/postgres, service_role=X/postgres}
+--
+--   State the FULL acl, not just the anon entry: `authenticated` holds
+--   EXECUTE too, and there is no PUBLIC (`=X/`) entry -- the baseline revoked
+--   from PUBLIC and granted explicitly, so both grant sources are accounted
+--   for and DROP removes all of them. The full acl STRENGTHENS the rejection
+--   below: gating on `auth.uid() IS NOT NULL` changes nothing for a role that
+--   already holds the grant.
 --
 --   The audit that flagged these three views probed as anon and saw 0 rows.
 --   That 0 is NOT enforced by anything -- public.username_registry simply
@@ -81,9 +90,15 @@
 --   anon all 143 rows of v_sport_profiles_with_user. Recorded as a standing
 --   rule in CONVENTIONS.md 12.
 --
--- G-002: authored by backend-4, NOT applied here. cto applies after
--- independently re-measuring the preconditions above and posting
--- verification back to KAN-141.
+-- G-028 (DECISIONS.md, 2026-09-07, amending G-002): backend-4 authors AND
+-- applies this migration. cto CONFIRMS and never runs it. Confirmation was
+-- posted on KAN-141 as comment 10685 (2026-09-07) after cto independently
+-- re-measured the preconditions above against the live catalogue; backend-4
+-- re-measured them again immediately before applying, and posts the
+-- verification results back to KAN-141.
+--
+-- (This trailer previously read "cto applies after independently
+-- re-measuring." That predated G-028 and named the wrong actor.)
 
 BEGIN;
 
@@ -95,7 +110,9 @@ DROP FUNCTION IF EXISTS public.list_active_usernames();
 COMMIT;
 
 -- ============================================================================
--- VERIFICATION -- to be run by whoever applies this (cto), not run here.
+-- VERIFICATION -- run by backend-4 immediately after applying (G-028), and
+-- posted back to KAN-141. That posting is what closes G-002 condition 4;
+-- cto's confirmation does not cover it.
 -- ============================================================================
 -- 1. Both objects are gone. Expect 0 and 0.
 --    SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
