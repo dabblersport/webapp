@@ -5,11 +5,11 @@
 import 'package:flutter/material.dart';
 import 'package:dabbler/themes/app_theme.dart';
 
-class SectionHeader extends StatelessWidget {
+class NotifSectionHeader extends StatelessWidget {
   final String title;
   final int count;
   final String? suffix;
-  const SectionHeader({
+  const NotifSectionHeader({
     super.key,
     required this.title,
     required this.count,

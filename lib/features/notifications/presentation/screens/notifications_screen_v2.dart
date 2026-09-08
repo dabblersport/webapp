@@ -14,7 +14,6 @@ import 'package:dabbler/features/activities/data/models/activity_feed_event.dart
 import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/notifications/utils/notification_localizer.dart';
 import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
 import '../widgets/notif_chips.dart';
@@ -22,31 +21,11 @@ import '../widgets/notif_list_states.dart';
 import '../widgets/notif_pill.dart';
 import '../widgets/notif_section_header.dart';
 import '../widgets/notif_top_bar.dart';
+import '../widgets/notif_empty_state.dart';
+import '../widgets/notif_row.dart';
+import '../widgets/notif_unread_counter_row.dart';
 import '../widgets/notif_visual.dart';
 import 'package:dabbler/widgets/app_background.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
-    show isFollowingProvider, profileIdByUserIdProvider, myProfileIdProvider;
-
-/// Whether the "Follow back" CTA should show on a follow notification —
-/// false when the recipient already follows the notification's sender.
-/// KAN-101: the CTA must not render on an already-mutual follow.
-final _followBackVisibleProvider =
-    FutureProvider.autoDispose.family<bool, String>((ref, actorUserId) async {
-      final myProfileId = await ref.watch(myProfileIdProvider.future);
-      if (myProfileId == null) return true;
-      final targetProfileId = await ref.watch(
-        profileIdByUserIdProvider(actorUserId).future,
-      );
-      if (targetProfileId == null) return true;
-      final alreadyFollowing = await ref.watch(
-        isFollowingProvider((
-          currentProfileId: myProfileId,
-          targetProfileId: targetProfileId,
-        )).future,
-      );
-      return !alreadyFollowing;
-    });
-
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
 
@@ -202,7 +181,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           ),
           if (isNotif)
             SliverToBoxAdapter(
-              child: _UnreadCounterRow(
+              child: UnreadCounterRow(
                 state: notificationState,
                 onMarkAll: () => ref
                     .read(notificationsControllerProvider(userId).notifier)
@@ -315,7 +294,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final filtered =
         _filterNotifications(state.notifications as List<AppNotification>);
     if (filtered.isEmpty) {
-      return const [SliverToBoxAdapter(child: _NotifEmptyState())];
+      return const [SliverToBoxAdapter(child: NotifEmptyState())];
     }
 
     final groups = <String, List<AppNotification>>{};
@@ -335,11 +314,11 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       final items = groups[key];
       if (items == null || items.isEmpty) continue;
       widgets.add(SliverToBoxAdapter(
-        child: SectionHeader(title: bucketLabels[key]!, count: items.length),
+        child: NotifSectionHeader(title: bucketLabels[key]!, count: items.length),
       ));
       widgets.add(SliverList.builder(
         itemCount: items.length,
-        itemBuilder: (context, i) => _NotificationRow(
+        itemBuilder: (context, i) => NotificationRow(
           notification: items[i],
           onTap: () => _handleNotificationTap(userId, items[i]),
         ),
@@ -403,7 +382,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final widgets = <Widget>[];
     grouped.forEach((day, items) {
       widgets.add(SliverToBoxAdapter(
-        child: SectionHeader(
+        child: NotifSectionHeader(
           title: day,
           count: items.length,
           suffix: 'events',
@@ -554,400 +533,6 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   Future<void> _refreshActivity() =>
       ref.read(activityFeedControllerProvider.notifier).refresh();
-}
-
-class _UnreadCounterRow extends StatelessWidget {
-  final dynamic state;
-  final VoidCallback onMarkAll;
-  const _UnreadCounterRow({required this.state, required this.onMarkAll});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    final accent = cs.error;
-    final unread = state.unreadCount as int;
-    final total = (state.notifications as List).length;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
-      child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                Iconsax.notification_copy,
-                size: 15,
-                color: cs.onSurface.withValues(alpha: 0.6),
-              ),
-              if (unread > 0)
-                Positioned(
-                  top: -2,
-                  right: -3,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withValues(alpha: 0.7),
-                          blurRadius: 6,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '$unread unread',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
-          ),
-          if (unread > 0) ...[
-            const SizedBox(width: 6),
-            TextButton.icon(
-              onPressed: onMarkAll,
-              icon: Icon(
-                Iconsax.tick_circle_copy,
-                size: 14,
-                color: scheme.primary,
-              ),
-              label: Text(
-                AppLocalizations.of(context).notif_mark_all_read,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.primary,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                minimumSize: const Size(0, 28),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            ),
-          ],
-          const Spacer(),
-          Text(
-            '$total total',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: cs.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationRow extends ConsumerWidget {
-  final AppNotification notification;
-  final VoidCallback onTap;
-  const _NotificationRow({required this.notification, required this.onTap});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cs = context.colorScheme;
-    final visual = _visualForKind(notification.kindKey, context);
-    final unread = !notification.isRead;
-    final actor = _actorFromPayload(notification.payload);
-
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
-        decoration: BoxDecoration(
-          color: unread ? cs.primaryContainer.withValues(alpha: 0.18) : null,
-          border: BorderDirectional(
-            bottom: BorderSide(color: context.colorTokens.stroke, width: 1),
-            start: BorderSide(
-              color: unread ? cs.primary : Colors.transparent,
-              width: 3,
-            ),
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 50,
-              height: 50,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          visual.color.withValues(alpha: 0.20),
-                          visual.color.withValues(alpha: 0.06),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: visual.color.withValues(alpha: 0.20),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Icon(visual.icon, color: visual.color, size: 20),
-                  ),
-                  if (actor != null)
-                    Positioned(
-                      bottom: -2,
-                      right: -2,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: cs.surface, width: 2),
-                        ),
-                        child: _AvatarChip(name: actor),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    localizedNotificationTitle(context, notification),
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: cs.onSurface.withValues(alpha: unread ? 1 : 0.7),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (notification.body != null &&
-                      notification.body!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      notification.body!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                        color: cs.onSurface.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 7),
-                  Row(
-                    children: [
-                      Text(
-                        _formatTime(context, notification.createdAt),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: cs.onSurface.withValues(alpha: 0.45),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _buildQuickAction(context, ref, notification),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            if (unread)
-              Container(
-                width: 9,
-                height: 9,
-                margin: const EdgeInsets.only(top: 4),
-                decoration: BoxDecoration(
-                  color: visual.color,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: visual.color.withValues(alpha: 0.7),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Returns the quick-action chip for [n], or an empty widget when no
-  /// action applies — or, for a follow notification, when the recipient
-  /// already follows the sender back (KAN-101).
-  Widget _buildQuickAction(
-    BuildContext context,
-    WidgetRef ref,
-    AppNotification n,
-  ) {
-    final label = _actionLabelFor(context, n.kindKey);
-    if (label == null) return const SizedBox.shrink();
-
-    if (n.kindKey.startsWith('social.followed')) {
-      final actorId = _actorUserId(n.payload);
-      if (actorId == null) return _quickAction(context, label);
-      final visible = ref.watch(_followBackVisibleProvider(actorId));
-      if (visible.valueOrNull != true) return const SizedBox.shrink();
-    }
-
-    return _quickAction(context, label);
-  }
-
-  String? _actorUserId(Map<String, dynamic>? ctx) {
-    if (ctx == null) return null;
-    final direct = ctx['actor_user_id'];
-    if (direct is String && direct.trim().isNotEmpty) return direct.trim();
-    for (final key in const ['follower_user_ids', 'actor_user_ids']) {
-      final list = ctx[key];
-      if (list is List && list.isNotEmpty) {
-        final first = list.first;
-        if (first is String && first.trim().isNotEmpty) return first.trim();
-      }
-    }
-    return null;
-  }
-
-  Widget _quickAction(BuildContext context, String label) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    final isPrimary = notification.kindKey.contains('invited') ||
-        notification.kindKey.contains('reminder');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isPrimary ? scheme.primary : Colors.transparent,
-        borderRadius: BorderRadius.circular(999),
-        border: isPrimary
-            ? null
-            : Border.all(
-                color: cs.onSurface.withValues(alpha: 0.10),
-                width: 1.5,
-              ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w700,
-          color: isPrimary ? cs.onPrimary : cs.onSurface,
-        ),
-      ),
-    );
-  }
-
-  String? _actionLabelFor(BuildContext context, String kindKey) {
-    final l10n = AppLocalizations.of(context);
-    if (kindKey.startsWith('friend.requested')) return l10n.notif_action_respond;
-    if (kindKey.startsWith('social.followed')) return l10n.notif_action_follow_back;
-    if (kindKey.startsWith('game.invited')) return l10n.notif_action_view;
-    if (kindKey.startsWith('social.circle_joined')) return l10n.notif_action_see_circle;
-    return null;
-  }
-
-  String? _actorFromPayload(Map<String, dynamic>? p) {
-    if (p == null) return null;
-    for (final k in const ['actor_username', 'actor_name', 'actor_user_name']) {
-      final v = p[k];
-      if (v is String && v.trim().isNotEmpty) return v.trim();
-    }
-    return null;
-  }
-}
-
-NotifVisual _visualForKind(String kindKey, BuildContext context) {
-  final cs = context.colorScheme;
-  if (kindKey.startsWith('social.post_liked') ||
-      kindKey.startsWith('social.comment_liked')) {
-    return NotifVisual(Iconsax.heart_copy, cs.error);
-  }
-  if (kindKey.startsWith('social.post_commented') ||
-      kindKey.startsWith('social.mentioned')) {
-    return NotifVisual(Iconsax.message_copy, cs.tertiary);
-  }
-  if (kindKey.startsWith('social.followed') || kindKey.startsWith('friend')) {
-    return NotifVisual(Iconsax.user_add_copy, cs.primary);
-  }
-  if (kindKey.startsWith('social.circle_joined')) {
-    return NotifVisual(Iconsax.people_copy, cs.primary);
-  }
-  if (kindKey.startsWith('booking') || kindKey.startsWith('arena')) {
-    return const NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
-  }
-  if (kindKey.startsWith('game')) {
-    return const NotifVisual(Iconsax.game_copy, DesignTokens.warning);
-  }
-  if (kindKey.startsWith('achievement') || kindKey.startsWith('reward')) {
-    return const NotifVisual(Iconsax.cup_copy, DesignTokens.warning);
-  }
-  if (kindKey.startsWith('loyalty')) {
-    return const NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
-  }
-  if (kindKey.startsWith('system')) {
-    return NotifVisual(Iconsax.warning_2_copy, cs.error);
-  }
-  return NotifVisual(Iconsax.notification_copy, cs.primary);
-}
-
-class _AvatarChip extends StatelessWidget {
-  final String name;
-  static const double size = 22;
-  const _AvatarChip({required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    final initials = name.isEmpty
-        ? '?'
-        : name
-            .split(RegExp(r'\s+|_'))
-            .where((s) => s.isNotEmpty)
-            .map((s) => s[0])
-            .take(2)
-            .join()
-            .toUpperCase();
-    final hue = (name.codeUnits.fold<int>(0, (a, b) => a + b) % 360);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            HSLColor.fromAHSL(1, hue.toDouble(), 0.65, 0.55).toColor(),
-            HSLColor.fromAHSL(1, ((hue + 50) % 360).toDouble(), 0.7, 0.45)
-                .toColor(),
-          ],
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-          fontSize: size * 0.36,
-        ),
-      ),
-    );
-  }
 }
 
 class _ActivitySummaryCard extends StatelessWidget {
@@ -1531,43 +1116,6 @@ class _ActivitySecurityFooter extends StatelessWidget {
   }
 }
 
-class _NotifEmptyState extends StatelessWidget {
-  const _NotifEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-      child: Column(
-        children: [
-          Icon(
-            Iconsax.notification_bing_copy,
-            size: 64,
-            color: cs.onSurface.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).notif_empty_no_notifications,
-            style: context.textTheme.headlineSmall?.copyWith(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context).notif_empty_subtitle,
-            textAlign: TextAlign.center,
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ActivityEmptyState extends StatelessWidget {
   const _ActivityEmptyState();
 
@@ -1603,15 +1151,4 @@ class _ActivityEmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatTime(BuildContext context, DateTime dateTime) {
-  final l10n = AppLocalizations.of(context);
-  final now = DateTime.now();
-  final diff = now.difference(dateTime);
-  if (diff.inMinutes < 1) return l10n.time_just_now;
-  if (diff.inHours < 1) return l10n.time_minutes_ago(diff.inMinutes);
-  if (diff.inDays < 1) return l10n.time_hours_ago(diff.inHours);
-  if (diff.inDays < 7) return l10n.time_days_ago(diff.inDays);
-  return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
 }

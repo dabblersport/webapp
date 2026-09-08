@@ -35,7 +35,7 @@ class ChipsRow extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final c = chips[i];
-          return Chip(
+          return NotifChip(
             data: c,
             active: c.key == activeKey,
             onTap: () => onChanged(c.key),
@@ -46,11 +46,11 @@ class ChipsRow extends StatelessWidget {
   }
 }
 
-class Chip extends StatelessWidget {
+class NotifChip extends StatelessWidget {
   final ChipData data;
   final bool active;
   final VoidCallback onTap;
-  const Chip({
+  const NotifChip({
     super.key,
     required this.data,
     required this.active,
