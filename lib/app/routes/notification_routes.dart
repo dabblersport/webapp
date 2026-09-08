@@ -12,14 +12,17 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler/app/app_router.dart';
 
-// Notifications route (hidden for MVP)
-// Route kept for deep links/admin access but UI entry points hidden
+// Notifications route. Live and reachable from ordinary UI — not deep-link- or
+// admin-only: app_top_bar.dart mounts a NotificationBadge and pushes this route
+// from the bell button, and main_navigation_screen.dart and
+// adaptive_destinations.dart both push it from main navigation. Access is gated
+// on FeatureFlags.notifications.
 RouteBase get notificationsRoute =>
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,
       path: RoutePaths.notifications,
       redirect: (context, state) {
-        // Notifications hidden for MVP
+        // Feature gate: the route is enabled by FeatureFlags.notifications.
         if (!FeatureFlags.notifications) {
           return RoutePaths.home;
         }
