@@ -17,6 +17,12 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/notifications/utils/notification_localizer.dart';
 import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
+import '../widgets/notif_chips.dart';
+import '../widgets/notif_list_states.dart';
+import '../widgets/notif_pill.dart';
+import '../widgets/notif_section_header.dart';
+import '../widgets/notif_top_bar.dart';
+import '../widgets/notif_visual.dart';
 import 'package:dabbler/widgets/app_background.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show isFollowingProvider, profileIdByUserIdProvider, myProfileIdProvider;
@@ -49,12 +55,10 @@ class NotificationsScreenV2 extends ConsumerStatefulWidget {
       _NotificationsScreenV2State();
 }
 
-enum _ViewMode { notifications, activity }
-
 class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   final AuthService _authService = AuthService();
   String _selectedFilter = 'all';
-  _ViewMode _mode = _ViewMode.notifications;
+  ViewMode _mode = ViewMode.notifications;
 
   @override
   void initState() {
@@ -64,12 +68,12 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     });
   }
 
-  void _setMode(_ViewMode mode) {
+  void _setMode(ViewMode mode) {
     setState(() {
       _mode = mode;
       _selectedFilter = 'all';
     });
-    if (mode == _ViewMode.activity) {
+    if (mode == ViewMode.activity) {
       ref.read(lastSeenActivityAtProvider.notifier).markNow();
     }
   }
@@ -129,14 +133,14 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         notificationState,
         activityState,
         hideToggle: true,
-        forceMode: _ViewMode.notifications,
+        forceMode: ViewMode.notifications,
       ),
       rightPanel: _buildScrollBody(
         userId,
         notificationState,
         activityState,
         hideToggle: true,
-        forceMode: _ViewMode.activity,
+        forceMode: ViewMode.activity,
       ),
     );
   }
@@ -161,10 +165,10 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     dynamic notificationState,
     dynamic activityState, {
     bool hideToggle = false,
-    _ViewMode? forceMode,
+    ViewMode? forceMode,
   }) {
     final mode = forceMode ?? _mode;
-    final isNotif = mode == _ViewMode.notifications;
+    final isNotif = mode == ViewMode.notifications;
 
     return RefreshIndicator(
       onRefresh: () => isNotif ? _refresh(userId) : _refreshActivity(),
@@ -174,14 +178,14 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         ),
         slivers: [
           SliverToBoxAdapter(
-            child: _TopBar(
+            child: TopBar(
               title: isNotif ? AppLocalizations.of(context).notif_title_notifications : AppLocalizations.of(context).notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
             ),
           ),
           SliverToBoxAdapter(
-            child: _ChipsRow(
+            child: ChipsRow(
               chips:
                   isNotif ? _notifChips(notificationState) : _activityChips(),
               activeKey: _selectedFilter,
@@ -218,7 +222,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           if (isNotif)
             SliverToBoxAdapter(
               child: notificationState.hasMore
-                  ? _LoadMoreButton(
+                  ? LoadMoreButton(
                       onPressed: () => ref
                           .read(notificationsControllerProvider(userId).notifier)
                           .loadMore(),
@@ -233,34 +237,34 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     );
   }
 
-  List<_ChipData> _notifChips(dynamic state) {
+  List<ChipData> _notifChips(dynamic state) {
     final notifs = (state.notifications as List<AppNotification>);
     final l10n = AppLocalizations.of(context);
     int countOf(bool Function(AppNotification) test) =>
         notifs.where((n) => !n.isRead && test(n)).length;
     return [
-      _ChipData('all', l10n.notif_chip_all, Iconsax.message_copy, count: state.unreadCount),
-      _ChipData(
+      ChipData('all', l10n.notif_chip_all, Iconsax.message_copy, count: state.unreadCount),
+      ChipData(
         'games',
         l10n.notif_chip_games,
         Iconsax.game_copy,
         count: countOf((n) => n.kindKey.startsWith('game')),
       ),
-      _ChipData(
+      ChipData(
         'bookings',
         l10n.notif_chip_bookings,
         Iconsax.calendar_copy,
         count: countOf((n) =>
             n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena')),
       ),
-      _ChipData(
+      ChipData(
         'social',
         l10n.notif_chip_social,
         Iconsax.people_copy,
         count: countOf((n) =>
             n.kindKey.startsWith('social') || n.kindKey.startsWith('friend')),
       ),
-      _ChipData(
+      ChipData(
         'achieve',
         l10n.notif_chip_achievements,
         Iconsax.cup_copy,
@@ -272,16 +276,16 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     ];
   }
 
-  List<_ChipData> _activityChips() {
+  List<ChipData> _activityChips() {
     final l10n = AppLocalizations.of(context);
     return [
-      _ChipData('all', l10n.notif_chip_all, Iconsax.activity_copy),
-      _ChipData('me', l10n.notif_chip_you, Iconsax.edit_copy),
-      _ChipData('game', l10n.notif_chip_games, Iconsax.game_copy),
-      _ChipData('booking', l10n.notif_chip_bookings, Iconsax.calendar_copy),
-      _ChipData('social', l10n.notif_chip_social, Iconsax.people_copy),
-      _ChipData('reward', l10n.notif_chip_rewards, Iconsax.coin_copy),
-      _ChipData('security', l10n.notif_chip_security, Iconsax.security_copy),
+      ChipData('all', l10n.notif_chip_all, Iconsax.activity_copy),
+      ChipData('me', l10n.notif_chip_you, Iconsax.edit_copy),
+      ChipData('game', l10n.notif_chip_games, Iconsax.game_copy),
+      ChipData('booking', l10n.notif_chip_bookings, Iconsax.calendar_copy),
+      ChipData('social', l10n.notif_chip_social, Iconsax.people_copy),
+      ChipData('reward', l10n.notif_chip_rewards, Iconsax.coin_copy),
+      ChipData('security', l10n.notif_chip_security, Iconsax.security_copy),
     ];
   }
 
@@ -298,7 +302,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       return [
         SliverFillRemaining(
           hasScrollBody: false,
-          child: _ErrorView(
+          child: ErrorView(
             message: state.error.toString(),
             onRetry: () => ref
                 .read(notificationsControllerProvider(userId).notifier)
@@ -331,7 +335,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       final items = groups[key];
       if (items == null || items.isEmpty) continue;
       widgets.add(SliverToBoxAdapter(
-        child: _SectionHeader(title: bucketLabels[key]!, count: items.length),
+        child: SectionHeader(title: bucketLabels[key]!, count: items.length),
       ));
       widgets.add(SliverList.builder(
         itemCount: items.length,
@@ -399,7 +403,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final widgets = <Widget>[];
     grouped.forEach((day, items) {
       widgets.add(SliverToBoxAdapter(
-        child: _SectionHeader(
+        child: SectionHeader(
           title: day,
           count: items.length,
           suffix: 'events',
@@ -550,317 +554,6 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   Future<void> _refreshActivity() =>
       ref.read(activityFeedControllerProvider.notifier).refresh();
-}
-
-class _TopBar extends StatelessWidget {
-  final String title;
-  final _ViewMode mode;
-  final ValueChanged<_ViewMode>? onModeChanged;
-
-  const _TopBar({
-    required this.title,
-    required this.mode,
-    required this.onModeChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-      child: Row(
-        children: [
-          _SquareIconButton(
-            icon: Iconsax.arrow_left_2_copy,
-            onTap: () =>
-                context.canPop() ? context.pop() : context.go('/home'),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: context.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: cs.onSurface,
-                letterSpacing: -0.4,
-              ),
-            ),
-          ),
-          if (onModeChanged != null)
-            _ModeToggle(mode: mode, onChanged: onModeChanged!),
-        ],
-      ),
-    );
-  }
-}
-
-class _SquareIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const _SquareIconButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: cs.onSurface.withValues(alpha: 0.10),
-            width: 1.5,
-          ),
-        ),
-        child: Icon(icon, size: 22, color: cs.onSurface),
-      ),
-    );
-  }
-}
-
-class _ModeToggle extends StatelessWidget {
-  final _ViewMode mode;
-  final ValueChanged<_ViewMode> onChanged;
-  const _ModeToggle({required this.mode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: cs.onSurface.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: cs.onSurface.withValues(alpha: 0.10),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleBtn(
-            context,
-            icon: Iconsax.notification_copy,
-            active: mode == _ViewMode.notifications,
-            color: scheme.primary,
-            onTap: () => onChanged(_ViewMode.notifications),
-          ),
-          const SizedBox(width: 2),
-          _toggleBtn(
-            context,
-            icon: Iconsax.activity_copy,
-            active: mode == _ViewMode.activity,
-            color: scheme.primary,
-            onTap: () => onChanged(_ViewMode.activity),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _toggleBtn(
-    BuildContext context, {
-    required IconData icon,
-    required bool active,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final cs = context.colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 36,
-        height: 34,
-        decoration: BoxDecoration(
-          color: active ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: active ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
-        ),
-      ),
-    );
-  }
-}
-
-class _ChipData {
-  final String key;
-  final String label;
-  final IconData icon;
-  final int? count;
-  const _ChipData(this.key, this.label, this.icon, {this.count});
-}
-
-class _ChipsRow extends StatelessWidget {
-  final List<_ChipData> chips;
-  final String activeKey;
-  final ValueChanged<String> onChanged;
-  const _ChipsRow({
-    required this.chips,
-    required this.activeKey,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-        itemCount: chips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, i) {
-          final c = chips[i];
-          return _Chip(
-            data: c,
-            active: c.key == activeKey,
-            onTap: () => onChanged(c.key),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final _ChipData data;
-  final bool active;
-  final VoidCallback onTap;
-  const _Chip({required this.data, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    final bg = active ? scheme.primary : cs.onSurface.withValues(alpha: 0.04);
-    final fg = active ? cs.onPrimary : cs.onSurface;
-    final borderColor =
-        active ? Colors.transparent : cs.onSurface.withValues(alpha: 0.10);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: borderColor, width: 1.5),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.33),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              data.icon,
-              size: 15,
-              color: active ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.7),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              data.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: fg,
-              ),
-            ),
-            if (data.count != null && data.count! > 0) ...[
-              const SizedBox(width: 7),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                constraints: const BoxConstraints(minWidth: 18),
-                decoration: BoxDecoration(
-                  color: active
-                      ? cs.onPrimary.withValues(alpha: 0.22)
-                      : cs.error,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${data.count}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final int count;
-  final String? suffix;
-  const _SectionHeader({
-    required this.title,
-    required this.count,
-    this.suffix,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final muted = cs.onSurface.withValues(alpha: 0.45);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
-                color: muted,
-              ),
-            ),
-          ),
-          Text(
-            suffix == null ? '$count' : '$count $suffix',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: muted,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _UnreadCounterRow extends StatelessWidget {
@@ -1178,44 +871,38 @@ class _NotificationRow extends ConsumerWidget {
   }
 }
 
-class _NotifVisual {
-  final IconData icon;
-  final Color color;
-  const _NotifVisual(this.icon, this.color);
-}
-
-_NotifVisual _visualForKind(String kindKey, BuildContext context) {
+NotifVisual _visualForKind(String kindKey, BuildContext context) {
   final cs = context.colorScheme;
   if (kindKey.startsWith('social.post_liked') ||
       kindKey.startsWith('social.comment_liked')) {
-    return _NotifVisual(Iconsax.heart_copy, cs.error);
+    return NotifVisual(Iconsax.heart_copy, cs.error);
   }
   if (kindKey.startsWith('social.post_commented') ||
       kindKey.startsWith('social.mentioned')) {
-    return _NotifVisual(Iconsax.message_copy, cs.tertiary);
+    return NotifVisual(Iconsax.message_copy, cs.tertiary);
   }
   if (kindKey.startsWith('social.followed') || kindKey.startsWith('friend')) {
-    return _NotifVisual(Iconsax.user_add_copy, cs.primary);
+    return NotifVisual(Iconsax.user_add_copy, cs.primary);
   }
   if (kindKey.startsWith('social.circle_joined')) {
-    return _NotifVisual(Iconsax.people_copy, cs.primary);
+    return NotifVisual(Iconsax.people_copy, cs.primary);
   }
   if (kindKey.startsWith('booking') || kindKey.startsWith('arena')) {
-    return const _NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
+    return const NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
   }
   if (kindKey.startsWith('game')) {
-    return const _NotifVisual(Iconsax.game_copy, DesignTokens.warning);
+    return const NotifVisual(Iconsax.game_copy, DesignTokens.warning);
   }
   if (kindKey.startsWith('achievement') || kindKey.startsWith('reward')) {
-    return const _NotifVisual(Iconsax.cup_copy, DesignTokens.warning);
+    return const NotifVisual(Iconsax.cup_copy, DesignTokens.warning);
   }
   if (kindKey.startsWith('loyalty')) {
-    return const _NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
+    return const NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
   }
   if (kindKey.startsWith('system')) {
-    return _NotifVisual(Iconsax.warning_2_copy, cs.error);
+    return NotifVisual(Iconsax.warning_2_copy, cs.error);
   }
-  return _NotifVisual(Iconsax.notification_copy, cs.primary);
+  return NotifVisual(Iconsax.notification_copy, cs.primary);
 }
 
 class _AvatarChip extends StatelessWidget {
@@ -1684,14 +1371,14 @@ class _ActivityRow extends StatelessWidget {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               if (_activityPill(context, event) != null)
-                                _Pill(
+                                Pill(
                                   label: _activityPill(context, event)!,
                                   color: visual.color,
                                 ),
                               if (event.timeBucket == 'upcoming')
-                                _Pill(label: AppLocalizations.of(context).activity_pill_upcoming, color: cs.primary),
+                                Pill(label: AppLocalizations.of(context).activity_pill_upcoming, color: cs.primary),
                               if (event.timeBucket == 'present')
-                                _Pill(label: AppLocalizations.of(context).activity_pill_live, color: cs.error),
+                                Pill(label: AppLocalizations.of(context).activity_pill_live, color: cs.error),
                             ],
                           ),
                         ],
@@ -1754,52 +1441,25 @@ class _ActivityRow extends StatelessWidget {
   }
 }
 
-class _Pill extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _Pill({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.30), width: 1),
-      ),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.4,
-          color: color,
-        ),
-      ),
-    );
-  }
-}
-
-_NotifVisual _activityVisual(ActivityFeedEvent e, BuildContext context) {
+NotifVisual _activityVisual(ActivityFeedEvent e, BuildContext context) {
   final cs = context.colorScheme;
   switch (e.subjectType) {
     case 'game':
-      return const _NotifVisual(Iconsax.game_copy, DesignTokens.warning);
+      return const NotifVisual(Iconsax.game_copy, DesignTokens.warning);
     case 'booking':
-      return const _NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
+      return const NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
     case 'social':
-      return _NotifVisual(Iconsax.people_copy, cs.primary);
+      return NotifVisual(Iconsax.people_copy, cs.primary);
     case 'reward':
-      return const _NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
+      return const NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
     case 'security':
-      return const _NotifVisual(Iconsax.security_copy, DesignTokens.success);
+      return const NotifVisual(Iconsax.security_copy, DesignTokens.success);
     case 'payment':
-      return const _NotifVisual(Iconsax.card_copy, DesignTokens.success);
+      return const NotifVisual(Iconsax.card_copy, DesignTokens.success);
     case 'post':
-      return _NotifVisual(Iconsax.edit_copy, cs.primary);
+      return NotifVisual(Iconsax.edit_copy, cs.primary);
     default:
-      return _NotifVisual(
+      return NotifVisual(
         Iconsax.info_circle_copy,
         cs.onSurface.withValues(alpha: 0.5),
       );
@@ -1865,42 +1525,6 @@ class _ActivitySecurityFooter extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LoadMoreButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  const _LoadMoreButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
-      child: Center(
-        child: OutlinedButton(
-          onPressed: onPressed,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(999),
-            ),
-            side: BorderSide(
-              color: cs.onSurface.withValues(alpha: 0.10),
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            AppLocalizations.of(context).notif_load_older,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
         ),
       ),
     );
@@ -1975,31 +1599,6 @@ class _ActivityEmptyState extends StatelessWidget {
               color: cs.onSurface.withValues(alpha: 0.6),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, size: 40),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(AppLocalizations.of(context).notif_error_prefix(message), textAlign: TextAlign.center),
-          ),
-          const SizedBox(height: 12),
-          TextButton(onPressed: onRetry, child: Text(AppLocalizations.of(context).notif_btn_retry)),
         ],
       ),
     );
