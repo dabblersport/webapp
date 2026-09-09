@@ -25,6 +25,18 @@ import { test as base, expect } from '@playwright/test';
  *    way — a spec that wants to check auth behaviour some other day
  *    still can; this fixture only stops it from being an unexplained
  *    failure reason.
+ *
+ * Separately: Auth Welcome eagerly loads Google Identity Services
+ * (`accounts.google.com/gsi/client`) regardless of which button is
+ * tapped — measured to throw asynchronously back into our Dart callback
+ * (an uncaught page error) when it runs against a non-functional
+ * placeholder OAuth client ID, on a timer that made it intermittent
+ * rather than immediate. None of this harness's scenarios exercise real
+ * Google sign-in, so this fixture blocks that third-party origin at the
+ * network level — the same call any e2e harness makes to keep a real,
+ * live third party from being an untested, flaky dependency of a test
+ * that isn't about it. It is not a suppression of an error our own code
+ * produces; nothing from Google ever runs in this harness.
  */
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 
@@ -32,6 +44,10 @@ export const test = base.extend({
   page: async ({ page }, use, testInfo) => {
     const unexpectedErrors: string[] = [];
     let classifiedPlaceholder401Seen = false;
+
+    await page.route('https://accounts.google.com/**', (route) =>
+      route.abort(),
+    );
 
     page.on('pageerror', (err) => {
       unexpectedErrors.push(`pageerror: ${err.message}`);

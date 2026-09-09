@@ -25,8 +25,17 @@ test('auth welcome offers both Google and Email continue controls, enabled', asy
   // rather than assuming the earlier enable carried over.
   await enableSemantics(page);
 
-  const googleButton = page.getByRole('button', { name: /google/i });
-  const emailButton = page.getByRole('button', { name: /email/i });
+  // Disambiguated per KAN-166 AC-4 (amended): a bare /continue/i matches
+  // BOTH "Continue with Google" and "Continue with Email" on this screen
+  // (2 results -> Playwright strict-mode failure), so the names must be
+  // specific here. Landing's Continue button above stays a bare
+  // /continue/i because it is the only match there.
+  const googleButton = page.getByRole('button', {
+    name: /continue with google/i,
+  });
+  const emailButton = page.getByRole('button', {
+    name: /continue with email/i,
+  });
 
   await expect(googleButton).toBeVisible();
   await expect(googleButton).toBeEnabled();
