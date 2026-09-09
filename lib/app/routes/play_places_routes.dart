@@ -160,7 +160,10 @@ RouteBase get activitiesRoute =>
     );
 
 // Game Creation Routes - Differentiated by profile type
-// Organisers can create, players cannot (MVP)
+// Access is gated per profile type by FeatureFlags.enablePlayerGameCreation /
+// enableOrganiserGameCreation (feature_flags.dart) in the redirect below —
+// not a fixed MVP restriction that always blocks one side. Check the flags'
+// current values rather than assuming from this comment.
 RouteBase get createGameRoute =>
     GoRoute(
       path: RoutePaths.createGame,
