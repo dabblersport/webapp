@@ -63,7 +63,7 @@ class FeatureFlags {
   // ============================================================================
   // ANALYTICS-ONLY FLAGS
   // ============================================================================
-  // KAN-32 judgment call: these 5 are read only by the flags_snapshot
+  // KAN-32 judgment call: these 4 are read only by the flags_snapshot
   // analytics event in lib/main.dart:78-93. Unlike the deleted 98, that read
   // has a real consequence — AnalyticsService.trackEvent forwards to the
   // live `rpc_track_event` RPC, which writes into the `analytics_events`
@@ -72,7 +72,6 @@ class FeatureFlags {
   // telemetry dimensions, so they are kept rather than removed.
   static const bool multiSport = true;
   static const bool organiserProfile = true;
-  static const bool squads = true;
   static const bool venuesBooking = true; // venues remain read-only
   static const bool enableBookingFlow = true;
 
