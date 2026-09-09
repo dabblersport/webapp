@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/fixtures';
 import { enableSemantics } from './support/semantics';
 import { RoutePaths } from './support/route-paths';
 

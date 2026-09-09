@@ -19,7 +19,7 @@ const repoRoot = path.resolve(here, '..', '..', '..');
 // so a real CI-injected value is never shadowed by a stale local file.
 const envFile = path.join(here, '..', '.env.e2e');
 if (existsSync(envFile)) {
-  loadDotenv({ path: envFile });
+  loadDotenv({ path: envFile, quiet: true });
 }
 
 const REQUIRED = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'APP_NAME', 'ENVIRONMENT'];

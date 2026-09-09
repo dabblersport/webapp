@@ -1,4 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { config as loadDotenv } from 'dotenv';
+
+// tests/e2e/support/fixtures.ts needs SUPABASE_URL at test-process time (to
+// classify the placeholder-401 network response), same as
+// tests/e2e/support/build-web.mjs needs it at build time. process.env
+// always wins, same precedence rule as the build script.
+const envFile = path.join(__dirname, 'tests', 'e2e', '.env.e2e');
+if (existsSync(envFile)) {
+  loadDotenv({ path: envFile, quiet: true });
+}
 
 // Timing/retry bounds are CEO Sec20 ceilings (confirmed, KAN-166 comment
 // 2026-09-09T21:25) — not targets. Raising any of these requires evidence,
