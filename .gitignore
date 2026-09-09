@@ -206,3 +206,10 @@ ios/Runner */
 # Signing certificates exported for App Links / Play verification —
 # public certs, but build scratch that does not belong in the repo
 *.der
+
+# Playwright e2e harness (KAN-166) — reports, artifacts, and any local
+# test-safe env/auth state. Never commit these.
+/playwright-report/
+/test-results/
+/tests/e2e/.env.e2e
+/tests/e2e/.auth/

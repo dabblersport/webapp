@@ -8,7 +8,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "e2e:build": "node tests/e2e/support/build-web.mjs",
+    "test:e2e": "npm run e2e:build && playwright test",
+    "test:e2e:failing": "npm run e2e:build && playwright test --config=playwright.failing.config.ts"
   },
   "repository": {
     "type": "git",
@@ -26,5 +29,8 @@
     "@supabase/supabase-js": "^2.76.0",
     "dotenv": "^17.2.3",
     "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
   }
 }
