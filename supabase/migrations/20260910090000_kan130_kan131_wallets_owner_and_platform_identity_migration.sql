@@ -285,10 +285,31 @@ $$;
 -- Placed with the other pre-auth.users deletes, before the final delete, and
 -- keyed the same way the new wallets_self_read policy is keyed.
 --
--- OWED, NOT WRITTEN HERE: cpo's financial_ledger retention ruling (KAN-135)
--- belongs in this comment block once it exists (T-051). financial_ledger is
--- absent from the cascade list below and always has been; that is KAN-135's
--- question, not this migration's.
+-- RETENTION, NOW RULED (KAN-172). This block previously recorded the
+-- financial_ledger position as still owed and deferred it to KAN-135. It is no
+-- longer owed: cpo ruled it in P-036 (DECISIONS.md, ruled
+-- 2026-09-06, on the question T-054 routed out of KAN-135). The ruling is
+-- RETAIN AND DISCLOSE. financial_ledger is kept as a financial record and is
+-- deliberately absent from the cascade list below — that absence is a decision,
+-- not an oversight, and it stays.
+--
+-- The two alternatives were rejected on cto's technical analysis, which P-036
+-- adopts rather than re-derives: deleting the user's own debit leaves a
+-- double-entry journal unbalanced for counterparties who never asked to be
+-- erased, and scrubbing entity_id while booking_id and payment_intent_id still
+-- lead back to the user is "anonymisation in appearance only".
+--
+-- NO RETENTION PERIOD IS STATED, and that is deliberate. P-036 is explicit that
+-- a period is a legal determination — obtained, not ruled — and it waits on the
+-- PDPL legal review (12b §I.2 Flag 3, budgeted and unspent). Its documented home
+-- is a fourth bullet in `11` v2 §I.4, beside the three retention categories
+-- already there; financial and payment records are not among those three. po
+-- writes that bullet. This migration must not invent the number.
+--
+-- What a reader of this function should also know: the three in-app deletion
+-- strings promising total erasure overpromise against this position
+-- (KAN-137 -> KAN-160/KAN-161). They are true today only because
+-- financial_ledger holds zero rows.
 
 create or replace function public.delete_my_account() returns void
     language plpgsql security definer
@@ -345,8 +366,12 @@ begin
   -- profiles, posts, comments, likes, notifications, user_blocks,
   -- moderation_reports, consent_records, fcm_tokens, etc. NOTE: `wallets` was
   -- removed from this list by KAN-130 and is handled explicitly above.
-  -- financial_ledger is NOT in this list and never was — its retention position
-  -- is KAN-135 (T-054), deliberately unruled here.
+  -- financial_ledger is NOT in this list and never was, and per cpo's P-036
+  -- (ruled 2026-09-06) that absence is DELIBERATE: financial records are
+  -- RETAINED, not erased, because deleting one side of a double-entry journal
+  -- unbalances it for counterparties who never asked to be erased. No retention
+  -- period is fixed yet — that is a legal determination pending PDPL review, and
+  -- this function must not assume one.
   delete from auth.users where id = v_uid;
 end;
 $$;
