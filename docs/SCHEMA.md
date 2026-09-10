@@ -597,8 +597,37 @@ the exposure it was meant to catch. The control and the exposure sat on differen
 object classes.
 
 **What the gate fails on.** Not "is `SECURITY DEFINER`" and not "is anon-executable" — those
-are 303 and 292 functions respectively, reported as a census on every run and never failing,
-because an allowlist nobody can maintain goes green by exhaustion. It fails on the narrow
+are **303** and **1,746** functions respectively (of 1,761 in `public`; their intersection is
+290), reported as a census on every run and never failing, because an allowlist nobody can
+maintain goes green by exhaustion.
+
+> Those four figures were measured against `wtncuzcskpigqpmnxwws` on **2026-09-10** by
+> `backend-5`. They are reproducible — the gate prints them live on every run, and the same
+> numbers come from `anon_function_census_sql()` in `scripts/ci/anon_function_grants_diff.sh`:
+>
+> ```sql
+> SELECT count(*)                                                    AS all_functions,
+>        count(*) FILTER (WHERE p.prosecdef)                          AS security_definer,
+>        count(*) FILTER (WHERE has_function_privilege('anon', p.oid, 'EXECUTE'))
+>                                                                     AS anon_executable,
+>        count(*) FILTER (WHERE p.prosecdef
+>                     AND has_function_privilege('anon', p.oid, 'EXECUTE')) AS both
+>   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+>  WHERE n.nspname = 'public' AND p.prokind = 'f';
+> ```
+>
+> **Prefer the gate's own printed census to this paragraph.** These numbers drift; the
+> command does not. (Corrected 2026-09-10: this said "303 and 292", attributing the `both`
+> count to the anon-executable bullet and understating that population ~6×.)
+>
+> **`303 / 1,746 / 290` were independently measured twice** — by `backend-5` and by
+> `backend-7`, separately, on 2026-09-10, agreeing exactly. **The `1,761` total-functions
+> denominator rests on `backend-5`'s reading alone** and has never been reproduced: the
+> Supabase token expired before `backend-7` could check it. Re-verify that one figure when
+> database access returns. It is the only number here with a single source, and this section
+> exists because an unchecked number sat in it for weeks.
+
+It fails on the narrow
 intersection: **`SECURITY DEFINER`, effectively executable by `anon`, taking a uuid argument
 whose name denotes a PERSON, whose body never COMPARES that argument to `auth.uid()`.** That
 is a function which lets an unauthenticated caller choose whose data to act on while running
@@ -609,9 +638,11 @@ demonstrated failing against fabricated cases in `check_anon_function_grants_tes
 
 * **It never text-matches `proacl` for `anon`.** A bare `=X/postgres` entry is a grant to
   `PUBLIC` that `anon` inherits, so a function whose ACL never names `anon` is still callable
-  by it. 60 of the 292 are reachable only that way. `has_function_privilege` is required.
-* **It requires a COMPARISON to `auth.uid()`, not a mention.** Of 76 functions carrying an
-  identity argument, 47 mention `auth.uid()` and only **2** compare the argument to it. The
+  by it. 60 of the 292 definer+anon functions (2026-09-10 reading; 290 later that day) are
+  reachable only that way. `has_function_privilege` is required.
+* **It requires a COMPARISON to `auth.uid()`, not a mention.** Of the functions carrying an
+  identity argument (76 at the first 2026-09-10 reading, 74 after two were contained), 47
+  mentioned `auth.uid()` and only **2** compared the argument to it. The
   common shape is `v := COALESCE(p_user_id, auth.uid())`, which reads as authentication and is
   not — supply any uuid and you win. `rpc_get_friends(p_user_id uuid)` does exactly this today.
 * **It does not require a same-named overload.** An earlier draft did, on the
@@ -624,11 +655,19 @@ never in `prosrc`, so testing the body ignores it automatically.
 
 **THIS LIST IS A MEASURED BASELINE OF EXISTING DEBT, NOT A CERTIFICATE OF SAFETY.** Every
 signature below was flagged by the predicate on 2026-09-10 and is recorded so the gate can
-detect the 75st. Several are plainly alarming on their face — `admin_cleanup_user_data`,
+detect the 75th. Several are plainly alarming on their face — `admin_cleanup_user_data`,
 `rpc_admin_freeze_user`, `admin_take_action`, `request_payout`, `set_session_user`,
 `is_admin(p_user uuid)` — and **nothing here says they are acceptable**. Triaging them is
 separate work; freezing the population so it cannot silently grow is this gate's job.
 **Removing a name from this list by fixing the function is always the preferred direction.**
+
+**The live set may be SMALLER than this list, and that is not a failure.** The diff is
+one-directional by design (`comm -23 live allowlist`), matching §2f: a signature that leaves
+the flagged set because someone fixed the function is a stale entry to tidy, never a red build.
+Verified 2026-09-10 by `backend-5`: `create_system_post` and `process_notification_event` were
+contained by `REVOKE` after this baseline was taken — both now resolve
+`has_function_privilege('anon', …)` false — so 72 of the 74 below are live and the gate is
+correctly green. That is the preferred direction stated above, actually happening.
 
 **Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
 reviewable diff is the whole mechanism. Do not add one to make the gate pass without

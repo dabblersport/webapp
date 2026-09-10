@@ -21,22 +21,49 @@
 #   2. `anon` holds EXECUTE **effectively** — has_function_privilege(), never a
 #      text match on proacl. A bare `=X/postgres` ACL entry is a grant to PUBLIC
 #      which `anon` inherits, so a function whose proacl never names `anon` can
-#      still be called by it. Measured on wtncuzcskpigqpmnxwws 2026-09-10:
-#      60 of the 292 SECURITY DEFINER + anon-executable functions are reachable
-#      ONLY through that bare PUBLIC grant and are invisible to string matching;
+#      still be called by it. Measured on wtncuzcskpigqpmnxwws 2026-09-10: of the
+#      SECURITY DEFINER + anon-executable population (292 at the time of that
+#      reading, 290 later the same day as functions were contained), 60 were
+#      reachable ONLY through that bare PUBLIC grant and invisible to a string
+#      match. The ratio is the point, not the integer — read the printed census;
 #   3. it takes a uuid argument whose NAME denotes a person rather than a thing;
-#   4. its body never COMPARES that argument to auth.uid().
+#   4. its body never COMPARES **that** argument to auth.uid() — and it is flagged
+#      if ANY ONE of its identity arguments is unguarded, not merely the first.
+#
+# On (4)'s "ANY ONE", added 2026-09-10 (KAN-175 AC7, found by backend-7 and
+# reproduced by backend-5 in peer review): an earlier draft selected a single
+# identity argument with `LIMIT 1` and tested only that one. A function which
+# guards its FIRST identity argument and leaves a SECOND one caller-controlled
+# was therefore cleared outright. That is not hypothetical — the fabricated
+# case in the self-test,
+#
+#     rpc_second_arg_unguarded(p_user_id uuid, p_profile_id uuid)
+#       IF p_user_id <> auth.uid() THEN RAISE ...          -- first arg guarded
+#       RETURN 'data for ' || p_profile_id                 -- second NEVER checked
+#
+# is a genuine anon-reachable read of another user's data, and the LIMIT 1 form
+# returned NOTHING for it. Four live functions carry two identity arguments
+# (can_view_post, is_blocked, rpc_rate_user, rpc_squad_create); all four happen
+# to be flagged on their first argument anyway, so there was no live miss — but
+# that was luck, not coverage, and luck is what this ticket exists to remove.
+# The EXISTS form below is non-regressive: measured against wtncuzcskpigqpmnxwws
+# on 2026-09-10 it returns the same population of 72 as the LIMIT 1 form.
 #
 # On (3): the vocabulary below was derived from the live catalogue, not guessed.
-# Enumerating every uuid argument name on the 292 shows the split plainly —
+# Enumerating every uuid argument name across the definer + anon-executable
+# population (292 at the 2026-09-10 reading) shows the split plainly —
 # p_game_id, p_post_id, p_venue_id, p_squad_id are object identifiers and carry
 # no impersonation risk, while p_user_id, p_profile_id, p_me, p_actor, p_peer
 # denote a person and are what an attacker substitutes.
 #
 # On (4), and this is the part that matters most: the test is COMPARISON, not
-# mention. Of the 76 functions carrying an identity argument, 47 mention
-# auth.uid() somewhere in the body and only 2 actually compare the argument to
-# it. The classic bypass is
+# mention. Measured 2026-09-10: of the functions carrying an identity argument
+# (76 at the first reading that day, 74 later once two were contained), 47
+# mentioned auth.uid() somewhere in the body and only 2 actually compared an
+# argument to it. The 47-vs-2 gap is the finding; the totals drift and the two
+# figures above were taken at slightly different moments, so treat them as
+# orientation and re-derive from the catalogue if a number has to be exact.
+# The classic bypass is
 #
 #     v_user_id := COALESCE(p_user_id, auth.uid());
 #
@@ -88,13 +115,9 @@ WITH f AS (
   SELECT p.oid,
          p.proname,
          p.prosrc,
-         pg_get_function_identity_arguments(p.oid) AS idargs,
-         (SELECT a.nm
-            FROM unnest(coalesce(p.proargnames, ARRAY[]::text[]),
-                        p.proargtypes::oid[]) AS a(nm, ty)
-           WHERE ty = 'uuid'::regtype
-             AND a.nm ~ '(^|_)(me|user|users|profile|actor|peer|rater|ratee|author|owner|captain|beneficiary|creator|member|viewer|recipient|sender|follower|friend)(_|$)'
-           LIMIT 1) AS id_arg
+         p.proargnames,
+         p.proargtypes,
+         pg_get_function_identity_arguments(p.oid) AS idargs
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
    WHERE n.nspname = 'public'
@@ -104,10 +127,16 @@ WITH f AS (
 )
 SELECT proname || '(' || idargs || ')'
   FROM f
- WHERE id_arg IS NOT NULL
-   AND NOT (
-         prosrc ~ ('(?i)' || id_arg || '\s*(=|<>|!=|is\s+distinct\s+from|is\s+not\s+distinct\s+from)\s*auth\.uid\(\)')
-      OR prosrc ~ ('(?i)auth\.uid\(\)\s*(=|<>|!=|is\s+distinct\s+from|is\s+not\s+distinct\s+from)\s*' || id_arg)
+ WHERE EXISTS (
+         SELECT 1
+           FROM unnest(coalesce(f.proargnames, ARRAY[]::text[]),
+                       f.proargtypes::oid[]) AS a(nm, ty)
+          WHERE ty = 'uuid'::regtype
+            AND a.nm ~ '(^|_)(me|user|users|profile|actor|peer|rater|ratee|author|owner|captain|beneficiary|creator|member|viewer|recipient|sender|follower|friend)(_|$)'
+            AND NOT (
+                  f.prosrc ~ ('(?i)' || a.nm || '\s*(=|<>|!=|is\s+distinct\s+from|is\s+not\s+distinct\s+from)\s*auth\.uid\(\)')
+               OR f.prosrc ~ ('(?i)auth\.uid\(\)\s*(=|<>|!=|is\s+distinct\s+from|is\s+not\s+distinct\s+from)\s*' || a.nm)
+                )
        )
  ORDER BY 1;
 SQL
@@ -116,9 +145,22 @@ SQL
 # ------------------------------------------------------------------ the census
 #
 # AC1's first two bullets. REPORTED, NEVER FAILING. Both populations are far too
-# large to allowlist name-by-name (303 and 292 live), and a gate whose baseline
-# nobody can maintain goes green by exhaustion rather than by being satisfied.
-# They are printed so a human sees the shape of the estate move over time.
+# large to allowlist name-by-name — measured 2026-09-10, SECURITY DEFINER was 303
+# and effectively anon-executable was 1,746 of 1,761 public functions — and a gate
+# whose baseline nobody can maintain goes green by exhaustion rather than by being
+# satisfied. They are printed so a human sees the shape of the estate move.
+#
+# THE FIGURE ABOVE WAS WRONG UNTIL 2026-09-10 (KAN-175 AC6). This comment read
+# "(303 and 292 live)", which pairs the SECURITY DEFINER count with `both` and
+# presents it as the anon-executable population — understating that population
+# roughly SIX-FOLD. The SQL below always computed all four correctly and prints
+# them under their own labels; only the prose was wrong. That is the whole trap
+# AC6 exists to close, and it appeared in three separate places in this repo,
+# including here, three lines above the correct query.
+#
+# So: PREFER THE PRINTED CENSUS TO ANY NUMBER WRITTEN IN A COMMENT. Counts drift
+# as functions are contained; the query does not. Numbers quoted in this file are
+# dated snapshots for orientation, never the authority.
 anon_function_census_sql() {
   cat <<'SQL'
 SELECT

@@ -39,17 +39,26 @@ project had; the view gate ran green throughout the live window of the exposure 
 supposed to catch. This script covers the function class. It shares `SUPABASE_DB_URL` with
 the view gate and needs no extra secret.
 
-It prints a **census** (SECURITY DEFINER: 303; anon-executable: 292; both: 292 — measured
-2026-09-10) which **never fails the build**, and fails on a narrow predicate: a function that
-is `SECURITY DEFINER`, effectively executable by `anon`, takes a uuid argument whose name
-denotes a person, and **never compares that argument to `auth.uid()`**. 74 live signatures
-are recorded in `docs/SCHEMA.md` §2g as a baseline; a 75th turns the build red.
+It prints a **census** — of 1,761 `public` functions: `SECURITY DEFINER` 303; effectively
+`anon`-executable **1,746**; both 290 (measured 2026-09-10) — which **never fails the build**,
+and fails on a narrow predicate: a function that is `SECURITY DEFINER`, effectively executable
+by `anon`, takes a uuid argument whose name denotes a person, and **never compares that
+argument to `auth.uid()`**. 74 live signatures are recorded in `docs/SCHEMA.md` §2g as a
+baseline; any flagged signature not on that list turns the build red.
+
+*(The anon-executable figure was stated as 292 until 2026-09-10, when `backend-5` measured it
+during the KAN-175 peer review. 292 is the `both` count; the anon-executable population is
+~6× larger. The script itself was always correct — it prints the live value under its own
+label — so this was prose drift, never a gate defect. Read the census output, not this
+paragraph, for current numbers. The derivation command and date are recorded in
+`docs/SCHEMA.md` §2g so the next drift is checkable rather than a matter of trust.)*
 
 Three traps it is built around, each demonstrated failing in the self-test:
 
 - **`has_function_privilege`, never a text match on `proacl`.** A bare `=X/postgres` entry
-  grants `PUBLIC`, which `anon` inherits — 60 of the 292 are reachable only that way and are
-  invisible to string matching.
+  grants `PUBLIC`, which `anon` inherits — 60 of the 292 definer+anon functions (2026-09-10
+  reading; 290 later that day) are reachable only that way and are invisible to string
+  matching.
 - **Comparison, not mention.** 47 identity-taking functions mention `auth.uid()`; only **2**
   compare an argument to it. `COALESCE(p_user_id, auth.uid())` reads as authentication and is
   not.

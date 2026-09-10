@@ -119,6 +119,19 @@ DECLARE v uuid;
 BEGIN v := COALESCE(p_profile_id, auth.uid()); RETURN v::text; END $$;
 GRANT EXECUTE ON FUNCTION public.rpc_coalesce_fallback(uuid) TO anon;
 
+-- CASE J (must FLAG): KAN-175 AC7. The FIRST identity argument is properly
+-- guarded; the SECOND is caller-controlled and never checked. The earlier
+-- LIMIT 1 predicate selected one identity argument and tested only that one,
+-- so it returned NOTHING for this function while `anon` could read any
+-- profile it named. Regression case for the EXISTS form.
+CREATE FUNCTION public.rpc_second_arg_unguarded(p_user_id uuid, p_profile_id uuid)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  IF p_user_id <> auth.uid() THEN RAISE EXCEPTION 'not your data'; END IF;
+  RETURN 'data for ' || p_profile_id::text;
+END $$;
+GRANT EXECUTE ON FUNCTION public.rpc_second_arg_unguarded(uuid, uuid) TO anon;
+
 -- CASE F (must NOT flag): properly guarded. Compares the argument to auth.uid().
 CREATE FUNCTION public.rpc_properly_guarded(p_user_id uuid)
 RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
@@ -158,6 +171,12 @@ psql_t -tAc "SELECT public.rpc_fetch_locker_contents('00000000-0000-0000-0000-00
 psql_t -tAc "SELECT public.rpc_properly_guarded('00000000-0000-0000-0000-000000000001');" >/dev/null 2>&1 \
   && { echo "FAIL: the guarded fixture should have raised, so it is not exercising its guard." >&2; exit 1; } \
   || true
+# CASE J must be a REAL exposure, not merely a shape the regex matches: passing the
+# caller's own id as the guarded first argument satisfies the guard, and the second
+# argument then returns data for a user the caller never proved they are.
+psql_t -tAc "SELECT public.rpc_second_arg_unguarded('00000000-0000-0000-0000-0000000000ff','11111111-1111-1111-1111-111111111111');" \
+  | grep -q '11111111-1111-1111-1111-111111111111' \
+  || { echo "FAIL: CASE J did not actually leak the second argument's data, so it is not the exposure it claims to be." >&2; exit 1; }
 echo "Fixtures seeded and confirmed executable."
 echo
 
@@ -177,6 +196,7 @@ must_flag "rpc_export_member_dossier(p_member_ref uuid, p_format text)"
 must_flag "rpc_public_grant_only(p_viewer_id uuid)"
 must_flag "rpc_decorated_default(p_user_id uuid)"
 must_flag "rpc_coalesce_fallback(p_profile_id uuid)"
+must_flag "rpc_second_arg_unguarded(p_user_id uuid, p_profile_id uuid)"
 echo
 echo "--- Cases that MUST NOT be caught (false-positive control) ---"
 must_not_flag "rpc_properly_guarded(p_user_id uuid)"
