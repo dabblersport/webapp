@@ -8,13 +8,16 @@ Runs in `.github/workflows/anon-allowlist-check.yml` on push to `Canary` and on 
 `docs/SCHEMA.md` §2f.
 
 **Requires a `SUPABASE_DB_URL` GitHub Actions secret** — a direct Postgres connection
-string for `wtncuzcskpigqpmnxwws` (Project Settings → Database → Connection string). This
-does **not exist yet** as of this ticket landing; only `SUPABASE_URL` /
-`SUPABASE_ANON_KEY` / `SUPABASE_PUBLISHABLE_KEY` are provisioned, and those go through
-PostgREST, not a raw SQL connection, so they cannot run this query. The script fails loudly
-with an explanation if the secret is unset, rather than silently skipping the gate. Adding
-the secret needs the DB password, which version-control does not hold — cto or the PO
-needs to add it in the repo's Actions secrets.
+string for `wtncuzcskpigqpmnxwws` (Project Settings → Database → Connection string). The
+script fails loudly with an explanation if the secret is unset, rather than silently
+skipping the gate.
+
+*(Corrected 2026-09-10, KAN-175. This paragraph said the secret did "not exist yet" and
+that cto or the PO needed to add it. It was provisioned **2026-08-29**, and
+`gh run list --workflow=anon-allowlist-check.yml` shows the gate completing **success** in
+8–20s on every push to `Canary` and PR into `main` since. The gate is live and really is
+querying the database. Left corrected in place rather than deleted, because "the secret is
+missing" was quoted more than once as a reason the gate could not be trusted.)*
 
 The connection only needs to read `pg_catalog` (`pg_class`, `has_table_privilege`,
 `pg_options_to_table`) — no elevated role is required.
@@ -26,6 +29,54 @@ runnable anywhere:
 ```
 bash scripts/ci/check_anon_allowlist_test.sh
 ```
+
+## `check_anon_function_grants.sh` (KAN-175, `docs/SCHEMA.md` §2g)
+
+**The view gate above covers views only.** Its SQL reads `WHERE c.relkind = 'v'` — there is
+no `pg_proc`, no `proacl`, no `EXECUTE` anywhere in it. A `SECURITY DEFINER` **function**
+that `anon` can call is a different Postgres object class and sat outside every control the
+project had; the view gate ran green throughout the live window of the exposure it was
+supposed to catch. This script covers the function class. It shares `SUPABASE_DB_URL` with
+the view gate and needs no extra secret.
+
+It prints a **census** (SECURITY DEFINER: 303; anon-executable: 292; both: 292 — measured
+2026-09-10) which **never fails the build**, and fails on a narrow predicate: a function that
+is `SECURITY DEFINER`, effectively executable by `anon`, takes a uuid argument whose name
+denotes a person, and **never compares that argument to `auth.uid()`**. 74 live signatures
+are recorded in `docs/SCHEMA.md` §2g as a baseline; a 75th turns the build red.
+
+Three traps it is built around, each demonstrated failing in the self-test:
+
+- **`has_function_privilege`, never a text match on `proacl`.** A bare `=X/postgres` entry
+  grants `PUBLIC`, which `anon` inherits — 60 of the 292 are reachable only that way and are
+  invisible to string matching.
+- **Comparison, not mention.** 47 identity-taking functions mention `auth.uid()`; only **2**
+  compare an argument to it. `COALESCE(p_user_id, auth.uid())` reads as authentication and is
+  not.
+- **No overload requirement.** An earlier draft required a shorter same-named overload; the
+  worst live instance has no overload, so that requirement made the gate blind to it.
+
+`DEFAULT auth.uid()` on a parameter is decoration, not mitigation — it applies only when the
+caller omits the argument.
+
+### The self-test really uses a database
+
+```
+bash scripts/ci/check_anon_function_grants_test.sh
+```
+
+Unlike `check_anon_allowlist_test.sh` — which is a pure text diff over fixture files and
+never executes the catalogue SQL it exists to validate — this one **creates real functions in
+a real, disposable Postgres** and asserts on what the shipped predicate actually returns. It
+fabricates nine cases (five that must be flagged, four that must not), none named
+`rpc_potential_vibes` and none sharing a parameter name with it, so it proves the gate catches
+functions nobody has written yet rather than the one instance already known.
+
+Substrate: set `KAN175_TEST_DB_URL` to a service-container Postgres in CI, or leave it unset
+locally and the script starts and destroys its own Docker container (no local `psql` needed).
+**It never touches `wtncuzcskpigqpmnxwws`.** If neither substrate is available it fails rather
+than falling back to fixtures, because a fixture fallback would silently stop testing the only
+thing worth testing.
 
 ## `ci.yml` (KAN-72)
 

@@ -308,6 +308,22 @@ transaction.
 | `username_registry_public` | *dropped* | n/a | n/a | **DROPPED — `KAN-141`.** The `T-027` note below ("a lookup queried with a predicate") did not match the object: the view body was `SELECT list_active_usernames()`, which returns **every** active username, and `anon` could select it unfiltered. Its `0` was an empty `username_registry`, not a control. `SECURITY DEFINER` on the function bypassed the table's own `username_registry_no_read` RLS. Dropped with the function; signup availability is served by `rpc_username_availability(text)` |
 | `v_space_slots_today` | granted | no | **errors (until KAN-74 applied)** | **`BUG-05`, being fixed via KAN-74 + KAN-104.** `find_slots()` referenced the dropped `public.venue_opening_hours`; KAN-74 (`20260831130000`) corrects the reference to `opening_hours`/`day_group`. Separately, KAN-104/`T-044` found `is_booked` reads `false` for every anon/non-privileged-authenticated caller regardless of actual occupancy (RLS on `venue_bookings` denies those callers all rows, so `find_slots`'s internal EXISTS always finds none) — fixed by making `find_slots` `SECURITY DEFINER` (`20260901120000`, must apply after KAN-74, restates its body) plus `security_invoker = true` on this view. Both migrations authored, not yet applied |
 
+**The condition that makes "access control lives inside the function" true — `T-070`, 2026-09-10.**
+A function-backed public view is safe only while **every function in its call chain** derives
+caller identity internally. **A caller-supplied identity parameter anywhere in that chain voids
+the claim, and the view's own definition will not show it.**
+
+`v_potential_vibes_default` met the claim; the 6-arg `rpc_potential_vibes` it reads does inject
+`auth.uid()`. Behind that wrapper sat a **7-arg overload** taking `p_me uuid` from the caller,
+`SECURITY DEFINER`, `EXECUTE` to `anon` — which returned **147 rows / 137 distinct users** to an
+anonymous caller. It read as safe only because `spw.user_id <> NULL` is NULL for every row. The
+row above is not being withdrawn: it was correct about the view. It was silent about the chain.
+
+**And the finding that generalises: `anon-allowlist-check.yml` cannot see this.** The gate checks
+**views**; the exposure was a **function** two hops down, and the gate passed throughout.
+Passing it is evidence about view grants and about nothing else. The gate is not broken and is
+not being changed — it is bounded, and this is where that bound is recorded.
+
 **Where the earlier guesses landed.** The old note guessed `v_comments`, `v_game_rating` and
 `v_user_badges_summary` were "probably public". **One of three.** `v_comments` is public and
 was also leaking one row; the other two had their `anon` grant revoked outright. That is the
@@ -566,6 +582,134 @@ v_recreate_candidates
 v_recreate_quickpicks
 v_space_slots_today
 <!-- ANON_ALLOWLIST_END -->
+
+### 2g. CI function allowlist — machine-readable, drives KAN-175
+
+**A SEPARATE BLOCK FROM §2f, and deliberately so.** §2f holds VIEW names and is parsed by
+`scripts/ci/check_anon_allowlist.sh`, whose SQL reads `WHERE c.relkind = 'v'`. Widening it to
+hold function signatures would break that parser. This block holds FUNCTION SIGNATURES and is
+parsed by `scripts/ci/check_anon_function_grants.sh`. Two object classes, two gates, two lists.
+
+**Why this block exists.** The KAN-61 view gate has no `pg_proc`, `proacl` or `EXECUTE`
+coverage anywhere in it. A `SECURITY DEFINER` function that `anon` can call was therefore
+outside every control the project had, and the gate ran green throughout the live window of
+the exposure it was meant to catch. The control and the exposure sat on different Postgres
+object classes.
+
+**What the gate fails on.** Not "is `SECURITY DEFINER`" and not "is anon-executable" — those
+are 303 and 292 functions respectively, reported as a census on every run and never failing,
+because an allowlist nobody can maintain goes green by exhaustion. It fails on the narrow
+intersection: **`SECURITY DEFINER`, effectively executable by `anon`, taking a uuid argument
+whose name denotes a PERSON, whose body never COMPARES that argument to `auth.uid()`.** That
+is a function which lets an unauthenticated caller choose whose data to act on while running
+with its owner's privileges. Measured 74 live on 2026-09-10.
+
+**Three things the predicate deliberately does not do**, each because a weaker version was
+demonstrated failing against fabricated cases in `check_anon_function_grants_test.sh`:
+
+* **It never text-matches `proacl` for `anon`.** A bare `=X/postgres` entry is a grant to
+  `PUBLIC` that `anon` inherits, so a function whose ACL never names `anon` is still callable
+  by it. 60 of the 292 are reachable only that way. `has_function_privilege` is required.
+* **It requires a COMPARISON to `auth.uid()`, not a mention.** Of 76 functions carrying an
+  identity argument, 47 mention `auth.uid()` and only **2** compare the argument to it. The
+  common shape is `v := COALESCE(p_user_id, auth.uid())`, which reads as authentication and is
+  not — supply any uuid and you win. `rpc_get_friends(p_user_id uuid)` does exactly this today.
+* **It does not require a same-named overload.** An earlier draft did, on the
+  `rpc_potential_vibes` wrapper/implementation shape. `rpc_get_friend_suggestions` has no
+  overload and is the worst instance found, so that requirement made the gate blind to it.
+
+Also note `DEFAULT auth.uid()` on a parameter is **decoration, not mitigation** — a default
+applies only when the caller omits the argument. It lives in `pg_get_function_arguments()`,
+never in `prosrc`, so testing the body ignores it automatically.
+
+**THIS LIST IS A MEASURED BASELINE OF EXISTING DEBT, NOT A CERTIFICATE OF SAFETY.** Every
+signature below was flagged by the predicate on 2026-09-10 and is recorded so the gate can
+detect the 75st. Several are plainly alarming on their face — `admin_cleanup_user_data`,
+`rpc_admin_freeze_user`, `admin_take_action`, `request_payout`, `set_session_user`,
+`is_admin(p_user uuid)` — and **nothing here says they are acceptable**. Triaging them is
+separate work; freezing the population so it cannot silently grow is this gate's job.
+**Removing a name from this list by fixing the function is always the preferred direction.**
+
+**Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
+reviewable diff is the whole mechanism. Do not add one to make the gate pass without
+establishing why a new function needs an unguarded caller-supplied identity.
+
+<!-- ANON_FUNCTION_ALLOWLIST_START -->
+admin_cleanup_user_data(p_user_id uuid, p_dry_run boolean)
+admin_take_action(p_action mod_action, p_target_type mod_target, p_target_id uuid, p_target_user_id uuid, p_reason text, p_expires_at timestamp with time zone, p_meta jsonb)
+admin_whois_profile(p_profile_id uuid)
+audit_log(p_action text, p_target_type mod_target, p_target_id uuid, p_target_user_id uuid, p_meta jsonb)
+can_create_venue_booking(p_user_id uuid, p_venue_id uuid)
+can_edit_venue_details(p_user_id uuid, p_venue_id uuid)
+can_manage_venue(p_user_id uuid, p_venue_id uuid)
+can_manage_venue_members(p_user_id uuid, p_venue_id uuid)
+can_review_venue_submission(p_user_id uuid)
+can_view_circle(p_circle_id uuid, p_profile_id uuid)
+can_view_post(p_post_id uuid, p_user_id uuid, p_profile_id uuid)
+can_view_venue_bookings(p_user_id uuid, p_venue_id uuid)
+create_system_post(p_profile_id uuid, p_body text, p_kind post_kind, p_visibility text, p_vibe_id uuid, p_sport_id uuid, p_post_type post_type_enum, p_origin_type origin_type_enum, p_origin_id uuid, p_location_name text, p_geo_lat double precision, p_geo_lng double precision, p_media jsonb)
+is_admin(p_user uuid)
+is_blocked(user_a uuid, user_b uuid)
+is_circle_member(p_circle_id uuid, p_user_id uuid)
+is_frozen(p_user uuid)
+is_post_owner(p_post_id uuid, p_profile_id uuid)
+meetup_my_status(p_meetup_id uuid, p_actor uuid)
+perform_check_in(p_user_id uuid, p_device_info jsonb)
+process_notification_event(p_to_user_id uuid, p_kind_key text, p_entity_type text, p_entity_id uuid, p_actor_user_id uuid, p_title text, p_body text)
+reputation_recompute(p_user_id uuid)
+request_payout(p_amount_aed numeric, p_beneficiary_id uuid)
+respond_vibe_request(p_other_user uuid, p_action text)
+reuse_touch(p_context text, p_fields jsonb, p_hash text, p_version integer, p_user uuid, p_payload jsonb)
+rpc_add_comment(p_post_id uuid, p_author_profile_id uuid, p_body text, p_parent_comment_id uuid)
+rpc_admin_freeze_user(p_user_id uuid, p_scope text, p_days integer, p_reason text)
+rpc_block_user(p_peer uuid)
+rpc_block_user(p_peer uuid, p_block boolean)
+rpc_create_post(p_author_profile_id uuid, p_kind text, p_visibility text, p_body text, p_lang text, p_sport_key text, p_venue_id uuid, p_geo_lat double precision, p_geo_lng double precision, p_media jsonb, p_vibe_ids uuid[])
+rpc_create_sport_profile(p_profile_id uuid, p_sport_id uuid, p_sport_key text, p_skill_level integer)
+rpc_create_squad(p_actor_profile_id uuid, p_sport text, p_name text, p_bio text, p_logo_url text)
+rpc_feed_ranked(p_scope text, p_author_user_id uuid, p_sport text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_since timestamp with time zone, p_limit integer)
+rpc_freeze_user(p_user_id uuid, p_reason text, p_until timestamp with time zone)
+rpc_friend_remove(p_peer_profile_id uuid)
+rpc_friend_request_accept(p_peer_profile_id uuid)
+rpc_friend_request_reject(p_peer_profile_id uuid)
+rpc_friend_request_send(p_peer_profile_id uuid)
+rpc_friend_unfriend(p_peer uuid)
+rpc_get_friend_suggestions(p_user_id uuid, p_limit integer)
+rpc_get_friends(p_user_id uuid)
+rpc_get_friendship_status(p_peer_profile_id uuid)
+rpc_hide_user(p_peer uuid, p_hide boolean)
+rpc_hide_user(target_user uuid)
+rpc_invite_user(p_game_id uuid, p_to_user_id uuid)
+rpc_is_following_user(p_target_profile_id uuid)
+rpc_meetup_create(p_owner_profile_id uuid, p_title text, p_description text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_location_name text, p_lat double precision, p_lng double precision, p_listing_visibility text, p_rsvp_policy text, p_capacity integer, p_vibe_key text, p_meta jsonb)
+rpc_meetup_invite_user(p_meetup_id uuid, p_to_user_id uuid, p_expires_at timestamp with time zone)
+rpc_meetup_rsvp(p_meetup_id uuid, p_action text, p_profile_id uuid, p_link_token uuid)
+rpc_meetup_set_attendee(p_meetup_id uuid, p_target_actor uuid, p_status text)
+rpc_potential_vibes_debug(p_me uuid, p_sport text, p_as_role text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_limit integer)
+rpc_rate_game(p_game_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text)
+rpc_rate_user(p_game_id uuid, p_rater_profile_id uuid, p_ratee_user_id uuid, p_scores jsonb, p_comment text)
+rpc_rate_venue(p_game_id uuid, p_venue_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text)
+rpc_remove_player(p_game_id uuid, p_profile_id uuid)
+rpc_squad_add_member(p_squad_id uuid, p_profile_id uuid, p_as_captain boolean)
+rpc_squad_create(p_created_by_profile_id uuid, p_sport text, p_name text, p_bio text, p_listing_visibility text, p_join_policy text, p_max_members integer, p_captain_user_id uuid)
+rpc_squad_invite(p_squad_id uuid, p_to_profile_id uuid, p_expires_at timestamp with time zone)
+rpc_squad_remove_member(p_squad_id uuid, p_profile_id uuid)
+rpc_squad_request_join(p_squad_id uuid, p_profile_id uuid, p_message text, p_link_token uuid)
+rpc_squad_respond_invite(p_invite_id uuid, p_action text, p_profile_id uuid)
+rpc_squad_set_captain(p_squad_id uuid, p_profile_id uuid, p_is_captain boolean)
+rpc_unblock_user(p_peer uuid)
+rpc_unfollow_user(p_target_profile_id uuid)
+rpc_unfreeze_user(p_user_id uuid, p_reason text)
+rpc_unhide_user(target_user uuid)
+rpc_unverify_profile(p_profile_id uuid, p_reason text)
+rpc_verify_profile(p_profile_id uuid, p_reason text)
+send_vibe_request(p_to_user uuid)
+set_hidden_mode(p_target_user uuid, p_enable boolean, p_reason text)
+set_session_user(p_user uuid)
+switch_active_profile(p_profile_id uuid)
+toggle_venue_favorite(venue_id uuid, user_id uuid)
+unsync(p_other_user uuid)
+<!-- ANON_FUNCTION_ALLOWLIST_END -->
 
 ## 3. STORAGE BUCKETS — 4
 
