@@ -163,6 +163,7 @@ class OnboardingCTAButton extends StatelessWidget {
     this.onPressed,
     this.icon,
     this.isLoading = false,
+    this.identifier,
   });
 
   final String label;
@@ -170,10 +171,25 @@ class OnboardingCTAButton extends StatelessWidget {
   final Widget? icon;
   final bool isLoading;
 
+  /// Stable semantics identifier for end-to-end tests.
+  ///
+  /// Surfaces on web as a `flt-semantics-identifier` attribute, letting a test
+  /// target this control without depending on its visible copy. Purely a
+  /// testability hook — it is not exposed to users and changes nothing about
+  /// how the button renders or behaves.
+  final String? identifier;
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final disabled = onPressed == null;
+    // Attaches [identifier] to the same semantics node the InkWell contributes,
+    // so the test hook and the button role/name land on one DOM element.
+    Widget identify(Widget child) => identifier == null
+        ? child
+        : MergeSemantics(
+            child: Semantics(identifier: identifier, child: child),
+          );
     return SizedBox(
       width: double.infinity,
       height: 56,
@@ -196,41 +212,46 @@ class OnboardingCTAButton extends StatelessWidget {
         child: Material(
           color: disabled ? const Color(0x1F1D1A20) : colorScheme.primary,
           borderRadius: BorderRadius.circular(999),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(999),
-            onTap: disabled || isLoading ? null : onPressed,
-            child: Center(
-              child: isLoading
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: colorScheme.onPrimary,
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (icon != null) ...[icon!, const SizedBox(width: 8)],
-                        Text(
-                          label,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            height: 1.0,
-                            leadingDistribution: TextLeadingDistribution.even,
-                            color: disabled
-                                ? colorScheme.onPrimaryFixed.withValues(
-                                    alpha: 0.4,
-                                  )
-                                : colorScheme.onPrimary,
-                            letterSpacing: 0.1,
-                          ),
+          child: identify(
+            InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: disabled || isLoading ? null : onPressed,
+              child: Center(
+                child: isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: colorScheme.onPrimary,
                         ),
-                      ],
-                    ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (icon != null) ...[
+                            icon!,
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            label,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              height: 1.0,
+                              leadingDistribution: TextLeadingDistribution.even,
+                              color: disabled
+                                  ? colorScheme.onPrimaryFixed.withValues(
+                                      alpha: 0.4,
+                                    )
+                                  : colorScheme.onPrimary,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),

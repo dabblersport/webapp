@@ -259,6 +259,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                                   ),
                                   const SizedBox(height: 16),
                                   OnboardingCTAButton(
+                                    identifier: 'landing-continue',
                                     label: AppLocalizations.of(
                                       context,
                                     ).landing_continue,

@@ -347,6 +347,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                   // Continue Actions — node cI24o (gap 12)
                                   _GlassButton(
                                     // Glass Button / Dark — node Pnlba
+                                    identifier: 'auth-welcome-continue-google',
                                     fill: const Color(0xA8241631),
                                     blur: 18,
                                     borderGradient: const LinearGradient(
@@ -398,6 +399,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                   const SizedBox(height: 12),
                                   _GlassButton(
                                     // Continue with Email — Glass, node MYbIU
+                                    identifier: 'auth-welcome-continue-email',
                                     fill: const Color(0x66C18FFF),
                                     blur: 20,
                                     borderGradient: const LinearGradient(
@@ -461,6 +463,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                                     const SizedBox(height: 12),
                                     _GlassButton(
                                       // Continue with Apple — Black, node LQcOo
+                                      identifier: 'auth-welcome-continue-apple',
                                       fill: const Color(0xFF09090B),
                                       blur: 16,
                                       borderColor: const Color(0x54FFFFFF),
@@ -644,6 +647,7 @@ class _GlassButton extends StatelessWidget {
     required this.child,
     this.borderGradient,
     this.borderColor,
+    this.identifier,
   });
 
   final Color fill;
@@ -654,9 +658,24 @@ class _GlassButton extends StatelessWidget {
   final Gradient? borderGradient;
   final Color? borderColor;
 
+  /// Stable semantics identifier for end-to-end tests.
+  ///
+  /// Surfaces on web as a `flt-semantics-identifier` attribute, letting a test
+  /// target this control without depending on its visible copy. Purely a
+  /// testability hook — it is not exposed to users and changes nothing about
+  /// how the button renders or behaves.
+  final String? identifier;
+
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(22);
+    // Attaches [identifier] to the same semantics node the InkWell contributes,
+    // so the test hook and the button role/name land on one DOM element.
+    Widget identify(Widget child) => identifier == null
+        ? child
+        : MergeSemantics(
+            child: Semantics(identifier: identifier, child: child),
+          );
     return SizedBox(
       width: double.infinity,
       height: 58,
@@ -674,9 +693,11 @@ class _GlassButton extends StatelessWidget {
               ),
               child: Material(
                 color: fill,
-                child: InkWell(
-                  onTap: onTap,
-                  child: Center(child: child),
+                child: identify(
+                  InkWell(
+                    onTap: onTap,
+                    child: Center(child: child),
+                  ),
                 ),
               ),
             ),
