@@ -669,6 +669,48 @@ contained by `REVOKE` after this baseline was taken — both now resolve
 `has_function_privilege('anon', …)` false — so 72 of the 74 below are live and the gate is
 correctly green. That is the preferred direction stated above, actually happening.
 
+#### §2g.1 — EXECUTE containment applied 2026-09-10: the full set of seven, five of which were recorded nowhere
+
+**Five of the seven revokes applied to production on 2026-09-10 existed only in a session
+transcript.** `create_system_post` and `process_notification_event` were recorded (the paragraph
+above); the rest were not — no migration, no `SCHEMA.md` entry, no `DECISIONS.md` entry named them.
+Found by `devops` while reconstructing why the gate's flagged count moved **72 → 70**; it could
+narrow the two departing signatures by elimination but could not corroborate either from the repo.
+This block closes that gap.
+
+| Function | Resulting EXECUTE holders | Why narrowed |
+|---|---|---|
+| `settle_game` | `postgres`, `service_role` | Money write; `T-069` — no trusted amount source, organiser/sport/gross derived, not parameters |
+| `rpc_potential_vibes` (bare, 7-arg) | `postgres`, `service_role` | `T-070` — the identity parameter is the whole vulnerability; the 7-arg *is* the implementation |
+| `create_system_post` | `postgres`, `service_role` | Caller-supplied `p_profile_id` — post authorship forgeable. **Already recorded** |
+| `process_notification_event` | `postgres`, `authenticated`, `service_role` | `anon` had no business reaching it. **Already recorded** |
+| `set_session_user` | `postgres`, `service_role` | Session-identity setter reachable by `anon`; named in the "plainly alarming" list above |
+| `rpc_remove_player` | `anon` removed, `authenticated` retained | Roster mutation by an unauthenticated caller |
+| `rpc_decide_join_request` | `anon` removed, `authenticated` retained | Join-request adjudication by an unauthenticated caller |
+
+Plus the **`content_hits_blocklist(text, text)` bundle (KAN-68)**: revoked from `PUBLIC`, `anon` and
+`authenticated`; re-granted `authenticated` and `service_role`. Recorded here because the `PUBLIC`
+revoke is the load-bearing half — see the next paragraph.
+
+**Verification of any row above uses `has_function_privilege`, never a `proacl` text match** — the
+reason is already stated once at §2g and is not restated here: a bare `=X/postgres` entry is a grant
+to `PUBLIC` that `anon` inherits without ever being named. A `REVOKE … FROM anon, authenticated` that
+leaves the `PUBLIC` grant standing looks like containment and is not. That nearly happened once on
+2026-09-10.
+
+**Status: applied 2026-09-10; resulting `proacl` as reported by the applying seat, PENDING LIVE
+RE-READ.** The Supabase MCP has been disconnected since `T-077` Amendment 1 and `T-068` makes the repo
+authoritative for nothing about what ran. **None of these seven is confirmed current state.** They are
+on the `T-077` owed-on-reconnect list.
+
+**Why this record is load-bearing and not bookkeeping.** A revoke that exists in no artefact is one
+`DROP` + `CREATE` away from being silently undone, because a recreated function re-derives its grants
+from `pg_default_acl`. `T-045` closed the **`postgres` default-privilege rule for tables**; whether
+the **function** default in `public` still carries `anon=X` is **not settled by `T-045` and not
+repo-determinable**. If it does, all seven revokes are permanently fragile and every future
+`CREATE FUNCTION` in `public` re-opens the same hole. **That is work, not a record** — see
+`DECISIONS.md` `T-078`.
+
 **Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
 reviewable diff is the whole mechanism. Do not add one to make the gate pass without
 establishing why a new function needs an unguarded caller-supplied identity.
