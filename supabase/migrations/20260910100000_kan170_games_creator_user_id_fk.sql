@@ -1,0 +1,288 @@
+-- KAN-170 / T-069: games.creator_user_id -> auth.users(id) ON DELETE RESTRICT
+--
+-- STATUS: AUTHORED, NOT APPLIED. The apply was DENIED by the Claude Code
+-- permission classifier on 2026-09-10 -- THREE TIMES. The second attempt
+-- followed a relayed CEO authorisation, which did NOT materialise as an actual
+-- permission in the executing session. The THIRD attempt was made in a FRESH
+-- session, on the stated premise that the block had lifted because
+-- `apply_migration` had just succeeded for another seat on KAN-173. That
+-- premise was tested and is FALSE for this statement: the KAN-173 apply is
+-- real and visible in the remote ledger as version 20260910171433
+-- (kan173_wallet_recalc_owner_id), yet `apply_migration` for THIS one-statement
+-- DDL was refused again, as was the behavioural probe. Session freshness is
+-- therefore NOT the discriminator.
+-- Nothing has been run against wtncuzcskpigqpmnxwws.
+-- Verified after each denial: games_creator_user_id_fkey absent, constraints
+-- 20, FKs 7, indexes 13, games 218, auth.users 259, profiles 165, orphans 0,
+-- probe residue 0/0 -- production is untouched.
+-- This file is the authored artifact awaiting an authorised apply. It is NOT
+-- evidence that the constraint exists.
+--
+-- FILENAME IS PROVISIONAL. Per T-068 step 5 the repo file must be named from
+-- the exact version string `apply_migration` RETURNS. No apply has returned
+-- one, so the `20260910100000` prefix here is a GUESS and must be renamed to
+-- the returned version once the apply succeeds. Do not treat it as the ledger
+-- version.
+--
+-- ============================================================================
+-- PRECONDITIONS -- re-measured live immediately before the SECOND apply attempt
+-- (2026-09-10 17:10:51Z), per AC2. Explicitly NOT the ticket's cited 218/218
+-- and NOT Preflight's numbers, both of which AC2 names as stale. (The first
+-- attempt's reading at 12:41:30Z was identical on every field.)
+--
+-- ALSO RE-VERIFIED AT APPLY TIME, because the clean data is trigger-enforced
+-- rather than schema-enforced (see the trigger section below):
+--   trg_games_set_host -> tgenabled 'O', tgtype 23 (ROW, BEFORE, INSERT+UPDATE),
+--   body still executes `NEW.creator_user_id := uid`. Unchanged. Had it been
+--   altered or disabled, the orphan risk would be live rather than theoretical
+--   and these preconditions would genuinely differ.
+--
+-- RE-MEASURED A THIRD TIME before the third attempt (2026-09-10). Identical on
+-- every field: games 218, NULL creator 0, orphans 0, distinct creators 26,
+-- auth.users 259, profiles 165, constraints 20, FKs 7, indexes 13, RLS true,
+-- auth.users constraints 3, target FK absent. The trigger was re-read from the
+-- live catalogue rather than assumed: tgenabled 'O', tgtype 23, and
+-- `NEW.creator_user_id := uid` still present in pg_get_functiondef
+-- (body md5 d290135e4ce3521fbcb7ebed2a0791a1, recorded so a future reader can
+-- detect a body change rather than re-argue it).
+-- ============================================================================
+--   SELECT count(*) FROM public.games;                              -> 218
+--   NULL creator_user_id                                            -> 0
+--   creator_user_id with no matching auth.users row                 -> 0
+--   distinct creator_user_id                                        -> 26
+--   games.creator_user_id  -> uuid NOT NULL
+--   auth.users.id          -> uuid NOT NULL, PK
+--     Types match and the referenced column carries a PK, so the FK is
+--     creatable. Clean, so the plain validated ADD CONSTRAINT is used and
+--     AC2's NOT VALID + VALIDATE CONSTRAINT branch is NOT taken.
+--
+--   idx_games_host ON public.games USING btree (creator_user_id, creator_profile_id)
+--     ALREADY EXISTS with creator_user_id LEADING. This matters: ON DELETE
+--     RESTRICT checks the referencing side on every auth.users delete, and
+--     without an index that check is a sequential scan. No index is added here
+--     -- AC3 ("no other object touched") is satisfied with no trade-off,
+--     because the index the constraint wants is already in place.
+--
+-- ============================================================================
+-- WHY ON DELETE RESTRICT, AND NOT THE CASCADE AC1 POINTS AT
+-- ============================================================================
+-- AC1 says the action is the implementer's call "unless the existing FK on
+-- game_settlements.organiser_user_id or wallet_ledger.user_id already fixes a
+-- repo convention -- match it if so". Both of those were measured and both are
+-- ON DELETE CASCADE (confdeltype 'c'), so the ticket's own cited precedents
+-- point AWAY from RESTRICT. Recorded here rather than passed over in silence.
+--
+-- RESTRICT is still correct. Three reasons, in order of weight:
+--
+--   1. THE NEAREST CONVENTION IS ON THIS TABLE, NOT ANOTHER ONE.
+--      games.creator_profile_id -- the other column naming the SAME creator on
+--      the SAME row -- is games_creator_profile_id_fkey ... ON DELETE RESTRICT.
+--      Two columns identifying one creator must not carry opposite delete
+--      semantics. A different table's user FK is a weaker analogue than the
+--      sibling column.
+--
+--   2. CASCADE HERE IS EITHER INERT OR ACTIVELY HARMFUL, NEVER CLEAN.
+--      profiles.user_id -> auth.users is CASCADE, and games.creator_profile_id
+--      -> profiles is RESTRICT. So deleting a game creator's auth row is
+--      ALREADY BLOCKED TODAY -- the RESTRICT halts the cascade. Adding CASCADE
+--      on creator_user_id would put two contradictory paths on one delete:
+--      either the existing RESTRICT still wins (and the CASCADE is a lie
+--      recorded in the schema), or the CASCADE removes the games rows first and
+--      UNBLOCKS a deletion that is currently blocked, silently changing
+--      production behaviour. Which one happens depends on cascade interleaving
+--      order, and nothing should rest on that.
+--
+--   3. THE CITED PRECEDENTS ARE A DIFFERENT KIND OF OBJECT.
+--      A wallet_ledger row and a game_settlements row are per-user artifacts
+--      keyed to one person. A games row is shared state that other users
+--      joined; deleting a user must not delete a game other people attended.
+--      (Noted in passing, not relitigated here: game_settlements
+--      .organiser_user_id CASCADE looks questionable against P-036's retention
+--      posture, since deleting a user would delete settlement records. Not this
+--      ticket's business, and a possibly-defective precedent is not treated as
+--      governing.)
+--
+-- ON UPDATE is left at the default NO ACTION (confupdtype 'a'), matching every
+-- sibling FK on this table.
+--
+-- ============================================================================
+-- WHY THIS CONSTRAINT MATTERS EVEN THOUGH NO ORDINARY DML CAN VIOLATE IT
+-- ============================================================================
+-- Found while building the probe, and it is the reason the naive probe for this
+-- ticket is worthless:
+--
+--   BEFORE INSERT OR UPDATE trigger trg_games_set_host
+--   (public.trgfn_games_set_host_user, tgtype 23 = ROW, BEFORE, INSERT, UPDATE)
+--   executes:
+--       SELECT user_id INTO uid FROM public.profiles WHERE id = NEW.creator_profile_id;
+--       IF uid IS NULL THEN RAISE EXCEPTION ... 'creator_profile_not_found'; END IF;
+--       NEW.creator_user_id := uid;
+--
+--   It OVERWRITES creator_user_id unconditionally, on both INSERT and UPDATE,
+--   with a value derived from creator_profile_id -- and profiles.user_id
+--   carries its own FK to auth.users. So an INSERT naming a bogus
+--   creator_user_id does not fail; the bogus value is silently REPLACED by the
+--   correct one and the row lands clean. An UPDATE behaves the same way.
+--
+--   Consequence 1: the 218/218 match this ticket is built on is TRIGGER-
+--   ENFORCED, not coincidence and not schema-enforced.
+--   Consequence 2: the obvious "insert a bad row and watch it fail" probe would
+--   have PASSED both before and after this migration while proving nothing.
+--   That is the T-055 trap -- check the target path can execute at all before
+--   trusting a probe -- and it is why this comment exists.
+--
+-- The constraint is still worth adding, and this is exactly T-061's point:
+-- a trigger body is replaceable by the next CREATE OR REPLACE, a constraint is
+-- not. The FK is the guarantee; the trigger is an assertion that the guarantee
+-- held. It also covers the paths that bypass triggers entirely -- COPY with
+-- triggers disabled, session_replication_role = 'replica', a restore, or a
+-- future migration that rewrites trg_games_set_host without knowing what it was
+-- load-bearing for.
+--
+-- ============================================================================
+-- LOCK / BLAST RADIUS
+-- ============================================================================
+-- ALTER TABLE ... ADD CONSTRAINT ... FOREIGN KEY takes SHARE ROW EXCLUSIVE on
+-- BOTH public.games AND auth.users. Reads are unaffected; writes to both block
+-- for the duration -- and a lock on auth.users blocks logins and signups.
+-- Validating 218 rows is sub-millisecond, so the window is trivial, but it is
+-- the auth table and that is named rather than glossed.
+--
+-- NOT VALID + a later VALIDATE CONSTRAINT was considered and rejected as
+-- ceremony at this size: it takes the same locks on both tables and only defers
+-- a scan that costs nothing, while leaving a window in which the constraint is
+-- unvalidated.
+--
+-- ============================================================================
+-- LANDING MECHANISM
+-- ============================================================================
+-- Not via `supabase db push` -- T-068 bars it until the repo is rebaselined,
+-- and the remote ledger is authoritative for what ran. Applied directly with
+-- apply_migration by the owning backend-N under G-002; validation_route is PEER
+-- (system-derived from schema_change) and the reviewer is another backend-N.
+
+BEGIN;
+
+ALTER TABLE public.games
+  ADD CONSTRAINT games_creator_user_id_fkey
+  FOREIGN KEY (creator_user_id) REFERENCES auth.users(id)
+  ON DELETE RESTRICT;
+
+COMMIT;
+
+-- ============================================================================
+-- VERIFICATION -- to be run immediately after applying and posted back to
+-- KAN-170 (G-002 condition 4). NOT YET RUN: the apply was denied.
+-- ============================================================================
+-- AC1. The FK exists with the CHOSEN action. Assert confdeltype, not merely
+--      that a row appeared -- a CASCADE FK would also satisfy "an FK exists",
+--      which is the precise wording AC1 was tightened to close.
+--
+--   SELECT conname, contype, confdeltype, confupdtype, convalidated,
+--          confrelid::regclass AS references, pg_get_constraintdef(oid)
+--     FROM pg_constraint
+--    WHERE conrelid = 'public.games'::regclass
+--      AND conname  = 'games_creator_user_id_fkey';
+--   -> exactly 1 row: contype 'f', confdeltype 'r' (RESTRICT -- NOT 'c'
+--      cascade, NOT 'n' set null, NOT 'a' no action), confupdtype 'a',
+--      convalidated true, references auth.users.
+--
+-- AC2. Apply-time counts, quoted above, re-run and posted as the evidence.
+--
+-- AC3. No other object touched.
+--   constraint count on public.games   20 -> 21 and nothing else moves
+--   foreign key count on public.games   7 -> 8
+--   index count on public.games        13 -> 13 (unchanged)
+--   RLS on public.games                relrowsecurity true, unchanged
+--   auth.users                         unaltered (locked during the ALTER,
+--                                      not modified); constraint count 3 -> 3
+--
+-- OUTSTANDING EVIDENCE GAP, disclosed rather than papered over:
+--   The behavioural probe -- create synthetic users + profile + game, repoint
+--   the profile so the creator_profile_id RESTRICT cannot mask the result, then
+--   delete the now-unreferenced synthetic user and show the delete SUCCEEDS
+--   pre-apply (creating the orphan this ticket exists to prevent) and raises
+--   23503 on games_creator_user_id_fkey post-apply -- was written and DENIED by
+--   the permission classifier on both attempts, because it writes to auth.users
+--   and profiles. So the pre/post flip that would turn AC1 from ASSERTED into
+--   DEMONSTRATED has NOT happened, and cannot be claimed. The PEER reviewer
+--   should decide whether catalogue evidence (confdeltype='r' from
+--   pg_constraint) closes AC1 as tightened, or whether the behavioural probe
+--   must run under an authorisation that also covers auth.users writes.
+--
+--   ATTEMPTED A THIRD TIME on 2026-09-10 and DENIED A THIRD TIME. The full
+--   probe is reproduced below so the next authorised session can run it as-is
+--   rather than rebuild it. It is written as a single DO block whose final
+--   RAISE aborts the transaction, so it commits nothing and leaves no residue:
+--
+--     DO $$
+--     DECLARE
+--       uA uuid := gen_random_uuid(); uB uuid := gen_random_uuid();
+--       pid uuid; gid uuid; set_creator uuid;
+--       del_ok boolean := false; err_state text := 'none'; err_con text := 'none';
+--       orphans_after int;
+--     BEGIN
+--       INSERT INTO auth.users (id, instance_id, aud, role, email,
+--                               encrypted_password, created_at, updated_at)
+--       VALUES (uA,'00000000-0000-0000-0000-000000000000','authenticated',
+--               'authenticated','kan170-probe-a@invalid.test','x',now(),now()),
+--              (uB,'00000000-0000-0000-0000-000000000000','authenticated',
+--               'authenticated','kan170-probe-b@invalid.test','x',now(),now());
+--
+--       INSERT INTO public.profiles (user_id, profile_type, username,
+--                                    display_name, age, persona_type, country)
+--       VALUES (uA,'personal','kan170probea','KAN170 Probe A',30,'player','AE')
+--       RETURNING id INTO pid;   -- country given EXPLICITLY: the 'UAE' default is broken (KAN-185)
+--
+--       INSERT INTO public.games (creator_profile_id, creator_user_id, start_at,
+--                                 end_at, capacity, sport_id, geo_location_id, area_id)
+--       VALUES (pid, uA, now()+interval '10 days', now()+interval '10 days 1 hour', 4,
+--               '4fd36109-12c2-4b17-a8a2-281be2b8649c',   -- is_challenge_sport AND is_active
+--               'f63ae51e-df1d-4fcc-b4e7-0e2717961a38',
+--               'a0000000-0000-0000-0000-000000000014')
+--       RETURNING id, creator_user_id INTO gid, set_creator;
+--
+--       -- THE STEP THAT MAKES THE PROBE MEAN ANYTHING: repoint the profile to uB.
+--       -- games.creator_user_id stays uA (games is not updated, so the BEFORE
+--       -- UPDATE trigger never fires on it), while nothing references uA any
+--       -- more -- so the creator_profile_id -> profiles RESTRICT can no longer
+--       -- mask the result. Without this the delete is blocked by the WRONG
+--       -- constraint and the probe proves nothing.
+--       UPDATE public.profiles SET user_id = uB WHERE id = pid;
+--
+--       BEGIN
+--         DELETE FROM auth.users WHERE id = uA;
+--         del_ok := true;
+--       EXCEPTION WHEN foreign_key_violation THEN
+--         GET STACKED DIAGNOSTICS err_state = RETURNED_SQLSTATE, err_con = CONSTRAINT_NAME;
+--       END;
+--
+--       SELECT count(*) INTO orphans_after FROM public.games g
+--         LEFT JOIN auth.users u ON u.id = g.creator_user_id WHERE u.id IS NULL;
+--
+--       RAISE EXCEPTION 'KAN170_PROBE trigger_set_creator_to_uA=% | delete_succeeded=% | sqlstate=% | constraint=% | orphans_created=%',
+--         (set_creator = uA), del_ok, err_state, err_con, orphans_after;
+--     END $$;
+--
+--   EXPECTED, and this pre/post FLIP is the whole point:
+--     PRE-apply  -> delete_succeeded=true,  sqlstate=none,  orphans_created=1
+--                   (the delete SUCCEEDS and manufactures exactly the orphan
+--                    this ticket exists to prevent -- the probe demonstrated
+--                    FAILING before it can count as passing)
+--     POST-apply -> delete_succeeded=false, sqlstate=23503,
+--                   constraint=games_creator_user_id_fkey, orphans_created=0
+--   Note it must raise 23503 on THAT constraint name -- not the DO block's own
+--   P0001, and not some other FK. That is the T-055 check.
+--
+--   The probe got far enough to be worth keeping verbatim: it cleared the
+--   profiles insert and reached the games insert before being blocked. Two
+--   incidental obstacles it surfaced, both needed to make it run, neither
+--   changed here (AC3):
+--     * public.profiles.country DEFAULTS to 'UAE', but profiles_country_fkey
+--       references ref_countries, which is ISO-2 ('AE'). So ANY insert into
+--       profiles that relies on the column default fails with 23503. All 165
+--       existing rows set country explicitly, which is why nothing has hit it.
+--       Reported to po as a separate defect; NOT fixed here.
+--     * games inserts must name a sport with is_challenge_sport AND is_active
+--       (trg_fn_games_require_challenge_sport), or they raise P0001
+--       'sport_not_challenge'.
