@@ -337,8 +337,47 @@ view calls it *as the caller*: the revoke does not degrade to NULL, it raises
 `42501 permission denied` and the whole view dies for every legitimate user. Measured
 on `circle_member_count` (KAN-77). When a view depends on the function, use option 1.
 
+**Option 1 has a precondition that was left implicit until `T-070`, and it is the one that
+bit us: a `SECURITY DEFINER` function MUST NOT accept the caller's identity as a
+parameter.** It derives identity from `auth.uid()` inside its own body, always. A `p_me uuid`
+argument on a definer function is not authorization — it is the caller asserting who they
+are to code running with the owner's privileges.
+
+```sql
+-- WRONG: identity is an argument. Any caller with EXECUTE is any user.
+create function rpc_thing(p_me uuid, ...) ... security definer
+  ... where t.user_id <> p_me                 -- a product filter wearing a lock's clothes
+
+-- RIGHT: identity is derived. There is no parameter to abuse.
+create function rpc_thing(...) ... security definer
+  ... where t.user_id <> auth.uid()
+```
+
+`KAN-174`: `rpc_potential_vibes`'s 7-arg overload took `p_me` and held EXECUTE for `anon`.
+It returned **147 rows / 137 distinct users** anonymously. Its only user-scoped predicate was
+`spw.user_id <> p_me`, whose own comment read `-- don't recommend yourself` — a self-exclusion
+**product filter**, never intended as access control. It read as safe because `x <> NULL` is
+NULL for every row (§12a).
+
+**A test harness that must act as another user does it from outside the function**, never by
+adding a parameter:
+
+```sql
+perform set_config('request.jwt.claims',
+         json_build_object('sub', uid::text, 'role','authenticated')::text, true);
+set local role authenticated;
+```
+
+**And when the defect is found, remove the parameter — do not revoke the grant.** A revoke
+leaves a loaded function whose safety is one `GRANT EXECUTE` away from undone; deleting the
+parameter removes the class. Where the definer function is wrapped by a thin `auth.uid()`-injecting
+overload, the two are **folded into one** — replace the wrapper's signature with the full body,
+then drop the overload, in that order. Note that a catalogue sweep for callers **cannot see
+overload dispatch**: the call site names the function, not the signature, so an implementation
+overload will look like an orphan while its wrapper looks self-contained.
+
 Established by KAN-77 and KAN-80, after `create_seed_user` was found anon-callable in
-production.
+production; extended by KAN-174 / `T-070`.
 
 ### 6e. A guard added later does not protect the rows that predate it
 
@@ -768,6 +807,30 @@ proves nothing unless you have separately established that the thing was *reache
 and unmatched lookups are the usual reason it was not — and this codebase is full of both, since
 most feature tables hold zero rows.
 
+**The RLS form, added by `T-074` (2026-09-10): an empty table is not evidence that its policies
+work. Test a policy by calling its predicate, not by selecting from the table.**
+
+RLS predicates are evaluated **per row**. On a zero-row table the policy function is never invoked,
+so a `SELECT` returns `0 rows` cleanly no matter how broken the predicate is.
+
+`public.can_manage_venue` raises `42P01 relation "public.organiser_profiles" does not exist` (the
+live table is `public.organiser`). All four `venue_members` policies call it or its sibling. Yet
+`SELECT count(*) FROM public.venue_members` as `anon` and as `authenticated` returns **0 rows, no
+error** — because the table holds 0 rows. A probe that stopped there would have filed a real
+defect as a false positive.
+
+```sql
+-- proves nothing on an empty table
+set local role authenticated; select count(*) from public.venue_members;
+
+-- the actual test
+select public.can_manage_venue('…'::uuid, '…'::uuid);   -- 42P01, or a boolean
+```
+
+**And write the acceptance criterion at the predicate, not the table.** "`venue_members` returns
+rows" is untestable here: it returns 0 rows while broken *and* 0 rows once fixed. A criterion that
+passes in both states is not a criterion.
+
 ### 12i. In a shared tree, `git add -A` commits other seats' work under your name
 
 *Written 2026-09-07 by `cto`, from a near-miss `backend-4` found and `team-lead-4` routed.
@@ -820,3 +883,66 @@ This governs commands that act on files you did not name and **claim** work: `ad
 `add .`, `commit -a`. Same root cause — a repo-global operation in a shared tree — and the two
 opposite consequences. `12b`'s carve-out logic applies here unchanged: **name the path, and
 only for hunks you authored.**
+
+
+### 12j. Live state resembling a migration's target is not evidence the migration partly ran
+
+**Attribute state to a confirmed-applied source before calling it residue.** `T-068` Amendment 2
+retired *"a repo file absent from the ledger must be unapplied"* — a file can be fully live under
+another recorded version. **The inverse is equally false and bit us the same week.**
+
+`T-073`: `wallets` was read as mid-migration on five markers — `owner_type` nullable where `T-051`
+wants NOT NULL, `user_id` still the PK, `id` not the PK, `wallets_unique_idx` co-existing with
+`wallets_pkey`, `wallets_self_read` still `user_id`-keyed. Every one of those is declared in
+`20260829080500_baseline_schema.sql`, which is **ledger-matched and therefore confirmed applied**.
+Zero of the pending migration's nine statements had run. The table has simply been incoherent since
+its baseline — that is why the migration exists.
+
+Two mechanics to keep in hand:
+
+- **A table exhibiting *none* of a migration's effects is unapplied, not partially applied.** Read
+  the pending file statement by statement against live and tabulate; "looks halfway" is not a
+  finding, "A.4 has not run" is.
+- **Ordinal position carries no date information.** Columns appearing last do not mean they were
+  added last. `pg_dump` emits columns in `attnum` order, so a dump-derived baseline preserves the
+  order of the pre-baseline history — new-design columns routinely sit at the end of a `CREATE
+  TABLE` that ran in one statement.
+
+### 12k. Verifying a secret asserts its properties — never echo its value
+
+Verification of a credential is proving that something is **true of** it, not showing what it **is**.
+The value never appears in the evidence: not in a ticket, a comment, a decision entry, a status log,
+a commit message, a PR description, or a test fixture. Those surfaces are all long-lived, widely
+readable, and indexed by tooling that was never in scope when the check was written.
+
+**This is a technique, not a caution.** The check that prompted this rule was careful, correct work —
+it read the right file, confirmed the right things, and caught a real gap that kept a ticket open for
+the right reason. Quoting the file wholesale to show its work is the only thing that turned a good
+verification into a disclosure. The fix is not to verify less; it is to evidence the assertion instead
+of the input.
+
+**Assert the property:**
+
+| Instead of showing | Assert |
+|---|---|
+| the file's contents | every expected key is present and non-empty |
+| the password | the keystore opens with the configured credentials |
+| the key itself | the fingerprint, and that it **differs** from the prior one |
+| the secret's value | its length, or a truncated hash, if identity must be pinned at all |
+
+```bash
+# Evidences that signing is correctly configured, and discloses nothing.
+keytool -list -keystore "$STORE" -storepass:env STOREPASS | grep -i 'SHA1:'
+awk -F= '{ printf "%s=%s\n", $1, ($2 == "" ? "MISSING" : "SET") }' android/key.properties
+```
+
+**Two properties are worth stating explicitly because they are the ones people reach for the value to
+demonstrate.** That a credential *loads* is shown by the operation succeeding, not by printing what
+was loaded. That a credential has *changed* is shown by a fingerprint or hash differing across two
+reads — **never by displaying the old and new values side by side**, which discloses both at once and
+additionally reveals how they relate. Any statement characterising the relationship between two
+credential values belongs in neither the evidence nor the prose.
+
+**If a value has already been written somewhere durable, treat editing it out as reducing further
+spread, not as un-disclosing it** — the same reasoning by which `T-003` rejected rewriting public git
+history. Assume it is captured, and rotate.
