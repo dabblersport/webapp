@@ -1482,6 +1482,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get account_delete_dialog_warning =>
+      'This action cannot be undone. Your profile and personal data are deleted. Payment and booking records are retained for accounting purposes, for a period that is still being finalized.';
+
+  @override
+  String get account_delete_success_snack =>
+      'Your account and personal data have been deleted.';
+
+  @override
+  String get danger_zone_delete_confirmation_message =>
+      'This deletes your account and personal data and cannot be undone. Payment and booking records are retained for accounting purposes, for a period that is still being finalized.';
+
+  @override
   String get settings_version_app_name => 'Dabbler';
 
   @override

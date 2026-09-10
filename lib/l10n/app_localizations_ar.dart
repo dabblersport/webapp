@@ -1452,6 +1452,17 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get account_delete_dialog_warning =>
+      'الخطوة دي مفيش رجوع فيها. بنمسح بياناتك الشخصية وملفك الشخصي. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.';
+
+  @override
+  String get account_delete_success_snack => 'تم حذف حسابك وبياناتك الشخصية.';
+
+  @override
+  String get danger_zone_delete_confirmation_message =>
+      'الخطوة دي هتمسح حسابك وبياناتك الشخصية ومفيش رجوع فيها. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.';
+
+  @override
   String get settings_version_app_name => 'Dabbler';
 
   @override

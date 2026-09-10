@@ -586,6 +586,11 @@
   "settings_sign_out_dialog_cancel": "إلغاء",
   "settings_sign_out_error": "حصل خطأ أثناء تسجيل الخروج: {error}",
   "@settings_sign_out_error": { "placeholders": { "error": { "type": "String" } } },
+
+  "account_delete_dialog_warning": "الخطوة دي مفيش رجوع فيها. بنمسح بياناتك الشخصية وملفك الشخصي. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.",
+  "account_delete_success_snack": "تم حذف حسابك وبياناتك الشخصية.",
+  "danger_zone_delete_confirmation_message": "الخطوة دي هتمسح حسابك وبياناتك الشخصية ومفيش رجوع فيها. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.",
+
   "settings_version_app_name": "Dabbler",
   "settings_version_label": "الإصدار {version}",
   "@settings_version_label": { "placeholders": { "version": { "type": "String" } } },

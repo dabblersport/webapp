@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
@@ -1063,27 +1064,9 @@ class _AccountManagementScreenState
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Delete Account'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This action cannot be undone. All your data will be permanently deleted.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: confirmTextController,
-                  decoration: const InputDecoration(
-                    labelText: 'Type "DELETE" to confirm',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.warning_outlined),
-                  ),
-                  enabled: !isDeleting,
-                ),
-              ],
-            ),
+          content: DeleteAccountDialogContent(
+            confirmController: confirmTextController,
+            enabled: !isDeleting,
           ),
           actions: [
             TextButton(
@@ -1168,11 +1151,18 @@ class _AccountManagementScreenState
       }
 
       if (mounted) {
+        // Resolved before navigating: `context.go` replaces the route this
+        // context belongs to, so the lookup has to happen while it is still
+        // the one the user is on.
+        final message = AppLocalizations.of(
+          context,
+        ).account_delete_success_snack;
+
         context.go('/auth-welcome');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Your account has been permanently deleted.'),
+            content: Text(message),
             backgroundColor: context.successColor,
           ),
         );
@@ -1180,5 +1170,54 @@ class _AccountManagementScreenState
     } catch (e) {
       throw Exception('Failed to delete account: $e');
     }
+  }
+}
+
+/// The body of the delete-account confirmation dialog.
+///
+/// Extracted from [AccountManagementScreen] so KAN-161's AC2 — layout verified
+/// at the new string lengths in Arabic as well as English — can be exercised by
+/// a widget test against the widget the app actually renders, rather than a
+/// reconstruction of it in the test. The screen itself cannot be pumped: it
+/// reaches for `Supabase.instance` and an authenticated session.
+///
+/// The `Type "DELETE"` label is deliberately still a hardcoded English literal.
+/// It is outside KAN-160/KAN-161's scope and `content-manager` ruled the
+/// confirmation token stays a fixed Latin `DELETE`; see the ticket's scope
+/// correction #2.
+class DeleteAccountDialogContent extends StatelessWidget {
+  const DeleteAccountDialogContent({
+    super.key,
+    required this.confirmController,
+    required this.enabled,
+  });
+
+  final TextEditingController confirmController;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context).account_delete_dialog_warning,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: confirmController,
+            decoration: const InputDecoration(
+              labelText: 'Type "DELETE" to confirm',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.warning_outlined),
+            ),
+            enabled: enabled,
+          ),
+        ],
+      ),
+    );
   }
 }

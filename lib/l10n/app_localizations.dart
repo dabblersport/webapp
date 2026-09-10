@@ -2726,6 +2726,24 @@ abstract class AppLocalizations {
   /// **'Error signing out: {error}'**
   String settings_sign_out_error(String error);
 
+  /// No description provided for @account_delete_dialog_warning.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone. Your profile and personal data are deleted. Payment and booking records are retained for accounting purposes, for a period that is still being finalized.'**
+  String get account_delete_dialog_warning;
+
+  /// No description provided for @account_delete_success_snack.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account and personal data have been deleted.'**
+  String get account_delete_success_snack;
+
+  /// No description provided for @danger_zone_delete_confirmation_message.
+  ///
+  /// In en, this message translates to:
+  /// **'This deletes your account and personal data and cannot be undone. Payment and booking records are retained for accounting purposes, for a period that is still being finalized.'**
+  String get danger_zone_delete_confirmation_message;
+
   /// No description provided for @settings_version_app_name.
   ///
   /// In en, this message translates to:
