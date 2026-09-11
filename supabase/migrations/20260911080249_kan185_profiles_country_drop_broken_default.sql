@@ -1,0 +1,123 @@
+-- KAN-185: public.profiles.country carried DEFAULT 'UAE', which could never satisfy
+--          profiles_country_fkey. Default removed.
+--
+-- STATUS: APPLIED via `apply_migration` against wtncuzcskpigqpmnxwws on 2026-09-11.
+-- Ledger version 20260911080249, name kan185_profiles_country_drop_broken_default.
+-- Filename taken from the version string the ledger RETURNED (T-068 step 5), not a
+-- guess. Not applied via `supabase db push` -- T-068 bars it.
+--
+-- ============================================================================
+-- THE DEFECT, AND A CORRECTION TO THE TICKET'S OWN SEVERITY
+-- ============================================================================
+--
+-- profiles_country_fkey references ref_countries, which is keyed on ISO-2 codes.
+-- Measured live: ref_countries holds 196 rows, 'AE' is present, 'UAE' is NOT. So
+-- any INSERT omitting `country` took a default that could not satisfy the very FK
+-- it defaulted into -> 23503.
+--
+-- KAN-185 was filed as "Latent, not active", on the understanding that
+-- rpc_onboard_profile is the only insert path into profiles. THAT IS NOT TRUE OF
+-- THE LIVE CATALOGUE. Scanning every plpgsql/sql function (prokind='f') for an
+-- INSERT into profiles returns TWO:
+--
+--   public.rpc_onboard_profile(...)   names `country`, passes p_country (DEFAULT
+--                                     NULL) -- the default never applies here.
+--   public.rpc_create_profile(profile_type text, username text, display_name text)
+--                                     OMITS `country` entirely:
+--
+--       insert into public.profiles (user_id, profile_type, username, display_name)
+--       values (v_uid, rpc_create_profile.profile_type, v_username, v_display_name)
+--
+-- rpc_create_profile is SECURITY DEFINER and EXECUTE-granted to anon AND
+-- authenticated. So the default DID fire on a live, reachable, granted path, and
+-- that call raised 23503 every time. The defect was ACTIVE, not latent. The
+-- ticket's reasoning ("all 165 existing rows set country explicitly") explains
+-- why no STORED row shows it -- a failed insert stores nothing -- but it does not
+-- make the path safe.
+--
+-- Also correct as filed and worth keeping: profiles_country_fkey is NOT VALID
+-- (convalidated=false). NOT VALID exempts EXISTING ROWS ONLY; new inserts are
+-- checked in full. The 165 clean rows are not evidence against the defect.
+--
+-- ============================================================================
+-- WHY THE DEFAULT WAS REMOVED RATHER THAN CORRECTED TO 'AE'
+-- ============================================================================
+--
+-- Both branches clear the 23503. Removal was chosen:
+--
+--   1. A default would INVENT A FACT ABOUT A PERSON. `country` is a claim about
+--      where a real user is. The live population is not uniformly UAE:
+--          AE 149 · GB 6 · SG 3 · US 3 · FR 1 · IE 1 · BE 1 · NULL 1
+--      15 of 164 non-null profiles (9.1%) are elsewhere. A hardcoded 'AE' would
+--      silently record a wrong country for roughly one user in eleven, and an
+--      unverified one for the rest. NULL is the honest "not supplied".
+--   2. IT MAKES THE TWO INSERT PATHS AGREE. rpc_onboard_profile already stores
+--      NULL when the caller supplies nothing. After this, rpc_create_profile does
+--      the same thing rather than a different one.
+--   3. The default was already inert on the path designed around it, and only ever
+--      had effect on the path that never wanted it -- decoration that did damage
+--      exactly where it applied.
+--
+-- NO 23502 IS INTRODUCED, which is what AC2 asks. profiles.country is nullable
+-- (is_nullable='YES', re-confirmed post-apply) and an FK does not constrain NULL.
+-- The path that relied on the default (rpc_create_profile) therefore needs NO
+-- change: after this migration its insert succeeds and stores NULL. Its body was
+-- deliberately NOT edited -- outside this ticket's recorded surface (public.profiles,
+-- column default only) and not required.
+--
+-- ============================================================================
+-- DEMONSTRATED FAILING FIRST -- on a DISPOSABLE Postgres, not against production
+-- ============================================================================
+--
+-- The live shape was replicated exactly (ref_countries keyed on ISO-2, country text
+-- DEFAULT 'UAE', profiles_country_fkey ... NOT VALID, plus a pre-existing row) and
+-- rpc_create_profile's exact INSERT column list was run against it:
+--
+--   BEFORE: ERROR: insert or update on table "profiles" violates foreign key
+--           constraint "profiles_country_fkey"
+--           DETAIL: Key (country)=(UAE) is not present in table "ref_countries".
+--   AFTER DROP DEFAULT: INSERT 0 1, stored country = NULL, no 23502.
+--   REJECTED BRANCH, recorded: with SET DEFAULT 'AE' the same insert succeeds and
+--           records 'AE' for a user who supplied nothing.
+--
+-- NO LIVE USER-DATA WRITE WAS MADE. The behavioural demonstration is a substrate
+-- reproduction and is labelled as such rather than implying an insert into
+-- production profiles.
+--
+-- ON THE ASSERT-THAT-CANNOT-FAIL TRAP (backend-2, 2026-09-11): the post-condition
+-- is `column_default IS NULL`. It was run against BOTH states on the substrate and
+-- reports "FAIL: default still 'UAE'::text" with the defect present and "PASS: no
+-- default" after -- it distinguishes them. Live, it read the FAIL branch before the
+-- apply and the PASS branch after. It is not an assert that passes while nothing
+-- changed.
+--
+-- ============================================================================
+-- POST-APPLY VERIFICATION -- read from the live catalogue, never from this file
+-- ============================================================================
+--   information_schema.columns.column_default for profiles.country -> NULL
+--       ("PASS: no default"; pre-apply the same query read 'UAE'::text)
+--   pg_attrdef rows for profiles.country                           -> 0
+--   is_nullable                                                    -> YES  (unchanged)
+--   data_type                                                      -> text (unchanged)
+--   profiles_country_fkey                                          ->
+--       FOREIGN KEY (country) REFERENCES ref_countries(code) NOT VALID  (unchanged)
+--   profiles column count      33      profiles constraint count   10
+--   profiles rows             165      country NULL rows            1   (unchanged)
+--
+-- AC3 SCOPE NOTE, stated precisely rather than overclaimed: the column count,
+-- constraint count, FK definition, type and nullability above are measured before
+-- and after. The full per-column default list was NOT captured pre-apply, so "no
+-- other column default changed" rests on the statement's own grammar --
+-- `ALTER TABLE ... ALTER COLUMN country DROP DEFAULT` names exactly one column and
+-- cannot reach another -- rather than on a pre/post diff of pg_attrdef. Flagged so
+-- a reviewer weighs it as a structural argument, not as a measurement.
+--
+-- Catalogue-only change (pg_attrdef). No table rewrite. No data modified, so this is
+-- not the user-data mutation 019 reserves to the CEO. ACCESS EXCLUSIVE on
+-- public.profiles for the duration of a catalogue update -- sub-millisecond, no scan.
+--
+-- ROLLBACK: ALTER TABLE public.profiles ALTER COLUMN country SET DEFAULT 'UAE';
+--           Instant. Restores the prior (defective) state exactly.
+-- ============================================================================
+
+ALTER TABLE public.profiles ALTER COLUMN country DROP DEFAULT;
