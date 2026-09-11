@@ -1,0 +1,160 @@
+-- KAN-170: integrity-only FK on public.games.creator_user_id -> auth.users(id),
+--          ON DELETE SET NULL.
+--
+-- STATUS: APPLIED. Landed via `apply_migration` against wtncuzcskpigqpmnxwws on
+-- 2026-09-11. Ledger version 20260911074608, name
+-- kan170_games_creator_user_id_fk_setnull. This filename is taken from the
+-- version string the remote ledger RETURNED, per T-068 step 5 -- it is not a
+-- guess. Verified present in supabase_migrations.schema_migrations.
+--
+-- ============================================================================
+-- SCOPE -- read this before assuming what this constraint does
+-- ============================================================================
+--
+-- This FK is INTEGRITY-ONLY and explicitly NON-LOAD-BEARING. It makes NO
+-- ERASURE CLAIM and it does not gate account deletion.
+--
+-- The chain that actually blocks account deletion runs through a DIFFERENT
+-- column:
+--     profiles.user_id          -> auth.users   ON DELETE CASCADE
+--     games.creator_profile_id  -> profiles     ON DELETE RESTRICT   <-- blocker
+-- That work is owned entirely by KAN-191 (frontend sibling KAN-192), per cto's
+-- T-077 Amendment 3. Do not re-implement any of it here.
+--
+-- SUPERSEDES: supabase/migrations/20260910100000_kan170_games_creator_user_id_fk.sql
+-- (committed f6c5f10 on Canary) -- authored ON DELETE RESTRICT, which T-077
+-- Amendment 1 REJECTED, and never applied. That file carries its own SUPERSEDED
+-- header and must not be applied. It is retained as honest history.
+--
+-- ============================================================================
+-- WHAT THIS FK IS ACTUALLY WORTH -- the write path, not the delete path
+-- ============================================================================
+--
+-- games.creator_user_id is kept consistent today by a TRIGGER
+-- (trg_games_set_host -> trgfn_games_set_host_user), which derives it from
+-- creator_profile_id. That means the pre-apply "218/218 clean" state was
+-- TRIGGER-ENFORCED, NOT SCHEMA-ENFORCED.
+--
+-- Per T-061, a trigger body is replaceable by the next CREATE OR REPLACE; a
+-- constraint is not. This FK therefore covers the paths a trigger does not:
+--   * COPY with triggers disabled
+--   * session_replication_role = 'replica'
+--   * restores
+--   * a future migration that rewrites the trigger without knowing what it was
+--     load-bearing for
+-- It rejects an orphan INSERT/UPDATE of creator_user_id on all of them.
+--
+-- ============================================================================
+-- KNOWN LIMITATION -- creator_user_id is NOT NULL. Recorded, not hidden.
+-- ============================================================================
+--
+-- Measured live 2026-09-11 and re-confirmed post-apply:
+--   information_schema.columns.is_nullable = 'NO' for games.creator_user_id.
+--
+-- Postgres CREATES an ON DELETE SET NULL FK on a NOT NULL column without
+-- complaint -- the action is only checked when it fires. Consequences, stated
+-- plainly:
+--
+--   * The SET NULL action CANNOT SUCCEED while the column stays NOT NULL. A
+--     delete of a referenced auth.users row raises 23502 not_null_violation
+--     rather than severing the link.
+--   * This changes NOTHING about whether account deletion works today. That
+--     delete is ALREADY blocked by games.creator_profile_id -> profiles
+--     RESTRICT. This FK adds a second way for the same delete to fail; it
+--     neither unblocks nor newly blocks anything. Consistent with the ticket's
+--     non-load-bearing framing.
+--   * The write-path integrity value above is unaffected by any of this.
+--
+-- NOT NULL is deliberately NOT dropped here. Two reasons:
+--   1. The NOT NULL blocker is KAN-191's scope, per Amendment 3.
+--   2. Nullability DDL is exactly what po's STOP guarded: can_view_squad's
+--      `NULL IS NOT DISTINCT FROM NULL` is TRUE, so a null owner plus an
+--      anonymous viewer passes the owner branch and grants anon
+--      owner-equivalent read. Shipping nullability DDL before KAN-176 Part B's
+--      authz audit lands would open that hole. Adding this FK alone opens
+--      nothing.
+--
+-- >> HANDOFF TO KAN-191, the reason this section exists:
+--    When KAN-191 changes creator_profile_id to SET NULL, the RESTRICT there
+--    stops being the blocker -- and THIS FK becomes the SOLE REMAINING BLOCKER
+--    on that delete, failing 23502, unless KAN-191's NOT NULL work covers
+--    creator_user_id as well as creator_profile_id.
+--
+-- ============================================================================
+-- AC2 -- trg_games_set_host does NOT fire on this FK's SET NULL. Verified live.
+-- ============================================================================
+--
+-- Read from pg_trigger.tgattr (which is what encodes column scope), attnums
+-- resolved against pg_attribute, 2026-09-11:
+--
+--   trg_games_set_host  oid 59086  tgenabled 'O'  tgtype 23
+--                       tgattr '5'  ->  {creator_profile_id}
+--
+-- COLUMN-SCOPED to creator_profile_id. This FK's SET NULL writes only
+-- creator_user_id -- a different column -- so the trigger does not fire on it,
+-- and KAN-191's null-guard cannot re-derive over it.
+--
+-- THE TRAP, so nobody re-derives this wrongly: tgtype 23 does NOT encode column
+-- scope. In the same live result set, trg_games_search_tsv is ALSO tgtype 23 but
+-- has tgattr '' (unscoped, every column). Identical tgtype, opposite scope. Only
+-- tgattr answers the question. Earlier KAN-170 comments citing "tgtype 23" were
+-- therefore never in conflict with the column-scoped baseline reading.
+--
+-- Why this mattered rather than being a formality: had trg_games_set_host been
+-- unscoped, this FK's SET NULL would have been overwritten straight back to the
+-- departing user's id, or the trigger's creator_profile_not_found branch would
+-- have aborted the whole deletion with P0001/23503. The arrangement is safe
+-- because of a specific verified property, not by luck. Do NOT generalize "this
+-- trigger doesn't interfere" to any other column on games without checking that
+-- column's own tgattr.
+--
+-- ============================================================================
+-- PRECONDITIONS -- measured live immediately before apply (2026-09-11)
+-- ============================================================================
+--   total_games 218 · null_creator 0 · orphans 0 · distinct_creators 26
+--   auth.users 259 · profiles 165
+--   games.creator_user_id uuid NOT NULL · auth.users.id uuid NOT NULL PK
+--   games_creator_user_id_fkey present: 0
+-- Clean, so a plain VALIDATED ADD CONSTRAINT was correct; the NOT VALID branch
+-- was not needed.
+--
+-- LOCK: ADD CONSTRAINT ... FOREIGN KEY takes SHARE ROW EXCLUSIVE on BOTH
+-- public.games and auth.users. Reads unaffected; writes to both block for the
+-- duration, and a lock on auth.users blocks logins and signups. At 218 rows the
+-- validation window is sub-millisecond. No data was modified.
+--
+-- ============================================================================
+-- POST-APPLY VERIFICATION -- read from the live catalogue, never from this file
+-- ============================================================================
+--   pg_constraint: games_creator_user_id_fkey
+--     confdeltype  'n'   (SET NULL)          <-- AC1
+--     confupdtype  'a'   (NO ACTION, default, matches sibling FKs on this table)
+--     convalidated true
+--     pg_get_constraintdef ->
+--       FOREIGN KEY (creator_user_id) REFERENCES auth.users(id) ON DELETE SET NULL
+--
+--   Deltas, all exactly as intended:
+--     constraints on public.games   20 -> 21   (+1)
+--     foreign keys on public.games   7 ->  8   (+1)
+--     indexes on public.games       13 -> 13   (unchanged)
+--     public.games rows            218 -> 218  (unchanged)
+--     auth.users rows              259 -> 259  (unchanged)
+--     public.profiles rows         165 -> 165  (unchanged)
+--     public.games RLS            true -> true (unchanged)
+--     auth.users constraints         3 ->  3   (unchanged -- auth.users not altered)
+--
+-- EVIDENCE HONESTY: enforcement here is ASSERTED FROM THE CATALOGUE, not
+-- demonstrated behaviourally. The decisive behavioural probe requires writes to
+-- auth.users and public.profiles -- a permission surface denied three times on
+-- 2026-09-10 and not granted for this pass. It was not routed around. The PEER
+-- reviewer must rule on catalogue evidence knowing that, and must not assume
+-- stronger proof exists somewhere in this ticket's history. It does not.
+--
+-- ROLLBACK: ALTER TABLE public.games DROP CONSTRAINT games_creator_user_id_fkey;
+--           Instant, no scan, no data loss.
+-- ============================================================================
+
+ALTER TABLE public.games
+  ADD CONSTRAINT games_creator_user_id_fkey
+  FOREIGN KEY (creator_user_id) REFERENCES auth.users(id)
+  ON DELETE SET NULL;

@@ -1,3 +1,57 @@
+-- ############################################################################
+-- ##  SUPERSEDED -- DO NOT APPLY THIS FILE. IT IS NOT THE FIX.              ##
+-- ############################################################################
+--
+-- Superseded 2026-09-11 by T-077 Amendment 2, and rescoped again by T-077
+-- Amendment 3. This file was authored but NEVER APPLIED; it is retained as
+-- honest history only. Everything below this header is the superseded record.
+--
+-- (a) WHY IT IS SUPERSEDED
+--     It authors `ON DELETE RESTRICT`. Amendment 1 REJECTED that action, under
+--     cpo's P-044 (participation objects preserved, the departed person's links
+--     severed): RESTRICT would BLOCK the very deletion the erasure work exists
+--     to enable. Amendment 3 then moved erasure off KAN-170 entirely.
+--
+-- (b) IT TARGETED THE WRONG COLUMN
+--     This file targets `public.games.creator_user_id`, framed at the time as an
+--     erasure vehicle. It was never one. `games.creator_user_id` carried NO
+--     FOREIGN KEY AT ALL when this file was written, so there was nothing there
+--     gating any deletion -- a constraint that does not exist cannot block
+--     anything. The column's values were kept consistent by a TRIGGER
+--     (`trg_games_set_host`), not by the schema. See the trigger analysis below,
+--     which remains correct and is worth reading.
+--
+-- (c) THE ACTUAL ERASURE VEHICLE IS A DIFFERENT COLUMN
+--     It is `public.games.creator_profile_id`. The chain that genuinely blocks
+--     account deletion runs:
+--         profiles.user_id -> auth.users            ON DELETE CASCADE
+--         games.creator_profile_id -> profiles      ON DELETE RESTRICT  <-- here
+--     The RESTRICT on `creator_profile_id` is what halts the delete. Fixing
+--     erasure therefore means changing `creator_profile_id`, NOT
+--     `creator_user_id`.
+--
+-- (d) WHO OWNS WHAT NOW -- BOTH TICKETS NAMED, DELIBERATELY
+--     * KAN-191  owns ALL erasure work: the `creator_profile_id` /
+--                `owner_profile_id` RESTRICT -> SET NULL change across games,
+--                meetups and squads, the NOT NULL blocker, the
+--                `trg_games_set_host` amendment, and a BINDING cross-file
+--                execution order. KAN-192 is its frontend sibling.
+--     * KAN-170  (this ticket) keeps ONLY its narrow original scope: an
+--                integrity-only FK on `games.creator_user_id`, ON DELETE SET
+--                NULL, explicitly NON-LOAD-BEARING and making NO ERASURE CLAIM.
+--                That FK is carried by a SEPARATE, FORWARD-ONLY migration --
+--                NOT by this file, which cannot carry it (this file authors
+--                RESTRICT, the rejected action).
+--
+-- (e) THE TRAP THIS HEADER EXISTS TO PREVENT -- T-068, LITERALLY
+--     A future reader finding this file in the repo could mistake an
+--     AUTHORED-BUT-NEVER-APPLIED migration for the real, live fix. It is not.
+--     The repo is NOT authoritative for live database state. Read the live
+--     catalogue (`pg_constraint`, `pg_trigger`), never a migration file, to
+--     learn what is actually enforced.
+--
+-- ############################################################################
+--
 -- KAN-170 / T-069: games.creator_user_id -> auth.users(id) ON DELETE RESTRICT
 --
 -- STATUS: AUTHORED, NOT APPLIED. The apply was DENIED by the Claude Code
