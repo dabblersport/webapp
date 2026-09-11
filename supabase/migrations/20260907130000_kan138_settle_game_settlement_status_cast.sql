@@ -20,8 +20,18 @@
 -- 20260911113000_kan169_settle_game_derive_organiser_sport_gross.sql and
 -- 20260911114500_kan169_settle_game_zero_and_negative_earnings.sql.
 --
--- APPLYING THIS FILE WOULD SILENTLY REVERT THE KAN-169 FIX AND RESTORE THE
--- PRIVILEGE-ESCALATION BUG. Do not run it.
+-- This file's 5-param signature does not match the live settle_game(uuid,boolean)
+-- (KAN-169 applied). CREATE OR REPLACE would NOT revert the fix -- it would
+-- CREATE A SECOND OVERLOAD beside the hardened one, left untouched with its
+-- revoke intact. This file contains zero GRANT/REVOKE statements. pg_default_acl
+-- grants anon and authenticated EXECUTE on every new public function by default
+-- (verified: postgres and supabase_admin defaults both grant anon=X,
+-- authenticated=X). Applying this file creates an anon-reachable
+-- privilege-escalation function -- WORSE than the pre-2026-09-10 state, because
+-- the existing containment revoke protects a different function object entirely
+-- and does not apply to this one.
+--
+-- DO NOT APPLY THIS FILE UNDER ANY CIRCUMSTANCES.
 --
 -- ============================================================================
 --
