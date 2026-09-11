@@ -227,6 +227,91 @@ select 'P8 discrimination' as probe, ctx, n,
 rollback;
 
 -- ===========================================================================
+-- P9 — AC5: the oracle is CLOSED and the policy path SURVIVED
+-- ===========================================================================
+-- After 20260911081512, util.is_moderator(uuid) and util.is_venue_admin(uuid)
+-- are SECURITY DEFINER and live in `util`. The containment is the reverse of
+-- the usual one: EXECUTE is KEPT for anon/authenticated, and `util` withholds
+-- USAGE. PostgREST resolves an RPC BY NAME and so needs USAGE -> denied. A
+-- policy qual stores the OID and resolves no name -> only EXECUTE is checked
+-- -> it still runs.
+--
+-- Measured as `authenticated` 2026-09-11. BEFORE this migration both were
+-- "REACHABLE, returned false" by name — that is the pre-state these replace.
+--
+--   util.is_venue_admin(uuid)  by name -> 42501 permission denied for schema util
+--   util.is_moderator(uuid)    by name -> 42501 permission denied for schema util
+--   public.is_venue_admin(uuid) 1-arg  -> 42883 function does not exist
+--   public.is_venue_admin(uuid,uuid)   -> REACHABLE, returned true   << 2-arg
+--                                          untouched and MUST stay reachable
+--
+-- The last line is the over-reach guard. If it ever returns 42883 or 42501,
+-- someone converted or moved the 2-arg overload, and venue_spaces /
+-- venue_blackouts / venue_price_rules writes are broken.
+begin;
+create temp table _p9(scenario text, result text);
+grant all on _p9 to authenticated;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"11111111-2222-3333-4444-555555555555","role":"authenticated"}';
+do $$
+declare s text; m text; b boolean;
+begin
+  begin
+    select util.is_venue_admin('2d7024f7-198a-45aa-a64d-f52916b6b6c1'::uuid) into b;
+    insert into _p9 values ('A util.is_venue_admin by name','REACHABLE - ORACLE OPEN, returned '||b::text);
+  exception when others then
+    get stacked diagnostics s=returned_sqlstate, m=message_text;
+    insert into _p9 values ('A util.is_venue_admin by name', s||' '||m);
+  end;
+  begin
+    select util.is_moderator('2d7024f7-198a-45aa-a64d-f52916b6b6c1'::uuid) into b;
+    insert into _p9 values ('B util.is_moderator by name','REACHABLE - ORACLE OPEN, returned '||b::text);
+  exception when others then
+    get stacked diagnostics s=returned_sqlstate, m=message_text;
+    insert into _p9 values ('B util.is_moderator by name', s||' '||m);
+  end;
+  begin
+    select public.is_venue_admin('2d7024f7-198a-45aa-a64d-f52916b6b6c1'::uuid,
+                                 '00000000-0000-0000-0000-000000000000'::uuid) into b;
+    insert into _p9 values ('C 2-ARG must STAY reachable','REACHABLE returned '||b::text);
+  exception when others then
+    get stacked diagnostics s=returned_sqlstate, m=message_text;
+    insert into _p9 values ('C 2-ARG must STAY reachable','BROKEN: '||s||' '||m);
+  end;
+end $$;
+reset role;
+select 'P9 oracle closure' as probe, scenario, result from _p9 order by scenario;
+rollback;
+
+-- ===========================================================================
+-- P10 — AC5 no-regression, plus the OID/qual survival that makes it true
+-- ===========================================================================
+-- AC5 asks only that both still return false today. They do — and because they
+-- are now DEFINER, false is the TRUE answer rather than a fail-closed artifact:
+-- 0 moderator grants and 0 venue_admin grants of 1 total row.
+--
+-- The OID assertions are the load-bearing half. ALTER … SET SCHEMA preserves
+-- the OID; a DROP + CREATE would not, and the three storage.objects quals are
+-- OID-bound, so they would have been silently orphaned. Measured: both OIDs
+-- unchanged at 20147 / 20148 across the move, and all three quals now render
+-- `util.is_venue_admin(auth.uid())` — the binding followed the function.
+select 'P10 AC5 no-regression' as probe,
+       util.is_moderator('2d7024f7-198a-45aa-a64d-f52916b6b6c1'::uuid)   as is_moderator_false,
+       util.is_venue_admin('2d7024f7-198a-45aa-a64d-f52916b6b6c1'::uuid) as is_venue_admin_false,
+       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='util' and p.proname in ('is_moderator','is_venue_admin')
+           and p.prosecdef and p.oid in (20147,20148))                    as both_definer_in_util_same_oid,
+       (select count(*) from pg_policy
+         where polrelid='storage.objects'::regclass
+           and coalesce(pg_get_expr(polqual,polrelid),pg_get_expr(polwithcheck,polrelid))
+               ~ 'util\.is_venue_admin')                                  as storage_quals_rebound,
+       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='public' and p.proname='is_venue_admin'
+           and pg_get_function_identity_arguments(p.oid)='p_user uuid, p_venue uuid'
+           and not p.prosecdef)                                           as two_arg_untouched,
+       'expect false,false,2,3,1' as criterion;
+
+-- ===========================================================================
 -- GUARD SHAPES IN THE MIGRATION — classified, not asserted to be fine
 -- ===========================================================================
 -- The migration's in-transaction DO block holds three guards. All three are
