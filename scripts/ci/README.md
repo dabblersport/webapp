@@ -136,6 +136,69 @@ locally and the script starts and destroys its own Docker container (no local `p
 than falling back to fixtures, because a fixture fallback would silently stop testing the only
 thing worth testing.
 
+## `check_function_default_acl.sh` (KAN-189/KAN-194, `docs/SCHEMA.md` §2g.1)
+
+**KAN-175's gate above covers functions that already exist.** It has no view into
+`pg_default_acl` at all, so a function that is contained today (or written correctly
+from the start) is invisible to it and to KAN-61's view gate — neither says anything
+about what EXECUTE grant the *next* `CREATE FUNCTION` in `public` gets by default.
+This gate covers that: `pg_default_acl` for `defaclobjtype='f'`, read-only, against
+`wtncuzcskpigqpmnxwws` directly (shares `SUPABASE_DB_URL`, no new secret, no `CREATE
+FUNCTION` against production).
+
+**Two independent channels, not one — closing only the first is not sufficient,**
+proven live rather than assumed (`KAN-189`):
+
+1. **The NAMED per-schema default.** `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN
+   SCHEMA public ...` writes a row keyed on `(defaclrole=postgres,
+   defaclnamespace=<public>, defaclobjtype='f')`. This is what the original T-078
+   question and most people's mental model of "the default ACL" actually means.
+2. **PostgreSQL's own built-in default.** Newly-created functions get EXECUTE granted
+   to `PUBLIC` unless that has been explicitly revoked — and that revoke is **GLOBAL**
+   (no `IN SCHEMA` clause), a *separate* `pg_default_acl` row keyed on
+   `defaclnamespace=0`. A per-schema revoke targeting `PUBLIC` — tried three ways on
+   `KAN-189`, each disposable-probe-verified ineffective — **cannot** remove this:
+   per-schema defaults are added on top of the global one, never a replacement for it.
+
+`KAN-189` found both channels open for `postgres`, closed them with two separate
+migrations (`20260911133843` for channel 1, `20260911163938` for channel 2), and
+proved the fix with a disposable probe function's *effective* privilege
+(`has_function_privilege`), not just the catalogue row shape. This gate encodes that
+exact two-channel predicate so a future regression on either channel — including one
+that reopens channel 2 alone, which a naive "no bare PUBLIC in the schema-scoped row"
+check would miss entirely — is caught by CI.
+
+**`supabase_admin` is reported, never gates the build.** `T-045`'s role split reserves
+it for its own ruling; neither `KAN-189` nor `KAN-194` had authority to modify it. The
+gate prints its current state (both channels) for visibility, exactly as measured, and
+does not fail on it — encoding it as an "expected good" security state would be
+false, since it is not fixed.
+
+```
+bash scripts/ci/check_function_default_acl.sh
+```
+
+`check_function_default_acl_test.sh` proves the predicate itself — shared with the
+real script via `function_default_acl_diff.sh` — against a real, disposable Postgres,
+same discipline as `check_anon_function_grants_test.sh`: it seeds the actual
+pre-`KAN-189` production shape (a schema-scoped grant to `anon`, no global revoke),
+confirms the gate flags **both** channels *and* that a genuinely new function's
+effective privilege matches, applies `KAN-189`'s real fix verbatim and confirms the
+gate goes green with a fresh probe confirming `anon` is denied while `authenticated`
+still works, then demonstrates two independent regressions — channel 2 alone
+reopening, and channel 1 alone reopening — each correctly flagged as exactly the one
+problem it is, never the other. `supabase_admin`'s report path is exercised too
+(informational only).
+
+```
+bash scripts/ci/check_function_default_acl_test.sh
+```
+
+Substrate: set `KAN194_TEST_DB_URL` to a service-container Postgres in CI (the
+workflow reuses the same container KAN-175's self-test uses), or leave it unset
+locally and the script starts and destroys its own Docker container. **It never
+touches `wtncuzcskpigqpmnxwws`.**
+
 ## `ci.yml` (KAN-72)
 
 `.github/workflows/ci.yml` runs `flutter analyze` and `flutter test` on push to `Canary`

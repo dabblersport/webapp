@@ -11,6 +11,14 @@ name: Anon reachability allowlist
 # disposable Postgres (the detection IS the SQL predicate; a fixture-only
 # test would leave the predicate itself unexercised), supplied here as a
 # service container. See scripts/ci/README.md.
+#
+# KAN-189/KAN-194 add a third, companion gate: whether `postgres`'s function
+# default-privilege configuration in `public` still grants EXECUTE to anon or
+# PUBLIC on FUTURE `CREATE FUNCTION` statements, checked against
+# docs/SCHEMA.md §2g.1. Shares SUPABASE_DB_URL; reuses the same disposable
+# Postgres service container for its self-test. `supabase_admin`'s identical
+# exposure is reported by the gate but never fails the build — T-045's role
+# split reserves that for its own ruling. See scripts/ci/README.md.
 
 on:
   push:
@@ -60,3 +68,13 @@ jobs:
         env:
           KAN175_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/kan175
         run: bash scripts/ci/check_anon_function_grants_test.sh
+
+      - name: Check function default-privilege configuration
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/ci/check_function_default_acl.sh
+
+      - name: Self-test the function default-privilege gate (real disposable Postgres)
+        env:
+          KAN194_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/kan175
+        run: bash scripts/ci/check_function_default_acl_test.sh

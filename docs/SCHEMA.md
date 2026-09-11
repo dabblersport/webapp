@@ -716,6 +716,37 @@ repo-determinable**. If it does, all seven revokes are permanently fragile and e
 `CREATE FUNCTION` in `public` re-opens the same hole. **That is work, not a record** — see
 `DECISIONS.md` `T-078`.
 
+**`T-078` answered, `KAN-189`/`KAN-194`, 2026-09-11 — the function default DID exist, on BOTH
+channels, and is now closed for `postgres`.** `pg_default_acl` for schema `public`,
+`defaclobjtype='f'`, checked live:
+
+* **`postgres` grantor — FIXED.** Two channels, not one, and closing only the first was proven
+  live to be insufficient (`KAN-189`): the NAMED default (`postgres=X, anon=X, authenticated=X,
+  service_role=X` in the schema-scoped row) was revoked (`ALTER DEFAULT PRIVILEGES FOR ROLE
+  postgres IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM anon`, ledger `20260911133843`), and
+  PostgreSQL's own built-in **global** EXECUTE-to-PUBLIC default on new functions — separate from
+  and layered on top of any per-schema entry, and NOT removable by a schema-scoped revoke — was
+  separately revoked (`ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM
+  PUBLIC`, no `IN SCHEMA` clause, ledger `20260911163938`). Both re-confirmed live on `KAN-194`'s
+  own re-read (2026-09-11, after `KAN-189` landed): `postgres`'s schema-scoped row is now
+  `{postgres=X, authenticated=X, service_role=X}` — no `anon`, no bare `PUBLIC` — and a fresh
+  disposable probe function created by `postgres` carries exactly that ACL, confirmed twice
+  independently (`KAN-189`'s own close, and again on `KAN-194`'s re-read). Existing functions'
+  explicit grants are unaffected — default-privilege changes are forward-only.
+* **`supabase_admin` grantor — UNCHANGED, OUT OF SCOPE, NOT FIXED.** `T-045`'s role split reserves
+  this for its own ruling; neither `KAN-189` nor `KAN-194` had authority to touch it, and neither
+  did. Its schema-scoped row is unchanged: `{postgres=X, anon=X, authenticated=X, service_role=X}/
+  supabase_admin`. It also carries no global-scope (`defaclnamespace=0`) override, meaning
+  PostgreSQL's built-in global PUBLIC-EXECUTE default is inferred still active for it too — **this
+  is a catalogue inference, not a live-probe proof**: the reading role (`postgres`) cannot `SET
+  ROLE supabase_admin` in this environment (`pg_has_role(...) = false`), so a function created BY
+  `supabase_admin` was never actually created to test it. **Do not read this row as fixed.** A
+  function created by `supabase_admin` today would still inherit `anon` EXECUTE on both channels.
+
+**Do not describe the function-default hole as fully closed.** It is closed for the `postgres`
+grantor only. Whatever creates functions as `supabase_admin` remains exposed until a future ticket
+with its own authorized ruling addresses that half.
+
 **Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
 reviewable diff is the whole mechanism. Do not add one to make the gate pass without
 establishing why a new function needs an unguarded caller-supplied identity.
