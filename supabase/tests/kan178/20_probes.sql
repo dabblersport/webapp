@@ -83,22 +83,53 @@ rollback;
 -- ===========================================================================
 -- P4 — writes are refused even for an admin
 -- ===========================================================================
--- role_grants_no_insert / _no_update / _no_delete replaced the FOR ALL
--- role_grants_no_rw. Writes reach this table only through SECURITY DEFINER
--- functions and roles carrying rolbypassrls (postgres, service_role).
+-- !! READ THIS BEFORE CITING P4 AS EVIDENCE FOR THE WRITE POLICIES. IT IS NOT. !!
+--
+-- P4 is a true CONTAINMENT assertion — writes are refused — and a FALSE
+-- assertion about role_grants_no_insert / _no_update / _no_delete. Measured
+-- 2026-09-11 by capturing the SQLSTATE instead of trusting the handler:
+--
+--   authenticated, uuid absent from auth.users -> 42501 permission denied
+--   authenticated, real uuid + real role value -> 42501 permission denied
+--   has_table_privilege('authenticated','public.role_grants','INSERT') = FALSE
+--   relacl = {... anon=rm/postgres, authenticated=rm/postgres ...}   (r,m only)
+--
+-- `authenticated` holds NO INSERT GRANT, so the denial happens at the GRANT
+-- layer and the RLS write policies ARE NEVER REACHED. The code under test is
+-- not executed (T-055). Exercising them needs a role that HOLDS the write
+-- grant and is still subject to RLS; no such role exists on this project, so
+-- those three policies are untested here and are belt-and-braces by design —
+-- with RLS enabled and no permissive policy for a command, the command is
+-- denied anyway.
+--
+-- The original form of this probe caught `insufficient_privilege or
+-- check_violation` and would ALSO have passed on a foreign-key violation going
+-- uncaught, since role_grants.role is FK -> roles and role_grants.user_id is
+-- FK -> auth.users. Rewritten below to capture and REPORT the SQLSTATE rather
+-- than swallow it, so a future run cannot pass for a reason nobody looked at.
 begin;
+create temp table _p4(scenario text, sqlstate text, msg text);
+grant all on _p4 to authenticated;
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"2d7024f7-198a-45aa-a64d-f52916b6b6c1","role":"authenticated"}';
 do $$
+declare s text; m text;
 begin
   begin
     insert into public.role_grants(user_id, role)
-    values ('11111111-2222-3333-4444-555555555555','super_admin');
-    raise exception 'P4 FAILED: insert succeeded as authenticated admin';
-  exception when insufficient_privilege or check_violation then
-    raise notice 'P4 pass: insert blocked';
+    values ('2d7024f7-198a-45aa-a64d-f52916b6b6c1','admin');
+    insert into _p4 values ('insert as authenticated admin','NONE - INSERT SUCCEEDED','');
+  exception when others then
+    get stacked diagnostics s = returned_sqlstate, m = message_text;
+    insert into _p4 values ('insert as authenticated admin', s, m);
   end;
 end $$;
+reset role;
+-- expect sqlstate 42501. Anything else — especially 23503 — means the write
+-- was stopped by something other than access control; read the message.
+select 'P4 write containment' as probe, scenario, sqlstate, msg,
+       (sqlstate = '42501') as pass
+  from _p4;
 rollback;
 
 -- ===========================================================================
@@ -146,6 +177,77 @@ select 'P6 diagnostics' as probe,
        (select count(*) from pg_policy
          where polrelid='public.role_grants'::regclass and polcmd='*')       as for_all_policy_count;
 
+-- ===========================================================================
+-- P7 — assert the PREDICATE, not the existence. With its discrimination pair.
+-- ===========================================================================
+-- The defect being fixed is a predicate (`USING (true)`) and the fix is a
+-- different predicate, potentially under a similar name. A check shaped
+-- `IF NOT EXISTS (select 1 from pg_policies where policyname = ...)` passes on
+-- a policy of the right NAME with entirely the wrong PREDICATE, which is the
+-- exact failure mode this ticket exists to remove.
+--
+-- Both columns below run the SAME join against the SAME schema with different
+-- expected values. A single number is not evidence — `0` is also what a blind
+-- predicate returns. The PAIR (1 and 0) is what proves the comparison really
+-- compares. Measured live 2026-09-11: 1 and 0.
+select 'P7 predicate assertion' as probe,
+       (select count(*) from pg_policy
+         where polrelid='public.role_grants'::regclass and polcmd='r'
+           and pg_get_expr(polqual,polrelid) = 'is_admin(auth.uid())') as matches_intended_predicate,
+       (select count(*) from pg_policy
+         where polrelid='public.role_grants'::regclass and polcmd='r'
+           and pg_get_expr(polqual,polrelid) = 'true')                 as matches_old_defect_predicate,
+       (select count(*) from pg_policy
+         where polrelid='public.role_grants'::regclass and polcmd='*') as for_all_policies,
+       'expect 1, 0, 0' as criterion;
+
+-- ===========================================================================
+-- P8 — prove the behavioural test is actually testing (role discrimination)
+-- ===========================================================================
+-- P1's pass condition is ZERO ROWS — which is also exactly what a test that
+-- has stopped working returns. If an empty answer came back for BOTH an
+-- RLS-exempt role and an RLS-subject role, P1 would be measuring nothing.
+--
+-- Same query, same schema, same session, two roles. Measured live 2026-09-11:
+--   postgres (table owner, RLS-exempt)      -> 1
+--   authenticated non-admin (RLS applies)   -> 0
+-- The two MUST differ. If they ever match, stop and fix the harness before
+-- reading anything else in this file.
+begin;
+create temp table _disc(ctx text, n int);
+grant all on _disc to authenticated;
+insert into _disc values ('1. postgres (owner, RLS-EXEMPT)', (select count(*) from public.role_grants));
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"11111111-2222-3333-4444-555555555555","role":"authenticated"}';
+insert into _disc values ('2. authenticated non-admin (RLS applies)', (select count(*) from public.role_grants));
+reset role;
+select 'P8 discrimination' as probe, ctx, n,
+       ((select n from _disc where ctx like '1.%') <> (select n from _disc where ctx like '2.%')) as pass
+  from _disc order by ctx;
+rollback;
+
+-- ===========================================================================
+-- GUARD SHAPES IN THE MIGRATION — classified, not asserted to be fine
+-- ===========================================================================
+-- The migration's in-transaction DO block holds three guards. All three are
+-- COUNT-shaped (`count(*)` into an int, then `IF n <> expected RAISE`), so
+-- none can test NULL and all fail CLOSED. Their SUBSTANCE differs:
+--
+--   v_legacy <> 0   asserts ABSENCE by policy NAME. Adequate — name is the
+--                   right key for "this specific old policy is gone".
+--   v_forall <> 0   asserts ABSENCE by polcmd. Adequate — polcmd is the right
+--                   key for "no FOR ALL policy exists".
+--   v_read <> 1     asserts ARITY ONLY. ** UNDER-SPECIFIED. ** It counts SELECT
+--                   policies and never inspects their predicate, so a policy
+--                   with USING (true) satisfies it. It would NOT have caught
+--                   the very defect this ticket fixes.
+--
+-- P7 above is the assertion v_read should have been. It is in this re-runnable
+-- pack rather than in the applied migration because that migration has already
+-- landed; the behavioural probes P1/P2 cover the same property more strongly
+-- (they assert the predicate's EFFECT, not its text), so nothing is unguarded.
+-- Recorded rather than quietly corrected.
+--
 -- ===========================================================================
 -- WHEN TO RE-RUN THIS WHOLE PACK
 -- ===========================================================================
