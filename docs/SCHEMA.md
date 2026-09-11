@@ -303,7 +303,7 @@ transaction.
 | `v_comments` | granted | **yes** | 66 | **Closed** — invoker + **LEFT JOIN** `profiles`; 67 → 66, the one leaking row was a comment on a non-public parent. The 18 null-author rows are retained deliberately |
 | `v_post_comments` | granted | **yes** | 66 | **Closed** — same migration |
 | `v_circle_feed_visible` | granted | no | **0** | **No leak.** Definer and anon-granted, but returns nothing. Left as-is |
-| `v_potential_vibes_default` | granted | no | **0** | **Intentionally public — `T-027`.** Function-backed: `security_invoker` is a **no-op** when the `FROM` is a set-returning function; access control lives inside the function. Probed, not assumed |
+| `v_potential_vibes_default` | granted | no | **0** | **Intentionally public — `T-027`.** Function-backed: `security_invoker` is a **no-op** when the `FROM` is a set-returning function. `KAN-162` established the caller-controlled-identity chain that voided this for a sibling view; `KAN-174`/`T-070` closed the matching gap here by dropping the 7-arg `rpc_potential_vibes(..., p_me uuid)` overload entirely — only the 6-arg, `auth.uid()`-deriving form remains, `EXECUTE` verified live post-fix (`has_function_privilege`) and over an actual PostgREST HTTP round-trip: anon gets `200 []`, and the removed 7-arg signature is unreachable (`404 PGRST202`). Access control now genuinely lives inside the one remaining function. Probed, not assumed |
 | `v_recreate_quickpicks` | granted | no | **0** | **Intentionally public — `T-027`.** Same mechanism |
 | `username_registry_public` | *dropped* | n/a | n/a | **DROPPED — `KAN-141`.** The `T-027` note below ("a lookup queried with a predicate") did not match the object: the view body was `SELECT list_active_usernames()`, which returns **every** active username, and `anon` could select it unfiltered. Its `0` was an empty `username_registry`, not a control. `SECURITY DEFINER` on the function bypassed the table's own `username_registry_no_read` RLS. Dropped with the function; signup availability is served by `rpc_username_availability(text)` |
 | `v_space_slots_today` | granted | no | **errors (until KAN-74 applied)** | **`BUG-05`, being fixed via KAN-74 + KAN-104.** `find_slots()` referenced the dropped `public.venue_opening_hours`; KAN-74 (`20260831130000`) corrects the reference to `opening_hours`/`day_group`. Separately, KAN-104/`T-044` found `is_booked` reads `false` for every anon/non-privileged-authenticated caller regardless of actual occupancy (RLS on `venue_bookings` denies those callers all rows, so `find_slots`'s internal EXISTS always finds none) — fixed by making `find_slots` `SECURITY DEFINER` (`20260901120000`, must apply after KAN-74, restates its body) plus `security_invoker = true` on this view. Both migrations authored, not yet applied |
@@ -318,6 +318,11 @@ the claim, and the view's own definition will not show it.**
 `SECURITY DEFINER`, `EXECUTE` to `anon` — which returned **147 rows / 137 distinct users** to an
 anonymous caller. It read as safe only because `spw.user_id <> NULL` is NULL for every row. The
 row above is not being withdrawn: it was correct about the view. It was silent about the chain.
+
+**Closed — `KAN-174`, 2026-09-11.** The 7-arg overload and `rpc_potential_vibes_debug` were
+dropped in the same migration that folded the 7-arg's body into the 6-arg (identity now derived
+exclusively from `auth.uid()`); the row above reflects that fixed state. The chain this section
+warns about no longer has a caller-supplied-identity link in it.
 
 **And the finding that generalises: `anon-allowlist-check.yml` cannot see this.** The gate checks
 **views**; the exposure was a **function** two hops down, and the gate passed throughout.
@@ -898,7 +903,7 @@ Check the signature, not just the name:
 `rpc_block_user(p_peer, p_block boolean)` · `rpc_get_friends()` and
 `rpc_get_friends(p_user_id)` · `rpc_hide_user(target_user)` and
 `rpc_hide_user(p_peer, p_hide)` · `rpc_meetup_create` ×2 (a 4-arg and an 14-arg form) ·
-`rpc_meetup_rsvp` ×2 · `rpc_potential_vibes` ×2 (one takes `p_me`) ·
+`rpc_meetup_rsvp` ×2 ·
 `rpc_squad_respond_invite` ×2 (`p_action` vs `p_decision`)
 
 Also near-duplicates by name: `rpc_admin_revoke_venue` and
