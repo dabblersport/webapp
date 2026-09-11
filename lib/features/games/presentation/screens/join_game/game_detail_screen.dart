@@ -645,13 +645,17 @@ class _HostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs      = Theme.of(context).colorScheme;
     final name    = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
-    final creatorUserId = game.creatorUserId;
+    final creatorProfileId = game.creatorProfileId;
     return GestureDetector(
-      onTap: creatorUserId == null
+      onTap: creatorProfileId == null
           ? null
+          // The view no longer exposes a real auth uid for the creator, only
+          // creator_profile_id (KAN-87) — pass it in both the path slot and
+          // the profileId query param so downstream consumers that check
+          // profileId first resolve correctly.
           : () => context.push(
-                '${RoutePaths.userProfile}/$creatorUserId'
-                '${game.creatorProfileId != null ? '?profileId=${game.creatorProfileId}' : ''}',
+                '${RoutePaths.userProfile}/$creatorProfileId'
+                '?profileId=$creatorProfileId',
               ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

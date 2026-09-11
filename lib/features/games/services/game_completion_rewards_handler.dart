@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dabbler/core/utils/logger.dart';
-import 'package:dabbler/data/models/rewards/badge_tier.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';
 import 'package:dabbler/services/sport_profile_service.dart';
 
@@ -215,38 +214,4 @@ class GameCompletionRewardsHandler {
     }
   }
 
-  /// Get tier based on milestone count
-  BadgeTier _getTierForMilestone(int count) {
-    if (count >= 100) return BadgeTier.diamond;
-    if (count >= 50) return BadgeTier.platinum;
-    if (count >= 25) return BadgeTier.gold;
-    if (count >= 10) return BadgeTier.silver;
-    return BadgeTier.bronze;
-  }
-
-  /// Get tier based on win streak
-  BadgeTier _getTierForWinStreak(int streak) {
-    if (streak >= 20) return BadgeTier.platinum;
-    if (streak >= 10) return BadgeTier.gold;
-    if (streak >= 5) return BadgeTier.silver;
-    return BadgeTier.bronze;
-  }
-
-  /// Get milestone name for achievement
-  String _getMilestoneName(int count) {
-    switch (count) {
-      case 5:
-        return 'Newcomer';
-      case 10:
-        return 'Regular';
-      case 25:
-        return 'Veteran';
-      case 50:
-        return 'Expert';
-      case 100:
-        return 'Master';
-      default:
-        return 'Player';
-    }
-  }
 }

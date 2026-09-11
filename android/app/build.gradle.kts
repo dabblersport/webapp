@@ -1,3 +1,15 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+// Signing credentials live in android/key.properties, which is gitignored and
+// injected from CI secrets. They are never literals in this tracked file.
+// See docs/DECISIONS.md T-003.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -25,17 +37,19 @@ android {
     defaultConfig {
         applicationId = "com.dabbler.dabblerapp"
         minSdk = flutter.minSdkVersion // pinned: existing Play Store APKs require minSdk 21
-        targetSdk = 35  // or 36
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
     
     signingConfigs {
         create("release") {
-            storeFile = file("upload-keystore.jks")
-            storePassword = "mo3taz51024."
-            keyAlias = "upload"
-            keyPassword = "mo3taz51024."
+            // Falls back to nothing when key.properties is absent: a release
+            // build then fails loudly rather than silently signing with debug.
+            keyAlias = keystoreProperties["keyAlias"] as String?
+            keyPassword = keystoreProperties["keyPassword"] as String?
+            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String?
         }
     }
 

@@ -130,6 +130,34 @@ class PushNotificationService {
     }
   }
 
+  /// Revoke this browser's push registration on logout: deletes the current
+  /// user's `fcm_tokens` row for platform='web' (RLS requires auth.uid(), so
+  /// this MUST be called before `supabase.auth.signOut()` per T-004's
+  /// teardown order) and, best-effort, invalidates the local FCM
+  /// registration so a re-login in the same browser generates a fresh token.
+  Future<void> revokeToken() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await supabase
+          .from(SupabaseConfig.fcmTokensTable)
+          .delete()
+          .eq('user_id', userId)
+          .eq('platform', 'web');
+      debugPrint('Web FCM token revoked for user $userId');
+    } catch (e) {
+      debugPrint('Failed to revoke web FCM token in Supabase: $e');
+    }
+
+    try {
+      await FirebaseMessaging.instance.deleteToken();
+    } catch (e) {
+      debugPrint('Failed to delete local web FCM token: $e');
+    }
+  }
+
   /// Check if we should show the notification permission prompt.
   Future<bool> shouldShowNotificationPrompt() async {
     final prefs = await SharedPreferences.getInstance();

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/games/domain/models/game_creation_state.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 class GameCreationController extends StateNotifier<GameCreationState> {
   GameCreationController(super.initialState);
@@ -142,6 +145,19 @@ class GameCreationController extends StateNotifier<GameCreationState> {
           },
         );
         final gameId = response?.toString() ?? '';
+        final durationMinutes = (s.startAt != null && s.endAt != null)
+            ? s.endAt!.difference(s.startAt!).inMinutes
+            : 0;
+        unawaited(
+          const AnalyticsService().trackGameCreated(
+            gameId: gameId,
+            sportType: s.sportKey,
+            playerCount: s.requiredPlayers,
+            price: s.costCover == 'paid' ? 0 : null,
+            venueType: s.venueId != null ? 'venue' : 'unspecified',
+            duration: '${durationMinutes}m',
+          ),
+        );
         return gameId;
       } on PostgrestException catch (e) {
         if (e.code == 'P0001') {

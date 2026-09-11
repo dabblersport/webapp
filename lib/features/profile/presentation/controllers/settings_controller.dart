@@ -1,8 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/profile/user_settings.dart';
-import '../../domain/usecases/change_settings_usecase.dart';
-import 'package:dabbler/core/fp/failure.dart';
 
 /// State for settings management
 class SettingsState {
@@ -51,8 +49,6 @@ class SettingsState {
 
 /// Controller for user settings management with category organization
 class SettingsController extends StateNotifier<SettingsState> {
-  final ChangeSettingsUseCase? _changeSettingsUseCase;
-
   static const _categories = {
     'display': 'Display & Theme',
     'game_defaults': 'Game Defaults',
@@ -62,9 +58,7 @@ class SettingsController extends StateNotifier<SettingsState> {
     'performance': 'Performance',
   };
 
-  SettingsController({ChangeSettingsUseCase? changeSettingsUseCase})
-    : _changeSettingsUseCase = changeSettingsUseCase,
-      super(const SettingsState()) {
+  SettingsController() : super(const SettingsState()) {
     _initializeCategories();
   }
 
@@ -173,50 +167,13 @@ class SettingsController extends StateNotifier<SettingsState> {
     state = state.copyWith(isSaving: true, errorMessage: null);
 
     try {
-      final params = ChangeSettingsParams(
-        userId: 'current-user-id', // Would come from auth
-        themeMode: state.pendingChanges['themeMode'] != null
-            ? ThemeMode.values.firstWhere(
-                (e) =>
-                    e.toString().split('.').last ==
-                    state.pendingChanges['themeMode'],
-              )
-            : null,
-        language: state.pendingChanges['language'] as String?,
-        enablePushNotifications:
-            state.pendingChanges['enablePushNotifications'] as bool?,
-        gameInviteNotifications:
-            state.pendingChanges['gameInviteNotifications'] as bool?,
-        enableDataSaver: state.pendingChanges['enableDataSaver'] as bool?,
+      state = state.copyWith(
+        isSaving: false,
+        pendingChanges: {},
+        hasUnsavedChanges: false,
+        lastSyncTime: DateTime.now(),
       );
-
-      if (_changeSettingsUseCase == null) {
-        state = state.copyWith(isSaving: false, lastSyncTime: DateTime.now());
-        return true;
-      }
-
-      final result = await _changeSettingsUseCase.call(params);
-
-      return result.fold(
-        (failure) {
-          state = state.copyWith(
-            isSaving: false,
-            errorMessage: _getFailureMessage(failure),
-          );
-          return false;
-        },
-        (changeResult) {
-          state = state.copyWith(
-            isSaving: false,
-            settings: changeResult.updatedSettings,
-            pendingChanges: {},
-            hasUnsavedChanges: false,
-            lastSyncTime: DateTime.now(),
-          );
-
-          return true;
-        },
-      );
+      return true;
     } catch (error) {
       state = state.copyWith(
         isSaving: false,
@@ -421,19 +378,6 @@ class SettingsController extends StateNotifier<SettingsState> {
     return 'An unexpected error occurred';
   }
 
-  /// Convert failure to user-friendly message
-  String _getFailureMessage(Failure failure) {
-    switch (failure.runtimeType) {
-      case ValidationFailure:
-        return failure.message;
-      case NetworkFailure:
-        return 'Network error. Please check your connection.';
-      case ServerFailure:
-        return 'Server error. Please try again later.';
-      default:
-        return failure.message;
-    }
-  }
 }
 
 /// Represents a setting item for UI display

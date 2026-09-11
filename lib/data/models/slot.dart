@@ -54,7 +54,7 @@ class Slot {
       end:
           asDateTime(endRaw) ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-      isOpen: open ?? true,
+      isOpen: open,
       isBooked: booked,
       isHeld: held,
       isAvailable: explicitAvail ?? computedAvail,

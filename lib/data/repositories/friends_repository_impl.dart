@@ -6,7 +6,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 import '../models/friend_edge.dart';
 import '../models/friendship.dart';

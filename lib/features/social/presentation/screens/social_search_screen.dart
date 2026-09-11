@@ -635,14 +635,6 @@ class _EmptyState extends StatelessWidget {
     '#nbaplayoffs',
   ];
 
-  static const _trendingTags = [
-    (tag: '#worldcup2026',  posts: '48.2k', sport: 'football',   delta: '+212%'),
-    (tag: '#padelnight',    posts: '12.4k', sport: 'padel',      delta: '+78%'),
-    (tag: '#sundayrun',     posts: '8.1k',  sport: 'running',    delta: '+34%'),
-    (tag: '#hoopsindubai',  posts: '5.6k',  sport: 'basketball', delta: '+22%'),
-    (tag: '#cricketleague', posts: '4.9k',  sport: 'cricket',    delta: '+18%'),
-  ];
-
   static const _grammar = [
     (tag: '@',  label: 'people',   accent: 'primary', icon: Iconsax.user_copy),
     (tag: '#',  label: 'hashtags', accent: 'pink',    icon: Iconsax.hashtag_copy),
@@ -706,7 +698,7 @@ class _EmptyState extends StatelessWidget {
                 icon: Iconsax.people_copy,
                 accentKey: 'green',
                 title: 'People nearby',
-                subtitle: '127 active in 5 km',
+                subtitle: 'Find players near you',
               ),
               SizedBox(height: 8),
               _QuickAccessCard(
@@ -723,61 +715,6 @@ class _EmptyState extends StatelessWidget {
                 subtitle: 'What everyone’s on',
               ),
             ],
-          ),
-        ),
-        _SectionLabel(
-          icon: Icons.local_fire_department_outlined,
-          iconColor: _kPink,
-          label: 'Trending now',
-          trailing: TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: cs.primary,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'View all',
-                  style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Icon(Iconsax.arrow_right_3_copy, size: 14),
-              ],
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: List.generate(_trendingTags.length, (i) {
-                final t = _trendingTags[i];
-                final sc = _sportColor(t.sport);
-                return _TrendingRow(
-                  rank: i + 1,
-                  tag: t.tag,
-                  posts: t.posts,
-                  delta: t.delta,
-                  accent: sc,
-                  showDivider: i > 0,
-                  onTap: () => onPickRecent(t.tag),
-                );
-              }),
-            ),
           ),
         ),
         Padding(
@@ -1808,7 +1745,7 @@ class _GameTile extends StatelessWidget {
         : '—';
     final whenText = _formatGameWhen(game.scheduledDate);
     return GestureDetector(
-      onTap: () => context.push('${RoutePaths.games}/${game.id}'),
+      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(

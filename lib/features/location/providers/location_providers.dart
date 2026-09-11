@@ -5,7 +5,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/area_repository.dart';
 import 'package:dabbler/data/repositories/area_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
 // =============================================================================

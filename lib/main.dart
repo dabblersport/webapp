@@ -85,11 +85,10 @@ void _logFlagsOnce() {
     'socialFeed': FeatureFlags.socialFeed,
     'messaging': FeatureFlags.messaging,
     'notifications': FeatureFlags.notifications,
-    'squads': FeatureFlags.squads,
     'venuesBooking': FeatureFlags.venuesBooking,
     'payments': FeatureFlags.enablePayments,
     'bookingFlow': FeatureFlags.enableBookingFlow,
-    'rewards': FeatureFlags.enableRewards,
+    'rewards': FeatureFlags.enableEarlyBirdCheckIn,
   });
 }
 

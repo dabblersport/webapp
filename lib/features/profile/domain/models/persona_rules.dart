@@ -3,7 +3,7 @@
 enum PersonaType {
   player,
   organiser,
-  hoster,
+  host,
   socialiser;
 
   String get displayName {
@@ -12,8 +12,8 @@ enum PersonaType {
         return 'Player';
       case PersonaType.organiser:
         return 'Organiser';
-      case PersonaType.hoster:
-        return 'Hoster';
+      case PersonaType.host:
+        return 'Host';
       case PersonaType.socialiser:
         return 'Socialiser';
     }
@@ -25,7 +25,7 @@ enum PersonaType {
         return 'Find and join games in your area';
       case PersonaType.organiser:
         return 'Create and manage sports events';
-      case PersonaType.hoster:
+      case PersonaType.host:
         return 'List your venue for sports activities';
       case PersonaType.socialiser:
         return 'Connect with other sports enthusiasts';
@@ -84,7 +84,7 @@ class PersonaAvailability {
 ///
 /// ADD RULES:
 /// - player ↔ organiser: Can coexist (user can be both)
-/// - hoster ↔ socialiser: Can coexist (user can be both)
+/// - host ↔ socialiser: Can coexist (user can be both)
 ///
 /// CONVERSION RULES:
 /// - socialiser → player: Conversion allowed (deactivate socialiser profile, create player)
@@ -93,8 +93,8 @@ class PersonaAvailability {
 /// ABSOLUTE FORBIDDEN STATES (never allowed):
 /// - player + socialiser
 /// - organiser + socialiser
-/// - player + hoster
-/// - organiser + hoster
+/// - player + host
+/// - organiser + host
 class PersonaRules {
   /// Maximum number of active profiles a user can have
   static const int maxActiveProfiles = 2;
@@ -117,8 +117,8 @@ class PersonaRules {
   static const Map<PersonaType, Set<PersonaType>> _coexistenceRules = {
     PersonaType.player: {PersonaType.organiser},
     PersonaType.organiser: {PersonaType.player},
-    PersonaType.hoster: {PersonaType.socialiser},
-    PersonaType.socialiser: {PersonaType.hoster},
+    PersonaType.host: {PersonaType.socialiser},
+    PersonaType.socialiser: {PersonaType.host},
   };
 
   /// Valid conversion paths (from → to)
@@ -130,8 +130,8 @@ class PersonaRules {
   static const List<Set<PersonaType>> _forbiddenCombinations = [
     {PersonaType.player, PersonaType.socialiser},
     {PersonaType.organiser, PersonaType.socialiser},
-    {PersonaType.player, PersonaType.hoster},
-    {PersonaType.organiser, PersonaType.hoster},
+    {PersonaType.player, PersonaType.host},
+    {PersonaType.organiser, PersonaType.host},
   ];
 
   /// Check if two personas can coexist

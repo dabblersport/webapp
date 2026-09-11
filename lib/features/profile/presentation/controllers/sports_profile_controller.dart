@@ -85,7 +85,7 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
             .eq('persona_type', 'player')
             .maybeSingle();
 
-        // Fallback: pick any profile for this user (organiser, hoster, etc.)
+        // Fallback: pick any profile for this user (organiser, host, etc.)
         profileRow ??= await client
             .from(SupabaseConfig.usersTable)
             .select('id')

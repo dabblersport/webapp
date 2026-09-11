@@ -68,26 +68,38 @@ class SportProfileService {
     }
   }
 
-  Future<List<SportProfile>> getSportProfilesForUser(String userId) async {
+  /// [userId] must be a genuine `auth.users` id — pass [profileId] when the
+  /// caller already knows the profile id to skip the `user_id` lookup (and
+  /// to avoid a silent empty result when only a profile id is available).
+  Future<List<SportProfile>> getSportProfilesForUser(
+    String userId, {
+    String? profileId,
+  }) async {
     try {
-      // First, get the profile_id(s) for this user_id
-      final profilesResponse = await _supabase
-          .from(SupabaseConfig.usersTable)
-          .select('id')
-          .eq('user_id', userId);
+      List<String> profileIds;
 
-      if (profilesResponse.isEmpty) {
-        Logger.debug('$_logTag: No profiles found for userId=$userId');
-        return [];
-      }
+      if (profileId != null) {
+        profileIds = [profileId];
+      } else {
+        // First, get the profile_id(s) for this user_id
+        final profilesResponse = await _supabase
+            .from(SupabaseConfig.usersTable)
+            .select('id')
+            .eq('user_id', userId);
 
-      // Extract profile IDs
-      final profileIds = (profilesResponse as List)
-          .map((p) => (p as Map<String, dynamic>)['id'] as String)
-          .toList();
+        if (profilesResponse.isEmpty) {
+          Logger.debug('$_logTag: No profiles found for userId=$userId');
+          return [];
+        }
 
-      if (profileIds.isEmpty) {
-        return [];
+        // Extract profile IDs
+        profileIds = (profilesResponse as List)
+            .map((p) => (p as Map<String, dynamic>)['id'] as String)
+            .toList();
+
+        if (profileIds.isEmpty) {
+          return [];
+        }
       }
 
       // Now fetch sport_profiles using profile_id

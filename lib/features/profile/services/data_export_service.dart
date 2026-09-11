@@ -33,13 +33,43 @@ class DataExportException implements Exception {
 }
 
 class EmailService {
+  /// Sends an email via the `send-export-email` Supabase Edge Function
+  /// (Resend under the hood). Requires an authenticated session — the
+  /// function only allows a caller to email themselves (`to` must match
+  /// their own auth email), so this is not usable as a general mailer.
+  ///
+  /// Delivery requires the `RESEND_API_KEY` Edge Function secret to be set
+  /// in the Supabase Dashboard (Project Settings -> Edge Functions ->
+  /// Secrets). Until that secret is set, the function returns a clear
+  /// "not configured" error rather than silently failing — this method
+  /// logs that as a warning and does not throw, so a missing email channel
+  /// never blocks the export itself from completing.
   static Future<void> sendEmail({
     required String to,
     required String subject,
     required String body,
     Map<String, String>? headers,
+    SupabaseClient? supabase,
   }) async {
-    Logger.info('Implement email sending to $to with subject: $subject');
+    final client = supabase ?? Supabase.instance.client;
+    try {
+      final response = await client.functions.invoke(
+        SupabaseConfig.sendExportEmailFn,
+        body: {'to': to, 'subject': subject, 'body': body},
+      );
+
+      if (response.status != 200) {
+        Logger.warning(
+          'EmailService: send-export-email returned status '
+          '${response.status} for $to: ${response.data}',
+        );
+        return;
+      }
+
+      Logger.info('EmailService: email sent to $to (subject: $subject)');
+    } catch (e) {
+      Logger.warning('EmailService: failed to send email to $to', e);
+    }
   }
 }
 
@@ -286,7 +316,7 @@ class DataExportService {
 
       // Social Connections and Interactions
       exportData.connections = await _getConnectionsData(userId);
-      exportData.messages = await _getMessagesData(userId);
+      // No messages export: Dabbler has no private-messaging feature (P-033).
       exportData.notifications = await _getNotificationsData(userId);
 
       // Content and Media (metadata only)
@@ -405,10 +435,6 @@ class DataExportService {
       csvContent.writeln(
         'Statistics,Total Game History Count,'
         '"${data.gameHistory?.length ?? 0}",N/A',
-      );
-      csvContent.writeln(
-        'Statistics,Total Messages Count,'
-        '"${data.messages?.length ?? 0}",N/A',
       );
       csvContent.writeln(
         'Statistics,Total Notifications Count,'
@@ -556,23 +582,55 @@ class DataExportService {
     String userId,
   ) async {
     try {
-      final gameStats = await _supabase
-          .from(SupabaseConfig.userGameStatisticsTable)
-          .select()
-          .eq('user_id', userId);
+      // Reconciled (KAN-103): `user_game_statistics` and
+      // `performance_metrics` never existed as tables. The real gameplay
+      // performance data lives directly on `sport_profiles` (per-sport
+      // columns: matches_played, xp_*, form_score, attendance/cancellation/
+      // punctuality/teamwork/reliability scores, performance_highlights,
+      // performance_by_venue), and the cross-sport reputation aggregate
+      // lives in `user_reputation_aggregate`. This is not a rename of a
+      // missing table into an existing one used for something else — it's
+      // the actual data this category was always meant to describe.
+      final profileResponse = await _supabase
+          .from(SupabaseConfig.usersTable)
+          .select('id')
+          .eq('user_id', userId)
+          .eq('profile_type', 'personal')
+          .maybeSingle();
 
-      final performanceMetrics = await _supabase
-          .from(SupabaseConfig.performanceMetricsTable)
+      List<dynamic> perSportPerformance = const [];
+      if (profileResponse != null) {
+        final profileId = profileResponse['id'] as String;
+        perSportPerformance = await _supabase
+            .from(SupabaseConfig.sportProfilesTable)
+            .select(
+              'sport, skill_level, overall_level, xp_total, xp_level, '
+              'matches_played, form_score, form_trend, last_5_matches, '
+              'attendance_rate, cancellation_rate, punctuality_score, '
+              'teamwork_score, reliability_score, rating_count, '
+              'rating_total, performance_highlights, performance_by_venue',
+            )
+            .eq('profile_id', profileId);
+      }
+
+      final reputationAggregate = await _supabase
+          .from(SupabaseConfig.userReputationAggregateTable)
           .select()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .maybeSingle();
 
       return {
-        'game_statistics': gameStats,
-        'performance_metrics': performanceMetrics,
-        'data_source': 'user_game_statistics, performance_metrics tables',
+        'per_sport_performance': perSportPerformance,
+        'reputation_aggregate': reputationAggregate,
+        'data_source':
+            'sport_profiles (performance columns), user_reputation_aggregate tables',
         'purpose': 'Performance tracking and skill assessment',
         'legal_basis': 'User consent',
         'retention_period': '3 years or until consent withdrawal',
+        'note':
+            'There is no separate user_game_statistics/performance_metrics '
+            'table - this reflects the actual gameplay performance and '
+            'reputation data Dabbler stores about you.',
       };
     } catch (e) {
       Logger.warning('Could not fetch statistics data', e);
@@ -587,18 +645,17 @@ class DataExportService {
       final response = await _supabase
           .from(SupabaseConfig.gamesTable)
           .select('''
-            *, 
-            game_participants!inner(user_id, joined_at, status, performance_rating),
-            messages(content, sent_at, sender_id)
+            *,
+            game_roster!inner(user_id, joined_at, status, role)
           ''')
-          .eq('game_participants.user_id', userId)
+          .eq('game_roster.user_id', userId)
           .order('created_at', ascending: false);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'games, game_participants, messages tables',
+              'data_source': 'games, game_roster tables',
               'purpose': 'Game history and social interaction tracking',
               'legal_basis': 'Contract performance and legitimate interest',
             },
@@ -659,9 +716,9 @@ class DataExportService {
     try {
       final twoYearsAgo = DateTime.now().subtract(Duration(days: 730));
       final response = await _supabase
-          .from(SupabaseConfig.auditLogsTable)
+          .from(SupabaseConfig.auditEventsTable)
           .select()
-          .eq('user_id', userId)
+          .eq('actor_user_id', userId)
           .gte('created_at', twoYearsAgo.toIso8601String())
           .order('created_at', ascending: false)
           .limit(5000);
@@ -670,7 +727,7 @@ class DataExportService {
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'audit_logs table',
+              'data_source': 'audit_events table',
               'purpose': 'Security monitoring and compliance',
               'legal_basis': 'Legitimate interest (security)',
               'retention_period': '2 years',
@@ -685,22 +742,28 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getLoginHistory(String userId) async {
     try {
-      final sixMonthsAgo = DateTime.now().subtract(Duration(days: 180));
-      final response = await _supabase
-          .from(SupabaseConfig.loginHistoryTable)
-          .select(
-            'login_at, ip_address, user_agent, device_info, location_info',
-          )
-          .eq('user_id', userId)
-          .gte('login_at', sixMonthsAgo.toIso8601String())
-          .order('login_at', ascending: false)
-          .limit(1000);
+      // Reconciled (KAN-103): `login_history` never existed as a public
+      // table. Real login events live in Supabase's own
+      // `auth.audit_log_entries`, which isn't directly client-readable
+      // (PostgREST doesn't expose `auth`, and anon/authenticated have no
+      // grants on it). This calls the `get_my_login_history` SECURITY
+      // DEFINER wrapper instead, which filters strictly to auth.uid() so
+      // only the caller's own login events ever come back - same pattern
+      // as `can_view_venue_bookings`.
+      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+      final response = await _supabase.rpc(
+        SupabaseConfig.getMyLoginHistoryFn,
+        params: {
+          'p_since': sixMonthsAgo.toIso8601String(),
+          'p_limit': 1000,
+        },
+      );
 
-      return response
+      return (response as List)
           .map<Map<String, dynamic>>(
             (item) => {
-              ...item,
-              'data_source': 'login_history table',
+              ...(item as Map<String, dynamic>),
+              'data_source': 'auth.audit_log_entries (via get_my_login_history)',
               'purpose': 'Security monitoring and fraud prevention',
               'legal_basis': 'Legitimate interest (security)',
               'retention_period': '6 months',
@@ -715,10 +778,16 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getConnectionsData(String userId) async {
     try {
-      final friendships = await _supabase
-          .from(SupabaseConfig.friendshipsTable)
-          .select('*, profiles!friend_id(name, email)')
-          .or('user_id.eq.$userId,friend_id.eq.$userId');
+      // Note: exports the follow graph (who this user follows / is followed
+      // by), not circle membership. `circles`/`circle_members` is the other
+      // "connections" concept in this schema and isn't interchangeable with
+      // follows — revisit if export scope is meant to mean "my circles".
+      final follows = await _supabase
+          .from(SupabaseConfig.profileFollowsTable)
+          .select()
+          .or(
+            'follower_profile_id.eq.$userId,following_profile_id.eq.$userId',
+          );
 
       final blockedUsers = await _supabase
           .from(SupabaseConfig.userBlocksTable)
@@ -726,9 +795,7 @@ class DataExportService {
           .eq('blocker_user_id', userId);
 
       return [
-            ...friendships.map(
-              (item) => {...item, 'connection_type': 'friendship'},
-            ),
+            ...follows.map((item) => {...item, 'connection_type': 'follow'}),
             ...blockedUsers.map(
               (item) => {...item, 'connection_type': 'blocked'},
             ),
@@ -736,7 +803,7 @@ class DataExportService {
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'friendships, user_blocks tables',
+              'data_source': 'profile_follows, user_blocks tables',
               'purpose': 'Social connection management',
               'legal_basis': 'User consent and contract performance',
             },
@@ -744,44 +811,6 @@ class DataExportService {
           .toList();
     } catch (e) {
       Logger.warning('Could not fetch connections data', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getMessagesData(String userId) async {
-    try {
-      final sentMessages = await _supabase
-          .from(SupabaseConfig.messagesTable)
-          .select('content, sent_at, game_id, recipient_id')
-          .eq('sender_id', userId)
-          .order('sent_at', ascending: false)
-          .limit(10000);
-
-      final receivedMessages = await _supabase
-          .from(SupabaseConfig.messagesTable)
-          .select('content, sent_at, game_id, sender_id')
-          .eq('recipient_id', userId)
-          .order('sent_at', ascending: false)
-          .limit(10000);
-
-      return [
-            ...sentMessages.map((item) => {...item, 'message_type': 'sent'}),
-            ...receivedMessages.map(
-              (item) => {...item, 'message_type': 'received'},
-            ),
-          ]
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'messages table',
-              'purpose': 'Communication facilitation',
-              'legal_basis': 'Contract performance',
-              'note': 'Message content may be pseudonymized for privacy',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch messages data', e);
       return null;
     }
   }
@@ -815,22 +844,23 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getMediaMetadata(String userId) async {
     try {
+      // Note: covers media attached to this user's posts (post_media joined
+      // via posts.author) — there is no general per-user upload library
+      // table, so media never attached to a post is out of scope here.
       final response = await _supabase
-          .from(SupabaseConfig.userMediaTable)
-          .select(
-            'file_name, file_type, file_size, uploaded_at, media_category',
-          )
-          .eq('user_id', userId);
+          .from(SupabaseConfig.postMediaTable)
+          .select('media_type, url, posts!inner(author)')
+          .eq('posts.author', userId);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'user_media table',
+              'data_source': 'post_media table (joined via posts.author)',
               'purpose': 'Profile and content management',
               'legal_basis': 'User consent',
               'note':
-                  'Only metadata included - actual files not exported for security',
+                  'Only media attached to your posts is included - metadata only, actual files not exported for security',
             },
           )
           .toList();
@@ -843,17 +873,16 @@ class DataExportService {
   Future<List<Map<String, dynamic>>?> _getLocationData(String userId) async {
     try {
       final response = await _supabase
-          .from(SupabaseConfig.locationDataTable)
-          .select('approximate_location, recorded_at, purpose, accuracy')
-          .eq('user_id', userId)
-          .order('recorded_at', ascending: false)
-          .limit(1000);
+          .from(SupabaseConfig.profileLocationsTable)
+          .select('lat, lng, label, area_id, geo_location_id, is_primary')
+          .eq('profile_id', userId)
+          .order('is_primary', ascending: false);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'location_data table',
+              'data_source': 'profile_locations table',
               'purpose': 'Location-based game matching and services',
               'legal_basis': 'User consent',
               'note':
@@ -871,16 +900,19 @@ class DataExportService {
     String userId,
   ) async {
     try {
+      // Note: this only covers push token + platform, not full device info
+      // (OS version, model, app version) — a real scope reduction, since no
+      // table storing that broader device detail exists.
       final response = await _supabase
-          .from(SupabaseConfig.deviceInfoTable)
-          .select('device_type, os_version, app_version, last_seen_at')
+          .from(SupabaseConfig.fcmTokensTable)
+          .select('platform, created_at, updated_at')
           .eq('user_id', userId);
 
       return response
           .map<Map<String, dynamic>>(
             (item) => {
               ...item,
-              'data_source': 'device_info table',
+              'data_source': 'fcm_tokens table',
               'purpose': 'App functionality and technical support',
               'legal_basis': 'Legitimate interest (technical support)',
             },
@@ -894,16 +926,16 @@ class DataExportService {
 
   Future<Map<String, dynamic>?> _getPaymentData(String userId) async {
     try {
+      // Note: this is the personal payment-attempt record for this user, not
+      // the organiser/settlement views (financial_ledger, wallet_ledger).
       final response = await _supabase
-          .from(SupabaseConfig.paymentRecordsTable)
-          .select(
-            'transaction_id, amount, currency, status, created_at, subscription_type',
-          )
+          .from(SupabaseConfig.paymentIntentsTable)
+          .select('booking_id, amount, currency, provider, status')
           .eq('user_id', userId);
 
       return {
         'transactions': response,
-        'data_source': 'payment_records table',
+        'data_source': 'payment_intents table',
         'purpose': 'Billing and subscription management',
         'legal_basis': 'Contract performance and legal obligation',
         'note':
@@ -918,17 +950,25 @@ class DataExportService {
 
   Future<List<Map<String, dynamic>>?> _getThirdPartyData(String userId) async {
     try {
-      final response = await _supabase
-          .from(SupabaseConfig.thirdPartyConnectionsTable)
-          .select('provider, connected_at, permissions_granted, last_sync')
-          .eq('user_id', userId);
+      // Reconciled (KAN-103): `third_party_connections` never existed as a
+      // public table. The real record of which third-party sign-in
+      // providers are linked to this account (e.g. Google Sign-In) lives
+      // in Supabase's own `auth.identities`, which isn't directly
+      // client-readable. This calls the `get_my_linked_identities`
+      // SECURITY DEFINER wrapper instead, filtered strictly to auth.uid()
+      // - same pattern as `get_my_login_history` /
+      // `can_view_venue_bookings`. Only connection metadata comes back;
+      // OAuth tokens and provider profile payloads are never exposed.
+      final response = await _supabase.rpc(
+        SupabaseConfig.getMyLinkedIdentitiesFn,
+      );
 
-      return response
+      return (response as List)
           .map<Map<String, dynamic>>(
             (item) => {
-              ...item,
-              'data_source': 'third_party_connections table',
-              'purpose': 'Social media integration and enhanced features',
+              ...(item as Map<String, dynamic>),
+              'data_source': 'auth.identities (via get_my_linked_identities)',
+              'purpose': 'Sign-in method management and account security',
               'legal_basis': 'User consent',
               'note':
                   'Third-party data is not stored - only connection metadata',
@@ -993,27 +1033,6 @@ class DataExportService {
     // return const ListToCsvConverter().convert(rows);
   }
 
-  // ignore: unused_element
-  String _generateMessagesCsv(List<Map<String, dynamic>> messages) {
-    if (messages.isEmpty) return '';
-
-    final rows = <List<String>>[];
-    rows.add(['Date', 'Type', 'Game ID', 'Content Length', 'Purpose']);
-
-    for (final message in messages) {
-      rows.add([
-        message['sent_at']?.toString() ?? '',
-        message['message_type']?.toString() ?? '',
-        message['game_id']?.toString() ?? '',
-        message['content']?.toString().length.toString() ?? '0',
-        message['purpose']?.toString() ?? '',
-      ]);
-    }
-
-    return 'CSV export requires csv package dependency';
-    // return const ListToCsvConverter().convert(rows);
-  }
-
   // GDPR documentation generators
   Map<String, String> _generateDataExplanations() {
     return {
@@ -1028,7 +1047,6 @@ class DataExportService {
       'audit_logs':
           'Log of account activities for security purposes (last 2 years)',
       'connections': 'Your friends, blocked users, and social connections',
-      'messages': 'Messages you have sent and received through the platform',
       'notifications': 'System notifications sent to you',
       'media':
           'Metadata about files you have uploaded (actual files not included)',
@@ -1437,7 +1455,6 @@ Last Updated: ${DateTime.now().toIso8601String()}
     if (data.auditLogs?.isNotEmpty == true) types.add('audit_logs');
     if (data.loginHistory?.isNotEmpty == true) types.add('login_history');
     if (data.connections?.isNotEmpty == true) types.add('connections');
-    if (data.messages?.isNotEmpty == true) types.add('messages');
     if (data.notifications?.isNotEmpty == true) types.add('notifications');
     if (data.media?.isNotEmpty == true) types.add('media');
     if (data.locationData?.isNotEmpty == true) types.add('location_data');
@@ -1657,16 +1674,16 @@ Last Updated: ${DateTime.now().toIso8601String()}
         '$_logTag: Sending GDPR completion email to: ${request.userEmail}',
       );
 
-      // Placeholder for email sending
-      // await EmailService.sendTemplate(
-      //   to: request.userEmail,
-      //   template: 'gdpr_export_complete',
-      //   variables: {
-      //     'export_id': request.id,
-      //     'format': request.format.toString().split('.').last,
-      //     'expires_at': request.expiresAt,
-      //   },
-      // );
+      await EmailService.sendEmail(
+        to: request.userEmail,
+        subject: 'Your Dabbler data export is ready',
+        body:
+            'Your requested data export (${request.format.toString().split('.').last.toUpperCase()} format, '
+            'request ${request.id}) has completed and is available in the app '
+            'under Settings > Export My Data. It will remain available until '
+            '${request.expiresAt.toIso8601String()}, after which it is deleted.',
+        supabase: _supabase,
+      );
     } catch (e) {
       Logger.error('$_logTag: Error sending completion email', e);
     }
@@ -1681,7 +1698,15 @@ Last Updated: ${DateTime.now().toIso8601String()}
         '$_logTag: Sending GDPR error email to: ${request.userEmail}',
       );
 
-      // Placeholder for error email sending
+      await EmailService.sendEmail(
+        to: request.userEmail,
+        subject: 'Your Dabbler data export failed',
+        body:
+            'Your requested data export (request ${request.id}) could not be '
+            'completed. Please try again from Settings > Export My Data, or '
+            'contact privacy@dabbler.app if the problem persists.',
+        supabase: _supabase,
+      );
     } catch (e) {
       Logger.error('$_logTag: Error sending error email', e);
     }
@@ -1962,7 +1987,6 @@ class UserExportData {
 
   // Social and communication data
   List<Map<String, dynamic>>? connections;
-  List<Map<String, dynamic>>? messages;
   List<Map<String, dynamic>>? notifications;
 
   // Technical and system data
@@ -1995,7 +2019,6 @@ class UserExportData {
       'audit_logs': auditLogs,
       'login_history': loginHistory,
       'connections': connections,
-      'messages': messages,
       'notifications': notifications,
       'media': media,
       'location_data': locationData,
@@ -2017,7 +2040,6 @@ class UserExportData {
     if (auditLogs?.isNotEmpty == true) count++;
     if (loginHistory?.isNotEmpty == true) count++;
     if (connections?.isNotEmpty == true) count++;
-    if (messages?.isNotEmpty == true) count++;
     if (notifications?.isNotEmpty == true) count++;
     if (media?.isNotEmpty == true) count++;
     if (locationData?.isNotEmpty == true) count++;

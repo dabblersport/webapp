@@ -53,20 +53,3 @@ export 'social/friend_request_model.dart';
 export 'social/post.dart';
 export 'social/post_enums.dart';
 
-// Rewards models
-export 'rewards/achievement.dart';
-export 'rewards/achievement_model.dart';
-export 'rewards/badge.dart';
-export 'rewards/badge_model.dart';
-export 'rewards/badge_tier.dart';
-export 'rewards/leaderboard_entry.dart' hide RankMovement;
-export 'rewards/leaderboard_model.dart' hide TierLevel;
-export 'rewards/points_transaction.dart';
-export 'rewards/tier.dart' hide TierLevel;
-export 'rewards/tier_model.dart';
-export 'rewards/user_progress.dart';
-export 'rewards/user_progress_model.dart';
-
-// Payments models
-export 'payments/payment_method.dart';
-export 'payments/payment_method_model.dart';

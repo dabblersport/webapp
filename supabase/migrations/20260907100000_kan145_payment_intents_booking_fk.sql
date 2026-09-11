@@ -1,0 +1,169 @@
+-- KAN-145 / T-061: payment_intents.booking_id -> venue_bookings(id) ON DELETE RESTRICT
+--
+-- T-061 (DECISIONS.md :8180, Accepted 2026-09-06, owner cto) rules this exact
+-- constraint and eliminates the other two delete actions BY NAME:
+--
+--   ON DELETE CASCADE  -- REJECTED. Deleting a booking would delete its payment
+--                         records, contradicting P-036's retention posture. A
+--                         financial record does not disappear because an
+--                         operational row was removed.
+--   ON DELETE SET NULL -- NOT AVAILABLE AT ALL. booking_id is NOT NULL, so it
+--                         would fail at runtime on the first delete.
+--   ON DELETE RESTRICT -- what remains, and independently correct: a booking
+--                         carrying a payment must not be deletable.
+--
+-- T-061's central point, and the reason this is its own ticket rather than part
+-- of KAN-136 or KAN-140: "The FK is the guarantee. A raise inside the function
+-- is an assertion that the guarantee held." Putting the guarantee inside a
+-- function body instead of the schema is the exact failure T-061 rules against
+-- -- a body is replaceable by the next CREATE OR REPLACE, a constraint is not.
+--
+-- PRECONDITIONS -- measured live against wtncuzcskpigqpmnxwws on 2026-09-07 by
+-- backend-4 (Min), immediately before authoring. NOT carried from the day-old
+-- readings by pm / team-lead-2 / team-lead-3, per AC3's "at apply time".
+--
+--   SELECT conname, contype FROM pg_constraint
+--     WHERE conrelid = 'public.payment_intents'::regclass;
+--   -> exactly 2 rows: payment_intents_pkey [p], payment_intents_status_valid [c]
+--      No foreign key of any kind. The three prior seats' reading still holds.
+--
+--   payment_intents.booking_id -> uuid, NOT NULL
+--   venue_bookings.id          -> uuid, NOT NULL, PK venue_bookings_pkey
+--      Types match; the referenced column carries a PK, so the FK is creatable.
+--
+--   SELECT count(*) FROM public.payment_intents;  -> 0
+--   SELECT count(*) FROM public.venue_bookings;   -> 0
+--   orphan booking_ids (booking_id with no matching venue_bookings row) -> 0
+--   NULL booking_ids -> 0
+--      Consistent with T-055: no payment has ever completed. The constraint is
+--      free now and free once -- it will not have to scan or reject anything.
+--
+--   idx_payment_intents_booking ON payment_intents USING btree (booking_id)
+--      ALREADY EXISTS. This matters: ON DELETE RESTRICT checks the referencing
+--      side on every venue_bookings delete, and without an index that check is
+--      a sequential scan. No index is added here -- AC4 ("no other schema
+--      object touched") is satisfied without a trade-off, because the index the
+--      constraint wants is already in place.
+--
+-- THE PROBE, DEMONSTRATED FAILING FIRST (2026-09-07, pre-apply).
+--   A probe nobody has seen fail is not evidence. Before this migration, an
+--   INSERT naming a booking that does not exist is accepted:
+--
+--     DO $$ BEGIN
+--       INSERT INTO public.payment_intents (booking_id, user_id, amount, provider)
+--       VALUES ('...00ff'::uuid, '...00ee'::uuid, 1.00, 'kan145_preapply_probe');
+--       RAISE EXCEPTION 'PROBE_RESULT=INSERT_SUCCEEDED_NO_FK';
+--     END $$;
+--     -> P0001 PROBE_RESULT=INSERT_SUCCEEDED_NO_FK
+--        i.e. the INSERT itself raised nothing. The RAISE is ours and aborts the
+--        block, so NOTHING IS COMMITTED -- re-measured 0 rows, 0 probe rows
+--        after. This touches no existing row (there are none) and is therefore
+--        not the user-data mutation 019 reserves to the CEO.
+--
+--   After this migration the identical block must fail at 23503
+--   foreign_key_violation instead, before reaching our RAISE. That flip from
+--   "our own error" to "the constraint's error" is the evidence.
+--
+-- KNOWN CONSEQUENCE, disclosed rather than discovered later.
+--   T-052's amendment (:7319-7329) records that payment_intents has ZERO SQL
+--   writers -- `insert into payment_intents` appears nowhere in the baseline,
+--   and the only Dart reference is a read at data_export_service.dart:932.
+--   Whatever creates payment intents lives outside this repo (the provider
+--   webhook path). So this FK, like KAN-128's deferred unique keys, will be met
+--   by a writer this repo cannot see.
+--
+--   That is NOT the same hazard, and the difference is why this one proceeds
+--   while KAN-128's payment_intents half is split out and deferred. T-049
+--   Decision 2's objection to a bare constraint is about IDEMPOTENCY: a UNIQUE
+--   key with no matching ON CONFLICT clause converts a tolerable webhook replay
+--   into a 500 the provider retries forever. An FK has no replay dimension --
+--   it rejects a payment naming a booking that does not exist, which is not a
+--   retry of anything, is never correct to accept, and is precisely the outcome
+--   AC3 asks for ("fails at the constraint rather than downstream"). There is no
+--   ON CONFLICT clause an FK could want.
+--
+-- THE DELETE SIDE HAS A CASCADE CHAIN ABOVE IT -- READ THIS BEFORE WRITING ANY
+-- VENUE DELETE FLOW. (Raised by cto on KAN-145 comment 10705; measured live.)
+--
+--   venues --ON DELETE CASCADE--> venue_spaces --ON DELETE CASCADE--> venue_bookings
+--
+--   ON DELETE RESTRICT binds the DELETE side, so once data exists, deleting a
+--   VENUE or a VENUE_SPACE whose booking carries a payment_intent fails with
+--   23503: the RESTRICT halts the cascade partway up. The blast radius is venue
+--   deletion, not merely booking deletion.
+--
+--   This is the correct posture, not a side effect. T-061 already implies it --
+--   "a booking carrying a payment must not be deletable" -- and P-036's
+--   retention posture reinforces it. Nothing breaks today: both tables are 0
+--   rows and nothing in lib/ or supabase/functions/ deletes venue_bookings or
+--   venue_spaces at all. But whoever authors venue management will meet it, and
+--   THE RIGHT ANSWER THERE IS ARCHIVAL OR SOFT-DELETE, NOT WEAKENING THIS FK.
+--   Written here rather than only in the ticket so it is found at the point of
+--   use instead of rediscovered as a bug.
+--
+-- SEQUENCING -- RULED by cto (KAN-145 comment 10705, 2026-09-07): KAN-128 does
+--   NOT block this migration. Recorded with the correction, because the version
+--   of this note I posted for confirmation had a factual error worth keeping
+--   visible.
+--
+--   I asked whether T-052's "authored and applied alone and first" (:7274)
+--   held this back, and said "both migrations touch payment_intents". THAT WAS
+--   WRONG. cto read 20260909090000_kan128_ledger_unique_keys_and_on_conflict.sql
+--   directly: payment_intents appears there ONLY in comments and as the
+--   trigger's source table -- no ALTER TABLE, no ADD CONSTRAINT, no CREATE INDEX
+--   against it in any form. KAN-128's DDL targets financial_ledger. The two
+--   migrations are DISJOINT AT THE OBJECT LEVEL, not merely compatible.
+--
+--   And "alone and first" governs KAN-128 versus KAN-131, whose hazard is that
+--   KAN-131 replaces trgfn_payment_to_ledger WHOLE and, if authored from the
+--   baseline dump, silently reverts KAN-128's ON CONFLICT clauses while the
+--   unique constraint stays (:7288 -- the T-044 / CONVENTIONS.md §6c
+--   whole-body-replacement trap). This migration replaces no function body, so
+--   the ordering never reached it.
+--
+--   Filename order is a non-issue: apply_migration stamps its own version at
+--   apply time, so this file being dated 20260907100000 against KAN-128's
+--   20260909090000 jumps nothing. Latest applied is 20260907052826 kan141_...;
+--   KAN-128 is absent from the applied ledger.
+--
+-- G-028 (DECISIONS.md, 2026-09-07, amending G-002): backend-4 authors AND
+-- applies; cto CONFIRMS and never runs it. NOTE: this ticket's description still
+-- reads "Apply is cto's (CONTRACT.md:242)" -- superseded by G-028, and
+-- CONTRACT.md:242 is under CEO custody so it will keep reading wrong. Ticket
+-- text is po's to correct.
+
+BEGIN;
+
+ALTER TABLE public.payment_intents
+  ADD CONSTRAINT payment_intents_booking_id_fkey
+  FOREIGN KEY (booking_id) REFERENCES public.venue_bookings(id)
+  ON DELETE RESTRICT;
+
+COMMIT;
+
+-- ============================================================================
+-- VERIFICATION -- run by backend-4 immediately after applying (G-028), and
+-- posted back to KAN-145. That posting is what closes G-002 condition 4;
+-- cto's confirmation does not cover it.
+-- ============================================================================
+-- AC1/AC2. The FK exists, alongside the PK and CHECK, with the ruled action.
+--    SELECT conname, contype, confdeltype, pg_get_constraintdef(oid)
+--      FROM pg_constraint WHERE conrelid = 'public.payment_intents'::regclass
+--      ORDER BY conname;
+--    -> 3 rows. payment_intents_booking_id_fkey is contype 'f' with
+--       confdeltype 'r' (RESTRICT -- NOT 'c' cascade, NOT 'n' set null) and
+--       references venue_bookings(id). Assert confdeltype, not merely that a
+--       row appeared: a CASCADE FK would also satisfy "an FK exists".
+--
+-- AC3. Both branches, not one.
+--    (a) Emptiness at apply time:
+--        SELECT count(*) FROM public.payment_intents;  -> 0
+--        SELECT count(*) FROM public.venue_bookings;   -> 0
+--    (b) The constraint actually bites -- re-run the probe block above.
+--        -> must now raise 23503 foreign_key_violation, NOT our P0001.
+--           Still commits nothing.
+--
+-- AC4. No other schema object touched.
+--    Constraint count on payment_intents goes 2 -> 3 and nothing else moves;
+--    index set unchanged (4 indexes, idx_payment_intents_booking pre-existing);
+--    venue_bookings untouched; RLS unchanged on both tables.

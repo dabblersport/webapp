@@ -1,7 +1,7 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart';
 
 abstract class NearbyVenuesDatasource {

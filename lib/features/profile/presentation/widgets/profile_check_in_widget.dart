@@ -11,7 +11,7 @@ class ProfileCheckInWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!FeatureFlags.enableRewards) return const SizedBox.shrink();
+    if (!FeatureFlags.enableEarlyBirdCheckIn) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
     final checkInState = ref.watch(checkInControllerProvider);

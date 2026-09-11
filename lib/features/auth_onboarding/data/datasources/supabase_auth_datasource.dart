@@ -68,17 +68,6 @@ class SupabaseAuthDataSource implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> signOut() async {
-    try {
-      await client.auth.signOut();
-    } on supabase.AuthException catch (e) {
-      throw AuthException(e.message);
-    } catch (e) {
-      throw NetworkException(e.toString());
-    }
-  }
-
-  @override
   Future<UserModel> getCurrentUser() async {
     final user = client.auth.currentUser;
     if (user == null) throw AuthException('No user signed in');

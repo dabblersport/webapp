@@ -17,92 +17,7 @@ class SocialOnboardingFriendsScreen extends ConsumerStatefulWidget {
 
 class _SocialOnboardingFriendsScreenState
     extends ConsumerState<SocialOnboardingFriendsScreen> {
-  bool _contactsPermissionGranted = false;
-  bool _isLoadingContacts = false;
-  List<_ContactSuggestion> _suggestions = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMockSuggestions();
-  }
-
-  void _loadMockSuggestions() {
-    // Mock friend suggestions
-    _suggestions = [
-      _ContactSuggestion(
-        name: 'John Smith',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        mutualFriends: 3,
-        source: 'Contacts',
-        isSelected: false,
-      ),
-      _ContactSuggestion(
-        name: 'Emma Johnson',
-        avatar: 'https://i.pravatar.cc/150?img=2',
-        mutualFriends: 1,
-        source: 'Nearby',
-        isSelected: false,
-      ),
-      _ContactSuggestion(
-        name: 'Mike Davis',
-        avatar: 'https://i.pravatar.cc/150?img=3',
-        mutualFriends: 2,
-        source: 'Contacts',
-        isSelected: false,
-      ),
-      _ContactSuggestion(
-        name: 'Sarah Wilson',
-        avatar: 'https://i.pravatar.cc/150?img=4',
-        mutualFriends: 0,
-        source: 'Suggested',
-        isSelected: false,
-      ),
-      _ContactSuggestion(
-        name: 'Alex Chen',
-        avatar: 'https://i.pravatar.cc/150?img=5',
-        mutualFriends: 4,
-        source: 'Contacts',
-        isSelected: false,
-      ),
-    ];
-  }
-
-  Future<void> _requestContactsPermission() async {
-    setState(() {
-      _isLoadingContacts = true;
-    });
-
-    try {
-      // Simulate permission request - in real app would use permission_handler
-      await Future.delayed(const Duration(seconds: 1));
-
-      setState(() {
-        _contactsPermissionGranted = true;
-      });
-
-      // In a real app, you would load actual contacts here
-      await Future.delayed(const Duration(seconds: 2));
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Contacts synced successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error accessing contacts. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoadingContacts = false;
-      });
-    }
-  }
+  final List<_ContactSuggestion> _suggestions = [];
 
   void _toggleSelection(int index) {
     setState(() {
@@ -110,20 +25,7 @@ class _SocialOnboardingFriendsScreenState
     });
   }
 
-  void _sendFriendRequests() {
-    final selectedFriends = _suggestions.where((s) => s.isSelected).toList();
-
-    if (selectedFriends.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Friend requests sent to ${selectedFriends.length} people!',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-
+  void _continue() {
     // Continue to next step
     context.push(RoutePaths.socialOnboardingPrivacy);
   }
@@ -172,46 +74,6 @@ class _SocialOnboardingFriendsScreenState
 
             const SizedBox(height: 32),
 
-            // Sync contacts button
-            if (!_contactsPermissionGranted) ...[
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isLoadingContacts
-                      ? null
-                      : _requestContactsPermission,
-                  icon: _isLoadingContacts
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.person_add),
-                  label: Text(
-                    _isLoadingContacts ? 'Syncing...' : 'Sync Contacts',
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    backgroundColor: theme.primaryColor.withValues(alpha: 0.1),
-                    foregroundColor: theme.primaryColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('or', style: TextStyle(color: Colors.grey)),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
-
             // Suggested friends section
             Row(
               children: [
@@ -248,13 +110,22 @@ class _SocialOnboardingFriendsScreenState
 
             // Friends list
             Expanded(
-              child: ListView.builder(
-                itemCount: _suggestions.length,
-                itemBuilder: (context, index) {
-                  final suggestion = _suggestions[index];
-                  return _buildFriendSuggestionCard(suggestion, index);
-                },
-              ),
+              child: _suggestions.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Friend suggestions are coming soon.',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: Colors.grey),
+                        textAlign: TextAlign.center,
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _suggestions.length,
+                      itemBuilder: (context, index) {
+                        final suggestion = _suggestions[index];
+                        return _buildFriendSuggestionCard(suggestion, index);
+                      },
+                    ),
             ),
 
             // Bottom section
@@ -264,7 +135,7 @@ class _SocialOnboardingFriendsScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _sendFriendRequests,
+                onPressed: _continue,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

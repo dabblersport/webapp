@@ -4,7 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:dabbler/data/models/feed/feed_post.dart';
 import 'package:dabbler/data/repositories/feed_repository.dart';
 import 'package:dabbler/data/repositories/feed_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 // ---------------------------------------------------------------------------
 // Repository DI

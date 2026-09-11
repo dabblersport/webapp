@@ -2,8 +2,6 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/utils/either.dart';
 import 'package:dabbler/features/profile/domain/repositories/profile_repository.dart';
 import 'package:dabbler/features/profile/domain/usecases/update_profile_usecase.dart';
-import 'package:dabbler/features/auth_onboarding/domain/location/region_resolver.dart';
-
 /// Controller for handling location (country & region) persistence during onboarding.
 ///
 /// This controller is responsible for:
@@ -17,14 +15,13 @@ import 'package:dabbler/features/auth_onboarding/domain/location/region_resolver
 /// - Does NOT touch age, gender, persona, or sports fields
 /// - Only updates: profiles.country and profiles.region
 class LocationController {
-  final ProfileRepository _profileRepository;
   final UpdateProfileUseCase _updateProfileUseCase;
 
   LocationController({
+    // ignore: unused_element_parameter
     required ProfileRepository profileRepository,
     required UpdateProfileUseCase updateProfileUseCase,
-  }) : _profileRepository = profileRepository,
-       _updateProfileUseCase = updateProfileUseCase;
+  }) : _updateProfileUseCase = updateProfileUseCase;
 
   /// Updates the user's country and automatically resolves their region.
   ///
@@ -65,8 +62,6 @@ class LocationController {
       final resolvedCountry = (country == null || country.isEmpty)
           ? 'Global'
           : country;
-      final region = RegionResolver.resolveRegionFromCountry(resolvedCountry);
-
       // Step 2: Update profile with country and region
       // Note: We're only updating country and region fields, nothing else
       final params = UpdateProfileParams(
@@ -79,7 +74,7 @@ class LocationController {
 
       final result = await _updateProfileUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           // Log the error but don't throw - return failure for graceful handling
           return Left(failure);
@@ -125,7 +120,7 @@ class LocationController {
         country: detectedCountry,
       );
 
-      return updateResult.fold(
+      return await updateResult.fold(
         (failure) => Left(failure),
         (_) => Right(detectedCountry),
       );

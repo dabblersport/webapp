@@ -186,7 +186,7 @@ class ProfileController extends StateNotifier<ProfileState> {
 
       final result = await _updateProfileUseCase.call(params);
 
-      return result.fold(
+      return await result.fold(
         (failure) {
           state = state.copyWith(
             isLoading: false,

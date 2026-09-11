@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Legacy Auto Backup rules (API 23-30). Android 31+ reads
+  data_extraction_rules.xml instead; this file is kept for backward
+  compatibility on older devices, which still had Auto Backup enabled by
+  default at targetSdk 36. Mirrors the same exclusion — see
+  data_extraction_rules.xml and docs/DECISIONS.md T-005 for the rationale.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSharedPreferences.xml" />
+</full-backup-content>

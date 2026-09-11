@@ -20,28 +20,18 @@ class ProfileOnboardingWelcomeScreen extends ConsumerStatefulWidget {
 
 class _ProfileOnboardingWelcomeScreenState
     extends ConsumerState<ProfileOnboardingWelcomeScreen> {
-  late List<_Step> _steps;
+  _Step _step = const _Step();
   bool _didStart = false;
 
   @override
   void initState() {
     super.initState();
-    _steps = [
-      const _Step(),
-      const _Step(),
-      const _Step(),
-    ];
     WidgetsBinding.instance.addPostFrameCallback((_) => _runCreation());
   }
 
-  void _setStep(int i, _StepStatus status, {String? error}) {
+  void _setStep(_StepStatus status, {String? error}) {
     if (!mounted) return;
-    setState(() {
-      _steps = [
-        for (int j = 0; j < _steps.length; j++)
-          j == i ? _Step(status: status, errorMsg: error) : _steps[j],
-      ];
-    });
+    setState(() => _step = _Step(status: status, errorMsg: error));
   }
 
   String _friendlyError(Object e) {
@@ -55,6 +45,14 @@ class _ProfileOnboardingWelcomeScreenState
     if (raw.contains('23503')) {
       return 'Some information couldn\'t be saved. Please go back and check your details.';
     }
+    if (raw.contains('organiser persona requires p_preferred_sport')) {
+      // Belt-and-suspenders: interests_selection_screen already requires a
+      // sport before an organiser can reach this screen (T-037/KAN-48 —
+      // the RPC rejects a null-sport organiser, so the client must never
+      // let one arrive here). This message only fires if that guard is
+      // ever bypassed.
+      return 'Please go back and choose a sport before continuing as an organiser.';
+    }
     return 'Something went wrong. Please try again.';
   }
 
@@ -63,7 +61,19 @@ class _ProfileOnboardingWelcomeScreenState
     _didStart = true;
 
     final data = ref.read(onboardingDataProvider);
-    if (data == null || !mounted) return;
+    if (!mounted) return;
+    if (data == null) {
+      // No in-memory onboarding data to submit for this session — this
+      // screen was reached without going through the onboarding flow (e.g.
+      // browser back/forward on web after onboarding already completed, or
+      // a stale/bookmarked route). The router deliberately never redirects
+      // away from this progress screen (KAN-96), so without this branch an
+      // already-onboarded user sees "Setting up your account" forever with
+      // no error, no back, and no timeout. Route them out instead.
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
+      context.go(isAuthenticated ? RoutePaths.home : RoutePaths.landing);
+      return;
+    }
 
     final authService = AuthService();
     final locationState = ref.read(selectedLocationProvider);
@@ -76,11 +86,13 @@ class _ProfileOnboardingWelcomeScreenState
       orElse: () => null,
     );
 
-    // Step 0: create profile
-    _setStep(0, _StepStatus.running);
-    late String profileId;
+    // One call: rpc_onboard_profile creates the profile, the persona
+    // extension row, and (for players) the sport_profiles row, all in one
+    // transaction (T-037/KAN-48). There is no longer a separate persona or
+    // sport step to run — one step either fully succeeds or fully fails.
+    _setStep(_StepStatus.running);
     try {
-      profileId = await authService.createProfileStep(
+      await authService.createProfileStep(
         displayName: data.displayName ?? '',
         username: data.username ?? '',
         age: data.age ?? 18,
@@ -92,34 +104,9 @@ class _ProfileOnboardingWelcomeScreenState
         city: city,
         password: null,
       );
-      _setStep(0, _StepStatus.done);
+      _setStep(_StepStatus.done);
     } catch (e) {
-      _setStep(0, _StepStatus.error, error: _friendlyError(e));
-      return;
-    }
-
-    // Step 1: persona profile
-    _setStep(1, _StepStatus.running);
-    try {
-      await authService.createPersonaProfileStep(
-        profileId,
-        data.intention ?? 'player',
-      );
-      _setStep(1, _StepStatus.done);
-    } catch (e) {
-      _setStep(1, _StepStatus.error, error: _friendlyError(e));
-      return;
-    }
-
-    // Step 2: sport profile (players only)
-    _setStep(2, _StepStatus.running);
-    try {
-      if (data.intention == 'player' && (data.preferredSport?.isNotEmpty ?? false)) {
-        await authService.createSportProfileStep(profileId, data.preferredSport!);
-      }
-      _setStep(2, _StepStatus.done);
-    } catch (e) {
-      _setStep(2, _StepStatus.error, error: _friendlyError(e));
+      _setStep(_StepStatus.error, error: _friendlyError(e));
       return;
     }
 
@@ -149,11 +136,6 @@ class _ProfileOnboardingWelcomeScreenState
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context);
-    final labels = [
-      l10n.onboarding_welcome_step_profile,
-      l10n.onboarding_welcome_step_persona,
-      l10n.onboarding_welcome_step_sport,
-    ];
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -183,8 +165,12 @@ class _ProfileOnboardingWelcomeScreenState
                 ),
               ),
               const SizedBox(height: 48),
-              for (int i = 0; i < _steps.length; i++)
-                _StepRow(step: _steps[i], label: labels[i], colorScheme: colorScheme, theme: theme),
+              _StepRow(
+                step: _step,
+                label: l10n.onboarding_welcome_step_profile,
+                colorScheme: colorScheme,
+                theme: theme,
+              ),
             ],
           ),
               ),

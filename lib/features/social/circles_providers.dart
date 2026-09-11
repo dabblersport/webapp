@@ -2,7 +2,7 @@ import 'package:dabbler/core/fp/failure.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/fp/result.dart';
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/data/models/circle_contact.dart';
 import '../../data/repositories/circle_repository.dart';
 import '../../data/repositories/circle_repository_impl.dart';

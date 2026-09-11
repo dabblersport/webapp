@@ -24,7 +24,11 @@ class SportGameHistorySection extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final historyAsync = ref.watch(
-      sportGameHistoryProvider((userId: args.userId, sportId: args.sportId)),
+      sportGameHistoryProvider((
+        userId: args.userId,
+        profileId: args.profileId,
+        sportId: args.sportId,
+      )),
     );
 
     return Container(

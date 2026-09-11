@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/data/repositories/block_repository.dart';
 import 'package:dabbler/data/repositories/block_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 /// Singleton BlockRepository provider.
 final blockRepositoryProvider = Provider<BlockRepository>((ref) {

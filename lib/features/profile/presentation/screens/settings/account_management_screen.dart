@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/widgets/app_background.dart';
+import 'package:dabbler/features/profile/services/data_export_service.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 /// Screen for managing account settings like email, password, and security
 class AccountManagementScreen extends ConsumerStatefulWidget {
@@ -208,6 +212,13 @@ class _AccountManagementScreenState
                         // Release 2: Security Settings
                         // const SizedBox(height: 12),
                         // _buildSecuritySection(),
+                        // KAN-52/KAN-103/P-029: hidden until the export
+                        // mechanism covers every data category — see
+                        // FeatureFlags.enableDataExport.
+                        if (FeatureFlags.enableDataExport) ...[
+                          const SizedBox(height: 12),
+                          _buildDataExportSection(),
+                        ],
                         const SizedBox(height: 12),
                         _buildDangerZone(),
                       ],
@@ -598,6 +609,85 @@ class _AccountManagementScreenState
   //   );
   // }
 
+  Widget _buildDataExportSection() {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: colorScheme.outline.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.download_outlined,
+              color: colorScheme.onPrimaryContainer,
+              size: 24,
+            ),
+          ),
+          title: Text(
+            'Export My Data',
+            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            'Request a copy of your Dabbler data (PDPL data portability)',
+            style: textTheme.bodySmall,
+          ),
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          onTap: _requestDataExport,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _requestDataExport() async {
+    final user = _authService.getCurrentUser();
+    final email = _authService.getCurrentUserEmail();
+    if (user == null || email == null) return;
+
+    try {
+      await DataExportService().requestGDPRDataExport(
+        userId: user.id,
+        format: DataExportFormat.json,
+        userEmail: email,
+      );
+      AnalyticsService.trackEvent('data_export_requested', {
+        'format': 'json',
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            "We're preparing your data export. You'll be notified by email when it's ready.",
+          ),
+          backgroundColor: context.successColor,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not request data export: $e')),
+      );
+    }
+  }
+
   Widget _buildDangerZone() {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
@@ -974,27 +1064,9 @@ class _AccountManagementScreenState
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Delete Account'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'This action cannot be undone. All your data will be permanently deleted.',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: confirmTextController,
-                  decoration: const InputDecoration(
-                    labelText: 'Type "DELETE" to confirm',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.warning_outlined),
-                  ),
-                  enabled: !isDeleting,
-                ),
-              ],
-            ),
+          content: DeleteAccountDialogContent(
+            confirmController: confirmTextController,
+            enabled: !isDeleting,
           ),
           actions: [
             TextButton(
@@ -1079,11 +1151,18 @@ class _AccountManagementScreenState
       }
 
       if (mounted) {
+        // Resolved before navigating: `context.go` replaces the route this
+        // context belongs to, so the lookup has to happen while it is still
+        // the one the user is on.
+        final message = AppLocalizations.of(
+          context,
+        ).account_delete_success_snack;
+
         context.go('/auth-welcome');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Your account has been permanently deleted.'),
+            content: Text(message),
             backgroundColor: context.successColor,
           ),
         );
@@ -1091,5 +1170,54 @@ class _AccountManagementScreenState
     } catch (e) {
       throw Exception('Failed to delete account: $e');
     }
+  }
+}
+
+/// The body of the delete-account confirmation dialog.
+///
+/// Extracted from [AccountManagementScreen] so KAN-161's AC2 — layout verified
+/// at the new string lengths in Arabic as well as English — can be exercised by
+/// a widget test against the widget the app actually renders, rather than a
+/// reconstruction of it in the test. The screen itself cannot be pumped: it
+/// reaches for `Supabase.instance` and an authenticated session.
+///
+/// The `Type "DELETE"` label is deliberately still a hardcoded English literal.
+/// It is outside KAN-160/KAN-161's scope and `content-manager` ruled the
+/// confirmation token stays a fixed Latin `DELETE`; see the ticket's scope
+/// correction #2.
+class DeleteAccountDialogContent extends StatelessWidget {
+  const DeleteAccountDialogContent({
+    super.key,
+    required this.confirmController,
+    required this.enabled,
+  });
+
+  final TextEditingController confirmController;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context).account_delete_dialog_warning,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: confirmController,
+            decoration: const InputDecoration(
+              labelText: 'Type "DELETE" to confirm',
+              border: OutlineInputBorder(),
+              prefixIcon: Icon(Icons.warning_outlined),
+            ),
+            enabled: enabled,
+          ),
+        ],
+      ),
+    );
   }
 }

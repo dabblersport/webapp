@@ -5,7 +5,7 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/user_circle.dart';
 import 'package:dabbler/data/repositories/user_circles_repository.dart';
 import 'package:dabbler/data/repositories/user_circles_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

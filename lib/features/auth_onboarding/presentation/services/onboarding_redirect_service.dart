@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/controllers/onboarding_controller.dart';
 import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_state.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Service to check onboarding status and redirect accordingly
 ///
@@ -38,22 +39,22 @@ class OnboardingRedirectService {
         // Onboarding complete
         if (state.existingProfileCount == 2) {
           // User has 2 profiles - go to profile switcher
-          context.go('/profile-switcher');
+          context.go(RoutePaths.profileSwitcher);
           return true;
         } else {
           // User has 1 complete profile - go to home
-          context.go('/home');
+          context.go(RoutePaths.home);
           return true;
         }
 
       case OnboardingStep.collectingBasicInfo:
         // Start onboarding from beginning
-        context.go('/onboarding/basic-info');
+        context.go(RoutePaths.onboardingBasicInfo);
         return true;
 
       case OnboardingStep.selectingPersona:
         // Resume at persona selection
-        context.go('/onboarding/persona-selection');
+        context.go(RoutePaths.onboardingPersonaSelection);
         return true;
 
       case OnboardingStep.creatingProfile:
@@ -64,7 +65,7 @@ class OnboardingRedirectService {
 
       case OnboardingStep.selectingPrimarySport:
         // Resume at primary sport selection
-        context.go('/onboarding/primary-sport');
+        context.go(RoutePaths.onboardingPrimarySport);
         return true;
 
       case OnboardingStep.creatingSportProfile:

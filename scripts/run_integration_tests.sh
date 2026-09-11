@@ -36,11 +36,11 @@ if [[ -n "${BOOTED_UDID}" ]]; then
   BOOTED_NAME="$(xcrun simctl list devices booted 2>/dev/null \
     | grep "${BOOTED_UDID}" | sed -E 's/^[[:space:]]*//; s/ \(.*//' | head -n 1 || true)"
   echo "==> Booted simulator detected: ${BOOTED_NAME:-unknown} (${BOOTED_UDID})"
-  echo "==> Running: flutter test ${TEST_TARGET} -d ${BOOTED_UDID}"
-  exec flutter test "${TEST_TARGET}" -d "${BOOTED_UDID}"
+  echo "==> Running: flutter test ${TEST_TARGET} -d ${BOOTED_UDID} --dart-define-from-file=.env"
+  exec flutter test "${TEST_TARGET}" -d "${BOOTED_UDID}" --dart-define-from-file=.env
 else
   echo "==> No booted iOS simulator found."
   echo "    Tip: boot one with 'open -a Simulator' (or 'xcrun simctl boot <udid>')."
-  echo "==> Falling back to: flutter test ${TEST_TARGET}"
-  exec flutter test "${TEST_TARGET}"
+  echo "==> Falling back to: flutter test ${TEST_TARGET} --dart-define-from-file=.env"
+  exec flutter test "${TEST_TARGET}" --dart-define-from-file=.env
 fi

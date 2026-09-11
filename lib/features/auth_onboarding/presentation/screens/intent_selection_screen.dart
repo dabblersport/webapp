@@ -88,7 +88,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       } else if (_selectedPersona == 'organise') {
         personaType = 'organiser';
       } else if (_selectedPersona == 'host') {
-        personaType = 'hoster';
+        personaType = 'host';
       } else {
         personaType = 'socialiser';
       }

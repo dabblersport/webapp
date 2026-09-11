@@ -2,7 +2,7 @@ import 'package:dabbler/data/models/check_in/check_in_status.dart';
 import 'package:dabbler/data/repositories/check_in_repository.dart';
 import 'package:dabbler/data/repositories/check_in_repository_impl.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 /// Provider for CheckInRepository
 final checkInRepositoryProvider = Provider<CheckInRepository>((ref) {

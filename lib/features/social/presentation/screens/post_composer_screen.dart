@@ -134,7 +134,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 ),
               ),
             ),
+            // Circle visibility has no picker wired in this composer yet
+            // (KAN-47) — selecting it always fails at submit time.
             for (final v in PostVisibility.values)
+              if (v != PostVisibility.circle)
               ListTile(
                 leading: Icon(
                   _visibilityIcon(v),

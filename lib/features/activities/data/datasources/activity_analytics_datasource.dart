@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 /// Data source for tracking analytics events via Supabase RPC.
 ///
@@ -26,7 +27,7 @@ class ActivityAnalyticsDatasource {
       // RPC returns void, so we await the call directly
       // The response will be null/empty for void-returning functions
       final response = await _supabase.rpc(
-        'rpc_track_event',
+        SupabaseConfig.rpcTrackEventFn,
         params: {'_event_name': eventName, '_properties': properties},
       );
 

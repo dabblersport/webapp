@@ -3,7 +3,7 @@ import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import '../../features/misc/data/datasources/supabase_remote_data_source.dart';
+import '../../core/data/supabase_remote_data_source.dart';
 import '../models/profile.dart';
 import 'username_repository.dart';
 

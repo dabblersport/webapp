@@ -3,7 +3,7 @@ import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/news/data/news_repository.dart';
 import 'package:dabbler/features/news/data/news_repository_impl.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';

@@ -8,7 +8,7 @@ import 'package:dabbler/data/models/venue_space.dart';
 import 'package:dabbler/data/models/games/venue.dart' as games_venue;
 import 'package:dabbler/data/repositories/venues_repository.dart';
 import 'package:dabbler/data/repositories/venues_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'

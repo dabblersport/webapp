@@ -456,7 +456,7 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
   Future<Either<Failure, double>> getProfileCompletion(String userId) async {
     try {
       final profileResult = await getProfile(userId);
-      return profileResult.fold(
+      return await profileResult.fold(
         (failure) => Left(failure),
         (profile) => Right(profile.calculateProfileCompletion()),
       );

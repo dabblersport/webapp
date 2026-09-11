@@ -78,7 +78,7 @@ class GameModel extends Game {
         maxPlayers:
             json['capacity'] as int? ?? 10, // Map capacity to maxPlayers
         currentPlayers: currentPlayers,
-        organizerId: json['creator_user_id'] as String? ?? json['host_user_id'] as String? ?? '',
+        organizerId: json['creator_profile_id'] as String? ?? json['host_user_id'] as String? ?? '',
         skillLevel: _parseSkillLevel(json), // Parse from min_skill/max_skill
         pricePerPlayer: 0.0, // Default - not in DB schema
         currency: 'AED',

@@ -1,0 +1,62 @@
+name: Anon reachability allowlist
+
+# KAN-61 / docs/DECISIONS.md T-002. Fails the build if any view in `public`
+# is readable by `anon` without `security_invoker` and is not on the
+# reviewed allowlist in docs/SCHEMA.md §2f. See scripts/ci/README.md.
+#
+# KAN-175 adds a second, companion gate in the same workflow: anon-executable
+# SECURITY DEFINER functions with an unguarded caller-supplied identity
+# argument, checked against docs/SCHEMA.md §2g. It shares SUPABASE_DB_URL
+# with the view gate above — no new secret. Its self-test needs a real,
+# disposable Postgres (the detection IS the SQL predicate; a fixture-only
+# test would leave the predicate itself unexercised), supplied here as a
+# service container. See scripts/ci/README.md.
+
+on:
+  push:
+    branches:
+      - Canary
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  allowlist-check:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kan175
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure psql is available
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Check anon-reachability allowlist
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/ci/check_anon_allowlist.sh
+
+      - name: Check anon-executable SECURITY DEFINER functions
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: bash scripts/ci/check_anon_function_grants.sh
+
+      - name: Self-test the SECURITY DEFINER function gate (real disposable Postgres)
+        env:
+          KAN175_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/kan175
+        run: bash scripts/ci/check_anon_function_grants_test.sh

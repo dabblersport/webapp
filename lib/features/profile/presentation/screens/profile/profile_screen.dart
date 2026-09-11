@@ -91,7 +91,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     with TickerProviderStateMixin, RouteAware {
   late AnimationController _animationController;
   late AnimationController _refreshController;
-  late TickerProvider _tickerProvider;
   late TabController _tabController;
   int _selectedTabIndex = 0;
   final ScrollController _scrollController = ScrollController();
@@ -160,7 +159,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
       // Invalidate dependent providers to refresh their data
       ref.invalidate(myPostsCountProvider);
-      ref.invalidate(sportProfileHeaderProvider(user.id));
+      ref.invalidate(sportProfileHeaderProvider((userId: user.id, profileId: null)));
     }
     // Load fresh profile data
     await _loadProfileData();
@@ -1710,7 +1709,7 @@ class _PersonaOptionTile extends StatelessWidget {
         return Iconsax.user_copy;
       case PersonaType.organiser:
         return Iconsax.calendar_copy;
-      case PersonaType.hoster:
+      case PersonaType.host:
         return Iconsax.building_copy;
       case PersonaType.socialiser:
         return Iconsax.people_copy;

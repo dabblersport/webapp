@@ -155,6 +155,20 @@ class ProfileCacheService {
     return list.take(limit).toList();
   }
 
+  /// Clears every profile this device has cached — the own-profile cache,
+  /// the up-to-25 recently-viewed profiles list, and every individual
+  /// `profile:$userId` entry. Required on logout (T-004): otherwise the next
+  /// account signed in on this device inherits up to 25 other users' cached
+  /// profiles, including their email addresses.
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keysToRemove = prefs.getKeys().where((k) => k.startsWith('profile:'));
+    for (final key in keysToRemove) {
+      await prefs.remove(key);
+    }
+    _inFlight.clear();
+  }
+
   // Internals
   bool _isStale(Map<String, dynamic> cached) {
     try {

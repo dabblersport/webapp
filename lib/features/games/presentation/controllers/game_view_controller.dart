@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -127,7 +128,6 @@ class GameView {
     this.sportNameEn,
     this.variantNameEn,
     this.creatorProfileId,
-    this.creatorUserId,
     this.creatorUsername,
     this.creatorDisplayName,
     this.creatorAvatarUrl,
@@ -161,7 +161,6 @@ class GameView {
   final String? sportNameEn;
   final String? variantNameEn;
   final String? creatorProfileId;
-  final String? creatorUserId;
   final String? creatorUsername;
   final String? creatorDisplayName;
   final String? creatorAvatarUrl;
@@ -209,7 +208,6 @@ class GameView {
       sportNameEn: j['sport_name_en'] as String?,
       variantNameEn: j['variant_name_en'] as String?,
       creatorProfileId: j['creator_profile_id'] as String?,
-      creatorUserId: j['creator_user_id'] as String?,
       creatorUsername: j['creator_username'] as String?,
       creatorDisplayName: j['creator_display_name'] as String?,
       creatorAvatarUrl: j['creator_avatar_url'] as String?,
@@ -480,6 +478,7 @@ class GameViewController extends StateNotifier<GameViewState> {
 
   Future<void> joinGame() async {
     if (currentUserId == null) return;
+    final joinStartedAt = DateTime.now();
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
@@ -507,6 +506,25 @@ class GameViewController extends StateNotifier<GameViewState> {
           break;
         default:
           action = JoinActionResult.joined;
+      }
+
+      if (action == JoinActionResult.joined) {
+        final sportType =
+            state.game?.sportKey ?? state.game?.sportId ?? 'unknown';
+        unawaited(
+          const AnalyticsService().trackGameJoined(
+            gameId: gameId,
+            sportType: sportType,
+            joinMethod: state.game?.joinPolicy ?? 'unknown',
+            timeToJoin: DateTime.now().difference(joinStartedAt).inMilliseconds,
+          ),
+        );
+        unawaited(
+          const AnalyticsService().trackGameConfirmed(
+            gameId: gameId,
+            sportType: sportType,
+          ),
+        );
       }
 
       await _load();

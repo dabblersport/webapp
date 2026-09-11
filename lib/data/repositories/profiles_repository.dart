@@ -2,14 +2,17 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import '../models/profile.dart';
 
-/// NOTE: This is the legacy Result-based profiles repository used by
-/// auth/profile flows today. New code should prefer the clean-architecture
-/// `ProfileRepository` in `lib/features/profile/domain/repositories/`
-/// and its `ProfileRepositoryImpl` in `features/profile/data/repositories/`.
+/// `ProfilesRepository` (this file) is Result-based: every method returns
+/// `Result<T, Failure>`. `Result` is CLAUDE.md's convention for new code.
 ///
-/// Over time, this interface can be turned into a thin adapter that
-/// delegates to the domain repository, and eventually removed once all
-/// callers have migrated.
+/// A separate Either-based profile stack also exists: the domain
+/// `ProfileRepository` in `lib/features/profile/domain/repositories/` and its
+/// `ProfileRepositoryImpl` in `features/profile/data/repositories/`, whose
+/// methods return `Either<Failure, T>`. That stack is live — it is reached
+/// through `profileControllerProvider`, from the router and from the venues,
+/// sports and home slices among others. For the current call sites, run:
+///   grep -rn "profileControllerProvider" lib/
+/// It is frozen: no new methods are added to it.
 
 abstract class ProfilesRepository {
   /// Owner read: relies on policy `profiles_select_owner` (auth.uid() = user_id)

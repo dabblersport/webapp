@@ -19,7 +19,6 @@ class RoutePaths {
 
   // ── Deep Link entry paths (top-level, redirect into the shell) ──
   // dabbler://app/game/:gameId  → /sports/games/:gameId
-  static const String deepLinkGame = '/game/:gameId';
   // dabbler://app/create-game  → /create-game (already top-level, works directly)
 
   // Landing & Authentication
@@ -48,10 +47,6 @@ class RoutePaths {
   static const String onboardingInterestsSelection =
       '/onboarding-interests-selection';
   static const String onboardingPrimarySport = '/onboarding-primary-sport';
-  static const String onboardingSports = '/onboarding-sports';
-  static const String onboardingPreferences = '/onboarding-preferences';
-  static const String onboardingPrivacy = '/onboarding-privacy';
-  static const String onboardingCompletion = '/onboarding-completion';
   static const String profileSwitcher = '/profile-switcher';
 
   // Add Persona Flow (from Settings)
@@ -69,14 +64,9 @@ class RoutePaths {
   static const String sportProfile = '/profile/sport';
   static const String games = '/games';
   static const String social = '/social';
-  static const String sports = '/sports';
   static const String sportsExplore = '/sports-explore';
-  static const String bookings = '/bookings';
   static const String activities = '/activities';
   static const String notifications = '/notifications';
-  static const String support = '/support';
-  static const String loyalty = '/loyalty';
-  static const String designSystemDemo = '/design-system-demo';
 
   // Organiser Venue Submissions
   static const String myVenueSubmissions = '/venue-submissions';
@@ -94,36 +84,22 @@ class RoutePaths {
 
   // Rewards & Leaderboard
   static const String rewards = '/rewards';
-  static const String leaderboard = '/rewards/leaderboard';
 
   // Game Creation Routes
   static const String createGame = '/create-game';
   static const String editGame = '/edit-game/:gameId';
   static const String createGameBasicInfo = '/create-game-basic-info';
-  static const String createGameVenueSelection = '/create-game-venue-selection';
-  static const String createGameDateTime = '/create-game-date-time';
-  static const String createGamePlayerSettings = '/create-game-player-settings';
-  static const String createGamePricing = '/create-game-pricing';
-  static const String createGameAdditionalDetails =
-      '/create-game-additional-details';
-  static const String createGameReview = '/create-game-review';
 
   // Social Routes
   static const String socialFeed = '/social-feed';
-  static const String socialPost = '/social-post';
-  static const String addPost = '/add-post';
   static const String socialPostDetail = '/social-post-detail';
   static const String userProfile = '/user-profile';
-  static const String socialProfileDetail = '/social-profile-detail';
   static const String socialChat = '/social-chat';
-  static const String socialChatDetail = '/social-chat-detail';
   static const String socialChatList = '/social-chat-list';
   static const String socialMessages = '/social-messages';
   static const String socialFriends = '/social-friends';
   static const String following = '/following';
   static const String followers = '/followers';
-  static const String socialAddFriends = '/social-add-friends';
-  static const String userFriendsList = '/user-friends';
   static const String socialNotifications = '/social-notifications';
   static const String socialSearch = '/social-search';
   static const String hashtagFeed = '/hashtag';
@@ -154,28 +130,13 @@ class RouteNames {
   static const String home = 'home';
   static const String error = 'error';
 
-  // Auth Routes
-  static const String login = 'login';
-  static const String register = 'register';
-  static const String forgotPassword = 'forgot_password';
-  static const String enterPassword = 'enter_password';
-  static const String createUserInfo = 'create_user_information';
-  static const String welcome = 'welcome';
-  static const String resetPassword = 'reset_password';
-
   // Profile Onboarding Routes
   static const String onboardingWelcome = 'onboarding-welcome';
-  static const String onboardingBasicInfo = 'onboarding-basic-info';
   static const String onboardingPersonaSelection =
       'onboarding-persona-selection';
   static const String onboardingInterestsSelection =
       'onboarding-interests-selection';
   static const String onboardingPrimarySport = 'onboarding-primary-sport';
-  static const String onboardingSports = 'onboarding-sports';
-  static const String onboardingPreferences = 'onboarding-preferences';
-  static const String onboardingPrivacy = 'onboarding-privacy';
-  static const String onboardingCompletion = 'onboarding-completion';
-  static const String profileSwitcher = 'profile-switcher';
 
   // Add Persona Flow Routes
   static const String addPersonaInterests = 'add-persona-interests';
@@ -186,44 +147,16 @@ class RouteNames {
   // Feature Routes
   static const String profile = 'profile';
   static const String sportProfile = 'sport-profile';
-  static const String profileUser = 'profile-user';
-  static const String profileEdit = 'profile-edit';
-  static const String profileAvatar = 'profile-avatar';
-  static const String profileStats = 'profile-stats';
-  static const String profileEditPhoto = 'profile-edit-photo';
-  static const String profileEditSports = 'profile-edit-sports';
-  static const String settings = 'settings';
-  static const String settingsPrivacy = 'settings-privacy';
-  static const String settingsNotifications = 'settings-notifications';
-  static const String settingsAccount = 'settings-account';
-  static const String notifications = 'notifications';
 
   // Games Routes
-  static const String games = 'games';
-  static const String availableGames = 'available-games';
-  static const String myGames = 'my-games';
-  static const String gameHistory = 'game-history';
   static const String gameDetail = 'game-detail';
-  static const String joinGame = 'join-game';
-  static const String gameCheckin = 'game-checkin';
-  static const String gameLobby = 'game-lobby';
-  static const String liveGame = 'live-game';
-  static const String postGame = 'post-game';
 
   // Game Creation Routes
   static const String createGame = 'create-game';
   static const String editGame = 'edit-game';
   static const String createGameBasicInfo = 'create-game-basic-info';
-  static const String createGameVenueSelection = 'create-game-venue-selection';
-  static const String createGameDateTime = 'create-game-date-time';
-  static const String createGamePlayerSettings = 'create-game-player-settings';
-  static const String createGamePricing = 'create-game-pricing';
-  static const String createGameAdditionalDetails =
-      'create-game-additional-details';
-  static const String createGameReview = 'create-game-review';
 
   // Venue Routes
-  static const String venuesList = 'venues-list';
   static const String venueDetail = 'venue-detail';
 
   // News Routes
@@ -237,19 +170,14 @@ class RouteNames {
   // Social Routes
   static const String social = 'social';
   static const String socialFeed = 'social-feed';
-  static const String socialPost = 'social-post';
   static const String socialPostDetail = 'social-post-detail';
   static const String userProfile = 'user-profile';
-  static const String socialProfileDetail = 'social-profile-detail';
   static const String socialChat = 'social-chat';
-  static const String socialChatDetail = 'social-chat-detail';
   static const String socialChatList = 'social-chat-list';
   static const String socialMessages = 'social-messages';
   static const String socialFriends = 'social-friends';
   static const String following = 'following';
   static const String followers = 'followers';
-  static const String socialAddFriends = 'social-add-friends';
-  static const String userFriendsList = 'user-friends-list';
   static const String socialNotifications = 'social-notifications';
   static const String socialSearch = 'social-search';
   static const String hashtagFeed = 'hashtag-feed';
@@ -267,10 +195,6 @@ class RouteNames {
 
   // Rewards & Leaderboard
   static const String rewards = 'rewards';
-  static const String leaderboard = 'leaderboard';
-
-  // Main App Navigation
-  static const String mainApp = 'main-app';
 
   // Social Onboarding Routes
   static const String socialOnboardingWelcome = 'social-onboarding-welcome';
@@ -283,20 +207,6 @@ class RouteNames {
 
 /// Route parameters used in dynamic routes
 class RouteParams {
-  static const String errorMessage = 'errorMessage';
-  static const String gameId = 'gameId';
-  static const String venueId = 'venueId';
-  static const String playerId = 'playerId';
-  static const String inviteToken = 'inviteToken';
-  static const String userId = 'userId';
-  static const String itemId = 'itemId';
-  static const String postId = 'postId';
-  static const String hashtagSlug = 'slug';
-  static const String conversationId = 'conversationId';
-  static const String searchQuery = 'q';
-  static const String searchType = 'type';
-  static const String notificationId = 'notificationId';
-
   // Organiser Venue Submissions
   static const String submissionId = 'submissionId';
 }

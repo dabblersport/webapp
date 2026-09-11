@@ -916,7 +916,21 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
       ref.invalidate(followingCountProvider(widget.currentProfileId));
       ref.invalidate(followersCountProvider(_targetProfileId));
     } catch (_) {
-      // Silently fail — UI will stay stale until next refresh
+      // The request failed (e.g. a 409 because the check that drove this
+      // button's label was stale/wrong) — never claim success. Re-check the
+      // real server state instead of trusting the label the user just acted
+      // on, and tell them nothing happened.
+      ref.invalidate(
+        isFollowingProvider((
+          currentProfileId: widget.currentProfileId,
+          targetProfileId: _targetProfileId,
+        )),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Something went wrong. Please try again.')),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
     }
@@ -934,10 +948,11 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
       )),
     );
 
-    final isFollowing = isFollowingAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => false,
-    );
+    // Never collapse "still checking" or "check failed" into a confident
+    // false — that renders as "Follow" for someone the user already follows
+    // (KAN-91). Only a resolved value drives the button; anything else
+    // shows a neutral loading state.
+    final isFollowing = isFollowingAsync.valueOrNull;
 
     return Card.filled(
       color: colorScheme.primary.withValues(alpha: 0.08),
@@ -963,7 +978,7 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
         subtitle: Text('@$_username'),
         trailing: isSelf
             ? null
-            : _isProcessing
+            : (_isProcessing || isFollowing == null)
             ? const SizedBox(
                 width: 24,
                 height: 24,

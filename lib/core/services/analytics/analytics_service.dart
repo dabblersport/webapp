@@ -1,29 +1,51 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 
 typedef AnalyticsProps = Map<String, Object?>;
 
-/// Central analytics façade. Wire your vendor(s) inside these methods.
+/// Central analytics façade. Emits to `rpc_track_event` — the same RPC
+/// already proven live in `ActivityAnalyticsDatasource`. Fire-and-forget:
+/// analytics must never throw into a caller or block the UI.
 class AnalyticsService {
   // Allow instantiation for use in mixins
   const AnalyticsService();
 
+  static String? _userId;
+
   static Future<void> trackEvent(String name, [AnalyticsProps? props]) async {
-    // TODO: forward to underlying provider(s)
+    final client = Supabase.instance.client;
+    final properties = <String, Object?>{
+      if (_userId != null) 'user_id': _userId,
+      ...?props,
+    };
+    try {
+      await client.rpc(
+        SupabaseConfig.rpcTrackEventFn,
+        params: {'_event_name': name, '_properties': properties},
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('AnalyticsService.trackEvent could not deliver "$name": $e');
+      }
+    }
   }
 
   static Future<void> trackScreen(
     String screenName, [
     AnalyticsProps? props,
   ]) async {
-    // TODO: forward to underlying provider(s)
+    await trackEvent('screen_view', {'screen_name': screenName, ...?props});
   }
 
   static Future<void> setUser(String userId, [AnalyticsProps? traits]) async {
-    // TODO: implement identify
+    _userId = userId;
+    await trackEvent('identify', {'user_id': userId, ...?traits});
   }
 
   static Future<void> reset() async {
-    // TODO: implement reset
+    _userId = null;
   }
 
   // Game creation tracking
@@ -32,7 +54,6 @@ class AnalyticsService {
     required String sportType,
     Map<String, dynamic>? additionalData,
   }) async {
-    // TODO: implement game creation step tracking
     await trackEvent('game_creation_step', {
       'step': step,
       'sport_type': sportType,
@@ -48,7 +69,6 @@ class AnalyticsService {
     required String venueType,
     required String duration,
   }) async {
-    // TODO: implement game created tracking
     await trackEvent('game_created', {
       'game_id': gameId,
       'sport_type': sportType,
@@ -65,12 +85,21 @@ class AnalyticsService {
     required String joinMethod,
     required int timeToJoin,
   }) async {
-    // TODO: implement game joined tracking
     await trackEvent('game_joined', {
       'game_id': gameId,
       'sport_type': sportType,
       'join_method': joinMethod,
       'time_to_join': timeToJoin,
+    });
+  }
+
+  Future<void> trackGameConfirmed({
+    required String gameId,
+    required String sportType,
+  }) async {
+    await trackEvent('game_confirmed', {
+      'game_id': gameId,
+      'sport_type': sportType,
     });
   }
 
@@ -80,7 +109,6 @@ class AnalyticsService {
     required String sportType,
     required Map<String, dynamic> filters,
   }) async {
-    // TODO: implement game search tracking
     await trackEvent('game_search', {
       'query': query,
       'results_count': resultsCount,
@@ -94,7 +122,6 @@ class AnalyticsService {
     required dynamic filterValue,
     required int resultsCount,
   }) async {
-    // TODO: implement filter usage tracking
     await trackEvent('filter_used', {
       'filter_type': filterType,
       'filter_value': filterValue,
@@ -109,7 +136,6 @@ class AnalyticsService {
     required bool successful,
     String? errorReason,
   }) async {
-    // TODO: implement check-in tracking
     await trackEvent('game_check_in', {
       'game_id': gameId,
       'sport_type': sportType,
@@ -125,7 +151,6 @@ class AnalyticsService {
     required String sportType,
     required String selectionMethod,
   }) async {
-    // TODO: implement venue selection tracking
     await trackEvent('venue_selected', {
       'venue_id': venueId,
       'venue_name': venueName,
@@ -138,7 +163,6 @@ class AnalyticsService {
     required String screenName,
     Map<String, dynamic>? properties,
   }) async {
-    // TODO: implement screen view tracking
     await trackScreen(screenName, properties);
   }
 
@@ -146,7 +170,6 @@ class AnalyticsService {
     required String featureName,
     Map<String, dynamic>? context,
   }) async {
-    // TODO: implement feature usage tracking
     await trackEvent('feature_used', {
       'feature_name': featureName,
       ...?context,
@@ -159,7 +182,6 @@ class AnalyticsService {
     String? stackTrace,
     Map<String, dynamic>? context,
   }) async {
-    // TODO: implement error tracking
     await trackEvent('error', {
       'error_type': errorType,
       'error_message': errorMessage,
@@ -174,7 +196,6 @@ class AnalyticsService {
     required String action,
     Map<String, dynamic>? metadata,
   }) async {
-    // TODO: implement game engagement tracking
     await trackEvent('game_engagement', {
       'game_id': gameId,
       'sport_type': sportType,
@@ -189,7 +210,6 @@ class AnalyticsService {
     required String sportType,
     String? query,
   }) async {
-    // TODO: implement search result click tracking
     await trackEvent('search_result_clicked', {
       'game_id': gameId,
       'position': position,
@@ -203,7 +223,6 @@ class AnalyticsService {
     required bool success,
     String? failureReason,
   }) async {
-    // TODO: implement check-in attempt tracking
     await trackEvent('check_in_attempt', {
       'game_id': gameId,
       'success': success,
@@ -216,7 +235,6 @@ class AnalyticsService {
     required num value,
     Map<String, dynamic>? tags,
   }) async {
-    // TODO: implement performance metric tracking
     await trackEvent('performance_metric', {
       'metric_name': metricName,
       'value': value,

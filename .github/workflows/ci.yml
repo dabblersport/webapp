@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - Canary
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        # No flutter-version pin, deliberately: scripts/cloudflare-build.sh
+        # clones `stable` unpinned for the actual production build. Floating
+        # here too means this gate compiles/lints against the same SDK that
+        # ships, instead of a stale pin drifting out of sync with it (that
+        # divergence is what silently killed the old deploy-web.yml — see
+        # KAN-112 / DECISIONS.md T-042).
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        # Warnings are fatal; infos are advisory — see docs/CONVENTIONS.md #11.
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test

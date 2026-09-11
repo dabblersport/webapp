@@ -775,6 +775,42 @@ class AppTheme {
     );
   }
 
+  /// Appends a bundled emoji font as a fallback so emoji glyphs never render
+  /// as tofu boxes (KAN-95). Flutter web's CanvasKit renderer doesn't inherit
+  /// the OS's native emoji font the way native platforms do, and its
+  /// CDN-fetched emoji fallback can fail/race — bundling the font locally
+  /// removes that dependency entirely, on every platform.
+  static TextTheme _withEmojiFallback(TextTheme base) {
+    const emojiFallback = 'Noto Emoji';
+    TextStyle? withFallback(TextStyle? s) {
+      if (s == null) return null;
+      return s.copyWith(
+        fontFamilyFallback: [
+          ...?s.fontFamilyFallback,
+          emojiFallback,
+        ],
+      );
+    }
+
+    return base.copyWith(
+      displayLarge: withFallback(base.displayLarge),
+      displayMedium: withFallback(base.displayMedium),
+      displaySmall: withFallback(base.displaySmall),
+      headlineLarge: withFallback(base.headlineLarge),
+      headlineMedium: withFallback(base.headlineMedium),
+      headlineSmall: withFallback(base.headlineSmall),
+      titleLarge: withFallback(base.titleLarge),
+      titleMedium: withFallback(base.titleMedium),
+      titleSmall: withFallback(base.titleSmall),
+      bodyLarge: withFallback(base.bodyLarge),
+      bodyMedium: withFallback(base.bodyMedium),
+      bodySmall: withFallback(base.bodySmall),
+      labelLarge: withFallback(base.labelLarge),
+      labelMedium: withFallback(base.labelMedium),
+      labelSmall: withFallback(base.labelSmall),
+    );
+  }
+
   /// Dabbler type-size scale (tuned mobile scale, px). Single source of truth
   /// for text sizes: every TextTheme slot gets an explicit size so screens
   /// inherit a consistent scale through Theme.of(context).textTheme. Adjust a
@@ -820,9 +856,9 @@ class AppTheme {
     //               Material 3 metrics. No forced family, weights, or sizes —
     //               system fonts are hinted per device and adapt correctly to
     //               the user's font-size/display-size settings (WCAG resize).
-    final textTheme = _isIOS
-        ? _applySizes(_enforceMinWeightAndFamily(baseTextTheme))
-        : baseTextTheme;
+    final textTheme = _withEmojiFallback(
+      _isIOS ? _applySizes(_enforceMinWeightAndFamily(baseTextTheme)) : baseTextTheme,
+    );
 
     // Material 3 shape system - using rounded corners
     const shapeSmall = RoundedRectangleBorder(

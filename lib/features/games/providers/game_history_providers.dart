@@ -8,7 +8,13 @@ import 'package:dabbler/features/explore/presentation/screens/sports_history_scr
 
 /// Family key for a user's game history within a single sport.
 /// [sportId] is the sports-table UUID stored in games.sport_id.
-typedef SportGameHistoryArgs = ({String userId, String sportId});
+/// [profileId] is the profiles.id used to match `v_game_card.creator_profile_id`
+/// (KAN-87 — the view no longer exposes `creator_user_id`).
+typedef SportGameHistoryArgs = ({
+  String userId,
+  String profileId,
+  String sportId,
+});
 
 /// Upcoming + past joined/created games for one sport.
 typedef SportGameHistory = ({List<PastGame> upcoming, List<PastGame> past});
@@ -76,8 +82,8 @@ final sportGameHistoryProvider = FutureProvider.autoDispose
         .toSet()
         .join(',');
     membershipOr = ids.isEmpty
-        ? 'creator_user_id.eq.${args.userId}'
-        : 'creator_user_id.eq.${args.userId},id.in.($ids)';
+        ? 'creator_profile_id.eq.${args.profileId}'
+        : 'creator_profile_id.eq.${args.profileId},id.in.($ids)';
   }
 
   PostgrestFilterBuilder<List<Map<String, dynamic>>> base() => supabase

@@ -103,15 +103,6 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<void, Failure>> signOut() async {
-    final result = await guardResult<void>(() async {
-      await remoteDataSource.signOut();
-      _cachedUser = null;
-    });
-    return result;
-  }
-
-  @override
   Future<Result<User, Failure>> getCurrentUser() async {
     if (_cachedUser != null) {
       return Ok<User, Failure>(_cachedUser!);

@@ -13,7 +13,7 @@ import 'package:dabbler/features/profile/presentation/providers/add_persona_prov
 /// Tables affected:
 /// - profiles: New row with persona_type
 /// - sport_profiles: New row for primary sport
-/// - player/organiser/hoster: New row if applicable
+/// - player/organiser/host: New row if applicable
 /// - profile_tiers: New tier assignment (defaults to 'member')
 class ProfileCreationService {
   final SupabaseClient _client;
@@ -57,7 +57,7 @@ class ProfileCreationService {
       case PersonaType.organiser:
         profileType = 'business';
         break;
-      case PersonaType.hoster:
+      case PersonaType.host:
         profileType = 'venue';
         break;
       case PersonaType.socialiser:
@@ -126,7 +126,7 @@ class ProfileCreationService {
           case PersonaType.organiser:
             intention = 'organise';
             break;
-          case PersonaType.hoster:
+          case PersonaType.host:
             intention = 'host';
             break;
           case PersonaType.socialiser:
@@ -178,7 +178,7 @@ class ProfileCreationService {
         case PersonaType.organiser:
           intention = 'organise';
           break;
-        case PersonaType.hoster:
+        case PersonaType.host:
           intention = 'host';
           break;
         case PersonaType.socialiser:
@@ -286,8 +286,8 @@ class ProfileCreationService {
       case PersonaType.organiser:
         await _createOrganiserProfile(profileId);
         break;
-      case PersonaType.hoster:
-        await _createHosterProfile(profileId);
+      case PersonaType.host:
+        await _createHostProfile(profileId);
         break;
       case PersonaType.socialiser:
         // Socialiser has no separate table
@@ -336,20 +336,20 @@ class ProfileCreationService {
     }
   }
 
-  /// Create hoster profile row
-  Future<void> _createHosterProfile(String profileId) async {
+  /// Create host profile row
+  Future<void> _createHostProfile(String profileId) async {
     try {
       final existing = await _client
-          .from(SupabaseConfig.hosterTable)
+          .from(SupabaseConfig.hostTable)
           .select('profile_id')
           .eq('profile_id', profileId)
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from(SupabaseConfig.hosterTable).insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.hostTable).insert({'profile_id': profileId});
       }
     } catch (e) {
-      // Hoster table insert is best-effort
+      // Host table insert is best-effort
     }
   }
 

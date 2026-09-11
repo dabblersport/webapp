@@ -4,7 +4,7 @@ import 'package:dabbler/data/models/nearby/nearby.dart';
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/data/repositories/nearby_games_repository.dart';
 import 'package:dabbler/data/repositories/nearby_games_repository_impl.dart';
-import 'package:dabbler/features/misc/data/datasources/supabase_remote_data_source.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 
 // ---------------------------------------------------------------------------
 // Repository provider
