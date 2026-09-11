@@ -104,13 +104,40 @@
 --   profiles column count      33      profiles constraint count   10
 --   profiles rows             165      country NULL rows            1   (unchanged)
 --
--- AC3 SCOPE NOTE, stated precisely rather than overclaimed: the column count,
--- constraint count, FK definition, type and nullability above are measured before
--- and after. The full per-column default list was NOT captured pre-apply, so "no
--- other column default changed" rests on the statement's own grammar --
--- `ALTER TABLE ... ALTER COLUMN country DROP DEFAULT` names exactly one column and
--- cannot reach another -- rather than on a pre/post diff of pg_attrdef. Flagged so
--- a reviewer weighs it as a structural argument, not as a measurement.
+-- AC3 SCOPE -- and the guard against a blind query, added after the fact.
+--
+-- The column count, constraint count, FK definition, type and nullability above are
+-- measured before and after.
+--
+-- THE 0 ABOVE IS NOT A BLIND QUERY, AND THAT HAD TO BE DEMONSTRATED. A pg_attrdef
+-- join that resolves nothing also returns 0, so "0 rows for country" proves nothing
+-- on its own (backend-2 shipped an assert that passed while nothing had changed for
+-- exactly this reason; backend-8 derived the guard). The SAME join, in the SAME
+-- session and schema, widened to every profiles attribute, returns:
+--
+--     pg_attrdef_rows = 1  ->  avatar_url, created_at, hashtag_reputation_score, id,
+--                              intention, is_active, is_original, is_player, language,
+--                              news, onboard, updated_at, verified        (13 columns)
+--     pg_attrdef_rows = 0  ->  country                                    ( 1 column)
+--
+-- 13 and 0 from one join. The join demonstrably resolves, so country's 0 is a real
+-- absence rather than a query that found nothing.
+--
+-- AND THE PRE-IMAGE, so "no other default changed" is a comparison and not an
+-- assertion: the baseline schema
+-- (supabase/migrations/20260829080500_baseline_schema.sql:23785-23821) lists 14
+-- columns with defaults on profiles, including `"country" "text" DEFAULT 'UAE'::"text"`
+-- -- the defect, verbatim, in the repo. Baseline MINUS country = 13 columns, and that
+-- set is IDENTICAL by name and by default expression to the 13 measured live above.
+-- Exactly one default was removed; none added, none altered.
+--
+-- CAVEAT, stated rather than glossed: the baseline is a REPO FILE, and T-068 is
+-- explicit that the repo is not authoritative for live state. This is corroboration
+-- against the baseline COMMIT, not a live pre-image captured at apply time. Had a
+-- default drifted since the baseline and drifted back to an identical expression,
+-- this would not distinguish it. Stronger than a grammar-only argument; weaker than
+-- a pre-apply live snapshot. The lesson for the next migration on this table:
+-- capture the full pre-image BEFORE applying.
 --
 -- Catalogue-only change (pg_attrdef). No table rewrite. No data modified, so this is
 -- not the user-data mutation 019 reserves to the CEO. ACCESS EXCLUSIVE on
