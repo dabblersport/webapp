@@ -312,6 +312,67 @@ select 'P10 AC5 no-regression' as probe,
        'expect false,false,2,3,1' as criterion;
 
 -- ===========================================================================
+-- P11 — row_security=off, and WHY it is the guard (PEER FAIL, backend-6)
+-- ===========================================================================
+-- 20260911081512 relocated both helpers and made them DEFINER but carried the
+-- invoker-era proconfig through, so row_security=off was missing. Added in
+-- 20260911105846.
+--
+-- The mechanism, measured live as `authenticated` (a non-exempt role) rather
+-- than asserted:
+--   default (row_security on) -> read of role_grants returns FALSE, silently
+--   SET row_security = off    -> 42501 "query would be affected by row-level
+--                                security policy for table role_grants"
+--
+-- So without it, the day any of the three owner-exemption conditions flips —
+-- `ALTER TABLE role_grants FORCE ROW LEVEL SECURITY` is one line and looks
+-- like hardening — these two quietly answer `false` again, which is the exact
+-- regression AC5 removes. With it they raise. It is the guard against this
+-- ticket's own bug returning, which is why a missing attribute was a FAIL.
+--
+-- The second column is the class check: ZERO SECURITY DEFINER functions in
+-- util may lack row_security=off. An empty list is the pass.
+select 'P11 row_security=off' as probe,
+       (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='util' and p.proname in ('is_moderator','is_venue_admin')
+           and pg_get_function_identity_arguments(p.oid)='p_user uuid'
+           and p.proconfig::text ~ 'row_security=off')            as both_have_rs_off,
+       (select coalesce(string_agg(p.proname,','),'(none)')
+          from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+         where n.nspname='util' and p.prosecdef
+           and not (p.proconfig::text ~ 'row_security=off'))      as util_definers_missing_rs_off,
+       'expect 2, (none)' as criterion;
+
+-- The mechanism demonstration itself, re-runnable. Neither row writes.
+begin;
+create temp table _rs(scenario text, result text);
+grant all on _rs to authenticated;
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"11111111-2222-3333-4444-555555555555","role":"authenticated"}';
+do $$
+declare s text; m text; b boolean;
+begin
+  begin
+    select exists(select 1 from public.role_grants where role='admin') into b;
+    insert into _rs values ('row_security ON (default)', 'returned '||b::text||' - SILENTLY FILTERED');
+  exception when others then
+    get stacked diagnostics s=returned_sqlstate, m=message_text;
+    insert into _rs values ('row_security ON (default)', s||' '||m);
+  end;
+  begin
+    set local row_security = off;
+    select exists(select 1 from public.role_grants where role='admin') into b;
+    insert into _rs values ('row_security OFF, non-exempt role', 'returned '||b::text||' - NO RAISE, UNEXPECTED');
+  exception when others then
+    get stacked diagnostics s=returned_sqlstate, m=message_text;
+    insert into _rs values ('row_security OFF, non-exempt role', s||' '||m);
+  end;
+end $$;
+reset role;
+select 'P11b mechanism' as probe, scenario, result from _rs order by scenario;
+rollback;
+
+-- ===========================================================================
 -- GUARD SHAPES IN THE MIGRATION — classified, not asserted to be fine
 -- ===========================================================================
 -- The migration's in-transaction DO block holds three guards. All three are
