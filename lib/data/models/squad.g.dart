@@ -9,8 +9,8 @@ part of 'squad.dart';
 _$SquadImpl _$$SquadImplFromJson(Map<String, dynamic> json) => _$SquadImpl(
   id: json['id'] as String,
   sport: json['sport'] as String,
-  ownerProfileId: json['owner_profile_id'] as String,
-  ownerUserId: json['owner_user_id'] as String,
+  ownerProfileId: json['owner_profile_id'] as String?,
+  ownerUserId: json['owner_user_id'] as String?,
   name: json['name'] as String,
   bio: json['bio'] as String?,
   logoUrl: json['logo_url'] as String?,

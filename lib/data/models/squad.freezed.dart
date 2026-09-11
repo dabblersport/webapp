@@ -24,9 +24,9 @@ mixin _$Squad {
   String get id => throw _privateConstructorUsedError;
   String get sport => throw _privateConstructorUsedError;
   @JsonKey(name: 'owner_profile_id')
-  String get ownerProfileId => throw _privateConstructorUsedError;
+  String? get ownerProfileId => throw _privateConstructorUsedError;
   @JsonKey(name: 'owner_user_id')
-  String get ownerUserId => throw _privateConstructorUsedError;
+  String? get ownerUserId => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String? get bio => throw _privateConstructorUsedError;
   @JsonKey(name: 'logo_url')
@@ -72,8 +72,8 @@ abstract class $SquadCopyWith<$Res> {
   $Res call({
     String id,
     String sport,
-    @JsonKey(name: 'owner_profile_id') String ownerProfileId,
-    @JsonKey(name: 'owner_user_id') String ownerUserId,
+    @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
+    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     String name,
     String? bio,
     @JsonKey(name: 'logo_url') String? logoUrl,
@@ -110,8 +110,8 @@ class _$SquadCopyWithImpl<$Res, $Val extends Squad>
   $Res call({
     Object? id = null,
     Object? sport = null,
-    Object? ownerProfileId = null,
-    Object? ownerUserId = null,
+    Object? ownerProfileId = freezed,
+    Object? ownerUserId = freezed,
     Object? name = null,
     Object? bio = freezed,
     Object? logoUrl = freezed,
@@ -138,14 +138,14 @@ class _$SquadCopyWithImpl<$Res, $Val extends Squad>
                 ? _value.sport
                 : sport // ignore: cast_nullable_to_non_nullable
                       as String,
-            ownerProfileId: null == ownerProfileId
+            ownerProfileId: freezed == ownerProfileId
                 ? _value.ownerProfileId
                 : ownerProfileId // ignore: cast_nullable_to_non_nullable
-                      as String,
-            ownerUserId: null == ownerUserId
+                      as String?,
+            ownerUserId: freezed == ownerUserId
                 ? _value.ownerUserId
                 : ownerUserId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             name: null == name
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
@@ -223,8 +223,8 @@ abstract class _$$SquadImplCopyWith<$Res> implements $SquadCopyWith<$Res> {
   $Res call({
     String id,
     String sport,
-    @JsonKey(name: 'owner_profile_id') String ownerProfileId,
-    @JsonKey(name: 'owner_user_id') String ownerUserId,
+    @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
+    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     String name,
     String? bio,
     @JsonKey(name: 'logo_url') String? logoUrl,
@@ -260,8 +260,8 @@ class __$$SquadImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? sport = null,
-    Object? ownerProfileId = null,
-    Object? ownerUserId = null,
+    Object? ownerProfileId = freezed,
+    Object? ownerUserId = freezed,
     Object? name = null,
     Object? bio = freezed,
     Object? logoUrl = freezed,
@@ -288,14 +288,14 @@ class __$$SquadImplCopyWithImpl<$Res>
             ? _value.sport
             : sport // ignore: cast_nullable_to_non_nullable
                   as String,
-        ownerProfileId: null == ownerProfileId
+        ownerProfileId: freezed == ownerProfileId
             ? _value.ownerProfileId
             : ownerProfileId // ignore: cast_nullable_to_non_nullable
-                  as String,
-        ownerUserId: null == ownerUserId
+                  as String?,
+        ownerUserId: freezed == ownerUserId
             ? _value.ownerUserId
             : ownerUserId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         name: null == name
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
@@ -367,8 +367,8 @@ class _$SquadImpl implements _Squad {
   const _$SquadImpl({
     required this.id,
     required this.sport,
-    @JsonKey(name: 'owner_profile_id') required this.ownerProfileId,
-    @JsonKey(name: 'owner_user_id') required this.ownerUserId,
+    @JsonKey(name: 'owner_profile_id') this.ownerProfileId,
+    @JsonKey(name: 'owner_user_id') this.ownerUserId,
     required this.name,
     this.bio,
     @JsonKey(name: 'logo_url') this.logoUrl,
@@ -396,10 +396,10 @@ class _$SquadImpl implements _Squad {
   final String sport;
   @override
   @JsonKey(name: 'owner_profile_id')
-  final String ownerProfileId;
+  final String? ownerProfileId;
   @override
   @JsonKey(name: 'owner_user_id')
-  final String ownerUserId;
+  final String? ownerUserId;
   @override
   final String name;
   @override
@@ -537,8 +537,8 @@ abstract class _Squad implements Squad {
   const factory _Squad({
     required final String id,
     required final String sport,
-    @JsonKey(name: 'owner_profile_id') required final String ownerProfileId,
-    @JsonKey(name: 'owner_user_id') required final String ownerUserId,
+    @JsonKey(name: 'owner_profile_id') final String? ownerProfileId,
+    @JsonKey(name: 'owner_user_id') final String? ownerUserId,
     required final String name,
     final String? bio,
     @JsonKey(name: 'logo_url') final String? logoUrl,
@@ -565,10 +565,10 @@ abstract class _Squad implements Squad {
   String get sport;
   @override
   @JsonKey(name: 'owner_profile_id')
-  String get ownerProfileId;
+  String? get ownerProfileId;
   @override
   @JsonKey(name: 'owner_user_id')
-  String get ownerUserId;
+  String? get ownerUserId;
   @override
   String get name;
   @override

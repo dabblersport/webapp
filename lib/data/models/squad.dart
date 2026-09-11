@@ -11,8 +11,8 @@ class Squad with _$Squad {
   const factory Squad({
     required String id,
     required String sport,
-    @JsonKey(name: 'owner_profile_id') required String ownerProfileId,
-    @JsonKey(name: 'owner_user_id') required String ownerUserId,
+    @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
+    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     required String name,
     String? bio,
     @JsonKey(name: 'logo_url') String? logoUrl,
