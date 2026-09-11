@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
@@ -223,14 +224,11 @@ Future<void> main() async {
         // ignore: avoid_print
         print(st);
 
-        // In debug, fail fast so configuration issues are visible (instead of
-        // crashing later when something accesses Supabase.instance).
-        if (kDebugMode) {
-          rethrow;
-        }
-
-        // In release, still attempt to render the app (best-effort).
-        runApp(const ProviderScope(child: MyApp()));
+        // KAN-196: always render a real, visible error screen instead of a
+        // debug-mode rethrow (silent on web/iOS, see BootstrapErrorApp's own
+        // doc comment) or a release "best-effort" runApp(MyApp()) that threw
+        // again deeper with nothing on screen either way.
+        runApp(BootstrapErrorApp(error: e, stackTrace: st));
       }
     },
     (Object error, StackTrace stack) {
