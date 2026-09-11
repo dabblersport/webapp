@@ -1,3 +1,30 @@
+-- SUPERSEDED AND DEAD -- DO NOT APPLY. Flagged 2026-09-11 (team-lead/po), verified
+-- against this file and against KAN-169's own log.
+--
+-- This migration reproduces the PRE-T-069 vulnerable settle_game body verbatim: a
+-- 5-parameter signature settle_game(p_game_id uuid, p_organiser_user_id uuid,
+-- p_sport text, p_gross_collected numeric, p_finalize boolean) in which
+-- p_organiser_user_id is caller-supplied, never validated against the game's
+-- actual organiser. The function's own guard -- "if not (public.is_admin(me) or
+-- me = p_organiser_user_id)" -- is satisfied by any authenticated caller simply
+-- passing their own auth.uid() as p_organiser_user_id; this file's own comment at
+-- line 69-70 states the exploit outright as its probe's reachability proof.
+-- backend-4 demonstrated this live against the pre-fix body on 2026-09-11: a
+-- non-organiser settled a game they did not own and credited themselves
+-- 899,999.10 AED.
+--
+-- KAN-169 (T-069) is APPLIED and supersedes this file. It changed settle_game's
+-- signature to (p_game_id uuid, p_finalize boolean) -- organiser, sport and gross
+-- are now derived server-side from the game's own data, not accepted as
+-- caller-supplied arguments. Landed via apply_migration as
+-- 20260911113000_kan169_settle_game_derive_organiser_sport_gross.sql and
+-- 20260911114500_kan169_settle_game_zero_and_negative_earnings.sql.
+--
+-- APPLYING THIS FILE WOULD SILENTLY REVERT THE KAN-169 FIX AND RESTORE THE
+-- PRIVILEGE-ESCALATION BUG. Do not run it.
+--
+-- ============================================================================
+--
 -- KAN-138 / T-058 Decision 4: settle_game raises 42804 before reaching its
 -- wallet_ledger credit insert. Cast the status CASE to settlement_status.
 --
