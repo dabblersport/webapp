@@ -68,6 +68,33 @@ Three traps it is built around, each demonstrated failing in the self-test:
 `DEFAULT auth.uid()` on a parameter is decoration, not mitigation — it applies only when the
 caller omits the argument.
 
+### It reports MEMBERSHIP, not just a count (KAN-193)
+
+Every run prints the full flagged population between `--- ANON_FUNCTION_FLAGGED_BEGIN ---` and
+`--- ANON_FUNCTION_FLAGGED_END ---`, `LC_ALL=C` sorted, one signature per line — **on both the
+green and the red exit**. Extract that block from two runs' logs and `comm`/`diff` them to name
+exactly which signatures entered and which left.
+
+**Why this is not cosmetic.** The gate used to report only `OK: all 72 flagged function
+signature(s) are on the allowlist`. A function newly becoming `anon`-reachable while a different
+one is contained, in the same window, moves that number by **zero** — both runs print an
+identical line, both are green, and the change is invisible. That is not hypothetical: it was
+reproduced on a disposable Postgres before the fix, one signature out and a different one in,
+and the two runs' outputs were **byte-identical**. It is also not academic — a real `72 → 70`
+move was observed and could not be attributed to specific functions afterwards, because no log at
+either point enumerated the set.
+
+The red exit prints the population too, and needs it more, not less: the failure branch names only
+the **offenders**, and without the population they were drawn from, whoever is looking at a red
+gate cannot tell a real regression from a baseline that shifted underneath them.
+
+**When reading any count-based gate, ask which members, not how many.** This is the second defect
+found in this area by that question — the first was KAN-175's `LIMIT 1` hole, where the gate was
+right about the population and wrong about which members were in it.
+
+`74` is the **§2g allowlist size**, not a flagged count; the flagged count is a different
+measurement and comparing the two as if they were the same is the KAN-175 AC6 error.
+
 ### The self-test really uses a database
 
 ```
@@ -77,9 +104,31 @@ bash scripts/ci/check_anon_function_grants_test.sh
 Unlike `check_anon_allowlist_test.sh` — which is a pure text diff over fixture files and
 never executes the catalogue SQL it exists to validate — this one **creates real functions in
 a real, disposable Postgres** and asserts on what the shipped predicate actually returns. It
-fabricates nine cases (five that must be flagged, four that must not), none named
-`rpc_potential_vibes` and none sharing a parameter name with it, so it proves the gate catches
-functions nobody has written yet rather than the one instance already known.
+fabricates its cases from scratch, none named `rpc_potential_vibes` and none sharing a parameter
+name with it, so it proves the gate catches functions nobody has written yet rather than the one
+instance already known.
+
+It seeds **ten** cases — six that must be flagged, four that must not — and then introduces an
+eleventh mid-run, `rpc_late_arrival`, as the entrant in the KAN-193 add-and-drop check below.
+*(Counted 2026-09-11 by running it. The paragraph above read "nine cases (five that must be
+flagged, four that must not)" until this edit: the sixth must-flag case is
+`rpc_second_arg_unguarded`, added by KAN-175's own AC7 without the prose being updated alongside
+it. The count now appears in exactly one place — carrying it in two was how the stale one
+survived, and a first draft of this correction left the old figure standing two lines above the
+new one while claiming in the past tense that it had been fixed. `backend-6` caught that in peer
+review. Same failure as the `74`-vs-`72` mislabel: two counts of different things, read as one.)*
+
+Beyond the predicate cases it asserts, with the output **captured** rather than discarded:
+
+- the full flagged population is emitted and reconstructs exactly, on the green exit **and** the
+  red one;
+- on the red exit the block is the population and not merely the offender list;
+- a **masked add-and-drop** — one signature contained, a different one introduced, count
+  unchanged, allowlist covering both so the gate stays green on both runs — is named exactly, in
+  both directions, by diffing the two runs' blocks.
+
+That last one is the criterion that matters. A test that only checked "the script prints a list"
+would pass against an unsorted or static list that is not diffable at all.
 
 Substrate: set `KAN175_TEST_DB_URL` to a service-container Postgres in CI, or leave it unset
 locally and the script starts and destroys its own Docker container (no local `psql` needed).

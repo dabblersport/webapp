@@ -225,6 +225,133 @@ else
 fi
 echo
 
+# ============================================================ KAN-193: membership
+#
+# The two assertions above discard the function's output (`>/dev/null`). They
+# prove the EXIT STATUS and nothing about what was printed — which is exactly
+# how a gate comes to report a number nobody can reconcile. Everything below
+# CAPTURES the output and asserts on its content.
+
+echo "--- AC1: the full flagged population is emitted, on BOTH exits ---"
+
+# If the emission is ever removed, this must REPORT a failure rather than abort
+# the run on `set -u` — a crash here would take the AC2 section with it and tell
+# the reader "bash error" instead of "the gate went back to printing a count".
+if [[ -z "${ANON_FUNCTION_FLAGGED_BEGIN_MARKER:-}" || -z "${ANON_FUNCTION_FLAGGED_END_MARKER:-}" ]]; then
+  echo "  FAIL  the diff script defines no flagged-population markers; there is nothing" >&2
+  echo "        to reconstruct a membership from. The gate reports a count only." >&2
+  fail=1
+  ANON_FUNCTION_FLAGGED_BEGIN_MARKER="<<marker absent>>"
+  ANON_FUNCTION_FLAGGED_END_MARKER="<<marker absent>>"
+fi
+
+extract_block() {
+  awk -v b="$ANON_FUNCTION_FLAGGED_BEGIN_MARKER" \
+      -v e="$ANON_FUNCTION_FLAGGED_END_MARKER" \
+      '$0==b{f=1;next} $0==e{f=0} f' "$1"
+}
+
+anon_function_grants_diff "$TMP/flagged.txt" "$TMP/allow_full.txt" > "$TMP/out_ok.txt" 2>&1 || true
+extract_block "$TMP/out_ok.txt" > "$TMP/block_ok.txt"
+if diff -q <(LC_ALL=C sort -u "$TMP/flagged.txt") "$TMP/block_ok.txt" >/dev/null; then
+  echo "  PASS  green run: block reconstructs the flagged population exactly."
+else
+  echo "  FAIL  green run: emitted block is not the flagged population." >&2
+  # `|| true`: diff exits 1 on a difference, and under `set -o pipefail` that
+  # would abort the run here and swallow every remaining assertion.
+  { diff <(LC_ALL=C sort -u "$TMP/flagged.txt") "$TMP/block_ok.txt" || true; } | sed 's/^/        /' >&2
+  fail=1
+fi
+
+anon_function_grants_diff "$TMP/flagged.txt" "$TMP/allow_short.txt" > "$TMP/out_fail.txt" 2>&1 || true
+extract_block "$TMP/out_fail.txt" > "$TMP/block_fail.txt"
+if diff -q <(LC_ALL=C sort -u "$TMP/flagged.txt") "$TMP/block_fail.txt" >/dev/null; then
+  echo "  PASS  RED run: block reconstructs the flagged population exactly."
+else
+  echo "  FAIL  RED run: emitted block is not the flagged population." >&2
+  { diff <(LC_ALL=C sort -u "$TMP/flagged.txt") "$TMP/block_fail.txt" || true; } | sed 's/^/        /' >&2
+  fail=1
+fi
+
+# The red run is the one that regressed before. Its old output named ONLY the
+# offenders, so this asserts the block is the POPULATION and not the offender
+# list: a signature that is on the allowlist (never an offender) must be present.
+if grep -qx "rpc_coalesce_fallback(p_profile_id uuid)" "$TMP/block_fail.txt"; then
+  echo "  PASS  RED run: block includes non-offending members, so it is not the offender list."
+else
+  echo "  FAIL  RED run: block looks like the offender list, not the population." >&2
+  fail=1
+fi
+echo
+
+echo "--- AC2: a MASKED add-and-drop is nameable from two runs' outputs ---"
+#
+# The case the count cannot see: one signature leaves, a different one enters,
+# net count unchanged, and the allowlist covers BOTH so the gate stays GREEN
+# on both runs. Verified against the pre-change script before this was written:
+# the two runs' outputs were byte-identical and named nothing.
+
+cp "$TMP/allow_full.txt" "$TMP/allow_both.txt"
+echo "rpc_late_arrival(p_recipient_id uuid)" >> "$TMP/allow_both.txt"
+
+rc1=0
+anon_function_grants_diff "$TMP/flagged.txt" "$TMP/allow_both.txt" > "$TMP/run1.txt" 2>&1 || rc1=$?
+
+# Contain one member; introduce a different one. Net zero.
+psql_t -q <<'SQL'
+REVOKE EXECUTE ON FUNCTION public.rpc_fetch_locker_contents(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.rpc_fetch_locker_contents(uuid) FROM anon;
+
+CREATE FUNCTION public.rpc_late_arrival(p_recipient_id uuid)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN RETURN 'data for ' || p_recipient_id::text; END $$;
+GRANT EXECUTE ON FUNCTION public.rpc_late_arrival(uuid) TO anon;
+SQL
+
+psql_t -tAc "$(anon_function_predicate_sql)" | sed '/^[[:space:]]*$/d' > "$TMP/flagged_after.txt"
+rc2=0
+anon_function_grants_diff "$TMP/flagged_after.txt" "$TMP/allow_both.txt" > "$TMP/run2.txt" 2>&1 || rc2=$?
+
+n1="$(grep -c . "$TMP/flagged.txt")"
+n2="$(grep -c . "$TMP/flagged_after.txt")"
+
+if [[ "$rc1" -eq 0 && "$rc2" -eq 0 ]]; then
+  echo "  PASS  both runs green — this is the masked case, not a failing one."
+else
+  echo "  FAIL  a run was red (rc1=$rc1 rc2=$rc2); that is not the masked case." >&2
+  fail=1
+fi
+
+if [[ "$n1" -eq "$n2" ]]; then
+  echo "  PASS  counts identical ($n1 = $n2) — a count-only report sees NOTHING here."
+else
+  echo "  FAIL  counts moved ($n1 -> $n2); the change is not masked, so this proves less." >&2
+  fail=1
+fi
+
+extract_block "$TMP/run1.txt" > "$TMP/block1.txt"
+extract_block "$TMP/run2.txt" > "$TMP/block2.txt"
+# LC_ALL=C so comm's byte comparison matches the order the blocks were emitted in.
+LC_ALL=C comm -23 "$TMP/block1.txt" "$TMP/block2.txt" > "$TMP/left.txt"
+LC_ALL=C comm -13 "$TMP/block1.txt" "$TMP/block2.txt" > "$TMP/entered.txt"
+
+if diff -q "$TMP/left.txt" <(echo "rpc_fetch_locker_contents(p_owner_id uuid)") >/dev/null; then
+  echo "  PASS  diff names EXACTLY what left:     rpc_fetch_locker_contents(p_owner_id uuid)"
+else
+  echo "  FAIL  departure not named exactly; got:" >&2
+  sed 's/^/        /' "$TMP/left.txt" >&2
+  fail=1
+fi
+
+if diff -q "$TMP/entered.txt" <(echo "rpc_late_arrival(p_recipient_id uuid)") >/dev/null; then
+  echo "  PASS  diff names EXACTLY what entered:  rpc_late_arrival(p_recipient_id uuid)"
+else
+  echo "  FAIL  entrant not named exactly; got:" >&2
+  sed 's/^/        /' "$TMP/entered.txt" >&2
+  fail=1
+fi
+echo
+
 if [[ "$fail" -eq 0 ]]; then
   echo "Self-test result: ALL cases behaved correctly."
   exit 0

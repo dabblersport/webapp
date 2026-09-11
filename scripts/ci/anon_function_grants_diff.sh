@@ -186,9 +186,64 @@ SQL
 # offenders otherwise. Deliberately one-directional, matching KAN-61: a signature
 # that leaves the flagged set (someone fixed it) is not a build failure, it is
 # just a stale allowlist entry to tidy.
+#
+# ---------------------------------------------------- membership, not just a count
+#
+# KAN-193. This function used to report its result as a bare count — "OK: all 72
+# flagged function signature(s) are on the allowlist" — and record nowhere WHICH
+# signatures made up that 72. The CI log had the number and never the membership.
+#
+# That is not a cosmetic gap. A function newly becoming anon-reachable while a
+# different one is contained, in the same window, moves the count by zero. Both
+# runs print the identical line, both are green, and the change is invisible.
+# Reproduced for real on a disposable Postgres before this was written: one
+# signature out, a different one in, allowlist covering both, and the two runs'
+# outputs were BYTE-IDENTICAL. A shrinking or churning flagged set is the one
+# direction a count cannot distinguish from the predicate silently breaking.
+#
+# So the full population is emitted between markers, LC_ALL=C sorted, one
+# signature per line, ON BOTH EXITS — the failing path too. A red run needs this
+# more than a green one, not less: the failure branch below names only the
+# OFFENDERS, and without the population they were drawn from, whoever is paged by
+# a red gate cannot tell a real regression from a shifted baseline.
+#
+# The sort is LC_ALL=C so the block is byte-stable across machines and database
+# collations; two runs' blocks are then directly comparable with comm/diff, which
+# is what makes the add-and-drop above nameable rather than merely countable.
+# The count is derived FROM the emitted block rather than counted separately, so
+# the number and the membership can never disagree — a count that cannot be
+# reconciled against its own membership is the whole defect this closes.
+#
+# The markers are load-bearing. An unmarked or differently-ordered list can print
+# without being diffable, which would satisfy "the script prints a list" while
+# leaving the masked case exactly as invisible as it was.
+#
+# ON STREAMS, so nobody "tidies" this later: the block always goes to STDOUT, on
+# both exits, while the failure message goes to stderr. Do not make the block's
+# stream depend on the exit status — a consumer extracting it would then have to
+# know how the run ended before it could find the block, which is backwards.
+# The failure message therefore names stdout explicitly rather than saying the
+# block is "above": the two streams are separate pipes in CI and their relative
+# order is not guaranteed under buffering, so a positional claim would be a
+# statement this code cannot honour. (Raised by backend-6 in KAN-193 peer review.)
+ANON_FUNCTION_FLAGGED_BEGIN_MARKER="--- ANON_FUNCTION_FLAGGED_BEGIN ---"
+ANON_FUNCTION_FLAGGED_END_MARKER="--- ANON_FUNCTION_FLAGGED_END ---"
+
 anon_function_grants_diff() {
   local live_file="$1"
   local allowlist_file="$2"
+
+  # AC1: the full flagged population, on every run. Emitted BEFORE the pass/fail
+  # branch below precisely so that neither outcome can skip it.
+  local sorted_flagged flagged_count
+  sorted_flagged="$(LC_ALL=C sort -u "$live_file" | sed '/^[[:space:]]*$/d')"
+  flagged_count="$(printf '%s\n' "$sorted_flagged" | grep -c . || true)"
+
+  echo "$ANON_FUNCTION_FLAGGED_BEGIN_MARKER"
+  if [[ -n "$sorted_flagged" ]]; then
+    printf '%s\n' "$sorted_flagged"
+  fi
+  echo "$ANON_FUNCTION_FLAGGED_END_MARKER"
 
   local extra
   extra="$(comm -23 <(sort -u "$live_file") <(sort -u "$allowlist_file"))"
@@ -203,10 +258,18 @@ anon_function_grants_diff() {
     echo "auth.uid(), drop the argument, or REVOKE EXECUTE FROM PUBLIC and anon), or — if it" >&2
     echo "is genuinely intended — add it to §2g with a written justification, which is the" >&2
     echo "reviewable diff this gate exists to force." >&2
+    echo "" >&2
+    echo "The offender(s) above are a SUBSET of the flagged population, which is $flagged_count" >&2
+    echo "signature(s) and is printed in full ON STDOUT, between the ANON_FUNCTION_FLAGGED" >&2
+    echo "markers. Diff that block against a previous run's to tell a real regression from a" >&2
+    echo "baseline that moved underneath you." >&2
     return 1
   fi
 
-  echo "OK: all $(grep -c . "$live_file" | tr -d ' ') flagged function signature(s) are on the allowlist."
+  echo "OK: all $flagged_count flagged function signature(s) are on the allowlist."
+  echo "    (Full membership is between the ANON_FUNCTION_FLAGGED markers above, LC_ALL=C"
+  echo "     sorted. Diff two runs' blocks to name what entered and left — the count alone"
+  echo "     cannot: one signature out and a different one in moves it by zero.)"
   return 0
 }
 
