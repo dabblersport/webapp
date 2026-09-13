@@ -20,6 +20,7 @@ import 'package:dabbler/data/models/search/meetup_search_result.dart';
 import 'package:dabbler/data/models/search/post_search_result.dart';
 import 'package:dabbler/data/models/venue.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/social/presentation/providers/search_history_provider.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -171,6 +172,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
       ref.read(searchProvider.notifier).clear();
       return;
     }
+    ref.read(recentSearchHistoryProvider.notifier).add(query);
     ref.read(searchProvider.notifier).search(query);
   }
 
@@ -202,6 +204,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   @override
   Widget build(BuildContext context) {
     final searchState = ref.watch(searchProvider);
+    final recentSearches = ref.watch(recentSearchHistoryProvider);
 
     ref.listen<SearchState>(searchProvider, (_, next) {
       _maybeAutoSwitchTab(next);
@@ -210,15 +213,15 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
     final isWide =
         MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.compact;
 
-    if (isWide) return _buildWideLayout(searchState);
-    return _buildMobileLayout(searchState);
+    if (isWide) return _buildWideLayout(searchState, recentSearches);
+    return _buildMobileLayout(searchState, recentSearches);
   }
 
   // ---------------------------------------------------------------------------
   // Mobile layout
   // ---------------------------------------------------------------------------
 
-  Widget _buildMobileLayout(SearchState state) {
+  Widget _buildMobileLayout(SearchState state, List<String> recentSearches) {
     final cs = Theme.of(context).colorScheme;
 
     if (_viewAllMode != null) {
@@ -265,10 +268,17 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
                 Expanded(
                   child: state.query.isEmpty
                       ? _EmptyState(
+                          recentSearches: recentSearches,
                           onPickRecent: (q) {
                             _searchController.text = q;
                             _triggerSearch(q);
                           },
+                          onRemoveRecent: (q) => ref
+                              .read(recentSearchHistoryProvider.notifier)
+                              .remove(q),
+                          onClearRecent: () => ref
+                              .read(recentSearchHistoryProvider.notifier)
+                              .clear(),
                           onTapGrammar: (prefix) {
                             _searchController.text = prefix;
                             _searchController.selection =
@@ -337,7 +347,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
   // Wide layout
   // ---------------------------------------------------------------------------
 
-  Widget _buildWideLayout(SearchState state) {
+  Widget _buildWideLayout(SearchState state, List<String> recentSearches) {
     final cs = Theme.of(context).colorScheme;
     return AdaptiveScaffold(
       currentIndex: 4,
@@ -377,10 +387,17 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen>
                 Expanded(
                   child: state.query.isEmpty
                       ? _EmptyState(
+                          recentSearches: recentSearches,
                           onPickRecent: (q) {
                             _searchController.text = q;
                             _triggerSearch(q);
                           },
+                          onRemoveRecent: (q) => ref
+                              .read(recentSearchHistoryProvider.notifier)
+                              .remove(q),
+                          onClearRecent: () => ref
+                              .read(recentSearchHistoryProvider.notifier)
+                              .clear(),
                           onTapGrammar: (prefix) {
                             _searchController.text = prefix;
                             _searchController.selection =
@@ -618,22 +635,20 @@ class _TabStrip extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
+    required this.recentSearches,
     required this.onPickRecent,
+    required this.onRemoveRecent,
+    required this.onClearRecent,
     required this.onTapGrammar,
     required this.scrollController,
   });
 
+  final List<String> recentSearches;
   final ValueChanged<String> onPickRecent;
+  final ValueChanged<String> onRemoveRecent;
+  final VoidCallback onClearRecent;
   final ValueChanged<String> onTapGrammar;
   final ScrollController scrollController;
-
-  static const _recent = [
-    '#football',
-    '@ahmed_fc',
-    'padel courts dubai',
-    'sunday meetup',
-    '#nbaplayoffs',
-  ];
 
   static const _grammar = [
     (tag: '@',  label: 'people',   accent: 'primary', icon: Iconsax.user_copy),
@@ -663,33 +678,41 @@ class _EmptyState extends StatelessWidget {
       controller: scrollController,
       padding: const EdgeInsets.only(top: 6, bottom: 80),
       children: [
-        _SectionLabel(
-          icon: Iconsax.clock_copy,
-          label: 'Recent',
-          trailing: TextButton(
-            onPressed: () {},
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: const Size(0, 28),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: cs.primary,
-            ),
-            child: Text(
-              'Clear',
-              style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600),
+        if (recentSearches.isNotEmpty) ...[
+          _SectionLabel(
+            icon: Iconsax.clock_copy,
+            label: 'Recent',
+            trailing: TextButton(
+              onPressed: onClearRecent,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: const Size(0, 28),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: cs.primary,
+              ),
+              child: Text(
+                'Clear',
+                style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-          child: Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _recent
-                .map((q) => _RecentChip(query: q, onTap: () => onPickRecent(q)))
-                .toList(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: recentSearches
+                  .map(
+                    (q) => _RecentChip(
+                      query: q,
+                      onTap: () => onPickRecent(q),
+                      onRemove: () => onRemoveRecent(q),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-        ),
+        ],
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
           child: Column(
@@ -796,15 +819,20 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _RecentChip extends StatelessWidget {
-  const _RecentChip({required this.query, required this.onTap});
+  const _RecentChip({
+    required this.query,
+    required this.onTap,
+    required this.onRemove,
+  });
   final String query;
   final VoidCallback onTap;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
+    return Material(
+      color: Colors.transparent,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -813,18 +841,31 @@ class _RecentChip extends StatelessWidget {
           border: Border.all(color: cs.outlineVariant, width: 1.5),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Iconsax.clock_copy, size: 11, color: cs.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Text(
-            query,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-              fontWeight: FontWeight.w500,
-              color: cs.onSurface,
-            ),
+          InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(999),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Iconsax.clock_copy, size: 11, color: cs.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text(
+                query,
+                style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: cs.onSurface,
+                ),
+              ),
+            ]),
           ),
           const SizedBox(width: 6),
-          Icon(Icons.close,
-              size: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+          InkWell(
+            onTap: onRemove,
+            borderRadius: BorderRadius.circular(999),
+            child: Padding(
+              padding: const EdgeInsets.all(2),
+              child: Icon(Icons.close,
+                  size: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
+            ),
+          ),
         ]),
       ),
     );
