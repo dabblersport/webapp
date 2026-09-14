@@ -337,6 +337,86 @@ view calls it *as the caller*: the revoke does not degrade to NULL, it raises
 `42501 permission denied` and the whole view dies for every legitimate user. Measured
 on `circle_member_count` (KAN-77). When a view depends on the function, use option 1.
 
+**…and equally unsafe when an RLS POLICY calls it, which is the same mechanism and was
+added 2026-09-11 (KAN-188).** A policy qual also evaluates **as the invoking role**. Seven
+policies on `venues` / `venue_spaces` / `venue_members` / `venue_bookings` are `TO public`
+and call the venue-authority functions; `backend-2` dry-ran the intended
+`REVOKE … FROM PUBLIC` in a rolled-back transaction and measured anon `SELECT` on `venues`
+(**379 rows**) and `venue_spaces` (**679 rows**) collapsing to `42501`. Option 1 does not
+apply either — these functions *are* the authorization, so there is nothing to authorize
+inside them. Hence:
+
+3. **Relocate the function out of the PostgREST-exposed schema.** This is the option for a
+   definer function that must stay callable from policies but must never be an RPC.
+
+**Why it works, and the two facts that make it non-obvious.** A stored policy qual holds the
+function's **OID**, not its name. So:
+
+- **Schema `USAGE` is checked at name resolution** — which, for a policy, already happened at
+  definition time. Removing `USAGE` kills the RPC path and leaves policy execution untouched.
+- **`EXECUTE` is checked at run time, by OID** — so the policy's callers still need it.
+
+**Therefore: revoke schema `USAGE`, and KEEP `EXECUTE` for `anon` and `authenticated`.** This
+is the reverse of the instinct option 2 trains, and getting it backwards reproduces exactly the
+`42501` breakage above.
+
+**Mechanics that are not optional:**
+
+- **`ALTER FUNCTION … SET SCHEMA`, never `DROP` + `CREATE`.** Only `ALTER` preserves the OID the
+  policies hold. (`DROP` fails on `pg_depend` rather than corrupting silently — but do not rely
+  on being saved by an error.)
+- **Use the `util` schema.** It already exists and already denies `USAGE` to both `anon` and
+  `authenticated` (verified 2026-09-11). Do not mint a new schema per feature.
+- **Confirm the target schema is not in PostgREST's exposed-schema config.** That — not the
+  catalogue — is the actual containment boundary, and it is the one fact the catalogue cannot
+  tell you.
+- **The function leaves §2g's `public` population, so the anon-function gate stops watching it.**
+  Replace that cover with an assertion that `has_schema_privilege('anon','util','USAGE')` is
+  false, and record the relocation in `SCHEMA.md` §2g so the count drop reads as intended rather
+  than as a fix that never happened.
+- **Enumerate by OID, not by name.** `is_venue_admin` exists as **two overloads** (verified
+  2026-09-11), and a by-name list covers one of them. Same trap as §12a.
+
+**THE EXCEPTION THAT BREAKS THE OID ARGUMENT — plpgsql callers.** *(Added 2026-09-11 from
+`backend-2`'s `KAN-188` application. The relocation shipped correctly; this is the trap it hit
+on the way.)*
+
+**The OID-survives-relocation property holds for stored policy quals and for functions whose body
+is OID-bound at definition time (`prosqlbody IS NOT NULL`). It does NOT hold for plpgsql bodies,
+nor for string-bodied `LANGUAGE sql`.** Those are stored as **text** and re-parsed **by name at
+run time**, so `pg_depend` records no function→function edge and nothing warns you.
+`rpc_my_venue_permissions` — a plpgsql definer RPC calling all five by `public.`-qualified name —
+raised `42883` after the move until its qualifiers were updated in the same migration.
+
+**This is the dangerous half of the rule, because the reasoning that makes relocation safe is
+exactly what fails here.** A reader who has internalised *"the OID is held, name resolution
+already happened"* will not expect the exception, and the breakage lands on a caller that was
+never part of the change.
+
+**So the sweep is scoped to CALLERS, not to the objects being moved.** That scoping error is what
+missed it: checking only whether the five called each other proved nothing about a seventh
+function calling them. Sweep the whole database:
+
+```sql
+-- Every re-parsed body that names one of the objects you are about to move.
+SELECT p.oid::regprocedure::text, l.lanname, n.nspname
+FROM pg_proc p
+JOIN pg_language  l ON l.oid = p.prolang
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE p.prosqlbody IS NULL                      -- re-parsed at run time; not OID-bound
+  AND l.lanname IN ('plpgsql', 'sql')
+  AND p.prosrc ~ '(fn_one|fn_two|fn_three)';    -- unqualified OR schema-qualified hits
+```
+
+Update every hit's qualifiers **in the same migration as the move**, authored from the live
+catalogue per §6g — never from a remembered body.
+
+**And probe those callers under §12h.** A caller that guards on an auth context takes an early
+return when probed without one, never reaches the call sites, and **returns a confident pass**.
+That happened here on the first attempt; re-probing with `request.jwt.claims` set is what
+exposed the `42883`. §12h is the standing rule and needs no restatement — but this is the case it
+exists for, and a relocation probe is one of the easiest places to collect a worthless green.
+
 **Option 1 has a precondition that was left implicit until `T-070`, and it is the one that
 bit us: a `SECURITY DEFINER` function MUST NOT accept the caller's identity as a
 parameter.** It derives identity from `auth.uid()` inside its own body, always. A `p_me uuid`
@@ -619,6 +699,34 @@ spw.user_id <> p_me` — hands `anon` every row of `v_sport_profiles_with_user`.
 
 **Do not "tidy" this predicate.** Verified still present in prod 2026-09-07 (`cto`,
 read-only, via `pg_get_functiondef`).
+
+**The second half of the rule, and the one this section originally missed — a NULL-comparison
+predicate and the `EXECUTE` grant are independent exposure routes. Neutralising one says nothing
+about the other.**
+
+*(Corrected 2026-09-11. Everything above is accurate and still applies — but it reasoned only about
+the **6-argument wrapper**, and its "do not tidy" framing therefore implied the function was contained
+today and fragile only against a future repair. **That implication is false.** `KAN-162` measured the
+same data already reachable with no tidy at all — **147 rows across 137 distinct users** — because the
+**bare 7-argument overload is separately `EXECUTE`-granted** and takes `p_me` as a caller-supplied
+parameter, so the NULL never arises. The route is the **grant**, not the predicate. Found by
+`backend-3`; the remedy is `DECISIONS.md` `T-070` — fold the 7-arg into the 6-arg and delete the
+identity parameter — **not** a predicate change and not a grant revoke alone.)*
+
+**How to read this section now.** Both statements hold at once, and neither rescues the other:
+
+- **The predicate rule stands** — making the filter null-safe would open the 6-arg path, so still do
+  not tidy it.
+- **And the object was reachable the whole time by a different path.** A reader who followed only the
+  first half would correctly avoid tidying and **incorrectly conclude the function was safe**.
+
+**Generalised, because this is not about one function.** An overloaded or multi-entry object is
+contained only when **every** reachable entry point is closed. Reasoning about the path in front of
+you — the wrapper you happened to read, the predicate you happened to inspect — establishes nothing
+about the siblings. **The thing you are looking at not being exploitable does not mean the object is
+not reachable by another path.** Enumerate entry points from the catalogue (every overload, every
+grant) before calling anything contained; this is the same shape as verifying a grant with
+`has_function_privilege` rather than by reading the one predicate you can see.
 
 ### 12b. Concurrent seats do not share a working tree — and `git stash` is the sharpest edge
 
