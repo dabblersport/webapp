@@ -3,25 +3,32 @@
 -- them. Authored by backend-8, 2026-09-11.
 --
 -- ============================================================================
--- STATUS: AUTHORED, NOT APPLIED. apply_migration was DENIED by the Claude Code
--- permission classifier on 2026-09-11, after team-lead had authorised it for
--- this migration. The harness permission layer is separate from that
--- authorisation and refused the call; the ticket's own status note predicted
--- exactly this ("This ticket's ALTER TABLE shape may be denied the same way"),
--- so the denial confirms that prediction rather than contradicting anything.
+-- STATUS: APPLIED. Applied to wtncuzcskpigqpmnxwws on 2026-09-14 10:56:53 via
+-- apply_migration, which returned ledger version 20260914105653, name
+-- kan186_profile_fk_cascade_part_a. The row exists in
+-- supabase_migrations.schema_migrations. THE CONSTRAINTS BELOW ARE LIVE.
 --
--- NOTHING HAS BEEN RUN AGAINST wtncuzcskpigqpmnxwws. The DDL below was not
--- re-routed through execute_sql: doing so would have bypassed the denial rather
--- than respected it. This file is the authored artifact awaiting an authorised
--- apply. IT IS NOT EVIDENCE THAT THE CONSTRAINTS WERE CHANGED.
+-- DO NOT RE-APPLY THIS FILE. It is a record of a completed apply, not pending
+-- work. A replay would abort in the pre-check block anyway -- that block asserts
+-- 13 blocking constraints in scope and a blocking set of 20, and post-apply
+-- production has 0 blocking among those 13 and a blocking set of 7 -- but the
+-- correct action is simply not to run it. An earlier revision of this header
+-- said "AUTHORED, NOT APPLIED" (a 2026-09-11 apply_migration denial, later
+-- retried successfully) and that stale claim nearly caused exactly such a
+-- replay; it is corrected here rather than left to mislead the next reader.
 --
--- FILENAME CARRIES NO VERSION PREFIX, DELIBERATELY. Per T-068 step 5 the repo
--- file is named from the exact version string apply_migration RETURNS. No apply
--- has returned one, so no prefix is invented here -- a guessed timestamp would
--- be indistinguishable at a glance from a real ledger version. Rename this file
--- to the returned version when the apply succeeds.
+-- FILENAME IS PINNED TO THE LEDGER VERSION. Per T-068 step 5 the repo file is
+-- named from the exact version string apply_migration RETURNS. That version now
+-- exists, so the file is named 20260914105653_kan186_profile_fk_cascade_part_a.sql.
 --
--- PRE-STATE, read live 2026-09-11 immediately before the denied apply:
+-- APPLIED-SQL DIVERGENCE, DISCLOSED. The text apply_migration recorded in the
+-- ledger is 10,363 bytes; this file is ~23,006. The difference is COMMENTARY
+-- ONLY -- the applied copy carried a shorter header. The DDL and BOTH guard
+-- blocks are structurally identical: the ledger text contains 13 DROP CONSTRAINT
+-- and 13 ADD CONSTRAINT, both $kan186_pre$ and $kan186_post$ blocks, the string
+-- ON UPDATE RESTRICT ON DELETE CASCADE, and NO reference to delete_my_account.
+--
+-- PRE-STATE, read live 2026-09-11 before the (then-denied) apply:
 --   FKs referencing public.profiles                          51
 --   of those, blocking (confdeltype IN ('a','r'))            20
 --   Part-B constraints excluded by name                       7
@@ -29,8 +36,27 @@
 --   posts_author_user_profile_fkey confupdtype               'r' (the only one)
 --   rows: posts 503, reactions 102, comments 67, other nine   0
 --   profiles rows                                            165
--- The pre-check block below re-asserts all of this at apply time, so a drift
--- between this reading and the eventual apply aborts rather than proceeding.
+-- The pre-check block below re-asserted all of this at apply time, so a drift
+-- between this reading and the apply would have aborted rather than proceeding.
+-- It did not abort; the apply proceeded on exactly this state.
+--
+-- POST-APPLY READBACK, re-derived live from the catalogue 2026-09-14 by
+-- backend-2 independently of any reported figure (SELECT only, no write):
+--   ledger row for version 20260914105653                     1 (present)
+--   FKs referencing public.profiles                          51  (unchanged)
+--   of those, blocking (confdeltype IN ('a','r'))             7  (was 20)
+--   of those, CASCADE (confdeltype = 'c')                    39
+--   the 13 in-scope constraints, 'c' AND convalidated        13  (all of them)
+--   the 7 Part-B constraints, still confdeltype = 'r'          7  (untouched)
+--   rows: posts 503, profiles 165, reactions 102, comments 67 (all unchanged)
+--   pg_get_constraintdef('posts_author_user_profile_fkey') is exactly
+--     FOREIGN KEY (author_user_id, author_profile_id)
+--       REFERENCES profiles(user_id, id)
+--       ON UPDATE RESTRICT ON DELETE CASCADE
+--   -- i.e. the LANDMINE explained below was PRESERVED, not silently dropped.
+--
+-- Blocking set 20 -> 7. The 13 that moved are precisely this migration's scope;
+-- the 7 that remain are precisely Part B, which is not this file's work.
 -- ============================================================================
 --
 -- WHAT THIS DOES NOT DO
