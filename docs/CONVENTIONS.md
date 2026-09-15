@@ -129,9 +129,7 @@ screens do not exist yet produces exactly what this codebase already has too muc
   `.categoryActivity`, `.categoryProfile`).
 - Screens set their palette with `AppTheme.setActiveCategory(category)` in `initState` or
   on navigation. All five categories are preloaded in `main.dart`.
-- Standard layout: `TwoSectionLayout` (purple top / dark bottom).
-- Components: `AppButton.primary/secondary/ghost`, `AppCard`, `AppButtonCard`,
-  `AppActionCard`, `CustomInputField`.
+- Components: `AppButton.primary/secondary/ghost`, `CustomInputField`.
 - Spacing: the 4dp grid, via `AppSpacing`.
 - Icons: Iconsax (`iconsax_flutter`).
 - **Routes use a transition wrapper**, never raw `MaterialPage`. Choose from
@@ -143,9 +141,9 @@ edited together:
 2. `lib/design_system/tokens/<name>_<mode>.dart` — what compiles
 3. `lib/themes/app_theme.dart` — assembles the `ThemeData`
 
-Miss one and the palette disagrees with itself depending on the surface. There is no
-generator; the sync is manual (decision 008).
-`lib/design_system/JSONS/` is **dead** — 0 references — and is not a fourth copy.
+Miss one and the palette disagrees with itself depending on the surface. `scripts/generate_token_json.py`
+generates copy 1 (the token JSON) from copy 2 (the Dart tokens); copy 3 (`app_theme.dart`)
+still has to be updated by hand.
 
 **Existing violations: 233** hardcoded `Color(0x…)` in `lib/features/`
 (`PROJECT_STATE.md` STYLE-01) — `auth_onboarding`

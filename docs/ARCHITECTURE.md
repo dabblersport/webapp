@@ -45,7 +45,7 @@ lib/
     models/       shared Freezed models
     repositories/ THE LIVE REPOSITORIES — profiles, posts, areas, nearby games
     mappers/
-  design_system/  11 dart files · tokens/ (JSON + .dart per palette) · JSONS/ (DEAD, 0 refs)
+  design_system/  11 dart files · tokens/ (JSON + .dart per palette)
   features/       25 slices — see PROJECT_STATE.md §3 for the state of each
   l10n/           GENERATED — never hand-edit
   services/       notifications/ (push, 4 platform variants) · sport_profile_service.dart
@@ -64,7 +64,6 @@ lib/
 | `lib/l10n/`, `*.g.dart`, `*.freezed.dart` | **Any hand edit.** Regenerated; your change vanishes |
 | `lib/features/<slice>/` | Reaching into another slice's `data/` or `domain/`. Cross-slice goes through `lib/data/` or a shared provider |
 | `lib/core/config/supabase_config.dart` | Changing a constant's **value** without a decision |
-| `lib/design_system/JSONS/` | Everything — it is dead (0 references) |
 | Any repository | Throwing. Return `Result` |
 | Any feature widget | `Color(0x…)` literals and raw `MaterialPage` |
 
@@ -85,9 +84,8 @@ talks about.**
 | `lib/core/design_system/` | **22** |
 | `lib/design_system/` | 11 |
 
-Plus `dabbler_design_system`, a git dependency with **0** imports (`pubspec.yaml:40-43`).
-So the real count is **three** design-system surfaces, not two. §5 discusses the divergence;
-this is the measurement behind it. Ownership of all three is UNOWNED in `CONTRACT.md`.
+So the real count is **two** design-system surfaces. §5 discusses the divergence; this is
+the measurement behind it. Ownership of both is UNOWNED in `CONTRACT.md`.
 
 **The naming trap:** `lib/data/repositories/` holds the **live** repositories. The
 `lib/features/<slice>/data/repositories/` trees are largely the parallel stack that no route
@@ -235,12 +233,11 @@ are preloaded in `main.dart` via `AppTheme.initialize()`. A screen selects one w
 Each palette exists in **three** places that must be edited together (`CONVENTIONS.md` §5):
 the token JSON, the token `.dart`, and `app_theme.dart`. No generator closes the loop.
 
-**Divergences: three design-system surfaces coexist**, not two —
-`lib/core/design_system/` (**22** dart files, the largest), `lib/design_system/` (11, whose
-entry file calls itself "(temporary)"), and `dabbler_design_system`, a git dependency with
-**0** imports. None has an owner in `CONTRACT.md`. 233 hardcoded colours remain in feature
-code. **Which of the three is canonical is an open question for the PO** — it is a
-precondition for the design-system agent in `AGENTS.md` §8.
+**Divergences: two design-system surfaces coexist** —
+`lib/core/design_system/` (**22** dart files, the largest) and `lib/design_system/` (11,
+whose entry file calls itself "(temporary)"). Neither has an owner in `CONTRACT.md`. 233
+hardcoded colours remain in feature code. **Which of the two is canonical is an open
+question for the PO** — it is a precondition for the design-system agent in `AGENTS.md` §8.
 
 ---
 
@@ -325,7 +322,7 @@ Pointers, not restatements. Full evidence in `PROJECT_STATE.md`.
 | Router does too much | `app_router.dart` (1,745 LOC) | ARCH-02 |
 | `Either` / `Result` split | 31 vs 124 files, mixed in 4 slices | ARCH-03 |
 | Three profile repository stacks | `lib/data/` + `features/profile/data/` ×2 | ARCH-04 |
-| **Three** design-system surfaces | `lib/core/design_system/` (22) · `lib/design_system/` (11) · `dabbler_design_system` (git dep, 0 imports) | DEP-01 |
+| **Two** design-system surfaces | `lib/core/design_system/` (22) · `lib/design_system/` (11) | DEP-01 |
 | Repo cannot rebuild the schema | **See `SCHEMA.md` §8 mismatch 7 — the authoritative statement.** Summary: history exists in the DB ledger; the repo cannot reproduce it | KAN-33 |
 | Analytics is hollow | `analytics_service.dart` — 18 empty bodies, backend already exists | WIRE-11 |
 | Unowned surface | 23 of 25 slices, and all of Supabase outside notifications | `CONTRACT.md` §3 |
