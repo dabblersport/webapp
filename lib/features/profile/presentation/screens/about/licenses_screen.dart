@@ -86,14 +86,6 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen>
       copyright: 'Copyright 2020 Supabase',
       url: 'https://pub.dev/packages/supabase_flutter',
     ),
-    LicenseInfo(
-      name: 'lucide_icons',
-      version: '0.4.0',
-      description: 'Lucide icons for Flutter',
-      license: 'MIT License',
-      copyright: 'Copyright 2021 Lucide Contributors',
-      url: 'https://pub.dev/packages/lucide_icons',
-    ),
   ];
 
   List<LicenseInfo> get _filteredLicenses {

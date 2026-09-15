@@ -133,7 +133,7 @@ screens do not exist yet produces exactly what this codebase already has too muc
 - Components: `AppButton.primary/secondary/ghost`, `AppCard`, `AppButtonCard`,
   `AppActionCard`, `CustomInputField`.
 - Spacing: the 4dp grid, via `AppSpacing`.
-- Icons: Lucide (`lucide_icons`) and Iconsax (`iconsax_flutter`).
+- Icons: Iconsax (`iconsax_flutter`).
 - **Routes use a transition wrapper**, never raw `MaterialPage`. Choose from
   `lib/utils/transitions/page_transitions.dart`.
 
