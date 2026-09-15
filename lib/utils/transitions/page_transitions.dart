@@ -391,48 +391,6 @@ class _AdaptiveModalFrame extends StatelessWidget {
   }
 }
 
-/// Hero-style Transition - Expands from a point
-class HeroTransitionPage extends CustomTransitionPage<void> {
-  HeroTransitionPage({
-    required super.child,
-    super.key,
-    Duration duration = const Duration(milliseconds: 400),
-  }) : super(
-         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-           return ScaleTransition(
-             scale: animation.drive(
-               Tween<double>(
-                 begin: 0.0,
-                 end: 1.0,
-               ).chain(CurveTween(curve: Curves.easeOutCubic)),
-             ),
-             child: FadeTransition(
-               opacity: animation.drive(
-                 Tween<double>(begin: 0.0, end: 1.0).chain(
-                   CurveTween(
-                     curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-                   ),
-                 ),
-               ),
-               child: child,
-             ),
-           );
-         },
-         transitionDuration: duration,
-       );
-}
-
-/// No Transition - Instant navigation
-class NoTransitionPage extends CustomTransitionPage<void> {
-  NoTransitionPage({required super.child, super.key})
-    : super(
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return child;
-        },
-        transitionDuration: Duration.zero,
-      );
-}
-
 /// Enum for slide directions
 enum SlideDirection {
   fromRight(Offset(1.0, 0.0)),
@@ -446,57 +404,3 @@ enum SlideDirection {
 
 /// Enum for shared axis types
 enum SharedAxisType { horizontal, vertical, scaled }
-
-/// Extension on GoRouter for easy transition usage
-extension TransitionExtensions on BuildContext {
-  /// Navigate with fade transition
-  void fadeToPage(String location, {Object? extra}) {
-    go(location, extra: extra);
-  }
-
-  /// Navigate with slide transition
-  void slideToPage(String location, {Object? extra}) {
-    go(location, extra: extra);
-  }
-
-  /// Navigate with scale transition
-  void scaleToPage(String location, {Object? extra}) {
-    go(location, extra: extra);
-  }
-}
-
-/// Helper to get appropriate transition based on route
-CustomTransitionPage<void> getTransitionForRoute(
-  String route,
-  Widget child, {
-  LocalKey? key,
-}) {
-  // Modal-style routes (bottom sheet style)
-  if (route.contains('detail') ||
-      route.contains('edit') ||
-      route.contains('add') ||
-      route.contains('create')) {
-    return BottomSheetTransitionPage(child: child, key: key);
-  }
-
-  // Profile and settings (shared axis horizontal)
-  if (route.contains('profile') ||
-      route.contains('settings') ||
-      route.contains('preferences')) {
-    return SharedAxisTransitionPage(
-      child: child,
-      key: key,
-      type: SharedAxisType.horizontal,
-    );
-  }
-
-  // Notifications, transactions (fade through)
-  if (route.contains('notifications') ||
-      route.contains('transactions') ||
-      route.contains('history')) {
-    return FadeThroughTransitionPage(child: child, key: key);
-  }
-
-  // Default: Smooth fade
-  return FadeTransitionPage(child: child, key: key);
-}
