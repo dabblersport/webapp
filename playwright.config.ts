@@ -54,10 +54,26 @@ export default defineConfig({
   },
 
   projects: [
+    // Signs in once and writes tests/e2e/.auth/user.json. Not a browser
+    // project — it is the prerequisite every scenario depends on, so no
+    // spec repeats the three-screen login flow.
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+
     // AC1: exactly one browser project, Chromium. No firefox/webkit here —
     // do not add one without a CEO condition change (single-browser
     // ownership).
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    //
+    // `storageState` restores the session saved by `setup`, so every spec
+    // starts already authenticated. Scenarios that must observe the
+    // signed-out app override it with `test.use({ storageState: undefined })`.
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'tests/e2e/.auth/user.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
 
   webServer: {

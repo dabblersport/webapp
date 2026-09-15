@@ -2,6 +2,10 @@ import { test, expect } from './support/fixtures';
 import { enableSemantics } from './support/semantics';
 import { RoutePaths } from './support/route-paths';
 
+// Signed-out scenario: opts out of the session the chromium project
+// injects, for the same reason smoke.spec.ts does.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 // AC4: a second, deeper scenario that stays read-only — no DB mutation, no
 // money-layer mutation, no CEO authorization needed. It only asserts that
 // the two continue controls on Auth Welcome are present and enabled; it

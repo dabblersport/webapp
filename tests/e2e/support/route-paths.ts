@@ -10,4 +10,7 @@
 export const RoutePaths = {
   landing: '/landing',
   authWelcome: '/auth-welcome',
+  enterPassword: '/enter-password',
+  welcome: '/welcome',
+  home: '/home',
 } as const;

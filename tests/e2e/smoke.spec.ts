@@ -2,6 +2,12 @@ import { test, expect } from './support/fixtures';
 import { enableSemantics } from './support/semantics';
 import { RoutePaths } from './support/route-paths';
 
+// This scenario is about the SIGNED-OUT entry path, so it opts out of the
+// saved session the chromium project injects by default. With a live
+// session the router redirects away from Landing and there is no Continue
+// button to find.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 // AC3: deterministic smoke test — Landing -> enable semantics -> Continue
 // -> Auth Welcome. Matches the sequence team-lead proved end to end in the
 // KAN-166 spike (see the ticket's revision comment for the measured facts).
