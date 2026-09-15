@@ -1,0 +1,124 @@
+{
+  "info": {
+    "name": "Dabbler API — deterministic smoke",
+    "description": "Repository-owned API regression against the Supabase REST/Auth surface. Read-only requests, anon key only. Variables SUPABASE_URL and SUPABASE_ANON_KEY come from the environment at run time (tests/api/run.sh); nothing secret is stored in this file. Cases: success, authentication enforced, service health. Extend per work item with the smallest request that would catch the same defect next time — never a speculative suite.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "SUPABASE_URL", "value": "" },
+    { "key": "SUPABASE_ANON_KEY", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "success — anon reads an allowlisted public view (200, JSON array)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// v_potential_vibes_default is on the enforced anon allowlist",
+              "// (docs/SCHEMA.md §2f, intentionally public per T-027). The REST root",
+              "// (/rest/v1/, the OpenAPI document) is NOT an anon resource on this",
+              "// project — it answers 401 'Only the service_role API key can be used'",
+              "// for anon and publishable keys alike (measured 2026-09-15). That is",
+              "// correct posture, so the success case reads data anon may read.",
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('body is a JSON array', function () {",
+              "  pm.expect(pm.response.json()).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" }
+        ],
+        "url": "{{SUPABASE_URL}}/rest/v1/v_potential_vibes_default?select=*&limit=1"
+      }
+    },
+    {
+      "name": "authentication — REST root without a key is refused (401)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 401', function () { pm.response.to.have.status(401); });",
+              "pm.test('the refusal names the missing key', function () {",
+              "  pm.expect(pm.response.text()).to.match(/api key/i);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{SUPABASE_URL}}/rest/v1/"
+      }
+    },
+    {
+      "name": "health — Auth service answers (200)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('reports a name and version', function () {",
+              "  var body = pm.response.json();",
+              "  pm.expect(body).to.have.property('name');",
+              "  pm.expect(body).to.have.property('version');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" }
+        ],
+        "url": "{{SUPABASE_URL}}/auth/v1/health"
+      }
+    },
+    {
+      "name": "authorization — an anon SELECT on a protected table is empty or refused, never data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// RLS is the authorization boundary (CLAUDE.md: trust RLS). An anonymous",
+              "// read of the users table must not return rows. 200 with [] and 401/403",
+              "// are both correct; a 200 with a non-empty body is the defect this case exists for.",
+              "pm.test('anon cannot read user rows', function () {",
+              "  var code = pm.response.code;",
+              "  if (code === 200) {",
+              "    pm.expect(pm.response.json()).to.be.an('array').that.is.empty;",
+              "  } else {",
+              "    pm.expect([401, 403, 404]).to.include(code);",
+              "  }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "apikey", "value": "{{SUPABASE_ANON_KEY}}" },
+          { "key": "Authorization", "value": "Bearer {{SUPABASE_ANON_KEY}}" }
+        ],
+        "url": "{{SUPABASE_URL}}/rest/v1/users?select=id&limit=1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+appId: com.dabbler.dabblerapp
+name: "Smoke: cold start reaches Landing, Continue reaches Auth Welcome"
+tags:
+  - smoke
+# The representative flow proving the harness executes end to end. It asserts
+# the same first two screens the web smoke asserts (tests/e2e/smoke.spec.ts):
+# a cold start renders Landing with its single "Continue" CTA, and Continue
+# reaches Auth Welcome with its sign-in controls. Strings are the English
+# values in lib/l10n/app_en.arb (landing_continue, auth_welcome_btn_email,
+# auth_welcome_btn_login).
+#
+# clearState is deliberate: with a persisted session the router would skip
+# Landing and this flow would pass while proving nothing (see scripts/qa.sh's
+# --fresh note for the same trap on the integration-test path).
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 30000
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Continue with Email"
+    timeout: 15000
+- assertVisible: "Already have an account? Log in"

@@ -213,3 +213,10 @@ ios/Runner */
 /test-results/
 /tests/e2e/.env.e2e
 /tests/e2e/.auth/
+
+# QA layer artifacts (2026-09-15): every deterministic runner writes its full
+# results here and the Thebes QA layer references them by path. Reproducible
+# from a rerun; never committed.
+/tests/maestro/.results/
+/tests/api/.results/
+/tests/perf/.results/

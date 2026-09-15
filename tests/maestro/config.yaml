@@ -1,0 +1,13 @@
+# Maestro workspace — the deterministic mobile E2E / regression layer.
+#
+# Run from the repository root:
+#   npm run test:maestro                    # smoke flows on the connected device
+#   bash tests/maestro/run.sh flows/<dir>   # a specific folder or flow
+#
+# Flows are Product assets: they live here, not in an agent's memory, and they
+# survive chat restarts, provider changes and machine restarts. See README.md.
+flows:
+  - "flows/**/*.yaml"
+
+executionOrder:
+  continueOnFailure: false
