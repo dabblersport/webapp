@@ -52,17 +52,11 @@ dependencies:
 
   # Enhanced UI Libraries for Beautiful, Minimal Design
 
-  # Flutter Animate - Smooth, minimal animations
-  flutter_animate: ^4.2.0
-
   # Cached Network Image - Beautiful image loading with placeholders
   cached_network_image: ^3.3.0
 
   # Relative timestamps ("2h ago")
   timeago: ^3.7.0
-
-  # FL Chart - Beautiful charts and graphs
-  fl_chart: ^0.69.0
 
   # GoRouter - Clean, minimal navigation
   go_router: ^12.0.0
@@ -98,12 +92,6 @@ dependencies:
 
   # Path manipulation utilities
   path: ^1.9.0
-
-  # Confetti animations for celebrations
-  confetti: ^0.7.0
-
-  # Audio player for sound effects
-  audioplayers: ^6.1.0
 
   # Internationalization
   intl: ^0.20.2
