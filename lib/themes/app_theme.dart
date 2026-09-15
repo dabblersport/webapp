@@ -148,7 +148,7 @@ class AppTheme {
     errorContainer: Color(0xFFFFDAD6),
     onErrorContainer: Color(0xFF410002),
     surface: Color(0xFFFEF7FF),
-    onSurface: Color(0xFF1F2937), // DabblerColors.textPrimaryLight
+    onSurface: Color(0xFF1F2937),
     surfaceContainerHighest: Color(0xFFE6E0E9),
     surfaceContainerHigh: Color(0xFFECE6F0),
     surfaceContainer: Color(0xFFF3EDF7),
@@ -199,7 +199,7 @@ class AppTheme {
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
     surface: Color(0xFF141218),
-    onSurface: Color(0xFFF9FAFB), // DabblerColors.textPrimaryDark
+    onSurface: Color(0xFFF9FAFB),
     surfaceContainerHighest: Color(0xFF36343B),
     surfaceContainerHigh: Color(0xFF2B2930),
     surfaceContainer: Color(0xFF211F26),
@@ -250,7 +250,7 @@ class AppTheme {
     errorContainer: Color(0xFFFFDAD6),
     onErrorContainer: Color(0xFF410002),
     surface: Color(0xFFFDFBFF),
-    onSurface: Color(0xFF1F2937), // DabblerColors.textPrimaryLight
+    onSurface: Color(0xFF1F2937),
     surfaceContainerHighest: Color(0xFFE6E3EC),
     surfaceContainerHigh: Color(0xFFECEAF2),
     surfaceContainer: Color(0xFFF3F3F9),
@@ -301,7 +301,7 @@ class AppTheme {
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
     surface: Color(0xFF1B1B1F),
-    onSurface: Color(0xFFF9FAFB), // DabblerColors.textPrimaryDark
+    onSurface: Color(0xFFF9FAFB),
     surfaceContainerHighest: Color(0xFF36343B),
     surfaceContainerHigh: Color(0xFF2B2A30),
     surfaceContainer: Color(0xFF212026),
@@ -454,7 +454,7 @@ class AppTheme {
     errorContainer: Color(0xFFFFDAD6),
     onErrorContainer: Color(0xFF410002),
     surface: Color(0xFFFFFBFF),
-    onSurface: Color(0xFF1F2937), // DabblerColors.textPrimaryLight
+    onSurface: Color(0xFF1F2937),
     surfaceContainerHighest: Color(0xFFE5E1E6),
     surfaceContainerHigh: Color(0xFFECE7EC),
     surfaceContainer: Color(0xFFF3EFF3),
@@ -505,7 +505,7 @@ class AppTheme {
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
     surface: Color(0xFF1C1B1E),
-    onSurface: Color(0xFFF9FAFB), // DabblerColors.textPrimaryDark
+    onSurface: Color(0xFFF9FAFB),
     surfaceContainerHighest: Color(0xFF323034),
     surfaceContainerHigh: Color(0xFF28262A),
     surfaceContainer: Color(0xFF1E1C20),
@@ -556,7 +556,7 @@ class AppTheme {
     errorContainer: Color(0xFFFFDAD6),
     onErrorContainer: Color(0xFF410002),
     surface: Color(0xFFFFFBFF),
-    onSurface: Color(0xFF1F2937), // DabblerColors.textPrimaryLight
+    onSurface: Color(0xFF1F2937),
     surfaceContainerHighest: Color(0xFFEBE4DB),
     surfaceContainerHigh: Color(0xFFF0EAE1),
     surfaceContainer: Color(0xFFF6EFE6),
@@ -607,7 +607,7 @@ class AppTheme {
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
     surface: Color(0xFF17130E),
-    onSurface: Color(0xFFF9FAFB), // DabblerColors.textPrimaryDark
+    onSurface: Color(0xFFF9FAFB),
     surfaceContainerHighest: Color(0xFF39352F),
     surfaceContainerHigh: Color(0xFF2E2A24),
     surfaceContainer: Color(0xFF24201A),
