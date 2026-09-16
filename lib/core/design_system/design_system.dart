@@ -19,16 +19,12 @@ library;
 
 // Design Tokens - PRIMARY EXPORTS
 export 'tokens/design_tokens.dart';
-export 'tokens/token_based_theme.dart';
 export 'tokens/avatar_tokens.dart';
 export 'tokens/avatar_color_palette.dart';
 export '../../themes/app_theme.dart'; // Includes color extensions
 
 // Colors
 export 'colors/app_colors.dart';
-
-// Typography
-export 'typography/app_typography.dart';
 
 // Spacing
 export 'spacing/app_spacing.dart';
