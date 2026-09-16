@@ -34,13 +34,9 @@ export 'typography/app_typography.dart';
 export 'spacing/app_spacing.dart';
 
 // Specialized Widgets (not directly replaced by Material 3)
-export 'widgets/app_sport_icon.dart';
 export 'widgets/ds_avatar.dart'; // Unified avatar component
 
 // Services
 export '../services/avatar_service.dart';
-export 'widgets/upcoming_game_card.dart';
-export 'widgets/app_step.dart';
-export 'widgets/app_steps.dart';
 
 // Legacy Widgets (Consider removing)
