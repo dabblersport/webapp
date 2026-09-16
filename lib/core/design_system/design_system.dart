@@ -33,6 +33,5 @@ export 'spacing/app_spacing.dart';
 export 'widgets/ds_avatar.dart'; // Unified avatar component
 
 // Services
-export '../services/avatar_service.dart';
 
 // Legacy Widgets (Consider removing)
