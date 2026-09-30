@@ -141,7 +141,7 @@ class AppButton extends StatelessWidget {
           );
 
     // Handle tap with haptic feedback
-    VoidCallback? onTap = isLoading
+    VoidCallback? onTap = (isLoading || onPressed == null)
         ? null
         : () {
             HapticFeedback.lightImpact();

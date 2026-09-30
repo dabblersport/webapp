@@ -65,17 +65,21 @@ void main() {
   );
 
   testWidgets(
-    'onPressed null: tapping does not throw and invokes no callback '
-    '(see KAN-368 outcome report -- the underlying FilledButton.onPressed '
-    'is NOT null in this case; app_button.dart:144-149 always installs the '
-    'haptic-tap wrapper unless isLoading, regardless of onPressed)',
+    'onPressed null reports the underlying button as disabled and tapping '
+    'it does not throw',
     (tester) async {
       await tester.pumpWidget(
         wrap(AppButton.primary(label: 'Continue', onPressed: null)),
       );
 
-      // Tapping must not throw even though there is no callback to invoke.
-      await tester.tap(find.byType(AppButton));
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+      );
+
+      // A disabled button swallows the tap: there is no callback to reach and
+      // nothing may throw.
+      await tester.tap(find.byType(AppButton), warnIfMissed: false);
       await tester.pump();
     },
   );
