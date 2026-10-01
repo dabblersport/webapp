@@ -1052,3 +1052,23 @@ credential values belongs in neither the evidence nor the prose.
 **If a value has already been written somewhere durable, treat editing it out as reducing further
 spread, not as un-disclosing it** — the same reasoning by which `T-003` rejected rewriting public git
 history. Assume it is captured, and rotate.
+
+### 12l. Tests, scripts, CI, logs and agent reports assert credential properties — they never print values
+
+`12k` governs the evidence a person writes. **This governs what code and agents emit at run time:**
+a test, a script, a CI step, a log line, or an agent's report asserts that a credential is present,
+non-empty, of the expected format, length or prefix class, inside its expiry window, and carries the
+expected key-id — and **never echoes, prints, logs or pastes the value** of an API key,
+service-account JSON, keystore, password, token or signing material. CI logs and agent transcripts are
+retained and replayed far beyond the run that wrote them, so a value printed once is a value disclosed.
+
+```bash
+# Bad — the value lands in the CI log.
+echo "Using key: $SERVICE_KEY"
+# Good — properties only.
+[ -n "$SERVICE_KEY" ] && printf 'SERVICE_KEY: set, len=%s\n' "${#SERVICE_KEY}"
+[[ "$SERVICE_KEY" =~ ^FAKEPREFIX_ ]] && echo "SERVICE_KEY: prefix class OK" || echo "SERVICE_KEY: prefix class WRONG"
+```
+
+(The value above is never real: placeholders in examples and fixtures look like
+`FAKE_TOKEN_DO_NOT_USE`, never like a live key.)
