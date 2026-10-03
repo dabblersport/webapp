@@ -737,7 +737,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       child: DabblerButton.icon(
         icon: icon,
         semanticLabel: label,
-        tone: active ? DabblerButtonTone.primary : DabblerButtonTone.icon,
+        tone: active ? DabblerButtonTone.primary : DabblerButtonTone.neutral,
         onPressed: onTap,
       ),
     );

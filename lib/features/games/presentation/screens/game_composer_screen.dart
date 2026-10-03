@@ -1072,9 +1072,19 @@ class _SportChipsRow extends StatelessWidget {
       );
     }
     if (sports.isEmpty) {
-      return const SizedBox(
+      return SizedBox(
         height: DabblerSizing.touchTargetMin,
-        child: ComposerCenteredState.message('No sports available'),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            'No sports available',
+            style: composerType(
+              context,
+              DabblerType.footnote,
+              DabblerColors.of(context).textSecondary,
+            ),
+          ),
+        ),
       );
     }
     final colors = DabblerColors.of(context);
