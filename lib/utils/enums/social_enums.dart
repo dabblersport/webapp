@@ -1,24 +1,22 @@
-import 'package:flutter/material.dart';
-
 /// Chat-specific enums.
 /// Post enums have been removed — rebuilt in data/models layer.
+library;
 
 /// Types of chat messages
 enum MessageType {
-  text('text', 'Text Message', Icons.message),
-  image('image', 'Image', Icons.image),
-  video('video', 'Video', Icons.videocam),
-  audio('audio', 'Audio', Icons.mic),
-  file('file', 'File', Icons.attach_file),
-  location('location', 'Location', Icons.location_city),
-  gameInvite('game_invite', 'Game Invite', Icons.sports),
-  system('system', 'System Message', Icons.info);
+  text('text', 'Text Message'),
+  image('image', 'Image'),
+  video('video', 'Video'),
+  audio('audio', 'Audio'),
+  file('file', 'File'),
+  location('location', 'Location'),
+  gameInvite('game_invite', 'Game Invite'),
+  system('system', 'System Message');
 
-  const MessageType(this.value, this.displayName, this.icon);
+  const MessageType(this.value, this.displayName);
 
   final String value;
   final String displayName;
-  final IconData icon;
 
   /// Get MessageType from string value
   static MessageType? fromValue(String value) {

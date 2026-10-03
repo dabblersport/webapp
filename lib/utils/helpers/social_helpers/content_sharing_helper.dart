@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -99,10 +100,10 @@ class ContentSharingHelper {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to share: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: 'Failed to share: ${e.toString()}',
+            tone: DabblerToastTone.error,
           ),
         );
       }

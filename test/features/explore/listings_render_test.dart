@@ -17,7 +17,6 @@ import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart'
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -26,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 /// Renders the Games and Venues listings (content, loading, empty, filter
 /// sheet) and the explore drawers/widgets under the design-system theme in LTR
@@ -224,7 +224,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: screen,
@@ -251,7 +251,11 @@ class _SheetHostState extends State<_SheetHost> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      showAdaptiveSheet<void>(context: context, builder: widget.builder);
+      showDabblerSheet<void>(
+        context: context,
+        detent: DabblerSheetDetent.content,
+        builder: widget.builder,
+      );
     });
   }
 

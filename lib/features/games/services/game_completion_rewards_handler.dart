@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:dabbler/core/utils/logger.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';

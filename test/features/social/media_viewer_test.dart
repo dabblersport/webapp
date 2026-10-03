@@ -3,6 +3,7 @@ import 'package:dabbler/features/social/presentation/widgets/post_media_carousel
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/render_mode.dart';
 
 void main() {
   testWidgets('media viewer: dragging down past the threshold dismisses it',
@@ -13,7 +14,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+        theme: DabblerDesignSystemTheme.withTokens(renderThemeBase()),
         home: Builder(
           builder: (context) => GestureDetector(
             behavior: HitTestBehavior.opaque,

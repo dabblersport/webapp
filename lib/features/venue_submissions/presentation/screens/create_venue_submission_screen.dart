@@ -90,7 +90,7 @@ class _CreateVenueSubmissionScreenState
     super.dispose();
   }
 
-  /// The SnackBar messages, now DS toasts (same text).
+  /// The snack messages, now DS toasts (same text).
   void _toast(String message) {
     if (!mounted) return;
     DabblerToastProvider.of(context).show(DabblerToastSpec(message: message));
@@ -188,7 +188,7 @@ class _CreateVenueSubmissionScreenState
 
     const gap = SizedBox(height: DabblerSpacing.space3);
 
-    // One layout at every width (AdaptiveScaffold is not a DS component).
+    // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: isEditing ? 'Edit submission' : 'Create submission',

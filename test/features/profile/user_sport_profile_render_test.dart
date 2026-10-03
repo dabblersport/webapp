@@ -29,6 +29,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 const String _shotsDir = String.fromEnvironment('PROFILE_SHOTS_DIR');
 const Key _key = Key('shot');
@@ -157,7 +158,7 @@ Widget _app(Widget home, Locale locale, List<Override> overrides) {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       theme: DabblerDesignSystemTheme.withFonts(
-        DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+        DabblerDesignSystemTheme.withTokens(renderThemeBase()),
         locale: locale,
       ),
       home: home,

@@ -18,7 +18,7 @@ TextStyle _type(BuildContext context, DabblerTypeStyle style, Color color,
         .resolveForDirection(Directionality.of(context))
         .copyWith(color: color, fontWeight: weight);
 
-/// The SnackBar messages, now DS toasts (same text).
+/// The snack messages, now DS toasts (same text).
 void _toast(BuildContext context, String message) {
   if (!context.mounted) return;
   DabblerToastProvider.of(context).show(DabblerToastSpec(message: message));
@@ -36,7 +36,7 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
       venueSubmissionByIdProvider(submissionId),
     );
 
-    // One layout at every width (AdaptiveScaffold is not a DS component).
+    // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Submission details',

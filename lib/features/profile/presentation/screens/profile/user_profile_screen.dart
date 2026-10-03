@@ -175,6 +175,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           action: DabblerButton(
             label: l10n.user_profile_btn_go_back,
             icon: 'arrow-left',
+            mirrorIconInRtl: true,
             tone: DabblerButtonTone.outlined,
             onPressed: () => context.pop(),
           ),

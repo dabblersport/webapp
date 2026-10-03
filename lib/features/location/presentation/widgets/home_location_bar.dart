@@ -104,7 +104,7 @@ class _ReadyBar extends StatelessWidget {
                       ),
                       const SizedBox(width: DabblerSpacing.space1),
                       DabblerIcon(
-                        'arrow-down',
+                        'arrow-down-1',
                         size: 14,
                         color: colors.textSecondary,
                       ),

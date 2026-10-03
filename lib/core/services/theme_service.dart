@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 
-import 'package:flutter/material.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:flutter/material.dart' show DayPeriod, ThemeMode, TimeOfDay;
+import 'package:flutter/widgets.dart';
+import 'package:dabbler/core/services/theme_categories.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerTheme;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +21,7 @@ class ThemeService extends ChangeNotifier {
   static const String _nightStartTimeKey = 'night_start_time';
 
   ThemeMode _themeMode = ThemeMode.system;
-  String _themeCategory = AppTheme.defaultCategory;
+  String _themeCategory = ThemeCategories.defaultCategory;
   bool _autoThemeEnabled = true;
   TimeOfDay _dayStartTime = const TimeOfDay(hour: 6, minute: 0); // 6:00 AM
   TimeOfDay _nightStartTime = const TimeOfDay(hour: 18, minute: 0); // 6:00 PM
@@ -28,12 +29,8 @@ class ThemeService extends ChangeNotifier {
 
   /// The design-system theme for the active category — main→main,
   /// social→social, sports→sport, activity→active, profile→main.
-  DabblerTheme get dabblerTheme => switch (_themeCategory) {
-    'social' => DabblerTheme.social,
-    'sports' => DabblerTheme.sport,
-    'activity' => DabblerTheme.active,
-    _ => DabblerTheme.main,
-  };
+  DabblerTheme get dabblerTheme =>
+      ThemeCategories.dabblerThemeFor(_themeCategory);
 
   // Getters
   ThemeMode get themeMode => _themeMode;
@@ -65,7 +62,6 @@ class ThemeService extends ChangeNotifier {
   // Initialize theme service
   Future<void> init() async {
     await _loadPreferences();
-    AppTheme.setActiveCategory(_themeCategory);
     notifyListeners();
   }
 
@@ -104,7 +100,7 @@ class ThemeService extends ChangeNotifier {
       if (row == null) return;
 
       final nextThemeMode = _parseThemeMode(row['theme_mode']);
-      final nextThemeCategory = AppTheme.normalizeCategory(
+      final nextThemeCategory = ThemeCategories.normalize(
         row['theme_category'] as String? ?? _themeCategory,
       );
       final nextAutoThemeEnabled =
@@ -136,7 +132,6 @@ class ThemeService extends ChangeNotifier {
       _autoThemeEnabled = nextAutoThemeEnabled;
       _dayStartTime = nextDayStartTime;
       _nightStartTime = nextNightStartTime;
-      AppTheme.setActiveCategory(_themeCategory);
       await _savePreferences();
       notifyListeners();
     } on PostgrestException catch (error) {
@@ -159,8 +154,8 @@ class ThemeService extends ChangeNotifier {
       _themeMode = ThemeMode.system; // Default for invalid values
     }
 
-    _themeCategory = AppTheme.normalizeCategory(
-      prefs.getString(_themeCategoryKey) ?? AppTheme.defaultCategory,
+    _themeCategory = ThemeCategories.normalize(
+      prefs.getString(_themeCategoryKey) ?? ThemeCategories.defaultCategory,
     );
 
     // Load auto theme setting
@@ -224,11 +219,10 @@ class ThemeService extends ChangeNotifier {
   }
 
   Future<void> setThemeCategory(String category) async {
-    final normalized = AppTheme.normalizeCategory(category);
+    final normalized = ThemeCategories.normalize(category);
     if (_themeCategory == normalized) return;
 
     _themeCategory = normalized;
-    AppTheme.setActiveCategory(_themeCategory);
     await _savePreferences();
     notifyListeners();
     unawaited(_saveThemePreferencesToAccountIfAvailable());
@@ -327,7 +321,7 @@ class ThemeService extends ChangeNotifier {
   }
 
   static String getThemeCategoryDisplayName(String category) {
-    switch (AppTheme.normalizeCategory(category)) {
+    switch (ThemeCategories.normalize(category)) {
       case 'social':
         return 'Social';
       case 'sports':

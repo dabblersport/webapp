@@ -6,7 +6,8 @@
 // preserved by lib/app/app_router.dart's `_routes`, not by this file.
 
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -45,8 +46,10 @@ RouteBase get languageSelectionRoute =>
       path: '/language_selection',
       pageBuilder: (context, state) => FadeTransitionPage(
         key: state.pageKey,
-        child: const Scaffold(
-          body: Center(child: Text('Language Selection - Coming Soon')),
+        child: const DabblerPage(
+          body: Center(
+            child: DabblerEmptyState(text: 'Language Selection - Coming Soon'),
+          ),
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show ThemeData, ThemeExtension;
+import 'package:flutter/widgets.dart';
 
 /// App-root wiring for the Dabbler design-system package (KAN-407).
 ///

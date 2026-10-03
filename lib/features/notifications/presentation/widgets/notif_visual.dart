@@ -8,7 +8,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 
 class NotifVisual {
-  /// Kebab-case Iconsax name rendered through [DabblerIcon].
+  /// Kebab-case DS icon name rendered through [DabblerIcon].
   final String icon;
   final DabblerIconTileTone tone;
   const NotifVisual(this.icon, this.tone);

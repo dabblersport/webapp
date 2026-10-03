@@ -648,7 +648,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // One layout at every width (AdaptiveScaffold is not a DS component).
+    // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Edit Profile',

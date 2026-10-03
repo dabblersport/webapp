@@ -44,8 +44,6 @@ dependencies:
   dabbler_design_system:
     path: ../dabbler-design-system
 
-  # Iconsax - Beautiful outline and bold icons from iconsax.io
-  iconsax_flutter: ^1.0.0
 
   # Local storage for theme preferences
   shared_preferences: ^2.3.2
@@ -56,7 +54,6 @@ dependencies:
   # Enhanced UI Libraries for Beautiful, Minimal Design
 
   # Cached Network Image - Beautiful image loading with placeholders
-  cached_network_image: ^3.3.0
 
   # Relative timestamps ("2h ago")
   timeago: ^3.7.0
@@ -65,7 +62,6 @@ dependencies:
   go_router: ^12.0.0
 
   # Flutter SVG - Beautiful scalable graphics
-  flutter_svg: ^2.0.9
 
   # Riverpod - Minimal, powerful state management
   riverpod: ^2.5.0
@@ -113,7 +109,6 @@ dependencies:
   timezone: ^0.9.4
 
   # Shimmer effects for loading states
-  shimmer: ^3.0.0
   
   # Sharing
   share_plus: ^13.2.0
@@ -131,7 +126,6 @@ dependencies:
   crypto: ^3.0.3
   
   # Google Fonts - Includes Roboto and proper emoji fallback handling
-  google_fonts: ^6.1.0
 
   # Google Sign-In (token-based) to avoid browser redirects
   google_sign_in: ^6.2.1
@@ -143,13 +137,11 @@ dependencies:
 
   # Sign in with Apple (iOS) — required for App Store when Google sign-in is offered
   sign_in_with_apple: ^8.1.0
-  random_avatar: ^0.0.8
   mapbox_search: ^4.4.0
 
   # Map rendering (no API key required — OpenStreetMap tiles)
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
-  flutter_slidable: ^4.0.3
 dependency_overrides:
   # share_plus 13.2+ declares win32 ^6 but file_picker 8 only compiles against
   # win32 5. Pinned down — win32 code paths only run on Windows desktop builds,
@@ -206,14 +198,8 @@ flutter:
     - assets/elements/
     - assets/icons/
     - assets/logos/
-    - lib/design_system/tokens/
     - assets/logo.png
     - supabase/schema/schema.json
-
-  fonts:
-    - family: Noto Emoji
-      fonts:
-        - asset: assets/fonts/NotoEmoji-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

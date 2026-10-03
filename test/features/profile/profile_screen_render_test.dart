@@ -24,8 +24,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
-const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/profile';
+const String _shotsDir = String.fromEnvironment('PROFILE_SHOTS_DIR', defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan/profile');
 const Key _key = Key('shot');
 
 Future<void> _loadFonts() async {
@@ -204,7 +205,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
       ),

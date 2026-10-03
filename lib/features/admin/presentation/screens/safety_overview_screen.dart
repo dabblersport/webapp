@@ -22,7 +22,7 @@ class SafetyOverviewScreen extends ConsumerWidget {
     final isAdminAsync = ref.watch(isAdminProvider);
     final overviewAsync = ref.watch(safetyOverviewProvider);
 
-    // One layout at every width: the Material AdaptiveScaffold rail wrapper is
+    // One layout at every width: the Material adaptive-scaffold rail wrapper is
     // not a DS component; the app shell owns wide navigation.
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(

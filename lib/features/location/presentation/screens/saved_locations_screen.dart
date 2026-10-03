@@ -11,7 +11,7 @@ import 'package:dabbler/features/location/providers/profile_location_providers.d
 
 /// Saved locations. No design frame: DS defaults (DabblerPage, titled top
 /// bar, DabblerSwipeAction rows, a full-width add button in the page's bottom
-/// overlay in place of the extended FAB). The wide-layout AdaptiveScaffold
+/// overlay in place of the extended FAB). The wide-screen shell
 /// wrapper is dropped as in the earlier waves; the app shell owns navigation.
 class SavedLocationsScreen extends ConsumerWidget {
   const SavedLocationsScreen({super.key});

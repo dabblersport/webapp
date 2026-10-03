@@ -16,6 +16,7 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:go_router/go_router.dart';
 
 import 'home_test_harness.dart' show FakeFeed;
+import '../../support/render_mode.dart';
 
 /// The app shell: a [DabblerPage] holding the active branch and a
 /// [DabblerNavigationBottomBar] (Home, Venues, Games; create = post + game).
@@ -76,7 +77,7 @@ Future<GoRouter> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
       ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
+/// Below this width a route opens as a bottom sheet; at or above it, as a
+/// centred panel.
+const double _kCompactWidth = 600;
+
 
 /// Professional Page Transitions
 ///
@@ -265,7 +268,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
          ),
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            final isWide =
-               MediaQuery.sizeOf(context).width >= AdaptiveBreakpoints.compact;
+               MediaQuery.sizeOf(context).width >= _kCompactWidth;
 
            if (isWide) {
              return FadeTransition(
@@ -325,7 +328,7 @@ class _AdaptiveModalFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isWide = size.width >= AdaptiveBreakpoints.compact;
+    final isWide = size.width >= _kCompactWidth;
     final colorScheme = Theme.of(context).colorScheme;
     final sheetColor = transparentSurface
         ? Colors.transparent

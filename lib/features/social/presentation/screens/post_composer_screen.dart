@@ -16,7 +16,6 @@ import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
 ///
@@ -26,6 +25,9 @@ import 'package:dabbler/widgets/adaptive_scaffold.dart';
 /// Before insert it auto-detects language, extracts hashtags, resolves
 /// the author profile via RLS-safe lookup, and generates link_token
 /// when visibility == link.
+/// At or above this width the composer is centred in a 600px column.
+const double _kCompactWidth = 600;
+
 String _prettifyLabel(String raw) {
   return raw
       .replaceAll('_', ' ')
@@ -462,7 +464,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     // On wide (iPad/desktop) screens, constrain the composer drawer to a
     // comfortable width and align it to the bottom rather than stretching
     // edge-to-edge.
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
+    if (MediaQuery.of(context).size.width >= _kCompactWidth) {
       return Align(
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(

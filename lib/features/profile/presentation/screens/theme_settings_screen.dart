@@ -1,7 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/material.dart' show ColorScheme, ThemeMode, TimeOfDay;
+import 'package:flutter/material.dart' show ThemeMode, TimeOfDay;
 import 'package:flutter/widgets.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/core/services/theme_categories.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
@@ -152,21 +152,21 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     return DabblerSection(
       title: 'Color Theme',
       subtitle: 'Apply one token set across the entire app',
-      children: AppTheme.supportedCategories
+      children: ThemeCategories.supported
           .map(_buildThemeCategoryOption)
           .toList(growable: false),
     );
   }
 
   Widget _buildThemeCategoryOption(String category) {
-    final normalized = AppTheme.normalizeCategory(category);
+    final normalized = ThemeCategories.normalize(category);
     final isSelected = _themeService.themeCategory == normalized;
     final colors = DabblerColors.of(context);
     final name = ThemeService.getThemeCategoryDisplayName(normalized);
 
     return DabblerInputRow(
       onTap: () => _themeService.setThemeCategory(normalized),
-      leading: _buildThemePreviewSwatches(_previewSchemeFor(normalized)),
+      leading: _buildThemePreviewSwatches(_previewFor(normalized)),
       title: name,
       subtitle: 'Use $name tokens app-wide',
       trailing: isSelected
@@ -181,16 +181,16 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   /// The swatches preview another category's palette, so their colours come
-  /// from that category's [ColorScheme] rather than the active DS tokens.
-  Widget _buildThemePreviewSwatches(ColorScheme previewScheme) {
+  /// from that category's design-system theme rather than the active tokens.
+  Widget _buildThemePreviewSwatches(DabblerColors preview) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _dot(previewScheme.primary),
+        _dot(preview.brandPrimary),
         const SizedBox(width: DabblerSpacing.space2),
-        _dot(previewScheme.secondary),
+        _dot(preview.accent),
         const SizedBox(width: DabblerSpacing.space2),
-        _dot(previewScheme.tertiary),
+        _dot(preview.surfaceGrey),
       ],
     );
   }
@@ -203,12 +203,10 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     ),
   );
 
-  ColorScheme _previewSchemeFor(String category) {
-    return AppTheme.getColorSchemeSync(
-      category,
-      _themeService.currentBrightness,
-    );
-  }
+  DabblerColors _previewFor(String category) => DabblerColors.resolve(
+    theme: ThemeCategories.dabblerThemeFor(category),
+    brightness: _themeService.currentBrightness,
+  );
 
   Widget _buildAutoThemeSection() {
     final colors = DabblerColors.of(context);

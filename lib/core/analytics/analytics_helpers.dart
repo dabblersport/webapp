@@ -1,5 +1,5 @@
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 /// Mixin to provide easy access to analytics tracking
 mixin AnalyticsTrackingMixin {

@@ -22,6 +22,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/notifications';
 const String _userId = 'u-me';
@@ -216,7 +217,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: const NotificationsScreenV2(),

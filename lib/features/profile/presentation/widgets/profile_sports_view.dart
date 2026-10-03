@@ -49,17 +49,17 @@ class ProfileSportsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // One layout at every width: the Material AdaptiveScaffold rail wrapper
+    // One layout at every width: the wide-screen rail wrapper
     // is not a DS component (same call as sports_library_screen, W5).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Sports Preferences',
         onBack: onBack,
         actions: [
-          // The original showed a spinner in place of Save while busy; the
-          // DS action has no loading state (DS gap), so it is inert instead.
+          // A spinner replaces Save while busy, as the original did.
           DabblerNavigationAction.text(
             label: 'Save',
+            loading: isLoading,
             onPressed: isLoading ? null : onSave,
           ),
         ],

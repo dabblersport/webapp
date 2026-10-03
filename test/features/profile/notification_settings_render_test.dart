@@ -19,6 +19,7 @@ import 'package:dabbler/features/notifications/data/models/notification_settings
 import 'package:dabbler/features/notifications/data/notification_settings_repository.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_screen.dart';
+import '../../support/render_mode.dart';
 
 /// Writes PNGs only with `--dart-define=SETTINGS_SHOTS_DIR=<dir>`.
 const String _shotsDir = String.fromEnvironment('SETTINGS_SHOTS_DIR');
@@ -46,7 +47,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: home,
