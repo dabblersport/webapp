@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import '../../../../utils/constants/route_constants.dart';
@@ -12,164 +14,114 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _error;
-  bool _obscure1 = true;
-  bool _obscure2 = true;
+  String? _passwordError;
+  String? _confirmError;
   String _password = '';
-  final _confirmController = TextEditingController();
+  String _confirm = '';
+
+  bool _validate() {
+    final l10n = AppLocalizations.of(context);
+    String? passwordError;
+    if (_password.isEmpty) {
+      passwordError = l10n.reset_password_validate_enter;
+    } else if (_password.length < 8) {
+      passwordError = l10n.reset_password_validate_min;
+    }
+    String? confirmError;
+    if (_confirm.isEmpty) {
+      confirmError = l10n.reset_password_validate_confirm;
+    } else if (_confirm != _password) {
+      confirmError = l10n.reset_password_validate_match;
+    }
+    setState(() {
+      _passwordError = passwordError;
+      _confirmError = confirmError;
+    });
+    return passwordError == null && confirmError == null;
+  }
+
+  Future<void> _submit() async {
+    if (!_validate()) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      await AuthService().updatePassword(_password);
+      if (!mounted) return;
+      // After successful reset, go to login to sign in
+      context.go(RoutePaths.authWelcome);
+    } catch (e) {
+      setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context).reset_password_title,
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            AppLocalizations.of(context).reset_password_subtitle,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          TextFormField(
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context).reset_password_new_label,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscure1
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () =>
-                                    setState(() => _obscure1 = !_obscure1),
-                              ),
-                            ),
-                            obscureText: _obscure1,
-                            onChanged: (v) => _password = v,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return AppLocalizations.of(context).reset_password_validate_enter;
-                              }
-                              if (v.length < 8) {
-                                return AppLocalizations.of(context).reset_password_validate_min;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context).reset_password_confirm_label,
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscure2
-                                      ? Icons.visibility
-                                      : Icons.visibility_off,
-                                ),
-                                onPressed: () =>
-                                    setState(() => _obscure2 = !_obscure2),
-                              ),
-                            ),
-                            obscureText: _obscure2,
-                            controller: _confirmController,
-                            validator: (v) {
-                              if (v == null || v.isEmpty) {
-                                return AppLocalizations.of(context).reset_password_validate_confirm;
-                              }
-                              if (v != _password) {
-                                return AppLocalizations.of(context).reset_password_validate_match;
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () async {
-                                    if (!(_formKey.currentState?.validate() ??
-                                        false)) {
-                                      return;
-                                    }
-                                    setState(() {
-                                      _isLoading = true;
-                                      _error = null;
-                                    });
-                                    try {
-                                      await AuthService().updatePassword(
-                                        _password,
-                                      );
-                                      if (!mounted) return;
-                                      // After successful reset, go to login to sign in
-                                      context.go(RoutePaths.authWelcome);
-                                    } catch (e) {
-                                      setState(
-                                        () => _error = e
-                                            .toString()
-                                            .replaceFirst('Exception: ', ''),
-                                      );
-                                    } finally {
-                                      if (mounted) {
-                                        setState(() => _isLoading = false);
-                                      }
-                                    }
-                                  },
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(AppLocalizations.of(context).reset_password_update_btn),
-                          ),
-                          if (_error != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              _error!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return DabblerPage(
+      topBar: const DabblerNavigationTopBar.titled(),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space4,
+          DabblerSpacing.space8,
+          DabblerSpacing.space10,
         ),
-      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.reset_password_title,
+              style: DabblerType.largeTitle
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            Text(
+              l10n.reset_password_subtitle,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space9),
+            DabblerTextField(
+              variant: DabblerTextFieldVariant.password,
+              label: l10n.reset_password_new_label,
+              errorText: _passwordError,
+              onChanged: (v) => _password = v,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerTextField(
+              variant: DabblerTextFieldVariant.password,
+              label: l10n.reset_password_confirm_label,
+              errorText: _confirmError,
+              onChanged: (v) => _confirm = v,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: DabblerSpacing.space8),
+            DabblerButton(
+              label: l10n.reset_password_update_btn,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: _isLoading,
+              onPressed: _submit,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: DabblerSpacing.space4),
+              DabblerBanner(tone: DabblerBannerTone.error, message: _error),
+            ],
+          ],
         ),
       ),
     );

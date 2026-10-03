@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -33,234 +33,72 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                child: _buildHeroSection(),
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space4,
+          DabblerSpacing.space8,
+          DabblerSpacing.space11,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.forgot_password_title,
+              style: DabblerType.largeTitle
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            Text(
+              l10n.forgot_password_subtitle,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space9),
+            DabblerTextField(
+              controller: _emailController,
+              placeholder: l10n.forgot_password_email_hint,
+              errorText: _error,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.username, AutofillHints.email],
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(context),
+            ),
+            const SizedBox(height: DabblerSpacing.space8),
+            DabblerButton(
+              label: l10n.forgot_password_send_btn,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: _isLoading,
+              onPressed: () => _submit(context),
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+            if (_sent)
+              DabblerBanner(
+                tone: DabblerBannerTone.success,
+                message: l10n.forgot_password_sent_msg,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
-                child: _buildBottomSection(),
-              ),
-            ],
-          ),
+            const SizedBox(height: DabblerSpacing.space8),
+            DabblerButton(
+              label: l10n.forgot_password_back_to_signin,
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () => context.go(RoutePaths.authWelcome),
+            ),
+          ],
         ),
       ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeroSection() {
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    final heroColor = isDarkMode
-        ? const Color(0xFF4A148C)
-        : const Color(0xFFE0C7FF);
-    final textColor = isDarkMode ? Colors.white : Colors.black87;
-    final subtextColor = isDarkMode
-        ? Colors.white.withValues(alpha: 0.85)
-        : Colors.black.withValues(alpha: 0.7);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: heroColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          // Logo
-          _buildLogo(textColor),
-          const SizedBox(height: 24),
-          // Header
-          Text(
-            AppLocalizations.of(context).forgot_password_title,
-            style: textTheme.headlineSmall?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w800,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context).forgot_password_subtitle,
-            style: textTheme.bodyLarge?.copyWith(color: subtextColor),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogo(Color iconColor) {
-    return Column(
-      children: [
-        SvgPicture.asset(
-          'assets/images/dabbler_logo.svg',
-          width: 80,
-          height: 88,
-          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        ),
-        const SizedBox(height: 16),
-        SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 110,
-          height: 21,
-          colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Email Input
-        TextField(
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.username, AutofillHints.email],
-          textInputAction: TextInputAction.done,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w400,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context).forgot_password_email_hint,
-            hintStyle: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w400,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            filled: true,
-            fillColor: AppColors.cardColor(context),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: AppColors.borderDark),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: AppColors.borderDark),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: AppColors.primaryPurple, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12.0),
-              borderSide: BorderSide(color: Colors.red),
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 12.0,
-              vertical: 12.0,
-            ),
-            errorText: _error,
-            errorStyle: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-              color: Colors.red,
-            ),
-          ),
-          onSubmitted: (_) => _submit(context),
-        ),
-        SizedBox(height: 24.0),
-
-        // Send Reset Link Button
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : () => _submit(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPurple,
-              foregroundColor: AppColors.buttonForeground,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-            ),
-            child: _isLoading
-                ? SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.buttonForeground,
-                      ),
-                    ),
-                  )
-                : Text(
-                    AppLocalizations.of(context).forgot_password_send_btn,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-                  ),
-          ),
-        ),
-        SizedBox(height: 16.0),
-
-        // Success Message
-        if (_sent)
-          Container(
-            padding: EdgeInsets.all(12.0),
-            decoration: BoxDecoration(
-              color: AppColors.infoBackground,
-              borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(color: AppColors.infoBorder),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.check_circle_outline,
-                  color: AppColors.primaryPurple,
-                  size: 20,
-                ),
-                SizedBox(width: 8.0),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context).forgot_password_sent_msg,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        SizedBox(height: 24.0),
-
-        // Back to Sign In
-        TextButton(
-          onPressed: () => context.go(RoutePaths.authWelcome),
-          child: Text(
-            AppLocalizations.of(context).forgot_password_back_to_signin,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-      ],
     );
   }
 

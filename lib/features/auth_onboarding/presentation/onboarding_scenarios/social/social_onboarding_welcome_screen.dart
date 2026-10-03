@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../utils/constants/route_constants.dart';
@@ -9,183 +10,134 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
 
-    return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // Skip button
-              Align(
-                alignment: Alignment.topRight,
-                child: TextButton(
-                  onPressed: () => _skipOnboarding(context),
-                  child: const Text('Skip'),
-                ),
-              ),
-
-              const Spacer(),
-
-              // Icon and title
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: theme.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.group, size: 60, color: theme.primaryColor),
-              ),
-
-              const SizedBox(height: 32),
-
-              Text(
-                'Welcome to Social',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onSurface,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 16),
-
-              Text(
-                'Connect with fellow players, share your game experiences, and build your sports community.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 48),
-
-              // Features preview
-              _buildFeaturesList(context),
-
-              const Spacer(),
-
-              // Continue button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () =>
-                      context.push(RoutePaths.socialOnboardingFriends),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: const Text('Get Started'),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Progress indicator
-              _buildProgressIndicator(context, 0, 4),
-            ],
-          ),
+    return DabblerPage(
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DabblerButton(
+              label: 'Get Started',
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () => context.push(RoutePaths.socialOnboardingFriends),
+            ),
+            const SizedBox(height: DabblerSpacing.space6),
+            const DabblerProgressBar(
+              value: 0.25,
+              size: DabblerProgressBarSize.sm,
+            ),
+          ],
         ),
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+          vertical: DabblerSpacing.space6,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: DabblerButton(
+                label: 'Skip',
+                tone: DabblerButtonTone.text,
+                size: DabblerButtonSize.small,
+                onPressed: () => _skipOnboarding(context),
+              ),
+            ),
+            const SizedBox(height: DabblerSpacing.space10),
+            const Center(child: DabblerIconTile.named('people', size: 96)),
+            const SizedBox(height: DabblerSpacing.space10),
+            Text(
+              'Welcome to Social',
+              textAlign: TextAlign.center,
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+            Text(
+              'Connect with fellow players, share your game experiences, and build your sports community.',
+              textAlign: TextAlign.center,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space11),
+            _buildFeaturesList(context),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildFeaturesList(BuildContext context) {
-    final features = [
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    const features = [
       _FeatureItem(
-        icon: Icons.person_add,
+        icon: 'user-add',
         title: 'Find Friends',
         description: 'Connect with players in your area',
       ),
       _FeatureItem(
-        icon: Icons.chat_bubble_outline,
+        icon: 'message',
         title: 'Chat & Share',
         description: 'Message friends and share game moments',
       ),
       _FeatureItem(
-        icon: Icons.sports_esports,
+        icon: 'game',
         title: 'Game Together',
         description: 'Discover and join games with your network',
       ),
     ];
 
     return Column(
-      children: features
-          .map(
-            (feature) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      feature.icon,
-                      size: 24,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          feature.title,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          feature.description,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      children: [
+        for (final feature in features)
+          Padding(
+            padding: const EdgeInsetsDirectional.symmetric(
+              vertical: DabblerSpacing.space3,
             ),
-          )
-          .toList(),
-    );
-  }
-
-  Widget _buildProgressIndicator(
-    BuildContext context,
-    int currentStep,
-    int totalSteps,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(totalSteps, (index) {
-        final isActive = index <= currentStep;
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: isActive
-                ? Theme.of(context).primaryColor
-                : Theme.of(context).primaryColor.withValues(alpha: 0.3),
-            shape: BoxShape.circle,
+            child: Row(
+              children: [
+                DabblerIconTile.named(feature.icon),
+                const SizedBox(width: DabblerSpacing.space5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        feature.title,
+                        style: DabblerType.headline
+                            .resolveForDirection(direction)
+                            .copyWith(color: colors.textPrimary),
+                      ),
+                      const SizedBox(height: DabblerSpacing.space1),
+                      Text(
+                        feature.description,
+                        style: DabblerType.footnote
+                            .resolveForDirection(direction)
+                            .copyWith(color: colors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }),
+      ],
     );
   }
 
@@ -196,7 +148,7 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
 }
 
 class _FeatureItem {
-  final IconData icon;
+  final String icon;
   final String title;
   final String description;
 

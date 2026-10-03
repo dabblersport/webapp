@@ -1,9 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import '../../../../../utils/constants/route_constants.dart';
 
 /// Find friends screen for social onboarding
@@ -32,91 +30,97 @@ class _SocialOnboardingFriendsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     final selectedCount = _suggestions.where((s) => s.isSelected).length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Find Friends'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.push(RoutePaths.socialOnboardingPrivacy),
-            child: const Text('Skip'),
-          ),
-        ],
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Find Friends',
+        onBack: () => context.pop(),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DabblerButton(
+              label: selectedCount > 0
+                  ? 'Send ${selectedCount > 1 ? "$selectedCount Requests" : "Request"} & Continue'
+                  : 'Continue',
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: _continue,
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerButton(
+              label: 'Skip',
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () =>
+                  context.push(RoutePaths.socialOnboardingPrivacy),
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerProgressBar(
+              value: 0.5,
+              size: DabblerProgressBarSize.sm,
+            ),
+          ],
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+          vertical: DabblerSpacing.space6,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Title and description
             Text(
               'Find Your Sports Community',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space3),
             Text(
               'Connect with friends to share game experiences and discover new opportunities.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              style: DabblerType.subheadline
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
             ),
-
-            const SizedBox(height: 32),
-
-            // Suggested friends section
+            const SizedBox(height: DabblerSpacing.space10),
             Row(
               children: [
-                Text(
-                  'Suggested for You',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    'Suggested for You',
+                    style: DabblerType.headline
+                        .resolveForDirection(direction)
+                        .copyWith(color: colors.textPrimary),
                   ),
                 ),
-                const Spacer(),
                 if (selectedCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '$selectedCount selected',
-                      style: TextStyle(
-                        color: theme.primaryColor,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
+                  DabblerBadge(label: '$selectedCount selected'),
               ],
             ),
-
-            const SizedBox(height: 16),
-
-            // Friends list
+            const SizedBox(height: DabblerSpacing.space5),
             Expanded(
               child: _suggestions.isEmpty
                   ? Center(
                       child: Text(
                         'Friend suggestions are coming soon.',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: Colors.grey),
                         textAlign: TextAlign.center,
+                        style: DabblerType.subheadline
+                            .resolveForDirection(direction)
+                            .copyWith(color: colors.textSecondary),
                       ),
                     )
                   : ListView.builder(
@@ -127,174 +131,72 @@ class _SocialOnboardingFriendsScreenState
                       },
                     ),
             ),
-
-            // Bottom section
-            const SizedBox(height: 16),
-
-            // Continue button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _continue,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: Text(
-                  selectedCount > 0
-                      ? 'Send ${selectedCount > 1 ? "$selectedCount Requests" : "Request"} & Continue'
-                      : 'Continue',
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Progress indicator
-            _buildProgressIndicator(context, 1, 4),
           ],
-        ),
-      ),
         ),
       ),
     );
   }
 
   Widget _buildFriendSuggestionCard(_ContactSuggestion suggestion, int index) {
-    final theme = Theme.of(context);
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: ListTile(
-        leading: DSAvatar(
-          size: AvatarSize.medium,
-          imageUrl: suggestion.avatar,
-          displayName: suggestion.name,
-          context: AvatarContext.social,
-        ),
-        title: Text(
-          suggestion.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (suggestion.mutualFriends > 0)
-              Text(
-                '${suggestion.mutualFriends} mutual friend${suggestion.mutualFriends > 1 ? 's' : ''}',
-                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _getSourceColor(
-                      suggestion.source,
-                    ).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    suggestion.source,
-                    style: TextStyle(
-                      color: _getSourceColor(suggestion.source),
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: SizedBox(
-          width: 100,
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        vertical: DabblerSpacing.space1,
+      ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _toggleSelection(index),
+        child: DabblerSurface.card(
+          radius: DabblerRadius.lg,
+          padding: const EdgeInsetsDirectional.all(DabblerSpacing.space4),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              if (suggestion.isSelected)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.check, size: 14, color: Colors.green),
-                      SizedBox(width: 4),
+              DabblerAvatar(seed: suggestion.name, imageUrl: suggestion.avatar),
+              const SizedBox(width: DabblerSpacing.space4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      suggestion.name,
+                      style: DabblerType.headline
+                          .resolveForDirection(direction)
+                          .copyWith(color: colors.textPrimary),
+                    ),
+                    if (suggestion.mutualFriends > 0)
                       Text(
-                        'Added',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        '${suggestion.mutualFriends} mutual friend${suggestion.mutualFriends > 1 ? 's' : ''}',
+                        style: DabblerType.footnote
+                            .resolveForDirection(direction)
+                            .copyWith(color: colors.textSecondary),
                       ),
-                    ],
-                  ),
+                    const SizedBox(height: DabblerSpacing.space1),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: DabblerBadge(label: suggestion.source),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: DabblerSpacing.space4),
+              if (suggestion.isSelected)
+                const DabblerBadge(
+                  label: 'Added',
+                  tone: DabblerBadgeTone.success,
+                  icon: DabblerIcon('tick-circle', size: 14),
                 )
               else
-                ElevatedButton(
+                DabblerButton(
+                  label: 'Add',
+                  size: DabblerButtonSize.small,
                   onPressed: () => _toggleSelection(index),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    minimumSize: const Size(0, 32),
-                    textStyle: const TextStyle(fontSize: 12),
-                  ),
-                  child: const Text('Add'),
                 ),
             ],
           ),
         ),
-        onTap: () => _toggleSelection(index),
       ),
-    );
-  }
-
-  Color _getSourceColor(String source) {
-    switch (source) {
-      case 'Contacts':
-        return Colors.blue;
-      case 'Nearby':
-        return Colors.green;
-      case 'Suggested':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  Widget _buildProgressIndicator(
-    BuildContext context,
-    int currentStep,
-    int totalSteps,
-  ) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(totalSteps, (index) {
-        final isActive = index <= currentStep;
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: isActive
-                ? Theme.of(context).primaryColor
-                : Theme.of(context).primaryColor.withValues(alpha: 0.3),
-            shape: BoxShape.circle,
-          ),
-        );
-      }),
     );
   }
 }

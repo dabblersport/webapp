@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -10,71 +12,48 @@ class RegisterScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(registerControllerProvider);
     final controller = ref.read(registerControllerProvider.notifier);
-    return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).register_title)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: (constraints.maxHeight - 16)
-                      .clamp(0.0, double.infinity)
-                      .toDouble(),
-                ),
-                child: Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context).email_input_label,
-                        errorText: state.error,
-                      ),
-                      onChanged: controller.updateEmail,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      decoration: InputDecoration(labelText: AppLocalizations.of(context).set_password_password_label),
-                      obscureText: true,
-                      onChanged: controller.updatePassword,
-                      textInputAction: TextInputAction.done,
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: state.isLoading
-                            ? null
-                            : () async {
-                                await controller.register();
-                                final session = ref
-                                    .read(registerControllerProvider)
-                                    .session;
-                                if (session != null) {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    '/confirm-email',
-                                  );
-                                }
-                              },
-                        child: state.isLoading
-                            ? const CircularProgressIndicator()
-                            : Text(AppLocalizations.of(context).register_btn),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
+    final l10n = AppLocalizations.of(context);
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(title: l10n.register_title),
+      body: SingleChildScrollView(
+        padding: EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space6,
+          DabblerSpacing.space6,
+          DabblerSpacing.space6 + MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DabblerTextField(
+              label: l10n.email_input_label,
+              errorText: state.error,
+              onChanged: controller.updateEmail,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: DabblerSpacing.space6),
+            DabblerTextField(
+              variant: DabblerTextFieldVariant.password,
+              label: l10n.set_password_password_label,
+              onChanged: controller.updatePassword,
+              textInputAction: TextInputAction.done,
+            ),
+            const SizedBox(height: DabblerSpacing.space8),
+            DabblerButton(
+              label: l10n.register_btn,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: state.isLoading,
+              onPressed: () async {
+                await controller.register();
+                final session = ref.read(registerControllerProvider).session;
+                if (session != null) {
+                  Navigator.pushReplacementNamed(context, '/confirm-email');
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
