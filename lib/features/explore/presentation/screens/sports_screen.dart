@@ -523,7 +523,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       });
     }
 
-    // One layout at every width (the Material AdaptiveScaffold rail wrapper
+    // One layout at every width (the Material adaptive-scaffold rail wrapper
     // is not a DS component; the app shell owns wide navigation).
     return DabblerPage(
       body: DabblerRefresh(

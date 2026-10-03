@@ -40,7 +40,7 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // One layout at every width (the Material AdaptiveScaffold rail wrapper
+    // One layout at every width (the Material adaptive-scaffold rail wrapper
     // is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(

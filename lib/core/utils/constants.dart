@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class AppConstants {
   // App Info
   static const String appName = 'Dabbler Player';
@@ -356,13 +354,6 @@ class AppConstants {
   static const double menuSpacing = 24.0;
   static const double chipSpacing = 8.0;
   static const double sectionSpacing = 16.0;
-
-  // Profile Module Colors (Theme-aware)
-  static const Color profileIncompleteColor = Color(0xFFFF9800); // Orange
-  static const Color profileVerifiedColor = Color(0xFF2196F3); // Blue
-  static const Color profileSuccessColor = Color(0xFF4CAF50); // Green
-  static const Color profileWarningColor = Color(0xFFFFC107); // Amber
-  static const Color profileErrorColor = Color(0xFFF44336); // Red
 
   // Profile Module Typography
   static const double profileTitleSize = 24.0;

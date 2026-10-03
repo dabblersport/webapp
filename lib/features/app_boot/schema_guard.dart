@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers.dart';
@@ -24,9 +25,9 @@ class _BootSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF7328CE),
-      body: SizedBox.expand(),
+    return ColoredBox(
+      color: DabblerColors.of(context).brandPrimary,
+      child: const SizedBox.expand(),
     );
   }
 }
@@ -38,13 +39,18 @@ class _SchemaMismatchScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbSchemaMetaProvider).valueOrNull;
     final app = ref.watch(appSchemaHashProvider).valueOrNull;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final body = DabblerType.body
+        .resolveForDirection(direction)
+        .copyWith(color: colors.textPrimary);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Update required')),
+    return DabblerPage(
+      topBar: const DabblerNavigationTopBar.titled(title: 'Update required'),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(DabblerSpacing.space5),
         child: DefaultTextStyle.merge(
-          style: Theme.of(context).textTheme.bodyMedium!,
+          style: body,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -52,21 +58,21 @@ class _SchemaMismatchScreen extends ConsumerWidget {
                 'Your app is out of sync with the server schema.',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DabblerSpacing.space4),
               Text('App schema: ${app ?? 'unknown'}'),
               Text('Server schema: ${db?.schemaHash ?? 'unknown'}'),
               if (db?.notes != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: DabblerSpacing.space3),
                 Text('Notes: ${db!.notes}'),
               ],
               const Spacer(),
-              FilledButton(
+              DabblerButton(
+                label: 'Close',
                 onPressed: () {
                   // You can take users to the store or a custom updater.
                   // For now, just pop any dialogs and let them restart.
                   Navigator.of(context).maybePop();
                 },
-                child: const Text('Close'),
               ),
             ],
           ),
