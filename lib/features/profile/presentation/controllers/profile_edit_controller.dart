@@ -1,5 +1,6 @@
 import 'dart:io';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart'
+    show FormState, GlobalKey, TextEditingController;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/profile/user_profile.dart';

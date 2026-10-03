@@ -22,7 +22,6 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' hide Icons;
-import 'package:flutter/material.dart' as m show Icons;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -274,22 +273,18 @@ Future<void> _pumpSport(
                   SportProfileMetric(
                     label: 'Matches',
                     value: '86',
-                    icon: m.Icons.sports_score,
                   ),
                   SportProfileMetric(
                     label: 'Rating',
                     value: '4.9',
-                    icon: m.Icons.star_outline,
                   ),
                   SportProfileMetric(
                     label: 'Form',
                     value: '7.2',
-                    icon: m.Icons.trending_up,
                   ),
                   SportProfileMetric(
                     label: 'Reliability',
                     value: '99',
-                    icon: m.Icons.verified_outlined,
                   ),
                 ],
         ),
