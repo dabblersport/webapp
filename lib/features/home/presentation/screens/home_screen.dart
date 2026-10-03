@@ -17,8 +17,10 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
-import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_feed_parts.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
@@ -28,12 +30,9 @@ import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
-import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
-import 'package:dabbler/features/news/presentation/widgets/news_compact_card.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
-import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -471,6 +470,29 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
       oldDelegate.background != background || oldDelegate.tabBar != tabBar;
 }
 
+/// Pull-to-refresh with the design-system colours.
+///
+/// DS GAP: the package has no pull-to-refresh. The framework's behaviour is
+/// kept so refresh keeps working; its only visible part, the spinner, is
+/// painted with design-system tokens instead of Material defaults.
+class _HomeRefresh extends StatelessWidget {
+  const _HomeRefresh({required this.onRefresh, required this.child});
+
+  final Future<void> Function() onRefresh;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: colors.brandPrimary,
+      backgroundColor: colors.surfaceCard,
+      child: child,
+    );
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // For You tab — wraps existing FeedState (PostFeed + badge)
 // ────────────────────────────────────────────────────────────────────────────
@@ -537,7 +559,7 @@ class _ForYouTabBody extends ConsumerWidget {
         .toList();
     final itemCount = feedItems.length + (state.isLoadingMore ? 1 : 0);
 
-    return RefreshIndicator(
+    return _HomeRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -553,9 +575,9 @@ class _ForYouTabBody extends ConsumerWidget {
               );
           }
           final item = feedItems[index];
-          if (item is FeedPostItem) return resolvePostLayout(item.post);
+          if (item is FeedPostItem) return HomePostRow.resolve(item.post);
           if (item is FeedNewsItem) {
-            return NewsCompactCard(
+            return HomeNewsCompactRow(
               item: item,
               onDismiss: () => _confirmUnsubscribe(context, ref),
             );
@@ -685,7 +707,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
     final isLoadingMore = postState.isLoadingMore;
     final itemCount = merged.length + (isLoadingMore ? 1 : 0);
 
-    return RefreshIndicator(
+    return _HomeRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -703,8 +725,8 @@ class _FollowingFeedTabBody extends ConsumerWidget {
           final entry = merged[index];
           return switch (entry) {
             _ActivityEntry(:final activity) =>
-              PublicActivityCard(activity: activity),
-            _PostEntry(:final post) => resolvePostLayout(post),
+              HomeActivityRow(activity: activity),
+            _PostEntry(:final post) => HomePostRow.resolve(post),
           };
         },
       ),
@@ -770,7 +792,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
     final events = state.events;
     final itemCount = events.length + (state.isLoadingMore ? 1 : 0);
 
-    return RefreshIndicator(
+    return _HomeRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -835,7 +857,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
     final posts = state.posts;
     final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
 
-    return RefreshIndicator(
+    return _HomeRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -850,7 +872,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
               child: Center(child: DabblerSpinner()),
               );
           }
-          return resolvePostLayout(posts[index], showNearbyChipInHeader: true);
+          return HomePostRow.resolve(posts[index], showNearbyChipInHeader: true);
         },
       ),
     );
@@ -996,7 +1018,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
     final headerCount = isUnsubscribed ? 2 : 1;
     final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
 
-    return RefreshIndicator(
+    return _HomeRefresh(
       onRefresh: onRefresh,
       child: ListView.builder(
         controller: scrollController,
@@ -1028,7 +1050,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
               child: Center(child: DabblerSpinner()),
               );
           }
-          return NewsCard(item: filtered[i]);
+          return HomeNewsCard(item: filtered[i]);
         },
       ),
     );
@@ -1156,8 +1178,8 @@ class _HomeHeader extends ConsumerWidget {
 
   final String? displayName;
 
-  /// Kept for parity with the previous header's inputs. The design-system
-  /// avatar is seed-based and has no image-URL form (DS gap).
+  /// The user's photo. DS GAP: [DabblerAvatar] has no image-URL form, so the
+  /// photo is drawn over the bar's seed avatar when present.
   final String? avatarUrl;
 
   @override
@@ -1213,17 +1235,23 @@ class _HomeHeader extends ConsumerWidget {
       ],
     );
 
-    // The unread count sits on the notification glyph's top-end corner. The
-    // bar's action has no badge slot (DS gap), so the badge is anchored with
-    // the bar's own published geometry rather than a guessed offset.
+    // DS GAPS, handled with the bar's own published geometry (no guessed
+    // offsets): the top bar's action has no dot slot, and its avatar is
+    // seed-only. The design's 9px unread dot is laid on the bell's top-end
+    // corner, and the user's real photo (when there is one) is laid exactly over
+    // the bar's 36px seed avatar. Both ignore pointers, so taps still reach the
+    // bar's own buttons.
     const glyph = DabblerNavigationTopBar.actionGlyphSize;
-    final badgeTop = MediaQuery.paddingOf(context).top +
-        (DabblerNavigationTopBar.barHeight - glyph) / 2 -
-        DabblerSpacing.space5;
-    final badgeEnd = DabblerNavigationTopBar.barPaddingInline +
-        DabblerSizing.touchTargetMin +
+    final topInset = MediaQuery.paddingOf(context).top;
+    final avatarBox = DabblerSizing.touchTargetMin;
+    final avatarEnd = DabblerNavigationTopBar.barPaddingInline +
+        (avatarBox - DabblerAvatarSize.sm.diameter) / 2;
+    final dotTop = topInset + (DabblerNavigationTopBar.barHeight - glyph) / 2;
+    final dotEnd = DabblerNavigationTopBar.barPaddingInline +
+        avatarBox +
         (DabblerNavigationTopBar.actionTarget.width - glyph) / 2 -
-        DabblerSpacing.space4;
+        DabblerSpacing.space1;
+    final photoUrl = avatarUrl ?? profile?.avatarUrl;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -1238,7 +1266,7 @@ class _HomeHeader extends ConsumerWidget {
             ),
             DabblerNavigationAction(
               icon: 'notification-bing',
-              label: 'Notifications',
+              label: unread > 0 ? 'Notifications, $unread unread' : 'Notifications',
               onPressed: () => context.push(RoutePaths.notifications),
             ),
           ],
@@ -1246,14 +1274,30 @@ class _HomeHeader extends ConsumerWidget {
           avatarLabel: name,
           onAvatarPressed: () => context.push(RoutePaths.profile),
         ),
+        if (photoUrl != null && photoUrl.isNotEmpty)
+          PositionedDirectional(
+            end: avatarEnd,
+            top: topInset +
+                (DabblerNavigationTopBar.barHeight -
+                        DabblerAvatarSize.sm.diameter) /
+                    2,
+            child: IgnorePointer(child: HomeAvatar(name: name, imageUrl: photoUrl)),
+          ),
         if (unread > 0)
           PositionedDirectional(
-            top: badgeTop,
-            end: badgeEnd,
+            top: dotTop,
+            end: dotEnd,
             child: IgnorePointer(
-              child: DabblerBadge(
-                label: unread > 99 ? '99+' : '$unread',
-                tone: DabblerBadgeTone.primary,
+              child: SizedBox(
+                key: const Key('home-unread-dot'),
+                width: 9,
+                height: 9,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.brandPrimary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ),
             ),
           ),

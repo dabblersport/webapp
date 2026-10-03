@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+
+import 'home_post_row.dart';
 
 /// Top-level router — dispatches each sealed [ActiveEvent] variant to its
 /// dedicated card widget. Exhaustive: a new variant is a compile error.
@@ -254,7 +255,7 @@ class PostCard extends ConsumerWidget {
     final asyncPost = ref.watch(postDetailProvider(postId));
 
     return asyncPost.when(
-      data: (post) => resolvePostLayout(post),
+      data: (post) => HomePostRow.resolve(post),
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space4),
         child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),

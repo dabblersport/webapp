@@ -9,6 +9,7 @@ import 'package:dabbler/features/profile/presentation/controllers/profile_contro
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -85,7 +86,7 @@ class _News extends StateNotifier<NewsTabState> implements NewsTabNotifier {
 
 class _Profile extends StateNotifier<ProfileState>
     implements ProfileController {
-  _Profile() : super(const ProfileState());
+  _Profile([super.state = const ProfileState()]);
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -116,6 +117,7 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   ActiveFeedState activeState = const ActiveFeedLoading(),
   Locale locale = const Locale('en'),
   Key? boundaryKey,
+  ProfileState profileState = const ProfileState(),
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -144,9 +146,16 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
         followingActivitiesProvider.overrideWith((ref) => _Acts()),
         activeFeedProvider.overrideWith((ref) => _Active(activeState)),
         newsTabFeedProvider.overrideWith((ref) => _News()),
-        profileControllerProvider.overrideWith((ref) => _Profile()),
+        profileControllerProvider.overrideWith((ref) => _Profile(profileState)),
         unreadNotificationCountProvider.overrideWithValue(3),
         activeLocationProvider.overrideWith(_Location.new),
+        hasLikedProvider.overrideWith((ref, id) async => false),
+        hasRepostedProvider.overrideWith((ref, id) async => false),
+        myReactionsProvider.overrideWith((ref, id) async => <String>{}),
+        myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
+        sportsProvider.overrideWith((ref) async => []),
+        vibesProvider.overrideWith((ref) async => []),
+        latestCommentProvider.overrideWith((ref, id) async => null),
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,

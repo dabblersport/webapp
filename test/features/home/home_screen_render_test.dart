@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/data/models/feed/feed_item.dart';
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -70,6 +73,69 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   });
 }
 
+Post _post(String id, String name, String body, String sport, int likes,
+        {int comments = 0, Duration ago = const Duration(hours: 2)}) =>
+    Post(
+      id: id,
+      authorProfileId: 'prof-$id',
+      authorUserId: 'user-$id',
+      authorDisplayName: name,
+      kind: PostKind.original,
+      visibility: PostVisibility.public,
+      postType: PostType.dab,
+      personaTypeSnapshot: 'player',
+      body: body,
+      sport: sport,
+      tags: const <String>['dabblersport'],
+      likeCount: likes,
+      commentCount: comments,
+      createdAt: DateTime.now().subtract(ago),
+      updatedAt: DateTime.now(),
+    );
+
+final FeedData _feed = FeedData(
+  items: <FeedItem>[
+    FeedPostItem(
+      _post(
+        'a',
+        'Suraj Mehta',
+        'Anyone playing cricket in Dubai this weekend? We need 2 more for a '
+            'full side. DM if interested',
+        'Cricket',
+        12,
+        comments: 4,
+      ),
+    ),
+    FeedNewsItem(
+      newsId: 'n1',
+      id: 'n1',
+      title: const {'en': 'Dubai Padel Open returns with a record prize pool'},
+      body: const {
+        'en': 'Organisers confirmed 64 pairs will compete across three days.',
+      },
+      likeCount: 0,
+      commentCount: 3,
+      viewCount: 120,
+      tags: const [],
+      isPinned: false,
+      priorityScore: 0,
+      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
+      sourceLabel: 'Gulf Sport',
+    ),
+    FeedPostItem(
+      _post(
+        'b',
+        'Khalid Al Mansouri',
+        'Weekly Dubai Football Night - all welcome',
+        'Football',
+        38,
+        ago: const Duration(hours: 8),
+      ),
+    ),
+  ],
+  hasMore: false,
+);
+
 final List<ActiveEvent> _events = <ActiveEvent>[
   GameCreatedEvent(
     id: 'g1',
@@ -136,6 +202,14 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       await _shoot(tester, key, 'home-$dir-active');
+    }, variant: desktop);
+
+    testWidgets('renders Home (For You, posts + news) — $dir', (tester) async {
+      const Key key = Key('shot');
+      await pumpHome(tester, feedState: _feed, locale: locale, boundaryKey: key);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+      await _shoot(tester, key, 'home-$dir-for-you-posts');
     }, variant: desktop);
 
     testWidgets('renders Home (For You, error) — $dir', (tester) async {
