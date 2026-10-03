@@ -13,7 +13,7 @@ import 'package:flutter/widgets.dart';
 /// user is left on a blank white page (web) or a splash screen that never
 /// gets dismissed (iOS/native, since splash removal is tied to the first
 /// Flutter frame). A "best-effort" `runApp(MyApp())` fallback was no better:
-/// `MyApp`'s widget tree reads `Supabase.instance`/`AppTheme` immediately,
+/// `MyApp`'s widget tree reads `Supabase.instance`/`the Material theme` immediately,
 /// both uninitialized on this path, so it throws again deeper in the tree
 /// with nothing rendered either way. Neither branch ever surfaced a real
 /// error state. This widget has no dependency on anything bootstrap may

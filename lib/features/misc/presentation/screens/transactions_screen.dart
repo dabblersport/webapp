@@ -28,7 +28,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   Widget build(BuildContext context) {
     final user = _authService.getCurrentUser();
 
-    // One layout at every width: the Material AdaptiveScaffold rail wrapper is
+    // One layout at every width: the wide-screen rail wrapper is
     // not a DS component; the app shell owns wide navigation.
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(

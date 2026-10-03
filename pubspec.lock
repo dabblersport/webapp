@@ -814,7 +814,7 @@ packages:
     source: hosted
     version: "4.1.2"
   iconsax_flutter:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: iconsax_flutter
       sha256: d14b4cec8586025ac15276bdd40f6eea308cb85748135965bb6255f14beb2564
@@ -1259,7 +1259,7 @@ packages:
     source: hosted
     version: "1.5.0"
   random_avatar:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: random_avatar
       sha256: "1468b060ac4324fa4f6aeeced732079638d9b6a64838b705ecbe9f208bd1609b"

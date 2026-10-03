@@ -20,7 +20,7 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final submissionsAsync = ref.watch(myVenueSubmissionsProvider);
 
-    // One layout at every width (AdaptiveScaffold is not a DS component).
+    // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Venue submissions',

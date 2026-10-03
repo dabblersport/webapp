@@ -155,7 +155,7 @@ class _PersonaOption {
   final String title;
   final String description;
 
-  /// The DS icon name (Iconsax vocabulary).
+  /// The DS icon name (DS icon vocabulary).
   final String icon;
 
   const _PersonaOption({

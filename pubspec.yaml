@@ -44,8 +44,6 @@ dependencies:
   dabbler_design_system:
     path: ../dabbler-design-system
 
-  # Iconsax - Beautiful outline and bold icons from iconsax.io
-  iconsax_flutter: ^1.0.0
 
   # Local storage for theme preferences
   shared_preferences: ^2.3.2
@@ -139,7 +137,6 @@ dependencies:
 
   # Sign in with Apple (iOS) — required for App Store when Google sign-in is offered
   sign_in_with_apple: ^8.1.0
-  random_avatar: ^0.0.8
   mapbox_search: ^4.4.0
 
   # Map rendering (no API key required — OpenStreetMap tiles)

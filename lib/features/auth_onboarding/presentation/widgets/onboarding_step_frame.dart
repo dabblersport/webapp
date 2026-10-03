@@ -105,7 +105,7 @@ class OnboardingStepFrame extends StatelessWidget {
                   ),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    // `arrow-left` mirrored under RTL: Iconsax `arrow-right`
+                    // `arrow-left` mirrored under RTL: `arrow-right`
                     // is a boxed glyph, not the counterpart of `arrow-left`.
                     child: Transform.flip(
                       flipX: rtl,

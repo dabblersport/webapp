@@ -49,7 +49,7 @@ class ProfileSportsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // One layout at every width: the Material AdaptiveScaffold rail wrapper
+    // One layout at every width: the wide-screen rail wrapper
     // is not a DS component (same call as sports_library_screen, W5).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(

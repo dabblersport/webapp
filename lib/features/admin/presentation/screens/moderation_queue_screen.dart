@@ -42,7 +42,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     final isAdminAsync = ref.watch(isAdminProvider);
     final queueAsync = ref.watch(moderationQueueProvider);
 
-    // One layout at every width: the Material AdaptiveScaffold rail wrapper is
+    // One layout at every width: the wide-screen rail wrapper is
     // not a DS component; the app shell owns wide navigation.
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
