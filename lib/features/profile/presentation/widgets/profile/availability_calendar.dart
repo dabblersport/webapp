@@ -1,7 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+/// Per-day availability, as a paged month grid. No design frame (PLAN §2c):
+/// DS surfaces and status roles at their defaults.
+///
+/// [DabblerCalendar] is not used: it selects dates, while this grid paints a
+/// four-way status per day, which the DS calendar has no slot for (DS gap).
 class AvailabilityCalendar extends StatefulWidget {
   final Map<DateTime, AvailabilityStatus> availability;
   final Function(DateTime, AvailabilityStatus)? onAvailabilityChanged;
@@ -24,6 +29,61 @@ class AvailabilityCalendar extends StatefulWidget {
   State<AvailabilityCalendar> createState() => _AvailabilityCalendarState();
 }
 
+/// The status roles, labels and fills both views share.
+abstract final class _Availability {
+  static DabblerStatusColor? statusOf(
+    DabblerColors colors,
+    AvailabilityStatus status,
+  ) {
+    switch (status) {
+      case AvailabilityStatus.available:
+        return colors.success;
+      case AvailabilityStatus.maybe:
+        return colors.warning;
+      case AvailabilityStatus.busy:
+        return colors.error;
+      case AvailabilityStatus.notSet:
+        return null;
+    }
+  }
+
+  static Color dot(DabblerColors colors, AvailabilityStatus s) =>
+      statusOf(colors, s)?.base ?? colors.borderStrong;
+
+  static Color fill(DabblerColors colors, AvailabilityStatus s) =>
+      statusOf(colors, s)?.surface ?? colors.surfaceGrey;
+
+  static Color ink(DabblerColors colors, AvailabilityStatus s) =>
+      statusOf(colors, s)?.strong ?? colors.textPrimary;
+
+  static String label(AvailabilityStatus status, {bool short = false}) {
+    switch (status) {
+      case AvailabilityStatus.available:
+        return 'Available';
+      case AvailabilityStatus.maybe:
+        return short ? 'Maybe' : 'Maybe Available';
+      case AvailabilityStatus.busy:
+        return 'Busy';
+      case AvailabilityStatus.notSet:
+        return 'Not Set';
+    }
+  }
+
+  static Widget dotWidget(DabblerColors colors, AvailabilityStatus s,
+      {double size = 12}) {
+    return DabblerSurface(
+      width: size,
+      height: size,
+      radius: DabblerRadius.pill,
+      fill: dot(colors, s),
+      borderWidth: 0,
+    );
+  }
+
+  static bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
 class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   late PageController _pageController;
   int _currentPage = 0;
@@ -40,17 +100,20 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     super.dispose();
   }
 
+  TextStyle _style(DabblerTypeStyle style) =>
+      style.resolveForDirection(Directionality.of(context));
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _buildHeader(),
-        const SizedBox(height: 16),
+        const SizedBox(height: DabblerSpacing.space5),
         _buildLegend(),
-        const SizedBox(height: 16),
+        const SizedBox(height: DabblerSpacing.space5),
         _buildCalendar(),
         if (widget.selectedDate != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: DabblerSpacing.space5),
           _buildSelectedDateInfo(),
         ],
       ],
@@ -58,67 +121,58 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   }
 
   Widget _buildHeader() {
+    final colors = DabblerColors.of(context);
     final currentMonth = DateTime.now().add(Duration(days: _currentPage * 30));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
+        DabblerButton.icon(
+          icon: 'arrow-left-2',
+          semanticLabel: 'Previous month',
+          disabled: _currentPage <= 0,
           onPressed: _currentPage > 0 ? _previousMonth : null,
-          icon: const Icon(Icons.chevron_left),
         ),
         Text(
           DateFormat('MMMM yyyy').format(currentMonth),
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: _style(DabblerType.title3).copyWith(color: colors.textPrimary),
         ),
-        IconButton(
-          onPressed: _currentPage < widget.monthsToShow - 1 ? _nextMonth : null,
-          icon: const Icon(Icons.chevron_right),
+        DabblerButton.icon(
+          icon: 'arrow-right-2',
+          semanticLabel: 'Next month',
+          disabled: _currentPage >= widget.monthsToShow - 1,
+          onPressed:
+              _currentPage < widget.monthsToShow - 1 ? _nextMonth : null,
         ),
       ],
     );
   }
 
   Widget _buildLegend() {
+    final colors = DabblerColors.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _LegendItem(
-          color: Colors.green,
-          label: 'Available',
-          status: AvailabilityStatus.available,
-        ),
-        _LegendItem(
-          color: Colors.orange,
-          label: 'Maybe',
-          status: AvailabilityStatus.maybe,
-        ),
-        _LegendItem(
-          color: Colors.red,
-          label: 'Busy',
-          status: AvailabilityStatus.busy,
-        ),
-        _LegendItem(
-          color: Colors.grey,
-          label: 'Not Set',
-          status: AvailabilityStatus.notSet,
-        ),
+        for (final status in AvailabilityStatus.values)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _Availability.dotWidget(colors, status),
+              const SizedBox(width: DabblerSpacing.space1),
+              Text(
+                _Availability.label(status, short: true),
+                style: _style(DabblerType.caption1)
+                    .copyWith(color: colors.textSecondary),
+              ),
+            ],
+          ),
       ],
     );
   }
 
   Widget _buildCalendar() {
-    return Container(
+    return DabblerSurface.card(
       height: 300,
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-        ),
-      ),
       child: PageView.builder(
         controller: _pageController,
         onPageChanged: (page) => setState(() => _currentPage = page),
@@ -132,58 +186,47 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   }
 
   Widget _buildMonthView(DateTime month) {
+    final colors = DabblerColors.of(context);
     final firstDayOfMonth = DateTime(month.year, month.month, 1);
     final lastDayOfMonth = DateTime(month.year, month.month + 1, 0);
     final firstDayOfWeek = firstDayOfMonth.weekday % 7;
 
     // Generate all days for the month view (including padding days)
-    final days = <DateTime?>[];
-
-    // Add empty days for padding
-    for (int i = 0; i < firstDayOfWeek; i++) {
-      days.add(null);
-    }
-
-    // Add actual days of the month
-    for (int day = 1; day <= lastDayOfMonth.day; day++) {
-      days.add(DateTime(month.year, month.month, day));
-    }
+    final days = <DateTime?>[
+      for (int i = 0; i < firstDayOfWeek; i++) null,
+      for (int day = 1; day <= lastDayOfMonth.day; day++)
+        DateTime(month.year, month.month, day),
+    ];
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsetsDirectional.all(DabblerSpacing.space5),
       child: Column(
         children: [
           // Weekday headers
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                .map(
-                  (day) => Expanded(
-                    child: Center(
-                      child: Text(
-                        day,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                        ),
+            children: [
+              for (final day in const ['S', 'M', 'T', 'W', 'T', 'F', 'S'])
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: _style(DabblerType.caption1).copyWith(
+                        fontWeight: DabblerType.bold,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
-                )
-                .toList(),
+                ),
+            ],
           ),
-          const SizedBox(height: 8),
-
-          // Calendar grid
+          const SizedBox(height: DabblerSpacing.space3),
           Expanded(
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 7,
                 childAspectRatio: 1,
-                crossAxisSpacing: 4,
-                mainAxisSpacing: 4,
+                crossAxisSpacing: DabblerSpacing.space1,
+                mainAxisSpacing: DabblerSpacing.space1,
               ),
               itemCount: days.length,
               itemBuilder: (context, index) {
@@ -191,7 +234,6 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
                 if (date == null) {
                   return const SizedBox.shrink();
                 }
-
                 return _buildDayCell(date);
               },
             ),
@@ -202,16 +244,12 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   }
 
   Widget _buildDayCell(DateTime date) {
+    final colors = DabblerColors.of(context);
     final availability = widget.availability[date] ?? AvailabilityStatus.notSet;
     final isSelected =
         widget.selectedDate != null &&
-        date.year == widget.selectedDate!.year &&
-        date.month == widget.selectedDate!.month &&
-        date.day == widget.selectedDate!.day;
-    final isToday =
-        DateTime.now().year == date.year &&
-        DateTime.now().month == date.month &&
-        DateTime.now().day == date.day;
+        _Availability.sameDay(date, widget.selectedDate!);
+    final isToday = _Availability.sameDay(DateTime.now(), date);
 
     return GestureDetector(
       onTap: () {
@@ -220,26 +258,17 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
           _showAvailabilitySelector(date, availability);
         }
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: _getAvailabilityColor(availability).withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).primaryColor
-                : isToday
-                ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
-                : Colors.transparent,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Center(
-          child: Text(
-            date.day.toString(),
-            style: TextStyle(
-              fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-              color: _getTextColor(availability),
-            ),
+      child: DabblerSurface(
+        radius: DabblerRadius.md,
+        fill: _Availability.fill(colors, availability),
+        borderColor: isSelected || isToday ? colors.brandPrimary : null,
+        borderWidth: isSelected ? 2 : (isToday ? 1 : 0),
+        center: true,
+        child: Text(
+          date.day.toString(),
+          style: _style(DabblerType.footnote).copyWith(
+            fontWeight: isToday ? DabblerType.bold : DabblerType.regular,
+            color: _Availability.ink(colors, availability),
           ),
         ),
       ),
@@ -248,55 +277,40 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
 
   Widget _buildSelectedDateInfo() {
     if (widget.selectedDate == null) return const SizedBox.shrink();
+    final colors = DabblerColors.of(context);
 
     final date = widget.selectedDate!;
     final availability = widget.availability[date] ?? AvailabilityStatus.notSet;
     final formattedDate = DateFormat('EEEE, MMMM d, yyyy').format(date);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-        ),
-      ),
+    return DabblerSurface.card(
+      padding: const EdgeInsetsDirectional.all(DabblerSpacing.cardPadding),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             formattedDate,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: _style(DabblerType.headline)
+                .copyWith(color: colors.textPrimary),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DabblerSpacing.space3),
           Row(
             children: [
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: _getAvailabilityColor(availability),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
+              _Availability.dotWidget(colors, availability, size: 16),
+              const SizedBox(width: DabblerSpacing.space3),
               Text(
-                _getAvailabilityLabel(availability),
-                style: Theme.of(context).textTheme.bodyMedium,
+                _Availability.label(availability),
+                style: _style(DabblerType.body)
+                    .copyWith(color: colors.textPrimary),
               ),
             ],
           ),
           if (widget.isEditable) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => _showAvailabilitySelector(date, availability),
-                child: const Text('Change Availability'),
-              ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerButton(
+              label: 'Change Availability',
+              fullWidth: true,
+              onPressed: () => _showAvailabilitySelector(date, availability),
             ),
           ],
         ],
@@ -304,93 +318,47 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     );
   }
 
-  Color _getAvailabilityColor(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-        return Colors.green;
-      case AvailabilityStatus.maybe:
-        return Colors.orange;
-      case AvailabilityStatus.busy:
-        return Colors.red;
-      case AvailabilityStatus.notSet:
-        return Colors.grey[300]!;
-    }
-  }
-
-  Color _getTextColor(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-      case AvailabilityStatus.maybe:
-      case AvailabilityStatus.busy:
-        return Colors.white;
-      case AvailabilityStatus.notSet:
-        return Colors.black;
-    }
-  }
-
-  String _getAvailabilityLabel(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-        return 'Available';
-      case AvailabilityStatus.maybe:
-        return 'Maybe Available';
-      case AvailabilityStatus.busy:
-        return 'Busy';
-      case AvailabilityStatus.notSet:
-        return 'Not Set';
-    }
-  }
-
   void _showAvailabilitySelector(DateTime date, AvailabilityStatus current) {
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Set Availability'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              DateFormat('EEEE, MMMM d, yyyy').format(date),
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 16),
-            ...AvailabilityStatus.values.map(
-              (status) => RadioListTile(
-                title: Row(
-                  children: [
-                    Container(
-                      width: 16,
-                      height: 16,
-                      decoration: BoxDecoration(
-                        color: _getAvailabilityColor(status),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(_getAvailabilityLabel(status)),
-                  ],
+      builder: (dialogContext) {
+        final colors = DabblerColors.of(dialogContext);
+        return DabblerDialog(
+          title: 'Set Availability',
+          description: DateFormat('EEEE, MMMM d, yyyy').format(date),
+          onClose: () => Navigator.of(dialogContext).pop(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final status in AvailabilityStatus.values)
+                DabblerInputRow(
+                  leading: _Availability.dotWidget(colors, status, size: 16),
+                  title: _Availability.label(status),
+                  trailing: status == current
+                      ? DabblerIcon(
+                          'tick-circle',
+                          size: DabblerSizing.iconMd,
+                          color: colors.brandPrimary,
+                        )
+                      : null,
+                  onTap: () {
+                    widget.onAvailabilityChanged?.call(date, status);
+                    Navigator.of(dialogContext).pop();
+                  },
                 ),
-                value: status,
-                groupValue: current,
-                onChanged: (value) {
-                  if (value != null) {
-                    widget.onAvailabilityChanged?.call(date, value);
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 
   void _previousMonth() {
     if (_currentPage > 0) {
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: DabblerMotion.base,
+        curve: DabblerMotion.easeOut,
       );
     }
   }
@@ -398,38 +366,10 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   void _nextMonth() {
     if (_currentPage < widget.monthsToShow - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: DabblerMotion.base,
+        curve: DabblerMotion.easeOut,
       );
     }
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  final Color color;
-  final String label;
-  final AvailabilityStatus status;
-
-  const _LegendItem({
-    required this.color,
-    required this.label,
-    required this.status,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
-    );
   }
 }
 
@@ -466,24 +406,30 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
     return date.subtract(Duration(days: weekday));
   }
 
+  TextStyle _style(DabblerTypeStyle style) =>
+      style.resolveForDirection(Directionality.of(context));
+
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         _buildWeekHeader(),
-        const SizedBox(height: 12),
+        const SizedBox(height: DabblerSpacing.space4),
         _buildWeekDays(),
       ],
     );
   }
 
   Widget _buildWeekHeader() {
+    final colors = DabblerColors.of(context);
     final weekEnd = _currentWeekStart.add(const Duration(days: 6));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(
+        DabblerButton.icon(
+          icon: 'arrow-left-2',
+          semanticLabel: 'Previous week',
           onPressed: () {
             setState(() {
               _currentWeekStart = _currentWeekStart.subtract(
@@ -491,15 +437,15 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
               );
             });
           },
-          icon: const Icon(Icons.chevron_left),
         ),
         Text(
           '${DateFormat('MMM d').format(_currentWeekStart)} - ${DateFormat('MMM d').format(weekEnd)}',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: _style(DabblerType.headline)
+              .copyWith(color: colors.textPrimary),
         ),
-        IconButton(
+        DabblerButton.icon(
+          icon: 'arrow-right-2',
+          semanticLabel: 'Next week',
           onPressed: () {
             setState(() {
               _currentWeekStart = _currentWeekStart.add(
@@ -507,63 +453,50 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
               );
             });
           },
-          icon: const Icon(Icons.chevron_right),
         ),
       ],
     );
   }
 
   Widget _buildWeekDays() {
+    final colors = DabblerColors.of(context);
     return Row(
       children: List.generate(7, (index) {
         final date = _currentWeekStart.add(Duration(days: index));
         final availability =
             widget.availability[date] ?? AvailabilityStatus.notSet;
-        final isToday =
-            DateTime.now().year == date.year &&
-            DateTime.now().month == date.month &&
-            DateTime.now().day == date.day;
+        final isToday = _Availability.sameDay(DateTime.now(), date);
+        final ink = _Availability.ink(colors, availability);
 
         return Expanded(
           child: GestureDetector(
             onTap: widget.isEditable
                 ? () => _showQuickAvailabilitySelector(date, availability)
                 : null,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: _getAvailabilityColor(
-                  availability,
-                ).withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(8),
-                border: isToday
-                    ? Border.all(
-                        color: Theme.of(context).primaryColor,
-                        width: 2,
-                      )
-                    : null,
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    DateFormat('E').format(date),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _getTextColor(availability),
+            child: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 2),
+              child: DabblerSurface(
+                radius: DabblerRadius.md,
+                fill: _Availability.fill(colors, availability),
+                borderColor: isToday ? colors.brandPrimary : null,
+                borderWidth: isToday ? 2 : 0,
+                padding: const EdgeInsetsDirectional.symmetric(
+                  vertical: DabblerSpacing.space4,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      DateFormat('E').format(date),
+                      style: _style(DabblerType.caption1)
+                          .copyWith(fontWeight: DabblerType.bold, color: ink),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date.day.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: _getTextColor(availability),
+                    const SizedBox(height: DabblerSpacing.space1),
+                    Text(
+                      date.day.toString(),
+                      style: _style(DabblerType.headline).copyWith(color: ink),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -576,96 +509,34 @@ class _WeeklyAvailabilityViewState extends State<WeeklyAvailabilityView> {
     DateTime date,
     AvailabilityStatus current,
   ) {
-    showAdaptiveSheet(
+    showDabblerSheet<void>(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      title: 'Set availability for ${DateFormat('EEEE, MMM d').format(date)}',
+      detent: DabblerSheetDetent.content,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          0,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+        ),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: DabblerSpacing.space3,
+          runSpacing: DabblerSpacing.space3,
           children: [
-            Text(
-              'Set availability for ${DateFormat('EEEE, MMM d').format(date)}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: AvailabilityStatus.values.map((status) {
-                return GestureDetector(
-                  onTap: () {
-                    widget.onAvailabilityChanged?.call(date, status);
-                    Navigator.pop(context);
-                  },
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: _getAvailabilityColor(status),
-                          shape: BoxShape.circle,
-                          border: current == status
-                              ? Border.all(
-                                  color: Theme.of(context).primaryColor,
-                                  width: 3,
-                                )
-                              : null,
-                        ),
-                        child: current == status
-                            ? const Icon(Icons.check, color: Colors.white)
-                            : null,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _getAvailabilityLabel(status),
-                        style: Theme.of(context).textTheme.bodySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+            for (final status in AvailabilityStatus.values)
+              DabblerChip(
+                label: _Availability.label(status, short: true),
+                selected: current == status,
+                onTap: () {
+                  widget.onAvailabilityChanged?.call(date, status);
+                  Navigator.pop(sheetContext);
+                },
+              ),
           ],
         ),
       ),
     );
-  }
-
-  Color _getAvailabilityColor(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-        return Colors.green;
-      case AvailabilityStatus.maybe:
-        return Colors.orange;
-      case AvailabilityStatus.busy:
-        return Colors.red;
-      case AvailabilityStatus.notSet:
-        return Colors.grey[300]!;
-    }
-  }
-
-  Color _getTextColor(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-      case AvailabilityStatus.maybe:
-      case AvailabilityStatus.busy:
-        return Colors.white;
-      case AvailabilityStatus.notSet:
-        return Colors.black;
-    }
-  }
-
-  String _getAvailabilityLabel(AvailabilityStatus status) {
-    switch (status) {
-      case AvailabilityStatus.available:
-        return 'Available';
-      case AvailabilityStatus.maybe:
-        return 'Maybe';
-      case AvailabilityStatus.busy:
-        return 'Busy';
-      case AvailabilityStatus.notSet:
-        return 'Not Set';
-    }
   }
 }
