@@ -88,7 +88,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             icon: 'language-square',
             route: '',
             searchTerms: [
-              'language', 'locale', 'translate', 'arabic', 'english', 'ar', 'en',
+              'language',
+              'locale',
+              'translate',
+              'arabic',
+              'english',
+              'ar',
+              'en',
             ],
           ),
           SettingsItem(
@@ -98,7 +104,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             icon: 'global',
             route: '',
             searchTerms: [
-              'country', 'region', 'egypt', 'uae', 'ksa', 'saudi', 'morocco',
+              'country',
+              'region',
+              'egypt',
+              'uae',
+              'ksa',
+              'saudi',
+              'morocco',
             ],
           ),
         ],
@@ -139,17 +151,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: DabblerMotion.screenEntrance,
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _animationController,
+        curve: DabblerMotion.standardInOut,
+      ),
     );
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _animationController,
-            curve: Curves.easeOutCubic,
+            curve: DabblerMotion.emphasizedDecelerate,
           ),
         );
     _animationController.forward();
@@ -166,9 +181,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     _searchController.dispose();
     super.dispose();
   }
-
-  TextStyle _type(DabblerTypeStyle s, Color c) =>
-      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
 
   @override
   Widget build(BuildContext context) {
@@ -224,19 +236,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            DabblerText(
               l10n.settings_hero_eyebrow,
-              style: _type(DabblerType.label, colors.brandPrimary),
+              style: DabblerType.label,
+              tone: DabblerTextTone.brand,
             ),
             const SizedBox(height: DabblerSpacing.space2),
-            Text(
-              l10n.settings_hero_title,
-              style: _type(DabblerType.title3, colors.textPrimary),
-            ),
+            DabblerText(l10n.settings_hero_title, style: DabblerType.title3),
             const SizedBox(height: DabblerSpacing.space3),
-            Text(
+            DabblerText(
               l10n.settings_hero_subtitle,
-              style: _type(DabblerType.subheadline, colors.textSecondary),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
           ],
         ),
@@ -469,7 +480,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     if (mounted) context.go('/profile');
   }
 
-  void _toast(String message, {DabblerToastTone tone = DabblerToastTone.neutral}) {
+  void _toast(
+    String message, {
+    DabblerToastTone tone = DabblerToastTone.neutral,
+  }) {
     DabblerToastProvider.of(
       context,
     ).show(DabblerToastSpec(message: message, tone: tone));
@@ -609,28 +623,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _buildVersionInfo(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(DabblerSpacing.space8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
+          DabblerText(
             l10n.settings_version_app_name,
-            style: _type(DabblerType.headline, colors.textPrimary),
+            style: DabblerType.headline,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             l10n.settings_version_label(_appVersion),
-            style: _type(DabblerType.footnote, colors.textSecondary),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             l10n.settings_version_copyright,
-            style: _type(DabblerType.caption1, colors.textTertiary),
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.tertiary,
             textAlign: TextAlign.center,
           ),
         ],
@@ -692,7 +707,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   void _showCountryPicker() {
     final currentCountry = ref.read(selectedCountryProvider).valueOrNull ?? '';
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
     showDabblerSheet<void>(
       context: context,
@@ -704,9 +718,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: DabblerSpacing.space4),
-            child: Text(
+            child: DabblerText(
               l10n.settings_country_picker_helper,
-              style: _type(DabblerType.footnote, colors.textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
           ),
           for (final c in _kSupportedCountries)

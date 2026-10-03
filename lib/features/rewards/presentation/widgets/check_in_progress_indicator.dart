@@ -91,7 +91,7 @@ class _WeekProgressCard extends StatelessWidget {
                 const SizedBox(width: DabblerSpacing.space2),
                 DabblerIcon(
                   'tick-circle',
-                  size: 16,
+                  size: DabblerSizing.iconInline,
                   weight: DabblerIconWeight.bold,
                   color: colors.brandPrimary,
                 ),
@@ -100,15 +100,12 @@ class _WeekProgressCard extends StatelessWidget {
               const Spacer(),
 
               // Days count
-              Text(
+              DabblerText(
                 '$completedDays/$totalDays days',
-                style: DabblerType.caption1
-                    .resolveForDirection(Directionality.of(context))
-                    .copyWith(
-                      color: isActive
-                          ? colors.brandPrimary
-                          : colors.textSecondary,
-                    ),
+                style: DabblerType.caption1,
+                tone: isActive
+                    ? DabblerTextTone.brand
+                    : DabblerTextTone.secondary,
               ),
             ],
           ),
@@ -152,10 +149,13 @@ class CompactCheckInProgressIndicator extends StatelessWidget {
               end: index < totalDays - 1 ? DabblerSpacing.space1 : 0,
             ),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              width: 16,
-              height: 16,
+              duration: DabblerMotion.durationOf(
+                context,
+                DabblerMotion.contentSwap,
+              ),
+              curve: DabblerMotion.standardInOut,
+              width: DabblerSizing.iconInline,
+              height: DabblerSizing.iconInline,
               decoration: BoxDecoration(
                 color: isCompleted ? colors.brandPrimary : colors.surfaceSunken,
                 shape: BoxShape.circle,

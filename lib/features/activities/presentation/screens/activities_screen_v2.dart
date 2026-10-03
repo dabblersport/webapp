@@ -285,11 +285,10 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
         Padding(
           padding: const EdgeInsets.all(DabblerSpacing.space4),
           child: Center(
-            child: Text(
+            child: DabblerText(
               'No more activities',
-              style: DabblerType.footnote
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(color: DabblerColors.of(context).textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
           ),
         ),

@@ -31,8 +31,6 @@ class SportAchievementsSection extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, SportAchievementsData data) {
-    final colors = DabblerColors.of(context);
-
     if (data.badges.isEmpty && data.recentEvents.isEmpty) {
       return const SportEmptySection(
         icon: 'cup',
@@ -70,22 +68,15 @@ class SportAchievementsSection extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        DabblerText(
                           _formatEventType(event.eventType),
-                          style: sportProfileText(
-                            context,
-                            DabblerType.subheadline,
-                            colors.textPrimary,
-                            weight: FontWeight.w600,
-                          ),
+                          style: DabblerType.subheadline,
+                          weight: DabblerTextWeight.semibold,
                         ),
-                        Text(
+                        DabblerText(
                           _formatEventData(event.eventData),
-                          style: sportProfileText(
-                            context,
-                            DabblerType.footnote,
-                            colors.textSecondary,
-                          ),
+                          style: DabblerType.footnote,
+                          tone: DabblerTextTone.secondary,
                         ),
                       ],
                     ),

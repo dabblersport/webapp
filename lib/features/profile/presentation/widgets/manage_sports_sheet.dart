@@ -162,19 +162,15 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   }
 
   void _toast(String message) {
-    DabblerToastProvider.of(context).show(
-      DabblerToastSpec(message: message, tone: DabblerToastTone.error),
-    );
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
-    final mutedStyle = DabblerType.subheadline
-        .resolveForDirection(dir)
-        .copyWith(color: colors.textSecondary);
 
     // The DabblerSheet body is already a scroll view, so this shrink-wraps
     // (the old DraggableScrollableSheet hosted its own list).
@@ -193,15 +189,9 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  'Manage Sports',
-                  style: DabblerType.title3
-                      .resolveForDirection(dir)
-                      .copyWith(color: colors.textPrimary),
-                ),
+                child: DabblerText('Manage Sports', style: DabblerType.title3),
               ),
-              if (_isSaving)
-                const DabblerSpinner(size: DabblerSpinnerSize.sm),
+              if (_isSaving) const DabblerSpinner(size: DabblerSpinnerSize.sm),
             ],
           ),
         ),
@@ -209,9 +199,10 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           padding: const EdgeInsetsDirectional.symmetric(
             horizontal: DabblerSpacing.space5,
           ),
-          child: Text(
+          child: DabblerText(
             'Tap a sport to add or remove it from your profile.',
-            style: mutedStyle,
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
         ),
         const SizedBox(height: DabblerSpacing.space4),
@@ -245,10 +236,11 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             if (filteredSports.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space8),
-                child: Text(
+                child: DabblerText(
                   'No sports match your search',
                   textAlign: TextAlign.center,
-                  style: mutedStyle,
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
                 ),
               );
             }
@@ -277,10 +269,11 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
-            child: Text(
+            child: DabblerText(
               'Failed to load sports',
               textAlign: TextAlign.center,
-              style: mutedStyle,
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
           ),
         ),

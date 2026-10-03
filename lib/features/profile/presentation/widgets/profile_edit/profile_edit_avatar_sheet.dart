@@ -46,7 +46,6 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final choices = widget.choicesFor(_generation);
     return SingleChildScrollView(
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -59,11 +58,10 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          DabblerText(
             'Pick one of 12 generated avatars or upload your own photo.',
-            style: DabblerType.subheadline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space7),
           GridView.count(

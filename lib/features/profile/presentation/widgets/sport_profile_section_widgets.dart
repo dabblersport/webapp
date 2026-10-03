@@ -22,21 +22,12 @@ class SportSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-
     return DabblerSurface.card(
       padding: const EdgeInsets.all(DabblerSpacing.space5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: sportProfileText(
-              context,
-              DabblerType.title3,
-              colors.textPrimary,
-            ),
-          ),
+          DabblerText(title, style: DabblerType.title3),
           const SizedBox(height: DabblerSpacing.space4),
           child,
         ],

@@ -104,11 +104,9 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
         },
         loading: () => const AdminLoading(),
         error: (error, stack) => Center(
-          child: Text(
+          child: DabblerText(
             'Failed to check admin status: $error',
-            style: DabblerType.body
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: DabblerColors.of(context).textPrimary),
+            style: DabblerType.body,
           ),
         ),
       ),
@@ -140,35 +138,30 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
                     tone: DabblerBadgeTone.warning,
                   ),
                   const Spacer(),
-                  Text(
+                  DabblerText(
                     dateFormat.format(report.createdAt),
-                    style: DabblerType.footnote
-                        .resolveForDirection(Directionality.of(context))
-                        .copyWith(color: colors.textSecondary),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                   ),
                 ],
               ),
               const SizedBox(height: DabblerSpacing.space4),
-              Text(
+              DabblerText(
                 '${report.targetType.toPostgresString().toUpperCase()}: ${report.targetId}',
-                style: DabblerType.headline
-                    .resolveForDirection(Directionality.of(context))
-                    .copyWith(color: colors.textPrimary),
+                style: DabblerType.headline,
               ),
               const SizedBox(height: DabblerSpacing.space1),
-              Text(
+              DabblerText(
                 'Reason: ${report.reason.toPostgresString()}',
-                style: DabblerType.subheadline
-                    .resolveForDirection(Directionality.of(context))
-                    .copyWith(color: colors.textSecondary),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
               if (report.details != null && report.details!.isNotEmpty) ...[
                 const SizedBox(height: DabblerSpacing.space1),
-                Text(
+                DabblerText(
                   'Details: ${report.details}',
-                  style: DabblerType.footnote
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -232,7 +225,6 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
       title: 'Report Details',
       detents: const <double>[0.7, 0.95],
       builder: (context) {
-        final colors = DabblerColors.of(context);
         return SingleChildScrollView(
           padding: const EdgeInsets.all(DabblerSpacing.space7),
           child: Column(
@@ -249,19 +241,9 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
               ),
               if (report.details != null && report.details!.isNotEmpty) ...[
                 const SizedBox(height: DabblerSpacing.space6),
-                Text(
-                  'Details',
-                  style: DabblerType.headline
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: colors.textPrimary),
-                ),
+                DabblerText('Details', style: DabblerType.headline),
                 const SizedBox(height: DabblerSpacing.space3),
-                Text(
-                  report.details!,
-                  style: DabblerType.body
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: colors.textPrimary),
-                ),
+                DabblerText(report.details!, style: DabblerType.body),
               ],
             ],
           ),
@@ -319,13 +301,10 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            DabblerText(
               'Select an action:',
-              style: DabblerType.subheadline
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(
-                    color: DabblerColors.of(dialogContext).textSecondary,
-                  ),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space2),
             for (final action in ModAction.values)

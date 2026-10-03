@@ -53,7 +53,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     DabblerToastProvider.of(context).show(
       const DabblerToastSpec(
         message: 'Exporting transactions...',
-        duration: Duration(seconds: 2),
+        duration: DabblerMotion.toastShort,
       ),
     );
   }

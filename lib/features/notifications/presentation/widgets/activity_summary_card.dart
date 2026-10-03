@@ -6,6 +6,7 @@
 // 8-day sparkline has no DS equivalent and is dropped (DS gap, see the KAN-420
 // report); the numbers it summarised are unchanged.
 
+import 'package:dabbler/core/constants/timing/profile_timing.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -17,13 +18,12 @@ class ActivitySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
     final activities = (state.activities as List<ActivityFeedEvent>);
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    final recent =
-        activities.where((a) => a.happenedAt.isAfter(cutoff)).toList();
+    final cutoff = DateTime.now().subtract(ProfileTiming.week);
+    final recent = activities
+        .where((a) => a.happenedAt.isAfter(cutoff))
+        .toList();
     final total = recent.length;
     final rewards = recent.where((a) => a.subjectType == 'reward').length;
 
@@ -37,11 +37,10 @@ class ActivitySummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          DabblerText(
             l10n.activity_last_7_days,
-            style: DabblerType.caption1
-                .resolveForDirection(dir)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space3),
           DabblerStatGrid(
@@ -62,15 +61,17 @@ class ActivitySummaryCard extends StatelessWidget {
   int _streak(List<ActivityFeedEvent> all) {
     if (all.isEmpty) return 0;
     final daysWithActivity = all
-        .map((a) =>
-            DateTime(a.happenedAt.year, a.happenedAt.month, a.happenedAt.day))
+        .map(
+          (a) =>
+              DateTime(a.happenedAt.year, a.happenedAt.month, a.happenedAt.day),
+        )
         .toSet();
     int streak = 0;
     var cursor = DateTime.now();
     cursor = DateTime(cursor.year, cursor.month, cursor.day);
     while (daysWithActivity.contains(cursor)) {
       streak += 1;
-      cursor = cursor.subtract(const Duration(days: 1));
+      cursor = cursor.subtract(ProfileTiming.day);
     }
     return streak;
   }

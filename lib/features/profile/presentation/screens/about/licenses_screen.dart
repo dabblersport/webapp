@@ -1,4 +1,3 @@
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -122,18 +121,16 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
           DabblerSpacing.space8,
         ),
         children: [
-          Text(
+          DabblerText(
             'This app is built with amazing open source libraries. We thank all contributors for their work.',
-            style: composerType(context, DabblerType.body, colors.textSecondary),
+            style: DabblerType.body,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             '${_licenses.length} open source packages',
-            style: composerType(
-              context,
-              DabblerType.footnote,
-              colors.textTertiary,
-            ),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.tertiary,
           ),
           const SizedBox(height: DabblerSpacing.space5),
           DabblerSearchField(
@@ -156,7 +153,7 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
                   DabblerInputRow(
                     leading: DabblerIcon(
                       'code',
-                      size: 20,
+                      size: DabblerSizing.iconRow,
                       color: colors.textSecondary,
                     ),
                     title: license.name,
@@ -207,30 +204,21 @@ class _LicenseDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     Widget detail(String label, String value) => Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 88,
-            child: Text(
+            width: DabblerSizing.labelColumnWidth,
+            child: DabblerText(
               label,
-              style: composerType(
-                context,
-                DabblerType.footnote,
-                colors.textTertiary,
-                weight: FontWeight.w600,
-              ),
+              style: DabblerType.footnote,
+              weight: DabblerTextWeight.semibold,
+              tone: DabblerTextTone.tertiary,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: composerType(context, DabblerType.body, colors.textPrimary),
-            ),
-          ),
+          Expanded(child: DabblerText(value, style: DabblerType.body)),
         ],
       ),
     );
@@ -244,14 +232,12 @@ class _LicenseDetails extends StatelessWidget {
         detail('Copyright', license.copyright),
         detail('URL', license.url),
         const SizedBox(height: DabblerSpacing.space3),
-        Text(
-          'Description',
-          style: composerType(context, DabblerType.headline, colors.textPrimary),
-        ),
+        DabblerText('Description', style: DabblerType.headline),
         const SizedBox(height: DabblerSpacing.space2),
-        Text(
+        DabblerText(
           license.description,
-          style: composerType(context, DabblerType.body, colors.textSecondary),
+          style: DabblerType.body,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space6),
         DabblerButton(

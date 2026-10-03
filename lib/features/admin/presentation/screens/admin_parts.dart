@@ -66,22 +66,13 @@ class AdminInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final labelText = Text(
+    final labelText = DabblerText(
       label,
-      style: DabblerType.subheadline
-          .resolveForDirection(Directionality.of(context))
-          .copyWith(
-            color: colors.textSecondary,
-            fontWeight: labelWidth != null ? DabblerType.semibold : null,
-          ),
+      style: DabblerType.subheadline,
+      tone: DabblerTextTone.secondary,
+      weight: labelWidth != null ? DabblerTextWeight.semibold : null,
     );
-    final valueStyle = DabblerType.subheadline
-        .resolveForDirection(Directionality.of(context))
-        .copyWith(
-          color: colors.textPrimary,
-          fontWeight: labelWidth == null ? DabblerType.semibold : null,
-        );
+    final valueWeight = labelWidth == null ? DabblerTextWeight.semibold : null;
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
       child: labelWidth != null
@@ -89,7 +80,13 @@ class AdminInfoRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(width: labelWidth, child: labelText),
-                Expanded(child: Text(value, style: valueStyle)),
+                Expanded(
+                  child: DabblerText(
+                    value,
+                    style: DabblerType.subheadline,
+                    weight: valueWeight,
+                  ),
+                ),
               ],
             )
           : Row(
@@ -97,9 +94,10 @@ class AdminInfoRow extends StatelessWidget {
               children: [
                 labelText,
                 Flexible(
-                  child: Text(
+                  child: DabblerText(
                     value,
-                    style: valueStyle,
+                    style: DabblerType.subheadline,
+                    weight: valueWeight,
                     textAlign: TextAlign.end,
                   ),
                 ),

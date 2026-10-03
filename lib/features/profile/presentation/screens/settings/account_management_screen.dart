@@ -56,18 +56,21 @@ class _AccountManagementScreenState
 
   void _setupAnimations() {
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: DabblerMotion.screenEntrance,
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+      CurvedAnimation(
+        parent: _animationController,
+        curve: DabblerMotion.standardInOut,
+      ),
     );
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
           CurvedAnimation(
             parent: _animationController,
-            curve: Curves.easeOutCubic,
+            curve: DabblerMotion.emphasizedDecelerate,
           ),
         );
 
@@ -164,7 +167,7 @@ class _AccountManagementScreenState
             position: _slideAnimation,
             child: _isLoading
                 ? const SizedBox(
-                    height: 200,
+                    height: DabblerSizing.mediaPreviewHeight,
                     child: Center(child: DabblerSpinner()),
                   )
                 : Column(
@@ -686,15 +689,13 @@ class AccountSecurityIntro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        DabblerText(
           'Secure your account',
-          style: DabblerType.footnote
-              .resolveForDirection(Directionality.of(context))
-              .copyWith(color: colors.textSecondary),
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space2),
         const DabblerBanner(
@@ -755,20 +756,15 @@ class DeleteAccountDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
+          DabblerText(
             AppLocalizations.of(context).account_delete_dialog_warning,
-            style: DabblerType.body
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(
-                  color: colors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
+            style: DabblerType.body,
+            weight: DabblerTextWeight.bold,
           ),
           const SizedBox(height: DabblerSpacing.space5),
           DabblerTextField(

@@ -20,9 +20,6 @@ const _kModes = <(String, String, ThemeMode)>[
 class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   final ThemeService _themeService = ThemeService();
 
-  TextStyle _type(DabblerTypeStyle s, Color c) =>
-      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
-
   @override
   Widget build(BuildContext context) {
     return DabblerPage(
@@ -81,18 +78,16 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           children: [
             DabblerIcon(
               _isDark ? 'moon' : 'sun-1',
-              size: 48,
+              size: DabblerSizing.tileLg,
               color: colors.brandPrimary,
             ),
             const SizedBox(height: DabblerSpacing.space5),
-            Text(
-              'Customize your theme',
-              style: _type(DabblerType.title2, colors.textPrimary),
-            ),
+            DabblerText('Customize your theme', style: DabblerType.title2),
             const SizedBox(height: DabblerSpacing.space3),
-            Text(
+            DabblerText(
               'Choose how the app should look and when themes should automatically switch.',
-              style: _type(DabblerType.subheadline, colors.textSecondary),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
           ],
         ),
@@ -114,7 +109,6 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildThemeModeSection() {
-    final colors = DabblerColors.of(context);
     final current = _kModes.firstWhere(
       (m) => m.$3 == _themeService.themeMode,
       orElse: () => _kModes.last,
@@ -130,8 +124,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           allowNoSelection: true,
           value: _themeService.autoThemeEnabled ? null : current.$3.name,
           items: [
-            for (final m in _kModes)
-              DabblerTabItem(id: m.$3.name, label: m.$1),
+            for (final m in _kModes) DabblerTabItem(id: m.$3.name, label: m.$1),
           ],
           onChanged: (id) {
             final mode = _kModes.firstWhere((m) => m.$3.name == id).$3;
@@ -140,9 +133,10 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           },
         ),
         if (!_themeService.autoThemeEnabled)
-          Text(
+          DabblerText(
             current.$2,
-            style: _type(DabblerType.footnote, colors.textSecondary),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           ),
       ],
     );
@@ -196,8 +190,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _dot(Color color) => SizedBox(
-    width: 14,
-    height: 14,
+    width: DabblerSizing.swatch,
+    height: DabblerSizing.swatch,
     child: DecoratedBox(
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     ),
@@ -271,9 +265,10 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
       ),
       title: title,
       subtitle: subtitle,
-      trailing: Text(
+      trailing: DabblerText(
         _themeService.formatTime(time),
-        style: _type(DabblerType.headline, colors.brandPrimary),
+        style: DabblerType.headline,
+        tone: DabblerTextTone.brand,
       ),
     );
   }

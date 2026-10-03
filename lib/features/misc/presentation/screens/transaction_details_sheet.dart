@@ -61,7 +61,6 @@ class TransactionDetailsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final isRefund = transaction['type'] == 'refund';
 
     return Padding(
@@ -78,17 +77,14 @@ class TransactionDetailsSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    DabblerText(
                       transaction['title'],
-                      style: DabblerType.title3
-                          .resolveForDirection(Directionality.of(context))
-                          .copyWith(color: colors.textPrimary),
+                      style: DabblerType.title3,
                     ),
-                    Text(
+                    DabblerText(
                       'Transaction ID: ${transaction['id']}',
-                      style: DabblerType.footnote
-                          .resolveForDirection(Directionality.of(context))
-                          .copyWith(color: colors.textSecondary),
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.secondary,
                     ),
                   ],
                 ),
@@ -101,22 +97,18 @@ class TransactionDetailsSheet extends StatelessWidget {
             padding: const EdgeInsets.all(DabblerSpacing.space7),
             child: Column(
               children: [
-                Text(
+                DabblerText(
                   'Amount',
-                  style: DabblerType.subheadline
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
                 ),
                 const SizedBox(height: DabblerSpacing.space3),
-                Text(
+                DabblerText(
                   '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(2)}',
-                  style: DabblerType.largeTitle
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(
-                        color: isRefund
-                            ? colors.success.base
-                            : colors.brandPrimary,
-                      ),
+                  style: DabblerType.largeTitle,
+                  tone: isRefund
+                      ? DabblerTextTone.success
+                      : DabblerTextTone.brand,
                 ),
               ],
             ),
@@ -164,28 +156,22 @@ class TransactionDetailsSheet extends StatelessWidget {
   }
 
   Widget _detailRow(BuildContext context, String label, dynamic value) {
-    final colors = DabblerColors.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          DabblerText(
             label,
-            style: DabblerType.subheadline
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
           value is Widget
               ? value
-              : Text(
+              : DabblerText(
                   value.toString(),
-                  style: DabblerType.subheadline
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(
-                        color: colors.textPrimary,
-                        fontWeight: DabblerType.semibold,
-                      ),
+                  style: DabblerType.subheadline,
+                  weight: DabblerTextWeight.semibold,
                 ),
         ],
       ),

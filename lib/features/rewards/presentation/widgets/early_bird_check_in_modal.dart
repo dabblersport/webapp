@@ -26,9 +26,6 @@ class EarlyBirdCheckInModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final textStyle = DabblerType.footnote
-        .resolveForDirection(Directionality.of(context))
-        .copyWith(color: colors.textSecondary);
 
     return DabblerDialog(
       dismissible: false,
@@ -68,11 +65,16 @@ class EarlyBirdCheckInModal extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('Progress', style: textStyle),
+                    const DabblerText(
+                      'Progress',
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.secondary,
+                    ),
                     const Spacer(),
-                    Text(
+                    DabblerText(
                       '$currentDay/14 days',
-                      style: textStyle.copyWith(color: colors.brandPrimary),
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.brand,
                     ),
                   ],
                 ),
@@ -92,7 +94,10 @@ class EarlyBirdCheckInModal extends StatelessWidget {
               child: DabblerBadge(
                 label: '$streakCount Day Streak!',
                 status: colors.warning,
-                icon: const DabblerIcon('flash-1', size: 14),
+                icon: const DabblerIcon(
+                  'flash-1',
+                  size: DabblerSizing.iconInline,
+                ),
               ),
             ),
           ],
