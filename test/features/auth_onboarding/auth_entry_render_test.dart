@@ -123,6 +123,7 @@ Future<void> _pump(WidgetTester tester, Widget screen, Locale locale) async {
   for (var i = 0; i < 6; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+  await settleImages(tester);
 }
 
 void main() {

@@ -453,18 +453,26 @@ class ListingPageSpinner extends StatelessWidget {
       const DabblerPage(body: Center(child: DabblerSpinner()));
 }
 
-/// The cover of a listing card: the DS neutral well. The design system draws
-/// sport artwork here when the host app ships
-/// `assets/images/sports/<sport>-main-background.png`; this app does not ship
-/// them yet, and an unresolved asset would leave an empty cover and an image
-/// error per card, so the well is passed explicitly. The sport overlay mark
-/// still identifies the sport.
+/// The cover of a listing card: the sport's `main` background artwork from the
+/// design system, over the neutral well, which stays visible when the sport has
+/// no artwork (or while the image loads).
 class ListingCover extends StatelessWidget {
-  const ListingCover({super.key});
+  const ListingCover({super.key, this.sport});
+
+  /// The sport whose `main` background paints the cover; null, or a sport with
+  /// no artwork, leaves the token-derived fallback paint.
+  final DabblerSport? sport;
 
   @override
-  Widget build(BuildContext context) =>
-      ColoredBox(color: DabblerColors.of(context).surfaceGrey);
+  Widget build(BuildContext context) {
+    final Widget fallback = ColoredBox(
+      color: DabblerColors.of(context).surfaceGrey,
+    );
+    final DabblerSport? s = sport;
+    if (s == null) return fallback;
+    final Widget? art = DabblerSportBackground.maybe(s);
+    return art == null ? fallback : Stack(fit: StackFit.expand, children: [fallback, art]);
+  }
 }
 
 /// The badge row a listing card carries in its footer.

@@ -451,7 +451,7 @@ class _GameCard extends StatelessWidget {
     return DabblerCardEventLarge(
       title: game.title,
       sport: listingSportFor(game.sportName),
-      cover: const ListingCover(),
+      cover: ListingCover(sport: listingSportFor(game.sportName)),
       dateTime: game.scheduledAt != null
           ? _formatTime(game.scheduledAt!)
           : null,
