@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../utils/constants/route_constants.dart';
@@ -9,210 +10,154 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                const Spacer(),
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
 
-                // Success Animation/Icon
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check, size: 60, color: Colors.green),
-                ),
-                const SizedBox(height: 32),
-
-                // Success Message
-                Text(
-                  'Welcome to Social!',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-
-                Text(
-                  'You\'re all set up! Start connecting with friends, sharing your game experiences, and discovering new players in your area.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-
-                // Feature Preview Cards
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(
-                                  context,
-                                ).primaryColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                Icons.group,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Connect with Players',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Find and add friends who love the same sports',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.chat_bubble_outline,
-                                color: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Share Your Journey',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Post updates, photos, and celebrate your wins',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.sports_esports,
-                                color: Colors.orange,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Discover Games',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    'See what games your friends are playing',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: Colors.grey[600]),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Action Buttons
-                Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Navigate to main app with social/community tab selected
-                          context.go(RoutePaths.community);
-                        },
-                        child: const Text('Explore Social'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          // Navigate to main app with home tab
-                          context.go(RoutePaths.home);
-                        },
-                        child: const Text('Go to Home'),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Skip for now option
-                TextButton(
-                  onPressed: () {
-                    context.go(RoutePaths.home);
-                  },
-                  child: Text(
-                    'I\'ll explore later',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-              ],
+    return DabblerPage(
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DabblerButton(
+              label: 'Explore Social',
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () {
+                // Navigate to main app with social/community tab selected
+                context.go(RoutePaths.community);
+              },
             ),
-          ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerButton(
+              label: 'Go to Home',
+              tone: DabblerButtonTone.outlined,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () {
+                // Navigate to main app with home tab
+                context.go(RoutePaths.home);
+              },
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            DabblerButton(
+              label: 'I\'ll explore later',
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: () {
+                context.go(RoutePaths.home);
+              },
+            ),
+          ],
         ),
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+          vertical: DabblerSpacing.space10,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Center(
+              child: DabblerIconTile.named(
+                'tick-circle',
+                tone: DabblerIconTileTone.brand,
+                size: 96,
+              ),
+            ),
+            const SizedBox(height: DabblerSpacing.space10),
+            Text(
+              'Welcome to Social!',
+              textAlign: TextAlign.center,
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+            Text(
+              'You\'re all set up! Start connecting with friends, sharing your game experiences, and discovering new players in your area.',
+              textAlign: TextAlign.center,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space10),
+            DabblerSurface.card(
+              radius: DabblerRadius.lg,
+              padding: const EdgeInsetsDirectional.all(DabblerSpacing.space5),
+              child: Column(
+                children: [
+                  _feature(
+                    context,
+                    icon: 'people',
+                    title: 'Connect with Players',
+                    description:
+                        'Find and add friends who love the same sports',
+                  ),
+                  const SizedBox(height: DabblerSpacing.space5),
+                  _feature(
+                    context,
+                    icon: 'message',
+                    title: 'Share Your Journey',
+                    description:
+                        'Post updates, photos, and celebrate your wins',
+                  ),
+                  const SizedBox(height: DabblerSpacing.space5),
+                  _feature(
+                    context,
+                    icon: 'game',
+                    title: 'Discover Games',
+                    description: 'See what games your friends are playing',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _feature(
+    BuildContext context, {
+    required String icon,
+    required String title,
+    required String description,
+  }) {
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    return Row(
+      children: [
+        DabblerIconTile.named(icon),
+        const SizedBox(width: DabblerSpacing.space5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: DabblerType.headline
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textPrimary),
+              ),
+              Text(
+                description,
+                style: DabblerType.footnote
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
