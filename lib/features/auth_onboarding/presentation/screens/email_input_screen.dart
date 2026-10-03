@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:go_router/go_router.dart';
-import 'package:dabbler/widgets/legal_doc_sheet.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/foundation.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart'
+    show AutofillHints, TextInputAction, TextInputType;
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class EmailInputScreen extends ConsumerStatefulWidget {
   const EmailInputScreen({super.key});
@@ -21,13 +21,13 @@ class EmailInputScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
   bool _isEmailValid = false;
   bool _getUpdates = true;
+  String? _fieldError;
 
   @override
   void initState() {
@@ -57,17 +57,21 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   void _onEmailChanged(String value) {
     final isValid = _validateEmail(value) == null;
-    if (isValid != _isEmailValid) {
-      setState(() {
-        _isEmailValid = isValid;
-      });
-    }
+    setState(() {
+      _isEmailValid = isValid;
+      _fieldError = null;
+    });
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+    final fieldError = _validateEmail(_emailController.text);
+    if (fieldError != null) {
+      setState(() => _fieldError = fieldError);
+      return;
+    }
 
     setState(() {
+      _fieldError = null;
       _isLoading = true;
       _errorMessage = null;
       _successMessage = null;
@@ -126,199 +130,105 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final colors = DabblerColors.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      resizeToAvoidBottomInset: true,
-      body: Center(
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        onBack: () => context.canPop()
+            ? context.pop()
+            : context.go(RoutePaths.authWelcome),
+      ),
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: Column(
-          children: [
-            OnboardingTopBar(
-              onBack: () => context.canPop()
-                  ? context.pop()
-                  : context.go(RoutePaths.authWelcome),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space8,
+              DabblerSpacing.space4,
+              DabblerSpacing.space8,
+              DabblerSpacing.space6,
             ),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    OnboardingScreenHead(
-                      title: AppLocalizations.of(context).email_input_title,
-                      subtitle: AppLocalizations.of(
-                        context,
-                      ).email_input_subtitle,
-                    ),
-                    _buildTermsTextInline(context),
-                    const SizedBox(height: 28),
-                    Text(
-                      AppLocalizations.of(context).email_input_label,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildEmailInputPill(context),
-                    const SizedBox(height: 16),
-                    _buildKeepInLoopRow(context),
-                    const SizedBox(height: 24),
-                    _buildContinueButtonPill(context),
-                    if (_errorMessage != null) ...[
-                      const SizedBox(height: 12),
-                      _InlineMessage(
-                        message: _errorMessage!,
-                        color: colorScheme.error,
-                      ),
-                    ],
-                    if (_successMessage != null) ...[
-                      const SizedBox(height: 12),
-                      _InlineMessage(
-                        message: _successMessage!,
-                        color: Colors.green,
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(color: colorScheme.outlineVariant),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'OR',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(color: colorScheme.outlineVariant),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildGoogleButton(),
-                    if (!kIsWeb &&
-                        defaultTargetPlatform == TargetPlatform.iOS) ...[
-                      const SizedBox(height: 12),
-                      _buildAppleButton(context),
-                    ],
-                    const SizedBox(height: 24),
-                    Center(
-                      child: TextButton(
-                        onPressed: _isLoading ? null : _goToLogin,
-                        child: Text(
-                          AppLocalizations.of(
-                            context,
-                          ).email_input_already_account,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    final colorScheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: colorScheme.surfaceContainerLowest,
-          side: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
-          shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-        ),
-        child: _isLoading
-            ? SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: colorScheme.primary,
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Iconsax.google_1,
-                    size: 20,
-                    color: colorScheme.onSurface,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.email_input_title,
+                  style: authText(
+                    context,
+                    DabblerType.largeTitle,
+                    color: colors.textPrimary,
                   ),
-                  const SizedBox(width: 10),
-                  Text(
-                    AppLocalizations.of(context).email_input_btn_google,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
+                ),
+                const SizedBox(height: DabblerSpacing.space3),
+                Text(
+                  l10n.email_input_subtitle,
+                  style: authText(
+                    context,
+                    DabblerType.body,
+                    color: colors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: DabblerSpacing.space4),
+                const AuthLegalNotice(center: false),
+                const SizedBox(height: DabblerSpacing.space8),
+                _buildEmailField(context),
+                const SizedBox(height: DabblerSpacing.space5),
+                _buildKeepInLoopRow(context),
+                const SizedBox(height: DabblerSpacing.space8),
+                DabblerButton(
+                  label: l10n.email_input_continue,
+                  size: DabblerButtonSize.full,
+                  fullWidth: true,
+                  loading: _isLoading,
+                  disabled: !(_isEmailValid && !_isLoading),
+                  onPressed: (_isEmailValid && !_isLoading)
+                      ? _handleSubmit
+                      : null,
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: DabblerSpacing.space4),
+                  AuthInlineMessage(message: _errorMessage!),
+                ],
+                if (_successMessage != null) ...[
+                  const SizedBox(height: DabblerSpacing.space4),
+                  AuthInlineMessage(message: _successMessage!, success: true),
+                ],
+                const SizedBox(height: DabblerSpacing.space8),
+                const DabblerDivider(label: 'OR'),
+                const SizedBox(height: DabblerSpacing.space5),
+                DabblerButton(
+                  label: l10n.email_input_btn_google,
+                  tone: DabblerButtonTone.outlined,
+                  size: DabblerButtonSize.full,
+                  fullWidth: true,
+                  disabled: _isLoading,
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                ),
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
+                  const SizedBox(height: DabblerSpacing.space4),
+                  DabblerButton(
+                    label: l10n.email_input_btn_apple,
+                    tone: DabblerButtonTone.outlined,
+                    size: DabblerButtonSize.full,
+                    fullWidth: true,
+                    disabled: _isLoading,
+                    onPressed: _isLoading ? null : _handleAppleSignIn,
                   ),
                 ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildAppleButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: _isLoading ? null : _handleAppleSignIn,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: const Color(0xFF2C2A33),
-          side: BorderSide.none,
-          shape: const StadiumBorder(),
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Iconsax.apple,
-              size: 20,
-              color: Colors.white,
+                const SizedBox(height: DabblerSpacing.space6),
+                DabblerButton(
+                  label: l10n.email_input_already_account,
+                  tone: DabblerButtonTone.text,
+                  fullWidth: true,
+                  disabled: _isLoading,
+                  onPressed: _isLoading ? null : _goToLogin,
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Text(
-              AppLocalizations.of(context).email_input_btn_apple,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -479,190 +389,74 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     }
   }
 
-  Widget _buildEmailInputPill(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final borderRadius = BorderRadius.circular(16);
-
-    return Form(
-      key: _formKey,
-      child: TextFormField(
-        controller: _emailController,
-        keyboardType: TextInputType.emailAddress,
-        autofillHints: const [AutofillHints.email],
-        textInputAction: TextInputAction.done,
-        onChanged: _onEmailChanged,
-        validator: _validateEmail,
-        style: TextStyle(
-          color: colorScheme.onSurface,
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).email_input_hint,
-          hintStyle: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontSize: 15,
-          ),
-          prefixIcon: Icon(
-            Icons.mail_outline,
-            color: colorScheme.onSurfaceVariant,
-            size: 20,
-          ),
-          suffixIcon: _emailController.text.isNotEmpty
-              ? AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _isEmailValid
-                      ? Container(
-                          key: const ValueKey('valid'),
-                          margin: const EdgeInsets.all(10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF00C853,
-                            ).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            '✓',
-                            style: TextStyle(
-                              color: Color(0xFF00C853),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          key: const ValueKey('invalid'),
-                          margin: const EdgeInsets.all(10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            '✗',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                )
-              : null,
-          filled: true,
-          fillColor: colorScheme.surfaceContainerLowest,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: borderRadius,
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
-            borderSide: BorderSide(
-              color: colorScheme.outlineVariant,
-              width: 1.5,
+  Widget _buildEmailField(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    Widget? suffix;
+    if (_emailController.text.isNotEmpty) {
+      suffix = _isEmailValid
+          ? DabblerIcon(
+              'tick-circle',
+              key: const ValueKey('valid'),
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.iconSm,
+              color: colors.success.strong,
+            )
+          : DabblerIcon(
+              'close-circle',
+              key: const ValueKey('invalid'),
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.iconSm,
+              color: colors.error.strong,
+            );
+    }
+    return DabblerTextField(
+      controller: _emailController,
+      label: AppLocalizations.of(context).email_input_label,
+      placeholder: AppLocalizations.of(context).email_input_hint,
+      keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.email],
+      textInputAction: TextInputAction.done,
+      onChanged: _onEmailChanged,
+      onSubmitted: (_) {
+        if (_isEmailValid && !_isLoading) _handleSubmit();
+      },
+      errorText: _fieldError,
+      suffixIcon: suffix == null
+          ? null
+          : AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: suffix,
             ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
-            borderSide: const BorderSide(color: Colors.red),
-          ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: borderRadius,
-            borderSide: const BorderSide(color: Colors.red, width: 2),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContinueButtonPill(BuildContext context) {
-    final canSubmit = _isEmailValid && !_isLoading;
-    return OnboardingCTAButton(
-      label: AppLocalizations.of(context).email_input_continue,
-      onPressed: canSubmit ? _handleSubmit : null,
-      isLoading: _isLoading,
-      // icon: Icon(Icons.arrow_forward, size: 18, color: colorScheme.onPrimary),
     );
   }
 
   Widget _buildKeepInLoopRow(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
             AppLocalizations.of(context).email_input_keep_in_loop,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
+            style: authText(
+              context,
+              DabblerType.subheadline,
+              color: colors.textPrimary,
             ),
           ),
         ),
-        Switch(
-          value: _getUpdates,
+        const SizedBox(width: DabblerSpacing.space4),
+        DabblerToggle(
+          checked: _getUpdates,
+          semanticLabel: AppLocalizations.of(context).email_input_keep_in_loop,
           onChanged: _isLoading
               ? null
               : (v) {
                   setState(() => _getUpdates = v);
                   ref.read(onboardingDataProvider.notifier).setGetUpdates(v);
                 },
-          activeTrackColor: colorScheme.primary,
         ),
       ],
-    );
-  }
-
-  Widget _buildTermsTextInline(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return RichText(
-      text: TextSpan(
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurface,
-          height: 1.35,
-        ),
-        children: [
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_terms_link,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: colorScheme.primary,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showTermsSheet(context),
-          ),
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_privacy_link,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: colorScheme.primary,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showPrivacySheet(context),
-          ),
-          const TextSpan(text: '.'),
-        ],
-      ),
     );
   }
 
@@ -671,33 +465,3 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 }
 
-class _InlineMessage extends StatelessWidget {
-  const _InlineMessage({required this.message, required this.color});
-
-  final String message;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bg = color.withValues(alpha: 0.10);
-    final border = color.withValues(alpha: 0.30);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-      ),
-      child: Text(
-        message,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}

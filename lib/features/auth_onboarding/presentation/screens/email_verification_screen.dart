@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -267,100 +268,91 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final l10n = AppLocalizations.of(context);
     final email = _userEmail;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).email_verify_appbar),
-        automaticallyImplyLeading: false,
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Text(
-                AppLocalizations.of(context).email_verify_title,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                email != null
-                    ? AppLocalizations.of(context).email_verify_body_with_email(email)
-                    : AppLocalizations.of(context).email_verify_body_no_email,
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                AppLocalizations.of(context).email_verify_instruction,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.textTheme.bodySmall?.color?.withValues(
-                    alpha: 0.8,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: _isChecking ? null : _checkEmailConfirmed,
-                icon: _isChecking
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.check_circle_outline),
-                label: Text(AppLocalizations.of(context).email_verify_confirmed_btn),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _isResending ? null : _resendEmail,
-                icon: _isResending
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.email_outlined),
-                label: Text(AppLocalizations.of(context).email_verify_resend_btn),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (_errorMessage != null)
-                Text(
-                  _errorMessage!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              if (_successMessage != null)
-                Text(
-                  _successMessage!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              const Spacer(),
-              TextButton(
-                onPressed: () => context.go(RoutePaths.authWelcome),
-                child: Text(AppLocalizations.of(context).email_verify_different_account),
-              ),
-            ],
-          ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(title: l10n.email_verify_appbar),
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space4,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: DabblerButton(
+          label: l10n.email_verify_different_account,
+          tone: DabblerButtonTone.text,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          onPressed: () => context.go(RoutePaths.authWelcome),
         ),
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.email_verify_title,
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            Text(
+              email != null
+                  ? l10n.email_verify_body_with_email(email)
+                  : l10n.email_verify_body_no_email,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space8),
+            Text(
+              l10n.email_verify_instruction,
+              style: DabblerType.footnote
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space10),
+            DabblerButton(
+              label: l10n.email_verify_confirmed_btn,
+              icon: 'tick-circle',
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: _isChecking,
+              onPressed: _checkEmailConfirmed,
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerButton(
+              label: l10n.email_verify_resend_btn,
+              icon: 'sms',
+              tone: DabblerButtonTone.outlined,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: _isResending,
+              onPressed: _resendEmail,
+            ),
+            const SizedBox(height: DabblerSpacing.space8),
+            if (_errorMessage != null)
+              DabblerBanner(
+                tone: DabblerBannerTone.error,
+                message: _errorMessage,
+              ),
+            if (_successMessage != null)
+              DabblerBanner(
+                tone: DabblerBannerTone.success,
+                message: _successMessage,
+              ),
+          ],
         ),
       ),
     );

@@ -1,16 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
-import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/utils/ui_constants.dart';
-import 'package:dabbler/widgets/adaptive_auth_shell.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatefulWidget {
   final String displayName;
@@ -44,194 +40,111 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 800;
-
-    // Get persona-specific content
+    final colors = DabblerColors.of(context);
     final personaContent = _getPersonaContent(widget.personaType);
 
-    return AdaptiveAuthShell(
-      backgroundColor: colorScheme.surface,
-      // Match the home screen background: the DynamicBackground gradient is
-      // layered behind the content, so the card fill is the gradient's base
-      // surface colour rather than the secondaryContainer.
-      containerColor: colorScheme.surface,
-      maxCardWidth: isWide ? 960 : 520,
-      // WelcomeScreen manages its own two-column desktop layout internally.
-      splitWideLayout: false,
-      child: Stack(
-        children: [
-          const Positioned.fill(child: DynamicBackground()),
-          isWide
-              ? _buildDesktopLayout(context, theme, colorScheme, personaContent)
-              : _buildMobileLayout(context, theme, colorScheme, personaContent),
-        ],
-      ),
-    );
-  }
-
-  // ── Desktop: two-column layout ───────────────────────────────────────
-
-  Widget _buildDesktopLayout(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    _PersonaContent personaContent,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xxl),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // ── Left: text content + CTA ──
-          Expanded(
-            flex: 5,
-            child: Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.xxxl),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _getWelcomeTitle(),
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: colorScheme.onSecondaryContainer,
-                    ),
+    return DabblerPage(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    DabblerSpacing.space8,
+                    DabblerSpacing.space6,
+                    DabblerSpacing.space8,
+                    DabblerSpacing.space6,
                   ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  Text(
-                    personaContent.guidanceText,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                      height: 1.4,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildAvatarRow(context, personaContent),
+                      const SizedBox(height: DabblerSpacing.space8),
+                      Text(
+                        _getWelcomeTitle(),
+                        style: authText(
+                          context,
+                          DabblerType.largeTitle,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: DabblerSpacing.space4),
+                      Text(
+                        personaContent.guidanceText,
+                        style: authText(
+                          context,
+                          DabblerType.body,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: DabblerSpacing.space6),
+                      DabblerCard(
+                        variant: DabblerCardVariant.white,
+                        padding: const EdgeInsets.all(DabblerSpacing.space6),
+                        child: Text(
+                          personaContent.philosophyStatement,
+                          style: authText(
+                            context,
+                            DabblerType.title3,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: DabblerSpacing.space4),
+                      DabblerCard(
+                        variant: DabblerCardVariant.white,
+                        padding: const EdgeInsets.all(DabblerSpacing.space6),
+                        child: _buildReminder(context, personaContent),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  Text(
-                    personaContent.philosophyStatement,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  _buildReminderCard(theme, colorScheme, personaContent),
-                  const SizedBox(height: AppSpacing.xxxl),
-                  Text(
-                    personaContent.finalEmphasis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  SizedBox(
-                    width: double.infinity,
-                    child: _buildCTAButton(context, theme, colorScheme),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-
-          // ── Right: avatar card ──
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: _buildAvatarCard(theme, colorScheme, personaContent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Mobile: original single-column layout ────────────────────────────
-
-  Widget _buildMobileLayout(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    _PersonaContent personaContent,
-  ) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: IntrinsicHeight(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xxl),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  DabblerSpacing.space8,
+                  DabblerSpacing.space4,
+                  DabblerSpacing.space8,
+                  DabblerSpacing.space8,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: AppSpacing.xxxl),
-                    Text(
-                      _getWelcomeTitle(),
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: colorScheme.onSecondaryContainer,
-                      ),
-                      textAlign: TextAlign.start,
-                    ),
-                    const SizedBox(height: AppSpacing.xxxl),
-                    _buildAvatarCard(theme, colorScheme, personaContent),
-                    const SizedBox(height: AppSpacing.xxxl),
-                    Text(
-                      personaContent.guidanceText,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                        height: 1.25,
-                      ),
-                      textAlign: TextAlign.start,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    Text(
-                      personaContent.philosophyStatement,
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
-                      textAlign: TextAlign.start,
-                    ),
-                    const SizedBox(height: AppSpacing.xxxl),
-                    _buildReminderCard(theme, colorScheme, personaContent),
-                    const Spacer(),
-                    const SizedBox(height: AppSpacing.xl),
                     Text(
                       personaContent.finalEmphasis,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                        fontWeight: FontWeight.w500,
-                      ),
                       textAlign: TextAlign.center,
+                      style: authText(
+                        context,
+                        DabblerType.callout,
+                        color: colors.textPrimary,
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.xl),
-                    _buildCTAButton(context, theme, colorScheme),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: DabblerSpacing.space5),
+                    DabblerButton(
+                      label: AppLocalizations.of(context).welcome_screen_continue,
+                      size: DabblerButtonSize.full,
+                      fullWidth: true,
+                      onPressed: () {
+                        routerRefreshNotifier.clearPostLoginWelcome();
+                        context.go(RoutePaths.home);
+                      },
+                    ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  // ── Shared widgets ───────────────────────────────────────────────────
-
-  Widget _buildAvatarCard(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    _PersonaContent personaContent,
-  ) {
+  Widget _buildAvatarRow(BuildContext context, _PersonaContent personaContent) {
+    final colors = DabblerColors.of(context);
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
       builder: (context, snapshot) {
@@ -243,52 +156,35 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             : widget.displayName;
 
         return Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            DSAvatar(
-              size: AvatarSize.large,
-              customDimension: 80,
+            DabblerAvatar(
+              size: DabblerAvatarSize.lg,
+              seed: resolvedName,
               imageUrl: avatarUrl,
-              displayName: resolvedName,
-              context: AvatarContext.main,
-              backgroundColor: colorScheme.primary,
-              foregroundColor: colorScheme.onPrimary,
-              hasBorder: false,
             ),
-            const SizedBox(width: AppSpacing.lg),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  resolvedName,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: colorScheme.onSecondaryContainer,
+            const SizedBox(width: DabblerSpacing.space5),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    resolvedName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: authText(
+                      context,
+                      DabblerType.headline,
+                      color: colors.textPrimary,
+                    ),
                   ),
-                ),
-            const SizedBox(height: AppSpacing.sm),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.xs,
+                  const SizedBox(height: DabblerSpacing.space2),
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: DabblerBadge(label: personaContent.chipLabel),
+                  ),
+                ],
               ),
-              decoration: BoxDecoration(
-                color: colorScheme.secondary,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Text(
-                personaContent.chipLabel,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-              ],
             ),
           ],
         );
@@ -296,64 +192,40 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildReminderCard(
-    ThemeData theme,
-    ColorScheme colorScheme,
-    _PersonaContent personaContent,
-  ) {
+  Widget _buildReminder(BuildContext context, _PersonaContent personaContent) {
+    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           AppLocalizations.of(context).welcome_screen_dont_forget,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSecondaryContainer,
+          style: authText(
+            context,
+            DabblerType.headline,
+            color: colors.textPrimary,
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: DabblerSpacing.space2),
         Text(
           personaContent.reminderText,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSecondaryContainer,
-            height: 1.7,
+          style: authText(
+            context,
+            DabblerType.subheadline,
+            color: colors.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCTAButton(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return FilledButton(
-      onPressed: () {
-        routerRefreshNotifier.clearPostLoginWelcome();
-        context.go(RoutePaths.home);
-      },
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(56),
-        shape: const StadiumBorder(),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        textStyle: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-      child: Text(AppLocalizations.of(context).welcome_screen_continue),
-    );
-  }
-
   String _getWelcomeTitle() {
     final l10n = AppLocalizations.of(context);
     if (widget.isConversion) {
-      return l10n.welcome_screen_title_conversion;
+      return authStripEmoji(l10n.welcome_screen_title_conversion);
     } else if (widget.isFirstTime) {
-      return l10n.welcome_screen_title_first_time;
+      return authStripEmoji(l10n.welcome_screen_title_first_time);
     } else {
-      return l10n.welcome_screen_title_returning;
+      return authStripEmoji(l10n.welcome_screen_title_returning);
     }
   }
 

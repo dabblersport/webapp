@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/services/mock_localization_service.dart';
-import 'package:dabbler/core/utils/constants.dart';
-import 'package:dabbler/widgets/app_button.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 class LanguageSelectionScreen extends StatefulWidget {
@@ -17,8 +16,8 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   bool _isLoading = false;
 
   final List<Map<String, String>> _languages = [
-    {'code': 'en', 'name': 'English', 'native': 'English', 'flag': '🇺🇸'},
-    {'code': 'ar', 'name': 'Arabic', 'native': 'العربية', 'flag': '🇪🇬'},
+    {'code': 'en', 'name': 'English', 'native': 'English'},
+    {'code': 'ar', 'name': 'Arabic', 'native': 'العربية'},
   ];
 
   @override
@@ -60,8 +59,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: 'Error: $e',
+            tone: DabblerToastTone.error,
+          ),
         );
       }
     } finally {
@@ -73,152 +75,114 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).language_select_title),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: l10n.language_select_title,
+        onBack: () => Navigator.of(context).maybePop(),
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Padding(
-          padding: const EdgeInsets.all(AppConstants.defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 32),
-
-              // Header
-              Text(
-                'Choose Your Language',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space10,
+        ),
+        child: DabblerButton(
+          label: _isLoading ? l10n.language_select_saving : l10n.landing_continue,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          loading: _isLoading,
+          onPressed: _handleSubmit,
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space10,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Choose Your Language',
+              textAlign: TextAlign.center,
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space2),
+            Text(
+              'Select your preferred language for the app',
+              textAlign: TextAlign.center,
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space11),
+            ..._languages.map((language) {
+              final isSelected = _selectedLanguage == language['code'];
+              return Padding(
+                padding: const EdgeInsetsDirectional.only(
+                  bottom: DabblerSpacing.space3,
                 ),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                'Select your preferred language for the app',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: 48),
-
-              // Language Options
-              ..._languages.map((language) {
-                final isSelected = _selectedLanguage == language['code'];
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
+                child: Semantics(
+                  button: true,
+                  selected: isSelected,
                   child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => _selectLanguage(language['code']!),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Theme.of(
-                                context,
-                              ).colorScheme.primary.withValues(alpha: 0.07)
-                            : Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.borderRadius,
-                        ),
-                        border: Border.all(
-                          color: isSelected
-                              ? Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.3)
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.outline.withValues(alpha: 0.1),
-                          width: 1,
-                        ),
+                    child: DabblerSurface(
+                      variant: isSelected
+                          ? DabblerSurfaceVariant.selected
+                          : DabblerSurfaceVariant.card,
+                      radius: DabblerRadius.lg,
+                      padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: DabblerSpacing.space4,
+                        vertical: DabblerSpacing.space4,
                       ),
                       child: Row(
                         children: [
-                          Text(
-                            language['flag']!,
-                            style: const TextStyle(fontSize: 22),
+                          DabblerIcon(
+                            'global',
+                            size: 22,
+                            color: isSelected ? colors.onBrand : colors.textSecondary,
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: DabblerSpacing.space4),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  language['native']!,
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        fontWeight: isSelected
-                                            ? FontWeight.w600
-                                            : FontWeight.normal,
-                                        color: isSelected
-                                            ? Theme.of(
-                                                context,
-                                              ).colorScheme.primary
-                                            : Theme.of(
-                                                context,
-                                              ).colorScheme.onSurface,
-                                      ),
-                                ),
-                                if (language['code'] != 'en') ...[
-                                  const SizedBox(height: 2),
-                                  // Text(
-                                  //   language['name']!,
-                                  //   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  //         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                  //       ),
-                                  // ),
-                                ],
-                              ],
+                            child: Text(
+                              language['native']!,
+                              style: DabblerType.body
+                                  .resolveForDirection(direction)
+                                  .copyWith(
+                                    color: isSelected
+                                        ? colors.onBrand
+                                        : colors.textPrimary,
+                                  ),
                             ),
                           ),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 200),
-                            transitionBuilder: (child, anim) =>
-                                ScaleTransition(scale: anim, child: child),
-                            child: isSelected
-                                ? Icon(
-                                    Icons.check_circle_rounded,
-                                    key: ValueKey(language['code']),
-                                    size: 20,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  )
-                                : const SizedBox(width: 20),
-                          ),
+                          if (isSelected)
+                            DabblerIcon(
+                              'tick-circle',
+                              weight: DabblerIconWeight.bold,
+                              size: 20,
+                              color: colors.onBrand,
+                            )
+                          else
+                            const SizedBox(width: 20),
                         ],
                       ),
                     ),
                   ),
-                );
-              }),
-
-              const Spacer(),
-
-              // Continue Button
-              AppButton(
-                onPressed: _isLoading ? null : _handleSubmit,
-                label: _isLoading ? AppLocalizations.of(context).language_select_saving : AppLocalizations.of(context).landing_continue,
-              ),
-
-              const SizedBox(height: 32),
-            ],
-          ),
-        ),
-          ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );
