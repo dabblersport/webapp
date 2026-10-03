@@ -509,7 +509,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   HomePostRow.resolve(post)
                 else
                   _buildPostRow(post, isAuthor),
-                _buildDetails(post, isAuthor: isAuthor),
+                _buildDetails(
+                  post,
+                  isAuthor: isAuthor,
+                  timestampLine: post.originType == OriginType.repost,
+                ),
                 const DabblerDivider(),
               ],
             ),
@@ -591,6 +595,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       onComment: () => _commentFocusNode.requestFocus(),
       onShare: () => _copyLink(post),
       onMore: () => _showPostMenu(post, myProfileId),
+      detail: DabblerPostDetail(
+        timestamp: _fullTimestamp(post.createdAt),
+        editedLabel: post.isEdited ? 'Edited' : null,
+        visibilityLabel: _visibilityLabel(post.visibility),
+        visibilityIcon: _visibilityIcon(post.visibility),
+      ),
     );
   }
 
@@ -634,7 +644,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   /// Vibes, context badges and the full timestamp line under the post row.
-  Widget _buildDetails(Post post, {required bool isAuthor}) {
+  /// The post row carries the timestamp line itself ([DabblerPostDetail]);
+  /// a repost renders through `HomePostRow.resolve`, which cannot take one,
+  /// so [timestampLine] draws it here for that case only.
+  Widget _buildDetails(
+    Post post, {
+    required bool isAuthor,
+    required bool timestampLine,
+  }) {
     final colors = DabblerColors.of(context);
     final expiry = _expiryLabel(post.expiresAt);
     final visLabel = _visibilityLabel(post.visibility);
@@ -646,7 +663,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
     final badges = <Widget>[
       for (final vibe in post.vibes.take(5))
-        _VibeBadge(
+        DabblerChip(
           label: vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key,
           vibe: DabblerVibe.fromKey(vibe.key),
         ),
@@ -683,7 +700,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             ),
             const SizedBox(height: DabblerSpacing.space3),
           ],
-          Row(
+          if (timestampLine)
+            Row(
             children: [
               Flexible(
                 child: Text(
@@ -758,18 +776,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         }
 
         Widget row(PostComment c, {required PostComment thread, bool reply = false}) =>
-            _CommentRow(
-              comment: c,
-              isReply: reply,
+            _commentRow(
+              c,
+              reply: reply,
               onReply: () => setState(() {
                 _replyingTo = thread;
                 _commentFocusNode.requestFocus();
               }),
               onLongPress: () => _showCommentMenu(c, myProfileId),
-              onAvatarTap: () => _openProfile(
-                authorUserId: c.authorUserId,
-                authorProfileId: c.authorProfileId,
-              ),
             );
 
         return SliverPadding(
@@ -817,113 +831,121 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 
+  /// One reply, on [DabblerCommentRow]. Replies to a reply nest one level
+  /// and carry no Reply action, as before.
+  Widget _commentRow(
+    PostComment c, {
+    required bool reply,
+    required VoidCallback onReply,
+    required VoidCallback onLongPress,
+  }) {
+    final name = (c.authorDisplayName ?? '').trim();
+    final displayName = name.isEmpty ? 'Anonymous' : name;
+    final colors = DabblerColors.of(context);
+
+    Widget media(String url, {bool gif = false}) => DabblerImage(
+      url: url,
+      aspectRatio: 16 / 9,
+      radius: DabblerRadius.lgAll,
+      overlay: gif ? const DabblerBadge(label: 'GIF') : null,
+    );
+
+    final attachments = <Widget>[
+      if (c.imageUrl != null) media(c.imageUrl!),
+      if (c.gifUrl != null) media(c.gifUrl!, gif: true),
+      if (c.locationName != null)
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DabblerIcon('location', size: 13, color: colors.brandPrimary),
+            const SizedBox(width: DabblerSpacing.space1),
+            Flexible(
+              child: Text(
+                c.locationName!,
+                overflow: TextOverflow.ellipsis,
+                style: _type(
+                  DabblerType.caption1,
+                  colors.brandPrimary,
+                  weight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+    ];
+
+    return DabblerCommentRow(
+      name: displayName,
+      seed: displayName,
+      imageUrl: c.authorAvatarUrl,
+      time: homeRelativeTime(c.createdAt),
+      body: c.body,
+      depth: reply ? 1 : 0,
+      showLike: false,
+      divider: false,
+      attachment: attachments.isEmpty
+          ? null
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < attachments.length; i++) ...[
+                  if (i > 0) const SizedBox(height: DabblerSpacing.space2),
+                  attachments[i],
+                ],
+              ],
+            ),
+      onLongPress: onLongPress,
+      onReply: reply ? null : onReply,
+      onAuthorTap: name.isEmpty
+          ? null
+          : () => _openProfile(
+              authorUserId: c.authorUserId,
+              authorProfileId: c.authorProfileId,
+            ),
+    );
+  }
+
   // ── Comment input bar ────────────────────────────────────────────────────────
 
   Widget _buildCommentBar(String postId) {
-    final colors = DabblerColors.of(context);
     final hasVisual = _attachedImageUrl != null || _attachedGifUrl != null;
     final canAttach = !hasVisual && !_isUploading;
     final replyName = (_replyingTo?.authorDisplayName ?? '').trim();
+    final showAttachments =
+        hasVisual || _attachedPlace != null || _isUploading;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surfaceCard,
-        border: Border(top: BorderSide(color: colors.borderDefault)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space4,
-            DabblerSpacing.space3,
-            DabblerSpacing.space4,
-            DabblerSpacing.space3,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_replyingTo != null)
-                Row(
-                  children: [
-                    DabblerIcon('message', size: 14, color: colors.brandPrimary),
-                    const SizedBox(width: DabblerSpacing.space1),
-                    Expanded(
-                      child: Text(
-                        'Replying to ${replyName.isEmpty ? 'Anonymous' : replyName}',
-                        overflow: TextOverflow.ellipsis,
-                        style: _type(DabblerType.caption1, colors.brandPrimary),
-                      ),
-                    ),
-                    DabblerButton.icon(
-                      icon: 'close-circle',
-                      semanticLabel: 'Cancel reply',
-                      size: DabblerButtonSize.small,
-                      tone: DabblerButtonTone.text,
-                      onPressed: () => setState(() => _replyingTo = null),
-                    ),
-                  ],
-                ),
-              if (hasVisual || _attachedPlace != null || _isUploading)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    bottom: DabblerSpacing.space2,
-                  ),
-                  child: _buildAttachmentRow(),
-                ),
-              Row(
-                children: [
-                  DabblerButton.icon(
-                    icon: 'gallery',
-                    semanticLabel: 'Add image',
-                    size: DabblerButtonSize.small,
-                    tone: DabblerButtonTone.text,
-                    disabled: !canAttach,
-                    onPressed: () => _pickImage(ImageSource.gallery),
-                  ),
-                  DabblerButton(
-                    label: 'GIF',
-                    tone: DabblerButtonTone.text,
-                    size: DabblerButtonSize.small,
-                    disabled: !canAttach,
-                    onPressed: _showGifPicker,
-                  ),
-                  DabblerButton.icon(
-                    icon: 'location',
-                    semanticLabel: 'Add location',
-                    size: DabblerButtonSize.small,
-                    tone: _attachedPlace != null
-                        ? DabblerButtonTone.secondary
-                        : DabblerButtonTone.text,
-                    onPressed: _pickLocation,
-                  ),
-                  const SizedBox(width: DabblerSpacing.space1),
-                  Expanded(
-                    child: DabblerTextField(
-                      controller: _commentController,
-                      focusNode: _commentFocusNode,
-                      placeholder: _replyingTo != null
-                          ? 'Reply…'
-                          : 'Post your reply…',
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _submitComment(postId),
-                    ),
-                  ),
-                  const SizedBox(width: DabblerSpacing.space2),
-                  DabblerButton.icon(
-                    icon: 'send-2',
-                    semanticLabel: 'Send reply',
-                    tone: DabblerButtonTone.primary,
-                    loading: _isSending,
-                    disabled: !_hasText,
-                    onPressed: () => _submitComment(postId),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return DabblerReplyComposer(
+      controller: _commentController,
+      focusNode: _commentFocusNode,
+      placeholder: _replyingTo != null ? 'Reply…' : 'Post your reply…',
+      replyingTo: _replyingTo == null
+          ? null
+          : (replyName.isEmpty ? 'Anonymous' : replyName),
+      onCancelReply: () => setState(() => _replyingTo = null),
+      sending: _isSending,
+      // Text or an attached image/GIF makes a reply sendable, as before.
+      canSendEmpty: _hasText,
+      sendLabel: 'Send reply',
+      onSend: (_) => _submitComment(postId),
+      attachActions: [
+        DabblerReplyComposerAction(
+          icon: 'gallery',
+          label: 'Add image',
+          onTap: canAttach ? () => _pickImage(ImageSource.gallery) : null,
         ),
-      ),
+        DabblerReplyComposerAction(
+          icon: 'sticker',
+          label: 'GIF',
+          onTap: canAttach ? _showGifPicker : null,
+        ),
+        DabblerReplyComposerAction(
+          icon: 'location',
+          label: 'Add location',
+          onTap: _pickLocation,
+          active: _attachedPlace != null,
+        ),
+      ],
+      attachments: showAttachments ? _buildAttachmentRow() : null,
     );
   }
 
@@ -939,42 +961,46 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
             ),
           if (_attachedImageUrl != null)
-            _Removable(
-              label: 'Remove image',
-              onRemove: () => setState(() {
-                _attachedImageUrl = null;
-                _onTextChanged();
-              }),
-              child: DabblerImage(
-                url: _attachedImageUrl,
-                width: 60,
-                height: 60,
-                radius: DabblerRadius.mdAll,
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                end: DabblerSpacing.space2,
+              ),
+              child: DabblerAttachmentChip(
+                thumbnail: DabblerImage(url: _attachedImageUrl),
+                thumbnailSize: 60,
+                semanticLabel: 'Image',
+                removeLabel: 'Remove image',
+                onRemove: () => setState(() {
+                  _attachedImageUrl = null;
+                  _onTextChanged();
+                }),
               ),
             ),
           if (_attachedGifUrl != null)
-            _Removable(
-              label: 'Remove GIF',
-              onRemove: () => setState(() {
-                _attachedGifUrl = null;
-                _onTextChanged();
-              }),
-              child: DabblerImage(
-                url: _attachedGifUrl,
-                width: 80,
-                height: 60,
-                radius: DabblerRadius.mdAll,
-                overlay: const DabblerBadge(label: 'GIF'),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                end: DabblerSpacing.space2,
+              ),
+              child: DabblerAttachmentChip(
+                thumbnail: DabblerImage(
+                  url: _attachedGifUrl,
+                  overlay: const DabblerBadge(label: 'GIF'),
+                ),
+                thumbnailSize: 60,
+                semanticLabel: 'GIF',
+                removeLabel: 'Remove GIF',
+                onRemove: () => setState(() {
+                  _attachedGifUrl = null;
+                  _onTextChanged();
+                }),
               ),
             ),
           if (_attachedPlace != null)
-            _Removable(
-              label: 'Remove location',
+            DabblerAttachmentChip(
+              icon: 'location',
+              label: _attachedPlace!.name,
+              removeLabel: 'Remove location',
               onRemove: () => setState(() => _attachedPlace = null),
-              child: DabblerBadge(
-                label: _attachedPlace!.name,
-                icon: const DabblerIcon('location', size: 12),
-              ),
             ),
         ],
       ),
@@ -982,213 +1008,3 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 }
 
-/// One reply: avatar, name and time, body, attachments, and the Reply action.
-class _CommentRow extends StatelessWidget {
-  const _CommentRow({
-    required this.comment,
-    required this.isReply,
-    required this.onReply,
-    required this.onLongPress,
-    required this.onAvatarTap,
-  });
-
-  final PostComment comment;
-  final bool isReply;
-  final VoidCallback onReply;
-  final VoidCallback onLongPress;
-  final VoidCallback onAvatarTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final name = (comment.authorDisplayName ?? '').trim();
-    final displayName = name.isEmpty ? 'Anonymous' : name;
-    TextStyle type(DabblerTypeStyle s, Color c, {FontWeight? w}) =>
-        homeType(context, s, c, weight: w);
-
-    Widget media(String url, {bool gif = false}) => Padding(
-      padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space2),
-      child: DabblerImage(
-        url: url,
-        aspectRatio: 16 / 9,
-        radius: DabblerRadius.lgAll,
-        overlay: gif ? const DabblerBadge(label: 'GIF') : null,
-      ),
-    );
-
-    return GestureDetector(
-      onLongPress: onLongPress,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: EdgeInsetsDirectional.only(
-          start: isReply ? DabblerSpacing.space11 : 0,
-          top: DabblerSpacing.space4,
-          bottom: DabblerSpacing.space2,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            GestureDetector(
-              onTap: name.isEmpty ? null : onAvatarTap,
-              child: DabblerAvatar(
-                seed: displayName,
-                imageUrl: comment.authorAvatarUrl,
-                size: isReply ? DabblerAvatarSize.xs : DabblerAvatarSize.sm,
-              ),
-            ),
-            const SizedBox(width: DabblerSpacing.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          displayName,
-                          overflow: TextOverflow.ellipsis,
-                          style: type(
-                            DabblerType.subheadline,
-                            colors.textPrimary,
-                            w: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: DabblerSpacing.space2),
-                      Text(
-                        homeRelativeTime(comment.createdAt),
-                        style: type(DabblerType.caption1, colors.textSecondary),
-                      ),
-                    ],
-                  ),
-                  if (comment.body.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        top: DabblerSpacing.space1,
-                      ),
-                      child: Text(
-                        comment.body,
-                        style: type(DabblerType.subheadline, colors.textPrimary),
-                      ),
-                    ),
-                  if (comment.imageUrl != null) media(comment.imageUrl!),
-                  if (comment.gifUrl != null) media(comment.gifUrl!, gif: true),
-                  if (comment.locationName != null)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        top: DabblerSpacing.space2,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          DabblerIcon(
-                            'location',
-                            size: 13,
-                            color: colors.brandPrimary,
-                          ),
-                          const SizedBox(width: DabblerSpacing.space1),
-                          Flexible(
-                            child: Text(
-                              comment.locationName!,
-                              overflow: TextOverflow.ellipsis,
-                              style: type(
-                                DabblerType.caption1,
-                                colors.brandPrimary,
-                                w: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (!isReply)
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: DabblerButton(
-                        label: 'Reply',
-                        icon: 'message',
-                        tone: DabblerButtonTone.text,
-                        size: DabblerButtonSize.small,
-                        onPressed: onReply,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// An attachment preview with a remove button at its inline-end top corner.
-class _Removable extends StatelessWidget {
-  const _Removable({
-    required this.child,
-    required this.onRemove,
-    required this.label,
-  });
-
-  final Widget child;
-  final VoidCallback onRemove;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          child,
-          DabblerButton.icon(
-            icon: 'close-circle',
-            semanticLabel: label,
-            size: DabblerButtonSize.small,
-            tone: DabblerButtonTone.text,
-            onPressed: onRemove,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A post vibe, tinted with its [DabblerVibe] tokens (neutral when the vibe is
-/// not one the design system knows) — the composer's `_VibeBadge` pattern.
-class _VibeBadge extends StatelessWidget {
-  const _VibeBadge({required this.label, required this.vibe});
-
-  final String label;
-  final DabblerVibe? vibe;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final tokens = vibe?.resolve(colors);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens?.surface ?? colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(DabblerRadius.pill),
-        border: Border.all(color: tokens?.border ?? colors.borderDefault),
-      ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space3,
-          vertical: DabblerSpacing.space1,
-        ),
-        child: Text(
-          label,
-          style: homeType(
-            context,
-            DabblerType.caption1,
-            tokens?.ink ?? colors.textPrimary,
-            weight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}

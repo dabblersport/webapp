@@ -236,7 +236,10 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   ) async {
     final onboardingData = ref.read(onboardingDataProvider);
     if (onboardingData == null) {
-      showOnboardingError(context, 'Missing onboarding data. Please start over.');
+      showOnboardingError(
+        context,
+        'Missing onboarding data. Please start over.',
+      );
       return;
     }
 
@@ -244,7 +247,10 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     if (onboardingData.age == null ||
         onboardingData.intention == null ||
         onboardingData.preferredSport == null) {
-      showOnboardingError(context, 'Missing required information. Please complete all steps.');
+      showOnboardingError(
+        context,
+        'Missing required information. Please complete all steps.',
+      );
       return;
     }
 
@@ -310,8 +316,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     }
   }
 
-  /// A DS text field inside a [FormField] so the screen's `_formKey`
-  /// validation keeps working unchanged.
+  /// A DS text field registered with the screen's `_formKey`; validates live
+  /// once the user has edited it.
   Widget _buildInputField(
     BuildContext context, {
     required TextEditingController controller,
@@ -323,20 +329,16 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     Widget? prefixIcon,
     String? extraError,
   }) {
-    return FormField<String>(
-      validator: (_) => validator(controller.text),
-      builder: (field) => DabblerTextField(
-        controller: controller,
-        label: label,
-        placeholder: hintText,
-        prefixIcon: prefixIcon,
-        suffixIcon: suffixIcon,
-        errorText: field.errorText ?? extraError,
-        onChanged: (v) {
-          field.didChange(v);
-          onChanged?.call(v);
-        },
-      ),
+    return DabblerTextField(
+      controller: controller,
+      label: label,
+      placeholder: hintText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      errorText: extraError,
+      onChanged: onChanged,
     );
   }
 
@@ -417,8 +419,9 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     return OnboardingStepFrame(
       onBack: () => context.pop(),
       step: widget.mode == SetUsernameMode.addPersona ? null : 5,
-      stepLabel:
-          widget.mode == SetUsernameMode.addPersona ? null : 'Step 5 of 5',
+      stepLabel: widget.mode == SetUsernameMode.addPersona
+          ? null
+          : 'Step 5 of 5',
       title: title,
       subtitle: subtitle,
       ctaLabel: buttonText,

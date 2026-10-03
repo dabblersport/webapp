@@ -22,11 +22,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   String _selectedCategory = 'General';
   bool _isSubmitting = false;
 
-  /// Field errors, shown only after a submit attempt (the old Form validated
-  /// on submit the same way).
-  String? _emailError;
-  String? _subjectError;
-  String? _messageError;
+  final _formKey = GlobalKey<FormState>();
 
   final List<String> _categories = [
     'General',
@@ -64,93 +60,104 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
         title: 'Contact Support',
         onBack: () => context.pop(),
       ),
-      body: ListView(
+      // A non-lazy scroll view so every field stays mounted for
+      // `Form.validate()`.
+      body: SingleChildScrollView(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
           DabblerSpacing.space4,
           DabblerSpacing.space6,
           DabblerSpacing.space10,
         ),
-        children: [
-          const DabblerBanner(
-            tone: DabblerBannerTone.info,
-            title: 'How can we help?',
-            message:
-                'Send us a message and we\'ll get back to you as soon as possible.',
-          ),
-          const SizedBox(height: DabblerSpacing.space6),
-          DabblerSection(
-            title: 'Contact Information',
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DabblerTextField(
-                controller: _emailController,
-                label: 'Your Email',
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: const DabblerIcon('sms', size: 20),
-                errorText: _emailError,
+              const DabblerBanner(
+                tone: DabblerBannerTone.info,
+                title: 'How can we help?',
+                message:
+                    'Send us a message and we\'ll get back to you as soon as possible.',
               ),
-              const SizedBox(height: DabblerSpacing.space4),
-              DabblerSelect<String>(
-                label: 'Category',
-                value: _selectedCategory,
-                options: [
-                  for (final c in _categories)
-                    DabblerSelectOption<String>(value: c, label: c),
+              const SizedBox(height: DabblerSpacing.space6),
+              DabblerSection(
+                title: 'Contact Information',
+                children: [
+                  DabblerTextField(
+                    controller: _emailController,
+                    label: 'Your Email',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: const DabblerIcon('sms', size: 20),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: DabblerSpacing.space4),
+                  DabblerSelect<String>(
+                    label: 'Category',
+                    value: _selectedCategory,
+                    options: [
+                      for (final c in _categories)
+                        DabblerSelectOption<String>(value: c, label: c),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _selectedCategory = value),
+                  ),
+                  const SizedBox(height: DabblerSpacing.space4),
+                  DabblerTextField(
+                    controller: _subjectController,
+                    label: 'Subject',
+                    prefixIcon: const DabblerIcon('document-text', size: 20),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a subject';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: DabblerSpacing.space4),
+                  DabblerTextField(
+                    controller: _messageController,
+                    label: 'Message',
+                    variant: DabblerTextFieldVariant.multiline,
+                    rows: 5,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your message';
+                      }
+                      if (value.length < 10) {
+                        return 'Message must be at least 10 characters long';
+                      }
+                      return null;
+                    },
+                  ),
                 ],
-                onChanged: (value) =>
-                    setState(() => _selectedCategory = value),
               ),
-              const SizedBox(height: DabblerSpacing.space4),
-              DabblerTextField(
-                controller: _subjectController,
-                label: 'Subject',
-                prefixIcon: const DabblerIcon('document-text', size: 20),
-                errorText: _subjectError,
-              ),
-              const SizedBox(height: DabblerSpacing.space4),
-              DabblerTextField(
-                controller: _messageController,
-                label: 'Message',
-                variant: DabblerTextFieldVariant.multiline,
-                rows: 5,
-                errorText: _messageError,
+              const SizedBox(height: DabblerSpacing.space7),
+              DabblerButton(
+                label: 'Send Message',
+                icon: 'send-2',
+                size: DabblerButtonSize.full,
+                fullWidth: true,
+                loading: _isSubmitting,
+                onPressed: _isSubmitting ? null : _submitForm,
               ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space7),
-          DabblerButton(
-            label: 'Send Message',
-            icon: 'send-2',
-            size: DabblerButtonSize.full,
-            fullWidth: true,
-            loading: _isSubmitting,
-            onPressed: _isSubmitting ? null : _submitForm,
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  bool _validate() {
-    final email = _emailController.text;
-    final subject = _subjectController.text;
-    final message = _messageController.text;
-    setState(() {
-      _emailError = email.isEmpty
-          ? 'Please enter your email'
-          : (!email.contains('@') ? 'Please enter a valid email' : null);
-      _subjectError = subject.isEmpty ? 'Please enter a subject' : null;
-      _messageError = message.isEmpty
-          ? 'Please enter your message'
-          : (message.length < 10
-                ? 'Message must be at least 10 characters long'
-                : null);
-    });
-    return _emailError == null && _subjectError == null && _messageError == null;
-  }
-
   Future<void> _submitForm() async {
-    if (!_validate()) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 

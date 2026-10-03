@@ -190,6 +190,35 @@ void main() {
       await _shoot(tester, key, 'account-delete-dialog-$dir');
     });
 
+    testWidgets('account delete dialog deleting — $dir', (tester) async {
+      const Key key = Key('shot');
+      final c = TextEditingController(text: 'DELETE');
+      addTearDown(c.dispose);
+      await _pump(
+        tester,
+        DabblerDialog(
+          title: 'Delete Account',
+          destructive: true,
+          secondaryAction: const DabblerDialogAction(label: 'Cancel'),
+          primaryAction: DabblerDialogAction(
+            label: 'Delete Account',
+            loading: true,
+            onPressed: () {},
+          ),
+          child: DeleteAccountDialogContent(
+            confirmController: c,
+            enabled: false,
+          ),
+        ),
+        locale,
+        key,
+      );
+      expect(tester.takeException(), isNull);
+      // The primary button carries the spinner while the account is deleted.
+      expect(find.byType(DabblerSpinner), findsOneWidget);
+      await _shoot(tester, key, 'account-delete-dialog-deleting-$dir');
+    });
+
     final privacyStates = <String, (PrivacyState, List<Map<String, dynamic>>)>{
       'loading': (const PrivacyState(isLoading: true), const []),
       'default': (const PrivacyState(settings: PrivacySettings()), const []),

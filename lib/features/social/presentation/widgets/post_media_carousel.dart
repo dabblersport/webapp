@@ -1,5 +1,4 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/animation.dart' show Curves;
 import 'package:flutter/widgets.dart';
 
 /// Media strip for a post: one image renders full-width (16:9). Two or more
@@ -241,6 +240,11 @@ class _ZoomableImageState extends State<_ZoomableImage> {
   Widget build(BuildContext context) => InteractiveViewer(
     transformationController: _controller,
     maxScale: 4,
-    child: DabblerImage(url: widget.url, radius: BorderRadius.zero),
+    // `contain`: the whole image shows, as the pre-migration viewer did.
+    child: DabblerImage(
+      url: widget.url,
+      radius: BorderRadius.zero,
+      fit: BoxFit.contain,
+    ),
   );
 }

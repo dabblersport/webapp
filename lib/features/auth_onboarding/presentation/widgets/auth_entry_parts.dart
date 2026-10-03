@@ -8,7 +8,6 @@ import 'package:dabbler/features/profile/presentation/screens/about/legal_conten
         kTermsOfServiceSections;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
 /// Shared, design-system-only pieces for the entry screens (landing, welcome,
@@ -75,27 +74,39 @@ Future<void> _showLegal(
           children: <Widget>[
             Text(
               intro,
-              style: authText(ctx, DabblerType.subheadline,
-                  color: colors.textSecondary),
+              style: authText(
+                ctx,
+                DabblerType.subheadline,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: DabblerSpacing.space2),
             Text(
               'Last updated: $kLegalLastUpdated',
-              style: authText(ctx, DabblerType.caption1,
-                  color: colors.textSecondary),
+              style: authText(
+                ctx,
+                DabblerType.caption1,
+                color: colors.textSecondary,
+              ),
             ),
             const SizedBox(height: DabblerSpacing.space6),
             for (final LegalSection s in sections) ...<Widget>[
               Text(
                 s.title,
-                style: authText(ctx, DabblerType.headline,
-                    color: colors.brandPrimary),
+                style: authText(
+                  ctx,
+                  DabblerType.headline,
+                  color: colors.brandPrimary,
+                ),
               ),
               const SizedBox(height: DabblerSpacing.space2),
               Text(
                 s.content,
-                style: authText(ctx, DabblerType.subheadline,
-                    color: colors.textPrimary),
+                style: authText(
+                  ctx,
+                  DabblerType.subheadline,
+                  color: colors.textPrimary,
+                ),
               ),
               const SizedBox(height: DabblerSpacing.space6),
             ],
@@ -108,27 +119,10 @@ Future<void> _showLegal(
 
 /// "By continuing you agree to our Terms and Privacy Policy." with the two
 /// links opening the legal sheets.
-class AuthLegalNotice extends StatefulWidget {
+class AuthLegalNotice extends StatelessWidget {
   const AuthLegalNotice({super.key, this.center = true});
 
   final bool center;
-
-  @override
-  State<AuthLegalNotice> createState() => _AuthLegalNoticeState();
-}
-
-class _AuthLegalNoticeState extends State<AuthLegalNotice> {
-  late final TapGestureRecognizer _terms = TapGestureRecognizer()
-    ..onTap = () => showAuthTermsSheet(context);
-  late final TapGestureRecognizer _privacy = TapGestureRecognizer()
-    ..onTap = () => showAuthPrivacySheet(context);
-
-  @override
-  void dispose() {
-    _terms.dispose();
-    _privacy.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,31 +133,26 @@ class _AuthLegalNoticeState extends State<AuthLegalNotice> {
       DabblerType.caption1,
       color: colors.textSecondary,
     );
-    final TextStyle link = base.copyWith(
-      color: colors.brandPrimary,
-      decoration: TextDecoration.underline,
-      decorationColor: colors.brandPrimary,
-    );
     return Text.rich(
       TextSpan(
         style: base,
         children: <InlineSpan>[
           TextSpan(text: l10n.email_input_terms_prefix),
-          TextSpan(
-            text: l10n.email_input_terms_link,
-            style: link,
-            recognizer: _terms,
+          DabblerTextLink.span(
+            label: l10n.email_input_terms_link,
+            style: base,
+            onPressed: () => showAuthTermsSheet(context),
           ),
           TextSpan(text: l10n.email_input_terms_and),
-          TextSpan(
-            text: l10n.email_input_privacy_link,
-            style: link,
-            recognizer: _privacy,
+          DabblerTextLink.span(
+            label: l10n.email_input_privacy_link,
+            style: base,
+            onPressed: () => showAuthPrivacySheet(context),
           ),
           const TextSpan(text: '.'),
         ],
       ),
-      textAlign: widget.center ? TextAlign.center : TextAlign.start,
+      textAlign: center ? TextAlign.center : TextAlign.start,
     );
   }
 }
@@ -221,4 +210,6 @@ class AuthPickerRow extends StatelessWidget {
 /// Wraps [child] with a stable semantics identifier for end-to-end tests.
 Widget authIdentify(String? identifier, Widget child) => identifier == null
     ? child
-    : MergeSemantics(child: Semantics(identifier: identifier, child: child));
+    : MergeSemantics(
+        child: Semantics(identifier: identifier, child: child),
+      );

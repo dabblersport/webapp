@@ -186,11 +186,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
       title: 'Privacy Settings',
       onBack: () => context.pop(),
       actions: [
-        DabblerNavigationAction(
-          icon: 'tick-circle',
-          label: 'Save',
-          onPressed: _saveSettings,
-        ),
+        DabblerNavigationAction.text(label: 'Save', onPressed: _saveSettings),
       ],
     );
 
@@ -318,27 +314,15 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
       subtitle: description,
       children: [
         for (final t in toggles)
-          DabblerInputRow(
+          DabblerInputRow.toggle(
             title: t.$1,
             subtitle: t.$2,
             leading: _icon(t.$3),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DabblerButton.icon(
-                  icon: 'info-circle',
-                  semanticLabel: '${t.$1} info',
-                  size: DabblerButtonSize.small,
-                  onPressed: () => _showTooltip(t.$1, t.$5),
-                ),
-                const SizedBox(width: DabblerSpacing.space2),
-                DabblerToggle(
-                  checked: t.$6(settings),
-                  onChanged: (value) => update(t.$4, value),
-                  semanticLabel: t.$1,
-                ),
-              ],
-            ),
+            checked: t.$6(settings),
+            onChanged: (value) => update(t.$4, value),
+            toggleSemanticLabel: t.$1,
+            onInfo: () => _showTooltip(t.$1, t.$5),
+            infoSemanticLabel: '${t.$1} info',
           ),
       ],
     );
@@ -349,25 +333,12 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     PrivacySettings settings,
     void Function(String, dynamic) update,
   ) {
-    final colors = DabblerColors.of(context);
     final value = p.$5(settings);
     return DabblerInputRow(
       title: p.$1,
       subtitle: p.$2,
       leading: _icon(p.$3),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _communicationPrefLabel(value),
-            style: DabblerType.footnote
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: colors.textSecondary),
-          ),
-          const SizedBox(width: DabblerSpacing.space2),
-          const DabblerChevron(),
-        ],
-      ),
+      value: _communicationPrefLabel(value),
       onTap: () => showDabblerSheet<void>(
         context: context,
         title: p.$1,
@@ -378,10 +349,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
             for (final pref in CommunicationPreference.values)
               DabblerInputRow(
                 title: _communicationPrefLabel(pref),
-                trailing: DabblerRadio(
-                  selected: pref == value,
-                  semanticLabel: _communicationPrefLabel(pref),
-                ),
+                selected: pref == value,
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   update(p.$4, pref);

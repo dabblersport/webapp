@@ -14,36 +14,13 @@ class ResetPasswordScreen extends StatefulWidget {
 }
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   String? _error;
-  String? _passwordError;
-  String? _confirmError;
   String _password = '';
-  String _confirm = '';
-
-  bool _validate() {
-    final l10n = AppLocalizations.of(context);
-    String? passwordError;
-    if (_password.isEmpty) {
-      passwordError = l10n.reset_password_validate_enter;
-    } else if (_password.length < 8) {
-      passwordError = l10n.reset_password_validate_min;
-    }
-    String? confirmError;
-    if (_confirm.isEmpty) {
-      confirmError = l10n.reset_password_validate_confirm;
-    } else if (_confirm != _password) {
-      confirmError = l10n.reset_password_validate_match;
-    }
-    setState(() {
-      _passwordError = passwordError;
-      _confirmError = confirmError;
-    });
-    return passwordError == null && confirmError == null;
-  }
 
   Future<void> _submit() async {
-    if (!_validate()) return;
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() {
       _isLoading = true;
       _error = null;
@@ -77,51 +54,71 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           DabblerSpacing.space8,
           DabblerSpacing.space10,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.reset_password_title,
-              style: DabblerType.largeTitle
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
-            ),
-            const SizedBox(height: DabblerSpacing.space3),
-            Text(
-              l10n.reset_password_subtitle,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
-            ),
-            const SizedBox(height: DabblerSpacing.space9),
-            DabblerTextField(
-              variant: DabblerTextFieldVariant.password,
-              label: l10n.reset_password_new_label,
-              errorText: _passwordError,
-              onChanged: (v) => _password = v,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: DabblerSpacing.space4),
-            DabblerTextField(
-              variant: DabblerTextFieldVariant.password,
-              label: l10n.reset_password_confirm_label,
-              errorText: _confirmError,
-              onChanged: (v) => _confirm = v,
-              textInputAction: TextInputAction.done,
-            ),
-            const SizedBox(height: DabblerSpacing.space8),
-            DabblerButton(
-              label: l10n.reset_password_update_btn,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              loading: _isLoading,
-              onPressed: _submit,
-            ),
-            if (_error != null) ...[
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.reset_password_title,
+                style: DabblerType.largeTitle
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textPrimary),
+              ),
+              const SizedBox(height: DabblerSpacing.space3),
+              Text(
+                l10n.reset_password_subtitle,
+                style: DabblerType.body
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textSecondary),
+              ),
+              const SizedBox(height: DabblerSpacing.space9),
+              DabblerTextField(
+                variant: DabblerTextFieldVariant.password,
+                label: l10n.reset_password_new_label,
+                onChanged: (v) => _password = v,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (v) {
+                  if (v == null || v.isEmpty) {
+                    return l10n.reset_password_validate_enter;
+                  }
+                  if (v.length < 8) {
+                    return l10n.reset_password_validate_min;
+                  }
+                  return null;
+                },
+                textInputAction: TextInputAction.next,
+              ),
               const SizedBox(height: DabblerSpacing.space4),
-              DabblerBanner(tone: DabblerBannerTone.error, message: _error),
+              DabblerTextField(
+                variant: DabblerTextFieldVariant.password,
+                label: l10n.reset_password_confirm_label,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                validator: (v) {
+                  if (v == null || v.isEmpty) {
+                    return l10n.reset_password_validate_confirm;
+                  }
+                  if (v != _password) {
+                    return l10n.reset_password_validate_match;
+                  }
+                  return null;
+                },
+                textInputAction: TextInputAction.done,
+              ),
+              const SizedBox(height: DabblerSpacing.space8),
+              DabblerButton(
+                label: l10n.reset_password_update_btn,
+                size: DabblerButtonSize.full,
+                fullWidth: true,
+                loading: _isLoading,
+                onPressed: _isLoading ? null : _submit,
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: DabblerSpacing.space4),
+                DabblerBanner(tone: DabblerBannerTone.error, message: _error),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

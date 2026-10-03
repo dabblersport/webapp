@@ -13,11 +13,8 @@ Future<DateTime?> showBirthDateSheet({
   return showDabblerSheet<DateTime>(
     context: context,
     detents: const <double>[0.75],
-    builder: (_) => _BirthDateSheet(
-      initial: initialDate,
-      first: firstDate,
-      last: lastDate,
-    ),
+    builder: (_) =>
+        _BirthDateSheet(initial: initialDate, first: firstDate, last: lastDate),
   );
 }
 
