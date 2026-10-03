@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile_sports_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 
@@ -22,16 +21,14 @@ class ProfileSportsScreen extends ConsumerStatefulWidget {
       _ProfileSportsScreenState();
 }
 
-class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
+class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
   bool _isLoading = true;
 
   // User's sport preferences - will be loaded from database
   Map<String, SportPreference> _sportPreferences = {};
+
+  // Sport rows whose editor is open (was ExpansionTile's own state).
+  final Set<String> _expanded = {};
 
   // User's interests (sports they selected during onboarding)
   List<String> _userInterests = [];
@@ -43,28 +40,9 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
   void initState() {
     super.initState();
     _currentProfileType = widget.profileType;
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _animationController.forward();
-    _loadSportsPreferences();
+    // Deferred one microtask so a synchronous failure can reach the DS toast
+    // (an inherited lookup is not legal inside initState).
+    Future.microtask(_loadSportsPreferences);
   }
 
   Future<void> _loadSportsPreferences() async {
@@ -218,12 +196,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load sports preferences: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('Failed to load sports preferences: $e', DabblerToastTone.error);
       }
     }
   }
@@ -303,12 +276,6 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
     return SkillLevel.beginner;
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
   bool _shouldShowCreateGame() {
     final profileState = ref.read(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
@@ -323,344 +290,52 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final content = Scaffold(
-      appBar: AppBar(
-        title: const Text('Sports Preferences'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else
-            TextButton(onPressed: _savePreferences, child: const Text('Save')),
-        ],
-      ),
-      body: _isLoading && _sportPreferences.isEmpty
-          ? const Center(child: CircularProgressIndicator())
-          : FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 24),
-                      _buildSportsPreferences(),
-                      const SizedBox(height: 24),
-                      _buildGeneralPreferences(),
-                      const SizedBox(height: 96),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: _shouldShowCreateGame()
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push(RoutePaths.createGame),
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text('Create game'),
-            )
-          : null,
-    );
+    return ProfileSportsView(
+      isLoading: _isLoading,
+      sportPreferences: _sportPreferences,
+      expanded: _expanded,
+      showCreateGame: _shouldShowCreateGame(),
+      positionsFor: _getPositionsForSport,
+      onBack: () => context.pop(),
+      onSave: _savePreferences,
+      onCreateGame: () => context.push(RoutePaths.createGame),
+      onToggleExpanded: (key) => setState(() {
+        if (!_expanded.remove(key)) _expanded.add(key);
+      }),
+      onSportEnabledChanged: (sportKey, preference, value) async {
+        // If enabling, create sport_profile immediately
+        if (value) {
+          await _enableSport(sportKey, preference);
+          return;
+        }
 
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(
-          Theme.of(context).colorScheme.onSurface,
-          BlendMode.srcIn,
-        ),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeader() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.sports_esports,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Sports & Games',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (_shouldShowCreateGame())
-                  FilledButton.icon(
-                    onPressed: () => context.push(RoutePaths.createGame),
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Create game'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Customize your sports preferences and skill levels to get the best game recommendations.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+        // If disabling, show confirmation and delete profile
+        final confirmed = await _showRemoveConfirmation(sportKey);
+        if (confirmed && mounted) {
+          await _disableSport(sportKey, preference);
+        }
+      },
+      onSkillLevelSelected: (sportKey, preference, level) {
+        setState(() {
+          _sportPreferences[sportKey] = preference.copyWith(skillLevel: level);
+        });
+      },
+      onPositionChanged: (sportKey, preference, value) {
+        setState(() {
+          _sportPreferences[sportKey] = preference.copyWith(
+            preferredPosition: value,
+          );
+        });
+      },
     );
   }
 
-  Widget _buildSportsPreferences() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'My Sports',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Enable sports you want to play and set your skill level',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ..._sportPreferences.entries.map(
-              (entry) => _buildSportPreferenceItem(entry.key, entry.value),
-            ),
-          ],
-        ),
-      ),
-    );
+  void _toast(String message, DabblerToastTone tone) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
-  Widget _buildSportPreferenceItem(
-    String sportKey,
-    SportPreference preference,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        leading: Text(
-          preference.emoji,
-          style: TextStyle(
-            fontSize: 24,
-            color: preference.isEnabled
-                ? null
-                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.5),
-          ),
-        ),
-        title: Text(
-          preference.name,
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: preference.isEnabled
-                ? Theme.of(context).colorScheme.onSurface
-                : Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        subtitle: Text(
-          preference.isEnabled ? preference.skillLevel.displayName : 'Disabled',
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: Switch(
-          value: preference.isEnabled,
-          onChanged: (value) async {
-            // If enabling, create sport_profile immediately
-            if (value) {
-              await _enableSport(sportKey, preference);
-              return;
-            }
-
-            // If disabling, show confirmation and delete profile
-            final confirmed = await _showRemoveConfirmation(sportKey);
-            if (confirmed && mounted) {
-              await _disableSport(sportKey, preference);
-            }
-          },
-        ),
-        children: preference.isEnabled
-            ? [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Column(
-                    children: [
-                      _buildSkillLevelSelector(sportKey, preference),
-                      if (preference.preferredPosition != null) ...[
-                        const SizedBox(height: 16),
-                        _buildPositionSelector(sportKey, preference),
-                      ],
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ]
-            : [],
-      ),
-    );
-  }
-
-  Widget _buildSkillLevelSelector(String sportKey, SportPreference preference) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Skill Level',
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: SkillLevel.values.map((level) {
-            final isSelected = preference.skillLevel == level;
-            return FilterChip(
-              label: Text(level.displayName),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _sportPreferences[sportKey] = preference.copyWith(
-                      skillLevel: level,
-                    );
-                  });
-                }
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPositionSelector(String sportKey, SportPreference preference) {
-    final positions = _getPositionsForSport(sportKey);
-    if (positions.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Preferred Position',
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: preference.preferredPosition,
-          decoration: const InputDecoration(
-            border: OutlineInputBorder(),
-            isDense: true,
-          ),
-          items: positions.map((position) {
-            return DropdownMenuItem(value: position, child: Text(position));
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _sportPreferences[sportKey] = preference.copyWith(
-                preferredPosition: value,
-              );
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGeneralPreferences() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'General Preferences',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.group_outlined),
-              title: const Text('Auto-join compatible games'),
-              subtitle: const Text(
-                'Automatically join games that match your preferences',
-              ),
-              trailing: Switch(value: true, onChanged: (value) {}),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.location_city_outlined),
-              title: const Text('Use location for recommendations'),
-              subtitle: const Text('Find games near your current location'),
-              trailing: Switch(value: true, onChanged: (value) {}),
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.schedule_outlined),
-              title: const Text('Flexible timing'),
-              subtitle: const Text('Show games with flexible start times'),
-              trailing: Switch(value: false, onChanged: (value) {}),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   List<String> _getPositionsForSport(String sport) {
     switch (sport) {
@@ -804,12 +479,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Sports preferences saved successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _toast('Sports preferences saved successfully', DabblerToastTone.success);
         // Navigate back after successful save
         if (mounted) {
           context.pop();
@@ -817,12 +487,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save preferences: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('Failed to save preferences: $e', DabblerToastTone.error);
       }
     } finally {
       if (mounted) {
@@ -931,22 +596,11 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
           _sportPreferences[sportKey] = preference.copyWith(isEnabled: true);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_formatSportName(sportKey)} enabled'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        _toast('${_formatSportName(sportKey)} enabled', DabblerToastTone.success);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to enable sport: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('Failed to enable sport: $e', DabblerToastTone.error);
       }
     }
   }
@@ -1019,22 +673,11 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
           _sportPreferences[sportKey] = preference.copyWith(isEnabled: false);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_formatSportName(sportKey)} removed'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        _toast('${_formatSportName(sportKey)} removed', DabblerToastTone.warning);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to remove sport: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('Failed to remove sport: $e', DabblerToastTone.error);
       }
     }
   }
@@ -1060,36 +703,27 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen>
 
     if (!canRemove) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('You must have at least one sport enabled'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('You must have at least one sport enabled', DabblerToastTone.error);
       }
       return false;
     }
 
-    return await showDialog<bool>(
+    return await showDabblerDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Remove $sportName?'),
-            content: Text(
-              'Are you sure you want to remove $sportName from your profile?',
+          builder: (dialogContext) => DabblerDialog(
+            title: 'Remove $sportName?',
+            description:
+                'Are you sure you want to remove $sportName from your profile?',
+            destructive: true,
+            onClose: () => Navigator.of(dialogContext).pop(false),
+            secondaryAction: DabblerDialogAction(
+              label: 'Cancel',
+              onPressed: () => Navigator.of(dialogContext).pop(false),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: const Text('Remove'),
-              ),
-            ],
+            primaryAction: DabblerDialogAction(
+              label: 'Remove',
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+            ),
           ),
         ) ??
         false;
