@@ -37,11 +37,17 @@ String _ago(DateTime dt) {
   return DateFormat('MMM d').format(dt);
 }
 
+/// The joined players' photos (up to four) with a `+N` for the rest.
+Widget _joinedPlayers(List<String> urls, int count) {
+  final shown = urls.take(4).toList();
+  return DabblerAvatarGroup(
+    people: [for (var i = 0; i < shown.length; i++) 'player-$i'],
+    imageUrls: shown,
+    overflow: count > shown.length ? count - shown.length : 0,
+  );
+}
+
 /// Players joined a game (`player_joined_game`).
-///
-/// REMAINING NON-DS USE: the joined players' photos. `DabblerAvatarGroup` takes
-/// seeds and an overflow count only, so the group shows the count (design-system
-/// team: avatar-group images).
 class GroupedJoinCard extends StatelessWidget {
   const GroupedJoinCard({super.key, required this.event});
   final PlayerJoinedEvent event;
@@ -51,9 +57,11 @@ class GroupedJoinCard extends StatelessWidget {
     final int count = event.joinCount;
     final String? gameId = event.gameId;
     return DabblerActivityRow(
-      leading: count > 1
-          ? DabblerAvatarGroup(overflow: count)
-          : const DabblerActivitySystemTile('flash'),
+      leading: event.avatarUrls.isNotEmpty
+          ? _joinedPlayers(event.avatarUrls, count)
+          : (count > 1
+                ? DabblerAvatarGroup(overflow: count)
+                : const DabblerActivitySystemTile('flash')),
       actor: count > 1 ? '$count players' : 'A player',
       verb: 'joined this game',
       subject: event.gameTitle,

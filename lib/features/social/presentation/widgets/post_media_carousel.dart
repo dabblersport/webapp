@@ -25,6 +25,11 @@ class PostMediaCarousel extends StatelessWidget {
   /// list content padding so images scroll edge-to-edge underneath it.
   final EdgeInsetsGeometry? padding;
 
+  /// Opens the fullscreen viewer at [index] — the tap behaviour of a media
+  /// tile, for callers that draw their own tiles (Home's design-system rows).
+  static void openViewer(BuildContext context, List<String> urls, int index) =>
+      _MediaFullscreenViewer.open(context, urls, index);
+
   /// Extracts all renderable image URLs from a raw media list.
   static List<String> imageUrls(List<dynamic> media) {
     final urls = <String>[];

@@ -13,15 +13,6 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider, postActionsProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-import 'home_feed_parts.dart';
-
-/// The user-agent / accept headers the news CDN requires for cover images.
-const Map<String, String> _coverHeaders = <String, String>{
-  'User-Agent':
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-  'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-};
 
 void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   RouteNames.newsDetail,
@@ -29,13 +20,11 @@ void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   extra: item,
 );
 
-/// One news story, drawn by [DabblerNewsCard].
+/// One news story, drawn by [DabblerNewsCard] (cover: [DabblerImage]).
 ///
-/// REMAINING NON-DS USES (until the design-system team ships them):
-///  * the cover photo — the DS card takes a media widget but there is no image
-///    component yet, so the framework's `Image.network` fills the slot;
-///  * swipe-to-hide on the Most Recent feed — no swipe-to-reveal component yet,
-///    so [Dismissible] provides the gesture, with a DS-painted reveal.
+/// On the Most Recent feed [onDismiss] adds a swipe-to-hide action
+/// ([DabblerSwipeAction]); it calls the same callback as before (the hide-news
+/// confirmation).
 class HomeNewsCard extends ConsumerWidget {
   const HomeNewsCard({super.key, required this.item, this.onDismiss});
 
@@ -47,7 +36,6 @@ class HomeNewsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
     final lang = ref.watch(localeProvider).languageCode;
     final mine = ref.watch(myReactionsProvider(item.newsId)).valueOrNull ??
         const <String>{};
@@ -61,12 +49,7 @@ class HomeNewsCard extends ConsumerWidget {
     final Widget card = DabblerNewsCard(
       media: url == null
           ? null
-          : Image.network(
-              url,
-              headers: _coverHeaders,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
+          : DabblerImage(url: url, radius: BorderRadius.zero),
       sportLabel: item.feedLabel,
       title: item.localizedTitle(lang),
       excerpt: body.isEmpty ? null : body,
@@ -85,32 +68,14 @@ class HomeNewsCard extends ConsumerWidget {
     final VoidCallback? hide = onDismiss;
     if (hide == null) return card;
 
-    return Dismissible(
-      key: ValueKey<String>('news-${item.newsId}'),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) async {
-        hide();
-        return false;
-      },
-      background: ColoredBox(
-        color: colors.surfaceSunken,
-        child: Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DabblerIcon('eye-slash', size: 22, color: colors.textPrimary),
-                Text(
-                  'Hide',
-                  style: homeType(context, DabblerType.caption1, colors.textPrimary),
-                ),
-              ],
-            ),
-          ),
+    return DabblerSwipeAction(
+      actions: [
+        DabblerSwipeActionItem(
+          label: 'Hide',
+          icon: 'eye-slash',
+          onPressed: hide,
         ),
-      ),
+      ],
       child: card,
     );
   }
@@ -252,13 +217,10 @@ class HomeActivityRow extends StatelessWidget {
       verb: activity.actionLabel,
       subject: hasNewsTarget && newsTitle.isNotEmpty ? newsTitle : null,
       when: timeago.format(activity.createdAt, allowFromNow: true, locale: locale),
-      // The KAN-410 image component has not landed in alpha-ds yet, so the
-      // thumbnail slot carries the framework image (non-DS, listed).
       thumbnail: hasNewsTarget && activity.targetCoverImageUrl != null
-          ? Image.network(
-              activity.targetCoverImageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+          ? DabblerImage(
+              url: activity.targetCoverImageUrl,
+              radius: BorderRadius.zero,
             )
           : null,
       onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
