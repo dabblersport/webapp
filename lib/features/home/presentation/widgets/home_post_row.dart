@@ -507,7 +507,6 @@ class HomeRepostRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
     final original = post.originalPost;
     final author = (post.authorDisplayName ?? '').trim();
@@ -528,108 +527,27 @@ class HomeRepostRow extends ConsumerWidget {
       }
     }
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        vertical: DabblerSpacing.space5,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: isAnonymous ? null : openAuthor,
-            child: DabblerAvatar(seed: authorLabel, imageUrl: post.authorAvatarUrl),
-          ),
-          const SizedBox(width: DabblerSpacing.space3),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: GestureDetector(
-                        onTap: isAnonymous ? null : openAuthor,
-                        child: Text(
-                          authorLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: homeType(
-                            context,
-                            DabblerType.subheadline,
-                            colors.textPrimary,
-                            weight: DabblerType.semibold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (post.personaTypeSnapshot != null) ...[
-                      const SizedBox(width: DabblerSpacing.space2),
-                      DabblerBadge(
-                        label: post.personaTypeSnapshot == 'organiser'
-                            ? l10n.post_card_persona_organiser
-                            : l10n.post_card_persona_player,
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: DabblerSpacing.space1),
-                Row(
-                  children: [
-                    DabblerIcon('refresh', size: 13, color: colors.brandPrimary),
-                    const SizedBox(width: DabblerSpacing.space1),
-                    Text(
-                      '${l10n.post_card_kind_repost} · ${homeRelativeTime(post.createdAt)}',
-                      style: homeType(
-                        context,
-                        DabblerType.caption1,
-                        colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                if (post.body != null && post.body!.trim().isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      top: DabblerSpacing.space2,
-                    ),
-                    child: Text(
-                      post.body!,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: homeType(
-                        context,
-                        DabblerType.subheadline,
-                        colors.textPrimary,
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    top: DabblerSpacing.space3,
-                  ),
-                  child: DabblerCard(
-                    padding: EdgeInsets.zero,
-                    child: original != null
-                        ? HomePostRow(post: original, isEmbedded: true)
-                        : Padding(
-                            padding: const EdgeInsets.all(DabblerSpacing.space4),
-                            child: Text(
-                              l10n.repost_card_unavailable,
-                              style: homeType(
-                                context,
-                                DabblerType.footnote,
-                                colors.textSecondary,
-                              ),
-                            ),
-                          ),
-                  ),
-                ),
-                if (detail != null) DabblerPostDetailLine(detail: detail!),
-              ],
+    return DabblerRepostRow(
+      name: authorLabel,
+      seed: authorLabel,
+      imageUrl: post.authorAvatarUrl,
+      onAuthorTap: isAnonymous ? null : openAuthor,
+      badge: post.personaTypeSnapshot == null
+          ? null
+          : DabblerBadge(
+              label: post.personaTypeSnapshot == 'organiser'
+                  ? l10n.post_card_persona_organiser
+                  : l10n.post_card_persona_player,
             ),
-          ),
-        ],
-      ),
+      repostedLabel:
+          '${l10n.post_card_kind_repost} · ${homeRelativeTime(post.createdAt)}',
+      quote: post.body,
+      original: original != null
+          ? HomePostRow(post: original, isEmbedded: true)
+          : null,
+      unavailableLabel: l10n.repost_card_unavailable,
+      detail: detail,
+      divider: false,
     );
   }
 }

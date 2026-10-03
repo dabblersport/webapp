@@ -1,9 +1,11 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Below this width a route opens as a bottom sheet; at or above it, as a
 /// centred panel.
 const double _kCompactWidth = 600;
+
 
 
 /// Professional Page Transitions
@@ -220,7 +222,7 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
          opaque: false,
          fullscreenDialog: true,
          barrierDismissible: true,
-         barrierColor: Colors.black.withValues(alpha: 0.5),
+         barrierColor: DabblerScrimColors.light,
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            return SlideTransition(
              position:
@@ -253,12 +255,12 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
     this.maxDialogWidth = 720,
     this.maxDialogHeightFraction = 0.88,
     this.mobileHeightFactor = 0.94,
-    this.barrierColorValue = const Color(0x66000000),
+    Color? barrierColorValue,
     this.transparentSurface = false,
   }) : super(
          opaque: false,
          barrierDismissible: true,
-         barrierColor: barrierColorValue,
+         barrierColor: barrierColorValue ?? DabblerScrimColors.light,
          child: _AdaptiveModalFrame(
            maxDialogWidth: maxDialogWidth,
            maxDialogHeightFraction: maxDialogHeightFraction,
@@ -306,7 +308,6 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
   final double maxDialogWidth;
   final double maxDialogHeightFraction;
   final double mobileHeightFactor;
-  final Color barrierColorValue;
   final bool transparentSurface;
 }
 
@@ -329,10 +330,9 @@ class _AdaptiveModalFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isWide = size.width >= _kCompactWidth;
-    final colorScheme = Theme.of(context).colorScheme;
     final sheetColor = transparentSurface
-        ? Colors.transparent
-        : colorScheme.surface;
+        ? DabblerScrimColors.none
+        : DabblerColors.of(context).surfaceCard;
     final sheetElevation = transparentSurface ? 0.0 : 12.0;
 
     if (isWide) {
