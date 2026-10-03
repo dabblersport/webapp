@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+
+TextStyle _text(BuildContext context, DabblerTypeStyle step, Color color) =>
+    step.resolveForDirection(Directionality.of(context)).copyWith(color: color);
 
 /// Empty state widget when user has no upcoming games
 class NoUpcomingGamesWidget extends StatelessWidget {
@@ -21,109 +25,90 @@ class NoUpcomingGamesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final DabblerColors colors = DabblerColors.of(context);
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(DabblerSpacing.space10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.event_available_rounded,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
-            ),
+            const DabblerIconTile.named('calendar-tick', size: 72),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
 
             // Title
             Text(
               'No upcoming games',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: theme.colorScheme.onSurface,
-              ),
+              style: _text(context, DabblerType.headline, colors.textPrimary),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Message
             Text(
               'You don\'t have any games scheduled. Start playing by creating your own game or joining one nearby!',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: _text(context, DabblerType.body, colors.textSecondary),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: DabblerSpacing.space10),
 
             // Primary action - Create game
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onCreateGame,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Create Your First Game'),
-              ),
+            DabblerButton(
+              label: 'Create Your First Game',
+              icon: 'add',
+              fullWidth: true,
+              onPressed: onCreateGame,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Secondary action - Browse games
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onBrowseGames,
-                icon: const Icon(Icons.search_rounded),
-                label: const Text('Browse Games to Join'),
-              ),
+            DabblerButton(
+              label: 'Browse Games to Join',
+              icon: 'search-normal',
+              tone: DabblerButtonTone.outlined,
+              fullWidth: true,
+              onPressed: onBrowseGames,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
 
             // Additional navigation options if available
             if (hasJoinedGames || hasPastGames) ...[
               Text(
                 'Or check your other games:',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: _text(context, DabblerType.footnote, colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: DabblerSpacing.space5),
 
               Row(
                 children: [
                   if (hasJoinedGames) ...[
                     Expanded(
-                      child: TextButton.icon(
+                      child: DabblerButton(
+                        label: 'Joined Games',
+                        icon: 'people',
+                        tone: DabblerButtonTone.text,
                         onPressed: onJoinedGames,
-                        icon: const Icon(Icons.group_rounded, size: 18),
-                        label: const Text('Joined Games'),
                       ),
                     ),
                   ],
 
-                  if (hasJoinedGames && hasPastGames) const SizedBox(width: 8),
+                  if (hasJoinedGames && hasPastGames)
+                    const SizedBox(width: DabblerSpacing.space2),
 
                   if (hasPastGames) ...[
                     Expanded(
-                      child: TextButton.icon(
+                      child: DabblerButton(
+                        label: 'Past Games',
+                        icon: 'clock',
+                        tone: DabblerButtonTone.text,
                         onPressed: onPastGames,
-                        icon: const Icon(Icons.history_rounded, size: 18),
-                        label: const Text('Past Games'),
                       ),
                     ),
                   ],
@@ -131,46 +116,36 @@ class NoUpcomingGamesWidget extends StatelessWidget {
               ),
             ],
 
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
 
             // Help text with tips
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
+            DabblerSurface.sunken(
+              padding: const EdgeInsets.all(DabblerSpacing.space5),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.lightbulb_outline_rounded,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
+                      DabblerIcon('lamp-on', size: 20, color: colors.textSecondary),
+                      const SizedBox(width: DabblerSpacing.space2),
                       Text(
                         'Pro Tips',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: _text(
+                          context,
+                          DabblerType.subheadline,
+                          colors.textSecondary,
+                        ).copyWith(fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: DabblerSpacing.space2),
 
                   Text(
                     '• Create games in advance to give players time to join\n'
                     '• Set up recurring games for regular play sessions\n'
                     '• Join games early - popular ones fill up fast!',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: _text(context, DabblerType.footnote, colors.textSecondary),
                   ),
                 ],
               ),
@@ -197,135 +172,102 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final DabblerColors colors = DabblerColors.of(context);
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(DabblerSpacing.space10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Welcome icon with animation potential
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    theme.colorScheme.primary,
-                    theme.colorScheme.secondary,
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.sports_basketball_rounded,
-                size: 64,
-                color: Colors.white,
-              ),
-            ),
+            // Welcome mark (a flat brand tile; the old gradient is not in the
+            // design system).
+            const DabblerIconTile.named('game', weight: DabblerIconWeight.bold, size: 72),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
 
             // Welcome title
             Text(
               'Welcome to Dabbler!',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
+              style: _text(context, DabblerType.headline, colors.textPrimary),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Welcome message
             Text(
               'Ready to get in the game? Create your first game or join one nearby to start connecting with other players!',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: _text(context, DabblerType.body, colors.textSecondary),
               textAlign: TextAlign.center,
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: DabblerSpacing.space10),
 
             // Primary CTA - Create game
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onCreateGame,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Create Your First Game'),
-              ),
+            DabblerButton(
+              label: 'Create Your First Game',
+              icon: 'add',
+              fullWidth: true,
+              onPressed: onCreateGame,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Secondary CTA - Browse games
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onBrowseGames,
-                icon: const Icon(Icons.explore_rounded),
-                label: const Text('Explore Games Near You'),
-              ),
+            DabblerButton(
+              label: 'Explore Games Near You',
+              icon: 'discover',
+              tone: DabblerButtonTone.outlined,
+              fullWidth: true,
+              onPressed: onBrowseGames,
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Tutorial link
-            TextButton.icon(
+            DabblerButton(
+              label: 'How does it work?',
+              icon: 'info-circle',
+              tone: DabblerButtonTone.text,
               onPressed: onViewTutorial,
-              icon: const Icon(Icons.help_outline_rounded),
-              label: const Text('How does it work?'),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: DabblerSpacing.space10),
 
             // Feature highlights
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.5,
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
+            DabblerSurface.sunken(
+              padding: const EdgeInsets.all(DabblerSpacing.space6),
               child: Column(
                 children: [
                   Text(
                     'What you can do:',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
+                    style: _text(context, DabblerType.headline, colors.textPrimary),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DabblerSpacing.space5),
 
                   _buildFeatureItem(
                     context,
-                    Icons.event_rounded,
+                    'calendar',
                     'Create Games',
                     'Organize pickup games at your favorite venues',
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: DabblerSpacing.space4),
 
                   _buildFeatureItem(
                     context,
-                    Icons.group_add_rounded,
+                    'user-add',
                     'Join Players',
                     'Find and connect with players in your area',
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: DabblerSpacing.space4),
 
                   _buildFeatureItem(
                     context,
-                    Icons.location_city_rounded,
+                    'building-3',
                     'Discover Venues',
                     'Find courts, fields, and facilities nearby',
                   ),
@@ -340,24 +282,17 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
 
   Widget _buildFeatureItem(
     BuildContext context,
-    IconData icon,
+    String icon,
     String title,
     String description,
   ) {
-    final theme = Theme.of(context);
+    final DabblerColors colors = DabblerColors.of(context);
 
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, size: 20, color: theme.colorScheme.primary),
-        ),
+        DabblerIconTile.named(icon),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: DabblerSpacing.space4),
 
         Expanded(
           child: Column(
@@ -365,16 +300,12 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.onSurface,
-                ),
+                style: _text(context, DabblerType.subheadline, colors.textPrimary)
+                    .copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
                 description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: _text(context, DabblerType.footnote, colors.textSecondary),
               ),
             ],
           ),

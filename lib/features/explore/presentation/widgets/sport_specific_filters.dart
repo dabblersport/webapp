@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:dabbler/core/config/sport_filters_config.dart';
-import 'package:dabbler/core/theme/color_token_extensions.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 /// Base widget for sport-specific filters
 abstract class SportSpecificFilters extends StatelessWidget {
@@ -14,14 +15,15 @@ abstract class SportSpecificFilters extends StatelessWidget {
   });
 
   Widget buildSectionTitle(BuildContext context, String title) {
-    final sportsScheme = context.getCategoryTheme('main');
+    final DabblerColors colors = DabblerColors.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: sportsScheme.primary,
+        style: listingText(
+          context,
+          DabblerType.headline,
+          color: colors.textPrimary,
         ),
       ),
     );
@@ -32,42 +34,25 @@ abstract class SportSpecificFilters extends StatelessWidget {
     List<String> options,
     String filterKey,
   ) {
-    final sportsScheme = context.getCategoryTheme('main');
     final selectedValue = selectedFilters[filterKey];
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: DabblerSpacing.space3,
+      runSpacing: DabblerSpacing.space3,
       children: options.map((option) {
         final isSelected =
             selectedValue == option ||
             (selectedValue == null && option == 'All');
 
-        return FilterChip(
-          label: Text(option),
+        return DabblerChip(
+          label: option,
           selected: isSelected,
-          onSelected: (selected) {
-            if (selected) {
+          onTap: () {
+            // A chip is only ever selected here, never toggled off.
+            if (!isSelected) {
               onFilterChanged(filterKey, option == 'All' ? null : option);
             }
           },
-          backgroundColor: sportsScheme.surfaceContainerHighest,
-          selectedColor: sportsScheme.primaryContainer,
-          checkmarkColor: sportsScheme.onPrimaryContainer,
-          labelStyle: TextStyle(
-            color: isSelected
-                ? sportsScheme.onPrimaryContainer
-                : sportsScheme.onSurface,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isSelected
-                  ? Colors.transparent
-                  : sportsScheme.outlineVariant.withValues(alpha: 0.55),
-            ),
-          ),
         );
       }).toList(),
     );
@@ -93,7 +78,7 @@ class FootballFilters extends SportSpecificFilters {
           SportFiltersConfig.footballGameTypes,
           'gameType',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Surface Type'),
         buildChipGroup(
           context,
@@ -124,21 +109,21 @@ class CricketFilters extends SportSpecificFilters {
           SportFiltersConfig.cricketGameTypes,
           'gameType',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Ball Type'),
         buildChipGroup(
           context,
           SportFiltersConfig.cricketBallTypes,
           'ballType',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Over Format'),
         buildChipGroup(
           context,
           SportFiltersConfig.cricketOverFormats,
           'overFormat',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Pitch Type'),
         buildChipGroup(
           context,
@@ -165,14 +150,14 @@ class PadelFilters extends SportSpecificFilters {
       children: [
         buildSectionTitle(context, 'Game Type'),
         buildChipGroup(context, SportFiltersConfig.padelGameTypes, 'gameType'),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Court Type'),
         buildChipGroup(
           context,
           SportFiltersConfig.padelCourtTypes,
           'courtType',
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         buildSectionTitle(context, 'Surface Type'),
         buildChipGroup(
           context,
