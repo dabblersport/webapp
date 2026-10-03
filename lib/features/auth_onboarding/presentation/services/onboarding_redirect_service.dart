@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/controllers/onboarding_controller.dart';
@@ -75,10 +76,10 @@ class OnboardingRedirectService {
 
       case OnboardingStep.error:
         // Error occurred - show error screen or stay on current screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(state.error ?? 'An error occurred'),
-            backgroundColor: Colors.red,
+        DabblerToastProvider.maybeOf(context)?.show(
+          DabblerToastSpec(
+            message: state.error ?? 'An error occurred',
+            tone: DabblerToastTone.error,
           ),
         );
         return false;
