@@ -32,15 +32,6 @@ class _NearbyRadiusSliderState extends ConsumerState<NearbyRadiusSlider> {
 
   String _label(num meters) => '${(meters / 1000).round()} km';
 
-  /// Persist to DB and propagate to ActiveLocation. DabblerSlider has no
-  /// `onChangeEnd`, so the end of a drag is read from the pointer lifting
-  /// (non-visual [Listener]); the persisted value is the last snapped one.
-  void _persist() {
-    ref
-        .read(profileLocationNotifierProvider.notifier)
-        .updatePrimaryRadius(_currentMeters);
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
@@ -53,26 +44,30 @@ class _NearbyRadiusSliderState extends ConsumerState<NearbyRadiusSlider> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Listener(
-          onPointerUp: (_) => _persist(),
-          onPointerCancel: (_) => _persist(),
-          child: DabblerSlider(
-            value: _currentMeters.toDouble(),
-            min: _min.toDouble(),
-            max: _max.toDouble(),
-            step: _step.toDouble(),
-            label: 'Search radius',
-            formatValue: _label,
-            onChanged: (raw) {
-              final snapped = _snap(raw);
-              if (snapped == _currentMeters) return;
-              setState(() => _currentMeters = snapped);
-              // Live preview — no DB write
-              ref
-                  .read(activeLocationProvider.notifier)
-                  .setRadiusOverride(snapped);
-            },
-          ),
+        DabblerSlider(
+          value: _currentMeters.toDouble(),
+          min: _min.toDouble(),
+          max: _max.toDouble(),
+          step: _step.toDouble(),
+          label: 'Search radius',
+          formatValue: _label,
+          onChanged: (raw) {
+            final snapped = _snap(raw);
+            if (snapped == _currentMeters) return;
+            setState(() => _currentMeters = snapped);
+            // Live preview — no DB write
+            ref
+                .read(activeLocationProvider.notifier)
+                .setRadiusOverride(snapped);
+          },
+          // End of a drag or a keyboard step: persist to DB and propagate
+          // to ActiveLocation.
+          onChangeEnd: (raw) {
+            final snapped = _snap(raw);
+            ref
+                .read(profileLocationNotifierProvider.notifier)
+                .updatePrimaryRadius(snapped);
+          },
         ),
         const SizedBox(height: DabblerSpacing.space2),
         Row(

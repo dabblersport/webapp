@@ -130,7 +130,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     super.dispose();
   }
 
-  void _toast(String message, {DabblerToastTone tone = DabblerToastTone.neutral}) {
+  void _toast(
+    String message, {
+    DabblerToastTone tone = DabblerToastTone.neutral,
+  }) {
     DabblerToastProvider.maybeOf(
       context,
     )?.show(DabblerToastSpec(message: message, tone: tone));
@@ -165,16 +168,18 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     setState(() => _isSending = true);
 
     final includeLocation = body.isNotEmpty && _attachedPlace != null;
-    await ref.read(postActionsProvider.notifier).addComment(
-      postId: postId,
-      body: body,
-      parentCommentId: _replyingTo?.id,
-      imageUrl: _attachedImageUrl,
-      gifUrl: _attachedGifUrl,
-      locationName: includeLocation ? _attachedPlace!.name : null,
-      locationLat: includeLocation ? _attachedPlace!.latitude : null,
-      locationLng: includeLocation ? _attachedPlace!.longitude : null,
-    );
+    await ref
+        .read(postActionsProvider.notifier)
+        .addComment(
+          postId: postId,
+          body: body,
+          parentCommentId: _replyingTo?.id,
+          imageUrl: _attachedImageUrl,
+          gifUrl: _attachedGifUrl,
+          locationName: includeLocation ? _attachedPlace!.name : null,
+          locationLat: includeLocation ? _attachedPlace!.latitude : null,
+          locationLng: includeLocation ? _attachedPlace!.longitude : null,
+        );
 
     _commentController.clear();
     if (mounted) {
@@ -275,7 +280,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }) => DabblerButton(
     label: label,
     icon: icon,
-    tone: destructive ? DabblerButtonTone.destructive : DabblerButtonTone.neutral,
+    tone: destructive
+        ? DabblerButtonTone.destructive
+        : DabblerButtonTone.neutral,
     fullWidth: true,
     onPressed: () {
       Navigator.of(ctx).pop();
@@ -349,7 +356,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       (failure) => _toast('Failed to block user: ${failure.message}'),
       (_) {
         ref.invalidate(blockedUserIdsProvider);
-        ref.read(feedNotifierProvider.notifier).removePostsByAuthor(targetUserId);
+        ref
+            .read(feedNotifierProvider.notifier)
+            .removePostsByAuthor(targetUserId);
         _toast('User blocked. Their content is now hidden.');
       },
     );
@@ -491,8 +500,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   Widget _buildScrollContent(Post post, String? myProfileId) {
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
-    final isAuthor =
-        myProfileId != null && post.authorProfileId == myProfileId;
+    final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
     return CustomScrollView(
       controller: _scrollController,
@@ -506,14 +514,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (post.originType == OriginType.repost)
-                  HomePostRow.resolve(post)
+                  HomePostRow.resolve(post, detail: _postDetail(post))
                 else
                   _buildPostRow(post, isAuthor),
-                _buildDetails(
-                  post,
-                  isAuthor: isAuthor,
-                  timestampLine: post.originType == OriginType.repost,
-                ),
+                _buildDetails(post, isAuthor: isAuthor),
                 const DabblerDivider(),
               ],
             ),
@@ -563,9 +567,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           ? PostMediaCarousel(media: post.media, carouselHeight: 280)
           : null,
       onRepost: canRepost
-          ? () => isReposted
-                ? actions.undoRepost(post.id)
-                : _showRepostMenu(post)
+          ? () =>
+                isReposted ? actions.undoRepost(post.id) : _showRepostMenu(post)
           : null,
       reposts: post.repostCount,
       reposted: isReposted,
@@ -574,7 +577,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       time: homeRelativeTime(post.createdAt),
       place: post.locationName ?? '',
       segments: <DabblerPostSegment>[
-        if (post.body?.trim().isNotEmpty == true) DabblerPostSegment(post.body!),
+        if (post.body?.trim().isNotEmpty == true)
+          DabblerPostSegment(post.body!),
         for (final tag in post.tags.skip(1))
           DabblerPostSegment(' #$tag', link: true),
       ],
@@ -586,7 +590,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       liked: isLiked,
       vibed: myReactions.isNotEmpty,
       divider: false,
-      onLike: () => isLiked ? actions.unlikePost(post.id) : actions.likePost(post.id),
+      onLike: () =>
+          isLiked ? actions.unlikePost(post.id) : actions.likePost(post.id),
       onVibe: () => showHomeReactionSheet(
         context,
         postId: post.id,
@@ -595,14 +600,17 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       onComment: () => _commentFocusNode.requestFocus(),
       onShare: () => _copyLink(post),
       onMore: () => _showPostMenu(post, myProfileId),
-      detail: DabblerPostDetail(
-        timestamp: _fullTimestamp(post.createdAt),
-        editedLabel: post.isEdited ? 'Edited' : null,
-        visibilityLabel: _visibilityLabel(post.visibility),
-        visibilityIcon: _visibilityIcon(post.visibility),
-      ),
+      detail: _postDetail(post),
     );
   }
+
+  /// The full timestamp line under the post row, for a post or a repost.
+  DabblerPostDetail _postDetail(Post post) => DabblerPostDetail(
+    timestamp: _fullTimestamp(post.createdAt),
+    editedLabel: post.isEdited ? 'Edited' : null,
+    visibilityLabel: _visibilityLabel(post.visibility),
+    visibilityIcon: _visibilityIcon(post.visibility),
+  );
 
   /// Reaction-breakdown chips; tapping one toggles that vibe.
   Widget? _reactionSummary(Post post, Set<String> myReactions) {
@@ -625,7 +633,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               final mine = matched != null && myReactions.contains(matched.id);
               final label = matched == null
                   ? key
-                  : (matched.labelEn.isNotEmpty ? matched.labelEn : matched.key);
+                  : (matched.labelEn.isNotEmpty
+                        ? matched.labelEn
+                        : matched.key);
               return DabblerChip(
                 label: '$label ${entry.value}',
                 selected: mine,
@@ -643,20 +653,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 
-  /// Vibes, context badges and the full timestamp line under the post row.
-  /// The post row carries the timestamp line itself ([DabblerPostDetail]);
-  /// a repost renders through `HomePostRow.resolve`, which cannot take one,
-  /// so [timestampLine] draws it here for that case only.
-  Widget _buildDetails(
-    Post post, {
-    required bool isAuthor,
-    required bool timestampLine,
-  }) {
+  /// Vibes and context badges under the post row; the post row (or the
+  /// repost's, via `HomePostRow.resolve(detail:)`) carries the timestamp line.
+  Widget _buildDetails(Post post, {required bool isAuthor}) {
     final colors = DabblerColors.of(context);
     final expiry = _expiryLabel(post.expiresAt);
     final visLabel = _visibilityLabel(post.visibility);
     final hasGeo = post.geoLat != null && post.geoLng != null;
-    final origin = post.originType != OriginType.manual &&
+    final origin =
+        post.originType != OriginType.manual &&
             post.originType != OriginType.repost
         ? _originLabel(post.originType)
         : '';
@@ -681,12 +686,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           icon: DabblerIcon(_visibilityIcon(post.visibility), size: 12),
         ),
       if (post.requiresModeration)
-        const DabblerBadge(label: 'Pending review', tone: DabblerBadgeTone.warning),
+        const DabblerBadge(
+          label: 'Pending review',
+          tone: DabblerBadgeTone.warning,
+        ),
       if (expiry != null)
         DabblerBadge(label: expiry, tone: DabblerBadgeTone.warning),
     ];
 
-    final meta = _type(DabblerType.footnote, colors.textSecondary);
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
       child: Column(
@@ -700,26 +707,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             ),
             const SizedBox(height: DabblerSpacing.space3),
           ],
-          if (timestampLine)
-            Row(
-            children: [
-              Flexible(
-                child: Text(
-                  [
-                    _fullTimestamp(post.createdAt),
-                    if (post.isEdited) 'Edited',
-                  ].join(' · '),
-                  style: meta,
-                ),
-              ),
-              const SizedBox(width: DabblerSpacing.space2),
-              DabblerIcon(
-                _visibilityIcon(post.visibility),
-                size: 14,
-                color: colors.textSecondary,
-              ),
-            ],
-          ),
           if (isAuthor && post.viewCount > 0)
             Text(
               '${homeCompactCount(post.viewCount)} Views',
@@ -749,7 +736,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         ),
       ),
       error: (_, __) => const SliverToBoxAdapter(
-        child: DabblerEmptyState(icon: 'danger', text: 'Could not load replies'),
+        child: DabblerEmptyState(
+          icon: 'danger',
+          text: 'Could not load replies',
+        ),
       ),
       data: (comments) {
         if (comments.isEmpty) {
@@ -775,16 +765,19 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           }
         }
 
-        Widget row(PostComment c, {required PostComment thread, bool reply = false}) =>
-            _commentRow(
-              c,
-              reply: reply,
-              onReply: () => setState(() {
-                _replyingTo = thread;
-                _commentFocusNode.requestFocus();
-              }),
-              onLongPress: () => _showCommentMenu(c, myProfileId),
-            );
+        Widget row(
+          PostComment c, {
+          required PostComment thread,
+          bool reply = false,
+        }) => _commentRow(
+          c,
+          reply: reply,
+          onReply: () => setState(() {
+            _replyingTo = thread;
+            _commentFocusNode.requestFocus();
+          }),
+          onLongPress: () => _showCommentMenu(c, myProfileId),
+        );
 
         return SliverPadding(
           padding: const EdgeInsetsDirectional.symmetric(
@@ -817,7 +810,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       row(parent, thread: parent),
-                      for (final r in children[parent.id] ?? const <PostComment>[])
+                      for (final r
+                          in children[parent.id] ?? const <PostComment>[])
                         row(r, thread: parent, reply: true),
                       if (i != topLevel.length - 1) const DabblerDivider(),
                     ],
@@ -883,17 +877,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       depth: reply ? 1 : 0,
       showLike: false,
       divider: false,
-      attachment: attachments.isEmpty
-          ? null
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (var i = 0; i < attachments.length; i++) ...[
-                  if (i > 0) const SizedBox(height: DabblerSpacing.space2),
-                  attachments[i],
-                ],
-              ],
-            ),
+      attachments: attachments.isEmpty ? null : attachments,
       onLongPress: onLongPress,
       onReply: reply ? null : onReply,
       onAuthorTap: name.isEmpty
@@ -911,8 +895,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final hasVisual = _attachedImageUrl != null || _attachedGifUrl != null;
     final canAttach = !hasVisual && !_isUploading;
     final replyName = (_replyingTo?.authorDisplayName ?? '').trim();
-    final showAttachments =
-        hasVisual || _attachedPlace != null || _isUploading;
+    final showAttachments = hasVisual || _attachedPlace != null || _isUploading;
 
     return DabblerReplyComposer(
       controller: _commentController,
@@ -933,8 +916,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           label: 'Add image',
           onTap: canAttach ? () => _pickImage(ImageSource.gallery) : null,
         ),
-        DabblerReplyComposerAction(
-          icon: 'sticker',
+        DabblerReplyComposerAction.text(
           label: 'GIF',
           onTap: canAttach ? _showGifPicker : null,
         ),
@@ -968,6 +950,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               child: DabblerAttachmentChip(
                 thumbnail: DabblerImage(url: _attachedImageUrl),
                 thumbnailSize: 60,
+                borderRadius: DabblerRadius.mdAll,
                 semanticLabel: 'Image',
                 removeLabel: 'Remove image',
                 onRemove: () => setState(() {
@@ -986,7 +969,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   url: _attachedGifUrl,
                   overlay: const DabblerBadge(label: 'GIF'),
                 ),
-                thumbnailSize: 60,
+                size: const Size(80, 60),
+                borderRadius: DabblerRadius.mdAll,
                 semanticLabel: 'GIF',
                 removeLabel: 'Remove GIF',
                 onRemove: () => setState(() {
@@ -1007,4 +991,3 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 }
-

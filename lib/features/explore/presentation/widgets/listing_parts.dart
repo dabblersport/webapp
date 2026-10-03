@@ -22,7 +22,10 @@ TextStyle listingText(
 /// DS sport, or null when the system has no artwork for it.
 DabblerSport? listingSportFor(String? name) {
   if (name == null || name.trim().isEmpty) return null;
-  final String key = name.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
+  final String key = name.trim().toLowerCase().replaceAll(
+    RegExp(r'[\s_]+'),
+    '-',
+  );
   const Map<String, DabblerSport> aliases = <String, DabblerSport>{
     'soccer': DabblerSport.football,
     'futsal': DabblerSport.football,
@@ -322,67 +325,48 @@ class ListingFilterSection extends StatelessWidget {
   }
 }
 
-/// The body of a listing filter sheet: a Reset action, then the groups.
+/// The body of a listing filter sheet: the groups. The sheet header carries
+/// the "Filters" title and the Reset action ([showListingFilterSheet]).
 class ListingFilterBody extends StatelessWidget {
-  const ListingFilterBody({
-    super.key,
-    required this.groups,
-    required this.onReset,
-  });
+  const ListingFilterBody({super.key, required this.groups});
 
   final List<Widget> groups;
-  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     // The sheet owns the 18dp gutter and the scrolling.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        // The design's header row: "Filters" with Reset at the end. Drawn here
-        // rather than as the sheet's title (a text step, so the hard-coded
-        // English still renders under the Arabic display face).
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                'Filters',
-                style: listingText(
-                  context,
-                  DabblerType.headline,
-                  color: colors.textPrimary,
-                ),
-              ),
-            ),
-            DabblerButton(
-              label: 'Reset',
-              tone: DabblerButtonTone.neutral,
-              size: DabblerButtonSize.small,
-              onPressed: onReset,
-            ),
-          ],
-        ),
-        for (final Widget g in groups) ...<Widget>[
-          const SizedBox(height: DabblerSpacing.space6),
-          g,
+        for (int i = 0; i < groups.length; i++) ...<Widget>[
+          if (i > 0) const SizedBox(height: DabblerSpacing.space6),
+          groups[i],
         ],
       ],
     );
   }
 }
 
-/// Opens a listing filter sheet: title "Filters", the [builder] body and a
-/// full-width done button that closes it. The filters apply live as they are
-/// picked, exactly as the old inline chips did.
+/// Opens a listing filter sheet: title "Filters" with Reset in the sheet
+/// header (`Listings.dc.html:286-289`), the [builder] body and a full-width
+/// done button that closes it. The filters apply live as they are picked,
+/// exactly as the old inline chips did.
 Future<void> showListingFilterSheet(
   BuildContext context, {
   required WidgetBuilder builder,
+  required VoidCallback onReset,
 }) {
   return showDabblerSheet<void>(
     context: context,
     detents: const <double>[0.8],
+    title: 'Filters',
+    headerActionBuilder: (BuildContext ctx) => DabblerButton(
+      label: 'Reset',
+      tone: DabblerButtonTone.neutral,
+      size: DabblerButtonSize.small,
+      onPressed: onReset,
+    ),
     builder: builder,
     // The sheet's footer bar carries its own padding.
     footerBuilder: (BuildContext ctx) => DabblerButton(
@@ -453,7 +437,8 @@ class ListingSkeleton extends StatelessWidget {
         bottom: DabblerSpacing.space8,
       ),
       itemCount: 4,
-      separatorBuilder: (_, __) => const SizedBox(height: DabblerSpacing.space4),
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: DabblerSpacing.space4),
       itemBuilder: (_, __) => const DabblerSkeleton.card(),
     );
   }

@@ -7,7 +7,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
 import 'package:dabbler/data/models/mapbox_place.dart';
-import 'package:dabbler/features/location/presentation/widgets/autofocus_search_field.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
@@ -280,6 +279,13 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   // ── Venue Search ───────────────────────────────────────────────────
 
+  void _onVenueQueryChanged(String _) {
+    _venueDebounce?.cancel();
+    _venueDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) setState(() {});
+    });
+  }
+
   Widget _buildVenueSearch() {
     final colors = DabblerColors.of(context);
     final query = _venueController.text.trim();
@@ -291,15 +297,12 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
-          child: AutofocusSearchField(
+          child: DabblerSearchField(
             controller: _venueController,
+            autofocus: true,
             placeholder: 'Search venues...',
-            onChanged: (val) {
-              _venueDebounce?.cancel();
-              _venueDebounce = Timer(const Duration(milliseconds: 350), () {
-                if (mounted) setState(() {});
-              });
-            },
+            onChanged: _onVenueQueryChanged,
+            onCleared: () => _onVenueQueryChanged(''),
           ),
         ),
         venuesAsync.when(
@@ -463,6 +466,7 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
+      flat: true,
       leading: DabblerIconTile.named(icon),
       title: label,
       subtitle: subtitle,

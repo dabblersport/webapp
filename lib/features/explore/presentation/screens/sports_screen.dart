@@ -83,23 +83,30 @@ class VenueCard extends StatelessWidget {
         [];
     final showRating = reviews.length >= 3 && rating >= 3.0;
 
-    // The card's meta line carries what the old card drew as separate atoms:
-    // closed state, distance, sports (+overflow) and rating.
-    final meta = <String>[
-      if (isClosed) 'Closed',
-      if (distance.isNotEmpty) distance,
-      if (visibleSports.isNotEmpty)
-        visibleSports.join(' • ') +
-            (overflowCount > 0 ? ' +$overflowCount' : ''),
-      if (showRating) rating.toStringAsFixed(1),
-    ].join(' • ');
-
-    return DabblerCardEventMedium(
-      title: name,
-      sport: sports.isEmpty ? null : DabblerSport.fromKey(sports.first.toLowerCase()),
-      dateTime: meta.isEmpty ? null : meta,
-      location: area,
+    // The design system's venue card: closed state, sports (+overflow) and
+    // rating as tags, distance beside the area.
+    return DabblerCardVenue(
+      name: name,
+      area: area,
+      distance: distance.isEmpty ? null : distance,
+      tags: <Widget>[
+        if (isClosed)
+          DabblerBadge(
+            label: 'Closed',
+            status: DabblerColors.of(context).status(DabblerStatusTone.error),
+          ),
+        if (showRating)
+          DabblerCardVenue.rating(rating: rating.toStringAsFixed(1)),
+        for (final sport in visibleSports)
+          DabblerBadge(label: sport, tone: DabblerBadgeTone.warning),
+        if (overflowCount > 0)
+          DabblerBadge(
+            label: '+$overflowCount',
+            tone: DabblerBadgeTone.warning,
+          ),
+      ],
       onTap: onTap,
+      semanticLabel: name,
     );
   }
 }
@@ -354,7 +361,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           });
         }
 
-        final sportFilters = SportFiltersConfig.hasSportSpecificFilters(
+        final sportFilters =
+            SportFiltersConfig.hasSportSpecificFilters(
               sports[selectedIndex]['name'],
             )
             ? SportSpecificFiltersFactory.create(
@@ -370,7 +378,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             end: DabblerSpacing.space5,
             top: DabblerSpacing.space2,
             bottom:
-                DabblerSpacing.space4 + MediaQuery.of(context).viewInsets.bottom,
+                DabblerSpacing.space4 +
+                MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +467,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       onPressed: () {
                         setModalState(() {
                           _selectedArea = null;
-                          _selectedPriceRange = const DabblerSliderRange(0, 500);
+                          _selectedPriceRange = const DabblerSliderRange(
+                            0,
+                            500,
+                          );
                           _selectedRating = 0;
                           _selectedAmenities.clear();
                           _sportSpecificFilters.clear();
@@ -647,9 +659,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   Widget _buildGameCard(game) {
-    final colors = DabblerColors.of(context);
-    final meta = _type(context, DabblerType.caption1, colors.textSecondary);
-
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
       child: Column(
@@ -662,45 +671,23 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime} - ${game.endTime}',
             location: game.venueName ?? 'Venue TBD',
             onTap: () => _openGame(game.id as String),
-          ),
-          // Footer: sport + skill + time-from-now, players, and Join.
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: DabblerSpacing.space2,
-              top: DabblerSpacing.space1,
+            // The card's listing slots (DS gaps 6): players with the sport,
+            // skill and time-from-now line under the bar, and Join.
+            progress: DabblerCardEventPlayers(
+              label: '${game.currentPlayers}/${game.maxPlayers}',
+              joined: game.currentPlayers as int,
+              capacity: game.maxPlayers as int,
+              note:
+                  '${game.sport} · ${game.skillLevel} · ${_getTimeFromNow(game.scheduledDate)}',
             ),
-            child: Row(
-              children: [
-                _sportIcon(game.sport as String, color: colors.brandPrimary),
-                const SizedBox(width: DabblerSpacing.space1),
-                Flexible(
-                  child: Text(
-                    '${game.sport} · ${game.skillLevel} · ${_getTimeFromNow(game.scheduledDate)}',
-                    style: meta,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: DabblerSpacing.space3),
-                DabblerIcon(
-                  'profile-2user',
-                  size: 16,
-                  color: colors.textSecondary,
-                ),
-                const SizedBox(width: DabblerSpacing.space1),
-                Text('${game.currentPlayers}/${game.maxPlayers}', style: meta),
-                const Spacer(),
-                // Only show Join button for players with permission
-                if (_shouldShowJoinButton())
-                  DabblerButton(
+            // Only show Join button for players with permission; it opens
+            // the game detail to join.
+            action: _shouldShowJoinButton()
+                ? DabblerCardEventListing.joinButton(
                     label: 'Join',
-                    icon: 'add',
-                    size: DabblerButtonSize.small,
-                    // Navigate to game detail to join
                     onPressed: () => _openGame(game.id as String),
-                  ),
-              ],
-            ),
+                  )
+                : null,
           ),
         ],
       ),

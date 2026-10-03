@@ -300,7 +300,7 @@ void main() {
       expect(find.byType(DabblerSearchField), findsOneWidget);
       expect(find.byType(DabblerSportIcon), findsWidgets);
       expect(find.text('Al Quoz Sports Hub'), findsOneWidget);
-      expect(find.byType(DabblerCardEventMedium), findsNWidgets(2));
+      expect(find.byType(DabblerCardVenue), findsNWidgets(2));
       await _shoot(tester, key, 'explore-$dir');
       _restoreOnError();
     });
@@ -309,6 +309,8 @@ void main() {
       await _pump(tester, locale, key, const ExploreScreen(), subTab: 0);
       expect(tester.takeException(), isNull);
       expect(find.text('Sunday five-a-side'), findsOneWidget);
+      // Players ride in the card's progress slot, not a hand-built footer.
+      expect(find.byType(DabblerCardEventPlayers), findsWidgets);
       await _shoot(tester, key, 'explore-games-$dir');
       _restoreOnError();
     });

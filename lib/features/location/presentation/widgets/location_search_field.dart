@@ -45,13 +45,6 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
     _controller = TextEditingController(text: widget.initialQuery);
     _query = widget.initialQuery;
     _focusNode.addListener(_onFocusChange);
-    // DabblerSearchField takes no `autofocus`; request focus after the
-    // first frame instead (same behaviour).
-    if (widget.autofocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusNode.requestFocus();
-      });
-    }
   }
 
   @override
@@ -128,13 +121,18 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    // DabblerSearchField has no loading suffix; the dropdown below shows the
-    // geocode request's loading state instead of the old in-field spinner.
+    // The in-field spinner while the geocode request for the current query
+    // (two characters or more) is in flight, as the old field drew it.
+    final searching =
+        _query.length >= 2 &&
+        ref.watch(mapboxGeocodeProvider(_query)).isLoading;
     return CompositedTransformTarget(
       link: _layerLink,
       child: DabblerSearchField(
         controller: _controller,
         focusNode: _focusNode,
+        autofocus: widget.autofocus,
+        loading: searching,
         onChanged: _onChanged,
         onCleared: () => _onChanged(''),
         placeholder: widget.hintText,

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:dabbler/data/models/place.dart';
-import 'package:dabbler/features/location/presentation/widgets/autofocus_search_field.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/venues/presentation/providers/place_providers.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -141,10 +140,12 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
             horizontal: DabblerSpacing.space5,
             vertical: DabblerSpacing.space3,
           ),
-          child: AutofocusSearchField(
+          child: DabblerSearchField(
             controller: _controller,
+            autofocus: true,
             placeholder: 'Search places...',
             onChanged: _onQueryChanged,
+            onCleared: () => _onQueryChanged(''),
           ),
         ),
 

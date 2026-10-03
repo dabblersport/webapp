@@ -74,9 +74,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _errorToast(String message) {
-    DabblerToastProvider.of(context).show(
-      DabblerToastSpec(message: message, tone: DabblerToastTone.error),
-    );
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -156,11 +156,13 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         selectedSport: selectedSport,
         showClear: composerState.sportId != null,
         onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
-        onSelect: (sport) => ref.read(postComposerProvider.notifier).setSport(
-          id: sport.id,
-          name: sport.localizedName(context),
-          emoji: sport.emoji,
-        ),
+        onSelect: (sport) => ref
+            .read(postComposerProvider.notifier)
+            .setSport(
+              id: sport.id,
+              name: sport.localizedName(context),
+              emoji: sport.emoji,
+            ),
       ),
     );
   }
@@ -767,7 +769,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       height: 150,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        separatorBuilder: (_, __) => const SizedBox(width: DabblerSpacing.space2),
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: DabblerSpacing.space2),
         itemCount: items.length + 1,
         itemBuilder: (_, i) {
           if (i == items.length) {
@@ -968,41 +971,23 @@ class _MediaTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: 150,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DabblerImage(
-              url: url,
-              width: width,
-              height: 150,
-              radius: DabblerRadius.lgAll,
-              overlay: _isGif
-                  ? const Align(
-                      alignment: AlignmentDirectional.bottomStart,
-                      child: Padding(
-                        padding: EdgeInsets.all(DabblerSpacing.space2),
-                        child: DabblerBadge(label: 'GIF'),
-                      ),
-                    )
-                  : null,
-            ),
-          ),
-          PositionedDirectional(
-            top: 0,
-            end: 0,
-            child: DabblerButton.icon(
-              icon: 'close-circle',
-              semanticLabel: 'Remove media',
-              tone: DabblerButtonTone.neutral,
-              size: DabblerButtonSize.small,
-              onPressed: onRemove,
-            ),
-          ),
-        ],
+    return DabblerAttachmentChip(
+      thumbnail: DabblerImage(
+        url: url,
+        overlay: _isGif
+            ? const Align(
+                alignment: AlignmentDirectional.bottomStart,
+                child: Padding(
+                  padding: EdgeInsets.all(DabblerSpacing.space2),
+                  child: DabblerBadge(label: 'GIF'),
+                ),
+              )
+            : null,
       ),
+      size: Size(width, 150),
+      semanticLabel: _isGif ? 'GIF' : 'Image',
+      removeLabel: 'Remove media',
+      onRemove: onRemove,
     );
   }
 }
@@ -1183,8 +1168,7 @@ class _ComposerVibesPickerSheetState
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? (tokens?.selectedSurface ??
-                                    colors.surfaceGrey)
+                              ? (tokens?.selectedSurface ?? colors.surfaceGrey)
                               : (tokens?.surface ?? colors.surfaceSunken),
                           borderRadius: BorderRadius.circular(DabblerRadius.lg),
                           border: Border.all(

@@ -179,8 +179,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 .select('name_en')
                 .eq('code', storedCountry.toUpperCase())
                 .limit(1);
-            _countryController.text =
-                rows.isNotEmpty ? (rows.first['name_en'] as String? ?? storedCountry) : storedCountry;
+            _countryController.text = rows.isNotEmpty
+                ? (rows.first['name_en'] as String? ?? storedCountry)
+                : storedCountry;
           } catch (_) {
             _countryController.text = storedCountry;
           }
@@ -395,7 +396,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final user = _authService.getCurrentUser();
     if (user == null) {
       if (mounted) {
-        _toast('Please sign in to update your avatar', DabblerToastTone.neutral);
+        _toast(
+          'Please sign in to update your avatar',
+          DabblerToastTone.neutral,
+        );
       }
       return;
     }
@@ -427,7 +431,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final user = _authService.getCurrentUser();
     if (user == null) {
       if (mounted) {
-        _toast('Please sign in to update your avatar', DabblerToastTone.neutral);
+        _toast(
+          'Please sign in to update your avatar',
+          DabblerToastTone.neutral,
+        );
       }
       return;
     }
@@ -511,7 +518,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final user = _authService.getCurrentUser();
     if (user == null) {
       if (mounted) {
-        _toast('Please sign in to update your avatar', DabblerToastTone.neutral);
+        _toast(
+          'Please sign in to update your avatar',
+          DabblerToastTone.neutral,
+        );
       }
       return;
     }
@@ -607,6 +617,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final interestSports = ProfileEditSports.sortByCategory(
       _availableSports.where((s) => _selectedInterests.contains(s.id)),
     );
+    // Grouped under category headers, as the original select was.
+    final byCategory = ProfileEditSports.groupByCategory(interestSports);
     return DabblerSelect<String>(
       label: label,
       placeholder: placeholder,
@@ -616,11 +628,18 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           ? 'Select at least one interest first.'
           : null,
       searchable: interestSports.length >= 8,
-      options: [
-        for (final sport in interestSports)
-          DabblerSelectOption<String>(
-            value: sport.id,
-            label: ProfileEditSports.label(context, sport),
+      sheetTitle: label,
+      groups: [
+        for (final entry in byCategory.entries)
+          DabblerSelectGroup<String>(
+            label: entry.key,
+            options: [
+              for (final sport in entry.value)
+                DabblerSelectOption<String>(
+                  value: sport.id,
+                  label: ProfileEditSports.label(context, sport),
+                ),
+            ],
           ),
       ],
       onChanged: onSelected,
@@ -644,10 +663,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 DabblerSpacing.screenGutter,
                 DabblerSpacing.space8,
               ),
-              child: Form(
-                key: _formKey,
-                child: _buildForm(context),
-              ),
+              child: Form(key: _formKey, child: _buildForm(context)),
             ),
     );
   }
@@ -833,7 +849,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   .select('code')
                   .eq('name_en', rawCountry)
                   .limit(1);
-              countryToSave = rows.isNotEmpty ? rows.first['code'] as String? : null;
+              countryToSave = rows.isNotEmpty
+                  ? rows.first['code'] as String?
+                  : null;
             } catch (_) {}
           }
         }
@@ -917,7 +935,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           .where((r) => !existingKeys.contains(r['sport']))
           .toList();
       if (toInsert.isNotEmpty) {
-        await Supabase.instance.client.from(SupabaseConfig.sportProfilesTable).insert(toInsert);
+        await Supabase.instance.client
+            .from(SupabaseConfig.sportProfilesTable)
+            .insert(toInsert);
       }
 
       // Update skill level for sports that already existed
@@ -968,13 +988,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
             .eq('user_id', userId);
       } else {
         // Insert new
-        await Supabase.instance.client.from(SupabaseConfig.userPreferencesTable).insert({
-          'user_id': userId,
-          'weekly_availability': weeklyAvailJson,
-          'preferred_game_types': preferredGameTypes,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+        await Supabase.instance.client
+            .from(SupabaseConfig.userPreferencesTable)
+            .insert({
+              'user_id': userId,
+              'weekly_availability': weeklyAvailJson,
+              'preferred_game_types': preferredGameTypes,
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
       }
     } catch (_) {
       // user_preferences table does not exist in this environment — non-critical

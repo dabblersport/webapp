@@ -83,8 +83,7 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen>
-    with RouteAware {
+class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
   int _selectedTabIndex = 0;
 
   String? _selectedProfileType; // 'player' or 'organiser'
@@ -130,7 +129,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
       // Invalidate dependent providers to refresh their data
       ref.invalidate(myPostsCountProvider);
-      ref.invalidate(sportProfileHeaderProvider((userId: user.id, profileId: null)));
+      ref.invalidate(
+        sportProfileHeaderProvider((userId: user.id, profileId: null)),
+      );
     }
     // Load fresh profile data
     await _loadProfileData();
@@ -202,7 +203,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         final errorMsg =
             ref.read(personaServiceProvider).errorMessage ??
             AppLocalizations.of(context).profile_error_switch_profile_failed;
-        DabblerToastProvider.of(context).show(DabblerToastSpec(message: errorMsg));
+        DabblerToastProvider.of(
+          context,
+        ).show(DabblerToastSpec(message: errorMsg));
       }
       return;
     }
@@ -357,14 +360,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     final profile = profileState.profile;
     final displayName = profile?.getDisplayName() ?? '';
 
-    return DecoratedBox(
-      // The design's header: the brand colour at 14% over the card surface.
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          colors.brandPrimary.withValues(alpha: 0.14),
-          colors.surfaceCard,
-        ),
-      ),
+    // The design's full-bleed brand hero band.
+    return DabblerSurface.brandTintBleed(
       child: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
@@ -649,7 +646,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   void _openSportProfile(UserProfile? profile, dynamic sport) {
     final profileId = profile?.id;
     final userId = profile?.userId;
-    final personaType = profile?.personaType ?? profile?.profileType ?? 'player';
+    final personaType =
+        profile?.personaType ?? profile?.profileType ?? 'player';
     if (profileId == null ||
         userId == null ||
         (personaType != 'player' && personaType != 'organiser')) {
@@ -662,8 +660,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       personaType: personaType,
       sportId: sport.id,
       sportKey:
-          sport.sportKey ??
-          sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+          sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_'),
       sportName: sport.nameEn,
       avatarUrl: profile?.avatarUrl,
       sportEmoji: sport.emoji,
@@ -701,7 +698,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         .map((id) => sportsById[id]!)
         .toList();
 
-    final personaType = profile?.personaType ?? profile?.profileType ?? 'player';
+    final personaType =
+        profile?.personaType ?? profile?.profileType ?? 'player';
     final canOpen =
         profile?.id != null &&
         profile?.userId != null &&
@@ -796,7 +794,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           child: DabblerTabs(
             scrollable: true,
             value: '$_selectedTabIndex',
-            onChanged: (id) => setState(() => _selectedTabIndex = int.parse(id)),
+            onChanged: (id) =>
+                setState(() => _selectedTabIndex = int.parse(id)),
             items: [
               DabblerTabItem(id: '0', label: l10n.profile_tab_posts),
               DabblerTabItem(id: '1', label: l10n.profile_tab_replies),
@@ -843,7 +842,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
 
     if (state.activities.isEmpty) {
-      return _buildEmptyTabContent(context, AppLocalizations.of(context).profile_empty_no_activity);
+      return _buildEmptyTabContent(
+        context,
+        AppLocalizations.of(context).profile_empty_no_activity,
+      );
     }
 
     return Column(
@@ -859,7 +861,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_posts);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_posts,
+    );
   }
 
   Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
@@ -867,7 +872,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_replies);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_replies,
+    );
   }
 
   Widget _buildLikedTabContent(BuildContext context, String? profileId) {
@@ -875,7 +883,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_liked);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_liked,
+    );
   }
 
   Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
@@ -883,7 +894,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_reposts);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_reposts,
+    );
   }
 
   Widget _buildPostsList(
@@ -1209,7 +1223,8 @@ class _ProfileRow extends StatelessWidget {
         size: DabblerAvatarSize.sm,
       ),
       title: name,
-      subtitle: (profile.personaType ?? profile.profileType)?.toUpperCase() ??
+      subtitle:
+          (profile.personaType ?? profile.profileType)?.toUpperCase() ??
           'PLAYER',
       trailing: DabblerIcon(
         isActive ? 'tick-circle' : 'record',
