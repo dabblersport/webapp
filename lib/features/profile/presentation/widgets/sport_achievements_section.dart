@@ -51,7 +51,7 @@ class SportAchievementsSection extends ConsumerWidget {
                 .map(
                   (badge) => DabblerBadge(
                     label: badge.name.isEmpty ? badge.key : badge.name,
-                    tone: DabblerBadgeTone.primary,
+                    tone: DabblerBadgeTone.defaultTone,
                   ),
                 )
                 .toList(),

@@ -17,7 +17,7 @@ import 'package:dabbler/features/profile/presentation/widgets/sport_profile_sect
 /// [DabblerTabs] strip (Tracker / Achievements / History) and the existing
 /// sections beneath it. The design's "Personal bests" tab, minutes-played
 /// card, drill rail and recent-matches rail have no data source in the app and
-/// are not built. The wide-layout AdaptiveScaffold wrapper is dropped as in
+/// are not built. The legacy wide-layout wrapper is dropped as in
 /// the earlier waves; the app shell owns navigation.
 class SportProfileScreen extends ConsumerStatefulWidget {
   const SportProfileScreen({super.key, required this.args});
@@ -241,12 +241,12 @@ class _Header extends StatelessWidget {
               label: args.isOrganiserPersona
                   ? 'Organiser persona'
                   : 'Player persona',
-              tone: DabblerBadgeTone.pill,
+              tone: DabblerBadgeTone.withIcon,
             ),
             if (loaded?.playerTier != null)
               DabblerBadge(
                 label: loaded!.playerTier!.key.toUpperCase(),
-                tone: DabblerBadgeTone.primary,
+                tone: DabblerBadgeTone.defaultTone,
               ),
             if (loaded?.organiserProfile?.isVerified == true)
               DabblerBadge(

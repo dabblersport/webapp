@@ -47,7 +47,7 @@ class SportActivitySection extends ConsumerWidget {
                               .map(
                                 (source) => DabblerBadge(
                                   label: _sourceLabel(source),
-                                  tone: DabblerBadgeTone.pill,
+                                  tone: DabblerBadgeTone.withIcon,
                                 ),
                               )
                               .toList(),

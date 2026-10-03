@@ -47,7 +47,7 @@ class SportSectionCard extends StatelessWidget {
 
 /// Icon + message placeholder for empty sport profile sections.
 ///
-/// [icon] is a kebab-case Iconsax name rendered through [DabblerIcon].
+/// [icon] is a kebab-case DS icon name rendered through [DabblerIcon].
 class SportEmptySection extends StatelessWidget {
   const SportEmptySection({
     super.key,
