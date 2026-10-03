@@ -1,14 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 
-/// Shows posts that contain a specific hashtag.
+/// Shows posts that contain a specific hashtag (design X04, "Hashtag result").
 class HashtagFeedScreen extends ConsumerStatefulWidget {
   const HashtagFeedScreen({
     super.key,
@@ -124,161 +122,117 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
     }
   }
 
+  /// The tag, isolated as left-to-right so `#` stays in front of it in RTL.
+  String get _tag => '\u2066#${widget.hashtagSlug}\u2069';
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final totalLabel = widget.initialPostCount != null
         ? '${widget.initialPostCount} posts'
         : '${_posts.length} posts';
 
-    final content = Scaffold(
-      appBar: AppBar(title: Text('#${widget.hashtagSlug}')),
-      body: _isInitialLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _buildBody(theme, totalLabel),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: _tag,
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
+      body: _isInitialLoading ? const _HashtagSkeleton() : _buildBody(totalLabel),
     );
-
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 5,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 5),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(
-            theme.colorScheme.onSurface,
-            BlendMode.srcIn,
-          ),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
 
-  Widget _buildBody(ThemeData theme, String totalLabel) {
+  Widget _buildBody(String totalLabel) {
     if (_error != null && _posts.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.error_outline,
-                color: theme.colorScheme.error,
-                size: 40,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: theme.textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: _loadInitial,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
+      return DabblerEmptyState.error(
+        title: _error!,
+        onRetry: _loadInitial,
+        retryLabel: 'Retry',
       );
     }
 
     if (_posts.isEmpty) {
-      return RefreshIndicator(
+      return DabblerRefresh(
         onRefresh: _loadInitial,
         child: ListView(
+          padding: const EdgeInsets.all(DabblerSpacing.space6),
           children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Column(
-                children: [
-                  const Icon(Icons.tag, size: 44),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No posts found for #${widget.hashtagSlug}',
-                    style: theme.textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+            DabblerEmptyState(
+              icon: 'hashtag',
+              title: 'No posts found for #${widget.hashtagSlug}',
             ),
           ],
         ),
       );
     }
 
-    return RefreshIndicator(
+    return DabblerRefresh(
       onRefresh: _loadInitial,
       child: ListView.builder(
         controller: _scrollController,
         itemCount: _posts.length + 2,
         itemBuilder: (context, index) {
-          if (index == 0) {
-            return _buildHeader(theme, totalLabel);
-          }
+          if (index == 0) return _buildHeader(totalLabel);
 
           if (index == _posts.length + 1) {
-            if (!_isLoadingMore) return const SizedBox(height: 24);
+            if (!_isLoadingMore) {
+              return const SizedBox(height: DabblerSpacing.space8);
+            }
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
             );
           }
 
-          final post = _posts[index - 1];
-          return resolvePostLayout(post);
+          return resolvePostLayout(_posts[index - 1]);
         },
       ),
     );
   }
 
-  Widget _buildHeader(ThemeData theme, String totalLabel) {
+  Widget _buildHeader(String totalLabel) {
+    final colors = DabblerColors.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: theme.colorScheme.tertiaryContainer,
-              child: Icon(
-                Icons.tag,
-                color: theme.colorScheme.onTertiaryContainer,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '#${widget.hashtagSlug}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    totalLabel,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space4,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
       ),
+      child: DabblerInputRow(
+        leading: DabblerIcon(
+          'hashtag',
+          size: 24,
+          color: colors.brandPrimary,
+        ),
+        title: _tag,
+        subtitle: totalLabel,
+      ),
+    );
+  }
+}
+
+/// The first-load placeholder: three post-shaped skeleton rows.
+class _HashtagSkeleton extends StatelessWidget {
+  const _HashtagSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(DabblerSpacing.space6),
+      children: [
+        for (var i = 0; i < 3; i++)
+          const Padding(
+            padding: EdgeInsets.only(bottom: DabblerSpacing.space6),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DabblerSkeleton.circle(),
+                SizedBox(width: DabblerSpacing.space4),
+                Expanded(child: DabblerSkeleton.text(lines: 3)),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }
