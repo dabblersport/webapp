@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
 import 'package:dabbler/features/profile/presentation/widgets/sport_profile_section_widgets.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/core/feed/post_layout_resolver.dart';
 
 /// "Sport Activity" card: posts the user authored/commented/reacted for this
 /// sport, loaded independently of the rest of the sport profile screen.
@@ -65,7 +65,7 @@ class SportActivitySection extends ConsumerWidget {
                               .toList(),
                         ),
                         const SizedBox(height: 8),
-                        FeedPostCard(post: item.post),
+                        resolvePostLayout(item.post),
                       ],
                     ),
                   );

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/services/moderation_service.dart';
 
@@ -52,18 +53,24 @@ enum ReportTargetType {
   }
 }
 
+/// Opens the unified report dialog as a design-system dialog.
+Future<void> showReportDialog(
+  BuildContext context, {
+  required ReportTargetType targetType,
+  required String targetId,
+  String? targetUserId,
+}) => showDabblerDialog<void>(
+  context: context,
+  builder: (_) => ReportDialog(
+    targetType: targetType,
+    targetId: targetId,
+    targetUserId: targetUserId,
+  ),
+);
+
 /// Unified report dialog used across the entire app.
 ///
-/// Call via:
-/// ```dart
-/// showDialog(
-///   context: context,
-///   builder: (_) => ReportDialog(
-///     targetType: ReportTargetType.user,
-///     targetId: userId,
-///   ),
-/// );
-/// ```
+/// Call via [showReportDialog].
 class ReportDialog extends ConsumerStatefulWidget {
   final ReportTargetType targetType;
   final String targetId;
@@ -113,83 +120,61 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final label = widget.targetType.displayLabel;
 
-    return AlertDialog(
-      backgroundColor: colorScheme.surface,
-      title: Text('Report ${widget.targetType.displayLabel}'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Why are you reporting this ${widget.targetType.displayLabel}?',
-            ),
-            const SizedBox(height: 16),
-
-            // Reason chips
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _reportReasons.map((option) {
-                final isSelected = _selectedReason == option.label;
-                return ChoiceChip(
-                  label: Text(option.label),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedReason = selected ? option.label : null;
-                      _errorMessage = null;
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-
-            // Optional details field
-            if (_selectedReason != null) ...[
-              const SizedBox(height: 16),
-              TextField(
-                controller: _detailsController,
-                decoration: const InputDecoration(
-                  labelText: 'Additional details (optional)',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                maxLength: 500,
-              ),
-            ],
-
-            // Error message
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                style: TextStyle(color: colorScheme.error, fontSize: 13),
-              ),
-            ],
-          ],
-        ),
+    return DabblerDialog(
+      title: 'Report $label',
+      description: 'Why are you reporting this $label?',
+      onClose: () => Navigator.pop(context),
+      secondaryAction: DabblerDialogAction(
+        label: 'Cancel',
+        onPressed: () => Navigator.pop(context),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: (_selectedReason != null && !_isSubmitting)
-              ? _submitReport
-              : null,
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Submit Report'),
-        ),
-      ],
+      primaryAction: DabblerDialogAction(
+        label: _isSubmitting ? 'Sending…' : 'Submit Report',
+        onPressed: (_selectedReason != null && !_isSubmitting)
+            ? _submitReport
+            : null,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: DabblerSpacing.space2,
+            runSpacing: DabblerSpacing.space2,
+            children: _reportReasons.map((option) {
+              final isSelected = _selectedReason == option.label;
+              return DabblerChip(
+                label: option.label,
+                selected: isSelected,
+                onTap: () {
+                  setState(() {
+                    _selectedReason = isSelected ? null : option.label;
+                    _errorMessage = null;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          if (_selectedReason != null) ...[
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerTextField(
+              variant: DabblerTextFieldVariant.multiline,
+              controller: _detailsController,
+              label: 'Additional details (optional)',
+              rows: 3,
+            ),
+          ],
+          if (_errorMessage != null) ...[
+            const SizedBox(height: DabblerSpacing.space2),
+            DabblerBanner(
+              tone: DabblerBannerTone.error,
+              message: _errorMessage,
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -236,9 +221,13 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
       );
 
       if (mounted) {
+        final toast = DabblerToastProvider.of(context);
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted. Thank you.')),
+        toast.show(
+          const DabblerToastSpec(
+            message: 'Report submitted. Thank you.',
+            tone: DabblerToastTone.success,
+          ),
         );
       }
     } on ModerationServiceException catch (e) {

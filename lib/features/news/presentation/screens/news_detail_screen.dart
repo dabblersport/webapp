@@ -1,21 +1,25 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart' show TextInputAction;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:dabbler/core/providers/locale_provider.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
-import 'package:dabbler/features/news/presentation/widgets/news_comment_tile.dart';
-import 'package:dabbler/features/news/presentation/widgets/news_label_badge.dart';
-import 'package:dabbler/features/news/presentation/widgets/news_like_bar.dart';
+import 'package:dabbler/data/models/news/news_comment.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart'
+    show
+        homeNewsReactionCountsProvider,
+        showHomeNewsReactionPicker,
+        toggleHomeNewsReaction;
 import 'package:dabbler/features/news/providers/news_actions_provider.dart';
 import 'package:dabbler/features/news/providers/news_comments_provider.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart'
+    show myReactionsProvider;
 
+/// One news story (design X01, "Article").
 class NewsDetailScreen extends ConsumerStatefulWidget {
   const NewsDetailScreen({super.key, required this.item});
 
@@ -64,204 +68,304 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
       widget.item.title.map((k, v) => MapEntry(k, v)),
     );
 
-    final result = await ref.read(newsActionsProvider.notifier).addComment(
-          widget.item.newsId,
-          body,
-          titleSnapshot,
-        );
+    final result = await ref
+        .read(newsActionsProvider.notifier)
+        .addComment(widget.item.newsId, body, titleSnapshot);
 
     if (mounted) {
       setState(() => _submitting = false);
-      result.fold(
-        (_) => null,
-        (comment) {
-          _commentController.clear();
-          setState(() => _localCommentCount++);
-          ref
-              .read(newsCommentsProvider(widget.item.newsId).notifier)
-              .append(comment);
-        },
-      );
+      result.fold((_) => null, (comment) {
+        _commentController.clear();
+        setState(() => _localCommentCount++);
+        ref
+            .read(newsCommentsProvider(widget.item.newsId).notifier)
+            .append(comment);
+      });
     }
   }
 
+  TextStyle _type(DabblerTypeStyle step, Color color, {FontWeight? weight}) =>
+      step
+          .resolveForDirection(Directionality.of(context))
+          .copyWith(color: color, fontWeight: weight);
+
   @override
   Widget build(BuildContext context) {
-    final locale = ref.watch(localeProvider);
-    final lang = locale.languageCode;
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
+    final lang = ref.watch(localeProvider).languageCode;
     final item = widget.item;
     final title = item.localizedTitle(lang);
     final body = item.localizedBody(lang);
     final dateStr = DateFormat('MMM d, yyyy').format(item.createdAt.toLocal());
     final commentsAsync = ref.watch(newsCommentsProvider(item.newsId));
+    final mine =
+        ref.watch(myReactionsProvider(item.newsId)).valueOrNull ??
+        const <String>{};
+    final counts =
+        ref.watch(homeNewsReactionCountsProvider(item.newsId)).valueOrNull ??
+        const <String, int>{};
+    final likes = counts.values.fold<int>(0, (a, b) => a + b);
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
+    const side = DabblerSpacing.space6;
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: item.feedLabel ?? 'News',
+        onBack: () => context.pop(),
+      ),
+      bottomBar: _CommentBar(
+        controller: _commentController,
+        submitting: _submitting,
+        onSubmit: _submitComment,
+      ),
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          SliverAppBar(
-            expandedHeight: MediaQuery.sizeOf(context).width * 5 / 4,
-            pinned: true,
-            backgroundColor: cs.surface,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => context.pop(),
-            ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: _CoverHero(item: item),
-            ),
-          ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                side,
+                DabblerSpacing.space2,
+                side,
+                0,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Badge + date row
+                  if (item.coverImageUrl != null) ...[
+                    DabblerImage(
+                      url: item.coverImageUrl,
+                      aspectRatio: 4 / 5,
+                      semanticLabel: title,
+                    ),
+                    const SizedBox(height: DabblerSpacing.space6),
+                  ],
                   Row(
                     children: [
                       if (item.feedLabel != null) ...[
-                        NewsLabelBadge(item.feedLabel!),
-                        const SizedBox(width: 10),
+                        DabblerBadge(label: item.feedLabel!),
+                        const SizedBox(width: DabblerSpacing.space3),
                       ],
                       if (item.isPinned) ...[
-                        Icon(
-                          Iconsax.bookmark_2_copy,
+                        DabblerIcon(
+                          'bookmark-2',
                           size: 14,
-                          color: cs.onSurfaceVariant,
+                          color: colors.textSecondary,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: DabblerSpacing.space2),
                       ],
                       Text(
                         dateStr,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
-                        ),
+                        style: _type(DabblerType.caption1, colors.textSecondary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: DabblerSpacing.space4),
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: cs.onSurface,
-                      height: 1.3,
-                    ),
+                    style: _type(DabblerType.title1, colors.textPrimary),
                   ),
                   if (item.sourceLabel != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      item.sourceLabel!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: cs.primary,
-                      ),
+                    const SizedBox(height: DabblerSpacing.space4),
+                    Row(
+                      children: [
+                        DabblerAvatar(
+                          seed: item.sourceLabel!,
+                          size: DabblerAvatarSize.sm,
+                        ),
+                        const SizedBox(width: DabblerSpacing.space3),
+                        Expanded(
+                          child: Text(
+                            item.sourceLabel!,
+                            style: _type(
+                              DabblerType.subheadline,
+                              colors.textPrimary,
+                              weight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-                  const SizedBox(height: 20),
-                  const Divider(),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: DabblerSpacing.space6),
+                  const DabblerDivider(),
+                  const SizedBox(height: DabblerSpacing.space5),
                   if (body.isNotEmpty)
                     Text(
                       body,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: cs.onSurface,
-                        height: 1.7,
-                      ),
+                      style: _type(DabblerType.body, colors.textPrimary),
                     ),
-                  const SizedBox(height: 24),
-                  NewsLikeBar(
-                    newsId: item.newsId,
-                    onCommentTap: _scrollToComments,
+                  const SizedBox(height: DabblerSpacing.space7),
+                  Wrap(
+                    spacing: DabblerSpacing.space2,
+                    runSpacing: DabblerSpacing.space2,
+                    children: [
+                      DabblerButton(
+                        label: '$likes',
+                        icon: 'heart',
+                        tone: mine.isNotEmpty
+                            ? DabblerButtonTone.primary
+                            : DabblerButtonTone.secondary,
+                        size: DabblerButtonSize.small,
+                        semanticLabel: 'Like',
+                        onPressed: () =>
+                            toggleHomeNewsReaction(ref, item.newsId, mine),
+                      ),
+                      DabblerButton(
+                        label: 'React',
+                        icon: 'emoji-happy',
+                        tone: DabblerButtonTone.secondary,
+                        size: DabblerButtonSize.small,
+                        onPressed: () => showHomeNewsReactionPicker(
+                          context,
+                          ref,
+                          item.newsId,
+                          mine,
+                        ),
+                      ),
+                      DabblerButton(
+                        label: '$_localCommentCount',
+                        icon: 'message',
+                        tone: DabblerButtonTone.secondary,
+                        size: DabblerButtonSize.small,
+                        semanticLabel: 'Comments',
+                        onPressed: _scrollToComments,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  const Divider(),
+                  const SizedBox(height: DabblerSpacing.space7),
+                  const DabblerDivider(),
                 ],
               ),
             ),
           ),
-          // Comments heading
           SliverToBoxAdapter(
             key: _commentsKey,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                side,
+                DabblerSpacing.space5,
+                side,
+                DabblerSpacing.space1,
+              ),
               child: Text(
                 'Comments',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface,
-                ),
+                style: _type(DabblerType.headline, colors.textPrimary),
               ),
             ),
           ),
-          // Comments list
           commentsAsync.when(
             loading: () => const SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: CircularProgressIndicator()),
+                padding: EdgeInsets.all(DabblerSpacing.space8),
+                child: Center(child: DabblerSpinner()),
               ),
             ),
-            error: (_, __) =>
-                const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             data: (comments) => comments.isEmpty
                 ? SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        side,
+                        DabblerSpacing.space4,
+                        side,
+                        DabblerSpacing.space10,
+                      ),
                       child: Text(
                         'Be the first to comment.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: cs.onSurfaceVariant,
+                        style: _type(
+                          DabblerType.subheadline,
+                          colors.textSecondary,
                         ),
                       ),
                     ),
                   )
                 : SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (_, i) => NewsCommentTile(comment: comments[i]),
+                      (_, i) => _CommentRow(comment: comments[i], lang: lang),
                       childCount: comments.length,
                     ),
                   ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: DabblerSpacing.space10),
+          ),
         ],
       ),
-      bottomNavigationBar: _CommentBar(
-        controller: _commentController,
-        submitting: _submitting,
-        onSubmit: _submitComment,
-      ),
     );
-
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 0,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 0),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
 }
 
 // ---------------------------------------------------------------------------
+
+class _CommentRow extends StatelessWidget {
+  const _CommentRow({required this.comment, required this.lang});
+
+  final NewsComment comment;
+  final String lang;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
+    final displayName =
+        comment.authorDisplayName ?? comment.authorUsername ?? 'User';
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: DabblerSpacing.space6,
+        vertical: DabblerSpacing.space3,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DabblerAvatar(
+            seed: displayName,
+            imageUrl: comment.authorAvatarUrl,
+            size: DabblerAvatarSize.sm,
+          ),
+          const SizedBox(width: DabblerSpacing.space3),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: DabblerType.footnote
+                            .resolveForDirection(dir)
+                            .copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
+                    Text(
+                      timeago.format(comment.createdAt, locale: lang),
+                      style: DabblerType.caption2
+                          .resolveForDirection(dir)
+                          .copyWith(color: colors.textSecondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: DabblerSpacing.space1),
+                Text(
+                  comment.body,
+                  style: DabblerType.subheadline
+                      .resolveForDirection(dir)
+                      .copyWith(color: colors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _CommentBar extends StatelessWidget {
   const _CommentBar({
@@ -276,104 +380,40 @@ class _CommentBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      top: false,
+      child: DecoratedBox(
         decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border(
-            top: BorderSide(color: cs.outlineVariant, width: 0.5),
-          ),
+          color: colors.surfaceCard,
+          border: Border(top: BorderSide(color: colors.borderDefault)),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: controller,
-                decoration: InputDecoration(
-                  hintText: 'Add a comment…',
-                  hintStyle: TextStyle(
-                    fontSize: 14,
-                    color: cs.onSurfaceVariant,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  isDense: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: DabblerSpacing.space4,
+            vertical: DabblerSpacing.space2,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: DabblerTextField(
+                  controller: controller,
+                  placeholder: 'Add a comment…',
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => onSubmit(),
                 ),
-                style: TextStyle(fontSize: 14, color: cs.onSurface),
-                maxLines: 3,
-                minLines: 1,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSubmit(),
               ),
-            ),
-            const SizedBox(width: 8),
-            submitting
-                ? const SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : IconButton(
-                    onPressed: onSubmit,
-                    icon: Icon(Iconsax.send_1, color: cs.primary),
-                  ),
-          ],
+              const SizedBox(width: DabblerSpacing.space2),
+              DabblerButton.icon(
+                icon: 'send-1',
+                semanticLabel: 'Send',
+                loading: submitting,
+                onPressed: onSubmit,
+              ),
+            ],
+          ),
         ),
       ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-
-class _CoverHero extends StatelessWidget {
-  const _CoverHero({required this.item});
-  final FeedNewsItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (item.coverImageUrl != null)
-          CachedNetworkImage(
-            imageUrl: item.coverImageUrl!,
-            httpHeaders: const {
-              'User-Agent':
-                  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-              'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-            },
-            fit: BoxFit.cover,
-            placeholder: (_, __) => Container(color: Colors.grey.shade800),
-            errorWidget: (_, __, ___) =>
-                Container(color: Colors.grey.shade800),
-          )
-        else
-          Container(color: Colors.grey.shade800),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withValues(alpha: 0.4),
-              ],
-              stops: const [0.5, 1.0],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

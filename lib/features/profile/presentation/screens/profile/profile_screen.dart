@@ -30,7 +30,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
         userRepostedPostsProvider;
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/core/feed/post_layout_resolver.dart';
 // Extracted widgets for hero and basics live alongside this screen for now.
 // If you re-enable them, ensure the import paths match actual file locations.
 
@@ -1381,7 +1381,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           children: posts.map((post) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: FeedPostCard(post: post),
+              child: resolvePostLayout(post),
             );
           }).toList(),
         );

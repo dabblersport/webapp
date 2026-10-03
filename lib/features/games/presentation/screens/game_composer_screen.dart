@@ -918,7 +918,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Select Format',
-      detents: const <double>[0.6],
       builder: (_) => _VariantPickerSheet(
         variants: notifier.variants,
         onSelect: notifier.selectVariant,
@@ -941,7 +940,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Sports',
-      detents: const <double>[0.85],
       builder: (_) => SportSelectionSheet(
         sportsProvider: activeChallengeSportsByProfileCountryProvider,
         selectedSport: selectedSport,
@@ -962,7 +960,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Date',
-      detents: const <double>[0.7],
       builder: (_) => _DatePickerSheet(
         first: now,
         last: now.add(const Duration(days: 365)),
@@ -977,7 +974,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Time',
-      detents: const <double>[0.6],
       builder: (_) => _TimePickerSheet(
         initial: current ?? const TimeOfDay(hour: 18, minute: 0),
         onPicked: ref.read(_gameComposerProvider.notifier).selectTime,
@@ -990,7 +986,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Duration',
-      detents: const <double>[0.7],
       builder: (_) => _DurationPickerSheet(
         currentMinutes: current,
         onSelect: ref.read(_gameComposerProvider.notifier).setDuration,
@@ -1007,7 +1002,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Select Venue',
-      detents: const <double>[0.85],
       builder: (_) => _VenuePickerSheet(
         spaces: spaces,
         onSelect: notifier.selectVenueSpace,
@@ -1021,7 +1015,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: 'Skill Level',
-      detents: const <double>[0.6],
       builder: (_) => _SkillPickerSheet(
         onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
         onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
@@ -1039,7 +1032,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: title,
-      detents: const <double>[0.45],
       builder: (_) => _PlayerCountPickerSheet(
         initialValue: initial,
         onSelect: onSelect,

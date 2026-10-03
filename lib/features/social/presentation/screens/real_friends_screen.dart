@@ -1,20 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/widgets/app_top_bar.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
-import 'package:dabbler/widgets/app_background.dart';
 
 /// Community screen with Following, Followers, and People (discover) tabs.
 /// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
@@ -34,14 +26,11 @@ class RealFriendsScreen extends ConsumerStatefulWidget {
   ConsumerState<RealFriendsScreen> createState() => _RealFriendsScreenState();
 }
 
-class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  Map<String, dynamic>? _userProfile;
-  final _authService = AuthService();
+  late int _tab;
 
   /// Whether we're viewing another user's data (no People tab).
   bool get _isViewingOther => widget.profileId != null;
@@ -67,26 +56,11 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
   @override
   void initState() {
     super.initState();
-    final clamped = widget.initialTab.clamp(0, _tabCount - 1);
-    _tabController = TabController(
-      length: _tabCount,
-      vsync: this,
-      initialIndex: clamped,
-    );
-    _tabController.addListener(() => setState(() {}));
-    _loadUserProfile();
-  }
-
-  Future<void> _loadUserProfile() async {
-    try {
-      final profile = await _authService.getUserProfile();
-      if (mounted) setState(() => _userProfile = profile);
-    } catch (_) {}
+    _tab = widget.initialTab.clamp(0, _tabCount - 1);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -98,453 +72,71 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-
     // Watch myProfileIdProvider reactively so it resolves on first load
     if (!_isViewingOther) {
       ref.watch(myProfileIdProvider);
     }
 
-    return FutureBuilder<ColorScheme>(
-      future: AppTheme.getColorScheme(AppTheme.activeCategory, brightness),
-      builder: (context, snapshot) {
-        final socialScheme =
-            snapshot.data ?? context.getCategoryTheme(AppTheme.activeCategory);
-        final baseTheme = Theme.of(context);
-        final themed = baseTheme.copyWith(
-          colorScheme: socialScheme,
-          cardTheme: baseTheme.cardTheme.copyWith(
-            color: socialScheme.surfaceContainerLow,
-          ),
-        );
+    final canPop = Navigator.of(context).canPop();
+    final labels = ['Following', 'Followers', if (!_isViewingOther) 'People'];
 
-        return Theme(
-          data: themed,
-          child: Builder(
-            builder: (context) {
-              final colorScheme = Theme.of(context).colorScheme;
-              final isWide = MediaQuery.sizeOf(context).width >= 600;
-
-              if (isWide) {
-                return _buildWideLayout(context, colorScheme);
-              }
-
-              return Scaffold(
-                backgroundColor: Colors.transparent,
-                body: Stack(
-                  children: [
-                    DynamicBackground(scrollController: _scrollController),
-                    CustomScrollView(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(
-                        parent: BouncingScrollPhysics(),
-                      ),
-                      slivers: [
-                        SliverToBoxAdapter(
-                          child: _buildHeader(colorScheme),
-                        ),
-                        SliverPersistentHeader(
-                          pinned: true,
-                          delegate: _SocialTabBarDelegate(
-                            tabBar: _buildPillTabs(colorScheme),
-                            cs: colorScheme,
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                            child: _buildSearchBar(colorScheme),
-                          ),
-                        ),
-                        SliverToBoxAdapter(
-                          child: _buildBottomSection(),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // WIDE LAYOUT
-  // ---------------------------------------------------------------------------
-
-  Widget _buildWideLayout(BuildContext context, ColorScheme colorScheme) {
-    return AdaptiveScaffold(
-      currentIndex: 5, // Community
-      onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 5),
-      destinations: kAdaptiveDestinations,
-      headerWidget: SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Community',
+        onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
-      body: _buildWideCommunityBody(colorScheme),
-      rightPanel: _buildWidePeoplePanel(colorScheme),
-    );
-  }
-
-  /// Center column on wide screens: Community header + Following/Followers.
-  Widget _buildWideCommunityBody(ColorScheme colorScheme) {
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
       body: CustomScrollView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
         slivers: [
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Community',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Following / Followers only (People is in right panel)
-                  _buildWideTabSwitcher(colorScheme),
-                  const SizedBox(height: 12),
-                  _buildSearchBar(colorScheme),
-                ],
+              padding: const EdgeInsets.symmetric(
+                horizontal: DabblerSpacing.space6,
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: _buildWideBottomSection(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Right panel on wide screens: People (discover) tab.
-  Widget _buildWidePeoplePanel(ColorScheme colorScheme) {
-    final profileId = _resolvedProfileId;
-    final socialScheme = context.getCategoryTheme('main');
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(
-          parent: BouncingScrollPhysics(),
-        ),
-        slivers: [
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Icon(
-                    Iconsax.search_normal_1_copy,
-                    color: socialScheme.primary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Discover People',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              child: DabblerTabs(
+                items: [
+                  for (var i = 0; i < labels.length; i++)
+                    DabblerTabItem(id: '$i', label: labels[i]),
                 ],
-              ),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildPeopleSearchBar(colorScheme),
-            ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: profileId == null
-                  ? _buildSkeleton(4)
-                  : _buildPeopleTab(profileId),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Tab switcher for wide mode — only Following / Followers (no People).
-  Widget _buildWideTabSwitcher(ColorScheme colorScheme) {
-    final textTheme = Theme.of(context).textTheme;
-    final socialScheme = context.getCategoryTheme('main');
-    // Clamp index: wide mode only has 2 segments.
-    final idx = _tabController.index.clamp(0, 1);
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<int>(
-        segments: const [
-          ButtonSegment(
-            value: 0,
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [Text('Following')],
-            ),
-          ),
-          ButtonSegment(
-            value: 1,
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [Text('Followers')],
-            ),
-          ),
-        ],
-        selected: <int>{idx},
-        onSelectionChanged: (Set<int> s) {
-          final newIdx = s.first;
-          if (_tabController.index != newIdx) {
-            setState(() => _tabController.index = newIdx);
-          }
-        },
-        style: ButtonStyle(
-          side: WidgetStateProperty.all(
-            const BorderSide(color: Colors.transparent),
-          ),
-          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return socialScheme.primary;
-            }
-            return socialScheme.primary.withValues(alpha: 0.08);
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return socialScheme.onPrimary;
-            }
-            return socialScheme.onSurfaceVariant;
-          }),
-          textStyle: WidgetStateProperty.all(
-            textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          padding: WidgetStateProperty.all(
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          ),
-          shape: WidgetStateProperty.all(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        showSelectedIcon: false,
-      ),
-    );
-  }
-
-  /// People search bar (separate controller for the right panel).
-  Widget _buildPeopleSearchBar(ColorScheme colorScheme) {
-    return SizedBox(
-      height: 48,
-      child: TextField(
-        controller: _searchController,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontSize: 15,
-          color: colorScheme.onSurface,
-        ),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: colorScheme.primary.withValues(alpha: 0.12),
-          hintText: 'Search people by name or username',
-          hintStyle: TextStyle(
-            fontSize: 15,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          prefixIcon: const Icon(Iconsax.search_normal_copy),
-          suffixIcon: _searchController.text.isEmpty
-              ? null
-              : IconButton(
-                  icon: const Icon(Iconsax.close_circle_copy),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = '');
-                  },
-                ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        onChanged: (v) => setState(() => _searchQuery = v.trim()),
-      ),
-    );
-  }
-
-  /// Bottom section for wide mode: only Following/Followers (no People).
-  Widget _buildWideBottomSection() {
-    final profileId = _resolvedProfileId;
-    if (profileId == null) return _buildSkeleton(6);
-    if (_searchQuery.length >= 2) return _buildSearchResults(profileId);
-    switch (_tabController.index.clamp(0, 1)) {
-      case 0:
-        return _buildFollowingTab(profileId);
-      case 1:
-        return _buildFollowersTab(profileId);
-      default:
-        return const SizedBox.shrink();
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // HEADER (home-screen style)
-  // ---------------------------------------------------------------------------
-
-  Widget _buildHeader(ColorScheme cs) {
-    final displayName = (_userProfile?['display_name'] as String?)?.trim() ??
-        (_userProfile?['username'] as String?)?.trim();
-
-    return AppTopBar(
-      avatarContext: AvatarContext.social,
-      avatarUrl: _userProfile?['avatar_url'] as String?,
-      displayName: displayName,
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // PILL TAB SWITCHER (home-screen style)
-  // ---------------------------------------------------------------------------
-
-  Widget _buildPillTabs(ColorScheme cs) {
-    final textTheme = Theme.of(context).textTheme;
-    final labels = [
-      'Following',
-      'Followers',
-      if (!_isViewingOther) 'People',
-    ];
-
-    return AnimatedBuilder(
-      animation: _tabController,
-      builder: (context, _) {
-        return SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: labels.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, i) {
-              final isSelected = _tabController.index == i;
-              return GestureDetector(
-                onTap: () {
-                  if (_tabController.index != i) {
-                    setState(() => _tabController.index = i);
-                  }
+                value: '$_tab',
+                fullWidth: true,
+                label: 'Community',
+                onChanged: (id) {
+                  final i = int.parse(id);
+                  if (_tab != i) setState(() => _tab = i);
                 },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? cs.primary
-                        : cs.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    labels[i],
-                    style: textTheme.labelLarge?.copyWith(
-                      color: isSelected ? cs.onPrimary : cs.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              );
-            },
+              ),
+            ),
           ),
-        );
-      },
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // SEARCH BAR
-  // ---------------------------------------------------------------------------
-
-  Widget _buildSearchBar(ColorScheme colorScheme) {
-    return SizedBox(
-      height: 48,
-      child: TextField(
-        controller: _searchController,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontSize: 15,
-          color: colorScheme.onSurface,
-        ),
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: colorScheme.primary.withValues(alpha: 0.12),
-          hintText: 'Search by name or username',
-          hintStyle: TextStyle(
-            fontSize: 15,
-            color: colorScheme.onSurfaceVariant,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: DabblerSpacing.space6,
+                vertical: DabblerSpacing.space4,
+              ),
+              child: DabblerSearchField(
+                controller: _searchController,
+                placeholder: 'Search by name or username',
+                onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                onCleared: () => setState(() => _searchQuery = ''),
+              ),
+            ),
           ),
-          prefixIcon: const Icon(Iconsax.search_normal_copy),
-          suffixIcon: _searchController.text.isEmpty
-              ? null
-              : IconButton(
-                  icon: const Icon(Iconsax.close_circle_copy),
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _searchQuery = '');
-                  },
-                ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                DabblerSpacing.space6,
+                0,
+                DabblerSpacing.space6,
+                DabblerSpacing.space8,
+              ),
+              child: _buildBottomSection(),
+            ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-        onChanged: (v) => setState(() => _searchQuery = v.trim()),
+        ],
       ),
     );
   }
@@ -562,7 +154,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       return _buildSearchResults(profileId);
     }
 
-    switch (_tabController.index) {
+    switch (_tab) {
       case 0:
         return _buildFollowingTab(profileId);
       case 1:
@@ -574,10 +166,6 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // FOLLOWING TAB
-  // ---------------------------------------------------------------------------
-
   Widget _buildFollowingTab(String profileId) {
     final async = ref.watch(followingListProvider(profileId));
     return async.when(
@@ -586,20 +174,16 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       data: (profiles) {
         final filtered = _localFilter(profiles);
         if (filtered.isEmpty) {
-          return _buildEmpty(
-            icon: Iconsax.people_copy,
+          return const DabblerEmptyState(
+            icon: 'people',
             title: 'Not following anyone yet',
-            subtitle: 'Discover people in the People tab!',
+            text: 'Discover people in the People tab!',
           );
         }
         return _buildProfileList(filtered, profileId);
       },
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // FOLLOWERS TAB
-  // ---------------------------------------------------------------------------
 
   Widget _buildFollowersTab(String profileId) {
     final async = ref.watch(followersListProvider(profileId));
@@ -609,10 +193,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       data: (profiles) {
         final filtered = _localFilter(profiles);
         if (filtered.isEmpty) {
-          return _buildEmpty(
-            icon: Iconsax.profile_2user_copy,
+          return const DabblerEmptyState(
+            icon: 'profile-2user',
             title: 'No followers yet',
-            subtitle: 'Share your profile to get followers!',
+            text: 'Share your profile to get followers!',
           );
         }
         return _buildProfileList(filtered, profileId);
@@ -620,25 +204,17 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // PEOPLE (DISCOVER) TAB
-  // ---------------------------------------------------------------------------
-
   Widget _buildPeopleTab(String profileId) {
     if (_searchQuery.length >= 2) {
       return _buildSearchResults(profileId);
     }
 
-    return _buildEmpty(
-      icon: Iconsax.search_normal_copy,
+    return const DabblerEmptyState(
+      icon: 'search-normal',
       title: 'Discover People',
-      subtitle: 'Type a name or username above to find people to follow.',
+      text: 'Type a name or username above to find people to follow.',
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // GLOBAL SEARCH RESULTS
-  // ---------------------------------------------------------------------------
 
   Widget _buildSearchResults(String profileId) {
     final params = (query: _searchQuery, currentProfileId: profileId);
@@ -648,20 +224,16 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
       error: (_, __) => _buildError('Search failed'),
       data: (profiles) {
         if (profiles.isEmpty) {
-          return _buildEmpty(
-            icon: Iconsax.search_normal_copy,
+          return const DabblerEmptyState(
+            icon: 'search-normal',
             title: 'No results',
-            subtitle: 'Try a different name or username.',
+            text: 'Try a different name or username.',
           );
         }
         return _buildProfileList(profiles, profileId);
       },
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // SHARED PROFILE LIST
-  // ---------------------------------------------------------------------------
 
   Widget _buildProfileList(
     List<Map<String, dynamic>> profiles,
@@ -670,13 +242,16 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
     return Column(
       children: [
         for (final profile in profiles)
-          _ProfileTile(
-            profile: profile,
-            currentProfileId: currentProfileId,
-            onTap: () {
-              final userId = profile['user_id'] as String? ?? '';
-              _openProfile(userId);
-            },
+          Padding(
+            padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),
+            child: _ProfileTile(
+              profile: profile,
+              currentProfileId: currentProfileId,
+              onTap: () {
+                final userId = profile['user_id'] as String? ?? '';
+                _openProfile(userId);
+              },
+            ),
           ),
       ],
     );
@@ -698,166 +273,40 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen>
   }
 
   Widget _buildSkeleton(int count) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       children: List.generate(count, (_) {
-        return Card.filled(
-          color: colorScheme.primary.withValues(alpha: 0.08),
-          margin: const EdgeInsets.only(bottom: 8),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 16,
-                        width: 160,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 12,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+        return const Padding(
+          padding: EdgeInsets.only(bottom: DabblerSpacing.space4),
+          child: Row(
+            children: [
+              DabblerSkeleton.circle(width: 40),
+              SizedBox(width: DabblerSpacing.space4),
+              Expanded(child: DabblerSkeleton.text(lines: 2)),
+            ],
           ),
         );
       }),
     );
   }
 
-  Widget _buildEmpty({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: 36),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 64,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildError(String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Iconsax.danger_copy,
-            size: 64,
-            color: colorScheme.error.withValues(alpha: 0.8),
-          ),
-          const SizedBox(height: 16),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              final pid = _resolvedProfileId;
-              if (pid != null) {
-                ref.invalidate(followingListProvider(pid));
-                ref.invalidate(followersListProvider(pid));
-              }
-            },
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
+    return DabblerEmptyState.error(
+      title: message,
+      size: DabblerEmptyStateSize.inline,
+      retryLabel: 'Retry',
+      onRetry: () {
+        final pid = _resolvedProfileId;
+        if (pid != null) {
+          ref.invalidate(followingListProvider(pid));
+          ref.invalidate(followersListProvider(pid));
+        }
+      },
     );
   }
 }
 
 // =============================================================================
-// PINNED TAB BAR DELEGATE (home-screen style)
-// =============================================================================
-
-class _SocialTabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _SocialTabBarDelegate({required this.tabBar, required this.cs});
-
-  final Widget tabBar;
-  final ColorScheme cs;
-
-  @override
-  double get minExtent => 56;
-
-  @override
-  double get maxExtent => 56;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return ColoredBox(
-      color: Colors.transparent,
-      child: Column(
-        children: [
-          const SizedBox(height: 9),
-          Expanded(child: tabBar),
-          const SizedBox(height: 6),
-          Divider(
-            height: 1,
-            thickness: 0,
-            color: cs.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SocialTabBarDelegate oldDelegate) =>
-      oldDelegate.cs != cs || oldDelegate.tabBar != tabBar;
-}
-
-// =============================================================================
-// PROFILE TILE WITH FOLLOW / UNFOLLOW
+// PROFILE ROW WITH FOLLOW / UNFOLLOW
 // =============================================================================
 
 class _ProfileTile extends ConsumerStatefulWidget {
@@ -927,8 +376,11 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
         )),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Something went wrong. Please try again.')),
+        DabblerToastProvider.of(context).show(
+          const DabblerToastSpec(
+            message: 'Something went wrong. Please try again.',
+            tone: DabblerToastTone.error,
+          ),
         );
       }
     } finally {
@@ -938,7 +390,7 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     final isSelf = _targetProfileId == widget.currentProfileId;
 
     final isFollowingAsync = ref.watch(
@@ -954,46 +406,49 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
     // shows a neutral loading state.
     final isFollowing = isFollowingAsync.valueOrNull;
 
-    return Card.filled(
-      color: colorScheme.primary.withValues(alpha: 0.08),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        onTap: widget.onTap,
-        leading: DSAvatar.small(
-          imageUrl: _avatarUrl,
-          displayName: _displayName,
-          context: AvatarContext.social,
-        ),
-        title: Row(
-          children: [
-            Flexible(
-              child: Text(_displayName, overflow: TextOverflow.ellipsis),
-            ),
-            if (_verified) ...[
-              const SizedBox(width: 4),
-              Icon(Icons.verified, size: 16, color: colorScheme.primary),
-            ],
-          ],
-        ),
-        subtitle: Text('@$_username'),
-        trailing: isSelf
-            ? null
-            : (_isProcessing || isFollowing == null)
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : isFollowing
-            ? OutlinedButton(
-                onPressed: () => _toggleFollow(true),
-                child: const Text('Unfollow'),
-              )
-            : FilledButton(
-                onPressed: () => _toggleFollow(false),
-                child: const Text('Follow'),
-              ),
+    final Widget? action = isSelf
+        ? null
+        : (_isProcessing || isFollowing == null)
+        ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
+        : isFollowing
+        ? DabblerButton(
+            label: 'Unfollow',
+            tone: DabblerButtonTone.outlined,
+            size: DabblerButtonSize.small,
+            onPressed: () => _toggleFollow(true),
+          )
+        : DabblerButton(
+            label: 'Follow',
+            size: DabblerButtonSize.small,
+            onPressed: () => _toggleFollow(false),
+          );
+
+    return DabblerInputRow(
+      onTap: widget.onTap,
+      leading: DabblerAvatar(
+        seed: _displayName,
+        imageUrl: _avatarUrl,
+        size: DabblerAvatarSize.md,
       ),
+      title: _displayName,
+      subtitle: '@$_username',
+      trailing: (!_verified && action == null)
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_verified)
+                  DabblerIcon(
+                    'verify',
+                    size: 16,
+                    color: colors.brandPrimary,
+                    weight: DabblerIconWeight.bold,
+                  ),
+                if (_verified && action != null)
+                  const SizedBox(width: DabblerSpacing.space2),
+                ?action,
+              ],
+            ),
     );
   }
 }

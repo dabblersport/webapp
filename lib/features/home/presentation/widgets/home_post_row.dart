@@ -1,5 +1,4 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/material.dart' show showDialog;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +15,6 @@ import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'home_feed_parts.dart';
@@ -254,7 +252,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     final l10n = AppLocalizations.of(context);
     showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.35],
+      detent: DabblerSheetDetent.content,
       builder: (ctx) => Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
@@ -283,13 +281,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               fullWidth: true,
               onPressed: () {
                 Navigator.of(ctx).pop();
-                // The quote composer is the shared sheet (legacy widgets).
-                showAdaptiveSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  showDragHandle: false,
-                  builder: (_) => QuoteRepostSheet(originalPost: post),
-                );
+                showQuoteRepostSheet(context, post);
               },
             ),
           ],
@@ -301,7 +293,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   void _showMoreMenu({required bool isAuthor}) {
     showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.5],
+      detent: DabblerSheetDetent.content,
       builder: (ctx) => Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
@@ -484,20 +476,17 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   ];
 }
 
-/// Opens the shared report form. The form is a shared legacy Material dialog
-/// (it needs Material's dialog route), not part of Home's presentation.
+/// Opens the shared report form.
 void _showLegacyReportDialog(
   BuildContext context, {
   required String postId,
   required String authorUserId,
 }) {
-  showDialog<void>(
-    context: context,
-    builder: (_) => ReportDialog(
-      targetType: ReportTargetType.post,
-      targetId: postId,
-      targetUserId: authorUserId,
-    ),
+  showReportDialog(
+    context,
+    targetType: ReportTargetType.post,
+    targetId: postId,
+    targetUserId: authorUserId,
   );
 }
 

@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
-import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-/// Twitter/Facebook-style activity card rendered from a `public_activities` row.
-/// Shows: avatar · "username [action]" · timestamp, plus optional news preview.
+/// A `public_activities` row ("username [action] · time", plus an optional
+/// news preview), drawn by [DabblerActivityRow].
 class PublicActivityCard extends StatelessWidget {
   const PublicActivityCard({super.key, required this.activity});
 
@@ -16,103 +16,33 @@ class PublicActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final locale = Localizations.localeOf(context).languageCode;
-
     final hasNewsTarget =
         activity.activityType == PublicActivityType.comment &&
         activity.targetNewsId != null;
     final newsTitle = activity.localizedTargetTitle(locale);
 
-    return InkWell(
-      onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DSAvatar(
-              size: AvatarSize.small,
-              customDimension: 36,
-              imageUrl: activity.actorAvatarUrl,
-              displayName: activity.actorUsername,
-              context: AvatarContext.social,
-              backgroundColor: cs.primaryContainer,
-              foregroundColor: cs.onPrimaryContainer,
-              hasBorder: false,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                      children: [
-                        TextSpan(
-                          text: activity.actorUsername,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        TextSpan(text: ' ${activity.actionLabel}'),
-                        TextSpan(
-                          text:
-                              '  ·  ${timeago.format(activity.createdAt, allowFromNow: true, locale: locale)}',
-                          style: tt.bodySmall
-                              ?.copyWith(color: cs.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (hasNewsTarget && newsTitle.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          if (activity.targetCoverImageUrl != null) ...[
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.network(
-                                activity.targetCoverImageUrl!,
-                                width: 40,
-                                height: 40,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    const SizedBox.shrink(),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
-                          Expanded(
-                            child: Text(
-                              newsTitle,
-                              style: tt.bodySmall?.copyWith(
-                                color: cs.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
+    return DabblerActivityRow(
+      leading: DabblerAvatar(
+        seed: activity.actorUsername,
+        imageUrl: activity.actorAvatarUrl,
+        size: DabblerAvatarSize.sm,
       ),
+      actor: activity.actorUsername,
+      verb: activity.actionLabel,
+      subject: hasNewsTarget && newsTitle.isNotEmpty ? newsTitle : null,
+      when: timeago.format(
+        activity.createdAt,
+        allowFromNow: true,
+        locale: locale,
+      ),
+      thumbnail: hasNewsTarget && activity.targetCoverImageUrl != null
+          ? DabblerImage(
+              url: activity.targetCoverImageUrl,
+              radius: BorderRadius.zero,
+            )
+          : null,
+      onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
     );
   }
 

@@ -1,11 +1,21 @@
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
-/// Bottom sheet for composing a quote repost.
+/// Opens the quote-repost composer as a design-system sheet; resolves true
+/// when the repost was sent.
+Future<bool?> showQuoteRepostSheet(BuildContext context, Post originalPost) =>
+    showDabblerSheet<bool>(
+      context: context,
+      title: 'Quote Repost',
+      detent: DabblerSheetDetent.content,
+      builder: (_) => QuoteRepostSheet(originalPost: originalPost),
+    );
+
+/// Sheet content for composing a quote repost.
 ///
 /// Shows a text field for quote text plus a preview of the original post,
 /// and calls [PostActionsNotifier.repostPost] on submit.
@@ -41,133 +51,80 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
     final original = widget.originalPost;
     final authorLabel = (original.authorDisplayName ?? '').trim().isEmpty
         ? 'Anonymous'
         : original.authorDisplayName!.trim();
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+        DabblerSpacing.space6,
+        DabblerSpacing.space8,
       ),
-      child: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DabblerTextField(
+            variant: DabblerTextFieldVariant.multiline,
+            controller: _controller,
+            placeholder: 'Add your thoughts…',
+            rows: 3,
+            onChanged: (_) => setState(() {}),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ── Drag handle ──
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // ── Header ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Quote Repost',
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    FilledButton(
-                      onPressed: _isSending ? null : _submit,
-                      child: _isSending
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Post'),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Quote text field ──
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: TextField(
-                  controller: _controller,
-                  autofocus: true,
-                  maxLines: 4,
-                  minLines: 2,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: 'Add your thoughts…',
-                    hintStyle: tt.bodyMedium?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-
-              // ── Original post preview ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  AppSpacing.sm,
-                  16,
-                  AppSpacing.lg,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: cs.outlineVariant.withValues(alpha: 0.4),
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        authorLabel,
-                        style: tt.titleSmall?.copyWith(
+          const SizedBox(height: DabblerSpacing.space4),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: colors.borderDefault),
+              borderRadius: BorderRadius.circular(DabblerRadius.lg),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(DabblerSpacing.space4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    authorLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: DabblerType.subheadline
+                        .resolveForDirection(dir)
+                        .copyWith(
+                          color: colors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (original.body != null &&
-                          original.body!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          original.body!,
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
                   ),
-                ),
+                  if (original.body != null &&
+                      original.body!.trim().isNotEmpty) ...[
+                    const SizedBox(height: DabblerSpacing.space1),
+                    Text(
+                      original.body!,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: DabblerType.footnote
+                          .resolveForDirection(dir)
+                          .copyWith(color: colors.textSecondary),
+                    ),
+                  ],
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: DabblerSpacing.space6),
+          DabblerButton(
+            label: 'Post',
+            fullWidth: true,
+            loading: _isSending,
+            onPressed: _controller.text.trim().isEmpty || _isSending
+                ? null
+                : _submit,
+          ),
+        ],
       ),
     );
   }

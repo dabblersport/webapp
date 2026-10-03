@@ -1,3 +1,5 @@
+import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,7 +46,14 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: SocialSearchScreen()),
+        child: MaterialApp(
+          builder: (context, child) => DabblerToastProvider(child: child!),
+          theme: DabblerDesignSystemTheme.withFonts(
+            DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+            locale: const Locale('en'),
+          ),
+          home: const SocialSearchScreen(),
+        ),
       ),
     );
     await tester.pump();
@@ -54,16 +63,7 @@ void main() {
     expect(find.text('#football'), findsOneWidget);
     expect(find.text('@ahmed_fc'), findsOneWidget);
 
-    final ahmedRecentChip = find.ancestor(
-      of: find.text('@ahmed_fc'),
-      matching: find.byType(Container),
-    );
-    await tester.tap(
-      find.descendant(
-        of: ahmedRecentChip,
-        matching: find.byIcon(Icons.close),
-      ),
-    );
+    await tester.tap(find.byKey(const ValueKey('remove-recent-@ahmed_fc')));
     await tester.pump();
 
     expect(find.text('@ahmed_fc'), findsNothing);
