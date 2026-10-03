@@ -163,6 +163,7 @@ class ProfileEditDobField extends StatelessWidget {
           const SizedBox(width: DabblerSpacing.space2),
           DabblerButton.icon(
             icon: 'close-circle',
+            tone: DabblerButtonTone.text,
             semanticLabel: 'Clear date of birth',
             onPressed: () => onChanged(null),
           ),

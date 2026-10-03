@@ -44,12 +44,13 @@ class ProfileEditAvailabilitySection extends StatelessWidget {
   Widget _slotRow(ProfileEditTimeSlot slot, int index) {
     final dayName = ProfileEditSports.dayName(slot.dayOfWeek);
     return DabblerInputRow(
-      leading: DabblerIconTile(Text(dayName.substring(0, 2))),
+      leading: const DabblerIconTile.named('calendar-1'),
       title: dayName,
       subtitle:
           '${ProfileEditSports.formatHour(slot.startHour)} - ${ProfileEditSports.formatHour(slot.endHour)}',
       trailing: DabblerButton.icon(
         icon: 'trash',
+        tone: DabblerButtonTone.text,
         semanticLabel: 'Remove $dayName availability',
         onPressed: () => onRemove(index),
       ),
