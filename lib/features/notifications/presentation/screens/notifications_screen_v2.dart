@@ -1,10 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import '../../data/models/notification_model.dart';
 import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -26,7 +23,7 @@ import '../widgets/activity_search_row.dart';
 import '../widgets/activity_row.dart';
 import '../widgets/activity_security_footer.dart';
 import '../widgets/activity_empty_state.dart';
-import 'package:dabbler/widgets/app_background.dart';
+
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
 
@@ -63,8 +60,15 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final userId = _authService.getCurrentUserId();
 
     if (userId == null) {
-      return Scaffold(
-        body: Center(child: Text(AppLocalizations.of(context).notif_signin_required)),
+      return DabblerPage(
+        body: Center(
+          child: Text(
+            AppLocalizations.of(context).notif_signin_required,
+            style: DabblerType.body
+                .resolveForDirection(Directionality.of(context))
+                .copyWith(color: DabblerColors.of(context).textPrimary),
+          ),
+        ),
       );
     }
 
@@ -96,31 +100,34 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     dynamic notificationState,
     dynamic activityState,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return AdaptiveScaffold(
-      currentIndex: 6,
-      onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 6),
-      destinations: kAdaptiveDestinations,
-      headerWidget: SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      ),
-      body: _buildScrollBody(
-        userId,
-        notificationState,
-        activityState,
-        hideToggle: true,
-        forceMode: ViewMode.notifications,
-      ),
-      rightPanel: _buildScrollBody(
-        userId,
-        notificationState,
-        activityState,
-        hideToggle: true,
-        forceMode: ViewMode.activity,
+    // KAN-420: the adaptive scaffold (side rail + header) is gone with the
+    // design-system migration; the two lists keep their side-by-side panes.
+    return DabblerPage(
+      body: Row(
+        children: [
+          Expanded(
+            child: _buildScrollBody(
+              userId,
+              notificationState,
+              activityState,
+              hideToggle: true,
+              forceMode: ViewMode.notifications,
+            ),
+          ),
+          SizedBox(
+            width: DabblerSizing.borderDefault,
+            child: ColoredBox(color: DabblerColors.of(context).bgTertiary),
+          ),
+          Expanded(
+            child: _buildScrollBody(
+              userId,
+              notificationState,
+              activityState,
+              hideToggle: true,
+              forceMode: ViewMode.activity,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -131,12 +138,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     dynamic notificationState,
     dynamic activityState,
   ) {
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: SafeArea(
-        bottom: false,
-        child: _buildScrollBody(userId, notificationState, activityState),
-      ),
+    return DabblerPage(
+      body: _buildScrollBody(userId, notificationState, activityState),
     );
   }
 
@@ -150,7 +153,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final mode = forceMode ?? _mode;
     final isNotif = mode == ViewMode.notifications;
 
-    return RefreshIndicator(
+    return DabblerRefresh(
       onRefresh: () => isNotif ? _refresh(userId) : _refreshActivity(),
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(
@@ -162,6 +165,11 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
               title: isNotif ? AppLocalizations.of(context).notif_title_notifications : AppLocalizations.of(context).notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
+              onMarkAllRead: (isNotif && (notificationState.unreadCount as int) > 0)
+                  ? () => ref
+                      .read(notificationsControllerProvider(userId).notifier)
+                      .markAllRead()
+                  : null,
             ),
           ),
           SliverToBoxAdapter(
@@ -182,12 +190,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           ),
           if (isNotif)
             SliverToBoxAdapter(
-              child: UnreadCounterRow(
-                state: notificationState,
-                onMarkAll: () => ref
-                    .read(notificationsControllerProvider(userId).notifier)
-                    .markAllRead(),
-              ),
+              child: UnreadCounterRow(state: notificationState),
             )
           else ...[
             SliverToBoxAdapter(
@@ -223,31 +226,31 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     int countOf(bool Function(AppNotification) test) =>
         notifs.where((n) => !n.isRead && test(n)).length;
     return [
-      ChipData('all', l10n.notif_chip_all, Iconsax.message_copy, count: state.unreadCount),
+      ChipData('all', l10n.notif_chip_all, 'message', count: state.unreadCount),
       ChipData(
         'games',
         l10n.notif_chip_games,
-        Iconsax.game_copy,
+        'game',
         count: countOf((n) => n.kindKey.startsWith('game')),
       ),
       ChipData(
         'bookings',
         l10n.notif_chip_bookings,
-        Iconsax.calendar_copy,
+        'calendar',
         count: countOf((n) =>
             n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena')),
       ),
       ChipData(
         'social',
         l10n.notif_chip_social,
-        Iconsax.people_copy,
+        'people',
         count: countOf((n) =>
             n.kindKey.startsWith('social') || n.kindKey.startsWith('friend')),
       ),
       ChipData(
         'achieve',
         l10n.notif_chip_achievements,
-        Iconsax.cup_copy,
+        'cup',
         count: countOf((n) =>
             n.kindKey.startsWith('achievement') ||
             n.kindKey.startsWith('reward') ||
@@ -259,24 +262,19 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   List<ChipData> _activityChips() {
     final l10n = AppLocalizations.of(context);
     return [
-      ChipData('all', l10n.notif_chip_all, Iconsax.activity_copy),
-      ChipData('me', l10n.notif_chip_you, Iconsax.edit_copy),
-      ChipData('game', l10n.notif_chip_games, Iconsax.game_copy),
-      ChipData('booking', l10n.notif_chip_bookings, Iconsax.calendar_copy),
-      ChipData('social', l10n.notif_chip_social, Iconsax.people_copy),
-      ChipData('reward', l10n.notif_chip_rewards, Iconsax.coin_copy),
-      ChipData('security', l10n.notif_chip_security, Iconsax.security_copy),
+      ChipData('all', l10n.notif_chip_all, 'activity'),
+      ChipData('me', l10n.notif_chip_you, 'edit'),
+      ChipData('game', l10n.notif_chip_games, 'game'),
+      ChipData('booking', l10n.notif_chip_bookings, 'calendar'),
+      ChipData('social', l10n.notif_chip_social, 'people'),
+      ChipData('reward', l10n.notif_chip_rewards, 'coin'),
+      ChipData('security', l10n.notif_chip_security, 'security'),
     ];
   }
 
   List<Widget> _buildNotificationsSlivers(String userId, dynamic state) {
     if (state.isLoading && state.notifications.isEmpty) {
-      return const [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ];
+      return const [SliverToBoxAdapter(child: NotifLoadingView())];
     }
     if (state.error != null && state.notifications.isEmpty) {
       return [
@@ -362,12 +360,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   List<Widget> _buildActivitySlivers(dynamic state) {
     if (state.isLoading && state.activities.isEmpty) {
-      return const [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(child: CircularProgressIndicator()),
-        ),
-      ];
+      return const [SliverToBoxAdapter(child: NotifLoadingView())];
     }
     final activities = state.filteredActivities as List<ActivityFeedEvent>;
     if (activities.isEmpty) {

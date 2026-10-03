@@ -1,102 +1,73 @@
 // Extracted from notifications_screen_v2.dart by KAN-151 (pt.B of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: "mark all read" moved to the top bar (design); [onMarkAll] stays on
+// this row, shown as a text button, so the action is still reachable here when
+// the caller passes it.
 
-import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 class UnreadCounterRow extends StatelessWidget {
   final dynamic state;
-  final VoidCallback onMarkAll;
-  const UnreadCounterRow({
-    super.key,
-    required this.state,
-    required this.onMarkAll,
-  });
+  final VoidCallback? onMarkAll;
+  const UnreadCounterRow({super.key, required this.state, this.onMarkAll});
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    final accent = cs.error;
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
     final unread = state.unreadCount as int;
     final total = (state.notifications as List).length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space4,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+      ),
       child: Row(
         children: [
           Stack(
             clipBehavior: Clip.none,
             children: [
-              Icon(
-                Iconsax.notification_copy,
-                size: 15,
-                color: cs.onSurface.withValues(alpha: 0.6),
+              DabblerIcon(
+                'notification',
+                size: DabblerSizing.iconSm,
+                color: colors.textSecondary,
               ),
               if (unread > 0)
-                Positioned(
+                const PositionedDirectional(
                   top: -2,
-                  right: -3,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: accent,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: accent.withValues(alpha: 0.7),
-                          blurRadius: 6,
-                        ),
-                      ],
-                    ),
-                  ),
+                  end: -3,
+                  child: DabblerBadge.dot(),
                 ),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: DabblerSpacing.space2),
           Text(
-            '$unread unread',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface,
-            ),
+            '${DabblerType.toWesternDigits('$unread')} unread',
+            style: DabblerType.footnote
+                .resolveForDirection(dir)
+                .copyWith(color: colors.textPrimary),
           ),
-          if (unread > 0) ...[
-            const SizedBox(width: 6),
-            TextButton.icon(
+          if (unread > 0 && onMarkAll != null) ...[
+            const SizedBox(width: DabblerSpacing.space2),
+            DabblerButton(
+              label: AppLocalizations.of(context).notif_mark_all_read,
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.small,
               onPressed: onMarkAll,
-              icon: Icon(
-                Iconsax.tick_circle_copy,
-                size: 14,
-                color: scheme.primary,
-              ),
-              label: Text(
-                AppLocalizations.of(context).notif_mark_all_read,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: scheme.primary,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                minimumSize: const Size(0, 28),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
             ),
           ],
           const Spacer(),
           Text(
-            '$total total',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: cs.onSurface.withValues(alpha: 0.6),
-            ),
+            '${DabblerType.toWesternDigits('$total')} total',
+            style: DabblerType.footnote
+                .resolveForDirection(dir)
+                .copyWith(color: colors.textSecondary),
           ),
         ],
       ),

@@ -1,14 +1,19 @@
 // Extracted from notifications_screen_v2.dart by KAN-147 (pt.A of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: the filter rail is DabblerChip pills; the unread count rides on the
+// label because the chip has no count slot.
 
-import 'package:flutter/material.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 class ChipData {
   final String key;
   final String label;
-  final IconData icon;
+
+  /// DS icon name rendered through [DabblerIcon].
+  final String icon;
   final int? count;
   const ChipData(this.key, this.label, this.icon, {this.count});
 }
@@ -27,18 +32,24 @@ class ChipsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 52,
+      height: DabblerSizing.touchTargetMin + DabblerSpacing.space3,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space6,
+          vertical: DabblerSpacing.space1,
+        ),
         itemCount: chips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: DabblerSpacing.space3),
         itemBuilder: (context, i) {
           final c = chips[i];
-          return NotifChip(
-            data: c,
-            active: c.key == activeKey,
-            onTap: () => onChanged(c.key),
+          return Center(
+            child: NotifChip(
+              data: c,
+              active: c.key == activeKey,
+              onTap: () => onChanged(c.key),
+            ),
           );
         },
       ),
@@ -59,74 +70,20 @@ class NotifChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    final bg = active ? scheme.primary : cs.onSurface.withValues(alpha: 0.04);
-    final fg = active ? cs.onPrimary : cs.onSurface;
-    final borderColor = active
-        ? Colors.transparent
-        : cs.onSurface.withValues(alpha: 0.10);
-    return GestureDetector(
+    final count = data.count;
+    final label = (count != null && count > 0)
+        ? '${data.label} ${DabblerType.toWesternDigits('$count')}'
+        : data.label;
+    return DabblerChip(
+      label: label,
+      selected: active,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: borderColor, width: 1.5),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.33),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              data.icon,
-              size: 15,
-              color: active
-                  ? cs.onPrimary
-                  : cs.onSurface.withValues(alpha: 0.7),
-            ),
-            const SizedBox(width: 7),
-            Text(
-              data.label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: fg,
-              ),
-            ),
-            if (data.count != null && data.count! > 0) ...[
-              const SizedBox(width: 7),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                constraints: const BoxConstraints(minWidth: 18),
-                decoration: BoxDecoration(
-                  color: active
-                      ? cs.onPrimary.withValues(alpha: 0.22)
-                      : cs.error,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '${data.count}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ],
+      leadingIcon: DabblerIcon(
+        data.icon,
+        size: DabblerSizing.iconSm,
+        color: DabblerChip.iconColorFor(
+          DabblerColors.of(context),
+          selected: active,
         ),
       ),
     );

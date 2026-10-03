@@ -2,9 +2,9 @@
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/themes/app_theme.dart';
 
 class LoadMoreButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -12,31 +12,53 @@ class LoadMoreButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space6,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+      ),
       child: Center(
-        child: OutlinedButton(
+        child: DabblerButton(
+          label: AppLocalizations.of(context).notif_load_older,
+          tone: DabblerButtonTone.outlined,
+          size: DabblerButtonSize.small,
           onPressed: onPressed,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(999),
-            ),
-            side: BorderSide(
-              color: cs.onSurface.withValues(alpha: 0.10),
-              width: 1.5,
-            ),
-          ),
-          child: Text(
-            AppLocalizations.of(context).notif_load_older,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
-              color: cs.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
         ),
+      ),
+    );
+  }
+}
+
+/// Initial-load skeleton: a short stack of row-shaped placeholders.
+class NotifLoadingView extends StatelessWidget {
+  const NotifLoadingView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space6,
+        vertical: DabblerSpacing.space4,
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < 5; i++)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                bottom: DabblerSpacing.space4,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  DabblerSkeleton.circle(),
+                  SizedBox(width: DabblerSpacing.space4),
+                  Expanded(child: DabblerSkeleton.text(lines: 2)),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -49,25 +71,12 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, size: 40),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              AppLocalizations.of(context).notif_error_prefix(message),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(AppLocalizations.of(context).notif_btn_retry),
-          ),
-        ],
+      child: DabblerEmptyState.error(
+        title: l10n.notif_error_prefix(message),
+        onRetry: onRetry,
+        retryLabel: l10n.notif_btn_retry,
       ),
     );
   }

@@ -1,9 +1,12 @@
 // Extracted from notifications_screen_v2.dart by KAN-147 (pt.A of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: the group header is the DS activity group header; the count (and
+// optional suffix) joins the label because that header carries a label only.
 
-import 'package:flutter/material.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 class NotifSectionHeader extends StatelessWidget {
   final String title;
@@ -18,32 +21,13 @@ class NotifSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final muted = cs.onSurface.withValues(alpha: 0.45);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title.toUpperCase(),
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.4,
-                color: muted,
-              ),
-            ),
-          ),
-          Text(
-            suffix == null ? '$count' : '$count $suffix',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: muted,
-            ),
-          ),
-        ],
+    final n = DabblerType.toWesternDigits('$count');
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space6,
+      ),
+      child: DabblerActivityGroupHeader(
+        suffix == null ? '$title · $n' : '$title · $n $suffix',
       ),
     );
   }

@@ -1,11 +1,16 @@
 // Extracted from notifications_screen_v2.dart by KAN-147 (pt.A of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: back + title + trailing actions is the DS titled top bar; the
+// notifications/activity switch is a segmented DabblerTabs under it; "mark all
+// read" is a trailing top-bar action (it lived in the unread counter row).
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/themes/app_theme.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Which of the two lists the screen is showing. Moved here with [TopBar] and
 /// [ModeToggle], which cannot see a library-private enum from another file.
@@ -16,39 +21,47 @@ class TopBar extends StatelessWidget {
   final ViewMode mode;
   final ValueChanged<ViewMode>? onModeChanged;
 
+  /// When non-null a "mark all read" action shows at the end of the bar.
+  final VoidCallback? onMarkAllRead;
+
   const TopBar({
     super.key,
     required this.title,
     required this.mode,
     required this.onModeChanged,
+    this.onMarkAllRead,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-      child: Row(
-        children: [
-          SquareIconButton(
-            icon: Iconsax.arrow_left_2_copy,
-            onTap: () => context.canPop() ? context.pop() : context.go('/home'),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: context.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: cs.onSurface,
-                letterSpacing: -0.4,
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerNavigationTopBar.titled(
+          title: title,
+          safeArea: false,
+          onBack: () => context.canPop() ? context.pop() : context.go('/home'),
+          actions: [
+            if (onMarkAllRead != null)
+              DabblerNavigationAction(
+                icon: 'tick-circle',
+                label: l10n.notif_mark_all_read,
+                onPressed: onMarkAllRead,
               ),
+          ],
+        ),
+        if (onModeChanged != null)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space6,
+              DabblerSpacing.space2,
+              DabblerSpacing.space6,
+              DabblerSpacing.space3,
             ),
+            child: ModeToggle(mode: mode, onChanged: onModeChanged!),
           ),
-          if (onModeChanged != null)
-            ModeToggle(mode: mode, onChanged: onModeChanged!),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -60,100 +73,25 @@ class ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final scheme = context.getCategoryTheme('main');
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: cs.onSurface.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: cs.onSurface.withValues(alpha: 0.10),
-          width: 1.5,
+    final l10n = AppLocalizations.of(context);
+    return DabblerTabs(
+      variant: DabblerTabsVariant.segmented,
+      fullWidth: true,
+      value: mode.name,
+      items: [
+        DabblerTabItem(
+          id: ViewMode.notifications.name,
+          label: l10n.notif_title_notifications,
+          icon: const DabblerIcon('notification'),
         ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _toggleBtn(
-            context,
-            icon: Iconsax.notification_copy,
-            active: mode == ViewMode.notifications,
-            color: scheme.primary,
-            onTap: () => onChanged(ViewMode.notifications),
-          ),
-          const SizedBox(width: 2),
-          _toggleBtn(
-            context,
-            icon: Iconsax.activity_copy,
-            active: mode == ViewMode.activity,
-            color: scheme.primary,
-            onTap: () => onChanged(ViewMode.activity),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _toggleBtn(
-    BuildContext context, {
-    required IconData icon,
-    required bool active,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final cs = context.colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        width: 36,
-        height: 34,
-        decoration: BoxDecoration(
-          color: active ? color : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.4),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+        DabblerTabItem(
+          id: ViewMode.activity.name,
+          label: l10n.notif_title_activity_log,
+          icon: const DabblerIcon('activity'),
         ),
-        child: Icon(
-          icon,
-          size: 18,
-          color: active ? cs.onPrimary : cs.onSurface.withValues(alpha: 0.6),
-        ),
-      ),
-    );
-  }
-}
-
-class SquareIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  const SquareIconButton({super.key, required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: cs.onSurface.withValues(alpha: 0.10),
-            width: 1.5,
-          ),
-        ),
-        child: Icon(icon, size: 22, color: cs.onSurface),
+      ],
+      onChanged: (id) => onChanged(
+        id == ViewMode.activity.name ? ViewMode.activity : ViewMode.notifications,
       ),
     );
   }

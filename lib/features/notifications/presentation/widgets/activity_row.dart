@@ -1,14 +1,15 @@
 // Extracted from notifications_screen_v2.dart by KAN-152 (pt.C of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: an activity entry is one DabblerActivityRow with a tinted DS icon
+// tile. The timeline connector between rows is gone (the DS row is a card);
+// [isLast] stays on the constructor and is ignored.
 
-import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
-import 'notif_pill.dart';
 import 'notif_visual.dart';
 
 class ActivityRow extends StatelessWidget {
@@ -24,136 +25,32 @@ class ActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
-    final visual = _activityVisual(event, context);
+    final l10n = AppLocalizations.of(context);
+    final visual = _activityVisual(event);
+    final pill = _activityPill(context, event);
+    final upcoming =
+        event.timeBucket == 'upcoming' ? l10n.activity_pill_upcoming : null;
+    // The DS row has one neutral badge slot; both labels share it when both
+    // apply (they were two separate pills).
+    final badge = [pill, upcoming].whereType<String>().join(' · ');
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 36,
-              child: Column(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          visual.color.withValues(alpha: 0.20),
-                          visual.color.withValues(alpha: 0.06),
-                        ],
-                      ),
-                      border: Border.all(
-                        color: visual.color.withValues(alpha: 0.25),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Icon(visual.icon, size: 16, color: visual.color),
-                  ),
-                  if (!isLast)
-                    Expanded(
-                      child: Container(
-                        width: 1.5,
-                        margin: const EdgeInsets.symmetric(vertical: 2),
-                        color: cs.onSurface.withValues(alpha: 0.10),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: InkWell(
-                  onTap: onTap,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: cs.onSurface.withValues(alpha: 0.10),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _activityTitle(event),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: cs.onSurface,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _formatHM(event.happenedAt),
-                              style: TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: cs.onSurface.withValues(alpha: 0.45),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_activityMeta(context, event) != null) ...[
-                          const SizedBox(height: 5),
-                          Text(
-                            _activityMeta(context, event)!,
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              height: 1.45,
-                              color: cs.onSurface.withValues(alpha: 0.65),
-                            ),
-                          ),
-                        ],
-                        if (_activityPill(context, event) != null ||
-                            event.timeBucket != 'past') ...[
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              if (_activityPill(context, event) != null)
-                                Pill(
-                                  label: _activityPill(context, event)!,
-                                  color: visual.color,
-                                ),
-                              if (event.timeBucket == 'upcoming')
-                                Pill(label: AppLocalizations.of(context).activity_pill_upcoming, color: cs.primary),
-                              if (event.timeBucket == 'present')
-                                Pill(label: AppLocalizations.of(context).activity_pill_live, color: cs.error),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space6,
+      ),
+      child: DabblerActivityRow(
+        leading: DabblerIconTile.named(
+          visual.icon,
+          tone: visual.tone,
+          size: DabblerActivitySystemTile.size,
         ),
+        actor: _activityTitle(event),
+        subject: _activityMeta(context, event),
+        when: _formatHM(event.happenedAt),
+        live: event.timeBucket == 'present',
+        liveLabel: l10n.activity_pill_live,
+        sportLabel: badge.isEmpty ? null : badge,
+        onTap: onTap,
       ),
     );
   }
@@ -205,27 +102,23 @@ class ActivityRow extends StatelessWidget {
   }
 }
 
-NotifVisual _activityVisual(ActivityFeedEvent e, BuildContext context) {
-  final cs = context.colorScheme;
+NotifVisual _activityVisual(ActivityFeedEvent e) {
   switch (e.subjectType) {
     case 'game':
-      return const NotifVisual(Iconsax.game_copy, DesignTokens.warning);
+      return const NotifVisual('game', DabblerIconTileTone.amber);
     case 'booking':
-      return const NotifVisual(Iconsax.ticket_copy, DesignTokens.success);
+      return const NotifVisual('ticket', DabblerIconTileTone.info);
     case 'social':
-      return NotifVisual(Iconsax.people_copy, cs.primary);
+      return const NotifVisual('people', DabblerIconTileTone.brand);
     case 'reward':
-      return const NotifVisual(Iconsax.coin_copy, DesignTokens.warning);
+      return const NotifVisual('coin', DabblerIconTileTone.amber);
     case 'security':
-      return const NotifVisual(Iconsax.security_copy, DesignTokens.success);
+      return const NotifVisual('security', DabblerIconTileTone.info);
     case 'payment':
-      return const NotifVisual(Iconsax.card_copy, DesignTokens.success);
+      return const NotifVisual('card', DabblerIconTileTone.info);
     case 'post':
-      return NotifVisual(Iconsax.edit_copy, cs.primary);
+      return const NotifVisual('edit', DabblerIconTileTone.brand);
     default:
-      return NotifVisual(
-        Iconsax.info_circle_copy,
-        cs.onSurface.withValues(alpha: 0.5),
-      );
+      return const NotifVisual('info-circle', DabblerIconTileTone.brand);
   }
 }
