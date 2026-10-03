@@ -1,12 +1,9 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/themes/material3_extensions.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
@@ -14,8 +11,6 @@ import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
 import 'package:dabbler/features/rewards/presentation/widgets/early_bird_check_in_modal.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Tracks the active sub-tab inside ExploreScreen (0=Games, 1=Venues).
@@ -55,24 +50,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   // Convenience getter — the shell tracks which branch is active.
   int get _currentIndex => widget.navigationShell.currentIndex;
-
-  bool _isCompactNavWidth(BuildContext context) =>
-      MediaQuery.sizeOf(context).width < 390;
-
-  double _navLabelHorizontalPadding(BuildContext context) =>
-      _isCompactNavWidth(context) ? 12 : 16;
-
-  double _navLabelVerticalPadding(BuildContext context) =>
-      _isCompactNavWidth(context) ? 8 : 9;
-
-  double _navLabelFontSize(BuildContext context) =>
-      _isCompactNavWidth(context) ? 14 : 16;
-
-  double _navIconSize(BuildContext context) =>
-      _isCompactNavWidth(context) ? 24 : 26;
-
-  double _navItemGap(BuildContext context) =>
-      _isCompactNavWidth(context) ? 2 : 4;
 
   @override
   void initState() {
@@ -162,14 +139,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               final newStatus = ref.read(checkInControllerProvider).valueOrNull;
               final completedDays = newStatus?.totalDaysCompleted ?? 1;
 
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    completedDays >= 14
-                        ? '🎉 Congratulations! You earned the Early Bird badge!'
-                        : '✅ Checked in! Day $completedDays of 14',
-                  ),
-                  behavior: SnackBarBehavior.floating,
+              DabblerToastProvider.of(context).show(
+                DabblerToastSpec(
+                  message: completedDays >= 14
+                      ? 'Congratulations! You earned the Early Bird badge!'
+                      : 'Checked in! Day $completedDays of 14',
+                  tone: DabblerToastTone.success,
                   duration: const Duration(seconds: 3),
                 ),
               );
@@ -192,10 +167,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               }
             } else {
               // Already checked in today
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✅ Already checked in today!'),
-                  behavior: SnackBarBehavior.floating,
+              DabblerToastProvider.of(context).show(
+                const DabblerToastSpec(
+                  message: 'Already checked in today!',
                   duration: Duration(seconds: 2),
                 ),
               );
@@ -211,85 +185,61 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
   }
 
-  /// The bar has two groups: [Feeds, Venues] and [Games, Meet-ups].
-  /// The Games group is shown while the Games branch is active.
-  bool get _isOnGamesGroup =>
-      _currentIndex == NavigationBranch.games.shellIndex;
-
   void _goBranch(NavigationBranch branch) =>
       widget.navigationShell.goBranch(branch.shellIndex);
 
-  // Nav item indices 0–3 map 1:1 to shell branch indices so selection checks
-  // (`_currentIndex == index`) stay trivial. Higher indices are actions.
-  static const int _kItemCreate = 4;
-  static const int _kItemMeetups = 5;
+  /// The bar's item ids, one per shell branch it exposes. Community
+  /// (`NavigationBranch.community`) stays out of the bar while
+  /// [FeatureFlags.enableCommunityMobileNav] is off.
+  static const String _idHome = 'home';
+  static const String _idCommunity = 'community';
+  static const String _idVenues = 'venues';
+  static const String _idGames = 'games';
 
-  void _onItemTapped(int index) {
-    switch (index) {
-      case 0: // Feeds
-        _goBranch(NavigationBranch.home);
-      case 1: // Community (desktop side-nav only)
-        _goBranch(NavigationBranch.community);
-      case 2: // Venues
-        _goBranch(NavigationBranch.venues);
-      case 3: // Games
-        _goBranch(NavigationBranch.games);
-      case _kItemCreate:
-        _showCreateMenu();
-      case _kItemMeetups:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).nav_meetups_coming_soon),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+  static const String _createPost = 'post';
+  static const String _createGame = 'game';
+
+  String get _activeId {
+    switch (NavigationBranch.values[_currentIndex]) {
+      case NavigationBranch.home:
+        return _idHome;
+      case NavigationBranch.community:
+        return FeatureFlags.enableCommunityMobileNav ? _idCommunity : _idHome;
+      case NavigationBranch.venues:
+        return _idVenues;
+      case NavigationBranch.games:
+        return _idGames;
     }
   }
 
-  Future<void> _showCreateMenu() async {
-    // Toggle: if the sheet is already open, tapping the button closes it.
-    if (_createMenuOpen) {
-      Navigator.of(context, rootNavigator: true).pop();
-      return;
+  void _onSelect(String id) {
+    switch (id) {
+      case _idHome:
+        _goBranch(NavigationBranch.home);
+      case _idCommunity:
+        _goBranch(NavigationBranch.community);
+      case _idVenues:
+        _goBranch(NavigationBranch.venues);
+      case _idGames:
+        _goBranch(NavigationBranch.games);
     }
+  }
 
-    setState(() => _createMenuOpen = true);
+  Future<void> _onCreate(String id) async {
+    setState(() => _createMenuOpen = false);
 
-    // Capture router BEFORE the modal opens to avoid stale context after
-    // useRootNavigator:true dismisses the sheet on the root navigator.
+    // Capture the router and notifier before navigating away.
     final router = GoRouter.of(context);
     final feedNotifier = ref.read(feedNotifierProvider.notifier);
 
-    final action = await showModalBottomSheet<_CreateAction>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.35),
-      useRootNavigator: true,
-      builder: (ctx) => const _CreateActionSheet(),
-    );
-
-    if (!mounted) return;
-    setState(() => _createMenuOpen = false);
-
-    switch (action) {
-      case _CreateAction.post:
+    switch (id) {
+      case _createPost:
         final result = await router.push<bool>(RoutePaths.socialCreatePost);
         if (result == true && mounted) {
           feedNotifier.clearNewPostsBadge();
         }
-      case _CreateAction.game:
+      case _createGame:
         router.push(RoutePaths.createGame);
-      case _CreateAction.meetup:
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AppLocalizations.of(context).nav_meetups_coming_soon),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      case null:
-        break;
     }
   }
 
@@ -303,21 +253,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     _exitDialogShowing = true;
 
     try {
-      final shouldExit = await showDialog<bool>(
+      final l = AppLocalizations.of(context);
+      final shouldExit = await showDabblerDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text(AppLocalizations.of(context).nav_exit_app_title),
-          content: Text(AppLocalizations.of(context).nav_exit_app_body),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(AppLocalizations.of(context).nav_exit_app_cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(AppLocalizations.of(context).nav_exit_app_confirm),
-            ),
-          ],
+        builder: (ctx) => DabblerDialog(
+          title: l.nav_exit_app_title,
+          description: l.nav_exit_app_body,
+          onClose: () => Navigator.of(ctx).pop(false),
+          secondaryAction: DabblerDialogAction(
+            label: l.nav_exit_app_cancel,
+            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          primaryAction: DabblerDialogAction(
+            label: l.nav_exit_app_confirm,
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
         ),
       );
 
@@ -331,8 +281,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   void _handleSystemBack() {
     // If we're not on Home, back should return to Home (not exit the app).
-    if (_currentIndex != 0) {
-      _onItemTapped(0);
+    if (_currentIndex != NavigationBranch.home.shellIndex) {
+      _goBranch(NavigationBranch.home);
       return;
     }
 
@@ -347,15 +297,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         last != null && now.difference(last) < const Duration(seconds: 2);
 
     if (!pressedRecently) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).nav_press_back_to_exit),
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).nav_press_back_to_exit,
+          duration: const Duration(seconds: 2),
+        ),
+      );
       return;
     }
 
@@ -377,840 +324,74 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ref.watch(profileBootstrapCompletedProvider);
     ref.watch(initializeProfileDataProvider);
 
-    final colorScheme = Theme.of(context).colorScheme;
+    final l = AppLocalizations.of(context);
 
-    // Get target colors based on current screen
-    Color targetPrimaryColor;
-    if (_currentIndex == 0) {
-      // Home screen - Main category
-      targetPrimaryColor = colorScheme.categoryMain;
-    } else if (_currentIndex == 2) {
-      // Sports screen - Sports category
-      targetPrimaryColor = colorScheme.categoryMain;
-    } else {
-      // Default to main
-      targetPrimaryColor = colorScheme.categoryMain;
-    }
-
+    // One layout at every width: the design has no desktop shell. The page
+    // holds the active branch and the bottom bar.
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         _handleSystemBack();
       },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWideScreen =
-              constraints.maxWidth >= AdaptiveBreakpoints.compact;
-
-          if (isWideScreen) {
-            return _buildDesktopLayout(context, targetPrimaryColor);
-          }
-          return _buildMobileLayout(context, targetPrimaryColor);
-        },
-      ),
-    );
-  }
-
-  // ── Desktop adaptive layout (side nav + centre content + right panel) ──
-  Widget _buildDesktopLayout(BuildContext context, Color targetPrimaryColor) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    // Map branch index (0=Home,1=Community,2=Venues,3=Games) → side-nav destination index.
-    int destIndex;
-    switch (_currentIndex) {
-      case 0:
-        destIndex = 0; // Home
-        break;
-      case 1:
-        destIndex = 5; // Community
-        break;
-      case 2:
-        destIndex = 2; // Sports (Venues)
-        break;
-      case 3:
-        destIndex = 3; // Games
-        break;
-      default:
-        destIndex = 0;
-    }
-
-    return AdaptiveScaffold(
-      currentIndex: destIndex,
-      onDestinationSelected: _onDesktopDestinationSelected,
-      destinations: kAdaptiveDestinations,
-      headerWidget: SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      ),
-      body: widget.navigationShell,
-      rightPanel: const _DesktopRightPanel(),
-    );
-  }
-
-  void _onDesktopDestinationSelected(int destIndex) {
-    switch (destIndex) {
-      case 0: // Home
-        _onItemTapped(0);
-        break;
-      case 1: // Create
-        _showCreateMenu();
-        break;
-      case 2: // Sports (Venues)
-        _onItemTapped(2);
-        break;
-      case 3: // Games
-        _onItemTapped(3);
-        break;
-      case 4: // Search
-        context.push(RoutePaths.socialSearch);
-        break;
-      case 5: // Community
-        _onItemTapped(1); // navigate to community page
-        break;
-      case 6: // Notifications
-        context.push(RoutePaths.notifications);
-        break;
-      case 7: // Profile
-        context.push(RoutePaths.profile);
-        break;
-    }
-  }
-
-  // Height of the floating pill nav bar (pill content + bottom margin).
-  // Used to inject bottom padding into child screens so their content
-  // isn't hidden behind the floating bar when extendBody is true.
-  static const double _kNavBarHeight = 80.0;
-
-  // ── Mobile layout (bottom nav + shell body) ──
-  Widget _buildMobileLayout(BuildContext context, Color targetPrimaryColor) {
-    final mq = MediaQuery.of(context);
-    final extraBottom = _kNavBarHeight + mq.padding.bottom;
-
-    return Scaffold(
-      extendBody: true,
-      // Inject bottom padding so child screens know how far to scroll.
-      body: MediaQuery(
-        data: mq.copyWith(
-          padding: mq.padding.copyWith(bottom: extraBottom),
-          viewPadding: mq.viewPadding.copyWith(bottom: extraBottom),
+      child: DabblerPage(
+        // The bottom bar below owns the bottom inset; branch pages inside the
+        // shell must not pad for it a second time.
+        body: MediaQuery.removePadding(
+          context: context,
+          removeBottom: true,
+          child: widget.navigationShell,
         ),
-        child: widget.navigationShell,
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isCompactNav = constraints.maxWidth < 390;
-            final targetWidth =
-                (constraints.maxWidth * (isCompactNav ? 0.97 : 0.92))
-                    .clamp(0.0, 420.0)
-                    .toDouble();
-            final cs = Theme.of(context).colorScheme;
-            // Per the Pencil spec (nodes r2mU7 / r5GzG): unselected labels and
-            // icons use onSurface in both themes; selected labels use primary.
-            final foregroundColor = cs.onSurface;
-            final foregroundColorInactive = cs.onSurface.withValues(alpha: 0.90);
-
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: targetWidth),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32),
-                  child: BackdropFilter(
-                    filter: kIsWeb
-                        ? ImageFilter.blur(sigmaX: 0, sigmaY: 0) // No-op on web to be safe
-                        : ImageFilter.blur(sigmaX: 00, sigmaY: 00),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isCompactNav ? 8 : 10,
-                        vertical: isCompactNav ? 7 : 8,
-                      ),
-                      // decoration: BoxDecoration(
-                      //   color: Colors.transparent,
-                      //   borderRadius: BorderRadius.circular(32),
-                      //   border: Border.all(color: Colors.transparent, width: 1.0),
-                      //   // boxShadow: [
-                      //   //   BoxShadow(
-                      //   //     color: glowColor,
-                      //   //     blurRadius: 28,
-                      //   //     spreadRadius: -2,
-                      //   //     offset: const Offset(0, 8),
-                      //   //   ),
-                      //   //   BoxShadow(
-                      //   //     color: cs.primary.withValues(alpha: 0.08),
-                      //   //     blurRadius: 10,
-                      //   //     offset: const Offset(0, 2),
-                      //   //   ),
-                      //   // ],
-                      // ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: _isOnGamesGroup
-                              ? _buildGamesNavItems(
-                                  foregroundColor,
-                                  foregroundColorInactive,
-                                )
-                              : _buildHomeNavItems(
-                                  foregroundColor,
-                                  foregroundColorInactive,
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+        // The design sets the bar in a padded container (`12px 18px`).
+        bottomBar: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space6,
+            vertical: DabblerSpacing.space4,
+          ),
+          child: DabblerNavigationBottomBar(
+            items: <DabblerNavigationItem>[
+              DabblerNavigationItem(
+                id: _idHome,
+                icon: 'home-2',
+                label: l.nav_feeds,
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  /// Feeds-group nav items: [Feeds | Venues (segmented)]  [▦ icon → Games] [⊕]
-  ///
-  /// Community (RealFriendsScreen, branch 1) has no slot here — see
-  /// [FeatureFlags.enableCommunityMobileNav]. It stays reachable via the
-  /// desktop side-nav (`_onDesktopDestinationSelected`) until that flag
-  /// is enabled, at which point it joins this segmented group.
-  List<Widget> _buildHomeNavItems(
-    Color foregroundColor,
-    Color foregroundColorInactive,
-  ) {
-    return [
-      _buildSegmentedNavGroup(
-        foregroundColor: foregroundColor,
-        children: [
-          _buildTextNavItem(
-            index: NavigationBranch.home.shellIndex,
-            label: AppLocalizations.of(context).nav_feeds,
-            foregroundColor: foregroundColor,
-            foregroundColorInactive: foregroundColorInactive,
-            inSegmentedGroup: true,
-          ),
-          if (FeatureFlags.enableCommunityMobileNav)
-            _buildTextNavItem(
-              index: NavigationBranch.community.shellIndex,
-              label: AppLocalizations.of(context).nav_community,
-              foregroundColor: foregroundColor,
-              foregroundColorInactive: foregroundColorInactive,
-              inSegmentedGroup: true,
-            ),
-          _buildTextNavItem(
-            index: NavigationBranch.venues.shellIndex,
-            label: AppLocalizations.of(context).nav_venues,
-            foregroundColor: foregroundColor,
-            foregroundColorInactive: foregroundColorInactive,
-            inSegmentedGroup: true,
-          ),
-        ],
-      ),
-      SizedBox(width: _navItemGap(context) * 2),
-      _buildIconNavItem(
-        index: NavigationBranch.games.shellIndex,
-        outlineIcon: Iconsax.category_2_copy,
-        bulkIcon: Iconsax.category_2,
-        foregroundColor: foregroundColor,
-        foregroundColorInactive: foregroundColorInactive,
-        forceUnselected: true,
-      ),
-      SizedBox(width: _navItemGap(context) * 2),
-      _buildIconNavItem(
-        index: _kItemCreate,
-        outlineIcon: Iconsax.add_circle_copy,
-        bulkIcon: Iconsax.add_circle,
-        foregroundColor: foregroundColor,
-        foregroundColorInactive: foregroundColorInactive,
-        isMenuOpen: _createMenuOpen,
-      ),
-    ];
-  }
-
-  /// Games-group nav items: [🏠 icon → Feeds]  [Games (segmented)] [⊕]
-  List<Widget> _buildGamesNavItems(
-    Color foregroundColor,
-    Color foregroundColorInactive,
-  ) {
-    return [
-      _buildIconNavItem(
-        index: NavigationBranch.home.shellIndex,
-        outlineIcon: Iconsax.home_2_copy,
-        bulkIcon: Iconsax.home_2,
-        foregroundColor: foregroundColor,
-        foregroundColorInactive: foregroundColorInactive,
-        forceUnselected: true,
-      ),
-      SizedBox(width: _navItemGap(context) * 2),
-      _buildSegmentedNavGroup(
-        foregroundColor: foregroundColor,
-        children: [
-          _buildTextNavItem(
-            index: NavigationBranch.games.shellIndex,
-            label: AppLocalizations.of(context).nav_games,
-            foregroundColor: foregroundColor,
-            foregroundColorInactive: foregroundColorInactive,
-            inSegmentedGroup: true,
-          ),
-          // Meetups hidden until the feature ships — restore the
-          // _kItemMeetups text item here to bring it back.
-        ],
-      ),
-      SizedBox(width: _navItemGap(context) * 2),
-      _buildIconNavItem(
-        index: _kItemCreate,
-        outlineIcon: Iconsax.add_circle_copy,
-        bulkIcon: Iconsax.add_circle,
-        foregroundColor: foregroundColor,
-        foregroundColorInactive: foregroundColorInactive,
-        isMenuOpen: _createMenuOpen,
-      ),
-    ];
-  }
-
-  /// Text-based nav item. Selected state matches the Pencil design: a light
-  /// surface chip with primary-colored label sitting on the glass group pill.
-  Widget _buildTextNavItem({
-    required int index,
-    required String label,
-    required Color foregroundColor,
-    required Color foregroundColorInactive,
-    bool inSegmentedGroup = false,
-  }) {
-    final isSelected = _currentIndex == index;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Design chip fills: #ffffff73 (light) / #121117cc (dark) —
-    // surfaceContainerLowest is white/near-black in the respective schemes.
-    final chipColor = colorScheme.surfaceContainerLowest.withValues(
-      alpha: isDark ? 0.80 : 0.85,
-    );
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: EdgeInsets.symmetric(
-          horizontal: _navLabelHorizontalPadding(context),
-          vertical: _navLabelVerticalPadding(context),
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(inSegmentedGroup ? 22 : 28),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.20),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : const [],
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? colorScheme.onSurface : colorScheme.onPrimary,
-            fontSize: _navLabelFontSize(context),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w800,
-            letterSpacing: isSelected ? -0.2 : 0,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Icon-only nav item (Games, Create, Home)
-  Widget _buildIconNavItem({
-    required int index,
-    required IconData outlineIcon,
-    required IconData bulkIcon,
-    required Color foregroundColor,
-    required Color foregroundColorInactive,
-    bool forceUnselected = false,
-    bool isMenuOpen = false,
-  }) {
-    final isSelected = forceUnselected ? false : _currentIndex == index;
-    final buttonSize = _isCompactNavWidth(context) ? 44.0 : 48.0;
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Same primary-tinted glass as the segmented group pill.
-    final circleBg = cs.primary.withValues(alpha: isDark ? 0.80 : 0.80);
-    final circleBorder = Colors.white.withValues(alpha: isDark ? 0.50 : 0.65);
-
-    return GestureDetector(
-      onTap: () => _onItemTapped(index),
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: kIsWeb
-              ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-              : ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            width: buttonSize,
-            height: buttonSize,
-            decoration: BoxDecoration(
-              color: circleBg,
-              shape: BoxShape.circle,
-              border: Border.all(color: circleBorder, width: 0.9),
-              boxShadow: [
-                BoxShadow(
-                  color: cs.primary.withValues(alpha: isDark ? 0.18 : 0.12),
-                  blurRadius: 14,
-                  spreadRadius: -2,
-                  offset: const Offset(0, 4),
+              if (FeatureFlags.enableCommunityMobileNav)
+                DabblerNavigationItem(
+                  id: _idCommunity,
+                  icon: 'people',
+                  label: l.nav_community,
                 ),
-              ],
-            ),
-            child: AnimatedRotation(
-              turns: isMenuOpen ? 0.125 : 0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              child: Icon(
-                isSelected ? bulkIcon : outlineIcon,
-                color: isSelected ? cs.onPrimary : cs.onPrimary,
-                size: _navIconSize(context),
+              DabblerNavigationItem(
+                id: _idVenues,
+                icon: 'location',
+                label: l.nav_venues,
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSegmentedNavGroup({
-    required Color foregroundColor,
-    required List<Widget> children,
-  }) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    // Design pill: primary-tinted glass (#7229cc33 light; lavender in dark
-    // via a stronger #c18fff overlay) with a white specular border highlight.
-    final pillBg = cs.primary.withValues(alpha: isDark ? 0.80 : 0.80);
-    final pillBorder = Colors.white.withValues(alpha: isDark ? 0.50 : 0.65);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: BackdropFilter(
-        filter: kIsWeb
-            ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-            : ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: pillBg,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: pillBorder, width: 0.8),
-            boxShadow: [
-              BoxShadow(
-                color: cs.primary.withValues(alpha: isDark ? 0.40 : 0.10),
-                blurRadius: 16,
-                spreadRadius: -2,
-                offset: const Offset(0, 4),
+              DabblerNavigationItem(
+                id: _idGames,
+                icon: 'game',
+                label: l.nav_games,
               ),
             ],
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: children),
-        ),
-      ),
-    );
-  }
-}
-
-/// Right-side panel shown on wide desktop screens (similar to Twitter's
-/// "What's happening" / "Who to follow" sidebar).
-class _DesktopRightPanel extends StatelessWidget {
-  const _DesktopRightPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final l10n = AppLocalizations.of(context);
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Search bar
-            TextField(
-              decoration: InputDecoration(
-                hintText: l10n.nav_search_hint,
-                prefixIcon: Icon(
-                  Iconsax.search_normal_1_copy,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-                filled: true,
-                fillColor: colorScheme.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+            active: _activeId,
+            onSelect: _onSelect,
+            menuOpen: _createMenuOpen,
+            onAction: (open) => setState(() => _createMenuOpen = open),
+            createItems: <DabblerNavigationCreateItem>[
+              DabblerNavigationCreateItem(
+                id: _createPost,
+                icon: 'edit-2',
+                label: l.nav_create_post,
               ),
-              onSubmitted: (query) {
-                if (query.trim().isNotEmpty) {
-                  context.push(RoutePaths.socialSearch);
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Trending / What's happening card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
+              DabblerNavigationCreateItem(
+                id: _createGame,
+                icon: 'game',
+                label: l.nav_create_game,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.nav_whats_happening,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _TrendingItem(
-                    category: l10n.nav_trend_sports_category,
-                    title: l10n.nav_trend_sports_title,
-                    subtitle: l10n.nav_trend_sports_subtitle,
-                  ),
-                  const SizedBox(height: 12),
-                  _TrendingItem(
-                    category: l10n.nav_trend_community_category,
-                    title: l10n.nav_trend_community_title,
-                    subtitle: l10n.nav_trend_community_subtitle,
-                  ),
-                  const SizedBox(height: 12),
-                  _TrendingItem(
-                    category: l10n.nav_trend_dabbler_category,
-                    title: l10n.nav_trend_dabbler_title,
-                    subtitle: l10n.nav_trend_dabbler_subtitle,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Quick actions card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.nav_quick_actions,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _QuickActionTile(
-                    icon: Iconsax.people_copy,
-                    label: l10n.nav_find_friends,
-                    onTap: () => context.push(RoutePaths.socialFriends),
-                  ),
-                  _QuickActionTile(
-                    icon: Iconsax.setting_2_copy,
-                    label: l10n.nav_settings,
-                    onTap: () => context.push(RoutePaths.profile),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TrendingItem extends StatelessWidget {
-  const _TrendingItem({
-    required this.category,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final String category;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          category,
-          style: textTheme.labelSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          title,
-          style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        Text(
-          subtitle,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuickActionTile extends StatelessWidget {
-  const _QuickActionTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, size: 22, color: colorScheme.onSurfaceVariant),
-      title: Text(label),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
-  }
-}
-
-enum _CreateAction { post, game, meetup }
-
-class _CreateActionSheet extends StatefulWidget {
-  const _CreateActionSheet();
-
-  @override
-  State<_CreateActionSheet> createState() => _CreateActionSheetState();
-}
-
-class _CreateActionSheetState extends State<_CreateActionSheet>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fadeAnim;
-
-  List<({IconData icon, String label, _CreateAction action})> _buildActions(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return [
-      (icon: Iconsax.edit_2_copy, label: l10n.nav_create_post, action: _CreateAction.post),
-      (icon: Iconsax.game_copy, label: l10n.nav_create_game, action: _CreateAction.game),
-      // Hidden for now — kept for future re-enable.
-      // (icon: Iconsax.people_copy, label: l10n.nav_create_meetup, action: _CreateAction.meetup),
-    ];
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    );
-    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _select(_CreateAction action) {
-    Navigator.of(context).pop(action);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    final actions = _buildActions(context);
-    final glassBase = colorScheme.surface;
-    final glassBorder = isDark
-        ? Colors.white.withValues(alpha: 0.12)
-        : Colors.white.withValues(alpha: 0.80);
-
-    return FadeTransition(
-      opacity: _fadeAnim,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          0,
-          20,
-          MediaQuery.of(context).padding.bottom + 100,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: kIsWeb
-                ? ImageFilter.blur(sigmaX: 0, sigmaY: 0)
-                : ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-            child: Container(
-              decoration: BoxDecoration(
-                color: glassBase,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: glassBorder, width: 1.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 32,
-                    spreadRadius: -4,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: List.generate(actions.length, (i) {
-                  final item = actions[i];
-                  final delay = i * 0.12;
-                  return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 0.4),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: _controller,
-                            curve: Interval(
-                              delay,
-                              1.0,
-                              curve: Curves.easeOutCubic,
-                            ),
-                          ),
-                        ),
-                    child: FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent: _controller,
-                        curve: Interval(delay, 1.0, curve: Curves.easeOut),
-                      ),
-                      child: _ActionTile(
-                        icon: item.icon,
-                        label: item.label,
-                        onTap: () => _select(item.action),
-                        showDivider: i < actions.length - 1,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
+            ],
+            onCreate: _onCreate,
           ),
         ),
       ),
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    required this.showDivider,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final bool showDivider;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? colorScheme.primary.withValues(alpha: 0.20)
-                        : colorScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: colorScheme.primary, size: 22),
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            indent: 20,
-            endIndent: 20,
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.06),
-          ),
-      ],
     );
   }
 }

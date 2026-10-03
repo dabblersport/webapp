@@ -14,6 +14,7 @@ import 'package:dabbler/features/social/providers/public_activity_providers.dart
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerToastProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -159,8 +160,9 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
-        builder: (context, child) =>
-            RepaintBoundary(key: boundaryKey, child: child),
+        builder: (context, child) => DabblerToastProvider(
+          child: RepaintBoundary(key: boundaryKey, child: child),
+        ),
         routerConfig: router,
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -12,6 +12,8 @@ import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerColors, DabblerToastProvider;
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
@@ -27,7 +29,6 @@ import 'package:flutter/foundation.dart';
 import 'url_strategy_stub.dart' if (dart.library.html) 'url_strategy_web.dart';
 import 'app/app_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'widgets/responsive_app_shell.dart';
 
 // Top-level background message handler for Firebase
 // This function must be a top-level function (not in a class)
@@ -260,8 +261,14 @@ class MyApp extends ConsumerWidget {
         return MaterialApp.router(
           title: 'Dabbler',
           routerConfig: appRouter,
-          theme: DabblerDesignSystemTheme.withTokens(AppTheme.lightTheme),
-          darkTheme: DabblerDesignSystemTheme.withTokens(AppTheme.darkTheme),
+          theme: DabblerDesignSystemTheme.withTokens(
+            AppTheme.lightTheme,
+            theme: _themeService.dabblerTheme,
+          ),
+          darkTheme: DabblerDesignSystemTheme.withTokens(
+            AppTheme.darkTheme,
+            theme: _themeService.dabblerTheme,
+          ),
           themeMode: _themeService.effectiveThemeMode,
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -273,9 +280,16 @@ class MyApp extends ConsumerWidget {
             // Font root: the design-system sans family (Glory, Meral Sans for
             // Arabic), bundled by `dabbler_design_system`. Sizes and colours
             // stay as AppTheme sets them.
+            // One toast queue for the whole app, mounted above the router, and
+            // the design system's page ground behind every route.
             return Theme(
               data: DabblerDesignSystemTheme.withFonts(base, locale: locale),
-              child: ResponsiveAppShell(child: child),
+              child: Builder(
+                builder: (context) => ColoredBox(
+                  color: DabblerColors.of(context).bgPrimary,
+                  child: DabblerToastProvider(child: child),
+                ),
+              ),
             );
           },
         );
