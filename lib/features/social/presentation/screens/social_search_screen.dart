@@ -18,7 +18,6 @@ import 'package:dabbler/data/models/venue.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/providers/search_history_provider.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
-import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 // =============================================================================
@@ -90,7 +89,6 @@ class SocialSearchScreen extends ConsumerStatefulWidget {
 
 class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
   late TextEditingController _searchController;
-  late final String _previousCategory;
   late int _tabIndex;
 
   final FocusNode _searchFocus = FocusNode();
@@ -103,9 +101,6 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
   @override
   void initState() {
     super.initState();
-    _previousCategory = AppTheme.activeCategory;
-    AppTheme.setActiveCategory('social');
-
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
 
     final initialTabIndex = widget.searchType != null
@@ -124,7 +119,6 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
 
   @override
   void dispose() {
-    AppTheme.setActiveCategory(_previousCategory);
     _debounce?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();

@@ -56,7 +56,6 @@ dependencies:
   # Enhanced UI Libraries for Beautiful, Minimal Design
 
   # Cached Network Image - Beautiful image loading with placeholders
-  cached_network_image: ^3.3.0
 
   # Relative timestamps ("2h ago")
   timeago: ^3.7.0
@@ -65,7 +64,6 @@ dependencies:
   go_router: ^12.0.0
 
   # Flutter SVG - Beautiful scalable graphics
-  flutter_svg: ^2.0.9
 
   # Riverpod - Minimal, powerful state management
   riverpod: ^2.5.0
@@ -113,7 +111,6 @@ dependencies:
   timezone: ^0.9.4
 
   # Shimmer effects for loading states
-  shimmer: ^3.0.0
   
   # Sharing
   share_plus: ^13.2.0
@@ -131,7 +128,6 @@ dependencies:
   crypto: ^3.0.3
   
   # Google Fonts - Includes Roboto and proper emoji fallback handling
-  google_fonts: ^6.1.0
 
   # Google Sign-In (token-based) to avoid browser redirects
   google_sign_in: ^6.2.1
@@ -149,7 +145,6 @@ dependencies:
   # Map rendering (no API key required — OpenStreetMap tiles)
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
-  flutter_slidable: ^4.0.3
 dependency_overrides:
   # share_plus 13.2+ declares win32 ^6 but file_picker 8 only compiles against
   # win32 5. Pinned down — win32 code paths only run on Windows desktop builds,
@@ -206,14 +201,8 @@ flutter:
     - assets/elements/
     - assets/icons/
     - assets/logos/
-    - lib/design_system/tokens/
     - assets/logo.png
     - supabase/schema/schema.json
-
-  fonts:
-    - family: Noto Emoji
-      fonts:
-        - asset: assets/fonts/NotoEmoji-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

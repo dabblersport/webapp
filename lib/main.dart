@@ -11,7 +11,6 @@ import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerColors, DabblerToastProvider;
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -154,9 +153,6 @@ Future<void> main() async {
         // Location service is now initialized on-demand in sports screen
         await ThemeService().init();
 
-        // Preload token-based color schemes and build ThemeData.
-        await AppTheme.initialize();
-
         // Always use the JWT anon key for Supabase initialisation.
         // The publishable-key format (sb_publishable_*) is not a JWT and
         // is incompatible with the current supabase_flutter SDK, causing
@@ -262,11 +258,11 @@ class MyApp extends ConsumerWidget {
           title: 'Dabbler',
           routerConfig: appRouter,
           theme: DabblerDesignSystemTheme.withTokens(
-            AppTheme.lightTheme,
+            ThemeData(brightness: Brightness.light),
             theme: _themeService.dabblerTheme,
           ),
           darkTheme: DabblerDesignSystemTheme.withTokens(
-            AppTheme.darkTheme,
+            ThemeData(brightness: Brightness.dark),
             theme: _themeService.dabblerTheme,
           ),
           themeMode: _themeService.effectiveThemeMode,
@@ -278,8 +274,7 @@ class MyApp extends ConsumerWidget {
             if (child == null) return const SizedBox.shrink();
             final base = Theme.of(context);
             // Font root: the design-system sans family (Glory, Meral Sans for
-            // Arabic), bundled by `dabbler_design_system`. Sizes and colours
-            // stay as AppTheme sets them.
+            // Arabic), bundled by `dabbler_design_system`.
             // One toast queue for the whole app, mounted above the router, and
             // the design system's page ground behind every route.
             return Theme(
