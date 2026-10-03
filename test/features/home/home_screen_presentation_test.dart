@@ -1,3 +1,5 @@
+import 'package:dabbler/data/models/profile/user_profile.dart';
+import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +65,30 @@ void main() {
     expect(ltrWordmark, lessThan(ltrAvatar), reason: 'LTR: logo start, avatar end');
     final (rtlWordmark, rtlAvatar) = await xs(const Locale('ar'));
     expect(rtlWordmark, greaterThan(rtlAvatar), reason: 'RTL: header mirrored');
+  }, variant: desktop);
+
+  testWidgets('restored: the header shows the real profile photo', (
+    tester,
+  ) async {
+    final profile = ProfileState(
+      profile: UserProfile(
+        id: 'p',
+        userId: 'u',
+        displayName: 'Moataz',
+        avatarUrl: 'https://example.invalid/me.png',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+    );
+    await pumpHome(tester, feedState: const FeedLoading(), profileState: profile);
+    final avatar = tester.widget<DabblerAvatar>(
+      find.descendant(
+        of: find.byType(DabblerNavigationTopBar),
+        matching: find.byType(DabblerAvatar),
+      ),
+    );
+    expect(avatar.imageUrl, 'https://example.invalid/me.png');
+    expect(find.byType(DabblerPage), findsOneWidget);
   }, variant: desktop);
 
   testWidgets('RTL (Arabic) renders without overflow', (tester) async {

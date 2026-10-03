@@ -11,6 +11,7 @@ import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -75,6 +76,144 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     if (old.post.likeCount != widget.post.likeCount) {
       _localLikeCount = widget.post.likeCount;
     }
+  }
+
+  // ── Navigation ──────────────────────────────────────────────────────
+
+  Future<void> _navigateToAuthorProfile(BuildContext ctx, Post p) async {
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    final myProfileId = await ref.read(myProfileIdProvider.future);
+    if (!ctx.mounted) return;
+    if (p.authorUserId == currentUserId && p.authorProfileId == myProfileId) {
+      ctx.go(RoutePaths.profile);
+    } else {
+      ctx.push(
+        '${RoutePaths.userProfile}/${p.authorUserId}?profileId=${p.authorProfileId}',
+      );
+    }
+  }
+
+  // ── Reactions ───────────────────────────────────────────────────────
+
+  List<MapEntry<dynamic, dynamic>> _reactionBreakdownEntries(Post post) {
+    final rawBreakdown = post.reactionBreakdown['breakdown'];
+    if (rawBreakdown is Map) {
+      return rawBreakdown.entries
+          .where((e) => e.value is int && (e.value as int) > 0)
+          .toList();
+    }
+    return [];
+  }
+
+  /// The reaction-breakdown chips: tapping one toggles that vibe, as before.
+  Widget? _reactionSummary(Post post, Set<String> myReactions) {
+    final entries = _reactionBreakdownEntries(post);
+    if (entries.isEmpty) return null;
+    final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
+    return Wrap(
+      spacing: DabblerSpacing.space2,
+      runSpacing: DabblerSpacing.space1,
+      children: [
+        for (final entry in entries.take(5))
+          Builder(
+            builder: (context) {
+              final vibeKey = entry.key.toString();
+              final count = entry.value as int;
+              final matched = vibes.where((v) => v.key == vibeKey).firstOrNull;
+              final mine = matched != null && myReactions.contains(matched.id);
+              final label = matched == null
+                  ? vibeKey
+                  : (matched.labelEn.isNotEmpty ? matched.labelEn : matched.key);
+              return DabblerChip(
+                label: '$label $count',
+                selected: mine,
+                onTap: () {
+                  if (matched == null) return;
+                  final actions = ref.read(postActionsProvider.notifier);
+                  if (mine) {
+                    actions.removeReaction(post.id, matched.id);
+                  } else {
+                    actions.reactToPost(post.id, matched.id);
+                  }
+                },
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  // ── Badges (type / kind, origin, moderation, expiry) ────────────────
+
+  String? _postTypeLabel(PostType type, AppLocalizations l10n) {
+    switch (type) {
+      case PostType.moment:
+        return l10n.post_card_kind_moment;
+      case PostType.dab:
+        return l10n.post_card_kind_dab;
+      case PostType.kickIn:
+        return l10n.post_card_kind_kick_in;
+      case PostType.allocated:
+        return null;
+    }
+  }
+
+  String? _originLabel(OriginType origin, AppLocalizations l10n) {
+    switch (origin) {
+      case OriginType.manual:
+        return null;
+      case OriginType.game:
+        return l10n.post_card_kind_game;
+      case OriginType.achievement:
+        return l10n.post_card_kind_achievement;
+      case OriginType.venue:
+        return l10n.post_card_kind_venue;
+      case OriginType.admin:
+        return l10n.post_card_kind_admin;
+      case OriginType.system:
+        return l10n.post_card_kind_system;
+      case OriginType.repost:
+        return l10n.post_card_kind_repost;
+    }
+  }
+
+  String? _expiryLabel(DateTime? expiresAt, AppLocalizations l10n) {
+    if (expiresAt == null) return null;
+    final diff = expiresAt.difference(DateTime.now());
+    if (diff.isNegative) return l10n.post_card_expired;
+    if (diff.inDays > 0) return l10n.post_card_expires_in_days(diff.inDays);
+    if (diff.inHours > 0) return l10n.post_card_expires_in_hours(diff.inHours);
+    if (diff.inMinutes > 0) {
+      return l10n.post_card_expires_in_minutes(diff.inMinutes);
+    }
+    return l10n.post_card_expiring_soon;
+  }
+
+  Widget? _badges(Post post, AppLocalizations l10n) {
+    final typeLabel = post.postType == PostType.allocated
+        ? _kindLabel(post.kind, l10n)
+        : _postTypeLabel(post.postType, l10n);
+    final originLabel = _originLabel(post.originType, l10n);
+    final expiry = _expiryLabel(post.expiresAt, l10n);
+    final labels = <Widget>[
+      if (typeLabel != null) DabblerBadge(label: typeLabel),
+      if (originLabel != null) DabblerBadge(label: originLabel),
+      if (post.requiresModeration)
+        const DabblerBadge(label: 'Pending review', tone: DabblerBadgeTone.warning),
+      if (expiry != null)
+        DabblerBadge(label: expiry, tone: DabblerBadgeTone.warning),
+    ];
+    if (labels.isEmpty) return null;
+    if (labels.length == 1) return labels.single;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i > 0) const SizedBox(width: DabblerSpacing.space1),
+          labels[i],
+        ],
+      ],
+    );
   }
 
   void _toast(String message) {
@@ -159,11 +298,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     );
   }
 
-  void _showMoreMenu({
-    required bool isAuthor,
-    required bool canRepost,
-    required bool hasReposted,
-  }) {
+  void _showMoreMenu({required bool isAuthor}) {
     showDabblerSheet<void>(
       context: context,
       detents: const <double>[0.5],
@@ -177,26 +312,6 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // The DS post row has no repost action, so repost lives here.
-            if (canRepost) ...[
-              DabblerButton(
-                label: hasReposted
-                    ? 'Undo repost'
-                    : AppLocalizations.of(context).post_card_menu_repost,
-                icon: 'refresh',
-                tone: DabblerButtonTone.neutral,
-                fullWidth: true,
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  if (hasReposted) {
-                    ref.read(postActionsProvider.notifier).undoRepost(post.id);
-                  } else {
-                    _showRepostMenu();
-                  }
-                },
-              ),
-              const SizedBox(height: DabblerSpacing.space3),
-            ],
             DabblerButton(
               label: 'Report post',
               icon: 'flag',
@@ -311,7 +426,31 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         DabblerPostRow(
           name: authorLabel,
           seed: authorLabel,
-          roleLabel: persona ?? _kindLabelFor(post, l10n),
+          imageUrl: post.authorAvatarUrl,
+          onAuthorTap: author.isEmpty
+              ? null
+              : () => _navigateToAuthorProfile(context, post),
+          roleLabel: persona,
+          distance: widget.showNearbyChipInHeader ? l10n.post_card_near_you : null,
+          kindBadge: _badges(post, l10n),
+          // KAN-410's media component has not landed in alpha-ds yet, so the
+          // slot carries the shared carousel (non-DS, listed in the report).
+          media: PostMediaCarousel.imageUrls(post.media).isEmpty
+              ? null
+              : PostMediaCarousel(media: post.media, borderRadius: DabblerRadius.lg),
+          onRepost: canRepost
+              ? () {
+                  if (hasReposted) {
+                    ref.read(postActionsProvider.notifier).undoRepost(post.id);
+                  } else {
+                    _showRepostMenu();
+                  }
+                }
+              : null,
+          reposts: post.repostCount,
+          reposted: hasReposted,
+          reactions: _reactionSummary(post, myReactions),
+          views: isAuthor ? post.viewCount : null,
           time: homeRelativeTime(post.createdAt),
           place: place,
           segments: _segments(post),
@@ -330,11 +469,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           ),
           onComment: () =>
               context.push('${RoutePaths.socialPostDetail}/${post.id}'),
-          onMore: () => _showMoreMenu(
-            isAuthor: isAuthor,
-            canRepost: canRepost,
-            hasReposted: hasReposted,
-          ),
+          onMore: () => _showMoreMenu(isAuthor: isAuthor),
         ),
         if (post.commentCount > 0)
           HomeThreadPreview(postId: post.id, isEmbedded: widget.isEmbedded),
@@ -348,11 +483,6 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       DabblerPostSegment(post.body!),
     for (final tag in post.tags.skip(1)) DabblerPostSegment(' #$tag', link: true),
   ];
-
-  /// Allocated posts carry their kind (news, alert, …) where a person's post
-  /// carries their role.
-  String? _kindLabelFor(Post post, AppLocalizations l10n) =>
-      post.postType == PostType.allocated ? _kindLabel(post.kind, l10n) : null;
 }
 
 /// Opens the shared report form. The form is a shared legacy Material dialog

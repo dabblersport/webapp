@@ -17,11 +17,22 @@ import 'package:go_router/go_router.dart';
 
 import 'home_test_harness.dart';
 
-Post _post({String? body = 'Anyone playing cricket in Dubai this weekend?'}) =>
+Post _post({
+  String? body = 'Anyone playing cricket in Dubai this weekend?',
+  String? avatarUrl,
+  Map<String, dynamic> reactionBreakdown = const {},
+  String authorProfileId = 'prof1',
+  int viewCount = 0,
+}) =>
     Post(
       id: 'p1',
-      authorProfileId: 'prof1',
+      authorProfileId: authorProfileId,
       authorUserId: 'user1',
+      authorAvatarUrl: avatarUrl,
+      reactionBreakdown: reactionBreakdown,
+      viewCount: viewCount,
+      repostCount: 2,
+      allowReposts: true,
       authorDisplayName: 'Suraj Mehta',
       kind: PostKind.original,
       visibility: PostVisibility.public,
@@ -39,6 +50,7 @@ Future<List<String>> _pump(
   WidgetTester tester,
   Widget child, {
   Locale locale = const Locale('en'),
+  String myProfileId = 'someone-else',
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -74,7 +86,7 @@ Future<List<String>> _pump(
         hasLikedProvider.overrideWith((ref, id) async => false),
         hasRepostedProvider.overrideWith((ref, id) async => false),
         myReactionsProvider.overrideWith((ref, id) async => <String>{}),
-        myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
+        myProfileIdProvider.overrideWith((ref) async => myProfileId),
         sportsProvider.overrideWith((ref) async => []),
         vibesProvider.overrideWith((ref) async => []),
       ],
@@ -224,5 +236,87 @@ void main() {
       find.textContaining('مرحبا يا لاعبين', findRichText: true),
       findsOneWidget,
     );
+  });
+
+  testWidgets('restored: author photo and author tap open the profile', (
+    tester,
+  ) async {
+    final visited = await _pump(
+      tester,
+      HomePostRow(post: _post(avatarUrl: 'https://example.invalid/s.png')),
+    );
+    expect(
+      tester.widget<DabblerAvatar>(find.byType(DabblerAvatar)).imageUrl,
+      'https://example.invalid/s.png',
+    );
+    await tester.tap(find.text('Suraj Mehta'));
+    await tester.pumpAndSettle();
+    expect(visited.last, contains('${RoutePaths.userProfile}/user1'));
+  });
+
+  testWidgets('restored: repost action, kind badge, reaction summary', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      HomePostRow(
+        post: _post(
+          reactionBreakdown: const {
+            'breakdown': {'hyped': 4},
+          },
+        ),
+      ),
+    );
+    expect(find.text('2'), findsOneWidget, reason: 'repost count');
+    expect(find.text('Dab'), findsOneWidget, reason: 'post type badge');
+    expect(find.text('hyped 4'), findsOneWidget, reason: 'reaction chip');
+  });
+
+  testWidgets('restored: the view count only for the author', (tester) async {
+    await _pump(
+      tester,
+      HomePostRow(post: _post(authorProfileId: 'me', viewCount: 77)),
+      myProfileId: 'me',
+    );
+    expect(find.text('77'), findsOneWidget);
+  });
+
+  testWidgets('restored: long press on the news heart opens the picker', (
+    tester,
+  ) async {
+    final item = FeedNewsItem(
+      newsId: 'n2',
+      id: 'n2',
+      title: const {'en': 'Story'},
+      body: const {},
+      likeCount: 0,
+      commentCount: 0,
+      viewCount: 0,
+      tags: const [],
+      isPinned: false,
+      priorityScore: 0,
+      createdAt: DateTime.now(),
+    );
+    await _pump(tester, HomeNewsCard(item: item));
+    await tester.longPress(find.byWidgetPredicate(
+      (w) => w is DabblerIcon && w.name == 'heart',
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Loving'), findsOneWidget);
+    expect(find.text('Angry'), findsOneWidget);
+  });
+
+  testWidgets('restored: activity cover thumbnail', (tester) async {
+    final activity = PublicActivity(
+      id: 'a2',
+      activityType: PublicActivityType.comment,
+      actorProfileId: 'x',
+      actorUsername: 'khalid',
+      targetNewsId: 'n1',
+      targetCoverImageUrl: 'https://example.invalid/c.png',
+      createdAt: DateTime.now(),
+    );
+    await _pump(tester, HomeActivityRow(activity: activity));
+    expect(find.byType(Image), findsOneWidget);
   });
 }

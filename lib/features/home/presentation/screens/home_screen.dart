@@ -300,25 +300,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Widget _buildHeader() {
-    return _HomeHeader(displayName: _userProfile?.getFullName());
+    return _HomeHeader(
+      displayName: _userProfile?.getFullName(),
+      avatarUrl: _userProfile?.avatarUrl,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l = AppLocalizations.of(context);
     final forYouState = ref.watch(feedNotifierProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
     return DabblerToastProvider(
       controller: _toasts,
-      child: ColoredBox(
-        color: colors.bgPrimary,
-        child: Stack(
+      child: DabblerPage(
+        topBar: isWide ? null : _buildHeader(),
+        body: Stack(
           children: [
             Column(
               children: [
-                if (!isWide) _buildHeader(),
                 Expanded(
                   // The DS rows and tabs carry no screen gutter of their own.
                   child: Padding(
@@ -1086,9 +1087,12 @@ class _NewsFilterChips extends ConsumerWidget {
 // Header — wordmark + location row, search / notifications / avatar
 // ────────────────────────────────────────────────────────────────────────────
 class _HomeHeader extends ConsumerWidget {
-  const _HomeHeader({this.displayName});
+  const _HomeHeader({this.displayName, this.avatarUrl});
 
   final String? displayName;
+
+  /// The user's photo; falls back to the profile controller's.
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1160,9 +1164,8 @@ class _HomeHeader extends ConsumerWidget {
           onPressed: () => context.push(RoutePaths.notifications),
         ),
       ],
-      // DS GAP: the top bar's avatar is seed-only, so the user's photo is not
-      // shown here until the bar accepts an image URL.
       avatarSeed: name,
+      avatarImageUrl: avatarUrl ?? profile?.avatarUrl,
       avatarLabel: name,
       onAvatarPressed: () => context.push(RoutePaths.profile),
     );

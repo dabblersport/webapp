@@ -77,6 +77,8 @@ class HomeNewsCard extends ConsumerWidget {
       liked: mine.isNotEmpty,
       onTap: () => _openNews(context, item),
       onLike: () => toggleHomeNewsReaction(ref, item.newsId, mine),
+      onLikeLongPress: () =>
+          showHomeNewsReactionPicker(context, ref, item.newsId, mine),
       onComment: () => _openNews(context, item),
     );
 
@@ -154,6 +156,55 @@ final homeNewsReactionCountsProvider = FutureProvider.autoDispose
       return counts;
     });
 
+/// The six-reaction picker the news heart opens on a long press (it was a
+/// floating overlay before; it is a design-system sheet now). Choosing one
+/// replaces the user's current reaction; choosing the current one removes it.
+Future<void> showHomeNewsReactionPicker(
+  BuildContext context,
+  WidgetRef ref,
+  String newsId,
+  Set<String> mine,
+) {
+  return showDabblerSheet<void>(
+    context: context,
+    title: 'React',
+    detents: const <double>[0.4],
+    builder: (ctx) => Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+        DabblerSpacing.space6,
+        DabblerSpacing.space8,
+      ),
+      child: Wrap(
+        spacing: DabblerSpacing.space2,
+        runSpacing: DabblerSpacing.space2,
+        children: [
+          for (final r in _newsReactions)
+            DabblerChip(
+              label: r.label,
+              selected: mine.contains(r.id),
+              onTap: () async {
+                Navigator.of(ctx).pop();
+                final actions = ref.read(postActionsProvider.notifier);
+                if (mine.contains(r.id)) {
+                  await actions.removeReaction(newsId, r.id);
+                } else {
+                  for (final id in mine) {
+                    await actions.removeReaction(newsId, id);
+                  }
+                  await actions.reactToPost(newsId, r.id);
+                }
+                ref.invalidate(homeNewsReactionCountsProvider(newsId));
+                ref.invalidate(myReactionsProvider(newsId));
+              },
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 /// Toggles the user's reaction on a news item: tapping when they have reacted
 /// removes it, otherwise the default (the first) reaction is set.
 Future<void> toggleHomeNewsReaction(
@@ -201,6 +252,15 @@ class HomeActivityRow extends StatelessWidget {
       verb: activity.actionLabel,
       subject: hasNewsTarget && newsTitle.isNotEmpty ? newsTitle : null,
       when: timeago.format(activity.createdAt, allowFromNow: true, locale: locale),
+      // The KAN-410 image component has not landed in alpha-ds yet, so the
+      // thumbnail slot carries the framework image (non-DS, listed).
+      thumbnail: hasNewsTarget && activity.targetCoverImageUrl != null
+          ? Image.network(
+              activity.targetCoverImageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            )
+          : null,
       onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
     );
   }
