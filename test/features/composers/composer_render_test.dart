@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 /// Renders the post and game composers (and their DS sheets) to PNG with the
 /// real bundled faces. Writes files only with
@@ -107,7 +108,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: DabblerPage(

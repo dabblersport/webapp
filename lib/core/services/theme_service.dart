@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show DayPeriod, ThemeMode, TimeOfDay;
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/services/theme_categories.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerTheme;

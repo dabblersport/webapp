@@ -20,6 +20,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
+import '../../support/render_mode.dart';
 
 const _enWarning =
     'This action cannot be undone. Your profile and personal data are deleted. '
@@ -44,7 +45,7 @@ Widget _harness({required Locale locale, required TextEditingController c}) {
     supportedLocales: AppLocalizations.supportedLocales,
     // The dialog is a design-system DabblerDialog since the W8 migration; its
     // tokens resolve from the DS theme extension.
-    theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+    theme: DabblerDesignSystemTheme.withTokens(renderThemeBase()),
     home: DabblerDialog(
       title: 'Delete Account',
       destructive: true,

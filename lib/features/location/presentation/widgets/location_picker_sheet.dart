@@ -197,9 +197,8 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
               if (_mode != _PickerMode.menu) ...[
                 DabblerButton.icon(
                   tone: DabblerButtonTone.text,
-                  icon: direction == TextDirection.rtl
-                      ? 'arrow-right'
-                      : 'arrow-left',
+                  icon: 'arrow-left',
+                  mirrorInRtl: true,
                   semanticLabel: 'Back',
                   onPressed: () => setState(() => _mode = _PickerMode.menu),
                 ),

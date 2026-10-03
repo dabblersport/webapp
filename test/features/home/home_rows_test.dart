@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import 'home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 Post _post({
   String? body = 'Anyone playing cricket in Dubai this weekend?',
@@ -97,7 +98,7 @@ Future<List<String>> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
       ),

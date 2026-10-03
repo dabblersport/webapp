@@ -14,6 +14,7 @@ import '../home/home_test_harness.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/language_selection_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
+import '../../support/render_mode.dart';
 
 const String _shotsDir = String.fromEnvironment('SETTINGS_SHOTS_DIR');
 
@@ -94,7 +95,7 @@ Future<void> _pump(WidgetTester tester, Widget screen, Locale locale) async {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: screen,

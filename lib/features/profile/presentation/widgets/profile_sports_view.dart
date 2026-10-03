@@ -56,10 +56,10 @@ class ProfileSportsView extends StatelessWidget {
         title: 'Sports Preferences',
         onBack: onBack,
         actions: [
-          // The original showed a spinner in place of Save while busy; the
-          // DS action has no loading state (DS gap), so it is inert instead.
+          // A spinner replaces Save while busy, as the original did.
           DabblerNavigationAction.text(
             label: 'Save',
+            loading: isLoading,
             onPressed: isLoading ? null : onSave,
           ),
         ],

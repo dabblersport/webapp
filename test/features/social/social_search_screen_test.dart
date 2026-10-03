@@ -13,6 +13,7 @@ import 'package:dabbler/data/repositories/search_repository.dart';
 import 'package:dabbler/features/social/presentation/providers/search_history_provider.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
+import '../../support/render_mode.dart';
 
 class _RecordingSearchRepository implements SearchRepository {
   final queries = <String>[];
@@ -49,7 +50,7 @@ void main() {
         child: MaterialApp(
           builder: (context, child) => DabblerToastProvider(child: child!),
           theme: DabblerDesignSystemTheme.withFonts(
-            DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+            DabblerDesignSystemTheme.withTokens(renderThemeBase()),
             locale: const Locale('en'),
           ),
           home: const SocialSearchScreen(),

@@ -20,6 +20,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart';
 import 'package:dabbler/features/social/block_providers.dart';
+import '../../support/render_mode.dart';
 
 /// Writes PNGs only with `--dart-define=SETTINGS_SHOTS_DIR=<dir>`.
 const String _shotsDir = String.fromEnvironment('SETTINGS_SHOTS_DIR');
@@ -47,7 +48,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: home,

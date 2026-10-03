@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 /// The auth forms validate live (after the first edit) and gate submit on
 /// `Form.validate()`, as the pre-migration TextFormField screens did.
@@ -40,7 +41,7 @@ Future<void> _pump(WidgetTester tester, Widget screen) async {
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+        theme: DabblerDesignSystemTheme.withTokens(renderThemeBase()),
         home: screen,
       ),
     ),

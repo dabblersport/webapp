@@ -2,6 +2,7 @@ import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/render_mode.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -42,7 +43,7 @@ void main() {
   testWidgets('the DS extension is installed and Arabic '
       'selects the Arabic sans family', (tester) async {
     final ThemeData themed = DabblerDesignSystemTheme.withTokens(
-      ThemeData.light(),
+      renderThemeBase(),
     );
     expect(themed.extension<DabblerColors>(), isNotNull);
     final ThemeData ar = DabblerDesignSystemTheme.withFonts(

@@ -87,7 +87,6 @@ class OnboardingStepFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final rtl = Directionality.of(context) == TextDirection.rtl;
     return DabblerPage(
       body: SafeArea(
         child: Center(
@@ -105,16 +104,12 @@ class OnboardingStepFrame extends StatelessWidget {
                   ),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
-                    // `arrow-left` mirrored under RTL: `arrow-right`
-                    // is a boxed glyph, not the counterpart of `arrow-left`.
-                    child: Transform.flip(
-                      flipX: rtl,
-                      child: DabblerButton.icon(
-                        icon: 'arrow-left',
-                        tone: DabblerButtonTone.text,
-                        semanticLabel: 'Back',
-                        onPressed: onBack,
-                      ),
+                    child: DabblerButton.icon(
+                      icon: 'arrow-left',
+                      mirrorInRtl: true,
+                      tone: DabblerButtonTone.text,
+                      semanticLabel: 'Back',
+                      onPressed: onBack,
                     ),
                   ),
                 ),

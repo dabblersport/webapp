@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/render_mode.dart';
 
 /// Renders onboarding steps 1-5 (A11-A15) on the design system in LTR and
 /// RTL, and writes PNGs to the Alpha plan folder.
@@ -123,7 +124,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
         home: screen,
