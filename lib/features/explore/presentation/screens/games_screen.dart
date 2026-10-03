@@ -238,14 +238,11 @@ class _GamesFilterSheetBody extends ConsumerWidget {
             ),
           ],
         ),
-        // Not migrated yet (location slice): hosted on a transparent Material.
         ListingFilterSection(
           label: 'Nearby',
-          child: ListingMaterialHost(
-            child: NearbyFilterBar(
-              enabledProvider: nearbyGamesFilterEnabledProvider,
-              sortProvider: nearbyGameSortProvider,
-            ),
+          child: NearbyFilterBar(
+            enabledProvider: nearbyGamesFilterEnabledProvider,
+            sortProvider: nearbyGameSortProvider,
           ),
         ),
       ],

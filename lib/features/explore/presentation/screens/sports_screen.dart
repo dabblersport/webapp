@@ -1,10 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// Material is imported for two non-visual symbols only: the
-// `MaterialPageRoute` route type the existing pushes use (no behaviour change),
-// and a transparent `Material` ink host for the sport-specific filters (see
-// the filter sheet).
-import 'package:flutter/material.dart'
-    show Material, MaterialPageRoute, MaterialType;
+// Material is imported for one non-visual symbol only: the
+// `MaterialPageRoute` route type the existing pushes use (no behaviour change).
+import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -380,12 +377,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             children: [
               // Sport-Specific Filters
               if (sportFilters != null) ...[
-                // SportSpecificFiltersFactory (explore/widgets, another seat's
-                // file) still builds Material FilterChips, which need a
-                // Material ancestor; the old Material bottom sheet gave one,
-                // the DS sheet does not. Transparent ink host only — paints
-                // nothing. Remove once that widget is on the DS.
-                Material(type: MaterialType.transparency, child: sportFilters),
+                sportFilters,
                 const SizedBox(height: DabblerSpacing.space5),
               ],
               // Area

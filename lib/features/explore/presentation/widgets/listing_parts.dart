@@ -1,16 +1,11 @@
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// Material is imported for the transparent [Material] ancestor only. The
-// location widgets hosted in sheets below (`HomeLocationPickerSheet`,
-// `NearbyFilterBar`) are not migrated yet and need one; it paints nothing.
-import 'package:flutter/material.dart' show Material, MaterialType;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Shared, design-system-only pieces for the Games and Venues listings
-/// (KAN-416, Listings frames L01 and L03). Nothing here is Material apart
-/// from the transparent ancestor noted above.
+/// (KAN-416, Listings frames L01 and L03). Nothing here is Material.
 
 /// A design-system type step resolved for the ambient text direction.
 TextStyle listingText(
@@ -197,22 +192,8 @@ class _LocationPickerHostState extends State<_LocationPickerHost> {
   }
 
   @override
-  Widget build(BuildContext context) => Material(
-    type: MaterialType.transparency,
-    child: HomeLocationPickerSheet(scrollController: _controller),
-  );
-}
-
-/// Hosts a not-yet-migrated widget inside a design-system sheet: a transparent
-/// [Material] ancestor, nothing painted.
-class ListingMaterialHost extends StatelessWidget {
-  const ListingMaterialHost({super.key, required this.child});
-
-  final Widget child;
-
-  @override
   Widget build(BuildContext context) =>
-      Material(type: MaterialType.transparency, child: child);
+      HomeLocationPickerSheet(scrollController: _controller);
 }
 
 /// One applied filter, shown as a removable chip.

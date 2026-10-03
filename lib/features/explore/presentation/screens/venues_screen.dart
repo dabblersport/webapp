@@ -68,15 +68,11 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
       builder: (_) => ListingFilterBody(
         onReset: _resetFilters,
         groups: [
-          // Not migrated yet (location slice): hosted on a transparent
-          // Material.
           ListingFilterSection(
             label: 'Nearby',
-            child: ListingMaterialHost(
-              child: NearbyFilterBar(
-                enabledProvider: nearbyVenuesFilterEnabledProvider,
-                sortProvider: nearbyVenueSortProvider,
-              ),
+            child: NearbyFilterBar(
+              enabledProvider: nearbyVenuesFilterEnabledProvider,
+              sortProvider: nearbyVenueSortProvider,
             ),
           ),
         ],
