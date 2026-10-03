@@ -46,11 +46,11 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
     // The page paints immediately; each section resolves independently so a
     // slow query (e.g. post enrichment) never blocks the header/scoreboard.
     return DabblerPage(
+      // The display sport name below is the title (the design fades a nav
+      // title in on scroll); an empty one keeps the titled bar's back button.
       topBar: DabblerNavigationTopBar.titled(
-        title: args.sportName,
-        onBack: Navigator.of(context).canPop()
-            ? () => Navigator.of(context).maybePop()
-            : null,
+        title: '',
+        onBack: () => Navigator.of(context).maybePop(),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(

@@ -288,7 +288,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     if (profile?.username != null &&
                         profile!.username!.isNotEmpty)
                       Text(
-                        '@${profile.username}',
+                        // LRM keeps the @ on the handle's side in RTL.
+                        '\u200E@${profile.username}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: _t(
@@ -587,15 +588,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             l10n.user_profile_stat_reliability,
             DabblerStatTileTone.amber,
           ),
-          tile(
-            statistics.getActivityLevel(),
-            l10n.user_profile_stat_activity,
-            DabblerStatTileTone.sunken,
-          ),
-          tile(
-            statistics.lastActiveFormatted,
-            l10n.user_profile_stat_last_play,
-            DabblerStatTileTone.card,
+          // Activity and last play carry words, not numbers: one wider tile
+          // with the last play as its sub-line.
+          DabblerStatTile(
+            value: statistics.getActivityLevel(),
+            label: l10n.user_profile_stat_activity,
+            sub:
+                '${l10n.user_profile_stat_last_play}: ${statistics.lastActiveFormatted}',
+            tone: DabblerStatTileTone.sunken,
+            span: 4,
+            rows: 1,
           ),
         ],
       ),
