@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,7 +12,7 @@ import 'package:dabbler/features/username_engine/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'dart:async';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart';
 
 enum SetUsernameMode { onboarding, addPersona }
 
@@ -202,9 +203,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_usernameError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_usernameError!), backgroundColor: Colors.red),
-      );
+      showOnboardingError(context, _usernameError!);
       return;
     }
 
@@ -224,9 +223,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        showOnboardingError(context, 'Error: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -239,12 +236,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   ) async {
     final onboardingData = ref.read(onboardingDataProvider);
     if (onboardingData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Missing onboarding data. Please start over.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showOnboardingError(context, 'Missing onboarding data. Please start over.');
       return;
     }
 
@@ -252,14 +244,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     if (onboardingData.age == null ||
         onboardingData.intention == null ||
         onboardingData.preferredSport == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Missing required information. Please complete all steps.',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showOnboardingError(context, 'Missing required information. Please complete all steps.');
       return;
     }
 
@@ -286,12 +271,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   ) async {
     final addPersonaData = ref.read(addPersonaDataProvider);
     if (addPersonaData == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Missing data. Please start over.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showOnboardingError(context, 'Missing data. Please start over.');
       context.go('/settings');
       return;
     }
@@ -309,13 +289,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       );
     } on ProfileLimitException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        showOnboardingError(context, e.message);
       }
       return;
     }
@@ -336,6 +310,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     }
   }
 
+  /// A DS text field inside a [FormField] so the screen's `_formKey`
+  /// validation keeps working unchanged.
   Widget _buildInputField(
     BuildContext context, {
     required TextEditingController controller,
@@ -344,97 +320,33 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     required String? Function(String?) validator,
     Function(String)? onChanged,
     Widget? suffixIcon,
-    String? prefixText,
+    Widget? prefixIcon,
+    String? extraError,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final br = BorderRadius.circular(16);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          onChanged: onChanged,
-          validator: validator,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 15,
-            ),
-            prefixText: prefixText,
-            prefixStyle: TextStyle(
-              color: colorScheme.onSurfaceVariant,
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            fillColor: colorScheme.surfaceContainerLowest,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 18,
-              vertical: 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: br,
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: br,
-              borderSide: BorderSide(
-                color: colorScheme.outlineVariant,
-                width: 1.5,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: br,
-              borderSide: BorderSide(color: colorScheme.primary, width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: br,
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: br,
-              borderSide: const BorderSide(color: Colors.red, width: 2),
-            ),
-            suffixIcon: suffixIcon,
-          ),
-        ),
-      ],
+    return FormField<String>(
+      validator: (_) => validator(controller.text),
+      builder: (field) => DabblerTextField(
+        controller: controller,
+        label: label,
+        placeholder: hintText,
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        errorText: field.errorText ?? extraError,
+        onChanged: (v) {
+          field.didChange(v);
+          onChanged?.call(v);
+        },
+      ),
     );
   }
 
   Widget _buildSuggestionChips() {
-    final colorScheme = Theme.of(context).colorScheme;
-
     if (_loadingSuggestions) {
-      return SizedBox(
-        height: 36,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: 4,
-          separatorBuilder: (_, __) => const SizedBox(width: 8),
-          itemBuilder: (_, __) => Container(
-            width: 100,
-            height: 36,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
+      return const SizedBox(
+        height: DabblerSizing.touchTargetMin,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: DabblerSpinner(size: DabblerSpinnerSize.sm),
         ),
       );
     }
@@ -442,49 +354,27 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     if (_suggestions.isEmpty) return const SizedBox.shrink();
 
     return SizedBox(
-      height: 36,
+      height: DabblerSizing.touchTargetMin,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _suggestions.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: DabblerSpacing.space3),
         itemBuilder: (_, i) {
           final s = _suggestions[i];
-          final selected = _selectedSuggestion == s;
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedSuggestion = s;
-                _usernameController.text = s;
-                _usernameError = null;
-                _usernameReason = null;
-              });
-              _checkUsernameAvailability(s);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: selected
-                    ? colorScheme.primary.withValues(alpha: 0.10)
-                    : colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(
-                  color: selected
-                      ? colorScheme.primary
-                      : colorScheme.outlineVariant,
-                  width: selected ? 1.5 : 1,
-                ),
-              ),
-              child: Text(
-                '@$s',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: selected
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
+          return Center(
+            child: DabblerChip(
+              label: '@$s',
+              selected: _selectedSuggestion == s,
+              onTap: () {
+                setState(() {
+                  _selectedSuggestion = s;
+                  _usernameController.text = s;
+                  _usernameError = null;
+                  _usernameReason = null;
+                });
+                _checkUsernameAvailability(s);
+              },
             ),
           );
         },
@@ -517,175 +407,118 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               : l10n.set_username_btn_create_profile)
         : l10n.set_username_btn_complete;
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-          children: [
-            OnboardingTopBar(onBack: () => context.pop()),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      OnboardingScreenHead(
-                        eyebrow: widget.mode == SetUsernameMode.addPersona
-                            ? null
-                            : 'Step 5 of 5',
-                        title: title,
-                        subtitle: subtitle,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Display Name Field
-                            _buildInputField(
-                              context,
-                              controller: _displayNameController,
-                              label: AppLocalizations.of(
-                                context,
-                              ).set_username_display_name_label,
-                              hintText: AppLocalizations.of(
-                                context,
-                              ).set_username_display_name_hint,
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Display name is required';
-                                }
-                                if (value.trim().length < 2) {
-                                  return 'Display name must be at least 2 characters';
-                                }
-                                return null;
-                              },
-                            ),
+    final colors = DabblerColors.of(context);
+    final String? usernameErrorText = _usernameError == null
+        ? null
+        : (_usernameReason != null && _usernameReason!.isNotEmpty
+              ? _usernameReason!
+              : _usernameError!);
 
-                            const SizedBox(height: 20),
-
-                            // Username suggestions
-                            if (_loadingSuggestions ||
-                                _suggestions.isNotEmpty) ...[
-                              Text(
-                                'Suggestions',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              _buildSuggestionChips(),
-                              const SizedBox(height: 16),
-                            ],
-
-                            // Username Field
-                            _buildInputField(
-                              context,
-                              controller: _usernameController,
-                              label: AppLocalizations.of(
-                                context,
-                              ).set_username_username_label,
-                              hintText: AppLocalizations.of(
-                                context,
-                              ).set_username_username_hint,
-                              prefixText: '@',
-                              onChanged: (v) {
-                                setState(() => _selectedSuggestion = null);
-                                _checkUsernameAvailability(v);
-                              },
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Username is required';
-                                }
-                                if (value.trim().length < 3) {
-                                  return 'Username must be at least 3 characters';
-                                }
-                                if (!RegExp(
-                                  r'^[a-zA-Z0-9_]+$',
-                                ).hasMatch(value)) {
-                                  return 'Only letters, numbers, and underscores';
-                                }
-                                return null;
-                              },
-                              suffixIcon: _isCheckingUsername
-                                  ? Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: colorScheme.primary,
-                                        ),
-                                      ),
-                                    )
-                                  : _usernameError == null &&
-                                        _usernameController.text.isNotEmpty
-                                  ? const Icon(
-                                      Icons.check_circle,
-                                      color: Color(0xFF00C853),
-                                    )
-                                  : null,
-                            ),
-
-                            if (_usernameError != null) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                _usernameReason != null &&
-                                        _usernameReason!.isNotEmpty
-                                    ? _usernameReason!
-                                    : _usernameError!,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
+    return OnboardingStepFrame(
+      onBack: () => context.pop(),
+      step: widget.mode == SetUsernameMode.addPersona ? null : 5,
+      stepLabel:
+          widget.mode == SetUsernameMode.addPersona ? null : 'Step 5 of 5',
+      title: title,
+      subtitle: subtitle,
+      ctaLabel: buttonText,
+      ctaLoading: _isLoading,
+      onCta: _isLoading ? null : _handleSubmit,
+      secondary: widget.mode == SetUsernameMode.addPersona
+          ? DabblerButton(
+              label: 'Back',
+              tone: DabblerButtonTone.text,
+              fullWidth: true,
+              onPressed: () => context.pop(),
+            )
+          : null,
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInputField(
+                context,
+                controller: _displayNameController,
+                label: l10n.set_username_display_name_label,
+                hintText: l10n.set_username_display_name_hint,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Display name is required';
+                  }
+                  if (value.trim().length < 2) {
+                    return 'Display name must be at least 2 characters';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: DabblerSpacing.space6),
+              if (_loadingSuggestions || _suggestions.isNotEmpty) ...[
+                Text(
+                  'Suggestions',
+                  style: onboardingType(
+                    context,
+                    DabblerType.footnote,
+                    colors.textSecondary,
+                    weight: DabblerType.medium,
                   ),
                 ),
-              ),
-            ),
-            OnboardingBottomBar(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OnboardingCTAButton(
-                    label: buttonText,
-                    onPressed: _isLoading ? null : _handleSubmit,
-                    isLoading: _isLoading,
-                  ),
-                  if (widget.mode == SetUsernameMode.addPersona) ...[
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => context.pop(),
-                      child: Text(
-                        'Back',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: colorScheme.primary,
-                        ),
-                      ),
+                const SizedBox(height: DabblerSpacing.space3),
+                _buildSuggestionChips(),
+                const SizedBox(height: DabblerSpacing.space6),
+              ],
+              _buildInputField(
+                context,
+                controller: _usernameController,
+                label: l10n.set_username_username_label,
+                hintText: l10n.set_username_username_hint,
+                prefixIcon: Center(
+                  widthFactor: 1,
+                  child: Text(
+                    '@',
+                    style: onboardingType(
+                      context,
+                      DabblerType.body,
+                      colors.textSecondary,
                     ),
-                  ],
-                ],
+                  ),
+                ),
+                extraError: usernameErrorText,
+                onChanged: (v) {
+                  setState(() => _selectedSuggestion = null);
+                  _checkUsernameAvailability(v);
+                },
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username is required';
+                  }
+                  if (value.trim().length < 3) {
+                    return 'Username must be at least 3 characters';
+                  }
+                  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                    return 'Only letters, numbers, and underscores';
+                  }
+                  return null;
+                },
+                suffixIcon: _isCheckingUsername
+                    ? const Center(
+                        widthFactor: 1,
+                        child: DabblerSpinner(size: DabblerSpinnerSize.sm),
+                      )
+                    : _usernameError == null &&
+                          _usernameController.text.isNotEmpty
+                    ? DabblerIcon(
+                        'tick-circle',
+                        weight: DabblerIconWeight.bold,
+                        color: colors.success.strong,
+                      )
+                    : null,
               ),
-            ),
-          ],
-            ),
+            ],
           ),
         ),
       ),

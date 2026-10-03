@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,8 +9,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart';
 
 enum PrimarySportSelectionMode { onboarding, addPersona }
 
@@ -54,13 +54,9 @@ class _PrimarySportSelectionScreenState
 
   Future<void> _handleContinue() async {
     if (_selectedSportId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).primary_sport_select_error,
-          ),
-          backgroundColor: Colors.orange.shade700,
-        ),
+      showOnboardingWarning(
+        context,
+        AppLocalizations.of(context).primary_sport_select_error,
       );
       return;
     }
@@ -84,12 +80,7 @@ class _PrimarySportSelectionScreenState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
+        showOnboardingError(context, 'Error: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -99,122 +90,92 @@ class _PrimarySportSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
 
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-          children: [
-            OnboardingTopBar(onBack: () => context.pop()),
-            Expanded(
-              child: sportsAsync.when(
-                loading: () => Center(
-                  child: CircularProgressIndicator(color: colorScheme.primary),
+    return OnboardingStepFrame(
+      onBack: () => context.pop(),
+      step: widget.mode == PrimarySportSelectionMode.addPersona ? null : 4,
+      stepLabel: widget.mode == PrimarySportSelectionMode.addPersona
+          ? 'Primary Sport'
+          : 'Step 4 of 5',
+      title: l10n.primary_sport_title,
+      subtitle: l10n.primary_sport_subtitle,
+      ctaLabel: l10n.primary_sport_continue,
+      ctaLoading: _isLoading,
+      onCta: (_isLoading || _selectedSportId == null) ? null : _handleContinue,
+      body: sportsAsync.when(
+        loading: () => const Center(child: DabblerSpinner()),
+        error: (err, _) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Failed to load sports',
+                style: onboardingType(
+                  context,
+                  DabblerType.subheadline,
+                  colors.textSecondary,
                 ),
-                error: (err, _) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Failed to load sports',
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: () =>
-                            ref.invalidate(sportsForSelectedCountryProvider),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                ),
-                data: (allSports) {
-                  final sports = _resolveInterestSports(allSports);
-
-                  if (sports.length == 1 && _selectedSportId == null) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted) {
-                        setState(() => _selectedSportId = sports.first.id);
-                      }
-                    });
-                  }
-
-                  if (sports.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No sports selected. Please go back.',
-                        style: TextStyle(color: colorScheme.onSurfaceVariant),
-                      ),
-                    );
-                  }
-
-                  return CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.all(24),
-                        sliver: SliverToBoxAdapter(
-                          child: OnboardingScreenHead(
-                            eyebrow:
-                                widget.mode ==
-                                    PrimarySportSelectionMode.addPersona
-                                ? 'Primary Sport'
-                                : 'Step 4 of 5',
-                            title: AppLocalizations.of(
-                              context,
-                            ).primary_sport_title,
-                            subtitle: AppLocalizations.of(
-                              context,
-                            ).primary_sport_subtitle,
-                          ),
-                        ),
-                      ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                        sliver: SliverList.separated(
-                          itemCount: sports.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, index) {
-                            final sport = sports[index];
-                            final isSelected = _selectedSportId == sport.id;
-                            return _SportTile(
-                              sport: sport,
-                              isSelected: isSelected,
-                              onTap: () => _selectSport(sport.id),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
-                },
               ),
-            ),
-            OnboardingBottomBar(
-              child: OnboardingCTAButton(
-                label: AppLocalizations.of(context).primary_sport_continue,
-                onPressed: (_isLoading || _selectedSportId == null)
-                    ? null
-                    : _handleContinue,
-                isLoading: _isLoading,
+              const SizedBox(height: DabblerSpacing.space5),
+              DabblerButton(
+                label: 'Retry',
+                tone: DabblerButtonTone.text,
+                onPressed: () =>
+                    ref.invalidate(sportsForSelectedCountryProvider),
               ),
-            ),
-          ],
-            ),
+            ],
           ),
         ),
+        data: (allSports) {
+          final sports = _resolveInterestSports(allSports);
+
+          if (sports.length == 1 && _selectedSportId == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                setState(() => _selectedSportId = sports.first.id);
+              }
+            });
+          }
+
+          if (sports.isEmpty) {
+            return Center(
+              child: Text(
+                'No sports selected. Please go back.',
+                style: onboardingType(
+                  context,
+                  DabblerType.subheadline,
+                  colors.textSecondary,
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: DabblerSpacing.space8,
+            ),
+            itemCount: sports.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: DabblerSpacing.space3),
+            itemBuilder: (context, index) {
+              final sport = sports[index];
+              return _SportRow(
+                sport: sport,
+                isSelected: _selectedSportId == sport.id,
+                onTap: () => _selectSport(sport.id),
+              );
+            },
+          );
+        },
       ),
     );
   }
 }
 
-class _SportTile extends StatelessWidget {
-  const _SportTile({
+class _SportRow extends StatelessWidget {
+  const _SportRow({
     required this.sport,
     required this.isSelected,
     required this.onTap,
@@ -226,94 +187,37 @@ class _SportTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final accent = kSportColors[sport.nameEn] ?? colorScheme.primary;
-    final duration = MediaQuery.of(context).disableAnimations
-        ? Duration.zero
-        : const Duration(milliseconds: 200);
-
-    return GestureDetector(
+    final colors = DabblerColors.of(context);
+    final name = sport.localizedName(context);
+    return OnboardingOptionCard(
+      selected: isSelected,
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: duration,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: isSelected
-              ? accent.withValues(alpha: 0.10)
-              : colorScheme.surfaceContainerLowest,
-          border: Border.all(
-            color: isSelected ? accent : colorScheme.outlineVariant,
-            width: isSelected ? 2 : 1.5,
+      semanticLabel: name,
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space5,
+        vertical: DabblerSpacing.space4,
+      ),
+      child: Row(
+        children: [
+          OnboardingSportGlyph(
+            sport: sport,
+            selected: isSelected,
+            size: DabblerSizing.iconMd,
+            color: isSelected ? colors.brandPrimary : colors.textPrimary,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: accent.withValues(alpha: 0.22),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-        ),
-        child: Row(
-          children: [
-            AnimatedContainer(
-              duration: duration,
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                color: isSelected ? null : accent.withValues(alpha: 0.12),
-                gradient: isSelected
-                    ? LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [accent, accent.withValues(alpha: 0.8)],
-                      )
-                    : null,
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: accent.withValues(alpha: 0.40),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Center(
-                child: sport.emoji != null
-                    ? Text(sport.emoji!, style: const TextStyle(fontSize: 22))
-                    : Icon(
-                        kSportIcons[sport.nameEn] ?? Iconsax.activity,
-                        size: 22,
-                        color: isSelected ? colorScheme.onPrimary : accent,
-                      ),
+          const SizedBox(width: DabblerSpacing.space4),
+          Expanded(
+            child: Text(
+              name,
+              style: onboardingType(
+                context,
+                DabblerType.callout,
+                colors.textPrimary,
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                sport.nameEn,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            if (isSelected) CheckBadge(color: accent, size: 20),
-          ],
-        ),
+          ),
+          OnboardingRadioGlyph(selected: isSelected),
+        ],
       ),
     );
   }
