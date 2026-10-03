@@ -1,11 +1,10 @@
-// import 'package:dabbler/features/authentication/presentation/providers/auth_providers.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart'
+    show OnboardingSportGlyph;
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
@@ -31,17 +30,9 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
-// Extracted widgets for hero and basics live alongside this screen for now.
-// If you re-enable them, ensure the import paths match actual file locations.
-
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
-import 'package:dabbler/widgets/app_background.dart';
 
 /// Provider that checks if a profile is under takedown
 /// Uses autoDispose.family to cache per profileId and clean up when not needed
@@ -80,6 +71,11 @@ final myPostsCountProvider = FutureProvider.autoDispose<int>((ref) async {
   }
 });
 
+/// Maximum width of the profile column. One layout at every width: the
+/// Material scaffold rail / right-panel wrapper is gone, the design
+/// draws a single column (same decision as the other migrated screens).
+const double _kProfileMaxWidth = 700;
+
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -88,35 +84,14 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen>
-    with TickerProviderStateMixin, RouteAware {
-  late AnimationController _animationController;
-  late AnimationController _refreshController;
-  late TabController _tabController;
+    with RouteAware {
   int _selectedTabIndex = 0;
-  final ScrollController _scrollController = ScrollController();
 
   String? _selectedProfileType; // 'player' or 'organiser'
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _refreshController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _selectedTabIndex = _tabController.index);
-      }
-    });
-
-    _animationController.forward();
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -136,10 +111,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
-    _animationController.dispose();
-    _refreshController.dispose();
-    _tabController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -231,9 +202,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         final errorMsg =
             ref.read(personaServiceProvider).errorMessage ??
             AppLocalizations.of(context).profile_error_switch_profile_failed;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorMsg)));
+        DabblerToastProvider.of(context).show(DabblerToastSpec(message: errorMsg));
       }
       return;
     }
@@ -255,18 +224,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Future<void> _onRefresh() async {
-    _refreshController.reset();
-    _refreshController.forward();
     // Clear cache and reload fresh data on pull-to-refresh
     await _refreshProfileWithCacheClear();
   }
 
   void _showManageProfiles() {
-    showAdaptiveSheet<String>(
+    showDabblerSheet<String>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      showDragHandle: false,
+      title: AppLocalizations.of(context).profile_manage_profiles_title,
+      detent: DabblerSheetDetent.content,
       builder: (context) => const ManageProfilesSheet(),
     ).then((selectedProfileType) {
       if (selectedProfileType != null &&
@@ -276,15 +242,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     });
   }
 
+  TextStyle _type(DabblerTypeStyle s, Color c) =>
+      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final sportsState = ref.watch(sportsProfileControllerProvider);
-    final colorScheme = Theme.of(context).colorScheme;
     final profileId = profileState.profile?.id;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final isWide = screenWidth >= AdaptiveBreakpoints.compact;
-    final showWideRightPanel = screenWidth >= AdaptiveBreakpoints.medium;
 
     // Watch the takedown provider once per profileId
     final takedownAsync = profileId != null
@@ -298,493 +263,177 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         orElse: () => false,
       );
       if (isTakedown) {
-        return Scaffold(
-          backgroundColor: context.appScaffoldBackground,
-          body: SafeArea(
-            child: _buildTakedownPlaceholder(context, colorScheme),
-          ),
-        );
+        return DabblerPage(body: _buildTakedownPlaceholder(context));
       }
     }
 
     // Loading spinner while takedown check is in flight
     if (profileId != null && takedownAsync is AsyncLoading) {
-      return Scaffold(
-        backgroundColor: context.appScaffoldBackground,
-        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
-      );
+      return const DabblerPage(body: Center(child: DabblerSpinner()));
     }
 
-    if (isWide) {
-      return _buildWideLayout(
-        context,
-        colorScheme,
-        profileState,
-        sportsState,
-        showRightPanel: showWideRightPanel,
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(scrollController: _scrollController),
-          RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                // ── Hero section ──
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: EdgeInsets.only(
-                      top: isWide ? 16 : MediaQuery.of(context).padding.top + 12,
-                      bottom: 20,
-                    ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 700),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ── Header: only on mobile (desktop has side nav) ──
-                            if (!isWide) _buildHeader(context),
-                            if (!isWide) const SizedBox(height: 12),
-                            _buildProfileHeroCard(
-                              context,
-                              profileState,
-                              sportsState,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ── Posts section ──
-                SliverToBoxAdapter(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 700),
-                      child: profileId == null
-                          ? const Padding(
-                              padding: EdgeInsets.all(48),
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          : _buildTabbedPostsSection(context),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Wide-screen layout (AdaptiveScaffold, matching home_screen) ─────────────
-
-  Widget _buildWideLayout(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ProfileState profileState,
-    SportsProfileState sportsState, {
-    required bool showRightPanel,
-  }) {
-    return AdaptiveScaffold(
-      currentIndex: 7, // Profile
-      onDestinationSelected: (i) =>
-          onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-      destinations: kAdaptiveDestinations,
-      headerWidget: SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      ),
-      background: DynamicBackground(scrollController: _scrollController),
-      body: _buildWideBody(
-        context,
-        colorScheme,
-        profileState,
-        sportsState,
-        showHeroInBody: !showRightPanel,
-      ),
-      rightPanel: showRightPanel
-          ? _buildWideRightPanel(
-              context,
-              colorScheme,
-              profileState,
-              sportsState,
-            )
-          : null,
-    );
-  }
-
-  /// Center column on wide screens: tabbed posts + refresh.
-  Widget _buildWideBody(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ProfileState profileState,
-    SportsProfileState sportsState, {
-    required bool showHeroInBody,
-  }) {
-    final profileId = ref.watch(profileControllerProvider).profile?.id;
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: RefreshIndicator(
+    return DabblerPage(
+      topBar: _buildTopBar(context),
+      body: DabblerRefresh(
         onRefresh: _onRefresh,
         child: CustomScrollView(
-          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            if (showHeroInBody)
-              SliverToBoxAdapter(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 16, bottom: 20),
-                      child: _buildProfileHeroCard(
-                        context,
-                        profileState,
-                        sportsState,
-                        showActions: true,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            // ── Hero section ──
             SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
+                  constraints: const BoxConstraints(
+                    maxWidth: _kProfileMaxWidth,
+                  ),
+                  child: _buildProfileHeader(
+                    context,
+                    profileState,
+                    sportsState,
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Posts section ──
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: _kProfileMaxWidth,
+                  ),
                   child: profileId == null
                       ? const Padding(
-                          padding: EdgeInsets.all(48),
-                          child: Center(child: CircularProgressIndicator()),
+                          padding: EdgeInsets.all(DabblerSpacing.space11),
+                          child: Center(child: DabblerSpinner()),
                         )
                       : _buildTabbedPostsSection(context),
                 ),
               ),
             ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: DabblerSpacing.space9),
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Right panel on wide screens: profile hero card as a floating card on surface.
-  Widget _buildWideRightPanel(
+  // ── Header ───────────────────────────────────────────────────────────────────
+
+  Widget _buildTopBar(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final username = ref.watch(profileControllerProvider).profile?.username;
+    return DabblerNavigationTopBar.titled(
+      title: (username != null && username.isNotEmpty)
+          ? username
+          : l10n.profile_header_fallback,
+      onBack: () => context.canPop() ? context.pop() : context.go('/home'),
+      actions: [
+        DabblerNavigationAction(
+          icon: 'repeat',
+          label: l10n.profile_btn_manage_profiles_tooltip,
+          onPressed: _showManageProfiles,
+        ),
+        DabblerNavigationAction(
+          icon: 'setting-2',
+          label: l10n.settings_header_title,
+          onPressed: () => context.push('/settings'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileHeader(
     BuildContext context,
-    ColorScheme colorScheme,
     ProfileState profileState,
     SportsProfileState sportsState,
   ) {
-    return SizedBox.expand(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: _buildProfileHeroCard(
-          context,
-          profileState,
-          sportsState,
-          showActions: true,
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final profile = profileState.profile;
+    final displayName = profile?.getDisplayName() ?? '';
+
+    return DecoratedBox(
+      // The design's header: the brand colour at 14% over the card surface.
+      decoration: BoxDecoration(
+        color: Color.alphaBlend(
+          colors.brandPrimary.withValues(alpha: 0.14),
+          colors.surfaceCard,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space6,
+          DabblerSpacing.space6,
+          DabblerSpacing.space7,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Avatar + name ──
+            Row(
+              children: [
+                DabblerAvatar(
+                  seed: displayName.isNotEmpty ? displayName : 'User',
+                  imageUrl: profile?.avatarUrl,
+                  size: DabblerAvatarSize.lg,
+                ),
+                const SizedBox(width: DabblerSpacing.space5),
+                Expanded(
+                  child: Text(
+                    displayName.isNotEmpty
+                        ? displayName
+                        : l10n.profile_complete_your_profile,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: _type(DabblerType.title2, colors.textPrimary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+
+            // ── Pills: persona type + primary sport + location & age ──
+            _buildInfoPills(context, profile),
+
+            // ── Bio ──
+            const SizedBox(height: DabblerSpacing.space5),
+            Text(
+              profile?.bio?.isNotEmpty == true
+                  ? profile!.bio!
+                  : l10n.profile_bio_placeholder,
+              style: _type(DabblerType.subheadline, colors.textSecondary),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+
+            // ── Posts / Following / Followers counters ──
+            _buildPostsAndFriendsCounter(context),
+            const SizedBox(height: DabblerSpacing.space5),
+
+            // ── Edit profile + Share profile buttons ──
+            _buildEditShareButtons(context),
+            const SizedBox(height: DabblerSpacing.space7),
+
+            // ── Sports section ──
+            _buildSportsChipsSection(context, sportsState),
+          ],
         ),
       ),
     );
   }
 
-  // ── Mobile / shared widgets ──────────────────────────────────────────────────
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        children: [
-          IconButton.filledTonal(
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go('/home'),
-            icon: const Icon(Iconsax.arrow_left_2_copy),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.onSurface,
-              minimumSize: const Size(48, 48),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Builder(
-                  builder: (context) {
-                    final profileState = ref.watch(profileControllerProvider);
-                    final username = profileState.profile?.username;
-                    return Text(
-                      (username != null && username.isNotEmpty)
-                          ? username
-                          : AppLocalizations.of(context).profile_header_fallback,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          IconButton.filledTonal(
-            onPressed: () => _showManageProfiles(),
-            icon: const Icon(Iconsax.convert_copy),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.onSurface,
-              minimumSize: const Size(48, 48),
-            ),
-            tooltip: AppLocalizations.of(context).profile_btn_manage_profiles_tooltip,
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
-            onPressed: () => context.push('/settings'),
-            icon: const Icon(Iconsax.setting_copy),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.onSurface,
-              minimumSize: const Size(48, 48),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileHeroCard(
-    BuildContext context,
-    ProfileState profileState,
-    SportsProfileState sportsState, {
-    bool showActions = false,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final profile = profileState.profile;
-    final onTop = colorScheme.onSurface;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-
-          // ── Actions: wide layouts only (mobile shows these in the header) ──
-          if (showActions)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton.filledTonal(
-                  onPressed: () => _showManageProfiles(),
-                  icon: const Icon(Iconsax.convert_copy),
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-                    foregroundColor: colorScheme.onSurface,
-                    minimumSize: const Size(48, 48),
-                  ),
-                  tooltip: AppLocalizations.of(context)
-                      .profile_btn_manage_profiles_tooltip,
-                ),
-                const SizedBox(width: 8),
-                IconButton.filledTonal(
-                  onPressed: () => context.push('/settings'),
-                  icon: const Icon(Iconsax.setting_copy),
-                  style: IconButton.styleFrom(
-                    backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-                    foregroundColor: colorScheme.onSurface,
-                    minimumSize: const Size(48, 48),
-                  ),
-                ),
-              ],
-            ),
-
-          // ── Avatar + Name/Pills/Location row ──
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Name ──
-                    Text(
-                      profile?.getDisplayName().isNotEmpty == true
-                          ? profile!.getDisplayName()
-                          : AppLocalizations.of(context).profile_complete_your_profile,
-                      style: textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // ── Pills: persona type + primary sport ──
-                    _buildInfoPills(context, profile, colorScheme, textTheme),
-                    const SizedBox(height: 8),
-
-                    // ── Location & Age ──
-                    _buildLocationAgeRow(
-                      context,
-                      profile,
-                      colorScheme,
-                      textTheme,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              _buildAvatar(context, profile),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // ── Bio ──
-          Text(
-            profile?.bio?.isNotEmpty == true
-                ? profile!.bio!
-                : AppLocalizations.of(context).profile_bio_placeholder,
-            style: textTheme.bodyMedium?.copyWith(color: onTop),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 12),
-
-          // ── Posts / Following / Followers counters ──
-          _buildPostsAndFriendsCounter(
-            context,
-            colorScheme,
-            textTheme,
-            colorScheme.onSurface,
-          ),
-          const SizedBox(height: 16),
-
-          // ── Edit profile + Share profile buttons ──
-          _buildEditShareButtons(context, colorScheme, textTheme),
-          const SizedBox(height: 20),
-
-          // ── Sports section ──
-          _buildSportsChipsSection(
-            context,
-            sportsState,
-            colorScheme,
-            textTheme,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(BuildContext context, UserProfile? profile) {
-    final displayName = profile?.getDisplayName();
-    final fallbackText = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName
-        : 'User';
-
-    return DSAvatar.large(
-      imageUrl: profile?.avatarUrl,
-      displayName: fallbackText,
-      context: AvatarContext.profile,
-    );
-  }
-
-  Widget _buildInfoPill(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required Color baseOnTop,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(
-              color: baseOnTop,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSportPill({
-    required String label,
-    String? emoji,
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required Color baseOnTop,
-    bool outlined = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: outlined
-            ? Colors.transparent
-            : colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (emoji != null && emoji.isNotEmpty) ...[
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: textTheme.labelMedium?.copyWith(
-              color: baseOnTop,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoPills(
-    BuildContext context,
-    UserProfile? profile,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final baseOnTop = colorScheme.onSurface;
-
+  Widget _buildInfoPills(BuildContext context, UserProfile? profile) {
     // Resolve preferred & primary sport UUIDs to Sport objects
     final sportsAsync = ref.watch(sportsProvider);
     final allSports = sportsAsync.valueOrNull ?? [];
+    final colors = DabblerColors.of(context);
 
     dynamic findSport(String? id) {
       if (id == null || id.isEmpty) return null;
@@ -796,52 +445,112 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     final preferredSport = findSport(profile?.preferredSport);
     final primarySport = findSport(profile?.primarySport);
+    final city = profile?.city;
+    final age = profile?.age;
 
+    final pills = <Widget>[
+      // Persona type pill
+      if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
+        DabblerBadge(
+          label: personaLabel(context, profile.personaType),
+          tone: DabblerBadgeTone.defaultTone,
+        ),
+      // Primary sport pill
+      if (primarySport != null)
+        DabblerChip(
+          label: primarySport.localizedName(context) as String,
+          selected: true,
+          leadingIcon: OnboardingSportGlyph(
+            sport: primarySport,
+            selected: true,
+            size: DabblerSizing.iconSm,
+            color: colors.onBrand,
+          ),
+        ),
+      // Preferred sport pill (only if different from primary)
+      if (preferredSport != null &&
+          (primarySport == null ||
+              (preferredSport.id as String) != (primarySport.id as String)))
+        DabblerChip(
+          label: preferredSport.localizedName(context) as String,
+          leadingIcon: OnboardingSportGlyph(
+            sport: preferredSport,
+            selected: false,
+            size: DabblerSizing.iconSm,
+            color: colors.textPrimary,
+          ),
+        ),
+      // Location & age
+      if (city != null && city.isNotEmpty)
+        DabblerChip(
+          label: city,
+          leadingIcon: DabblerIcon(
+            'location',
+            size: DabblerSizing.iconSm,
+            color: colors.textPrimary,
+          ),
+        ),
+      if (age != null)
+        DabblerChip(
+          label: '$age yo',
+          leadingIcon: DabblerIcon(
+            'calendar',
+            size: DabblerSizing.iconSm,
+            color: colors.textPrimary,
+          ),
+        ),
+    ];
+
+    if (pills.isEmpty) return const SizedBox.shrink();
     return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: [
-        // Persona type pill
-        if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
-          _buildInfoPill(
-            context,
-            icon: Iconsax.profile_circle_copy,
-            label: personaLabel(context, profile.personaType),
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            baseOnTop: baseOnTop,
-          ),
-        // Primary sport pill
-        if (primarySport != null)
-          _buildSportPill(
-            label: primarySport.localizedName(context),
-            emoji: primarySport.emoji as String?,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            baseOnTop: baseOnTop,
-          ),
-        // Preferred sport pill (only if different from primary)
-        if (preferredSport != null &&
-            (primarySport == null ||
-                (preferredSport.id as String) != (primarySport.id as String)))
-          _buildSportPill(
-            label: preferredSport.localizedName(context),
-            emoji: preferredSport.emoji as String?,
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            baseOnTop: baseOnTop,
-            outlined: true,
-          ),
-      ],
+      spacing: DabblerSpacing.space2,
+      runSpacing: DabblerSpacing.space2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: pills,
     );
   }
 
-  Widget _buildPostsAndFriendsCounter(
-    BuildContext context,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-    Color baseOnTop,
-  ) {
+  Widget _counter(
+    BuildContext context, {
+    required int value,
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    final colors = DabblerColors.of(context);
+    return Semantics(
+      button: onTap != null,
+      label: '$value $label',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: DabblerSizing.touchTargetMin,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$value',
+                style: _type(DabblerType.headline, colors.textPrimary),
+              ),
+              const SizedBox(width: DabblerSpacing.space1 + 2),
+              Text(
+                label,
+                style: _type(DabblerType.footnote, colors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPostsAndFriendsCounter(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final postsCountAsync = ref.watch(myPostsCountProvider);
     final profileId = ref.watch(profileControllerProvider).profile?.id;
     final followingCountAsync = profileId != null
@@ -866,430 +575,240 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       orElse: () => 0,
     );
 
-    return Row(
+    return Wrap(
+      spacing: DabblerSpacing.space6,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         // Posts counter
-        InkWell(
+        _counter(
+          context,
+          value: postsCount,
+          label: l10n.profile_post_count(postsCount),
           onTap: () {
             // Scroll to posts tab
           },
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$postsCount ',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(
-                    text: AppLocalizations.of(context).profile_post_count(postsCount),
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
-        const SizedBox(width: 16),
         // Following counter
-        InkWell(
+        _counter(
+          context,
+          value: followingCount,
+          label: l10n.profile_following_label,
           onTap: profileId != null
               ? () => context.pushNamed(
                   RouteNames.following,
                   pathParameters: {'profileId': profileId},
                 )
               : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$followingCount ',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(
-                    text: AppLocalizations.of(context).profile_following_label,
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
-        const SizedBox(width: 16),
         // Followers counter
-        InkWell(
+        _counter(
+          context,
+          value: followersCount,
+          label: l10n.profile_follower_count(followersCount),
           onTap: profileId != null
               ? () => context.pushNamed(
                   RouteNames.followers,
                   pathParameters: {'profileId': profileId},
                 )
               : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: '$followersCount ',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  TextSpan(
-                    text: AppLocalizations.of(context).profile_follower_count(followersCount),
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: baseOnTop,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
-      ],
-    );
-  }
-
-  /// Location + Age row matching the design (icon + text inline)
-  Widget _buildLocationAgeRow(
-    BuildContext context,
-    UserProfile? profile,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final onTop = colorScheme.onSurface;
-    final city = profile?.city;
-    final age = profile?.age;
-
-    if ((city == null || city.isEmpty) && age == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (city != null && city.isNotEmpty) ...[
-          Icon(Iconsax.location_copy, size: 16, color: onTop),
-          const SizedBox(width: 4),
-          Text(city, style: textTheme.bodySmall?.copyWith(color: onTop)),
-        ],
-        if (city != null && city.isNotEmpty && age != null)
-          const SizedBox(width: 12),
-        if (age != null) ...[
-          Icon(Iconsax.calendar_1_copy, size: 16, color: onTop),
-          const SizedBox(width: 4),
-          Text('$age yo', style: textTheme.bodySmall?.copyWith(color: onTop)),
-        ],
       ],
     );
   }
 
   /// Edit profile + Share profile buttons as shown in the design
-  Widget _buildEditShareButtons(
-    BuildContext context,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
+  Widget _buildEditShareButtons(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
+          child: DabblerButton(
+            label: l10n.profile_btn_edit,
+            icon: 'edit',
+            tone: DabblerButtonTone.outlined,
+            fullWidth: true,
             onPressed: () => context.push('/profile/edit'),
-            icon: Icon(
-              Iconsax.edit_copy,
-              size: 18,
-              color: colorScheme.onSurface,
-            ),
-            label: Text(
-              AppLocalizations.of(context).profile_btn_edit,
-              style: textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                color: colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: DabblerSpacing.space4),
         Expanded(
-          child: OutlinedButton.icon(
+          child: DabblerButton(
+            label: l10n.profile_btn_share,
+            icon: 'share',
+            tone: DabblerButtonTone.outlined,
+            fullWidth: true,
             onPressed: () {
               // TODO: Implement share profile
             },
-            icon: Icon(
-              Iconsax.share_copy,
-              size: 18,
-              color: colorScheme.onSurface,
-            ),
-            label: Text(
-              AppLocalizations.of(context).profile_btn_share,
-              style: textTheme.labelLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(
-                color: colorScheme.onSurface.withValues(alpha: 0.3),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
           ),
         ),
       ],
     );
   }
 
-  /// Sports chips section with label, add button, and horizontal scroll chips
-  Widget _buildSportsChipsSection(
-    BuildContext context,
-    SportsProfileState sportsState,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final onTop = colorScheme.onSurface;
-    final profile = ref.watch(profileControllerProvider).profile;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 0,
-        vertical: AppSpacing.lg,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              children: [
-                Text(
-                  AppLocalizations.of(context).profile_section_sports,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: onTop,
-                  ),
-                ),
-                const Spacer(),
-                InkWell(
-                  onTap: () {
-                    showAdaptiveSheet(
-                      context: context,
-                      builder: (_) => const ManageSportsSheet(),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Icon(Iconsax.edit_copy, size: 24, color: onTop),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Builder(
-            builder: (context) {
-              // Resolve interests UUIDs to Sport objects from public.sports
-              final interestIds = profile?.interests ?? [];
-              final sportsAsync = ref.watch(sportsProvider);
-              final allSports = sportsAsync.valueOrNull ?? [];
-
-              // Build a map of id -> Sport for quick lookup
-              final sportsById = {for (final s in allSports) s.id: s};
-
-              final resolvedSports = interestIds
-                  .where((id) => sportsById.containsKey(id))
-                  .map((id) => sportsById[id]!)
-                  .toList();
-
-              if (resolvedSports.isNotEmpty) {
-                final isWide = MediaQuery.sizeOf(context).width >= 600;
-                final chips = resolvedSports.map((sport) {
-                  final profileId = profile?.id;
-                  final userId = profile?.userId;
-                  final personaType =
-                      profile?.personaType ?? profile?.profileType ?? 'player';
-
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap:
-                          profileId == null ||
-                              userId == null ||
-                              (personaType != 'player' &&
-                                  personaType != 'organiser')
-                          ? null
-                          : () {
-                              final args = SportProfileRouteArgs(
-                                profileId: profileId,
-                                userId: userId,
-                                displayName: profile?.displayName ?? '',
-                                personaType: personaType,
-                                sportId: sport.id,
-                                sportKey:
-                                    sport.sportKey ??
-                                    sport.nameEn.toLowerCase().replaceAll(
-                                      ' ',
-                                      '_',
-                                    ),
-                                sportName: sport.nameEn,
-                                avatarUrl: profile?.avatarUrl,
-                                sportEmoji: sport.emoji,
-                              );
-                              // Query params keep the route alive across web
-                              // refresh; extra stays as the fast path.
-                              context.push(
-                                Uri(
-                                  path: RoutePaths.sportProfile,
-                                  queryParameters: args.toQueryParameters(),
-                                ).toString(),
-                                extra: args,
-                              );
-                            },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.15),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (sport.emoji != null &&
-                                sport.emoji!.isNotEmpty) ...[
-                              Text(
-                                sport.emoji!,
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              const SizedBox(width: 6),
-                            ],
-                            Text(
-                              sport.nameEn,
-                              style: textTheme.labelLarge?.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList();
-
-                if (isWide) {
-                  return Wrap(spacing: 8, runSpacing: 8, children: chips);
-                }
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      const SizedBox(width: AppSpacing.lg),
-                      ...chips.map(
-                        (c) => Padding(
-                          padding: const EdgeInsets.only(right: AppSpacing.md),
-                          child: c,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return Text(
-                AppLocalizations.of(context).profile_empty_no_sports,
-                style: textTheme.bodySmall?.copyWith(
-                  color: onTop.withValues(alpha: 0.6),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+  void _openSportProfile(UserProfile? profile, dynamic sport) {
+    final profileId = profile?.id;
+    final userId = profile?.userId;
+    final personaType = profile?.personaType ?? profile?.profileType ?? 'player';
+    if (profileId == null ||
+        userId == null ||
+        (personaType != 'player' && personaType != 'organiser')) {
+      return;
+    }
+    final args = SportProfileRouteArgs(
+      profileId: profileId,
+      userId: userId,
+      displayName: profile?.displayName ?? '',
+      personaType: personaType,
+      sportId: sport.id,
+      sportKey:
+          sport.sportKey ??
+          sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+      sportName: sport.nameEn,
+      avatarUrl: profile?.avatarUrl,
+      sportEmoji: sport.emoji,
+    );
+    // Query params keep the route alive across web
+    // refresh; extra stays as the fast path.
+    context.push(
+      Uri(
+        path: RoutePaths.sportProfile,
+        queryParameters: args.toQueryParameters(),
+      ).toString(),
+      extra: args,
     );
   }
 
+  /// Sports chips section with label, edit button and the sport chips
+  Widget _buildSportsChipsSection(
+    BuildContext context,
+    SportsProfileState sportsState,
+  ) {
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final profile = ref.watch(profileControllerProvider).profile;
+
+    // Resolve interests UUIDs to Sport objects from public.sports
+    final interestIds = profile?.interests ?? [];
+    final sportsAsync = ref.watch(sportsProvider);
+    final allSports = sportsAsync.valueOrNull ?? [];
+
+    // Build a map of id -> Sport for quick lookup
+    final sportsById = {for (final s in allSports) s.id: s};
+
+    final resolvedSports = interestIds
+        .where((id) => sportsById.containsKey(id))
+        .map((id) => sportsById[id]!)
+        .toList();
+
+    final personaType = profile?.personaType ?? profile?.profileType ?? 'player';
+    final canOpen =
+        profile?.id != null &&
+        profile?.userId != null &&
+        (personaType == 'player' || personaType == 'organiser');
+
+    final chips = [
+      for (final sport in resolvedSports)
+        DabblerChip(
+          label: sport.nameEn,
+          leadingIcon: OnboardingSportGlyph(
+            sport: sport,
+            selected: false,
+            size: DabblerSizing.iconSm,
+            color: colors.textPrimary,
+          ),
+          onTap: canOpen ? () => _openSportProfile(profile, sport) : null,
+        ),
+    ];
+
+    final isWide = MediaQuery.sizeOf(context).width >= 600;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.profile_section_sports,
+                style: _type(DabblerType.headline, colors.textPrimary),
+              ),
+            ),
+            DabblerButton.icon(
+              icon: 'edit',
+              tone: DabblerButtonTone.neutral,
+              size: DabblerButtonSize.small,
+              semanticLabel: l10n.profile_btn_edit,
+              onPressed: () {
+                ManageSportsSheet.show(context);
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: DabblerSpacing.space3),
+        if (chips.isEmpty)
+          Text(
+            l10n.profile_empty_no_sports,
+            style: _type(DabblerType.footnote, colors.textSecondary),
+          )
+        else if (isWide)
+          Wrap(
+            spacing: DabblerSpacing.space2,
+            runSpacing: DabblerSpacing.space2,
+            children: chips,
+          )
+        else
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final c in chips)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      end: DabblerSpacing.space2,
+                    ),
+                    child: c,
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ── Tabbed posts ─────────────────────────────────────────────────────────────
+
   /// Tabbed posts section for the bottom part of the profile
   Widget _buildTabbedPostsSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final profileId = ref.watch(profileControllerProvider).profile?.id;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SizedBox(height: DabblerSpacing.space6),
         // Tab bar
-        TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          labelColor: colorScheme.onSurface,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
-          indicatorWeight: 3,
-          labelStyle: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w400,
-          ),
-          tabs: [
-            Tab(text: AppLocalizations.of(context).profile_tab_posts),
-            Tab(text: AppLocalizations.of(context).profile_tab_replies),
-            Tab(text: AppLocalizations.of(context).profile_tab_liked),
-            Tab(text: AppLocalizations.of(context).profile_tab_reposts),
-            Tab(text: AppLocalizations.of(context).profile_tab_activity),
-          ],
-        ),
-        const SizedBox(height: 4),
-        // Tab content
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0),
-          child: _buildTabContent(context, profileId),
+          padding: const EdgeInsets.symmetric(
+            horizontal: DabblerSpacing.space6,
+          ),
+          child: DabblerTabs(
+            scrollable: true,
+            value: '$_selectedTabIndex',
+            onChanged: (id) => setState(() => _selectedTabIndex = int.parse(id)),
+            items: [
+              DabblerTabItem(id: '0', label: l10n.profile_tab_posts),
+              DabblerTabItem(id: '1', label: l10n.profile_tab_replies),
+              DabblerTabItem(id: '2', label: l10n.profile_tab_liked),
+              DabblerTabItem(id: '3', label: l10n.profile_tab_reposts),
+              DabblerTabItem(id: '4', label: l10n.profile_tab_activity),
+            ],
+          ),
         ),
+        const SizedBox(height: DabblerSpacing.space1),
+        // Tab content
+        _buildTabContent(context, profileId),
       ],
     );
   }
@@ -1318,8 +837,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     if (state.isLoading && state.activities.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(DabblerSpacing.space11),
+        child: Center(child: DabblerSpinner()),
       );
     }
 
@@ -1380,89 +899,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           mainAxisSize: MainAxisSize.min,
           children: posts.map((post) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: DabblerSpacing.space1 + 1),
               child: resolvePostLayout(post),
             );
           }).toList(),
         );
       },
       loading: () => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(DabblerSpacing.space11),
+        child: Center(child: DabblerSpinner()),
       ),
       error: (_, __) => Padding(
-        padding: const EdgeInsets.all(48),
-        child: Center(child: Text(AppLocalizations.of(context).profile_error_failed_load_posts)),
+        padding: const EdgeInsets.all(DabblerSpacing.space6),
+        child: DabblerEmptyState.error(
+          title: AppLocalizations.of(context).profile_error_failed_load_posts,
+          size: DabblerEmptyStateSize.inline,
+        ),
       ),
     );
   }
 
   Widget _buildEmptyTabContent(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.article_outlined,
-              size: 48,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: DabblerSpacing.space6,
+        vertical: DabblerSpacing.space8,
       ),
+      child: DabblerEmptyState(icon: 'document-text', title: message),
     );
   }
 
-  Widget _buildTakedownPlaceholder(
-    BuildContext context,
-    ColorScheme colorScheme,
-  ) {
-    final textTheme = Theme.of(context).textTheme;
+  Widget _buildTakedownPlaceholder(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Iconsax.close_square_copy,
-              size: 64,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              AppLocalizations.of(context).profile_takedown_title,
-              style: textTheme.titleLarge?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context).profile_takedown_body,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+      child: DabblerEmptyState(
+        icon: 'close-square',
+        title: l10n.profile_takedown_title,
+        text: l10n.profile_takedown_body,
+        size: DabblerEmptyStateSize.page,
       ),
     );
   }
 }
 
+/// The switch-profile sheet body. Shown by [ProfileScreen] inside a
+/// [showDabblerSheet] (the sheet owns the title, the handle and the close
+/// affordance); pops with the chosen persona type.
 class ManageProfilesSheet extends ConsumerStatefulWidget {
   const ManageProfilesSheet({super.key});
 
@@ -1481,132 +963,90 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
     });
   }
 
+  TextStyle _type(DabblerTypeStyle s, Color c) =>
+      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final availableProfilesAsync = ref.watch(availableProfilesProvider);
     final activeProfileType = ref.watch(activeProfileTypeProvider);
     final personaState = ref.watch(personaServiceProvider);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return availableProfilesAsync.when(
+      data: (profiles) {
+        if (profiles.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(DabblerSpacing.space8),
+            child: Center(
+              child: Text(
+                l10n.profile_no_profiles_found,
+                style: _type(DabblerType.subheadline, colors.textSecondary),
+              ),
+            ),
+          );
+        }
+
+        // Get available persona options (only if not at limit)
+        final availablePersonas = personaState.canAddNewProfile
+            ? personaState.availablePersonas.where((p) => p.canProceed).toList()
+            : <PersonaAvailability>[];
+
+        // Check if at profile limit
+        final isAtLimit = personaState.isAtProfileLimit;
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Existing profiles section
+            ...profiles.map((profile) {
+              final effectiveType = profile.personaType ?? profile.profileType;
+              final isActive =
+                  effectiveType?.toLowerCase() ==
+                  activeProfileType?.toLowerCase();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),
+                child: _ProfileRow(
+                  profile: profile,
+                  isActive: isActive,
+                  onTap: () {
+                    // Pop the sheet and return the persona type
+                    // The parent ProfileScreen will handle the full switch
+                    Navigator.pop(context, effectiveType);
+                  },
+                ),
+              );
+            }),
+
+            // Add persona options section (only if not at limit)
+            if (availablePersonas.isNotEmpty && !isAtLimit) ...[
+              const SizedBox(height: DabblerSpacing.space4),
+              DabblerSection(
+                title: l10n.profile_add_profile,
                 children: [
-                  Text(
-                    AppLocalizations.of(context).profile_manage_profiles_title,
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
+                  for (final availability in availablePersonas)
+                    _PersonaOptionTile(
+                      availability: availability,
+                      onTap: () => _startPersonaFlow(availability),
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Iconsax.close_circle_copy),
-                  ),
                 ],
               ),
-              const SizedBox(height: 24),
-              availableProfilesAsync.when(
-                data: (profiles) {
-                  if (profiles.isEmpty) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Text(
-                          AppLocalizations.of(context).profile_no_profiles_found,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // Get available persona options (only if not at limit)
-                  final availablePersonas = personaState.canAddNewProfile
-                      ? personaState.availablePersonas
-                            .where((p) => p.canProceed)
-                            .toList()
-                      : <PersonaAvailability>[];
-
-                  // Check if at profile limit
-                  final isAtLimit = personaState.isAtProfileLimit;
-
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Existing profiles section
-                      ...profiles.map((profile) {
-                        final effectiveType =
-                            profile.personaType ?? profile.profileType;
-                        final isActive =
-                            effectiveType?.toLowerCase() ==
-                            activeProfileType?.toLowerCase();
-                        return _ProfileListTile(
-                          profile: profile,
-                          isActive: isActive,
-                          onTap: () {
-                            // Pop the sheet and return the persona type
-                            // The parent ProfileScreen will handle the full switch
-                            Navigator.pop(context, effectiveType);
-                          },
-                        );
-                      }),
-
-                      // Add persona options section (only if not at limit)
-                      if (availablePersonas.isNotEmpty && !isAtLimit) ...[
-                        const SizedBox(height: 24),
-                        Divider(color: colorScheme.outlineVariant),
-                        const SizedBox(height: 16),
-                        Text(
-                          AppLocalizations.of(context).profile_add_profile,
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ...availablePersonas.map((availability) {
-                          return _PersonaOptionTile(
-                            availability: availability,
-                            onTap: () => _startPersonaFlow(availability),
-                          );
-                        }),
-                      ],
-                    ],
-                  );
-                },
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (error, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      AppLocalizations.of(context).profile_error_loading_profiles,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ],
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.all(DabblerSpacing.space8),
+        child: Center(child: DabblerSpinner()),
+      ),
+      error: (error, _) => Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space8),
+        child: Center(
+          child: Text(
+            l10n.profile_error_loading_profiles,
+            style: _type(DabblerType.subheadline, colors.error.strong),
           ),
         ),
       ),
@@ -1620,10 +1060,10 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
     if (personaState.isAtProfileLimit &&
         availability.actionType == PersonaActionType.add) {
       Navigator.pop(context); // Close the sheet
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(PersonaRules.profileLimitMessage),
-          backgroundColor: Theme.of(context).colorScheme.error,
+      DabblerToastProvider.of(context).show(
+        const DabblerToastSpec(
+          message: PersonaRules.profileLimitMessage,
+          tone: DabblerToastTone.error,
         ),
       );
       return;
@@ -1663,159 +1103,92 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
   }
 
   void _showConversionConfirmDialog(PersonaAvailability availability) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        title: Text(AppLocalizations.of(context).profile_convert_to(
+      builder: (dialogContext) => DabblerDialog(
+        title: l10n.profile_convert_to(
           personaLabel(context, availability.targetPersona.name),
-        )),
-        content: Text(AppLocalizations.of(context).profile_convert_confirm_body(
+        ),
+        description: l10n.profile_convert_confirm_body(
           personaLabel(context, availability.convertFrom?.name),
           personaLabel(context, availability.targetPersona.name),
-        )),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(AppLocalizations.of(context).profile_btn_cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              // Navigate to first screen of add flow
-              context.push(RoutePaths.addPersonaInterests);
-            },
-            child: Text(AppLocalizations.of(context).profile_btn_continue),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Tile for displaying an available persona option
-class _PersonaOptionTile extends StatelessWidget {
-  final PersonaAvailability availability;
-  final VoidCallback onTap;
-
-  const _PersonaOptionTile({required this.availability, required this.onTap});
-
-  IconData get _personaIcon {
-    switch (availability.targetPersona) {
-      case PersonaType.player:
-        return Iconsax.user_copy;
-      case PersonaType.organiser:
-        return Iconsax.calendar_copy;
-      case PersonaType.host:
-        return Iconsax.building_copy;
-      case PersonaType.socialiser:
-        return Iconsax.people_copy;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isConversion = availability.actionType == PersonaActionType.convert;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: isConversion
-                        ? colorScheme.tertiaryContainer
-                        : colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    _personaIcon,
-                    color: isConversion
-                        ? colorScheme.onTertiaryContainer
-                        : colorScheme.onPrimaryContainer,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            personaLabel(context, availability.targetPersona.name),
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: colorScheme.onSurface,
-                            ),
-                          ),
-                          if (isConversion) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.tertiaryContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                AppLocalizations.of(context).profile_persona_convert_badge,
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onTertiaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        availability.targetPersona.description,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Iconsax.arrow_right_3_copy,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ],
-            ),
-          ),
+        ),
+        onClose: () => Navigator.of(dialogContext).pop(),
+        secondaryAction: DabblerDialogAction(
+          label: l10n.profile_btn_cancel,
+          onPressed: () => Navigator.of(dialogContext).pop(),
+        ),
+        primaryAction: DabblerDialogAction(
+          label: l10n.profile_btn_continue,
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+            // Navigate to first screen of add flow
+            context.push(RoutePaths.addPersonaInterests);
+          },
         ),
       ),
     );
   }
 }
 
-class _ProfileListTile extends StatelessWidget {
+/// Row for displaying an available persona option
+class _PersonaOptionTile extends StatelessWidget {
+  final PersonaAvailability availability;
+  final VoidCallback onTap;
+
+  const _PersonaOptionTile({required this.availability, required this.onTap});
+
+  String get _personaIcon {
+    switch (availability.targetPersona) {
+      case PersonaType.player:
+        return 'user';
+      case PersonaType.organiser:
+        return 'calendar';
+      case PersonaType.host:
+        return 'building';
+      case PersonaType.socialiser:
+        return 'people';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isConversion = availability.actionType == PersonaActionType.convert;
+
+    return DabblerInputRow(
+      onTap: onTap,
+      leading: DabblerIconTile.named(
+        _personaIcon,
+        tone: isConversion
+            ? DabblerIconTileTone.accent
+            : DabblerIconTileTone.brand,
+      ),
+      title: personaLabel(context, availability.targetPersona.name),
+      subtitle: availability.targetPersona.description,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isConversion) ...[
+            DabblerBadge(
+              label: AppLocalizations.of(context).profile_persona_convert_badge,
+            ),
+            const SizedBox(width: DabblerSpacing.space2),
+          ],
+          const DabblerChevron(),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileRow extends StatelessWidget {
   final UserProfile profile;
   final bool isActive;
   final VoidCallback onTap;
 
-  const _ProfileListTile({
+  const _ProfileRow({
     required this.profile,
     required this.isActive,
     required this.onTap,
@@ -1823,76 +1196,26 @@ class _ProfileListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final name = profile.getDisplayName().isNotEmpty
+        ? profile.getDisplayName()
+        : 'Profile';
 
-    return Card(
-      elevation: 0,
-      color: colorScheme.primary.withValues(
-        alpha: Theme.of(context).brightness == Brightness.dark ? 0.08 : 0.06,
+    return DabblerInputRow(
+      onTap: onTap,
+      leading: DabblerAvatar(
+        seed: name,
+        imageUrl: profile.avatarUrl,
+        size: DabblerAvatarSize.sm,
       ),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              DSAvatar.medium(
-                imageUrl: profile.avatarUrl,
-                displayName: profile.getDisplayName().isNotEmpty
-                    ? profile.getDisplayName()
-                    : 'Profile',
-                context: AvatarContext.profile,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      profile.getDisplayName().isNotEmpty
-                          ? profile.getDisplayName()
-                          : 'Profile',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        (profile.personaType ?? profile.profileType)
-                                ?.toUpperCase() ??
-                            'PLAYER',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Radio<bool>(
-                value: true,
-                groupValue: isActive,
-                onChanged: (_) => onTap(),
-                activeColor: colorScheme.primary,
-              ),
-            ],
-          ),
-        ),
+      title: name,
+      subtitle: (profile.personaType ?? profile.profileType)?.toUpperCase() ??
+          'PLAYER',
+      trailing: DabblerIcon(
+        isActive ? 'tick-circle' : 'record',
+        weight: isActive ? DabblerIconWeight.bold : DabblerIconWeight.linear,
+        size: DabblerSizing.iconMd,
+        color: isActive ? colors.brandPrimary : colors.borderStrong,
       ),
     );
   }

@@ -1,4 +1,17 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+
+/// Resolves a DS type step against the ambient direction and tints it.
+TextStyle sportProfileText(
+  BuildContext context,
+  DabblerTypeStyle step,
+  Color color, {
+  FontWeight? weight,
+}) {
+  return step
+      .resolveForDirection(Directionality.of(context))
+      .copyWith(color: color, fontWeight: weight);
+}
 
 /// Titled card container shared by the sport profile sections.
 class SportSectionCard extends StatelessWidget {
@@ -9,27 +22,22 @@ class SportSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
+    return DabblerSurface.card(
+      padding: const EdgeInsets.all(DabblerSpacing.space5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
+            style: sportProfileText(
+              context,
+              DabblerType.title3,
+              colors.textPrimary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: DabblerSpacing.space4),
           child,
         ],
       ),
@@ -38,35 +46,21 @@ class SportSectionCard extends StatelessWidget {
 }
 
 /// Icon + message placeholder for empty sport profile sections.
+///
+/// [icon] is a kebab-case DS icon name rendered through [DabblerIcon].
 class SportEmptySection extends StatelessWidget {
-  const SportEmptySection({super.key, required this.icon, required this.message});
+  const SportEmptySection({
+    super.key,
+    required this.icon,
+    required this.message,
+  });
 
-  final IconData icon;
+  final String icon;
   final String message;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(icon, size: 36, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
+    return DabblerEmptyState(icon: icon, title: message);
   }
 }
 
@@ -77,14 +71,8 @@ class SportSectionLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
+      padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space7),
+      child: Center(child: DabblerSpinner()),
     );
   }
 }

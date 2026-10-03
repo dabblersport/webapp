@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/core/constants/uae_locations.dart';
-import 'package:dabbler/themes/material3_extensions.dart';
+import 'package:dabbler/core/services/location_service.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
+/// The manual location picker: use the current location, or search and pick
+/// from the UAE list. Hosted in a design-system sheet, which owns the surface,
+/// the handle and the scrolling; this widget is the sheet's content.
 class ManualLocationDrawer extends StatefulWidget {
   const ManualLocationDrawer({super.key});
 
@@ -37,6 +40,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
   }
 
   Future<void> _selectLocation(LocationData location) async {
+    final toast = DabblerToastProvider.of(context);
     setState(() => _isLoading = true);
 
     try {
@@ -48,20 +52,19 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Location set to ${location.displayName}'),
-            behavior: SnackBarBehavior.floating,
+        toast.show(
+          DabblerToastSpec(
+            message: 'Location set to ${location.displayName}',
+            tone: DabblerToastTone.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update location: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.error,
+        toast.show(
+          DabblerToastSpec(
+            message: 'Failed to update location: $e',
+            tone: DabblerToastTone.error,
           ),
         );
       }
@@ -73,6 +76,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
   }
 
   Future<void> _useCurrentLocation() async {
+    final toast = DabblerToastProvider.of(context);
     setState(() => _isLoading = true);
 
     try {
@@ -80,20 +84,19 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location updated'),
-            behavior: SnackBarBehavior.floating,
+        toast.show(
+          const DabblerToastSpec(
+            message: 'Location updated',
+            tone: DabblerToastTone.success,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to get location: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Theme.of(context).colorScheme.error,
+        toast.show(
+          DabblerToastSpec(
+            message: 'Failed to get location: $e',
+            tone: DabblerToastTone.error,
           ),
         );
       }
@@ -106,207 +109,62 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final DabblerColors colors = DabblerColors.of(context);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.8,
-      minChildSize: 0.5,
-      maxChildSize: 0.95,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Select Location',
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Use current location button
-                  OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _useCurrentLocation,
-                    icon: _isLoading
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: colorScheme.categoryMain,
-                            ),
-                          )
-                        : const Icon(Iconsax.gps_copy, size: 20),
-                    label: const Text('Use Current Location'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: colorScheme.categoryMain,
-                      side: BorderSide(color: colorScheme.categoryMain),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Divider with "or choose" text
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(
-                          color: colorScheme.categoryMain.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or choose from list',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.categoryMain.withValues(
-                              alpha: 0.8,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(
-                          color: colorScheme.categoryMain.withValues(
-                            alpha: 0.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Search input
-                  SizedBox(
-                    height: 56,
-                    child: TextField(
-                      controller: _searchController,
-                      style: textTheme.bodyMedium?.copyWith(
-                        fontSize: 15,
-                        color: colorScheme.onSurface,
-                      ),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: colorScheme.primary.withValues(
-                          alpha: isDark ? 0.14 : 0.12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: colorScheme.primary,
-                            width: 2,
-                          ),
-                        ),
-                        hintText: 'Search locations...',
-                        hintStyle: TextStyle(
-                          fontSize: 15,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        suffixIcon: Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Icon(
-                            Iconsax.search_normal_copy,
-                            color: colorScheme.onSurfaceVariant,
-                            size: 24,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          'Select Location',
+          textAlign: TextAlign.center,
+          style: listingText(
+            context,
+            DabblerType.headline,
+            color: colors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space6),
+        DabblerButton(
+          label: 'Use Current Location',
+          icon: 'gps',
+          tone: DabblerButtonTone.outlined,
+          fullWidth: true,
+          loading: _isLoading,
+          disabled: _isLoading,
+          onPressed: _useCurrentLocation,
+        ),
+        const SizedBox(height: DabblerSpacing.space6),
+        const DabblerDivider(label: 'or choose from list'),
+        const SizedBox(height: DabblerSpacing.space6),
+        DabblerSearchField(
+          controller: _searchController,
+          placeholder: 'Search locations...',
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(DabblerSpacing.space10),
+            child: Center(child: DabblerSpinner()),
+          )
+        else if (_filteredLocations.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(DabblerSpacing.space8),
+            child: DabblerEmptyState(
+              icon: 'location-slash',
+              title: 'No locations found',
+              text: 'Try a different search term',
             ),
-
-            // Location list
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: colorScheme.categoryMain,
-                      ),
-                    )
-                  : _filteredLocations.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Iconsax.location_slash_copy,
-                            size: 64,
-                            color: colorScheme.categoryMain.withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No locations found',
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Try a different search term',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant.withValues(
-                                alpha: 0.7,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      controller: scrollController,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      itemCount: _filteredLocations.length,
-                      separatorBuilder: (context, index) => Divider(
-                        height: 1,
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.35,
-                        ),
-                      ),
-                      itemBuilder: (context, index) {
-                        final location = _filteredLocations[index];
-                        return _LocationTile(
-                          location: location,
-                          onTap: () => _selectLocation(location),
-                        );
-                      },
-                    ),
+          )
+        else
+          for (final LocationData location in _filteredLocations) ...<Widget>[
+            _LocationTile(
+              location: location,
+              onTap: () => _selectLocation(location),
             ),
+            const SizedBox(height: DabblerSpacing.space2),
           ],
-        );
-      },
+      ],
     );
   }
 }
@@ -320,43 +178,13 @@ class _LocationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return ListTile(
+    return DabblerInputRow(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: colorScheme.categoryMain.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(
-          Iconsax.location_copy,
-          size: 20,
-          color: colorScheme.categoryMain,
-        ),
-      ),
-      title: Text(
-        location.displayName,
-        style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        location.city,
-        style: textTheme.bodySmall?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: Icon(
-        Iconsax.arrow_right_3_copy,
-        size: 20,
-        color: colorScheme.categoryMain,
-      ),
+      leading: const DabblerIcon('location', size: 20),
+      title: location.displayName,
+      subtitle: location.city,
+      trailing: const DabblerChevron(),
+      semanticLabel: location.displayName,
     );
   }
 }

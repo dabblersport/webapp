@@ -1,67 +1,64 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
-import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/themes/app_theme.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
 
-// Sport-identity colors — intentionally hardcoded, not theme tokens.
-const _kGreen = Color(0xFF00C853);
-const _kPink  = Color(0xFFFF3376);
+/// Game details (D01) on the design system only.
+///
+/// Same provider, controller, routes, join / leave / request / remove flows and
+/// deep-link behaviour as before: only the widget tree changed.
 
-Color _sportColor(String? key) {
-  switch (key?.toLowerCase()) {
-    case 'football': case 'soccer': case 'futsal':
-      return const Color(0xFF00C853);
-    case 'basketball':
-      return const Color(0xFFFF6D00);
-    case 'tennis': case 'padel':
-      return const Color(0xFFF9A825);
-    case 'cricket':
-      return const Color(0xFF8D6E63);
-    case 'badminton':
-      return const Color(0xFFE91E63);
-    case 'swimming':
-      return const Color(0xFF0288D1);
-    case 'running':
-      return const Color(0xFFFF7043);
-    default:
-      return const Color(0xFF7328CE);
-  }
-}
+TextStyle _t(
+  BuildContext context,
+  DabblerTypeStyle step,
+  Color color, {
+  FontWeight? weight,
+}) => step
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(color: color, fontWeight: weight);
 
-Color _sportFgColor(String? key) {
-  switch (key?.toLowerCase()) {
-    case 'football': case 'soccer': case 'futsal':
-      return const Color(0xFF0a3d1c);
-    default:
-      return Colors.white;
-  }
-}
+/// The design's section header: 15 / 600 ink.
+TextStyle _section(BuildContext context, DabblerColors colors) => _t(
+  context,
+  DabblerType.subheadline,
+  colors.textPrimary,
+  weight: DabblerType.semibold,
+);
 
-String _sportEmoji(String? key) {
-  switch (key?.toLowerCase()) {
-    case 'football': case 'soccer': case 'futsal': return '⚽';
-    case 'basketball': return '🏀';
-    case 'tennis': case 'padel': return '🎾';
-    case 'cricket': return '🏏';
-    case 'badminton': return '🏸';
-    case 'swimming': return '🏊';
-    case 'running': return '🏃';
-    case 'equestrian': return '🐎';
-    case 'shooting': return '🎯';
-    default: return '🏃';
-  }
+/// The colours the design draws the hero in (`--sport-p-600`): the sport
+/// theme's brand pair, read through the design system rather than a literal.
+DabblerColors _sportColors(DabblerColors colors) => DabblerColors.resolve(
+  theme: DabblerTheme.sport,
+  brightness: colors.brightness,
+);
+
+/// `ds:<seed>` references and storage paths resolve the way the profile screen
+/// resolves them, so the picture always matches.
+String _seedFor(String? avatarUrl, String name) =>
+    extractDsAvatarSeed(avatarUrl) ?? name;
+
+String? _photoFor(String? avatarUrl) => resolveAvatarUrl(avatarUrl);
+
+String _backIcon(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl
+    ? 'arrow-circle-right'
+    : 'arrow-circle-left';
+
+void _toast(BuildContext context, String message, {required bool isError}) {
+  DabblerToastProvider.maybeOf(context)?.show(
+    DabblerToastSpec(
+      message: message,
+      tone: isError ? DabblerToastTone.error : DabblerToastTone.success,
+    ),
+  );
 }
 
 class GameDetailScreen extends ConsumerStatefulWidget {
@@ -85,14 +82,11 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   final ScrollController _scroll = ScrollController();
   final GlobalKey _playersKey = GlobalKey();
   bool _didFocusScroll = false;
-  late final String _previousCategory;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _previousCategory = AppTheme.activeCategory;
-    AppTheme.setActiveCategory('sports');
     // The controller is autoDispose.family but survives while an earlier
     // instance of this screen is in the nav stack (e.g. arriving again via a
     // notification tap). Reload so this entry never shows stale data.
@@ -115,14 +109,16 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    AppTheme.setActiveCategory(_previousCategory);
     _scroll.dispose();
     super.dispose();
   }
 
   void _shareGame(GameView game) {
     final when = DateFormat('EEE, MMM d · h:mm a').format(game.startAt);
-    final where = [game.venueName, game.areaName].whereType<String>().join(', ');
+    final where = [
+      game.venueName,
+      game.areaName,
+    ].whereType<String>().join(', ');
     final headline = [
       'Join me for ${game.title} on Dabbler!',
       when,
@@ -142,33 +138,30 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs   = Theme.of(context).colorScheme;
-    final top  = MediaQuery.of(context).padding.top;
     final state = ref.watch(gameViewControllerProvider(widget.gameId));
-    final ctrl  = ref.read(gameViewControllerProvider(widget.gameId).notifier);
+    final ctrl = ref.read(gameViewControllerProvider(widget.gameId).notifier);
 
     ref.listen(gameViewControllerProvider(widget.gameId), (prev, next) {
       if (!mounted) return;
       if (next.lastAction != null && prev?.lastAction != next.lastAction) {
-        _showSnack(_actionMessage(next.lastAction!), isError: false);
+        _toast(context, _actionMessage(next.lastAction!), isError: false);
       } else if (next.error != null && prev?.error != next.error) {
-        _showSnack(next.error!, isError: true);
+        _toast(context, next.error!, isError: true);
       }
     });
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(scrollController: _scroll),
-          _buildBody(state, ctrl, top, cs),
-        ],
-      ),
-      bottomNavigationBar: state.hasGame ? _buildBottomBar(state, ctrl, cs) : null,
+    return DabblerPage(
+      // The hero bleeds under the status bar, so the page must not inset the
+      // top itself: an empty top bar turns that inset off and the hero pads
+      // the safe area on its own.
+      topBar: const SizedBox.shrink(),
+      bottomOverlay: state.hasGame ? _buildBottomBar(state, ctrl) : null,
+      body: _buildBody(state, ctrl),
     );
   }
 
-  Widget _buildBody(GameViewState state, GameViewController ctrl, double top, ColorScheme cs) {
+  Widget _buildBody(GameViewState state, GameViewController ctrl) {
+    final top = MediaQuery.paddingOf(context).top;
     if (state.isLoading && !state.hasGame) return _LoadingBody(top: top);
     if (!state.hasGame) {
       return _ErrorBody(
@@ -178,8 +171,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       );
     }
 
-    final game       = state.game!;
-    final sportColor = _sportColor(game.sportKey);
+    final game = state.game!;
 
     // Notification deep link: scroll to the Players / requests section once
     // the first full load has settled.
@@ -198,167 +190,185 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       });
     }
 
-    return Stack(
-      children: [
-        CustomScrollView(
-          controller: _scroll,
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Mobile browser (link opened without the native app): offer to
-            // open/install the app. Native builds never show this.
-            if (kIsWeb &&
-                (defaultTargetPlatform == TargetPlatform.iOS ||
-                    defaultTargetPlatform == TargetPlatform.android))
-              SliverToBoxAdapter(
-                child: _OpenInAppBanner(gameId: game.id, top: top),
-              ),
-            SliverToBoxAdapter(
-              child: _HeroSection(game: game, sportColor: sportColor, top: top),
-            ),
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 700),
-                  child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+    // Mobile browser (link opened without the native app): offer to
+    // open/install the app. Native builds never show this.
+    final showBanner =
+        kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android);
+
+    return CustomScrollView(
+      controller: _scroll,
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        if (showBanner)
+          SliverToBoxAdapter(
+            child: _OpenInAppBanner(gameId: game.id, top: top),
+          ),
+        SliverToBoxAdapter(
+          child: _HeroSection(
+            game: game,
+            top: showBanner ? 0 : top,
+            onBack: () => context.pop(),
+            onShare: () => _shareGame(game),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space6,
+                  0,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _SquadSummary(state: state),
+                    const SizedBox(height: DabblerSpacing.space5),
+                    _StatsGrid(game: game),
+                    const SizedBox(height: DabblerSpacing.space5),
                     _HostCard(game: game),
-                    const SizedBox(height: 14),
-                    _StatsRow(game: game, sportColor: sportColor),
-                    const SizedBox(height: 14),
-                    _DateTimeCard(game: game),
                     if (game.venueName != null) ...[
-                      const SizedBox(height: 14),
+                      const SizedBox(height: DabblerSpacing.space5),
                       _VenueCard(game: game),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: DabblerSpacing.space5),
                     _DetailsChips(game: game),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: DabblerSpacing.space5),
                     KeyedSubtree(
                       key: _playersKey,
-                      child: _RosterSection(state: state, sportColor: sportColor, ctrl: ctrl),
+                      child: _RosterSection(state: state, ctrl: ctrl),
                     ),
-                    SizedBox(height: MediaQuery.of(context).padding.bottom + 100),
+                    SizedBox(
+                      height:
+                          MediaQuery.paddingOf(context).bottom +
+                          DabblerSpacing.space11 * 2,
+                    ),
                   ],
                 ),
               ),
-                ),
-              ),
             ),
-          ],
-        ),
-        Positioned(
-          top: top + 10,
-          left: 18,
-          right: 18,
-          child: Row(
-            children: [
-              _GlassBtn(icon: Iconsax.arrow_left_copy, onTap: () => context.pop()),
-              const Spacer(),
-              _GlassBtn(icon: Iconsax.share_copy, onTap: () => _shareGame(game)),
-            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildBottomBar(GameViewState state, GameViewController ctrl, ColorScheme cs) {
-    final game         = state.game!;
-    final isHost       = ctrl.isHost;
-    final isOnRoster   = ctrl.isOnRoster;
+  Widget _buildBottomBar(GameViewState state, GameViewController ctrl) {
+    final colors = DabblerColors.of(context);
+    final game = state.game!;
+    final isHost = ctrl.isHost;
+    final isOnRoster = ctrl.isOnRoster;
     final isOnWaitlist = ctrl.isOnWaitlist;
-    final hasPending   = state.hasPendingRequest;
-    final isCancelled  = game.isCancelled;
-    final isEnded      = game.endAt.isBefore(DateTime.now());
-    final sportColor   = _sportColor(game.sportKey);
+    final hasPending = state.hasPendingRequest;
+    final isCancelled = game.isCancelled;
+    final isEnded = game.endAt.isBefore(DateTime.now());
 
-    return Container(
+    final Widget cta;
+    if (isHost && !isCancelled && !isEnded) {
+      cta = DabblerButton(
+        label: 'Edit game',
+        icon: 'edit',
+        tone: DabblerButtonTone.outlined,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        onPressed: () => _openEditGame(game.id, ctrl),
+      );
+    } else if (isCancelled || isEnded) {
+      cta = DabblerButton(
+        label: isCancelled ? 'Cancelled' : 'Ended',
+        icon: 'slash',
+        tone: DabblerButtonTone.neutral,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        disabled: true,
+      );
+    } else if (isOnRoster) {
+      cta = DabblerButton(
+        label: state.isActing ? 'Leaving…' : 'Leave game',
+        icon: 'logout',
+        tone: DabblerButtonTone.outlined,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        disabled: state.isActing,
+        onPressed: _confirmLeave,
+      );
+    } else if (isOnWaitlist) {
+      cta = const DabblerButton(
+        label: 'On waitlist',
+        icon: 'clock',
+        tone: DabblerButtonTone.neutral,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        disabled: true,
+      );
+    } else if (hasPending) {
+      cta = DabblerButton(
+        label: state.isActing ? 'Cancelling…' : 'Cancel request',
+        icon: 'close-square',
+        tone: DabblerButtonTone.destructive,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        disabled: state.isActing,
+        onPressed: ctrl.cancelJoinRequest,
+      );
+    } else {
+      cta = DabblerButton(
+        label: state.isActing
+            ? _joiningLabel(game.joinPolicy)
+            : _joinLabel(game),
+        icon: state.isActing ? null : _joinIcon(game.joinPolicy),
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        loading: state.isActing,
+        onPressed: ctrl.joinGame,
+      );
+    }
+
+    final inGame = isOnRoster && !isHost;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [cs.surfaceContainerLowest.withValues(alpha: 0), cs.surfaceContainerLowest, cs.surfaceContainerLowest],
-          stops: const [0.0, 0.35, 1.0],
-        ),
+        border: BorderDirectional(top: BorderSide(color: colors.bgTertiary)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Column(
+      child: Row(
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 120),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isOnRoster && !isHost
+                  inGame
                       ? "You're in"
                       : game.isFree
-                          ? 'Free'
-                          : game.costCover.replaceAll('_', ' ').capitalize(),
-                  style: TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w900,
-                    color: isOnRoster && !isHost ? _kGreen : cs.onSurface,
-                    letterSpacing: -0.4, height: 1,
+                      ? 'Free'
+                      : game.costCover.replaceAll('_', ' ').capitalize(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _t(
+                    context,
+                    DabblerType.title3,
+                    inGame ? colors.success.strong : colors.textPrimary,
+                    weight: DabblerType.bold,
                   ),
                 ),
-                const SizedBox(height: 3),
                 Text(
                   _formatDateShort(game.startAt),
-                  style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _t(context, DabblerType.caption2, colors.textTertiary),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: isHost && !isCancelled && !isEnded
-                  ? _CtaButton(
-                      label: 'Edit game', icon: Iconsax.edit_copy,
-                      bg: cs.primary.withValues(alpha: 0.08), fg: cs.primary,
-                      border: cs.primary.withValues(alpha: 0.3),
-                      onTap: () => _openEditGame(game.id, ctrl),
-                    )
-                  : isCancelled || isEnded
-                      ? _CtaButton(
-                          label: isCancelled ? 'Cancelled' : 'Ended',
-                          icon: Iconsax.slash_copy,
-                          bg: cs.surfaceContainerLow, fg: cs.onSurfaceVariant, enabled: false,
-                        )
-                      : isOnRoster
-                          ? _CtaButton(
-                              label: state.isActing ? 'Leaving…' : 'Leave game',
-                              icon: Iconsax.logout_copy,
-                              bg: cs.surface, fg: sportColor,
-                              border: sportColor.withValues(alpha: 0.5),
-                              enabled: !state.isActing, onTap: _confirmLeave,
-                            )
-                          : isOnWaitlist
-                              ? _CtaButton(
-                                  label: 'On waitlist', icon: Iconsax.clock_copy,
-                                  bg: cs.surfaceContainerLow, fg: cs.onSurfaceVariant, enabled: false,
-                                )
-                              : hasPending
-                                  ? _CtaButton(
-                                      label: state.isActing ? 'Cancelling…' : 'Cancel request',
-                                      icon: Iconsax.close_square_copy,
-                                      bg: cs.surface, fg: cs.error,
-                                      border: cs.error.withValues(alpha: 0.3),
-                                      enabled: !state.isActing, onTap: ctrl.cancelJoinRequest,
-                                    )
-                                  : _CtaButton(
-                                      label: state.isActing ? _joiningLabel(game.joinPolicy) : _joinLabel(game),
-                                      icon: state.isActing ? null : _joinIcon(game.joinPolicy),
-                                      bg: sportColor, fg: _sportFgColor(game.sportKey),
-                                      enabled: !state.isActing, onTap: ctrl.joinGame,
-                                      loading: state.isActing,
-                                      shadow: sportColor.withValues(alpha: 0.4),
-                                    ),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: DabblerSpacing.space5),
+          Expanded(child: cta),
+        ],
       ),
     );
   }
@@ -366,15 +376,20 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   String _joinLabel(GameView game) {
     if (game.isFull && game.allowsWaitlist) return 'Join waitlist';
     switch (game.joinPolicy) {
-      case 'request': return 'Request to join';
-      case 'invite':  return 'Join (invited)';
-      default:        return 'Join game';
+      case 'request':
+        return 'Request to join';
+      case 'invite':
+        return 'Join (invited)';
+      default:
+        return 'Join game';
     }
   }
 
-  String _joiningLabel(String policy) => policy == 'request' ? 'Requesting…' : 'Joining…';
+  String _joiningLabel(String policy) =>
+      policy == 'request' ? 'Requesting…' : 'Joining…';
 
-  IconData _joinIcon(String policy) => policy == 'request' ? Iconsax.send_copy : Iconsax.tick_circle_copy;
+  String _joinIcon(String policy) =>
+      policy == 'request' ? 'send' : 'tick-circle';
 
   Future<void> _openEditGame(String gameId, GameViewController ctrl) async {
     final updated = await context.pushNamed(
@@ -385,19 +400,21 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   }
 
   Future<void> _confirmLeave() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDabblerDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Leave game?'),
-        content: const Text('You will lose your spot and may not be able to rejoin.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Leave'),
-          ),
-        ],
+      builder: (ctx) => DabblerDialog(
+        title: 'Leave game?',
+        description: 'You will lose your spot and may not be able to rejoin.',
+        destructive: true,
+        onClose: () => Navigator.pop(ctx, false),
+        secondaryAction: DabblerDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(ctx, false),
+        ),
+        primaryAction: DabblerDialogAction(
+          label: 'Leave',
+          onPressed: () => Navigator.pop(ctx, true),
+        ),
       ),
     );
     if (confirmed == true && mounted) {
@@ -407,29 +424,25 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
 
   String _actionMessage(JoinActionResult action) {
     switch (action) {
-      case JoinActionResult.joined:           return 'You joined the game!';
-      case JoinActionResult.waitlisted:       return 'Added to waitlist.';
-      case JoinActionResult.requestSubmitted: return 'Join request sent.';
-      case JoinActionResult.left:             return 'You left the game.';
-      case JoinActionResult.cancelledRequest: return 'Join request cancelled.';
+      case JoinActionResult.joined:
+        return 'You joined the game!';
+      case JoinActionResult.waitlisted:
+        return 'Added to waitlist.';
+      case JoinActionResult.requestSubmitted:
+        return 'Join request sent.';
+      case JoinActionResult.left:
+        return 'You left the game.';
+      case JoinActionResult.cancelledRequest:
+        return 'Join request cancelled.';
     }
   }
 
-  void _showSnack(String msg, {required bool isError}) {
-    final cs = Theme.of(context).colorScheme;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: isError ? cs.error : _kGreen,
-    ));
-  }
-
   String _formatDateShort(DateTime dt) {
-    final now   = DateTime.now();
+    final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final day   = DateTime(dt.year, dt.month, dt.day);
-    final diff  = day.difference(today).inDays;
-    final time  = DateFormat('h:mm a').format(dt);
+    final day = DateTime(dt.year, dt.month, dt.day);
+    final diff = day.difference(today).inDays;
+    final time = DateFormat('h:mm a').format(dt);
     if (diff == 0) return 'Today · $time';
     if (diff == 1) return 'Tomorrow · $time';
     return '${DateFormat('d MMM').format(dt)} · $time';
@@ -441,201 +454,241 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
 // =============================================================================
 
 class _HeroSection extends StatelessWidget {
-  const _HeroSection({required this.game, required this.sportColor, required this.top});
+  const _HeroSection({
+    required this.game,
+    required this.top,
+    required this.onBack,
+    required this.onShare,
+  });
   final GameView game;
-  final Color sportColor;
   final double top;
+  final VoidCallback onBack;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    final cs       = Theme.of(context).colorScheme;
-    final heroTop  = HSLColor.fromColor(cs.primary).withLightness(0.18).toColor();
+    final sport = _sportColors(DabblerColors.of(context));
+    final onSport = sport.onBrand;
+    final glass = onSport.withValues(alpha: 0.2);
+    final sportLabel = [
+      if (game.sportNameEn != null) game.sportNameEn!,
+      if (game.variantNameEn != null) game.variantNameEn!,
+    ].join(' · ');
+    final place = [
+      game.venueName,
+      game.areaName,
+    ].whereType<String>().join(' · ');
 
-    return SizedBox(
-      height: top + 230.0,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
-                colors: [heroTop, sportColor.withValues(alpha: 0.82), sportColor.withValues(alpha: 0.55)],
-                stops: const [0.0, 0.6, 1.0],
-              ),
-            ),
-          ),
-          CustomPaint(painter: _FieldPainter(Colors.white)),
-          Opacity(opacity: 0.06, child: CustomPaint(painter: _GridPainter())),
-          Positioned(
-            top: -30, right: -30,
-            child: Container(
-              width: 160, height: 160,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: _kPink.withValues(alpha: 0.15)),
-            ),
-          ),
-          Positioned(
-            left: 20, right: 20, bottom: 30,
+    return ColoredBox(
+      color: sport.brandPrimary,
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          top + DabblerSpacing.space5,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 700),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(children: [
-                  _StatusBadge(label: game.statusLabel),
-                  const SizedBox(width: 8),
-                  _SportBadge(
-                    emoji: _sportEmoji(game.sportKey),
-                    label: [if (game.sportNameEn != null) game.sportNameEn!, if (game.variantNameEn != null) game.variantNameEn!].join(' · '),
-                  ),
-                ]),
-                const SizedBox(height: 10),
-                Text(
-                  game.title,
-                  style: const TextStyle(
-                    fontSize: 23, fontWeight: FontWeight.w900, color: Colors.white,
-                    letterSpacing: -0.6, height: 1.15,
-                    shadows: [Shadow(offset: Offset(0, 2), blurRadius: 12, color: Color(0x44000000))],
-                  ),
-                  maxLines: 2, overflow: TextOverflow.ellipsis,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    DabblerButton.icon(
+                      icon: _backIcon(context),
+                      semanticLabel: 'Back',
+                      tone: DabblerButtonTone.neutral,
+                      onPressed: onBack,
+                    ),
+                    DabblerButton.icon(
+                      icon: 'share',
+                      semanticLabel: 'Share',
+                      tone: DabblerButtonTone.neutral,
+                      onPressed: onShare,
+                    ),
+                  ],
                 ),
-                if (game.venueName != null || game.areaName != null) ...[
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    const Icon(Iconsax.location_copy, size: 13, color: Colors.white70),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        [game.venueName, game.areaName].whereType<String>().join(' · '),
-                        style: const TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w600),
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                const SizedBox(height: DabblerSpacing.space5),
+                Wrap(
+                  spacing: DabblerSpacing.space2,
+                  runSpacing: DabblerSpacing.space2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    DabblerBadge(label: game.statusLabel, fill: glass),
+                    DabblerBadge(
+                      label: sportLabel.isEmpty ? 'Sport' : sportLabel,
+                      fill: glass,
+                      icon: DabblerSportIcon.fromKey(
+                        game.sportKey ?? '',
+                        size: 12,
+                        color: onSport,
                       ),
                     ),
-                  ]),
+                  ],
+                ),
+                const SizedBox(height: DabblerSpacing.space3),
+                Text(
+                  game.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: _t(context, DabblerType.largeTitle, onSport),
+                ),
+                if (place.isNotEmpty) ...[
+                  const SizedBox(height: DabblerSpacing.space2),
+                  Row(
+                    children: [
+                      DabblerIcon('location', size: 14, color: onSport),
+                      const SizedBox(width: DabblerSpacing.space1),
+                      Expanded(
+                        child: Text(
+                          place,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: _t(
+                            context,
+                            DabblerType.footnote,
+                            onSport,
+                            weight: DabblerType.semibold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             ),
           ),
-          Positioned(
-            bottom: 0, left: 0, right: 0,
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, cs.surfaceContainerLowest],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.label});
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final positive = label == 'Live' || label == 'Upcoming';
-    final bg  = positive ? _kGreen.withValues(alpha: 0.95) : Colors.white.withValues(alpha: 0.2);
-    final fg  = positive ? const Color(0xFF0a3d1c) : Colors.white;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: fg)),
-        const SizedBox(width: 5),
-        Text(label.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: fg, letterSpacing: 0.3)),
-      ]),
-    );
-  }
-}
-
-class _SportBadge extends StatelessWidget {
-  const _SportBadge({required this.emoji, required this.label});
-  final String emoji; final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-      ),
-      child: Text(
-        label.isEmpty ? emoji : '$emoji $label',
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
-      ),
-    );
-  }
-}
-
-class _GlassBtn extends StatelessWidget {
-  const _GlassBtn({required this.icon, this.onTap});
-  final IconData icon; final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36, height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.black.withValues(alpha: 0.3),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
         ),
-        child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
   }
-}
-
-class _FieldPainter extends CustomPainter {
-  const _FieldPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size s) {
-    final p = Paint()..color = color.withValues(alpha: 0.35)..style = PaintingStyle.stroke..strokeWidth = 1.2;
-    final w = s.width; final h = s.height;
-    canvas.drawRRect(RRect.fromLTRBR(20, 12, w - 20, h - 12, const Radius.circular(6)), p);
-    canvas.drawLine(Offset(w / 2, 12), Offset(w / 2, h - 12), p);
-    canvas.drawCircle(Offset(w / 2, h / 2), h * 0.26, p);
-    canvas.drawCircle(Offset(w / 2, h / 2), 2.5, Paint()..color = color.withValues(alpha: 0.6));
-    final bw = w * 0.13; final bh = h * 0.50;
-    canvas.drawRect(Rect.fromLTWH(20, (h - bh) / 2, bw, bh), p);
-    canvas.drawRect(Rect.fromLTWH(w - 20 - bw, (h - bh) / 2, bw, bh), p);
-    final gp = Paint()..color = color.withValues(alpha: 0.5)..style = PaintingStyle.stroke..strokeWidth = 1.2;
-    final gw = w * 0.045; final gh = h * 0.27;
-    canvas.drawRect(Rect.fromLTWH(20, (h - gh) / 2, gw, gh), gp);
-    canvas.drawRect(Rect.fromLTWH(w - 20 - gw, (h - gh) / 2, gw, gh), gp);
-  }
-
-  @override
-  bool shouldRepaint(_FieldPainter o) => o.color != color;
-}
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size s) {
-    final p = Paint()..color = Colors.white..strokeWidth = 1;
-    for (var i = 0; i < 12; i++) { canvas.drawLine(Offset(i * 36.0, 0), Offset(i * 36.0, s.height), p); }
-    for (var i = 0; i < 8; i++)  { canvas.drawLine(Offset(0, i * 36.0), Offset(s.width, i * 36.0), p); }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter _) => false;
 }
 
 // =============================================================================
 // CONTENT WIDGETS
 // =============================================================================
+
+/// Photos of whoever is on the roster, the headline count and the fill bar.
+class _SquadSummary extends StatelessWidget {
+  const _SquadSummary({required this.state});
+  final GameViewState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final game = state.game!;
+    final fill = game.capacity > 0
+        ? (game.rosterCount / game.capacity).clamp(0.0, 1.0)
+        : 0.0;
+    final shown = state.roster.take(5).toList();
+    final extra = game.rosterCount - shown.length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            if (shown.isNotEmpty || extra > 0) ...[
+              DabblerAvatarGroup(
+                people: [
+                  for (final p in shown) _seedFor(p.avatarUrl, p.displayName),
+                ],
+                imageUrls: [for (final p in shown) _photoFor(p.avatarUrl)],
+                overflow: extra > 0 ? extra : 0,
+              ),
+              const SizedBox(width: DabblerSpacing.space4),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${game.rosterCount} of ${game.capacity} players in',
+                    style: _t(
+                      context,
+                      DabblerType.title3,
+                      colors.textPrimary,
+                      weight: DabblerType.bold,
+                    ),
+                  ),
+                  Text(
+                    game.isFull ? 'Full' : '${game.spotsLeft} spots left',
+                    style: _t(
+                      context,
+                      DabblerType.caption1,
+                      game.isFull ? colors.error.strong : colors.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: DabblerSpacing.space3),
+        DabblerProgressBar(
+          value: fill,
+          size: DabblerProgressBarSize.md,
+          tone: game.isFull
+              ? DabblerProgressBarTone.error
+              : DabblerProgressBarTone.brand,
+        ),
+      ],
+    );
+  }
+}
+
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.game});
+  final GameView game;
+
+  @override
+  Widget build(BuildContext context) {
+    final mins = game.endAt.difference(game.startAt).inMinutes;
+    final hasSkill = game.minSkill != null && game.maxSkill != null;
+    return DabblerStatGrid(
+      children: [
+        DabblerStatTile(
+          value: DateFormat('h:mm a').format(game.startAt),
+          label: DateFormat('EEE, MMM d').format(game.startAt),
+          tone: DabblerStatTileTone.amber,
+          span: 3,
+        ),
+        DabblerStatTile(
+          value: _fmtDur(mins),
+          label: 'Until ${DateFormat('h:mm a').format(game.endAt)}',
+          tone: DabblerStatTileTone.info,
+          span: 3,
+        ),
+        DabblerStatTile(
+          value: game.isFree
+              ? 'Free'
+              : game.costCover.replaceAll('_', ' ').capitalize(),
+          label: game.isFree ? 'Entry · No fees' : 'Entry',
+          tone: DabblerStatTileTone.ink,
+          span: hasSkill ? 3 : 6,
+        ),
+        if (hasSkill)
+          DabblerStatTile(
+            value: '${game.minSkill}–${game.maxSkill}',
+            label: 'Skill level',
+            tone: DabblerStatTileTone.accent,
+            span: 3,
+          ),
+      ],
+    );
+  }
+
+  String _fmtDur(int m) {
+    if (m <= 0) return '—';
+    if (m < 60) return '${m}m';
+    final h = m ~/ 60;
+    final r = m % 60;
+    return r == 0 ? '${h}h' : '${h}h ${r}m';
+  }
+}
 
 class _HostCard extends StatelessWidget {
   const _HostCard({required this.game});
@@ -643,10 +696,11 @@ class _HostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs      = Theme.of(context).colorScheme;
-    final name    = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
+    final colors = DabblerColors.of(context);
+    final name = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
     final creatorProfileId = game.creatorProfileId;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: creatorProfileId == null
           ? null
           // The view no longer exposes a real auth uid for the creator, only
@@ -654,192 +708,54 @@ class _HostCard extends StatelessWidget {
           // the profileId query param so downstream consumers that check
           // profileId first resolve correctly.
           : () => context.push(
-                '${RoutePaths.userProfile}/$creatorProfileId'
-                '?profileId=$creatorProfileId',
-              ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: cs.surface, borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
-        ),
-        child: Row(children: [
-          // DSAvatar resolves storage paths and ds: seed references the same
-          // way the profile screen does, so the picture always matches.
-          DSAvatar(
-            size: AvatarSize.small,
-            customDimension: 42,
-            imageUrl: game.creatorAvatarUrl,
-            displayName: name,
-            context: AvatarContext.sports,
-            hasBorder: false,
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Created by', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, letterSpacing: 0.3)),
-            const SizedBox(height: 1),
-            Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
-          ])),
-        ]),
-      ),
-    );
-  }
-
-}
-
-// ── Stats ─────────────────────────────────────────────────────────────────────
-
-class _StatsRow extends StatelessWidget {
-  const _StatsRow({required this.game, required this.sportColor});
-  final GameView game; final Color sportColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs   = Theme.of(context).colorScheme;
-    final fill = game.capacity > 0 ? (game.rosterCount / game.capacity).clamp(0.0, 1.0) : 0.0;
-    final mins = game.endAt.difference(game.startAt).inMinutes;
-    // IntrinsicHeight + stretch keeps all three cards the same height (the
-    // tallest wins); equal flex keeps them the same width.
-    return IntrinsicHeight(
-      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Expanded(child: _StatCard(
-          icon: Iconsax.people_copy, iconColor: sportColor,
-          value: '${game.rosterCount}/${game.capacity}', label: 'Players',
-          progress: fill, progressColor: sportColor,
-          sub: game.isFull ? 'Full' : '${game.spotsLeft} spots left',
-          subColor: game.isFull ? cs.error : sportColor,
-        )),
-        const SizedBox(width: 8),
-        Expanded(child: _StatCard(
-          icon: Iconsax.money_copy, iconColor: _kGreen,
-          value: game.isFree ? 'Free' : game.costCover.replaceAll('_', ' ').capitalize(),
-          label: 'Entry', valueColor: game.isFree ? _kGreen : null,
-          sub: game.isFree ? 'No fees' : null,
-        )),
-        const SizedBox(width: 8),
-        Expanded(child: _StatCard(
-          icon: Iconsax.timer_copy, iconColor: cs.primary,
-          value: _fmtDur(mins), label: 'Duration',
-          sub: '${DateFormat('h a').format(game.startAt)}–${DateFormat('h a').format(game.endAt)}',
-        )),
-      ]),
-    );
-  }
-
-  String _fmtDur(int m) {
-    if (m <= 0) return '—';
-    if (m < 60) return '${m}m';
-    final h = m ~/ 60; final r = m % 60;
-    return r == 0 ? '${h}h' : '${h}h ${r}m';
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon, required this.iconColor,
-    required this.value, required this.label,
-    this.valueColor, this.sub, this.subColor,
-    this.progress, this.progressColor,
-  });
-  final IconData icon; final Color iconColor;
-  final String value; final String label;
-  final Color? valueColor; final String? sub; final Color? subColor;
-  final double? progress; final Color? progressColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cs.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 28, height: 28,
-          decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, size: 14, color: iconColor),
-        ),
-        const SizedBox(height: 8),
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: valueColor ?? cs.onSurface, height: 1, letterSpacing: -0.4)),
-        const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
-        if (progress != null) ...[
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress, minHeight: 5, backgroundColor: cs.surfaceContainerLow,
-              valueColor: AlwaysStoppedAnimation<Color>(progressColor ?? cs.primary),
+              '${RoutePaths.userProfile}/$creatorProfileId'
+              '?profileId=$creatorProfileId',
             ),
-          ),
-        ],
-        if (sub != null) ...[
-          const SizedBox(height: 4),
-          Text(sub!, style: TextStyle(fontSize: 10, color: subColor ?? cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
-        ],
-      ]),
-    );
-  }
-}
-
-// ── Date / Time ───────────────────────────────────────────────────────────────
-
-class _DateTimeCard extends StatelessWidget {
-  const _DateTimeCard({required this.game});
-  final GameView game;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
+      child: DabblerSurface(
+        fill: DabblerColors.tileInfo.surface,
+        borderColor: DabblerColors.tileInfo.surface,
+        radius: DabblerRadius.xl,
+        padding: const EdgeInsets.all(DabblerSpacing.space5),
+        child: Row(
+          children: [
+            DabblerAvatar(
+              seed: _seedFor(game.creatorAvatarUrl, name),
+              imageUrl: _photoFor(game.creatorAvatarUrl),
+              size: DabblerAvatarSize.md,
+            ),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Created by',
+                    style: _t(
+                      context,
+                      DabblerType.caption2,
+                      colors.textPrimary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  Text(
+                    name,
+                    style: _t(
+                      context,
+                      DabblerType.subheadline,
+                      colors.textPrimary,
+                      weight: DabblerType.semibold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(children: [
-        _InfoRow(icon: Iconsax.calendar_copy, iconColor: cs.primary, label: 'DATE', value: DateFormat('EEEE, MMMM d, y').format(game.startAt)),
-        Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.6)),
-        _InfoRow(
-          icon: Iconsax.clock_copy, iconColor: _kGreen, label: 'TIME',
-          value: '${DateFormat('h:mm a').format(game.startAt)} – ${DateFormat('h:mm a').format(game.endAt)}',
-        ),
-      ]),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.icon, required this.iconColor, required this.label, required this.value});
-  final IconData icon; final Color iconColor; final String label; final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(children: [
-        Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: iconColor.withValues(alpha: 0.2), width: 1.5),
-          ),
-          child: Icon(icon, size: 16, color: iconColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.4)),
-          const SizedBox(height: 2),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
-        ])),
-      ]),
-    );
-  }
-}
-
-// ── Venue ─────────────────────────────────────────────────────────────────────
+// ── Where ─────────────────────────────────────────────────────────────────────
 
 class _VenueCard extends StatelessWidget {
   const _VenueCard({required this.game});
@@ -847,27 +763,84 @@ class _VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(0),
-      decoration: BoxDecoration(
-        color: cs.surface, borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
+    final colors = DabblerColors.of(context);
+    final rows = <({String icon, String label, String value})>[
+      if (game.venueName != null)
+        (icon: 'buildings', label: 'VENUE', value: game.venueName!),
+      if (game.venueSpaceName != null)
+        (icon: 'location', label: 'SPACE', value: game.venueSpaceName!),
+      if (game.areaName != null)
+        (icon: 'map', label: 'AREA', value: game.areaName!),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Where', style: _section(context, colors)),
+        const SizedBox(height: DabblerSpacing.space3),
+        DabblerSurface.sunken(
+          radius: DabblerRadius.xl,
+          child: Column(
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0) const DabblerDivider(),
+                _InfoRow(
+                  icon: rows[i].icon,
+                  label: rows[i].label,
+                  value: rows[i].value,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+  final String icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: DabblerSpacing.space5,
+        vertical: DabblerSpacing.space4,
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Text('Venue', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
-        const SizedBox(height: 14),
-        if (game.venueName != null)
-          _InfoRow(icon: Iconsax.buildings_copy, iconColor: cs.primary, label: 'VENUE', value: game.venueName!),
-        if (game.venueSpaceName != null) ...[
-          Divider(height: 20, color: cs.outlineVariant.withValues(alpha: 0.6)),
-          _InfoRow(icon: Iconsax.location_copy, iconColor: cs.primary, label: 'SPACE', value: game.venueSpaceName!),
+      child: Row(
+        children: [
+          DabblerIconTile.named(icon, size: 36),
+          const SizedBox(width: DabblerSpacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: _t(context, DabblerType.caption2, colors.textTertiary),
+                ),
+                Text(
+                  value,
+                  style: _t(
+                    context,
+                    DabblerType.subheadline,
+                    colors.textPrimary,
+                    weight: DabblerType.semibold,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
-        if (game.areaName != null) ...[
-          Divider(height: 20, color: cs.outlineVariant.withValues(alpha: 0.6)),
-          _InfoRow(icon: Iconsax.map_copy, iconColor: cs.primary, label: 'AREA', value: game.areaName!),
-        ],
-      ]),
+      ),
     );
   }
 }
@@ -880,7 +853,7 @@ class _DetailsChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs    = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     final chips = [
       (
         label: switch (game.listingVisibility) {
@@ -889,76 +862,82 @@ class _DetailsChips extends StatelessWidget {
           _ => 'Public',
         },
         icon: switch (game.listingVisibility) {
-          'followers' => Iconsax.people_copy,
-          'private' => Iconsax.lock_copy,
-          _ => Iconsax.eye_copy,
+          'followers' => 'people',
+          'private' => 'lock',
+          _ => 'eye',
         },
       ),
-      (label: _policyLabel(game.joinPolicy), icon: _policyIcon(game.joinPolicy)),
+      (
+        label: _policyLabel(game.joinPolicy),
+        icon: _policyIcon(game.joinPolicy),
+      ),
       if (game.minSkill != null && game.maxSkill != null)
-        (label: 'Skill ${game.minSkill}–${game.maxSkill}', icon: Iconsax.star_copy),
+        (label: 'Skill ${game.minSkill}–${game.maxSkill}', icon: 'star'),
       if (game.benchSlots > 0)
-        (label: '${game.benchSlots} bench', icon: Iconsax.people_copy),
-      if (game.allowSpectators)
-        (label: 'Spectators', icon: Iconsax.eye_copy),
-      if (game.allowsWaitlist)
-        (label: 'Waitlist on', icon: Iconsax.clock_copy),
+        (label: '${game.benchSlots} bench', icon: 'people'),
+      if (game.allowSpectators) (label: 'Spectators', icon: 'eye'),
+      if (game.allowsWaitlist) (label: 'Waitlist on', icon: 'clock'),
     ];
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
-      const SizedBox(height: 10),
-      Wrap(spacing: 8, runSpacing: 8, children: chips.map((c) => _DetailChip(label: c.label, icon: c.icon)).toList()),
-    ]);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Details', style: _section(context, colors)),
+        const SizedBox(height: DabblerSpacing.space3),
+        Wrap(
+          spacing: DabblerSpacing.space3,
+          runSpacing: DabblerSpacing.space3,
+          children: [
+            for (final c in chips)
+              DabblerBadge(
+                label: c.label,
+                tone: DabblerBadgeTone.withIcon,
+                icon: DabblerIcon(c.icon, size: 13),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 
   String _policyLabel(String p) {
     switch (p) {
-      case 'open':    return 'Open join';
-      case 'request': return 'Request to join';
-      case 'invite':  return 'Invite only';
-      case 'link':    return 'Link join';
-      case 'circle':  return 'Circle only';
-      case 'squad':   return 'Squad only';
-      case 'closed':  return 'Closed';
-      default:        return p;
+      case 'open':
+        return 'Open join';
+      case 'request':
+        return 'Request to join';
+      case 'invite':
+        return 'Invite only';
+      case 'link':
+        return 'Link join';
+      case 'circle':
+        return 'Circle only';
+      case 'squad':
+        return 'Squad only';
+      case 'closed':
+        return 'Closed';
+      default:
+        return p;
     }
   }
 
-  IconData _policyIcon(String p) {
+  String _policyIcon(String p) {
     switch (p) {
-      case 'open':    return Iconsax.unlock_copy;
-      case 'request': return Iconsax.send_copy;
-      case 'invite':  return Iconsax.sms_copy;
-      case 'link':    return Iconsax.link_copy;
-      default:        return Iconsax.lock_copy;
+      case 'open':
+        return 'unlock';
+      case 'request':
+        return 'send';
+      case 'invite':
+        return 'sms';
+      case 'link':
+        return 'link';
+      default:
+        return 'lock';
     }
   }
 }
 
-class _DetailChip extends StatelessWidget {
-  const _DetailChip({required this.label, required this.icon});
-  final String label; final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: cs.surface, borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 13, color: cs.onSurfaceVariant),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: cs.onSurface)),
-      ]),
-    );
-  }
-}
-
-// ── Roster ────────────────────────────────────────────────────────────────────
+// ── Open-in-app banner ────────────────────────────────────────────────────────
 
 /// Mobile-web banner: deep-link into the installed app, or point at the
 /// store listing (buttons appear once RoutePaths.appStoreUrl/playStoreUrl
@@ -989,172 +968,231 @@ class _OpenInAppBannerState extends State<_OpenInAppBanner> {
   @override
   Widget build(BuildContext context) {
     if (_dismissed) return const SizedBox.shrink();
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.fromLTRB(16, widget.top + 8, 8, 10),
-      color: cs.primaryContainer,
-      child: Row(children: [
-        Text('⚡', style: TextStyle(fontSize: 20)),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            'Dabbler is better in the app',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: cs.onPrimaryContainer,
+    final colors = DabblerColors.of(context);
+    return ColoredBox(
+      color: colors.bgTertiary,
+      child: Padding(
+        padding: EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space5,
+          widget.top + DabblerSpacing.space2,
+          DabblerSpacing.space2,
+          DabblerSpacing.space2,
+        ),
+        child: Row(
+          children: [
+            DabblerIcon('flash', size: 20, color: colors.brandPrimary),
+            const SizedBox(width: DabblerSpacing.space3),
+            Expanded(
+              child: Text(
+                'Dabbler is better in the app',
+                style: _t(
+                  context,
+                  DabblerType.footnote,
+                  colors.textPrimary,
+                  weight: DabblerType.bold,
+                ),
+              ),
             ),
-          ),
-        ),
-        TextButton(
-          onPressed: _openInApp,
-          child: const Text('Open app'),
-        ),
-        if (_storeUrl.isNotEmpty)
-          TextButton(
-            onPressed: () => launchUrl(
-              Uri.parse(_storeUrl),
-              mode: LaunchMode.externalApplication,
+            DabblerButton(
+              label: 'Open app',
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.small,
+              onPressed: _openInApp,
             ),
-            child: const Text('Install'),
-          ),
-        IconButton(
-          icon: Icon(Icons.close, size: 18, color: cs.onPrimaryContainer),
-          onPressed: () => setState(() => _dismissed = true),
-          tooltip: 'Dismiss',
+            if (_storeUrl.isNotEmpty)
+              DabblerButton(
+                label: 'Install',
+                tone: DabblerButtonTone.text,
+                size: DabblerButtonSize.small,
+                onPressed: () => launchUrl(
+                  Uri.parse(_storeUrl),
+                  mode: LaunchMode.externalApplication,
+                ),
+              ),
+            DabblerButton.icon(
+              icon: 'close-circle',
+              semanticLabel: 'Dismiss',
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.small,
+              onPressed: () => setState(() => _dismissed = true),
+            ),
+          ],
         ),
-      ]),
+      ),
     );
   }
 }
 
+// ── Roster ────────────────────────────────────────────────────────────────────
+
 class _RosterSection extends StatelessWidget {
-  const _RosterSection({
-    required this.state,
-    required this.sportColor,
-    required this.ctrl,
-  });
-  final GameViewState state; final Color sportColor;
+  const _RosterSection({required this.state, required this.ctrl});
+  final GameViewState state;
   final GameViewController ctrl;
 
   @override
   Widget build(BuildContext context) {
-    final cs      = Theme.of(context).colorScheme;
-    final roster   = state.roster;
+    final colors = DabblerColors.of(context);
+    final roster = state.roster;
     final waitlist = state.waitlist;
-    final game     = state.game!;
+    final game = state.game!;
     // Pending join requests are host-managed; RLS only returns the full
     // list to the host, but gate on isHost anyway so a requester viewing
     // their own row never sees approve/deny controls.
-    final requests = ctrl.isHost ? state.pendingRequests : const <GameJoinRequestEntry>[];
+    final requests = ctrl.isHost
+        ? state.pendingRequests
+        : const <GameJoinRequestEntry>[];
     // Creator can drop players from upcoming games (never themselves).
-    final canManagePlayers = ctrl.isHost &&
-        !game.isCancelled &&
-        game.endAt.isAfter(DateTime.now());
+    final canManagePlayers =
+        ctrl.isHost && !game.isCancelled && game.endAt.isAfter(DateTime.now());
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Text('Players', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
-        const SizedBox(width: 6),
-        Text('· ${game.rosterCount} of ${game.capacity}', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
-        const Spacer(),
-        if (game.spotsLeft > 0)
-          Text('${game.spotsLeft} spots left', style: TextStyle(fontSize: 12, color: sportColor, fontWeight: FontWeight.w700)),
-      ]),
-      const SizedBox(height: 10),
-      if (requests.isNotEmpty) ...[
-        Container(
-          decoration: BoxDecoration(
-            color: sportColor.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: sportColor.withValues(alpha: 0.3), width: 1.5),
-          ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-              child: Text(
-                '${requests.length} join ${requests.length == 1 ? 'request' : 'requests'}',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: sportColor, letterSpacing: 0.2),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Players', style: _section(context, colors)),
+            const SizedBox(width: DabblerSpacing.space2),
+            Text(
+              '· ${game.rosterCount} of ${game.capacity}',
+              style: _t(context, DabblerType.caption1, colors.textTertiary),
             ),
-            ...requests.asMap().entries.map((e) => _RequestRow(
-                  request: e.value,
-                  sportColor: sportColor,
-                  enabled: !state.isActing,
-                  showDivider: e.key != requests.length - 1,
-                  onApprove: () => ctrl.decideJoinRequest(e.value.id, true),
-                  onDeny: () => ctrl.decideJoinRequest(e.value.id, false),
-                )),
-          ]),
-        ),
-        const SizedBox(height: 8),
-      ],
-      if (roster.isEmpty && waitlist.isEmpty)
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant, width: 1.5)),
-          child: Center(child: Text('No players yet — be the first to join!', style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant), textAlign: TextAlign.center)),
-        )
-      else
-        Container(
-          decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant, width: 1.5)),
-          child: Column(children: [
-            ...roster.asMap().entries.map((e) {
-              final isLast = e.key == roster.length - 1 && waitlist.isEmpty;
-              return _PlayerRow(
-                name: e.value.displayName, avatarUrl: e.value.avatarUrl,
-                isHost: e.value.isHost, badge: e.value.isHost ? 'Creator' : null,
-                isMe: e.value.userId == ctrl.currentUserId,
-                showDivider: !isLast,
-                onTap: () => context.push(
-                  '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
+            const Spacer(),
+            if (game.spotsLeft > 0)
+              Text(
+                '${game.spotsLeft} spots left',
+                style: _t(
+                  context,
+                  DabblerType.caption1,
+                  colors.brandPrimary,
+                  weight: DabblerType.bold,
                 ),
-                onRemove: canManagePlayers && !e.value.isHost && !state.isActing
-                    ? () => _confirmRemove(context, e.value)
-                    : null,
-              );
-            }),
-            if (waitlist.isNotEmpty) ...[
-              const _WaitlistDivider(),
-              ...waitlist.asMap().entries.map((e) {
-                final isLast = e.key == waitlist.length - 1;
-                return _PlayerRow(
-                  name: e.value.displayName, avatarUrl: e.value.avatarUrl,
-                  isHost: false, badge: '#${e.value.position}',
-                  isMe: e.value.userId == ctrl.currentUserId,
-                  showDivider: !isLast, isWaitlisted: true,
-                  onTap: () => context.push(
-                    '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
-                  ),
-                );
-              }),
-            ],
-          ]),
+              ),
+          ],
         ),
-      if (game.spotsLeft > 0) ...[
-        const SizedBox(height: 8),
-        _OpenSpotsCard(spotsLeft: game.spotsLeft, sportColor: sportColor),
+        const SizedBox(height: DabblerSpacing.space3),
+        if (requests.isNotEmpty) ...[
+          DabblerSurface(
+            fill: colors.brandPrimary.withValues(alpha: 0.06),
+            borderColor: colors.brandPrimary.withValues(alpha: 0.3),
+            radius: DabblerRadius.xl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    DabblerSpacing.space5,
+                    DabblerSpacing.space4,
+                    DabblerSpacing.space5,
+                    0,
+                  ),
+                  child: Text(
+                    '${requests.length} join ${requests.length == 1 ? 'request' : 'requests'}',
+                    style: _t(
+                      context,
+                      DabblerType.caption2,
+                      colors.brandPrimary,
+                      weight: DabblerType.bold,
+                    ),
+                  ),
+                ),
+                for (var i = 0; i < requests.length; i++)
+                  _RequestRow(
+                    request: requests[i],
+                    enabled: !state.isActing,
+                    showDivider: i != requests.length - 1,
+                    onApprove: () =>
+                        ctrl.decideJoinRequest(requests[i].id, true),
+                    onDeny: () => ctrl.decideJoinRequest(requests[i].id, false),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: DabblerSpacing.space3),
+        ],
+        if (roster.isEmpty && waitlist.isEmpty)
+          const DabblerEmptyState(
+            title: 'No players yet — be the first to join!',
+          )
+        else
+          DabblerSurface.sunken(
+            radius: DabblerRadius.xl,
+            child: Column(
+              children: [
+                ...roster.asMap().entries.map((e) {
+                  final isLast = e.key == roster.length - 1 && waitlist.isEmpty;
+                  return _PlayerRow(
+                    name: e.value.displayName,
+                    avatarUrl: e.value.avatarUrl,
+                    isHost: e.value.isHost,
+                    badge: e.value.isHost ? 'Creator' : null,
+                    isMe: e.value.userId == ctrl.currentUserId,
+                    showDivider: !isLast,
+                    onTap: () => context.push(
+                      '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
+                    ),
+                    onRemove:
+                        canManagePlayers && !e.value.isHost && !state.isActing
+                        ? () => _confirmRemove(context, e.value)
+                        : null,
+                  );
+                }),
+                if (waitlist.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: DabblerSpacing.space5,
+                      vertical: DabblerSpacing.space2,
+                    ),
+                    child: DabblerDivider(label: 'Waitlist'),
+                  ),
+                  ...waitlist.asMap().entries.map((e) {
+                    final isLast = e.key == waitlist.length - 1;
+                    return _PlayerRow(
+                      name: e.value.displayName,
+                      avatarUrl: e.value.avatarUrl,
+                      isHost: false,
+                      badge: '#${e.value.position}',
+                      isMe: e.value.userId == ctrl.currentUserId,
+                      showDivider: !isLast,
+                      isWaitlisted: true,
+                      onTap: () => context.push(
+                        '${RoutePaths.userProfile}/${e.value.userId}?profileId=${e.value.profileId}',
+                      ),
+                    );
+                  }),
+                ],
+              ],
+            ),
+          ),
+        if (game.spotsLeft > 0) ...[
+          const SizedBox(height: DabblerSpacing.space3),
+          _OpenSpotsCard(spotsLeft: game.spotsLeft),
+        ],
       ],
-    ]);
+    );
   }
 
-  Future<void> _confirmRemove(BuildContext context, GameRosterEntry player) async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _confirmRemove(
+    BuildContext context,
+    GameRosterEntry player,
+  ) async {
+    final confirmed = await showDabblerDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Remove ${player.displayName}?'),
-        content: const Text(
-          'They will lose their spot and be notified. If the game has a '
-          'waitlist, the first player in line takes their place.',
+      builder: (ctx) => DabblerDialog(
+        title: 'Remove ${player.displayName}?',
+        description:
+            'They will lose their spot and be notified. If the game has a '
+            'waitlist, the first player in line takes their place.',
+        destructive: true,
+        onClose: () => Navigator.pop(ctx, false),
+        secondaryAction: DabblerDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(ctx, false),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
+        primaryAction: DabblerDialogAction(
+          label: 'Remove',
+          onPressed: () => Navigator.pop(ctx, true),
+        ),
       ),
     );
     if (confirmed == true) await ctrl.removePlayer(player.profileId);
@@ -1162,54 +1200,46 @@ class _RosterSection extends StatelessWidget {
 }
 
 class _OpenSpotsCard extends StatelessWidget {
-  const _OpenSpotsCard({required this.spotsLeft, required this.sportColor});
-  final int spotsLeft; final Color sportColor;
+  const _OpenSpotsCard({required this.spotsLeft});
+  final int spotsLeft;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        color: sportColor.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: sportColor.withValues(alpha: 0.3), width: 1.5),
+    final colors = DabblerColors.of(context);
+    return DabblerSurface.sunken(
+      radius: DabblerRadius.xl,
+      padding: const EdgeInsets.all(DabblerSpacing.space5),
+      child: Row(
+        children: [
+          const DabblerIconTile.named(
+            'people',
+            tone: DabblerIconTileTone.amber,
+            size: 36,
+          ),
+          const SizedBox(width: DabblerSpacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$spotsLeft open spots',
+                  style: _t(
+                    context,
+                    DabblerType.footnote,
+                    colors.textPrimary,
+                    weight: DabblerType.semibold,
+                  ),
+                ),
+                Text(
+                  'Invite friends to fill the squad',
+                  style: _t(context, DabblerType.caption1, colors.textTertiary),
+                ),
+              ],
+            ),
+          ),
+          const DabblerBadge(label: 'Invite'),
+        ],
       ),
-      child: Row(children: [
-        Container(
-          width: 38, height: 38,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: cs.surfaceContainerLow, border: Border.all(color: cs.outlineVariant, width: 1.5)),
-          child: Icon(Iconsax.people_copy, size: 16, color: sportColor),
-        ),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('$spotsLeft open spots', style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: sportColor)),
-          const SizedBox(height: 2),
-          Text('Invite friends to fill the squad', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-        ])),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(999), border: Border.all(color: sportColor.withValues(alpha: 0.4), width: 1.5)),
-          child: Text('Invite', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: sportColor)),
-        ),
-      ]),
-    );
-  }
-}
-
-class _WaitlistDivider extends StatelessWidget {
-  const _WaitlistDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(children: [
-        Expanded(child: Divider(color: cs.outlineVariant.withValues(alpha: 0.6))),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Text('Waitlist', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))),
-        Expanded(child: Divider(color: cs.outlineVariant.withValues(alpha: 0.6))),
-      ]),
     );
   }
 }
@@ -1219,14 +1249,12 @@ class _WaitlistDivider extends StatelessWidget {
 class _RequestRow extends StatelessWidget {
   const _RequestRow({
     required this.request,
-    required this.sportColor,
     required this.enabled,
     required this.showDivider,
     required this.onApprove,
     required this.onDeny,
   });
   final GameJoinRequestEntry request;
-  final Color sportColor;
   final bool enabled;
   final bool showDivider;
   final VoidCallback onApprove;
@@ -1234,104 +1262,104 @@ class _RequestRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Row(children: [
-          // Avatar + name open the requester's profile so the host can vet
-          // them before deciding; the trailing buttons keep approve/deny.
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => context.push(
-                '${RoutePaths.userProfile}/${request.userId}?profileId=${request.profileId}',
-              ),
-              child: Row(children: [
-                DSAvatar(
-                  size: AvatarSize.small,
-                  customDimension: 38,
-                  imageUrl: request.avatarUrl,
-                  displayName: request.displayName,
-                  context: AvatarContext.sports,
-                  hasBorder: false,
+    final colors = DabblerColors.of(context);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: DabblerSpacing.space5,
+            vertical: DabblerSpacing.space3,
+          ),
+          child: Row(
+            children: [
+              // Avatar + name open the requester's profile so the host can vet
+              // them before deciding; the trailing buttons keep approve/deny.
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => context.push(
+                    '${RoutePaths.userProfile}/${request.userId}?profileId=${request.profileId}',
+                  ),
+                  child: Row(
+                    children: [
+                      DabblerAvatar(
+                        seed: _seedFor(request.avatarUrl, request.displayName),
+                        imageUrl: _photoFor(request.avatarUrl),
+                        size: DabblerAvatarSize.sm,
+                      ),
+                      const SizedBox(width: DabblerSpacing.space4),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              request.displayName,
+                              style: _t(
+                                context,
+                                DabblerType.footnote,
+                                colors.textPrimary,
+                                weight: DabblerType.semibold,
+                              ),
+                            ),
+                            Text(
+                              'Wants to join',
+                              style: _t(
+                                context,
+                                DabblerType.caption2,
+                                colors.textTertiary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(request.displayName, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cs.onSurface)),
-                  Text('Wants to join', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-                ])),
-              ]),
-            ),
+              ),
+              DabblerButton.icon(
+                icon: 'tick-circle',
+                semanticLabel: 'Approve ${request.displayName}',
+                tone: DabblerButtonTone.primary,
+                size: DabblerButtonSize.small,
+                disabled: !enabled,
+                onPressed: enabled ? onApprove : null,
+              ),
+              const SizedBox(width: DabblerSpacing.space3),
+              DabblerButton.icon(
+                icon: 'close-circle',
+                semanticLabel: 'Deny ${request.displayName}',
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                disabled: !enabled,
+                onPressed: enabled ? onDeny : null,
+              ),
+            ],
           ),
-          _RequestActionButton(
-            icon: Iconsax.tick_circle_copy,
-            color: sportColor,
-            filled: true,
-            semanticLabel: 'Approve ${request.displayName}',
-            onTap: enabled ? onApprove : null,
-          ),
-          const SizedBox(width: 8),
-          _RequestActionButton(
-            icon: Iconsax.close_circle_copy,
-            color: cs.error,
-            filled: false,
-            semanticLabel: 'Deny ${request.displayName}',
-            onTap: enabled ? onDeny : null,
-          ),
-        ]),
-      ),
-      if (showDivider)
-        Divider(height: 1, indent: 64, color: cs.outlineVariant.withValues(alpha: 0.6)),
-    ]);
-  }
-}
-
-class _RequestActionButton extends StatelessWidget {
-  const _RequestActionButton({
-    required this.icon,
-    required this.color,
-    required this.filled,
-    required this.semanticLabel,
-    required this.onTap,
-  });
-  final IconData icon;
-  final Color color;
-  final bool filled;
-  final String semanticLabel;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      enabled: onTap != null,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 34, height: 34,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: filled ? color.withValues(alpha: onTap == null ? 0.06 : 0.12) : Colors.transparent,
-            border: Border.all(color: color.withValues(alpha: onTap == null ? 0.2 : 0.4), width: 1.5),
-          ),
-          child: Icon(icon, size: 17, color: color.withValues(alpha: onTap == null ? 0.4 : 1)),
         ),
-      ),
+        if (showDivider) const DabblerDivider(inset: 64),
+      ],
     );
   }
 }
 
 class _PlayerRow extends StatelessWidget {
   const _PlayerRow({
-    required this.name, required this.isHost,
-    this.avatarUrl, this.badge, this.showDivider = true, this.isWaitlisted = false,
-    this.isMe = false, this.onTap, this.onRemove,
+    required this.name,
+    required this.isHost,
+    this.avatarUrl,
+    this.badge,
+    this.showDivider = true,
+    this.isWaitlisted = false,
+    this.isMe = false,
+    this.onTap,
+    this.onRemove,
   });
-  final String name; final String? avatarUrl;
-  final bool isHost; final String? badge;
-  final bool showDivider; final bool isWaitlisted;
+  final String name;
+  final String? avatarUrl;
+  final bool isHost;
+  final String? badge;
+  final bool showDivider;
+  final bool isWaitlisted;
 
   /// Adds a "You" pill so the viewer can spot themselves in the list.
   final bool isMe;
@@ -1344,109 +1372,80 @@ class _PlayerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs       = Theme.of(context).colorScheme;
-    return Column(children: [
-      GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(children: [
-          // DSAvatar resolves storage paths and ds: seed references the same
-          // way the profile screen does, so the picture always matches.
-          DSAvatar(
-            size: AvatarSize.small,
-            customDimension: 38,
-            imageUrl: avatarUrl,
-            displayName: name,
-            context: AvatarContext.sports,
-            hasBorder: false,
-          ),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700, color: cs.onSurface)),
-            if (isHost || isWaitlisted)
-              Text(isHost ? 'Creator' : 'Waitlisted', style: TextStyle(fontSize: 11, color: isHost ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
-          ])),
-          if (isMe) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: _kGreen.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(999)),
-              child: Text('You', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: _kGreen, letterSpacing: 0.3)),
+    final colors = DabblerColors.of(context);
+    return Column(
+      children: [
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DabblerSpacing.space5,
+              vertical: DabblerSpacing.space4,
             ),
-            if (badge != null || isWaitlisted) const SizedBox(width: 6),
-          ],
-          if (badge != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: isHost ? cs.primary.withValues(alpha: 0.12) : cs.surfaceContainerLow, borderRadius: BorderRadius.circular(999)),
-              child: Text(badge!, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: isHost ? cs.primary : cs.onSurfaceVariant, letterSpacing: 0.3)),
-            )
-          else if (isWaitlisted)
-            Icon(Iconsax.clock_copy, size: 16, color: cs.onSurfaceVariant),
-          if (onRemove != null) ...[
-            const SizedBox(width: 8),
-            Semantics(
-              label: 'Remove $name from game',
-              button: true,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: Container(
-                  width: 30, height: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: cs.error.withValues(alpha: 0.35), width: 1.5),
-                  ),
-                  child: Icon(Iconsax.trash_copy, size: 15, color: cs.error),
+            child: Row(
+              children: [
+                DabblerAvatar(
+                  seed: _seedFor(avatarUrl, name),
+                  imageUrl: _photoFor(avatarUrl),
+                  size: DabblerAvatarSize.sm,
                 ),
-              ),
+                const SizedBox(width: DabblerSpacing.space4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: _t(
+                          context,
+                          DabblerType.footnote,
+                          colors.textPrimary,
+                          weight: DabblerType.semibold,
+                        ),
+                      ),
+                      if (isHost || isWaitlisted)
+                        Text(
+                          isHost ? 'Creator' : 'Waitlisted',
+                          style: _t(
+                            context,
+                            DabblerType.caption1,
+                            colors.textTertiary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (isMe) ...[
+                  DabblerBadge(label: 'You', status: colors.success),
+                  if (badge != null || isWaitlisted)
+                    const SizedBox(width: DabblerSpacing.space2),
+                ],
+                if (badge != null)
+                  DabblerBadge(
+                    label: badge!,
+                    tone: isHost
+                        ? DabblerBadgeTone.defaultTone
+                        : DabblerBadgeTone.withIcon,
+                  )
+                else if (isWaitlisted)
+                  DabblerIcon('clock', size: 16, color: colors.textTertiary),
+                if (onRemove != null) ...[
+                  const SizedBox(width: DabblerSpacing.space3),
+                  DabblerButton.icon(
+                    icon: 'trash',
+                    semanticLabel: 'Remove $name from game',
+                    tone: DabblerButtonTone.neutral,
+                    size: DabblerButtonSize.small,
+                    onPressed: onRemove,
+                  ),
+                ],
+              ],
             ),
-          ],
-        ]),
+          ),
         ),
-      ),
-      if (showDivider) Divider(height: 1, indent: 64, endIndent: 14, color: cs.outlineVariant.withValues(alpha: 0.5)),
-    ]);
-  }
-}
-
-// ── CTA Button ────────────────────────────────────────────────────────────────
-
-class _CtaButton extends StatelessWidget {
-  const _CtaButton({
-    required this.label, required this.bg, required this.fg,
-    this.icon, this.border, this.enabled = true,
-    this.onTap, this.loading = false, this.shadow,
-  });
-  final String label; final Color bg; final Color fg;
-  final IconData? icon; final Color? border;
-  final bool enabled; final VoidCallback? onTap;
-  final bool loading; final Color? shadow;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          color: enabled ? bg : bg.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(999),
-          border: border != null ? Border.all(color: border!, width: 1.5) : null,
-          boxShadow: (shadow != null && enabled)
-              ? [BoxShadow(color: shadow!, blurRadius: 24, offset: const Offset(0, 8))]
-              : null,
-        ),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          if (loading)
-            SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(fg)))
-          else if (icon != null) ...[
-            Icon(icon, size: 18, color: enabled ? fg : fg.withValues(alpha: 0.6)),
-            const SizedBox(width: 6),
-          ],
-          Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: enabled ? fg : fg.withValues(alpha: 0.6))),
-        ]),
-      ),
+        if (showDivider) const DabblerDivider(inset: 64),
+      ],
     );
   }
 }
@@ -1459,68 +1458,87 @@ class _LoadingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SingleChildScrollView(child: Column(children: [
-      _shim(double.infinity, top + 230, cs),
-      const SizedBox(height: 14),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(children: [
-          _shim(double.infinity, 70, cs),
-          const SizedBox(height: 14),
-          Row(children: [
-            Expanded(child: _shim(double.infinity, 90, cs)),
-            const SizedBox(width: 8),
-            Expanded(child: _shim(double.infinity, 90, cs)),
-            const SizedBox(width: 8),
-            Expanded(child: _shim(double.infinity, 90, cs)),
-          ]),
-          const SizedBox(height: 14),
-          _shim(double.infinity, 100, cs),
-        ]),
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          DabblerSkeleton.rect(
+            width: double.infinity,
+            height: top + 230,
+            radius: 0,
+          ),
+          const SizedBox(height: DabblerSpacing.space5),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: DabblerSpacing.space6,
+            ),
+            child: Column(
+              children: [
+                const DabblerSkeleton.rect(width: double.infinity, height: 70),
+                const SizedBox(height: DabblerSpacing.space5),
+                Row(
+                  children: const [
+                    Expanded(child: DabblerSkeleton.rect(height: 90)),
+                    SizedBox(width: DabblerSpacing.space3),
+                    Expanded(child: DabblerSkeleton.rect(height: 90)),
+                  ],
+                ),
+                const SizedBox(height: DabblerSpacing.space5),
+                const DabblerSkeleton.rect(width: double.infinity, height: 100),
+              ],
+            ),
+          ),
+        ],
       ),
-    ]));
+    );
   }
-
-  Widget _shim(double w, double h, ColorScheme cs) => Container(
-    width: w, height: h,
-    decoration: BoxDecoration(color: cs.outlineVariant.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
-  );
 }
 
 class _ErrorBody extends StatelessWidget {
-  const _ErrorBody({required this.top, required this.message, required this.onBack});
-  final double top; final String message; final VoidCallback onBack;
+  const _ErrorBody({
+    required this.top,
+    required this.message,
+    required this.onBack,
+  });
+  final double top;
+  final String message;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Stack(children: [
-      Center(child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Iconsax.warning_2_copy, size: 48, color: cs.onSurfaceVariant),
-          const SizedBox(height: 16),
-          Text(message, style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
-          const SizedBox(height: 24),
-          FilledButton.tonal(onPressed: onBack, child: const Text('Go back')),
-        ]),
-      )),
-      Positioned(
-        top: top + 10, left: 18,
-        child: GestureDetector(
-          onTap: onBack,
-          child: Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: cs.primary.withValues(alpha: 0.10)),
-            child: Icon(Iconsax.arrow_left_copy, size: 18, color: cs.onSurface),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space6,
+            top + DabblerSpacing.space5,
+            DabblerSpacing.space6,
+            0,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DabblerButton.icon(
+              icon: _backIcon(context),
+              semanticLabel: 'Back',
+              tone: DabblerButtonTone.neutral,
+              onPressed: onBack,
+            ),
           ),
         ),
-      ),
-    ]);
+        Expanded(
+          child: DabblerEmptyState.error(
+            icon: 'warning-2',
+            title: message,
+            retryLabel: 'Go back',
+            onRetry: onBack,
+          ),
+        ),
+      ],
+    );
   }
 }
 
 extension _StringExt on String {
-  String capitalize() => isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
+  String capitalize() =>
+      isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 }

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
@@ -22,7 +23,7 @@ class SportAchievementsSection extends ConsumerWidget {
         data: (data) => _buildContent(context, data),
         loading: () => const SportSectionLoading(),
         error: (_, _) => const SportEmptySection(
-          icon: Icons.emoji_events_outlined,
+          icon: 'cup',
           message: 'No sport achievements yet.',
         ),
       ),
@@ -30,12 +31,11 @@ class SportAchievementsSection extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, SportAchievementsData data) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
 
     if (data.badges.isEmpty && data.recentEvents.isEmpty) {
       return const SportEmptySection(
-        icon: Icons.emoji_events_outlined,
+        icon: 'cup',
         message: 'No sport achievements yet.',
       );
     }
@@ -45,51 +45,52 @@ class SportAchievementsSection extends ConsumerWidget {
       children: [
         if (data.badges.isNotEmpty)
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: DabblerSpacing.space2,
+            runSpacing: DabblerSpacing.space2,
             children: data.badges
                 .map(
-                  (badge) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      badge.name.isEmpty ? badge.key : badge.name,
-                      style: textTheme.labelLarge?.copyWith(
-                        color: colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  (badge) => DabblerBadge(
+                    label: badge.name.isEmpty ? badge.key : badge.name,
+                    tone: DabblerBadgeTone.defaultTone,
                   ),
                 )
                 .toList(),
           ),
         if (data.badges.isNotEmpty && data.recentEvents.isNotEmpty)
-          const SizedBox(height: 16),
+          const SizedBox(height: DabblerSpacing.space5),
         if (data.recentEvents.isNotEmpty)
           ...data.recentEvents.map(
-            (event) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.workspace_premium_outlined,
-                color: colorScheme.primary,
-              ),
-              title: Text(
-                _formatEventType(event.eventType),
-                style: textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                _formatEventData(event.eventData),
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+            (event) => Padding(
+              padding: const EdgeInsets.only(bottom: DabblerSpacing.space3),
+              child: Row(
+                children: [
+                  const DabblerIconTile.named('medal-star'),
+                  const SizedBox(width: DabblerSpacing.space4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _formatEventType(event.eventType),
+                          style: sportProfileText(
+                            context,
+                            DabblerType.subheadline,
+                            colors.textPrimary,
+                            weight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          _formatEventData(event.eventData),
+                          style: sportProfileText(
+                            context,
+                            DabblerType.footnote,
+                            colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
@@ -15,8 +16,6 @@ class SportActivitySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final activityAsync = ref.watch(sportActivityProvider(args));
 
     return SportSectionCard(
@@ -24,47 +23,36 @@ class SportActivitySection extends ConsumerWidget {
       child: activityAsync.when(
         loading: () => const SportSectionLoading(),
         error: (_, _) => const SportEmptySection(
-          icon: Icons.article_outlined,
+          icon: 'document-text',
           message: 'No sport-related posts yet.',
         ),
         data: (activity) => activity.isEmpty
             ? const SportEmptySection(
-                icon: Icons.article_outlined,
+                icon: 'document-text',
                 message: 'No sport-related posts yet.',
               )
             : Column(
                 children: activity.map((item) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.only(
+                      bottom: DabblerSpacing.space4,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                          spacing: DabblerSpacing.space2,
+                          runSpacing: DabblerSpacing.space2,
                           children: item.sources
                               .map(
-                                (source) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    _sourceLabel(source),
-                                    style: textTheme.labelMedium?.copyWith(
-                                      color: colorScheme.onSecondaryContainer,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                (source) => DabblerBadge(
+                                  label: _sourceLabel(source),
+                                  tone: DabblerBadgeTone.withIcon,
                                 ),
                               )
                               .toList(),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: DabblerSpacing.space2),
                         resolvePostLayout(item.post),
                       ],
                     ),

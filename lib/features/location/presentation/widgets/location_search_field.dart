@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -44,6 +45,13 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
     _controller = TextEditingController(text: widget.initialQuery);
     _query = widget.initialQuery;
     _focusNode.addListener(_onFocusChange);
+    // DabblerSearchField takes no `autofocus`; request focus after the
+    // first frame instead (same behaviour).
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    }
   }
 
   @override
@@ -120,52 +128,16 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
+    // DabblerSearchField has no loading suffix; the dropdown below shows the
+    // geocode request's loading state instead of the old in-field spinner.
     return CompositedTransformTarget(
       link: _layerLink,
-      child: TextField(
+      child: DabblerSearchField(
         controller: _controller,
         focusNode: _focusNode,
-        autofocus: widget.autofocus,
         onChanged: _onChanged,
-        style: tt.bodyLarge?.copyWith(color: cs.onSurface),
-        decoration: InputDecoration(
-          hintText: widget.hintText,
-          hintStyle: tt.bodyLarge?.copyWith(
-            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-          suffixIcon: _query.length >= 2
-              ? Consumer(
-                  builder: (context, ref, _) {
-                    final async = ref.watch(mapboxGeocodeProvider(_query));
-                    if (async.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: cs.surfaceContainerHighest,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
+        onCleared: () => _onChanged(''),
+        placeholder: widget.hintText,
       ),
     );
   }
@@ -183,63 +155,50 @@ class _ResultsDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     final async = ref.watch(mapboxGeocodeProvider(query));
+    final secondary = DabblerType.subheadline
+        .resolveForDirection(direction)
+        .copyWith(color: colors.textSecondary);
 
-    return Material(
-      elevation: 4,
-      color: cs.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
-      clipBehavior: Clip.antiAlias,
+    return DabblerSurface(
+      radius: DabblerRadius.lg,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 280),
         child: async.when(
           loading: () => const Padding(
-            padding: EdgeInsets.all(16),
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
+            padding: EdgeInsets.all(DabblerSpacing.space5),
+            child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
           ),
           error: (_, __) => Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Couldn\u2019t load results',
-              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            ),
+            padding: const EdgeInsets.all(DabblerSpacing.space5),
+            child: Text('Couldn’t load results', style: secondary),
           ),
           data: (places) {
             if (places.isEmpty) {
               return Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'No results found',
-                  style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                ),
+                padding: const EdgeInsets.all(DabblerSpacing.space5),
+                child: Text('No results found', style: secondary),
               );
             }
             return ListView.separated(
               shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: places.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: cs.outlineVariant.withValues(alpha: 0.3),
+              padding: const EdgeInsets.symmetric(
+                vertical: DabblerSpacing.space1,
               ),
+              itemCount: places.length,
+              separatorBuilder: (_, __) =>
+                  const DabblerDivider(inset: DabblerSpacing.space5),
               itemBuilder: (_, i) {
                 final place = places[i];
-                return InkWell(
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () => onSelected(place),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
+                      horizontal: DabblerSpacing.space5,
+                      vertical: DabblerSpacing.space3,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,19 +206,18 @@ class _ResultsDropdown extends ConsumerWidget {
                       children: [
                         Text(
                           place.name,
-                          style: tt.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: cs.onSurface,
-                          ),
+                          style: DabblerType.headline
+                              .resolveForDirection(direction)
+                              .copyWith(color: colors.textPrimary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: DabblerSpacing.space1),
                         Text(
                           place.fullAddress,
-                          style: tt.bodySmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                          ),
+                          style: DabblerType.footnote
+                              .resolveForDirection(direction)
+                              .copyWith(color: colors.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),

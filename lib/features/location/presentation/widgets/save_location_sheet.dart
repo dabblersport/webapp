@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -32,7 +33,13 @@ class SaveLocationSheet extends ConsumerStatefulWidget {
     required this.areaName,
     this.accuracyMeters,
     this.onUseOnce,
+    this.tileLayerBuilder,
   });
+
+  /// Test seam: replaces the network [TileLayer] (render tests stub tiles).
+  /// Null in the app.
+  @visibleForTesting
+  final Widget Function()? tileLayerBuilder;
 
   final double lat;
   final double lng;
@@ -52,27 +59,16 @@ class SaveLocationSheet extends ConsumerStatefulWidget {
     double? accuracyMeters,
     void Function(double lat, double lng, String areaId)? onUseOnce,
   }) {
-    return showModalBottomSheet(
+    return showDabblerSheet<void>(
       context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 1.0,
-        expand: false,
-        builder: (ctx, scrollController) => SaveLocationSheet(
-          lat: lat,
-          lng: lng,
-          areaId: areaId,
-          areaName: areaName,
-          accuracyMeters: accuracyMeters,
-          onUseOnce: onUseOnce,
-        ),
+      detents: const <double>[0.85],
+      builder: (_) => SaveLocationSheet(
+        lat: lat,
+        lng: lng,
+        areaId: areaId,
+        areaName: areaName,
+        accuracyMeters: accuracyMeters,
+        onUseOnce: onUseOnce,
       ),
     );
   }
@@ -112,12 +108,14 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     return null;
   }
 
-  Color _accuracyColor(ColorScheme cs) {
+  /// Accuracy tone: null (neutral badge) when unknown, then success /
+  /// warning / error at the same 20 m and 100 m thresholds as before.
+  DabblerStatusColor? _accuracyStatus(DabblerColors colors) {
     final m = widget.accuracyMeters;
-    if (m == null) return cs.onSurfaceVariant;
-    if (m < 20) return Colors.green;
-    if (m < 100) return Colors.orange;
-    return cs.error;
+    if (m == null) return null;
+    if (m < 20) return colors.success;
+    if (m < 100) return colors.warning;
+    return colors.error;
   }
 
   String _accuracyText() {
@@ -156,41 +154,37 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final accuracy = _accuracyStatus(colors);
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          0,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Title
+            // Title (handle and close come from DabblerSheet; the emoji the
+            // old title carried is dropped, CEO rule).
             Text(
-              '📍 Save this location',
-              style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              'Save this location',
+              style: DabblerType.title3
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: DabblerSpacing.space5),
 
             // Mapbox place search
             LocationSearchField(
-              hintText: 'Search for a place\u2026',
+              hintText: 'Search for a place…',
               proximity: _activeProximity,
               onSelected: (place) async {
                 final repo = ref.read(areaRepositoryV2Provider);
@@ -208,168 +202,129 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 _mapController.move(LatLng(place.lat, place.lng), 15);
               },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
-            // Map thumbnail
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: SizedBox(
-                height: 180,
-                child: FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: LatLng(_lat, _lng),
-                    initialZoom: 15,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
+            // Map thumbnail — flutter_map tiles are content inside the DS
+            // surface; the marker is a DS icon.
+            DabblerSurface(
+              radius: DabblerRadius.card,
+              height: 180,
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: LatLng(_lat, _lng),
+                  initialZoom: 15,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none,
                   ),
-                  children: [
+                ),
+                children: [
+                  if (widget.tileLayerBuilder != null)
+                    widget.tileLayerBuilder!()
+                  else
                     TileLayer(
                       urlTemplate:
                           'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.dabbler.app',
                     ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: LatLng(_lat, _lng),
-                          width: 32,
-                          height: 32,
-                          child: Icon(
-                            Icons.location_pin,
-                            color: cs.primary,
-                            size: 32,
-                          ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(_lat, _lng),
+                        width: 32,
+                        height: 32,
+                        child: DabblerIcon(
+                          'location',
+                          weight: DabblerIconWeight.bold,
+                          color: colors.brandPrimary,
+                          size: 32,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Area name + accuracy badge
             Row(
               children: [
-                Icon(Icons.place_outlined, size: 16, color: cs.primary),
-                const SizedBox(width: 4),
+                DabblerIcon('location', size: 16, color: colors.brandPrimary),
+                const SizedBox(width: DabblerSpacing.space1),
                 Expanded(
                   child: Text(
                     _areaName,
-                    style: tt.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface,
-                    ),
+                    style: DabblerType.headline
+                        .resolveForDirection(direction)
+                        .copyWith(color: colors.textPrimary),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _accuracyColor(cs).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _accuracyColor(cs).withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    _accuracyText(),
-                    style: tt.labelSmall?.copyWith(
-                      color: _accuracyColor(cs),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                DabblerBadge(label: _accuracyText(), status: accuracy),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
 
             // Label picker
             Text(
               'Label',
-              style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: DabblerType.headline
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space3),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: DabblerSpacing.space3,
+              runSpacing: DabblerSpacing.space3,
               children: ProfileLocationLabel.values.map((label) {
-                final selected = _selectedLabel == label;
-                return ChoiceChip(
-                  label: Text(label.displayName),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedLabel = label),
-                  selectedColor: cs.primaryContainer,
-                  labelStyle: TextStyle(
-                    color: selected ? cs.onPrimaryContainer : cs.onSurface,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  ),
+                return DabblerChip(
+                  label: label.displayName,
+                  selected: _selectedLabel == label,
+                  onTap: () => setState(() => _selectedLabel = label),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
 
             // Custom name field
             if (_selectedLabel == ProfileLocationLabel.custom) ...[
-              TextField(
+              DabblerTextField(
                 controller: _customNameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g. My gym, Parents\' house',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                ),
+                placeholder: 'e.g. My gym, Parents\' house',
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DabblerSpacing.space4),
             ],
 
             // Primary toggle
-            SwitchListTile.adaptive(
-              value: _isPrimary,
-              onChanged: (v) => setState(() => _isPrimary = v),
-              title: Text('Set as primary location', style: tt.bodyMedium),
-              contentPadding: EdgeInsets.zero,
-              activeThumbColor: cs.onPrimary,
-              activeTrackColor: cs.primary,
+            DabblerInputRow(
+              title: 'Set as primary location',
+              trailing: DabblerToggle(
+                checked: _isPrimary,
+                semanticLabel: 'Set as primary location',
+                onChanged: (v) => setState(() => _isPrimary = v),
+              ),
+              onTap: () => setState(() => _isPrimary = !_isPrimary),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: DabblerSpacing.space6),
 
             // Save button
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _canSave && !_isSaving ? _save : null,
-                child: _isSaving
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: cs.onPrimary,
-                        ),
-                      )
-                    : const Text('Save location'),
-              ),
+            DabblerButton(
+              label: 'Save location',
+              fullWidth: true,
+              loading: _isSaving,
+              disabled: !_canSave || _isSaving,
+              onPressed: _save,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space3),
 
             // Use once button
             if (widget.onUseOnce != null)
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _useOnce,
-                  child: const Text('Use once'),
-                ),
+              DabblerButton(
+                label: 'Use once',
+                tone: DabblerButtonTone.text,
+                fullWidth: true,
+                onPressed: _useOnce,
               ),
           ],
         ),

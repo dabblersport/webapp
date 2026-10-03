@@ -1,33 +1,39 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/providers.dart';
 import 'package:dabbler/features/venue_submissions/presentation/widgets/venue_submission_status_badge.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 typedef Result<T> = core.Result<T, Failure>;
 
+/// No design frame: design-system defaults in the same structure.
 class MyVenueSubmissionsScreen extends ConsumerWidget {
   const MyVenueSubmissionsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final submissionsAsync = ref.watch(myVenueSubmissionsProvider);
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: RefreshIndicator(
+    // One layout at every width (AdaptiveScaffold is not a DS component).
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Venue submissions',
+        onBack: () => Navigator.of(context).maybePop(),
+        actions: [
+          DabblerNavigationAction(
+            icon: 'add',
+            label: 'Create submission',
+            onPressed: () => context.push(RoutePaths.createVenueSubmission),
+          ),
+        ],
+      ),
+      body: DabblerRefresh(
         onRefresh: () async {
           ref.invalidate(myVenueSubmissionsProvider);
           await ref.read(myVenueSubmissionsProvider.future);
@@ -38,52 +44,15 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
           ),
           slivers: [
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-              ),
-            ),
-            SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    IconButton.filledTonal(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Iconsax.arrow_left_copy),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        minimumSize: const Size(48, 48),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        'Venue submissions',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filledTonal(
-                      onPressed: () =>
-                          context.push(RoutePaths.createVenueSubmission),
-                      icon: const Icon(Iconsax.add_copy),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        minimumSize: const Size(48, 48),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space3,
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space6,
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                 child: submissionsAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const Center(child: DabblerSpinner()),
                   error: (e, _) => _ErrorState(
                     message: e.toString(),
                     onRetry: () => ref.invalidate(myVenueSubmissionsProvider),
@@ -102,117 +71,7 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
                                 context.push(RoutePaths.createVenueSubmission),
                           );
                         }
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Card.filled(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  children: [
-                                    const Icon(Iconsax.info_circle_copy),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        'Drafts can be edited. Pending/approved are read-only.',
-                                        style: textTheme.bodyMedium,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: submissions.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 10),
-                              itemBuilder: (context, index) {
-                                final s = submissions[index];
-                                final title =
-                                    (s.nameEn ?? s.nameAr ?? 'Untitled venue')
-                                        .trim();
-                                final location = <String?>[s.city, s.district]
-                                    .where((v) => (v ?? '').trim().isNotEmpty)
-                                    .map((v) => v!.trim())
-                                    .join(', ');
-
-                                return Card.filled(
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(12),
-                                    onTap: () => context.push(
-                                      RoutePaths.venueSubmissionDetail(s.id),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  title,
-                                                  style: textTheme.titleMedium
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.w800,
-                                                      ),
-                                                ),
-                                                if (location.isNotEmpty) ...[
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    location,
-                                                    style: textTheme.bodySmall,
-                                                  ),
-                                                ],
-                                                if (s.shouldShowAdminNote &&
-                                                    (s.adminNote ?? '')
-                                                        .trim()
-                                                        .isNotEmpty) ...[
-                                                  const SizedBox(height: 8),
-                                                  Text(
-                                                    'Admin note: ${s.adminNote}',
-                                                    style: textTheme.bodySmall
-                                                        ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          VenueSubmissionStatusBadge(
-                                            status: s.status,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            FilledButton.icon(
-                              onPressed: () => context.push(
-                                RoutePaths.createVenueSubmission,
-                              ),
-                              icon: const Icon(Iconsax.add_copy),
-                              label: const Text('Create new submission'),
-                            ),
-                          ],
-                        );
+                        return _SubmissionList(submissions: submissions);
                       },
                     );
                   },
@@ -223,23 +82,100 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
 
-    if (isWide) {
-      return AdaptiveScaffold(
-        currentIndex: 2,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+class _SubmissionList extends StatelessWidget {
+  const _SubmissionList({required this.submissions});
+
+  final List<VenueSubmissionModel> submissions;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const DabblerBanner(
+          message: 'Drafts can be edited. Pending/approved are read-only.',
+          icon: DabblerIcon('info-circle'),
         ),
-        body: content,
-      );
-    }
-    return content;
+        const SizedBox(height: DabblerSpacing.space3),
+        for (var i = 0; i < submissions.length; i++) ...[
+          if (i > 0) const SizedBox(height: DabblerSpacing.space2),
+          Builder(
+            builder: (context) {
+              final s = submissions[i];
+              final title = (s.nameEn ?? s.nameAr ?? 'Untitled venue').trim();
+              final location = <String?>[s.city, s.district]
+                  .where((v) => (v ?? '').trim().isNotEmpty)
+                  .map((v) => v!.trim())
+                  .join(', ');
+              final hasNote =
+                  s.shouldShowAdminNote &&
+                  (s.adminNote ?? '').trim().isNotEmpty;
+
+              return DabblerCard(
+                onTap: () =>
+                    context.push(RoutePaths.venueSubmissionDetail(s.id)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: DabblerType.headline
+                                .resolveForDirection(dir)
+                                .copyWith(color: colors.textPrimary),
+                          ),
+                          if (location.isNotEmpty) ...[
+                            const SizedBox(height: DabblerSpacing.space1),
+                            Text(
+                              location,
+                              style: DabblerType.footnote
+                                  .resolveForDirection(dir)
+                                  .copyWith(color: colors.textSecondary),
+                            ),
+                          ],
+                          if (hasNote) ...[
+                            const SizedBox(height: DabblerSpacing.space2),
+                            Text(
+                              'Admin note: ${s.adminNote}',
+                              style: DabblerType.footnote
+                                  .resolveForDirection(dir)
+                                  .copyWith(
+                                    color: colors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: DabblerSpacing.space3),
+                    VenueSubmissionStatusBadge(status: s.status),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+        const SizedBox(height: DabblerSpacing.space4),
+        DabblerButton(
+          label: 'Create new submission',
+          icon: 'add',
+          fullWidth: true,
+          onPressed: () => context.push(RoutePaths.createVenueSubmission),
+        ),
+      ],
+    );
   }
 }
 
@@ -250,37 +186,12 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Iconsax.building_4_copy, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'No submissions yet',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create a draft and submit it for review when ready.',
-              style: textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: onCreate,
-              child: const Text('Create submission'),
-            ),
-          ],
-        ),
-      ),
+    return DabblerEmptyState(
+      icon: 'building-4',
+      title: 'No submissions yet',
+      text: 'Create a draft and submit it for review when ready.',
+      size: DabblerEmptyStateSize.page,
+      action: DabblerButton(label: 'Create submission', onPressed: onCreate),
     );
   }
 }
@@ -293,34 +204,11 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Iconsax.danger_copy, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'Couldn\'t load submissions',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
+    return DabblerEmptyState.error(
+      title: 'Couldn\'t load submissions',
+      text: message,
+      retryLabel: 'Retry',
+      onRetry: onRetry,
     );
   }
 }

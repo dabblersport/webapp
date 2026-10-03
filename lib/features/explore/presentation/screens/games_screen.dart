@@ -1,23 +1,17 @@
-import 'dart:ui' show ImageFilter;
-
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:intl/intl.dart';
-
-import 'package:dabbler/core/design_system/design_system.dart';
-import 'package:dabbler/core/widgets/shimmer_loading.dart';
 import 'package:dabbler/data/models/social/sport.dart';
-import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
-import 'package:dabbler/widgets/app_top_bar.dart';
-import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
+import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 // =============================================================================
 // SCREEN — outer shell; waits for country-filtered sport list
@@ -32,8 +26,10 @@ class GamesScreen extends ConsumerWidget {
     final sportsAsync = ref.watch(activeChallengeSportsByProfileCountryProvider);
 
     return sportsAsync.when(
-      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator.adaptive())),
-      error: (_, __) => const Scaffold(body: Center(child: Text('Failed to load sports'))),
+      loading: () => const ListingPageSpinner(),
+      error: (_, __) => const DabblerPage(
+        body: ListingError(message: 'Failed to load sports'),
+      ),
       data: (sports) => _GamesTabScreen(
         key: ValueKey(sports.map((s) => s.id).join()),
         sports: sports,
@@ -43,7 +39,7 @@ class GamesScreen extends ConsumerWidget {
 }
 
 // =============================================================================
-// TAB SCREEN — owns TabController; recreated when sport list changes
+// TAB SCREEN — recreated when the sport list changes
 // =============================================================================
 
 class _GamesTabScreen extends ConsumerStatefulWidget {
@@ -55,23 +51,16 @@ class _GamesTabScreen extends ConsumerStatefulWidget {
   ConsumerState<_GamesTabScreen> createState() => _GamesTabScreenState();
 }
 
-class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
-    with TickerProviderStateMixin {
+class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
   // Index 0 = "All", then one tab per sport
-  late final TabController _tabController;
   late final List<ScrollController> _scrollControllers;
 
   int get _tabCount => widget.sports.length + 1; // +1 for "All"
 
-  /// Filters (Nearby bar + chips) are tucked behind the top-bar filter icon.
-  bool _filtersVisible = false;
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabCount, vsync: this);
     _scrollControllers = List.generate(_tabCount, (_) => ScrollController());
-    _tabController.addListener(_onTabChanged);
   }
 
   @override
@@ -79,15 +68,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
     for (final sc in _scrollControllers) {
       sc.dispose();
     }
-    _tabController
-      ..removeListener(_onTabChanged)
-      ..dispose();
     super.dispose();
-  }
-
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
-    setState(() {});
   }
 
   // index 0 → null (all sports), index N → sport id at N-1
@@ -104,140 +85,17 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
-
-  Widget _buildHeader() {
-    final cs = Theme.of(context).colorScheme;
-    // Dot on the filter icon whenever any filter narrows the list.
-    final filtersActive = ref.watch(nearbyGamesFilterEnabledProvider) ||
-        ref.watch(gamesDateFilterProvider) != GamesDateFilter.any ||
-        ref.watch(gamesSkillFilterProvider) != GamesSkillFilter.any ||
-        ref.watch(gamesOpenSpotsOnlyProvider);
-
-    return AppTopBar(
-      avatarContext: AvatarContext.main,
-      extraActions: [
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            AppTopBarButton(
-              icon: Iconsax.setting_4_copy,
-              onTap: () => setState(() => _filtersVisible = !_filtersVisible),
-            ),
-            if (filtersActive)
-              Positioned(
-                top: 2,
-                right: 2,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 9,
-                    height: 9,
-                    decoration: BoxDecoration(
-                      color: cs.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: cs.surface, width: 1.5),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
+  void _resetFilters() {
+    ref.read(nearbyGamesFilterEnabledProvider.notifier).state = false;
+    ref.read(gamesDateFilterProvider.notifier).state = GamesDateFilter.any;
+    ref.read(gamesSkillFilterProvider.notifier).state = GamesSkillFilter.any;
+    ref.read(gamesOpenSpotsOnlyProvider.notifier).state = false;
   }
 
-  // ── Tab bar ───────────────────────────────────────────────────────────────
-
-  Widget _buildTabBar() {
-    final cs = Theme.of(context).colorScheme;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-
-    return AnimatedBuilder(
-      animation: _tabController,
-      builder: (context, _) {
-        return SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: _tabCount,
-            separatorBuilder: (_, __) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final isSelected = _tabController.index == index;
-              final String label;
-              final String emoji;
-
-              if (index == 0) {
-                label = 'All';
-                emoji = '';
-              } else {
-                final sport = widget.sports[index - 1];
-                label = sport.localizedName(context);
-                emoji = sport.emoji ?? '';
-              }
-
-              // iOS-style filter capsules: frosted system material with a
-              // single hairline; selected = flat primary capsule. No
-              // gradients, sheens, or glows.
-              return Center(
-                child: GestureDetector(
-                  onTap: () => _tabController.animateTo(index),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(19),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOut,
-                        height: 38,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? cs.primary
-                              : isLight
-                                  ? Colors.white.withValues(alpha: 0.55)
-                                  : Colors.white.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(19),
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.transparent
-                                : isLight
-                                    ? Colors.black.withValues(alpha: 0.08)
-                                    : Colors.white.withValues(alpha: 0.12),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (emoji.isNotEmpty) ...[
-                              Text(emoji,
-                                  style: const TextStyle(fontSize: 15)),
-                              const SizedBox(width: 6),
-                            ],
-                            Text(
-                              label,
-                              style: TextStyle(
-                                fontSize: 15,
-                                letterSpacing: -0.2,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                color:
-                                    isSelected ? Colors.white : cs.onSurface,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
+  void _openFilters() {
+    showListingFilterSheet(
+      context,
+      builder: (_) => _GamesFilterSheetBody(onReset: _resetFilters),
     );
   }
 
@@ -245,258 +103,149 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
+    // The header's count and the applied-filters rail both follow every filter
+    // that narrows the list.
+    final nearby = ref.watch(nearbyGamesFilterEnabledProvider);
+    final dateFilter = ref.watch(gamesDateFilterProvider);
+    final skillFilter = ref.watch(gamesSkillFilterProvider);
+    final openSpots = ref.watch(gamesOpenSpotsOnlyProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(
-            tabController: _tabController,
-            scrollControllers: _scrollControllers,
-          ),
-          NestedScrollView(
-            headerSliverBuilder: (_, __) => [
-              if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
+    final active = <ListingActiveFilter>[
+      if (nearby)
+        ListingActiveFilter(
+          label: 'Nearby',
+          onClear: () =>
+              ref.read(nearbyGamesFilterEnabledProvider.notifier).state = false,
+        ),
+      if (dateFilter != GamesDateFilter.any)
+        ListingActiveFilter(
+          label: dateFilter.label,
+          onClear: () => ref.read(gamesDateFilterProvider.notifier).state =
+              GamesDateFilter.any,
+        ),
+      if (skillFilter != GamesSkillFilter.any)
+        ListingActiveFilter(
+          label: skillFilter.label,
+          onClear: () => ref.read(gamesSkillFilterProvider.notifier).state =
+              GamesSkillFilter.any,
+        ),
+      if (openSpots)
+        ListingActiveFilter(
+          label: 'Open spots',
+          onClear: () =>
+              ref.read(gamesOpenSpotsOnlyProvider.notifier).state = false,
+        ),
+    ];
+
+    return DabblerPage(
+      topBar: ListingHeader(
+        title: AppLocalizations.of(context).nav_games,
+        filterCount: active.length,
+        onFilter: _openFilters,
+      ),
+      // The DS cards and tabs carry no screen gutter of their own.
+      body: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space6,
+        ),
+        child: DabblerTabPager(
+          scrollable: true,
+          items: <DabblerTabItem>[
+            const DabblerTabItem(id: 'all', label: 'All'),
+            for (final sport in widget.sports)
+              DabblerTabItem(
+                id: sport.id,
+                label: sport.localizedName(context),
               ),
-              // Filters live behind the top-bar filter icon on mobile; the
-              // wide layout has no top bar, so they stay visible there.
-              if (_filtersVisible || isWide) ...[
-                SliverToBoxAdapter(
-                  child: NearbyFilterBar(
-                    enabledProvider: nearbyGamesFilterEnabledProvider,
-                    sortProvider: nearbyGameSortProvider,
+          ],
+          pages: List.generate(
+            _tabCount,
+            // The applied-filters rail sits under the tabs, above each list.
+            (i) => Column(
+              children: [
+                ListingActiveFilters(filters: active, onClearAll: _resetFilters),
+                Expanded(
+                  child: _GameTabBody(
+                    sportId: _sportIdForTab(i),
+                    scrollController: _scrollControllers[i],
+                    onRefresh: _handleRefresh,
+                    onRetry: () => ref.invalidate(nearbyGamesProvider),
                   ),
                 ),
-                const SliverToBoxAdapter(child: _GamesFilterChips()),
               ],
-            ],
-            body: TabBarView(
-              controller: _tabController,
-              children: List.generate(
-                _tabCount,
-                (i) => _GameTabBody(
-                  sportId: _sportIdForTab(i),
-                  scrollController: _scrollControllers[i],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.invalidate(nearbyGamesProvider),
-                ),
-              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // =============================================================================
-// TAB BAR DELEGATE
+// FILTER SHEET
 // =============================================================================
 
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate({required this.tabBar, required this.cs});
+/// Date window, skill tier and open spots (the old inline chips), plus the
+/// nearby control. Everything writes straight to its provider, as before.
+class _GamesFilterSheetBody extends ConsumerWidget {
+  const _GamesFilterSheetBody({required this.onReset});
 
-  final Widget tabBar;
-  final ColorScheme cs;
-
-  @override
-  double get minExtent => 56;
-  @override
-  double get maxExtent => 56;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return ColoredBox(
-      color: Colors.transparent,
-      child: Column(
-        children: [
-          const SizedBox(height: 9),
-          Expanded(child: tabBar),
-          const SizedBox(height: 6),
-          Divider(
-            height: 1,
-            thickness: 0,
-            color: cs.outlineVariant.withValues(alpha: 0.3),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_TabBarDelegate old) =>
-      old.cs != cs || old.tabBar != tabBar;
-}
-
-// =============================================================================
-// LIST FILTER CHIPS
-// =============================================================================
-
-/// Horizontal filter chips for the games list: date window, open spots,
-/// include-ended. Applied client-side in [_GameTabBody].
-class _GamesFilterChips extends ConsumerWidget {
-  const _GamesFilterChips();
-
-  Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
-    final current = ref.read(gamesDateFilterProvider);
-    final picked = await showAdaptiveSheet<GamesDateFilter>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final f in GamesDateFilter.values)
-              ListTile(
-                title: Text(f.label),
-                trailing: f == current ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.pop(ctx, f),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) {
-      ref.read(gamesDateFilterProvider.notifier).state = picked;
-    }
-  }
-
-  Future<void> _pickSkill(BuildContext context, WidgetRef ref) async {
-    final current = ref.read(gamesSkillFilterProvider);
-    final picked = await showAdaptiveSheet<GamesSkillFilter>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final f in GamesSkillFilter.values)
-              ListTile(
-                title: Text(f.label),
-                trailing: f == current ? const Icon(Icons.check) : null,
-                onTap: () => Navigator.pop(ctx, f),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) {
-      ref.read(gamesSkillFilterProvider.notifier).state = picked;
-    }
-  }
+  final VoidCallback onReset;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dateFilter = ref.watch(gamesDateFilterProvider);
-    final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
     final skillFilter = ref.watch(gamesSkillFilterProvider);
+    final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      child: Row(
-        children: [
-          _FilterChip(
-            label: dateFilter.label,
-            icon: Iconsax.calendar_1_copy,
-            selected: dateFilter != GamesDateFilter.any,
-            onTap: () => _pickDate(context, ref),
-          ),
-          const SizedBox(width: 8),
-          _FilterChip(
-            label: skillFilter.label,
-            icon: Iconsax.medal_star_copy,
-            selected: skillFilter != GamesSkillFilter.any,
-            onTap: () => _pickSkill(context, ref),
-          ),
-          const SizedBox(width: 8),
-          _FilterChip(
-            label: 'Open spots',
-            icon: Iconsax.people_copy,
-            selected: openSpotsOnly,
-            onTap: () => ref.read(gamesOpenSpotsOnlyProvider.notifier).state =
-                !openSpotsOnly,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isLight = Theme.of(context).brightness == Brightness.light;
-    final fg = selected ? Colors.white : cs.onSurface;
-
-    // Same iOS frosted-capsule language as the sport tabs, one size down.
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: selected
-                    ? cs.primary
-                    : isLight
-                        ? Colors.white.withValues(alpha: 0.55)
-                        : Colors.white.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: selected
-                      ? Colors.transparent
-                      : isLight
-                          ? Colors.black.withValues(alpha: 0.08)
-                          : Colors.white.withValues(alpha: 0.12),
-                  width: 1,
+    return ListingFilterBody(
+      onReset: onReset,
+      groups: [
+        ListingFilterGroup(
+          label: 'Date',
+          children: [
+            for (final f in GamesDateFilter.values)
+              if (f != GamesDateFilter.any)
+                DabblerChip(
+                  label: f.label,
+                  selected: f == dateFilter,
+                  onTap: () => ref.read(gamesDateFilterProvider.notifier).state =
+                      f == dateFilter ? GamesDateFilter.any : f,
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 14, color: fg),
-                  const SizedBox(width: 6),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      letterSpacing: -0.1,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.w400,
-                      color: fg,
-                    ),
-                  ),
-                ],
-              ),
+          ],
+        ),
+        ListingFilterGroup(
+          label: 'Skill level',
+          children: [
+            for (final f in GamesSkillFilter.values)
+              if (f != GamesSkillFilter.any)
+                DabblerChip(
+                  label: f.label,
+                  selected: f == skillFilter,
+                  onTap: () => ref.read(gamesSkillFilterProvider.notifier).state =
+                      f == skillFilter ? GamesSkillFilter.any : f,
+                ),
+          ],
+        ),
+        ListingFilterGroup(
+          label: 'Availability',
+          children: [
+            DabblerChip(
+              label: 'Open spots',
+              selected: openSpotsOnly,
+              onTap: () => ref.read(gamesOpenSpotsOnlyProvider.notifier).state =
+                  !openSpotsOnly,
             ),
+          ],
+        ),
+        ListingFilterSection(
+          label: 'Nearby',
+          child: NearbyFilterBar(
+            enabledProvider: nearbyGamesFilterEnabledProvider,
+            sortProvider: nearbyGameSortProvider,
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -520,8 +269,6 @@ class _GameTabBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-
     final nearbyEnabled = ref.watch(nearbyGamesFilterEnabledProvider);
     final locState =
         nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
@@ -547,13 +294,14 @@ class _GameTabBody extends ConsumerWidget {
     final isFiltered = location != null;
 
     return gamesAsync.when(
-      loading: () => const _GameSkeletonList(),
-      error: (e, _) => _ErrorView(message: "Couldn't load games", onRetry: onRetry),
+      loading: () => const ListingSkeleton(),
+      error: (e, _) =>
+          ListingError(message: "Couldn't load games", onRetry: onRetry),
       data: (games) {
         final pinnedIds = {for (final g in pinned) g.id};
 
-        // List filters (chips row). Pinned "My games" stay visible — the
-        // filters narrow discovery, not your own commitments.
+        // List filters. Pinned "My games" stay visible — the filters narrow
+        // discovery, not your own commitments.
         final dateFilter = ref.watch(gamesDateFilterProvider);
         final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
         final skillFilter = ref.watch(gamesSkillFilterProvider);
@@ -578,14 +326,16 @@ class _GameTabBody extends ConsumerWidget {
 
         if (pinned.isEmpty && others.isEmpty) {
           if (filtersActive && games.isNotEmpty) {
-            return _EmptyView(
-              message: 'No games match your filters',
-              hint: 'Adjust or clear the filter chips above.',
+            return const ListingEmpty(
+              icon: 'game',
+              title: 'No games match your filters',
+              text: 'Adjust or clear the filters.',
             );
           }
-          return _EmptyView(
-            message: isFiltered ? 'No games nearby' : 'No games yet',
-            hint: isFiltered
+          return ListingEmpty(
+            icon: 'game',
+            title: isFiltered ? 'No games nearby' : 'No games yet',
+            text: isFiltered
                 ? 'Try widening your search radius in the filter.'
                 : 'Be the first to create a game in your area!',
           );
@@ -602,25 +352,29 @@ class _GameTabBody extends ConsumerWidget {
           ...others.map(_ListEntry.game),
         ];
 
-        return RefreshIndicator(
+        return DabblerRefresh(
           onRefresh: onRefresh,
           child: ListView.separated(
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space4,
+              bottom: DabblerSpacing.space8,
+            ),
             itemCount: entries.length,
-            separatorBuilder: (_, i) =>
-                (entries[i].isHeader || entries[i + 1].isHeader)
-                    ? const SizedBox.shrink()
-                    : Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: cs.outlineVariant.withValues(alpha: 0.3),
-                      ),
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: DabblerSpacing.space4),
             itemBuilder: (_, i) {
               final entry = entries[i];
               if (entry.isHeader) {
-                return _SectionHeader(label: entry.headerLabel!);
+                return Text(
+                  entry.headerLabel!,
+                  style: listingText(
+                    context,
+                    DabblerType.headline,
+                    color: DabblerColors.of(context).textPrimary,
+                  ),
+                );
               }
               return _GameCard(
                 game: entry.gameModel!,
@@ -647,33 +401,13 @@ class _ListEntry {
   bool get isHeader => headerLabel != null;
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-      child: Text(
-        label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1,
-          color: cs.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
 // =============================================================================
 // GAME CARD
 // =============================================================================
 
+/// A game on the design system's event card (the Listings frame draws a local
+/// card; the DS card is canonical). Sport artwork stands in for a cover, the
+/// footer carries the status, relation and spots badges.
 class _GameCard extends StatelessWidget {
   const _GameCard({required this.game, this.showDistance = false});
 
@@ -682,88 +416,66 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
 
-    return InkWell(
-      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (game.sportName != null) ...[
-                  Text(
-                    _emojiFor(game.sportName ?? ''),
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    game.title,
-                    style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (game.isMine) ...[
-                  _RelationChip(isCreated: game.isCreated),
-                  const SizedBox(width: 4),
-                ],
-                _StatusChip(status: game.status),
-              ],
-            ),
-            const SizedBox(height: 6),
-            if (game.scheduledAt != null)
-              Row(
-                children: [
-                  Icon(Iconsax.clock_copy, size: 14, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatTime(game.scheduledAt!),
-                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            if (game.venueName?.isNotEmpty == true ||
-                (showDistance && game.distanceMeters > 0)) ...[
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  Icon(Iconsax.location_copy, size: 14, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      [
-                        if (game.venueName?.isNotEmpty == true) game.venueName!,
-                        if (showDistance && game.distanceMeters > 0)
-                          game.distanceLabel,
-                      ].join('  ·  '),
-                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (game.spotsRemaining != null) ...[
-              const SizedBox(height: 8),
-              _SmallChip(
-                label: game.spotsRemaining! > 0
-                    ? '${game.spotsRemaining} spots left'
-                    : 'Full',
-                highlight: game.spotsRemaining! == 0,
-              ),
-            ],
-          ],
+    final venueLine = [
+      if (game.venueName?.isNotEmpty == true) game.venueName!,
+      if (showDistance && game.distanceMeters > 0) game.distanceLabel,
+    ].join('  ·  ');
+
+    final badges = <Widget>[
+      if (game.isMine)
+        DabblerBadge(
+          label: game.isCreated ? 'Created' : 'Joined',
+          tone: DabblerBadgeTone.defaultTone,
+          status: game.isCreated
+              ? null
+              : colors.status(DabblerStatusTone.success),
         ),
-      ),
+      _statusBadge(colors, game.status),
+      if (game.spotsRemaining != null)
+        DabblerBadge(
+          label: game.spotsRemaining! > 0
+              ? '${game.spotsRemaining} spots left'
+              : 'Full',
+          // The DS `warning` tone is the neutral tint.
+          tone: DabblerBadgeTone.warning,
+          status: game.spotsRemaining! == 0
+              ? colors.status(DabblerStatusTone.error)
+              : null,
+        ),
+    ];
+
+    return DabblerCardEventLarge(
+      title: game.title,
+      sport: listingSportFor(game.sportName),
+      cover: const ListingCover(),
+      dateTime: game.scheduledAt != null ? _formatTime(game.scheduledAt!) : null,
+      location: venueLine.isEmpty ? null : venueLine,
+      footer: ListingBadgeRow(badges: badges),
+      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
+      semanticLabel: game.title,
     );
+  }
+
+  static Widget _statusBadge(DabblerColors colors, String? status) {
+    switch (status?.toLowerCase()) {
+      case 'live':
+        return DabblerBadge(
+          label: 'Live',
+          tone: DabblerBadgeTone.defaultTone,
+          status: colors.status(DabblerStatusTone.error),
+        );
+      case 'ended':
+        return const DabblerBadge(label: 'Ended', tone: DabblerBadgeTone.warning);
+      case 'cancelled':
+        return const DabblerBadge(
+          label: 'Cancelled',
+          tone: DabblerBadgeTone.warning,
+        );
+      default:
+        return const DabblerBadge(label: 'Upcoming');
+    }
   }
 
   static String _formatTime(DateTime dt) {
@@ -775,296 +487,5 @@ class _GameCard extends StatelessWidget {
     if (diff == 0) return 'Today  $timeStr';
     if (diff == 1) return 'Tomorrow  $timeStr';
     return '${DateFormat('d MMM').format(dt)}  $timeStr';
-  }
-}
-
-// =============================================================================
-// RELATION CHIP (Created / Joined — pinned "My games" cards)
-// =============================================================================
-
-class _RelationChip extends StatelessWidget {
-  const _RelationChip({required this.isCreated});
-
-  /// true → "Created" (creator), false → "Joined" (on the roster).
-  final bool isCreated;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    const green = Color(0xFF00C853);
-
-    final bg = isCreated ? cs.primary.withValues(alpha: 0.14) : green.withValues(alpha: 0.14);
-    final fg = isCreated ? cs.primary : green;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        isCreated ? 'Created' : 'Joined',
-        style: tt.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// STATUS CHIP
-// =============================================================================
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final String? status;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    final Color bg;
-    final Color fg;
-    final String label;
-
-    switch (status?.toLowerCase()) {
-      case 'live':
-        bg = cs.errorContainer;
-        fg = cs.onErrorContainer;
-        label = 'Live';
-        break;
-      case 'ended':
-        bg = cs.surfaceContainerHigh;
-        fg = cs.onSurfaceVariant;
-        label = 'Ended';
-        break;
-      case 'cancelled':
-        bg = cs.errorContainer.withValues(alpha: 0.5);
-        fg = cs.onSurfaceVariant;
-        label = 'Cancelled';
-        break;
-      default:
-        bg = cs.primaryContainer;
-        fg = cs.onPrimaryContainer;
-        label = 'Upcoming';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: tt.labelSmall?.copyWith(color: fg, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// SMALL CHIP
-// =============================================================================
-
-class _SmallChip extends StatelessWidget {
-  const _SmallChip({required this.label, this.highlight = false});
-
-  final String label;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: highlight ? cs.errorContainer : cs.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: highlight
-              ? cs.error.withValues(alpha: 0.3)
-              : cs.outlineVariant.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Text(
-        label,
-        style: tt.labelSmall?.copyWith(
-          color: highlight ? cs.onErrorContainer : cs.onSurfaceVariant,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// SKELETON
-// =============================================================================
-
-class _GameSkeletonList extends StatelessWidget {
-  const _GameSkeletonList();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
-      itemCount: 6,
-      separatorBuilder: (_, __) => Divider(
-        height: 1,
-        thickness: 1,
-        color: cs.outlineVariant.withValues(alpha: 0.3),
-      ),
-      itemBuilder: (_, __) => const _GameCardSkeleton(),
-    );
-  }
-}
-
-class _GameCardSkeleton extends StatelessWidget {
-  const _GameCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ShimmerLoading(
-                width: 24,
-                height: 24,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(child: ShimmerLoading(height: 14)),
-              const SizedBox(width: 8),
-              ShimmerLoading(
-                width: 64,
-                height: 22,
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const ShimmerLoading(width: 120, height: 12),
-          const SizedBox(height: 6),
-          const ShimmerLoading(width: 100, height: 12),
-        ],
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// EMPTY / ERROR VIEWS
-// =============================================================================
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView({required this.message, required this.hint});
-
-  final String message;
-  final String hint;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Iconsax.game_copy, size: 48, color: cs.outline),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              style: tt.bodyMedium?.copyWith(color: cs.outline),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              style: tt.titleMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// HELPERS
-// =============================================================================
-
-String _emojiFor(String sport) {
-  switch (sport.toLowerCase()) {
-    case 'football':
-    case 'soccer':
-    case 'futsal':
-      return '⚽';
-    case 'cricket':
-      return '🏏';
-    case 'padel':
-    case 'tennis':
-      return '🎾';
-    case 'basketball':
-      return '🏀';
-    case 'badminton':
-      return '🏸';
-    case 'running':
-      return '🏃';
-    case 'swimming':
-      return '🏊';
-    case 'equestrian':
-      return '🐎';
-    case 'shooting':
-      return '🎯';
-    case 'volleyball':
-      return '🏐';
-    default:
-      return '🏃';
   }
 }

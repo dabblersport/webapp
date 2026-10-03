@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,12 +20,10 @@ class SportProfileMetric {
   const SportProfileMetric({
     required this.label,
     required this.value,
-    required this.icon,
   });
 
   final String label;
   final String value;
-  final IconData icon;
 }
 
 class SportActivityItem {
@@ -234,22 +231,18 @@ List<SportProfileMetric> _buildPlayerMetrics(
     SportProfileMetric(
       label: 'Matches',
       value: profile.matchesPlayed.toString(),
-      icon: Icons.sports_score,
     ),
     SportProfileMetric(
       label: 'Rating',
       value: averageRating.toStringAsFixed(1),
-      icon: Icons.star_outline,
     ),
     SportProfileMetric(
       label: 'Form',
       value: profile.formScore.toStringAsFixed(1),
-      icon: Icons.trending_up,
     ),
     SportProfileMetric(
       label: 'Reliability',
       value: profile.reliabilityScore.toStringAsFixed(0),
-      icon: Icons.verified_outlined,
     ),
   ];
 }
@@ -287,22 +280,18 @@ List<SportProfileMetric> _buildOrganiserMetricsFrom({
     SportProfileMetric(
       label: 'Hosted',
       value: totalHosted.toString(),
-      icon: Icons.event_available_outlined,
     ),
     SportProfileMetric(
       label: 'Upcoming',
       value: upcomingHosted.toString(),
-      icon: Icons.schedule_outlined,
     ),
     SportProfileMetric(
       label: 'Level',
       value: (organiserProfile?.organiserLevel ?? 0).toString(),
-      icon: Icons.leaderboard_outlined,
     ),
     SportProfileMetric(
       label: 'Active',
       value: activeHosted.toString(),
-      icon: Icons.check_circle_outline,
     ),
   ];
 }

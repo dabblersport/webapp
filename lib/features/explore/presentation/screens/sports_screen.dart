@@ -1,87 +1,55 @@
-import 'package:flutter/material.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+// Material is imported for one non-visual symbol only: the
+// `MaterialPageRoute` route type the existing pushes use (no behaviour change).
+import 'package:flutter/material.dart' show MaterialPageRoute;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
-import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/core/design_system/ds.dart';
-import 'package:dabbler/themes/app_theme.dart';
-import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
-import 'package:dabbler/features/games/providers/games_providers.dart';
-import 'package:dabbler/features/games/presentation/controllers/venues_controller.dart'
-    as vc;
-import 'package:dabbler/features/explore/presentation/widgets/sport_specific_filters.dart';
-import 'package:dabbler/core/config/sport_filters_config.dart';
-import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
-import 'package:dabbler/utils/helpers/date_formatter.dart';
-import 'package:dabbler/core/services/location_service.dart';
-import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:geolocator/geolocator.dart';
+
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/config/sport_filters_config.dart';
+import 'package:dabbler/core/services/location_service.dart';
+import 'package:dabbler/core/utils/sport_id_mapping.dart';
+import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/explore/presentation/widgets/location_permission_drawer.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
-import 'package:dabbler/core/utils/sport_id_mapping.dart';
+import 'package:dabbler/features/explore/presentation/widgets/sport_specific_filters.dart';
+import 'package:dabbler/features/games/presentation/controllers/venues_controller.dart'
+    as vc;
+import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart'
     show sportsSubTabProvider;
-import 'package:dabbler/widgets/dynamic_background.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler/features/location/providers/location_providers.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
+import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/utils/helpers/date_formatter.dart';
 
-IconData _sportIconFor(String sport) {
-  switch (sport.toLowerCase()) {
-    case 'football':
-    case 'soccer':
-      return Iconsax.medal_star_copy;
-    case 'cricket':
-      return Iconsax.game_copy;
-    case 'padel':
-    case 'tennis':
-      return Iconsax.game_copy;
-    case 'basketball':
-      return Iconsax.game_copy;
-    case 'volleyball':
-      return Iconsax.game_copy;
-    default:
-      return Iconsax.game_copy;
-  }
-}
+/// No design frame exists for this screen (route `/sports-explore`): it is
+/// rebuilt with design-system defaults in the same structure.
 
-String _sportEmojiFor(String sport) {
-  switch (sport.toLowerCase()) {
-    case 'football':
-    case 'soccer':
-      return '⚽';
-    case 'cricket':
-      return '🏏';
-    case 'padel':
-      return '🎾';
-    case 'tennis':
-      return '🎾';
-    case 'basketball':
-      return '🏀';
-    case 'badminton':
-      return '🏸';
-    case 'futsal':
-      return '⚽';
-    case 'running':
-      return '🏃';
-    case 'swimming':
-      return '🏊';
-    case 'equestrian':
-      return '🐎';
-    case 'shooting':
-      return '🎯';
-    case 'volleyball':
-      return '🏐';
-    default:
-      return '🏃';
-  }
-}
+TextStyle _type(
+  BuildContext context,
+  DabblerTypeStyle style,
+  Color color, {
+  FontWeight? weight,
+}) => style
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(color: color, fontWeight: weight);
 
+const EdgeInsetsDirectional _gutter = EdgeInsetsDirectional.symmetric(
+  horizontal: DabblerSpacing.space6,
+);
+
+/// A sport's DS icon from its display name ('Football' -> `football`).
+Widget _sportIcon(String sport, {double size = 16, Color? color}) =>
+    DabblerSportIcon.fromKey(sport.toLowerCase(), size: size, color: color);
+
+/// A venue card. Public API (map + onTap + isLoading) is unchanged; it renders
+/// the canonical DS event card row ([DabblerCardEventMedium]).
 class VenueCard extends StatelessWidget {
   final Map<String, dynamic> venue;
   final VoidCallback? onTap;
@@ -97,7 +65,7 @@ class VenueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return _buildSkeletonCard(context);
+      return const DabblerSkeleton.card();
     }
 
     final name = venue['name'] as String? ?? 'Unknown Venue';
@@ -115,257 +83,23 @@ class VenueCard extends StatelessWidget {
         [];
     final showRating = reviews.length >= 3 && rating >= 3.0;
 
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('main');
+    // The card's meta line carries what the old card drew as separate atoms:
+    // closed state, distance, sports (+overflow) and rating.
+    final meta = <String>[
+      if (isClosed) 'Closed',
+      if (distance.isNotEmpty) distance,
+      if (visibleSports.isNotEmpty)
+        visibleSports.join(' • ') +
+            (overflowCount > 0 ? ' +$overflowCount' : ''),
+      if (showRating) rating.toStringAsFixed(1),
+    ].join(' • ');
 
-    return Card.filled(
-      color: sportsScheme.primary.withValues(alpha: 0.08),
-      margin: const EdgeInsets.only(bottom: 0),
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title row with status badge
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        if (isClosed)
-                          Badge.count(
-                            count: 0,
-                            backgroundColor: colorScheme.errorContainer,
-                            textColor: colorScheme.onErrorContainer,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              child: Text(
-                                'Closed',
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onErrorContainer,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Location
-                    Row(
-                      children: [
-                        Icon(
-                          Iconsax.location_copy,
-                          size: 16,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            area,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Distance, Sports and rating
-                    Row(
-                      children: [
-                        // Distance
-                        if (distance.isNotEmpty) ...[
-                          Icon(
-                            Iconsax.routing_copy,
-                            size: 14,
-                            color: colorScheme.categoryMain,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            distance,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: colorScheme.categoryMain,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '•',
-                              style: textTheme.labelSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-
-                        // Sports
-                        Expanded(
-                          child: Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: [
-                              ...visibleSports.map(
-                                (sport) => Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _sportEmojiFor(sport),
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      sport,
-                                      style: textTheme.labelSmall?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    if (sport != visibleSports.last)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 4,
-                                        ),
-                                        child: Text(
-                                          '•',
-                                          style: textTheme.labelSmall?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              if (overflowCount > 0)
-                                Text(
-                                  '+$overflowCount',
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-
-                        // Rating
-                        if (showRating) ...[
-                          const SizedBox(width: 12),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Iconsax.star_copy,
-                                size: 14,
-                                color: colorScheme.categoryMain,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                rating.toStringAsFixed(1),
-                                style: textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.categoryMain,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Iconsax.arrow_right_3_copy,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkeletonCard(BuildContext context) {
-    final sportsScheme = context.getCategoryTheme('main');
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Card(
-        color: sportsScheme.primary.withValues(alpha: 0.08),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Skeleton icon
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: sportsScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Skeleton content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Skeleton title
-                    DS.skeleton(height: 18, width: 150),
-                    const SizedBox(height: 8),
-
-                    // Skeleton location
-                    DS.skeleton(height: 14, width: 120),
-                    const SizedBox(height: 10),
-
-                    // Skeleton chips
-                    Row(
-                      children: [
-                        DS.skeleton(height: 24, width: 60),
-                        const SizedBox(width: 6),
-                        DS.skeleton(height: 24, width: 50),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Skeleton arrow
-              const SizedBox(width: 8),
-              Container(
-                width: 20,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: sportsScheme.surfaceContainerHighest,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return DabblerCardEventMedium(
+      title: name,
+      sport: sports.isEmpty ? null : DabblerSport.fromKey(sports.first.toLowerCase()),
+      dateTime: meta.isEmpty ? null : meta,
+      location: area,
+      onTap: onTap,
     );
   }
 }
@@ -380,9 +114,10 @@ class ExploreScreen extends ConsumerStatefulWidget {
   ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends ConsumerState<ExploreScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _mainTabController;
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
+  // Tab index kept in a plain int (was a Material TabController with no
+  // TabBar attached: it only stored the index and synced the provider).
+  int _mainTabIndex = 0;
   late LocationService _locationService;
   final ScrollController _mainScrollController = ScrollController();
   int _selectedSportIndex = 0;
@@ -392,7 +127,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   // Filter state
   String? _selectedArea;
-  RangeValues _selectedPriceRange = const RangeValues(0, 500);
+  DabblerSliderRange _selectedPriceRange = const DabblerSliderRange(0, 500);
   double _selectedRating = 0;
   final Set<String> _selectedAmenities = {};
 
@@ -401,56 +136,19 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   // Primary sports shown in chips
   final List<Map<String, dynamic>> _sports = [
-    {
-      'name': 'Football',
-      'icon': Iconsax.medal_star_copy,
-      'description': 'Find football games near you',
-    },
-    {
-      'name': 'Cricket',
-      'icon': Iconsax.game_copy,
-      'description': 'Join cricket games and tournaments',
-    },
-    {
-      'name': 'Padel',
-      'icon': Iconsax.game_copy,
-      'description': 'Discover padel courts and players',
-    },
-    {
-      'name': 'Basketball',
-      'icon': _sportIconFor('basketball'),
-      'description': 'Find basketball courts and games',
-    },
-    {
-      'name': 'Tennis',
-      'icon': _sportIconFor('tennis'),
-      'description': 'Discover tennis courts and games',
-    },
-    {
-      'name': 'Badminton',
-      'icon': _sportIconFor('badminton'),
-      'description': 'Find badminton venues and matches',
-    },
-    {
-      'name': 'Running',
-      'icon': _sportIconFor('running'),
-      'description': 'Explore running routes and events',
-    },
-    {
-      'name': 'Swimming',
-      'icon': _sportIconFor('swimming'),
-      'description': 'Find swimming pools and sessions',
-    },
+    {'name': 'Football', 'description': 'Find football games near you'},
+    {'name': 'Cricket', 'description': 'Join cricket games and tournaments'},
+    {'name': 'Padel', 'description': 'Discover padel courts and players'},
+    {'name': 'Basketball', 'description': 'Find basketball courts and games'},
+    {'name': 'Tennis', 'description': 'Discover tennis courts and games'},
+    {'name': 'Badminton', 'description': 'Find badminton venues and matches'},
+    {'name': 'Running', 'description': 'Explore running routes and events'},
+    {'name': 'Swimming', 'description': 'Find swimming pools and sessions'},
     {
       'name': 'Equestrian',
-      'icon': _sportIconFor('equestrian'),
       'description': 'Discover equestrian venues and activities',
     },
-    {
-      'name': 'Shooting',
-      'icon': _sportIconFor('shooting'),
-      'description': 'Find shooting ranges and sessions',
-    },
+    {'name': 'Shooting', 'description': 'Find shooting ranges and sessions'},
   ];
 
   List<Map<String, dynamic>> _sportsForChips() {
@@ -471,19 +169,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     super.initState();
     _locationService = LocationService();
     _locationService.addListener(_onLocationChanged);
-    _mainTabController = TabController(length: 2, vsync: this);
     // If games are hidden, default to venues tab
     if (!FeatureFlags.enableGameBrowsing) {
-      _mainTabController.index = 1;
+      _mainTabIndex = 1;
     }
-    _mainTabController.addListener(() {
-      if (_mainTabController.indexIsChanging) {
-        setState(() {});
-        // Sync tab controller changes back to the shared provider
-        ref.read(sportsSubTabProvider.notifier).state =
-            _mainTabController.index;
-      }
-    });
     _initLocation();
   }
 
@@ -520,13 +209,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   void _showLocationDrawer() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('main');
-
-    showAdaptiveSheet<void>(
+    showDabblerSheet<void>(
       context: context,
-      colorSchemeOverride: sportsScheme,
-      backgroundColor: colorScheme.surface,
+      detent: DabblerSheetDetent.content,
       builder: (context) {
         return LocationPermissionDrawer(
           onAllowLocation: () async {
@@ -550,7 +235,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   @override
   void dispose() {
     _locationService.removeListener(_onLocationChanged);
-    _mainTabController.dispose();
     _mainScrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -563,7 +247,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   void _handleSortTap() {
-    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
+    if (_mainTabIndex == 0 && FeatureFlags.enableGameBrowsing) {
       setState(() {
         _isSortAscending = !_isSortAscending;
       });
@@ -590,7 +274,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   String _sortTooltip(WidgetRef ref) {
-    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
+    if (_mainTabIndex == 0 && FeatureFlags.enableGameBrowsing) {
       return _isSortAscending ? 'Sort: Soonest first' : 'Sort: Latest first';
     }
 
@@ -602,308 +286,202 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   void _showFilterModal() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('main');
-
-    showAdaptiveSheet<void>(
+    showDabblerSheet<void>(
       context: context,
-      colorSchemeOverride: sportsScheme,
-      backgroundColor: colorScheme.surface,
+      title: 'Filter Results',
+      detent: DabblerSheetDetent.content,
       builder: (context) => _buildFiltersBottomSheetContent(),
     );
   }
 
+  List<DabblerSelectOption<String>> _areaOptions() {
+    final allAreas = ref.watch(activeAreasProvider).valueOrNull ?? [];
+
+    // Determine the user's country from the nearest area.
+    final position = _locationService.currentPosition;
+    String? userCountry;
+    if (position != null) {
+      userCountry = ref
+          .watch(
+            nearestAreaProvider((
+              lat: position.latitude,
+              lng: position.longitude,
+            )),
+          )
+          .valueOrNull
+          ?.country;
+    }
+
+    // Filter by country when known; otherwise show all.
+    final filtered = userCountry != null
+        ? allAreas.where((a) => a.country == userCountry).toList()
+        : allAreas;
+
+    return [
+      for (final area in filtered)
+        DabblerSelectOption<String>(value: area.name, label: area.name),
+    ];
+  }
+
   Widget _buildFiltersBottomSheetContent() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('main');
     final sports = _sportsForChips();
     final selectedIndex = _safeSelectedSportIndex(sports.length);
 
     return StatefulBuilder(
       builder: (context, setModalState) {
+        final colors = DabblerColors.of(context);
+        Widget label(String text) => Text(
+          text,
+          style: _type(
+            context,
+            DabblerType.subheadline,
+            colors.textPrimary,
+            weight: FontWeight.w600,
+          ),
+        );
+        Widget caption(String text) => Text(
+          text,
+          style: _type(context, DabblerType.footnote, colors.textSecondary),
+        );
+
+        void onSportFilter(String key, dynamic value) {
+          setModalState(() {
+            if (value == null || value == 'All') {
+              _sportSpecificFilters.remove(key);
+            } else {
+              _sportSpecificFilters[key] = value;
+            }
+          });
+        }
+
+        final sportFilters = SportFiltersConfig.hasSportSpecificFilters(
+              sports[selectedIndex]['name'],
+            )
+            ? SportSpecificFiltersFactory.create(
+                sport: sports[selectedIndex]['name'],
+                selectedFilters: _sportSpecificFilters,
+                onFilterChanged: onSportFilter,
+              )
+            : null;
+
         return SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 8,
-            bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
+          padding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space5,
+            end: DabblerSpacing.space5,
+            top: DabblerSpacing.space2,
+            bottom:
+                DabblerSpacing.space4 + MediaQuery.of(context).viewInsets.bottom,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Filter Results',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
               // Sport-Specific Filters
-              if (SportFiltersConfig.hasSportSpecificFilters(
-                sports[selectedIndex]['name'],
-              ))
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (SportSpecificFiltersFactory.create(
-                          sport: sports[selectedIndex]['name'],
-                          selectedFilters: _sportSpecificFilters,
-                          onFilterChanged: (key, value) {
-                            setModalState(() {
-                              if (value == null || value == 'All') {
-                                _sportSpecificFilters.remove(key);
-                              } else {
-                                _sportSpecificFilters[key] = value;
-                              }
-                            });
-                          },
-                        ) !=
-                        null)
-                      SportSpecificFiltersFactory.create(
-                        sport: sports[selectedIndex]['name'],
-                        selectedFilters: _sportSpecificFilters,
-                        onFilterChanged: (key, value) {
-                          setModalState(() {
-                            if (value == null || value == 'All') {
-                              _sportSpecificFilters.remove(key);
-                            } else {
-                              _sportSpecificFilters[key] = value;
-                            }
-                          });
-                        },
-                      )!,
-                    const SizedBox(height: 20),
-                  ],
-                ),
+              if (sportFilters != null) ...[
+                sportFilters,
+                const SizedBox(height: DabblerSpacing.space5),
+              ],
               // Area
-              Text(
-                'Area',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedArea,
-                hint: const Text('Select Area'),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: sportsScheme.primary.withValues(
-                    alpha: Theme.of(context).brightness == Brightness.dark
-                        ? 0.14
-                        : 0.12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: sportsScheme.primary.withValues(alpha: 0.18),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: sportsScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                ),
-                items: () {
-                      final allAreas =
-                          ref.watch(activeAreasProvider).valueOrNull ?? [];
-
-                      // Determine the user's country from the nearest area.
-                      final position = _locationService.currentPosition;
-                      String? userCountry;
-                      if (position != null) {
-                        userCountry = ref
-                            .watch(
-                              nearestAreaProvider((
-                                lat: position.latitude,
-                                lng: position.longitude,
-                              )),
-                            )
-                            .valueOrNull
-                            ?.country;
-                      }
-
-                      // Filter by country when known; otherwise show all.
-                      final filtered = userCountry != null
-                          ? allAreas
-                              .where((a) => a.country == userCountry)
-                              .toList()
-                          : allAreas;
-
-                      return filtered.map((area) {
-                        return DropdownMenuItem(
-                          value: area.name,
-                          child: Text(area.name),
-                        );
-                      }).toList();
-                    }(),
+              DabblerSelect<String>(
+                label: 'Area',
+                placeholder: 'Select Area',
+                value: _selectedArea,
+                options: _areaOptions(),
                 onChanged: (value) =>
                     setModalState(() => _selectedArea = value),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: DabblerSpacing.space5),
               // Price Range
-              Text(
-                'Price Range (AED)',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              RangeSlider(
+              label('Price Range (AED)'),
+              DabblerSlider.range(
                 values: _selectedPriceRange,
                 min: 0,
                 max: 500,
-                divisions: 10,
-                activeColor: sportsScheme.primary,
-                inactiveColor: sportsScheme.primary.withValues(alpha: 0.18),
-                labels: RangeLabels(
-                  _selectedPriceRange.start.round().toString(),
-                  _selectedPriceRange.end.round().toString(),
-                ),
+                step: 50,
                 onChanged: (values) =>
                     setModalState(() => _selectedPriceRange = values),
               ),
-              Text(
-                'AED ${_selectedPriceRange.start.round()} - AED ${_selectedPriceRange.end.round()}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+              caption(
+                'AED ${_selectedPriceRange.low.round()} - AED ${_selectedPriceRange.high.round()}',
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: DabblerSpacing.space5),
               // Rating
-              Text(
-                'Minimum Rating',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              Slider(
+              label('Minimum Rating'),
+              DabblerSlider(
                 value: _selectedRating,
                 min: 0,
                 max: 5,
-                divisions: 5,
-                activeColor: sportsScheme.primary,
-                inactiveColor: sportsScheme.primary.withValues(alpha: 0.18),
-                label: _selectedRating == 0
-                    ? 'Any'
-                    : _selectedRating.toStringAsFixed(1),
+                step: 1,
                 onChanged: (value) =>
                     setModalState(() => _selectedRating = value),
               ),
-              Text(
+              caption(
                 _selectedRating == 0
                     ? 'Any rating'
                     : '${_selectedRating.toStringAsFixed(1)}+ stars',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: DabblerSpacing.space5),
               // Amenities
-              Text(
-                'Amenities',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 8),
+              label('Amenities'),
+              const SizedBox(height: DabblerSpacing.space2),
               Wrap(
-                spacing: 8,
-                children:
-                    const [
-                      'Parking',
-                      'Showers',
-                      'Indoor',
-                      'Outdoor',
-                      'Cafeteria',
-                    ].map((amenity) {
-                      final selected = _selectedAmenities.contains(amenity);
-                      return FilterChip(
-                        label: Text(amenity),
-                        selected: selected,
-                        backgroundColor: sportsScheme.surfaceContainerHighest,
-                        selectedColor: sportsScheme.primaryContainer,
-                        checkmarkColor: sportsScheme.onPrimaryContainer,
-                        labelStyle: TextStyle(
-                          color: selected
-                              ? sportsScheme.onPrimaryContainer
-                              : sportsScheme.onSurface,
-                          fontWeight: selected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(
-                            color: selected
-                                ? Colors.transparent
-                                : sportsScheme.outlineVariant.withValues(
-                                    alpha: 0.55,
-                                  ),
-                          ),
-                        ),
-                        onSelected: (selectedNow) {
-                          setModalState(() {
-                            if (selectedNow) {
-                              _selectedAmenities.add(amenity);
-                            } else {
-                              _selectedAmenities.remove(amenity);
-                            }
-                          });
-                        },
-                      );
-                    }).toList(),
+                spacing: DabblerSpacing.space2,
+                runSpacing: DabblerSpacing.space2,
+                children: [
+                  for (final amenity in const [
+                    'Parking',
+                    'Showers',
+                    'Indoor',
+                    'Outdoor',
+                    'Cafeteria',
+                  ])
+                    DabblerChip(
+                      label: amenity,
+                      selected: _selectedAmenities.contains(amenity),
+                      onTap: () {
+                        setModalState(() {
+                          if (!_selectedAmenities.remove(amenity)) {
+                            _selectedAmenities.add(amenity);
+                          }
+                        });
+                      },
+                    ),
+                ],
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: DabblerSpacing.space8),
               Row(
                 children: [
                   Expanded(
-                    child: TextButton(
+                    child: DabblerButton(
+                      label: 'Clear All',
+                      tone: DabblerButtonTone.text,
+                      fullWidth: true,
                       onPressed: () {
                         setModalState(() {
                           _selectedArea = null;
-                          _selectedPriceRange = const RangeValues(0, 500);
+                          _selectedPriceRange = const DabblerSliderRange(0, 500);
                           _selectedRating = 0;
                           _selectedAmenities.clear();
                           _sportSpecificFilters.clear();
                         });
                       },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        foregroundColor: sportsScheme.primary,
-                      ),
-                      child: const Text('Clear All'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: DabblerSpacing.space3),
                   Expanded(
-                    child: FilledButton(
+                    child: DabblerButton(
+                      label: 'Apply Filters',
+                      fullWidth: true,
                       onPressed: () {
                         setState(() {
                           // Apply filters
                         });
                         Navigator.of(context).pop();
                       },
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: sportsScheme.primary,
-                        foregroundColor: sportsScheme.onPrimary,
-                      ),
-                      child: const Text('Apply Filters'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: DabblerSpacing.space4),
             ],
           ),
         );
@@ -912,7 +490,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Future<void> _handleRefresh() async {
-    if (_mainTabController.index == 0 && FeatureFlags.enableGameBrowsing) {
+    if (_mainTabIndex == 0 && FeatureFlags.enableGameBrowsing) {
       final _ = await ref.refresh(publicGamesProvider.future);
     } else {
       await ref.read(venuesControllerProvider.notifier).refresh();
@@ -921,94 +499,63 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-
-    // Sync shared sub-tab provider → local tab controller (driven by nav bar)
+    // Sync shared sub-tab provider → local tab index (driven by nav bar)
     final externalSubTab = ref.watch(sportsSubTabProvider);
-    if (_mainTabController.index != externalSubTab) {
+    if (_mainTabIndex != externalSubTab) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _mainTabController.index != externalSubTab) {
+        if (mounted && _mainTabIndex != externalSubTab) {
           setState(() {
-            _mainTabController.index = externalSubTab;
+            _mainTabIndex = externalSubTab;
           });
         }
       });
     }
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(
-            scrollController: _mainScrollController,
-            startColor: context.getCategoryTheme('main').primary,
+    // One layout at every width (the Material AdaptiveScaffold rail wrapper
+    // is not a DS component; the app shell owns wide navigation).
+    return DabblerPage(
+      body: DabblerRefresh(
+        onRefresh: _handleRefresh,
+        child: CustomScrollView(
+          controller: _mainScrollController,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
           ),
-          RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: CustomScrollView(
-              controller: _mainScrollController,
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
           slivers: [
-            // Safe-area top spacing
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-              ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: DabblerSpacing.space2),
             ),
-
             // ── Header ──
             SliverToBoxAdapter(child: _buildHeader()),
-
             // ── Search row ──
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(top: 9),
+                padding: const EdgeInsetsDirectional.only(
+                  top: DabblerSpacing.space3,
+                ),
                 child: _buildSearchRow(),
               ),
             ),
-
             // ── Sports chips ──
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.only(top: 9, bottom: 12),
+                padding: const EdgeInsetsDirectional.only(
+                  top: DabblerSpacing.space3,
+                  bottom: DabblerSpacing.space3,
+                ),
                 child: _buildSportsChips(),
               ),
             ),
-
             SliverToBoxAdapter(
-              child: (_mainTabController.index == 0 &&
-                      FeatureFlags.enableGameBrowsing)
+              child: (_mainTabIndex == 0 && FeatureFlags.enableGameBrowsing)
                   ? _buildGamesTabContent()
                   : _buildVenuesTabContent(),
             ),
           ],
         ),
       ),
-    ],
-  ),
-);
-
-    if (isWide) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 2,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-}
+    );
+  }
 
   Widget _buildGamesTabContent() {
     final publicGamesAsync = publicGamesProvider;
@@ -1016,7 +563,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     final selectedIndex = _safeSelectedSportIndex(sports.length);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: _gutter,
       child: Consumer(
         builder: (context, ref, child) {
           final gamesAsync = ref.watch(publicGamesAsync);
@@ -1062,76 +609,30 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               );
 
               if (searchFilteredGames.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Iconsax.game_copy,
-                        size: 64,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No ${sports[selectedIndex]['name']} games found',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Be the first to create one!',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
+                return DabblerEmptyState(
+                  icon: 'game',
+                  title: 'No ${sports[selectedIndex]['name']} games found',
+                  text: 'Be the first to create one!',
                 );
               }
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: searchFilteredGames.length,
-                itemBuilder: (context, index) {
-                  final game = searchFilteredGames[index];
-                  return _buildGameCard(game);
-                },
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final game in searchFilteredGames) _buildGameCard(game),
+                ],
               );
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Iconsax.danger_copy,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Failed to load games',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    error.toString(),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () => ref.refresh(publicGamesAsync),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
+            loading: () => const Padding(
+              padding: EdgeInsetsDirectional.all(DabblerSpacing.space6),
+              child: Center(child: DabblerSpinner()),
+            ),
+            error: (error, stack) => DabblerEmptyState.error(
+              title: 'Failed to load games',
+              text: error.toString(),
+              size: DabblerEmptyStateSize.inline,
+              retryLabel: 'Retry',
+              onRetry: () => ref.refresh(publicGamesAsync),
             ),
           );
         },
@@ -1139,248 +640,69 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     );
   }
 
-  Widget _buildGameCard(game) {
-    final sportsScheme = context.getCategoryTheme('main');
+  void _openGame(String gameId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => GameDetailScreen(gameId: gameId)),
+    );
+  }
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => GameDetailScreen(gameId: game.id),
+  Widget _buildGameCard(game) {
+    final colors = DabblerColors.of(context);
+    final meta = _type(context, DabblerType.caption1, colors.textSecondary);
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DabblerCardEventMedium(
+            title: game.title as String,
+            sport: DabblerSport.fromKey((game.sport as String).toLowerCase()),
+            dateTime:
+                '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime} - ${game.endTime}',
+            location: game.venueName ?? 'Venue TBD',
+            onTap: () => _openGame(game.id as String),
           ),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.only(
-          top: 18,
-          left: 12,
-          right: 18,
-          bottom: 18,
-        ),
-        decoration: ShapeDecoration(
-          color: sportsScheme.surfaceContainerHigh,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              width: 0.50,
-              strokeAlign: BorderSide.strokeAlignCenter,
-              color: sportsScheme.outline.withValues(alpha: 0.1),
+          // Footer: sport + skill + time-from-now, players, and Join.
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space2,
+              top: DabblerSpacing.space1,
             ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header: Sport, Game Type, Time
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Row(
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _sportIconFor(game.sport),
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      game.sport,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      game.skillLevel,
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 12,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  _getTimeFromNow(game.scheduledDate),
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
+                _sportIcon(game.sport as String, color: colors.brandPrimary),
+                const SizedBox(width: DabblerSpacing.space1),
+                Flexible(
+                  child: Text(
+                    '${game.sport} · ${game.skillLevel} · ${_getTimeFromNow(game.scheduledDate)}',
+                    style: meta,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Title
-            Text(
-              game.title,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 18,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Time and Location
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Iconsax.clock_copy,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime} - ${game.endTime}',
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.9),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                        height: 1.36,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: DabblerSpacing.space3),
+                DabblerIcon(
+                  'profile-2user',
+                  size: 16,
+                  color: colors.textSecondary,
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(
-                      Iconsax.location_copy,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        game.venueName ?? 'Venue TBD',
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.9),
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                          height: 1.36,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Players and Join Button
-            Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Iconsax.profile_2user_copy,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${game.currentPlayers}/${game.maxPlayers}',
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
+                const SizedBox(width: DabblerSpacing.space1),
+                Text('${game.currentPlayers}/${game.maxPlayers}', style: meta),
+                const Spacer(),
+                // Only show Join button for players with permission
+                if (_shouldShowJoinButton())
+                  DabblerButton(
+                    label: 'Join',
+                    icon: 'add',
+                    size: DabblerButtonSize.small,
+                    // Navigate to game detail to join
+                    onPressed: () => _openGame(game.id as String),
                   ),
-                  // Only show Join button for players with permission
-                  if (_shouldShowJoinButton())
-                    GestureDetector(
-                      onTap: () {
-                        // Navigate to game detail to join
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                GameDetailScreen(gameId: game.id),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 2,
-                        ),
-                        decoration: ShapeDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.categoryMain.withValues(alpha: 0.9),
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              width: 1,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimary.withValues(alpha: 0.12),
-                            ),
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Iconsax.add_copy,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Join',
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onPrimary,
-                                fontSize: 14,
-                                fontFamily: 'Inter',
-                                fontWeight: FontWeight.w500,
-                                height: 1.43,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1404,10 +726,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
     final sports = _sportsForChips();
     final selectedIndex = _safeSelectedSportIndex(sports.length);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 0, 32),
-      child: _buildVenuesTab(
-        sports[selectedIndex]['name'],
-        _searchQuery,
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space8),
+      child: _VenuesTabContent(
+        key: ValueKey('venues_${sports[selectedIndex]['name']}'),
+        selectedSport: sports[selectedIndex]['name'],
+        searchQuery: _searchQuery,
         sportSpecificFilters: _sportSpecificFilters,
         filterArea: _selectedArea,
         priceRange: _selectedPriceRange,
@@ -1418,17 +741,26 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Widget _buildHeader() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('main');
+    final colors = DabblerColors.of(context);
 
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
     final isOrganiser = profileType == 'organiser';
-    final isVenuesTab = _mainTabController.index == 1;
+    final isVenuesTab = _mainTabIndex == 1;
+
+    // Prefer GPS-reverse-geocoded area; fall back to the nearest area from the
+    // DB when that is unavailable (e.g. web where geocoding is unsupported).
+    final position = _locationService.currentPosition;
+    String? areaLabel = _locationService.currentArea;
+    if (areaLabel == null && position != null) {
+      final nearest = ref.watch(
+        nearestAreaProvider((lat: position.latitude, lng: position.longitude)),
+      );
+      areaLabel = nearest.valueOrNull?.name;
+    }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: _gutter,
       child: Row(
         children: [
           Expanded(
@@ -1437,64 +769,48 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               children: [
                 Text(
                   'Sports',
-                  style: textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: sportsScheme.primary,
+                  style: _type(
+                    context,
+                    DabblerType.title1,
+                    colors.textPrimary,
+                    weight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: DabblerSpacing.space1),
                 Row(
                   children: [
-                    Icon(
-                      Iconsax.location_copy,
+                    DabblerIcon(
+                      'location',
                       size: 14,
-                      color: sportsScheme.primary,
+                      color: colors.brandPrimary,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: DabblerSpacing.space1),
                     Flexible(
-                      child: Builder(
-                        builder: (context) {
-                          // Prefer GPS-reverse-geocoded area; fall back to the
-                          // nearest area from the DB when that is unavailable
-                          // (e.g. web where geocoding is unsupported).
-                          final position = _locationService.currentPosition;
-                          String? areaLabel = _locationService.currentArea;
-                          if (areaLabel == null && position != null) {
-                            final nearest = ref.watch(
-                              nearestAreaProvider((
-                                lat: position.latitude,
-                                lng: position.longitude,
-                              )),
-                            );
-                            areaLabel = nearest.valueOrNull?.name;
-                          }
-                          return Text(
-                            areaLabel ?? 'Location not available',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: sportsScheme.primary,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          );
-                        },
+                      child: Text(
+                        areaLabel ?? 'Location not available',
+                        style: _type(
+                          context,
+                          DabblerType.footnote,
+                          colors.brandPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: DabblerSpacing.space1),
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: () {
-                        final colorScheme = Theme.of(context).colorScheme;
-                        final sportsScheme = context.getCategoryTheme('main');
-
-                        showAdaptiveSheet<void>(
+                        showDabblerSheet<void>(
                           context: context,
-                          colorSchemeOverride: sportsScheme,
-                          backgroundColor: colorScheme.surface,
+                          detent: DabblerSheetDetent.content,
                           builder: (context) => const ManualLocationDrawer(),
                         );
                       },
-                      child: Icon(
-                        Iconsax.refresh_copy,
+                      child: DabblerIcon(
+                        'refresh',
                         size: 14,
-                        color: sportsScheme.primary,
+                        color: colors.brandPrimary,
+                        semanticLabel: 'Change location',
                       ),
                     ),
                   ],
@@ -1502,23 +818,18 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: DabblerSpacing.space3),
           if (isOrganiser && isVenuesTab) ...[
-            IconButton.filledTonal(
+            DabblerButton.icon(
+              icon: 'add',
+              semanticLabel: 'Add venue',
               onPressed: () => context.push(RoutePaths.createVenueSubmission),
-              icon: const Icon(Iconsax.add_copy),
-              tooltip: 'Add venue',
-              style: IconButton.styleFrom(
-                backgroundColor: colorScheme.categoryMain.withValues(
-                  alpha: 0.0,
-                ),
-                foregroundColor: colorScheme.onSurface,
-                minimumSize: const Size(48, 48),
-              ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: DabblerSpacing.space2),
           ],
-          IconButton.filledTonal(
+          DabblerButton.icon(
+            icon: 'archive',
+            semanticLabel: 'Library',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -1527,13 +838,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
                 ),
               );
             },
-            icon: const Icon(Iconsax.archive_copy),
-            tooltip: 'Library',
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.categoryMain,
-              minimumSize: const Size(48, 48),
-            ),
           ),
         ],
       ),
@@ -1541,92 +845,30 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Widget _buildSearchRow() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final sportsScheme = context.getCategoryTheme('main');
-
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: _gutter,
       child: Row(
         children: [
           Expanded(
-            child: SizedBox(
-              height: 48,
-              child: TextField(
-                controller: _searchController,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 15,
-                  color: sportsScheme.primary,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: sportsScheme.primary.withValues(alpha: 0.12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: sportsScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  hintText: FeatureFlags.enableGameBrowsing
-                      ? 'Search games and venues'
-                      : 'Search venues',
-                  hintStyle: TextStyle(
-                    fontSize: 15,
-                    color: colorScheme.onSurface,
-                  ),
-                  suffixIcon: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: Icon(
-                      Iconsax.search_normal_copy,
-                      color: sportsScheme.primary,
-                      size: 24,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                onChanged: _onSearchChanged,
-              ),
+            child: DabblerSearchField(
+              controller: _searchController,
+              placeholder: FeatureFlags.enableGameBrowsing
+                  ? 'Search games and venues'
+                  : 'Search venues',
+              onChanged: _onSearchChanged,
+              onCleared: () => _onSearchChanged(''),
             ),
           ),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: IconButton.filledTonal(
-              onPressed: _showFilterModal,
-              icon: const Icon(Iconsax.setting_4_copy),
-              style: IconButton.styleFrom(
-                backgroundColor: sportsScheme.primary.withValues(alpha: 0.0),
-                foregroundColor: sportsScheme.primary,
-                minimumSize: const Size(48, 48),
-              ),
-            ),
+          const SizedBox(width: DabblerSpacing.space2),
+          DabblerButton.icon(
+            icon: 'setting-4',
+            semanticLabel: 'Filters',
+            onPressed: _showFilterModal,
           ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: IconButton.filledTonal(
-              onPressed: _handleSortTap,
-              tooltip: _sortTooltip(ref),
-              icon: const Icon(Iconsax.sort_copy),
-              style: IconButton.styleFrom(
-                backgroundColor: sportsScheme.primary.withValues(alpha: 0.0),
-                foregroundColor: sportsScheme.primary,
-                minimumSize: const Size(48, 48),
-              ),
-            ),
+          DabblerButton.icon(
+            icon: 'sort',
+            semanticLabel: _sortTooltip(ref),
+            onPressed: _handleSortTap,
           ),
         ],
       ),
@@ -1634,9 +876,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
   }
 
   Widget _buildSportsChips() {
-    final textTheme = Theme.of(context).textTheme;
-    final sportsScheme = context.getCategoryTheme('main');
-    final isVenuesTab = _mainTabController.index == 1;
+    final isVenuesTab = _mainTabIndex == 1;
     final sports = _sportsForChips();
     final selectedIndex = _safeSelectedSportIndex(sports.length);
 
@@ -1649,131 +889,68 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen>
       });
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            const SizedBox(width: 24),
-            ...List.generate(sports.length, (index) {
-              final sport = sports[index];
-              final isSelected = selectedIndex == index;
-              final chipBackground = isSelected
-                  ? sportsScheme.primary
-                  : sportsScheme.primary.withValues(alpha: 0.12);
-              final chipForeground = isSelected
-                  ? sportsScheme.onPrimary
-                  : sportsScheme.primary;
-
-              // Get the actual venue count from the new provider when selected
-              int venueCount = 0;
-              if (isSelected && isVenuesTab) {
-                final sportName = (sport['name'] as String).trim();
-                final sportId = SportIdMapping.getSportId(
-                  sportName.toLowerCase(),
-                );
-
-                if (sportId != null) {
-                  final filters = VenuesBySportFilters(
-                    sportId: sportId,
-                    city: _selectedArea,
-                    isActive: true,
-                  );
-                  final venuesAsync = ref.watch(
-                    venuesBySportWithFiltersProvider(filters),
-                  );
-                  venueCount = venuesAsync.maybeWhen(
-                    data: (venues) => venues.length,
-                    orElse: () => 0,
-                  );
-                }
-              }
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedSportIndex = index;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: chipBackground,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _sportEmojiFor((sport['name'] as String?) ?? ''),
-                        style: const TextStyle(fontSize: 18),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        sport['name'] as String,
-                        style: textTheme.labelMedium?.copyWith(
-                          color: chipForeground,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (isSelected && isVenuesTab) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: sportsScheme.onPrimary.withValues(
-                              alpha: 0.2,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$venueCount',
-                            style: textTheme.labelSmall?.copyWith(
-                              color: sportsScheme.onPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(width: 24),
-          ],
-        ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: _gutter,
+      child: Row(
+        children: [
+          for (var index = 0; index < sports.length; index++)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                end: DabblerSpacing.space2,
+              ),
+              child: _buildSportChip(
+                sports[index]['name'] as String,
+                selected: selectedIndex == index,
+                showCount: selectedIndex == index && isVenuesTab,
+                onTap: () => setState(() => _selectedSportIndex = index),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildVenuesTab(
-    String selectedSport,
-    String searchQuery, {
-    Map<String, dynamic>? sportSpecificFilters,
-    String? filterArea,
-    RangeValues? priceRange,
-    double? rating,
-    Set<String>? amenities,
+  Widget _buildSportChip(
+    String name, {
+    required bool selected,
+    required bool showCount,
+    required VoidCallback onTap,
   }) {
-    return _VenuesTabContent(
-      key: ValueKey('venues_$selectedSport'),
-      selectedSport: selectedSport,
-      searchQuery: searchQuery,
-      sportSpecificFilters: sportSpecificFilters,
-      filterArea: filterArea,
-      priceRange: priceRange,
-      rating: rating,
-      amenities: amenities,
+    // Get the actual venue count from the new provider when selected
+    int venueCount = 0;
+    if (showCount) {
+      final sportId = SportIdMapping.getSportId(name.trim().toLowerCase());
+      if (sportId != null) {
+        final filters = VenuesBySportFilters(
+          sportId: sportId,
+          city: _selectedArea,
+          isActive: true,
+        );
+        final venuesAsync = ref.watch(
+          venuesBySportWithFiltersProvider(filters),
+        );
+        venueCount = venuesAsync.maybeWhen(
+          data: (venues) => venues.length,
+          orElse: () => 0,
+        );
+      }
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DabblerChip(
+          label: name,
+          selected: selected,
+          leadingIcon: _sportIcon(name),
+          onTap: onTap,
+        ),
+        if (showCount) ...[
+          const SizedBox(width: DabblerSpacing.space1),
+          DabblerBadge(label: '$venueCount'),
+        ],
+      ],
     );
   }
 }
@@ -1783,7 +960,7 @@ class _VenuesTabContent extends ConsumerStatefulWidget {
   final String searchQuery;
   final Map<String, dynamic>? sportSpecificFilters;
   final String? filterArea;
-  final RangeValues? priceRange;
+  final DabblerSliderRange? priceRange;
   final double? rating;
   final Set<String>? amenities;
 
@@ -1803,12 +980,9 @@ class _VenuesTabContent extends ConsumerStatefulWidget {
 }
 
 class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
-  final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     // Load venues with sport filter on init
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _applyFilter();
@@ -1825,16 +999,6 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
         _applyFilter();
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    // Infinite scroll can be implemented if needed
   }
 
   void _applyFilter() {
@@ -1889,9 +1053,9 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space6),
       child: venuesAsync.when(
-        loading: () => _buildLoadingState(),
+        loading: _buildLoadingState,
         error: (error, stack) => _buildErrorState(),
         data: (venues) {
           // Apply search query filter
@@ -1908,50 +1072,38 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
             return _buildEmptyState();
           }
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(vertical: 0),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredVenues.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final venue = filteredVenues[index];
-
-                    final venueMap = {
-                      'id': venue.id,
-                      'name': venue.nameEn,
-                      'location': venue.area != null
-                          ? '${venue.area}, ${venue.city}'
-                          : venue.city,
+          return Padding(
+            padding: _gutter,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < filteredVenues.length; i++) ...[
+                  if (i > 0) const SizedBox(height: DabblerSpacing.space3),
+                  VenueCard(
+                    venue: {
+                      'id': filteredVenues[i].id,
+                      'name': filteredVenues[i].nameEn,
+                      'location': filteredVenues[i].area != null
+                          ? '${filteredVenues[i].area}, ${filteredVenues[i].city}'
+                          : filteredVenues[i].city,
                       'sports': <String>[selectedSportName],
                       'images': [],
-                      'rating': venue.compositeScore ?? 0.0,
+                      'rating': filteredVenues[i].compositeScore ?? 0.0,
                       'isOpen': true,
                       'slots': [],
                       'reviews': [],
                       'distance': '', // Can add distance calculation
-                      'price': venue.pricePerHour != null
-                          ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)}/hr'
+                      'price': filteredVenues[i].pricePerHour != null
+                          ? 'AED ${filteredVenues[i].pricePerHour!.toStringAsFixed(0)}/hr'
                           : 'Price N/A',
-                      'amenities': venue.amenities,
-                    };
-
-                    return VenueCard(
-                      venue: venueMap,
-                      onTap: () => _onVenueTap(venue.id),
-                      isLoading: false,
-                    );
-                  },
-                ),
-              ),
-            ],
+                      'amenities': filteredVenues[i].amenities,
+                    },
+                    onTap: () => _onVenueTap(filteredVenues[i].id),
+                    isLoading: false,
+                  ),
+                ],
+              ],
+            ),
           );
         },
       ),
@@ -1960,12 +1112,14 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
 
   Widget _buildLoadingState() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: _gutter,
       child: Column(
         children: List.generate(
           5,
           (index) => Padding(
-            padding: EdgeInsets.only(bottom: index == 4 ? 0 : 12),
+            padding: EdgeInsetsDirectional.only(
+              bottom: index == 4 ? 0 : DabblerSpacing.space3,
+            ),
             child: const VenueCard(venue: {}, isLoading: true),
           ),
         ),
@@ -1974,110 +1128,32 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
   }
 
   Widget _buildErrorState() {
-    final sportsScheme = context.getCategoryTheme('main');
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: sportsScheme.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Iconsax.wifi_square_copy,
-                size: 48,
-                color: sportsScheme.error,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Couldn\'t load venues',
-              style: DS.headline.copyWith(
-                fontWeight: FontWeight.w700,
-                color: sportsScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check your connection and try again',
-              style: DS.body.copyWith(color: sportsScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _refreshVenues,
-              icon: const Icon(Iconsax.refresh_copy),
-              label: const Text('Retry'),
-              style: FilledButton.styleFrom(
-                backgroundColor: sportsScheme.primary,
-                foregroundColor: sportsScheme.onPrimary,
-              ),
-            ),
-          ],
-        ),
+    return Padding(
+      padding: _gutter,
+      child: DabblerEmptyState.error(
+        icon: 'wifi-square',
+        title: 'Couldn\'t load venues',
+        text: 'Check your connection and try again',
+        size: DabblerEmptyStateSize.inline,
+        retryLabel: 'Retry',
+        onRetry: _refreshVenues,
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    final sportsScheme = context.getCategoryTheme('main');
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              'assets/images/undraw/walking-outside.svg',
-              height: 200,
-              width: 200,
-              colorFilter: ColorFilter.mode(
-                sportsScheme.primary,
-                BlendMode.srcIn,
-              ),
-              placeholderBuilder: (context) => SizedBox(
-                height: 200,
-                width: 200,
-                child: Center(
-                  child: CircularProgressIndicator(color: sportsScheme.primary),
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Text(
-              'No ${widget.selectedSport} venues found around you',
-              style: DS.headline.copyWith(
-                fontWeight: FontWeight.w700,
-                color: sportsScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try a nearby location or add a new venue',
-              style: DS.body.copyWith(color: sportsScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: () {
-                // TODO: Navigate to add venue screen
-              },
-              icon: const Icon(Iconsax.add_circle_copy),
-              label: const Text('Add Venue'),
-              style: FilledButton.styleFrom(
-                backgroundColor: sportsScheme.primary,
-                foregroundColor: sportsScheme.onPrimary,
-              ),
-            ),
-          ],
+    return Padding(
+      padding: _gutter,
+      child: DabblerEmptyState(
+        icon: 'location',
+        title: 'No ${widget.selectedSport} venues found around you',
+        text: 'Try a nearby location or add a new venue',
+        action: DabblerButton(
+          label: 'Add Venue',
+          icon: 'add-circle',
+          onPressed: () {
+            // TODO: Navigate to add venue screen
+          },
         ),
       ),
     );
