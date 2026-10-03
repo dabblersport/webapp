@@ -95,21 +95,19 @@ class _LandingPageState extends ConsumerState<LandingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space8,
-                  0,
+                padding: EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space8,
+                  top: DabblerSpacing.space4,
+                  end: DabblerSpacing.space8,
                 ),
                 child: DabblerWordmark(),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space9,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space8,
+                    top: DabblerSpacing.space9,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,11 +268,10 @@ class _LandingLanguagePickerSheet extends StatelessWidget {
     final current = ref.watch(localeProvider);
 
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

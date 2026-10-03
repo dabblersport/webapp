@@ -44,7 +44,7 @@ class ProfileSportsView extends StatelessWidget {
     DabblerSpacing.space6,
     DabblerSpacing.space4,
     DabblerSpacing.space6,
-    DabblerSpacing.space11 * 2,
+    DabblerSpacing.floatingBarClearance,
   );
 
   @override

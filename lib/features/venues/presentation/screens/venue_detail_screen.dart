@@ -142,11 +142,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             // Rating + Spaces tiles
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  gutter,
-                  0,
-                  gutter,
-                  DabblerSpacing.space5,
+                padding: const EdgeInsetsDirectional.only(
+                  start: gutter,
+                  end: gutter,
+                  bottom: DabblerSpacing.space5,
                 ),
                 child: _buildRatingSpacesTiles(venue),
               ),
@@ -156,11 +155,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.supportedSports.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space3,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space3,
                   ),
                   child: _sectionHeader('Spaces', sub: 'tap for details'),
                 ),
@@ -171,11 +169,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                   height: DabblerSizing.heroCoverHeight,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      gutter,
-                      0,
-                      gutter,
-                      DabblerSpacing.space6,
+                    padding: const EdgeInsetsDirectional.only(
+                      start: gutter,
+                      end: gutter,
+                      bottom: DabblerSpacing.space6,
                     ),
                     itemCount: venue.supportedSports.length,
                     separatorBuilder: (_, __) =>
@@ -209,11 +206,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (_hasContact(venue))
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildContactCard(venue),
                 ),
@@ -223,11 +219,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.amenities.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildAmenities(venue),
                 ),
@@ -237,11 +232,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.description.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildAbout(venue),
                 ),
@@ -251,11 +245,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.totalRatings > 0)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space10,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space10,
                   ),
                   child: _buildRatings(venue),
                 ),
@@ -842,11 +835,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         ),
         const SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space6,
-              DabblerSpacing.space6,
-              DabblerSpacing.space6,
-              0,
+            padding: EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space6,
+              top: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -885,11 +877,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space5,
-            safeTop + DabblerSpacing.space3,
-            DabblerSpacing.space5,
-            0,
+          padding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space5,
+            top: safeTop + DabblerSpacing.space3,
+            end: DabblerSpacing.space5,
           ),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
@@ -1074,11 +1065,8 @@ class _HeroCarouselState extends State<_HeroCarousel> {
           children: [
             Positioned.fill(child: ColoredBox(color: colors.surfaceSunken)),
             // Sport glyph — large, centred
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 60,
+            Positioned.fill(
+              bottom: DabblerSpacing.space11 + DabblerSpacing.space4,
               child: Center(
                 child: AnimatedSwitcher(
                   duration: DabblerMotion.durationOf(
@@ -1097,7 +1085,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
             // Label pill
             PositionedDirectional(
               start: DabblerSpacing.space6,
-              bottom: 42,
+              bottom: DabblerSpacing.space10 + DabblerSpacing.space2,
               child: AnimatedSwitcher(
                 duration: DabblerMotion.durationOf(
                   context,
@@ -1112,10 +1100,9 @@ class _HeroCarouselState extends State<_HeroCarousel> {
             ),
             // Carousel dots
             if (widget.sports.length > 1)
-              Positioned(
+              Positioned.fill(
+                top: null,
                 bottom: DabblerSpacing.space4,
-                left: 0,
-                right: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(

@@ -969,11 +969,9 @@ class _NewsResubscribeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        0,
-        DabblerSpacing.space1,
-        0,
-        DabblerSpacing.space2,
+      padding: const EdgeInsetsDirectional.only(
+        top: DabblerSpacing.space1,
+        bottom: DabblerSpacing.space2,
       ),
       child: DabblerBanner(
         icon: const DabblerIcon('notification-status'),
@@ -1023,11 +1021,9 @@ class _NewsFilterChips extends ConsumerWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        0,
-        DabblerSpacing.space3,
-        0,
-        DabblerSpacing.space2,
+      padding: const EdgeInsetsDirectional.only(
+        top: DabblerSpacing.space3,
+        bottom: DabblerSpacing.space2,
       ),
       child: Row(
         children: [

@@ -128,11 +128,10 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                side,
-                DabblerSpacing.space2,
-                side,
-                0,
+              padding: const EdgeInsetsDirectional.only(
+                start: side,
+                top: DabblerSpacing.space2,
+                end: side,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

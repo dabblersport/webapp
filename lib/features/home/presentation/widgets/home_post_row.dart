@@ -677,12 +677,12 @@ class HomeThreadPreview extends ConsumerWidget {
         final hasLocation =
             comment.locationName != null && comment.locationName!.isNotEmpty;
         return Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            isEmbedded ? 0 : DabblerSpacing.space10 + DabblerSpacing.space4,
-            0,
-            0,
-            DabblerSpacing.space4,
-          ),
+          padding: isEmbedded
+              ? const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4)
+              : const EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space10 + DabblerSpacing.space4,
+                  bottom: DabblerSpacing.space4,
+                ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

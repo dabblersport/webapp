@@ -426,11 +426,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       errorMessage: composerState.error,
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space8,
-            DabblerSpacing.space1,
-            DabblerSpacing.space8,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space8,
+            top: DabblerSpacing.space1,
+            end: DabblerSpacing.space8,
           ),
           child: _buildAuthorRow(),
         ),
@@ -777,9 +776,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             );
           }
           final url = items[i].toString();
+          final isLead = i == 0;
           return _MediaTile(
             url: url,
-            width: i == 0 ? 200.0 : 100.0,
+            width: isLead
+                ? DabblerSizing.railCardWidth
+                : DabblerSizing.illustrationLg,
             onRemove: () =>
                 ref.read(postComposerProvider.notifier).removeMediaAt(i),
           );
@@ -794,11 +796,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   Widget _buildOptionsSection(PostComposerState state) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        0,
-        DabblerSpacing.space8,
-        DabblerSpacing.space3,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space8,
+        end: DabblerSpacing.space8,
+        bottom: DabblerSpacing.space3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1077,11 +1078,10 @@ class _ComposerVibesPickerSheetState
                   ..sort();
             if (types.length <= 1) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                DabblerSpacing.space6,
-                0,
-                DabblerSpacing.space6,
-                DabblerSpacing.space3,
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space3,
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

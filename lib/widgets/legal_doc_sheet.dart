@@ -50,7 +50,9 @@ class LegalDocSheetBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.7,
+      height:
+          MediaQuery.sizeOf(context).height *
+          DabblerSheet.defaultContentMaxFraction,
       child: LegalDocContent(
         intro: intro,
         sections: sections,

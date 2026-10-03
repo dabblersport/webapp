@@ -225,11 +225,10 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         ),
         if (_includeDeviceInfo)
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space4,
-              DabblerSpacing.space4,
-              DabblerSpacing.space4,
-              0,
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space4,
+              top: DabblerSpacing.space4,
+              end: DabblerSpacing.space4,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

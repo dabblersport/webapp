@@ -199,11 +199,10 @@ class _InterestsSelectionScreenState
           return CustomScrollView(
             slivers: [
               SliverPadding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  0,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space6,
+                padding: const EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space8,
+                  end: DabblerSpacing.space8,
+                  bottom: DabblerSpacing.space6,
                 ),
                 sliver: SliverToBoxAdapter(
                   child: DabblerSearchField(
@@ -215,11 +214,10 @@ class _InterestsSelectionScreenState
                 ),
               ),
               SliverPadding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  0,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space8,
+                padding: const EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space8,
+                  end: DabblerSpacing.space8,
+                  bottom: DabblerSpacing.space8,
                 ),
                 sliver: SliverGrid.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

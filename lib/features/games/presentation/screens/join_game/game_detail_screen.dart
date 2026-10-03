@@ -204,11 +204,10 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 700),
               child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
-                  0,
+                padding: const EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space6,
+                  top: DabblerSpacing.space6,
+                  end: DabblerSpacing.space6,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,7 +231,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
                     SizedBox(
                       height:
                           MediaQuery.paddingOf(context).bottom +
-                          DabblerSpacing.space11 * 2,
+                          DabblerSpacing.stickyActionBarClearance,
                     ),
                   ],
                 ),
@@ -1061,11 +1060,10 @@ class _RosterSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space5,
-                    DabblerSpacing.space4,
-                    DabblerSpacing.space5,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space5,
+                    top: DabblerSpacing.space4,
+                    end: DabblerSpacing.space5,
                   ),
                   child: DabblerText(
                     '${requests.length} join ${requests.length == 1 ? 'request' : 'requests'}',
@@ -1426,7 +1424,7 @@ class _LoadingBody extends StatelessWidget {
         children: [
           DabblerSkeleton.rect(
             width: double.infinity,
-            height: top + 230,
+            height: top + DabblerSizing.heroCoverHeight,
             radius: 0,
           ),
           const SizedBox(height: DabblerSpacing.space5),
@@ -1486,11 +1484,10 @@ class _ErrorBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            top + DabblerSpacing.space5,
-            DabblerSpacing.space6,
-            0,
+          padding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: top + DabblerSpacing.space5,
+            end: DabblerSpacing.space6,
           ),
           child: Align(
             alignment: AlignmentDirectional.centerStart,

@@ -93,20 +93,18 @@ class _HomeLocationPickerSheetState
       children: [
         // Title row (the emoji the old title carried is dropped, CEO rule).
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            0,
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space4,
           ),
           child: DabblerText('Your Location', style: DabblerType.headline),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            0,
-            DabblerSpacing.space6,
-            DabblerSpacing.space9,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space9,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -39,8 +39,8 @@ class UnreadCounterRow extends StatelessWidget {
               ),
               if (unread > 0)
                 const PositionedDirectional(
-                  top: -2,
-                  end: -3,
+                  top: -DabblerSpacing.space1,
+                  end: -DabblerSpacing.space1,
                   child: DabblerBadge.dot(),
                 ),
             ],

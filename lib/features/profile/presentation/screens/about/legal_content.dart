@@ -1,5 +1,3 @@
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart'
-    show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -231,13 +229,9 @@ class LegalDocContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          DabblerText(
             intro,
-            style: composerType(
-              context,
-              DabblerType.body,
-              colors.textSecondary,
-            ).copyWith(height: 1.4),
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space4),
           Row(
@@ -261,14 +255,7 @@ class LegalDocContent extends StatelessWidget {
           for (final section in sections) ...[
             DabblerText(section.title, style: DabblerType.headline),
             const SizedBox(height: DabblerSpacing.space3),
-            Text(
-              section.content,
-              style: composerType(
-                context,
-                DabblerType.body,
-                colors.textPrimary,
-              ).copyWith(height: 1.6),
-            ),
+            DabblerText(section.content),
             const SizedBox(height: DabblerSpacing.space7),
           ],
         ],

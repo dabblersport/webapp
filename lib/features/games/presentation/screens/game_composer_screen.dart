@@ -842,10 +842,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(
-                label: 'DETAILS (OPTIONAL)',
-                letterSpacing: 1.2,
-              ),
+              const ComposerSectionLabel(label: 'DETAILS (OPTIONAL)'),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,

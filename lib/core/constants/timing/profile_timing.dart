@@ -24,4 +24,7 @@ abstract final class ProfileTiming {
 
   /// Five days: an offset in the sample transaction list.
   static const Duration fiveDays = Duration(days: 5);
+
+  /// Two seconds: the per-attempt step of the image-upload retry backoff.
+  static const Duration uploadRetryBackoffStep = Duration(seconds: 2);
 }

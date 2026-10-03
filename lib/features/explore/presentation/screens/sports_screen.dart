@@ -1084,9 +1084,11 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
         children: List.generate(
           5,
           (index) => Padding(
-            padding: EdgeInsetsDirectional.only(
-              bottom: index == 4 ? 0 : DabblerSpacing.space3,
-            ),
+            padding: index == 4
+                ? EdgeInsets.zero
+                : const EdgeInsetsDirectional.only(
+                    bottom: DabblerSpacing.space3,
+                  ),
             child: const VenueCard(venue: {}, isLoading: true),
           ),
         ),

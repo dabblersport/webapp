@@ -180,11 +180,10 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       children: [
         // Title row (handle and close come from DabblerSheet).
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space5,
-            0,
-            DabblerSpacing.space5,
-            DabblerSpacing.space2,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space5,
+            end: DabblerSpacing.space5,
+            bottom: DabblerSpacing.space2,
           ),
           child: Row(
             children: [

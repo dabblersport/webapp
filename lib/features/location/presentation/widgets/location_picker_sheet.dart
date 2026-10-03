@@ -183,11 +183,10 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       children: [
         // ── Title + back ── (handle and close come from DabblerSheet)
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space5,
-            0,
-            DabblerSpacing.space5,
-            DabblerSpacing.space3,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space5,
+            end: DabblerSpacing.space5,
+            bottom: DabblerSpacing.space3,
           ),
           child: Row(
             children: [

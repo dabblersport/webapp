@@ -281,11 +281,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space4,
-          DabblerSpacing.space8,
-          0,
+        padding: const EdgeInsetsDirectional.only(
+          start: DabblerSpacing.space8,
+          top: DabblerSpacing.space4,
+          end: DabblerSpacing.space8,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

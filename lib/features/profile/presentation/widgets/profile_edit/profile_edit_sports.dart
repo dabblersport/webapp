@@ -93,11 +93,10 @@ class _ProfileEditCategorySportsSheetState
     final selectedCount = widget.sports.where(widget.isSelected).length;
     return ListView(
       shrinkWrap: true,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        0,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space8,
       ),
       children: [
         DabblerText(

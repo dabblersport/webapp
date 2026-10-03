@@ -157,7 +157,7 @@ class ListingHeader extends ConsumerWidget {
                       child: DabblerBadge(
                         label: '$filterCount',
                         tone: DabblerBadgeTone.pill,
-                        minWidth: 18,
+                        minWidth: DabblerSizing.iconSm,
                       ),
                     ),
                   ),

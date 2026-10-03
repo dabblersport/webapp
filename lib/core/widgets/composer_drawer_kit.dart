@@ -6,15 +6,6 @@ import 'package:flutter/widgets.dart';
 /// and fields are all `Dabbler*` components, coloured through
 /// [DabblerColors].
 
-TextStyle composerType(
-  BuildContext context,
-  DabblerTypeStyle step,
-  Color color, {
-  FontWeight? weight,
-}) => step
-    .resolveForDirection(Directionality.of(context))
-    .copyWith(color: color, fontWeight: weight);
-
 /// The composer panel: a drag handle, a title with a Cancel action, the
 /// scrolling [children], an optional error banner and the call-to-action.
 class ComposerDrawerShell extends StatelessWidget {
@@ -44,6 +35,7 @@ class ComposerDrawerShell extends StatelessWidget {
     final colors = DabblerColors.of(context);
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final safeBottom = MediaQuery.paddingOf(context).bottom;
+    final keyboardOpen = keyboard > 0;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.92;
 
     return Padding(
@@ -105,11 +97,10 @@ class ComposerDrawerShell extends StatelessWidget {
               ),
               if (errorMessage != null && errorMessage!.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space2,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space8,
+                    top: DabblerSpacing.space2,
+                    end: DabblerSpacing.space8,
                   ),
                   child: DabblerBanner(
                     tone: DabblerBannerTone.error,
@@ -117,11 +108,13 @@ class ComposerDrawerShell extends StatelessWidget {
                   ),
                 ),
               Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4 + (keyboard > 0 ? 0 : safeBottom),
+                padding: EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space8,
+                  top: DabblerSpacing.space4,
+                  end: DabblerSpacing.space8,
+                  bottom: keyboardOpen
+                      ? DabblerSpacing.space4
+                      : DabblerSpacing.space4 + safeBottom,
                 ),
                 child: DabblerButton(
                   label: ctaLabel,
@@ -144,15 +137,9 @@ class ComposerSectionLabel extends StatelessWidget {
   const ComposerSectionLabel({
     super.key,
     required this.label,
-    @Deprecated('The design system text has no tracking; the value is ignored.')
-    this.letterSpacing,
   });
 
   final String label;
-
-  /// Ignored: [DabblerText] carries no letter spacing. Kept so existing
-  /// callers compile; remove the argument at the call site.
-  final double? letterSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -438,11 +425,10 @@ class ComposerSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.fromSTEB(
-      DabblerSpacing.space6,
-      0,
-      DabblerSpacing.space6,
-      DabblerSpacing.space3,
+    padding: const EdgeInsetsDirectional.only(
+      start: DabblerSpacing.space6,
+      end: DabblerSpacing.space6,
+      bottom: DabblerSpacing.space3,
     ),
     child: DabblerTextField(
       variant: DabblerTextFieldVariant.search,
@@ -483,11 +469,10 @@ class ComposerClearRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.fromSTEB(
-      DabblerSpacing.space6,
-      0,
-      DabblerSpacing.space6,
-      DabblerSpacing.space2,
+    padding: const EdgeInsetsDirectional.only(
+      start: DabblerSpacing.space6,
+      end: DabblerSpacing.space6,
+      bottom: DabblerSpacing.space2,
     ),
     child: Align(
       alignment: AlignmentDirectional.centerEnd,

@@ -71,10 +71,11 @@ class NotificationRow extends ConsumerWidget {
           children: [
             leading,
             if (unread)
-              const PositionedDirectional(
-                top: 0,
-                end: 0,
-                child: DabblerBadge.dot(),
+              const Positioned.fill(
+                child: Align(
+                  alignment: AlignmentDirectional.topEnd,
+                  child: DabblerBadge.dot(),
+                ),
               ),
           ],
         ),

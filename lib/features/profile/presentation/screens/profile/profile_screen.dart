@@ -527,7 +527,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             textBaseline: TextBaseline.alphabetic,
             children: [
               DabblerText('$value', style: DabblerType.headline),
-              const SizedBox(width: DabblerSpacing.space1 + 2),
+              const SizedBox(width: DabblerSpacing.space2),
               DabblerText(
                 label,
                 style: DabblerType.footnote,

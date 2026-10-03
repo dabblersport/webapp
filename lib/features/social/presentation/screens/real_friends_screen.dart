@@ -127,11 +127,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                DabblerSpacing.space6,
-                0,
-                DabblerSpacing.space6,
-                DabblerSpacing.space8,
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space8,
               ),
               child: _buildBottomSection(),
             ),

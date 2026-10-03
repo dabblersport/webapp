@@ -145,9 +145,9 @@ class CompactCheckInProgressIndicator extends StatelessWidget {
           final isCompleted = index < completedDays;
 
           return Padding(
-            padding: EdgeInsetsDirectional.only(
-              end: index < totalDays - 1 ? DabblerSpacing.space1 : 0,
-            ),
+            padding: index < totalDays - 1
+                ? const EdgeInsetsDirectional.only(end: DabblerSpacing.space1)
+                : EdgeInsets.zero,
             child: AnimatedContainer(
               duration: DabblerMotion.durationOf(
                 context,

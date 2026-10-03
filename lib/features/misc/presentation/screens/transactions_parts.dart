@@ -131,11 +131,10 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
-            DabblerSpacing.space6,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space4,
+            end: DabblerSpacing.space6,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

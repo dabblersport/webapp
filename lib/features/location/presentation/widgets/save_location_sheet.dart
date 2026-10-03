@@ -162,11 +162,10 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          0,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
+        padding: const EdgeInsetsDirectional.only(
+          start: DabblerSpacing.space6,
+          end: DabblerSpacing.space6,
+          bottom: DabblerSpacing.space8,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

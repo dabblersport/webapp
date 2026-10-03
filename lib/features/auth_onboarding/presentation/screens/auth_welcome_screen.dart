@@ -409,11 +409,10 @@ class _CountryPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -472,11 +471,10 @@ class _LanguagePickerSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(localeProvider);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

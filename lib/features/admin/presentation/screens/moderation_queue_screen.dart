@@ -253,7 +253,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
   }
 
   Widget _detailRow(String label, String value) =>
-      AdminInfoRow(label: label, value: value, labelWidth: 120);
+      AdminInfoRow(label: label, value: value, labelWidth: DabblerSizing.labelColumnWidth);
 
   void _toast(String message, DabblerToastTone tone) {
     DabblerToastProvider.of(

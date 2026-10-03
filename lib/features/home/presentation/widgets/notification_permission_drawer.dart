@@ -23,11 +23,10 @@ class NotificationPermissionDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        0,
-        DabblerSpacing.space8,
-        DabblerSpacing.space8,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space8,
+        end: DabblerSpacing.space8,
+        bottom: DabblerSpacing.space8,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

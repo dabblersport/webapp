@@ -4,6 +4,7 @@ import 'package:path/path.dart' as path;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/constants/timing/profile_timing.dart';
 import 'package:dabbler/features/profile/services/image_file_reader.dart';
 
 /// Service for handling image uploads with compression and processing
@@ -331,7 +332,7 @@ class ImageUploadService {
 
         if (attempt < maxRetries) {
           // Wait before retrying (exponential backoff)
-          await Future.delayed(Duration(seconds: attempt * 2));
+          await Future.delayed(ProfileTiming.uploadRetryBackoffStep * attempt);
         }
       }
     }

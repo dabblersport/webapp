@@ -69,7 +69,7 @@ class SavedLocationsScreen extends ConsumerWidget {
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.space5,
-              100,
+              DabblerSpacing.floatingBarClearance,
             ),
             itemCount: sorted.length,
             separatorBuilder: (_, __) =>

@@ -283,10 +283,9 @@ class _SearchingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    return Positioned(
+    return Positioned.fill(
       top: DabblerSpacing.space4,
-      left: 0,
-      right: 0,
+      bottom: null,
       child: Center(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -362,11 +361,10 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     Widget section(DabblerSection s) => Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space5,
-        DabblerSpacing.space6,
-        0,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        top: DabblerSpacing.space5,
+        end: DabblerSpacing.space6,
       ),
       child: s,
     );
@@ -683,11 +681,10 @@ class _AllTabSections extends StatelessWidget {
     final q = state.query;
 
     Widget section(String title, SearchMode mode, List<Widget> rows) => Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space5,
-        DabblerSpacing.space6,
-        0,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        top: DabblerSpacing.space5,
+        end: DabblerSpacing.space6,
       ),
       child: DabblerSection(
         title: title,
@@ -705,11 +702,10 @@ class _AllTabSections extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
-            DabblerSpacing.space6,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space4,
+            end: DabblerSpacing.space6,
           ),
           child: Row(
             children: [

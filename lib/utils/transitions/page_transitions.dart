@@ -1,5 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerMotion, DabblerRadius, DabblerScrimColors;
+    show DabblerMotion, DabblerRadius, DabblerScrimColors, DabblerSheet;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -257,7 +257,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
     Duration duration = DabblerMotion.pageTransition,
     this.maxDialogWidth = 720,
     this.maxDialogHeightFraction = 0.88,
-    this.mobileHeightFactor = 0.94,
+    this.mobileHeightFactor = DabblerSheet.maxHeightFraction,
     this.barrierColorValue,
     this.transparentSurface = false,
   }) : super(

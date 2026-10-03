@@ -95,11 +95,10 @@ class OnboardingStepFrame extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space4,
-                    DabblerSpacing.space2,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space4,
+                    top: DabblerSpacing.space2,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
@@ -113,11 +112,10 @@ class OnboardingStepFrame extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space2,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space8,
+                    top: DabblerSpacing.space2,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
