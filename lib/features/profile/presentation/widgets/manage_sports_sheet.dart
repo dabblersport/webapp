@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +15,16 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 /// `sport_profiles` / `organiser` records in the database.
 class ManageSportsSheet extends ConsumerStatefulWidget {
   const ManageSportsSheet({super.key});
+
+  /// Presents the sheet. Was `showAdaptiveSheet` + a DraggableScrollableSheet
+  /// (0.6, 0.35-0.85); the DabblerSheet snaps between 0.6 and 0.85.
+  static Future<void> show(BuildContext context) {
+    return showDabblerSheet<void>(
+      context: context,
+      detents: const <double>[0.6, 0.85],
+      builder: (_) => const ManageSportsSheet(),
+    );
+  }
 
   @override
   ConsumerState<ManageSportsSheet> createState() => _ManageSportsSheetState();
@@ -64,12 +75,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     // Prevent removing the last sport.
     if (!isAdding && _selectedIds.length <= 1) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You must have at least one sport'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('You must have at least one sport');
       }
       return;
     }
@@ -148,177 +154,158 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       await ref.read(profileControllerProvider.notifier).refreshProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update sport: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _toast('Failed to update sport: $e');
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
+  void _toast(String message) {
+    DabblerToastProvider.of(context).show(
+      DabblerToastSpec(message: message, tone: DabblerToastTone.error),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
     final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
+    final mutedStyle = DabblerType.subheadline
+        .resolveForDirection(dir)
+        .copyWith(color: colors.textSecondary);
 
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      minChildSize: 0.35,
-      maxChildSize: 0.85,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Title row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-              child: Row(
+    // The DabblerSheet body is already a scroll view, so this shrink-wraps
+    // (the old DraggableScrollableSheet hosted its own list).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Title row (handle and close come from DabblerSheet).
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space5,
+            0,
+            DabblerSpacing.space5,
+            DabblerSpacing.space2,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Manage Sports',
+                  style: DabblerType.title3
+                      .resolveForDirection(dir)
+                      .copyWith(color: colors.textPrimary),
+                ),
+              ),
+              if (_isSaving)
+                const DabblerSpinner(size: DabblerSpinnerSize.sm),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space5,
+          ),
+          child: Text(
+            'Tap a sport to add or remove it from your profile.',
+            style: mutedStyle,
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space5,
+          ),
+          child: DabblerSearchField(
+            controller: _searchController,
+            enabled: !_isSaving,
+            placeholder: 'Search sports',
+            onChanged: (value) {
+              setState(() => _searchQuery = value.trim().toLowerCase());
+            },
+            onCleared: () => setState(() => _searchQuery = ''),
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        sportsAsync.when(
+          data: (sports) {
+            final filteredSports = _searchQuery.isEmpty
+                ? sports
+                : sports
+                      .where(
+                        (sport) =>
+                            sport.nameEn.toLowerCase().contains(_searchQuery) ||
+                            (sport.emoji?.contains(_searchQuery) ?? false),
+                      )
+                      .toList();
+
+            if (filteredSports.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(DabblerSpacing.space8),
+                child: Text(
+                  'No sports match your search',
+                  textAlign: TextAlign.center,
+                  style: mutedStyle,
+                ),
+              );
+            }
+
+            return Padding(
+              padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: DabblerSpacing.space5,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Manage Sports',
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_isSaving)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  for (final sport in filteredSports)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        bottom: DabblerSpacing.space2,
+                      ),
+                      child: _sportRow(sport, colors),
                     ),
                 ],
               ),
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.all(DabblerSpacing.space8),
+            child: Center(child: DabblerSpinner()),
+          ),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.all(DabblerSpacing.space8),
+            child: Text(
+              'Failed to load sports',
+              textAlign: TextAlign.center,
+              style: mutedStyle,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                'Tap a sport to add or remove it from your profile.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                controller: _searchController,
-                enabled: !_isSaving,
-                onChanged: (value) {
-                  setState(() => _searchQuery = value.trim().toLowerCase());
-                },
-                decoration: InputDecoration(
-                  hintText: 'Search sports',
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                          icon: Icon(
-                            Icons.close,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: colorScheme.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Sports list
-            Expanded(
-              child: sportsAsync.when(
-                data: (sports) {
-                  final filteredSports = _searchQuery.isEmpty
-                      ? sports
-                      : sports
-                            .where(
-                              (sport) =>
-                                  sport.nameEn.toLowerCase().contains(
-                                    _searchQuery,
-                                  ) ||
-                                  (sport.emoji?.contains(_searchQuery) ??
-                                      false),
-                            )
-                            .toList();
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space5),
+      ],
+    );
+  }
 
-                  if (filteredSports.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No sports match your search',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView.separated(
-                    controller: scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredSports.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final sport = filteredSports[index];
-                      final isSelected = _selectedIds.contains(sport.id);
-                      return ListTile(
-                        leading: Text(
-                          sport.emoji ?? '🏅',
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        title: Text(
-                          sport.nameEn,
-                          style: textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: colorScheme.onSurface,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? Icon(
-                                Icons.check_circle,
-                                color: colorScheme.primary,
-                              )
-                            : Icon(
-                                Icons.circle_outlined,
-                                color: colorScheme.outlineVariant,
-                              ),
-                        onTap: _isSaving ? null : () => _toggle(sport),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                  child: Text(
-                    'Failed to load sports',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+  Widget _sportRow(Sport sport, DabblerColors colors) {
+    final isSelected = _selectedIds.contains(sport.id);
+    final key = (sport.sportKey ?? sport.nameEn.toLowerCase())
+        .toLowerCase()
+        .replaceAll('_', '-')
+        .replaceAll(' ', '-');
+    return DabblerInputRow(
+      // The sport emoji is replaced by the DS sport glyph.
+      leading: DabblerSportIcon.fromKey(key),
+      title: sport.nameEn,
+      trailing: DabblerIcon(
+        isSelected ? 'tick-circle' : 'record',
+        weight: isSelected ? DabblerIconWeight.bold : DabblerIconWeight.linear,
+        color: isSelected ? colors.brandPrimary : colors.textTertiary,
+      ),
+      enabled: !_isSaving,
+      onTap: () => _toggle(sport),
     );
   }
 }

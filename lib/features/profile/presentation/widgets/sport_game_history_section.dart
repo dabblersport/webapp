@@ -1,12 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show MaterialPageRoute;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/features/explore/presentation/screens/sports_history_screen.dart'
     show PastGame;
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart'
+    show listingSportFor;
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/features/games/providers/game_history_providers.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
+import 'package:dabbler/features/profile/presentation/widgets/sport_profile_section_widgets.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
 
 /// "Game History" card for the sport profile screen: the games the user
@@ -21,8 +25,6 @@ class SportGameHistorySection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final historyAsync = ref.watch(
       sportGameHistoryProvider((
         userId: args.userId,
@@ -31,52 +33,23 @@ class SportGameHistorySection extends ConsumerWidget {
       )),
     );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Game History',
-            style: textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          historyAsync.when(
-            data: (history) => _buildContent(context, history),
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            ),
-            error: (error, stack) => _buildEmpty(
-              context,
-              icon: Iconsax.danger_copy,
-              message: "Couldn't load game history.",
-            ),
-          ),
-        ],
+    return SportSectionCard(
+      title: 'Game History',
+      child: historyAsync.when(
+        data: (history) => _buildContent(context, history),
+        loading: () => const SportSectionLoading(),
+        error: (error, stack) => const SportEmptySection(
+          icon: 'danger',
+          message: "Couldn't load game history.",
+        ),
       ),
     );
   }
 
   Widget _buildContent(BuildContext context, SportGameHistory history) {
     if (history.upcoming.isEmpty && history.past.isEmpty) {
-      return _buildEmpty(
-        context,
-        icon: Iconsax.clock_copy,
+      return const SportEmptySection(
+        icon: 'clock',
         message: 'No games for this sport yet.',
       );
     }
@@ -86,14 +59,14 @@ class SportGameHistorySection extends ConsumerWidget {
       children: [
         if (history.upcoming.isNotEmpty) ...[
           _buildGroupHeader(context, 'Upcoming'),
-          const SizedBox(height: 8),
+          const SizedBox(height: DabblerSpacing.space2),
           ..._buildTiles(context, history.upcoming),
         ],
         if (history.upcoming.isNotEmpty && history.past.isNotEmpty)
-          const SizedBox(height: 16),
+          const SizedBox(height: DabblerSpacing.space5),
         if (history.past.isNotEmpty) ...[
           _buildGroupHeader(context, 'Past'),
-          const SizedBox(height: 8),
+          const SizedBox(height: DabblerSpacing.space2),
           ..._buildTiles(context, history.past),
         ],
       ],
@@ -101,14 +74,14 @@ class SportGameHistorySection extends ConsumerWidget {
   }
 
   Widget _buildGroupHeader(BuildContext context, String label) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
+    final colors = DabblerColors.of(context);
     return Text(
       label,
-      style: textTheme.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: colorScheme.onSurfaceVariant,
+      style: sportProfileText(
+        context,
+        DabblerType.subheadline,
+        colors.textSecondary,
+        weight: FontWeight.w600,
       ),
     );
   }
@@ -118,39 +91,11 @@ class SportGameHistorySection extends ConsumerWidget {
         .take(_maxPerGroup)
         .map(
           (game) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: DabblerSpacing.space3),
             child: _GameHistoryTile(game: game),
           ),
         )
         .toList();
-  }
-
-  Widget _buildEmpty(
-    BuildContext context, {
-    required IconData icon,
-    required String message,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(icon, size: 36, color: colorScheme.onSurfaceVariant),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
@@ -161,107 +106,46 @@ class _GameHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => GameDetailScreen(gameId: game.id),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerCardEventMedium(
+          title: game.title,
+          sport: listingSportFor(game.sport),
+          dateTime:
+              '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime}',
+          location: game.venueName ?? 'Venue TBD',
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => GameDetailScreen(gameId: game.id),
+              ),
+            );
+          },
+        ),
+        Padding(
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space2,
+            top: DabblerSpacing.space1,
           ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: colorScheme.outlineVariant),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                _sportIconFor(game.sport),
-                size: 18,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    game.title,
-                    style: textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${DateFormatter.formatDate(game.scheduledDate)} • ${game.startTime}',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  Text(
-                    game.venueName ?? 'Venue TBD',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Row(
-              children: [
-                Icon(
-                  Iconsax.people_copy,
-                  size: 14,
-                  color: colorScheme.onSurfaceVariant,
+          child: Row(
+            children: [
+              DabblerIcon('people', size: 16, color: colors.brandPrimary),
+              const SizedBox(width: DabblerSpacing.space1),
+              Text(
+                '${game.currentPlayers}/${game.maxPlayers}',
+                style: sportProfileText(
+                  context,
+                  DabblerType.footnote,
+                  colors.textSecondary,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${game.currentPlayers}/${game.maxPlayers}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
-  }
-
-  IconData _sportIconFor(String sport) {
-    switch (sport.toLowerCase()) {
-      case 'football':
-      case 'soccer':
-        return Iconsax.medal_star_copy;
-      case 'cricket':
-      case 'padel':
-      case 'tennis':
-      case 'basketball':
-      case 'volleyball':
-      default:
-        return Iconsax.game_copy;
-    }
   }
 }

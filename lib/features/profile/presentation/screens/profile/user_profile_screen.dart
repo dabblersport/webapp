@@ -1,18 +1,13 @@
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
 import '../../../../../utils/constants/route_constants.dart';
 import '../../widgets/profile/player_sport_profile_header.dart';
 import '../../models/sport_profile_route_args.dart';
@@ -30,10 +25,17 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart'
+    show listingSportFor;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
-import 'package:dabbler/widgets/app_background.dart';
 
+/// Another user's profile (design frames PF04 / PF05, "seen by another
+/// user"): a brand-tinted identity header (avatar, name, handle, persona and
+/// place badges, bio, counters, Follow / Message actions), a bento of stat
+/// tiles, the user's sports, then the tabbed posts. DS-only; the wide-layout
+/// legacy wide-layout wrapper (side rail + right panel) is dropped as in the
+/// earlier waves, the content column is centred instead.
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
 
@@ -48,48 +50,27 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _refreshController;
-  late TabController _tabController;
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   int _selectedTabIndex = 0;
   final _activitiesKey = GlobalKey();
+
+  static const List<String> _tabIds = <String>[
+    'posts',
+    'replies',
+    'liked',
+    'reposts',
+    'activity',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _refreshController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _selectedTabIndex = _tabController.index);
-      }
-    });
-
-    _animationController.forward();
 
     // Check if viewing own profile and load data
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadProfileData();
       _checkOwnProfile();
     });
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _refreshController.dispose();
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _checkOwnProfile() async {
@@ -138,16 +119,34 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 
   Future<void> _onRefresh() async {
-    _refreshController.reset();
-    _refreshController.forward();
     await _loadProfileData();
+  }
+
+  TextStyle _t(
+    BuildContext context,
+    DabblerTypeStyle step,
+    Color color, {
+    FontWeight? weight,
+  }) => step
+      .resolveForDirection(Directionality.of(context))
+      .copyWith(color: color, fontWeight: weight);
+
+  void _toast(
+    String message, {
+    DabblerToastTone tone = DabblerToastTone.neutral,
+  }) {
+    if (!mounted) return;
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final sportsState = ref.watch(sportsProfileControllerProvider);
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final sportProfileHeaderAsync = ref.watch(
       sportProfileHeaderProvider((
         userId: widget.userId,
@@ -157,383 +156,227 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     // Show loading state
     if (profileState.isLoading) {
-      return Scaffold(
-        backgroundColor: context.appScaffoldBackground,
-        body: const Center(child: CircularProgressIndicator()),
-      );
+      return const DabblerPage(body: Center(child: DabblerSpinner()));
     }
 
     // Show error state
     if (profileState.errorMessage != null && profileState.profile == null) {
-      return Scaffold(
-        backgroundColor: context.appScaffoldBackground,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Neutral, not alarming: most of the time this fires
-                // because the profile isn't visible to this viewer (a
-                // benched persona, per P-028/KAN-100), not because
-                // anything actually failed — no "deleted"/"banned"
-                // wording, no danger-red styling, no avatar.
-                Icon(
-                  Iconsax.profile_circle_copy,
-                  size: 64,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  AppLocalizations.of(context).user_profile_error_not_found_title,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  profileState.errorMessage ?? AppLocalizations.of(context).user_profile_error_unable_to_load,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                FilledButton.icon(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Iconsax.arrow_left_copy),
-                  label: Text(AppLocalizations.of(context).user_profile_btn_go_back),
-                ),
-              ],
-            ),
+      // Neutral, not alarming: most of the time this fires because the
+      // profile isn't visible to this viewer (a benched persona, per
+      // P-028/KAN-100), not because anything actually failed — no
+      // "deleted"/"banned" wording, no danger styling, no avatar.
+      return DabblerPage(
+        body: DabblerEmptyState(
+          icon: 'profile-circle',
+          title: l10n.user_profile_error_not_found_title,
+          text:
+              profileState.errorMessage ?? l10n.user_profile_error_unable_to_load,
+          size: DabblerEmptyStateSize.page,
+          action: DabblerButton(
+            label: l10n.user_profile_btn_go_back,
+            icon: 'arrow-left',
+            tone: DabblerButtonTone.outlined,
+            onPressed: () => context.pop(),
           ),
         ),
       );
     }
 
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-
-    if (isWide) {
-      return _buildWideLayout(
-        context,
-        colorScheme,
-        profileState,
-        sportsState,
-        sportProfileHeaderAsync,
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            // ── Hero section ──
-            SliverToBoxAdapter(
-              child: Container(
-                color: colorScheme.surface,
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 12,
-                  bottom: 20,
-                ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHeader(context),
-                        const SizedBox(height: 12),
-                        _buildProfileHeroCard(
-                          context,
-                          profileState,
-                          sportsState,
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildActionButtons(context),
-                        ),
-                        const SizedBox(height: 12),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildSportProfileHeaderSection(
-                            context,
-                            sportProfileHeaderAsync,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // ── Posts section ──
-            SliverToBoxAdapter(
-              child: Container(
-                color: colorScheme.surface,
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 700),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 0),
-                      child: _buildTabbedPostsSection(context),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Wide-screen layout ───────────────────────────────────────────────
-
-  Widget _buildWideLayout(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ProfileState profileState,
-    SportsProfileState sportsState,
-    AsyncValue<SportProfileHeaderData?> sportProfileHeaderAsync,
-  ) {
-    return AdaptiveScaffold(
-      currentIndex: -1, // Viewing another user's profile — no nav item selected
-      onDestinationSelected: (i) => onAdaptiveDestinationSelected(context, i),
-      destinations: kAdaptiveDestinations,
-      headerWidget: SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      ),
-      body: _buildWideBody(context, colorScheme),
-      rightPanel: _buildWideRightPanel(
-        context,
-        colorScheme,
-        profileState,
-        sportsState,
-        sportProfileHeaderAsync,
-      ),
-    );
-  }
-
-  /// Center column on wide screens: tabbed posts.
-  Widget _buildWideBody(BuildContext context, ColorScheme colorScheme) {
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 600),
-                  child: _buildTabbedPostsSection(context),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Right panel on wide screens: profile hero + action buttons + sport header.
-  Widget _buildWideRightPanel(
-    BuildContext context,
-    ColorScheme colorScheme,
-    ProfileState profileState,
-    SportsProfileState sportsState,
-    AsyncValue<SportProfileHeaderData?> sportProfileHeaderAsync,
-  ) {
-    return SizedBox.expand(
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildProfileHeroCard(context, profileState, sportsState),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _buildActionButtons(context),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _buildSportProfileHeaderSection(
-                context,
-                sportProfileHeaderAsync,
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final profileState = ref.watch(profileControllerProvider);
     final profile = profileState.profile;
+    final username = profile?.username;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          IconButton.filledTonal(
-            onPressed: () =>
-                context.canPop() ? context.pop() : context.go('/home'),
-            icon: const Icon(Iconsax.arrow_left_copy),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.onSurface,
-              minimumSize: const Size(48, 48),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (profile?.username != null && profile!.username!.isNotEmpty)
-                  Text(
-                    '${profile.username}',
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton.filledTonal(
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: (username != null && username.isNotEmpty) ? username : null,
+        onBack: () => context.canPop() ? context.pop() : context.go('/home'),
+        actions: [
+          DabblerNavigationAction(
+            icon: 'more',
+            label: 'More',
             onPressed: () => _showMoreOptions(context),
-            icon: const Icon(Iconsax.more_copy),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.primary.withValues(alpha: 0.0),
-              foregroundColor: colorScheme.onSurface,
-              minimumSize: const Size(48, 48),
-            ),
           ),
         ],
       ),
+      body: DabblerRefresh(
+        onRefresh: _onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildProfileHeader(context, profileState, colors),
+                    const SizedBox(height: DabblerSpacing.space8),
+                    Padding(
+                      padding: _gutter,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildUnifiedStats(context, profileState, sportsState),
+                          _buildSportsChipsSection(context, profile, colors),
+                          _buildSportProfileHeaderSection(
+                            context,
+                            sportProfileHeaderAsync,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: DabblerSpacing.space8),
+                    _buildTabbedPostsSection(context),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _buildProfileHeroCard(
+  static const EdgeInsetsGeometry _gutter = EdgeInsets.symmetric(
+    horizontal: DabblerSpacing.space6,
+  );
+
+  // ── Header ───────────────────────────────────────────────────────────
+
+  Widget _buildProfileHeader(
     BuildContext context,
     ProfileState profileState,
-    SportsProfileState sportsState,
+    DabblerColors colors,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final profile = profileState.profile;
-    final onTop = colorScheme.onSurface;
+    final displayName = profile?.getDisplayName();
+    final name = (displayName != null && displayName.trim().isNotEmpty)
+        ? displayName
+        : 'User';
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+    return DabblerSurface.brandTint(
+      radius: 0,
+      borderWidth: 0,
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space6,
+        DabblerSpacing.space6,
+        DabblerSpacing.space7,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 12),
-
-          // ── Avatar + Name/Pills/Meta row ──
+          // ── Avatar + name / handle ──
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              DabblerAvatar(
+                seed: name,
+                imageUrl: profile?.avatarUrl,
+                size: DabblerAvatarSize.lg,
+              ),
+              const SizedBox(width: DabblerSpacing.space5),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Name ──
                     Text(
-                      profile?.getDisplayName().isNotEmpty == true
-                          ? profile!.getDisplayName()
-                          : 'User',
-                      style: textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: onTop,
-                      ),
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _t(context, DabblerType.title2, colors.textPrimary),
                     ),
-                    const SizedBox(height: 8),
-
-                    // ── Pills: persona type + primary sport ──
-                    _buildInfoPills(context, profile, colorScheme, textTheme),
-                    const SizedBox(height: 8),
-
-                    // ── Location, Age, Online indicator ──
-                    _buildUserMetaRow(context, profile, textTheme, colorScheme),
+                    if (profile?.username != null &&
+                        profile!.username!.isNotEmpty)
+                      Text(
+                        // LRM keeps the @ on the handle's side in RTL.
+                        '\u200E@${profile.username}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _t(
+                          context,
+                          DabblerType.subheadline,
+                          colors.textSecondary,
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              _buildAvatar(context, profile),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: DabblerSpacing.space5),
+
+          // ── Badges: persona, primary sport, place, age ──
+          _buildInfoPills(context, profile, colors),
+          const SizedBox(height: DabblerSpacing.space3),
+
+          // ── Online / last seen ──
+          if (profile != null) _buildOnlineIndicator(context, profile, colors),
 
           // ── Bio ──
-          if (profile?.bio?.isNotEmpty == true)
+          if (profile?.bio?.isNotEmpty == true) ...[
+            const SizedBox(height: DabblerSpacing.space4),
             Text(
               profile!.bio!,
-              style: textTheme.bodyMedium?.copyWith(color: onTop),
+              style: _t(context, DabblerType.callout, colors.textSecondary),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-          const SizedBox(height: 12),
+          ],
+          const SizedBox(height: DabblerSpacing.space5),
 
           // ── Posts / Following / Followers counters ──
-          _buildPostsAndFollowingCounter(
-            context,
-            colorScheme,
-            textTheme,
-            onTop,
-          ),
-          const SizedBox(height: 20),
+          _buildPostsAndFollowingCounter(context, colors),
+          const SizedBox(height: DabblerSpacing.space5),
 
-          // ── Stats ──
-          _buildUnifiedStats(context, profileState, sportsState),
-          const SizedBox(height: 20),
-
-          // ── Sports section ──
-          _buildSportsChipsSection(context, profile, colorScheme, textTheme),
+          // ── Follow / Message ──
+          _buildActionButtons(context),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar(BuildContext context, UserProfile? profile) {
-    final displayName = profile?.getDisplayName();
-    final fallbackText = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName
-        : 'User';
-
-    return DSAvatar.large(
-      imageUrl: profile?.avatarUrl,
-      displayName: fallbackText,
-      context: AvatarContext.social,
+  Widget _buildCounter(
+    BuildContext context,
+    DabblerColors colors, {
+    required int value,
+    required String label,
+    required VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              '$value',
+              style: _t(
+                context,
+                DabblerType.headline,
+                colors.textPrimary,
+                weight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: DabblerSpacing.space1),
+            Text(
+              label,
+              style: _t(context, DabblerType.footnote, colors.textSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildPostsAndFollowingCounter(
     BuildContext context,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-    Color baseOnTop,
+    DabblerColors colors,
   ) {
+    final l10n = AppLocalizations.of(context);
     final profileId = ref.watch(profileControllerProvider).profile?.id;
     final postsAsync = profileId != null
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
@@ -560,10 +403,15 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       orElse: () => 0,
     );
 
-    return Row(
+    return Wrap(
+      spacing: DabblerSpacing.space6,
       children: [
         // Posts counter
-        InkWell(
+        _buildCounter(
+          context,
+          colors,
+          value: postsCount,
+          label: l10n.profile_post_count(postsCount),
           onTap: () {
             final ctx = _activitiesKey.currentContext;
             if (ctx != null) {
@@ -574,168 +422,41 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               );
             }
           },
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$postsCount',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  AppLocalizations.of(context).profile_post_count(postsCount),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-        const SizedBox(width: 16),
         // Following counter
-        InkWell(
+        _buildCounter(
+          context,
+          colors,
+          value: followingCount,
+          label: l10n.profile_following_label,
           onTap: profileId != null
               ? () => context.pushNamed(
                   RouteNames.following,
                   pathParameters: {'profileId': profileId},
                 )
               : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$followingCount',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  AppLocalizations.of(context).profile_following_label,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
-        const SizedBox(width: 16),
         // Followers counter
-        InkWell(
+        _buildCounter(
+          context,
+          colors,
+          value: followersCount,
+          label: l10n.profile_follower_count(followersCount),
           onTap: profileId != null
               ? () => context.pushNamed(
                   RouteNames.followers,
                   pathParameters: {'profileId': profileId},
                 )
               : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$followersCount',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  AppLocalizations.of(context).profile_follower_count(followersCount),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: baseOnTop.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ],
     );
   }
 
-  Widget _buildUserMetaRow(
-    BuildContext context,
-    UserProfile? profile,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-  ) {
-    final baseOnTop = colorScheme.onSurface;
-
-    return Wrap(
-      spacing: 9,
-      runSpacing: 4,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        // Online / Last seen indicator
-        if (profile != null)
-          _buildOnlineIndicator(profile, textTheme, baseOnTop),
-        if (profile?.username != null && profile!.username!.isNotEmpty)
-          Text(
-            '@${profile.username}',
-            style: textTheme.labelSmall?.copyWith(
-              color: baseOnTop.withValues(alpha: 0.7),
-            ),
-          ),
-        if (profile?.city?.isNotEmpty == true ||
-            profile?.country?.isNotEmpty == true)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Iconsax.location_copy,
-                size: 16,
-                color: baseOnTop.withValues(alpha: 0.7),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                _formatLocation(profile!.city, profile.country),
-                style: textTheme.labelSmall?.copyWith(
-                  color: baseOnTop.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
-        if (profile?.age != null)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Iconsax.cake_copy,
-                size: 16,
-                color: baseOnTop.withValues(alpha: 0.7),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${profile!.age!} ${AppLocalizations.of(context).user_profile_age_suffix}',
-                style: textTheme.bodySmall?.copyWith(
-                  color: baseOnTop.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
   Widget _buildOnlineIndicator(
+    BuildContext context,
     UserProfile profile,
-    TextTheme textTheme,
-    Color baseOnTop,
+    DabblerColors colors,
   ) {
     final isOnline = profile.isOnline;
     final lastSeenText = profile.getLastSeenText();
@@ -743,61 +464,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Pulsing dot for online, static grey dot for offline
+        // Pulsing dot for online, static neutral dot for offline
         _OnlineStatusDot(isOnline: isOnline),
-        const SizedBox(width: 4),
+        const SizedBox(width: DabblerSpacing.space2),
         Text(
           lastSeenText,
-          style: textTheme.labelSmall?.copyWith(
-            color: isOnline
-                ? const Color(0xFF4CAF50)
-                : baseOnTop.withValues(alpha: 0.5),
-            fontWeight: isOnline ? FontWeight.w600 : FontWeight.w400,
+          style: _t(
+            context,
+            DabblerType.caption1,
+            isOnline ? colors.success.strong : colors.textTertiary,
+            weight: isOnline ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildInfoPill(
-    BuildContext context, {
-    required String label,
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required Color baseOnTop,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: textTheme.labelSmall?.copyWith(
-              color: baseOnTop,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildInfoPills(
     BuildContext context,
     UserProfile? profile,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
+    DabblerColors colors,
   ) {
-    final baseOnTop = colorScheme.onSurface;
     final primarySportId = profile?.preferredSport;
 
-    // Resolve UUID → Sport object to get name_en and emoji
+    // Resolve UUID → Sport object to get its name
     final sportsAsync = ref.watch(sportsProvider);
     final allSports = sportsAsync.valueOrNull ?? [];
     final matchedSport = (primarySportId != null && primarySportId.isNotEmpty)
@@ -806,51 +496,48 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
             orElse: () => null,
           )
         : null;
-    final sportName = matchedSport != null ? matchedSport.localizedName(context) as String : null;
-    final sportEmoji = matchedSport?.emoji as String?;
+    final sportName = matchedSport != null
+        ? matchedSport.localizedName(context) as String
+        : null;
+    final sport = listingSportFor(matchedSport?.nameEn as String?);
+
+    final location = _formatLocation(profile?.city, profile?.country);
 
     return Wrap(
-      spacing: 8,
-      runSpacing: 6,
+      spacing: DabblerSpacing.space2,
+      runSpacing: DabblerSpacing.space2,
       children: [
         // Persona type pill
         if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
-          _buildInfoPill(
-            context,
+          DabblerBadge(
             label: personaLabel(context, profile.personaType),
-            colorScheme: colorScheme,
-            textTheme: textTheme,
-            baseOnTop: baseOnTop,
+            tone: DabblerBadgeTone.defaultTone,
           ),
-        // Primary sport pill — resolved from public.sports via name_en
+        // Primary sport pill — resolved from public.sports
         if (sportName != null && sportName.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: colorScheme.outlineVariant),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (sportEmoji != null && sportEmoji.isNotEmpty) ...[
-                  Text(sportEmoji, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  sportName,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: baseOnTop,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          DabblerBadge(
+            label: sportName,
+            tone: DabblerBadgeTone.withIcon,
+            icon: sport == null ? null : DabblerSportIcon(sport, size: 14),
+          ),
+        if (location.isNotEmpty)
+          DabblerBadge(
+            label: location,
+            tone: DabblerBadgeTone.withIcon,
+            icon: const DabblerIcon('location', size: 14),
+          ),
+        if (profile?.age != null)
+          DabblerBadge(
+            label:
+                '${profile!.age!} ${AppLocalizations.of(context).user_profile_age_suffix}',
+            tone: DabblerBadgeTone.withIcon,
+            icon: const DabblerIcon('cake', size: 14),
           ),
       ],
     );
   }
+
+  // ── Stats bento ──────────────────────────────────────────────────────
 
   Widget _buildUnifiedStats(
     BuildContext context,
@@ -863,116 +550,67 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     }
 
     final statistics = profile.statistics;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     final l10n = AppLocalizations.of(context);
-    final allStats = [
-      _StatItem(
-        label: l10n.user_profile_stat_games,
-        value: statistics.totalGamesPlayed.toString(),
-        icon: Iconsax.medal_star_copy,
-      ),
-      _StatItem(
-        label: l10n.user_profile_stat_win_rate,
-        value: statistics.winRateFormatted,
-        icon: Iconsax.cup_copy,
-      ),
-      _StatItem(
-        label: l10n.user_profile_stat_sports,
-        value: sportsState.profiles.length.toString(),
-        icon: Iconsax.game_copy,
-      ),
-      _StatItem(
-        label: l10n.user_profile_stat_reliability,
-        value: '${statistics.getReliabilityScore().round()}%',
-        icon: Iconsax.verify_copy,
-      ),
-      _StatItem(
-        label: l10n.user_profile_stat_activity,
-        value: statistics.getActivityLevel(),
-        icon: Iconsax.flash_copy,
-      ),
-      _StatItem(
-        label: l10n.user_profile_stat_last_play,
-        value: statistics.lastActiveFormatted,
-        icon: Iconsax.clock_copy,
-      ),
-    ];
 
-    return Column(
-      children: [
-        Row(
-          children: allStats
-              .sublist(0, 3)
-              .map(
-                (stat) => Expanded(
-                  child: _buildStatCard(stat, colorScheme, textTheme),
-                ),
-              )
-              .toList(),
-        ),
-        Row(
-          children: allStats
-              .sublist(3)
-              .map(
-                (stat) => Expanded(
-                  child: _buildStatCard(stat, colorScheme, textTheme),
-                ),
-              )
-              .toList(),
-        ),
-      ],
+    DabblerStatTile tile(
+      String value,
+      String label,
+      DabblerStatTileTone tone,
+    ) => DabblerStatTile(
+      value: value,
+      label: label,
+      tone: tone,
+      span: 2,
+      rows: 1,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
+      child: DabblerStatGrid(
+        children: [
+          tile(
+            statistics.totalGamesPlayed.toString(),
+            l10n.user_profile_stat_games,
+            DabblerStatTileTone.brand,
+          ),
+          tile(
+            statistics.winRateFormatted,
+            l10n.user_profile_stat_win_rate,
+            DabblerStatTileTone.ink,
+          ),
+          tile(
+            sportsState.profiles.length.toString(),
+            l10n.user_profile_stat_sports,
+            DabblerStatTileTone.card,
+          ),
+          tile(
+            '${statistics.getReliabilityScore().round()}%',
+            l10n.user_profile_stat_reliability,
+            DabblerStatTileTone.amber,
+          ),
+          // Activity and last play carry words, not numbers: one wider tile
+          // with the last play as its sub-line.
+          DabblerStatTile(
+            value: statistics.getActivityLevel(),
+            label: l10n.user_profile_stat_activity,
+            sub:
+                '${l10n.user_profile_stat_last_play}: ${statistics.lastActiveFormatted}',
+            tone: DabblerStatTileTone.sunken,
+            span: 4,
+            rows: 1,
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildStatCard(
-    _StatItem stat,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-  ) {
-    final baseOnTop = colorScheme.onSurface;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide.none,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              stat.value,
-              style: textTheme.labelMedium?.copyWith(
-                color: baseOnTop,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              stat.label,
-              style: textTheme.labelSmall?.copyWith(
-                color: baseOnTop,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // ── Sports ───────────────────────────────────────────────────────────
 
   Widget _buildSportsChipsSection(
     BuildContext context,
     UserProfile? profile,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
+    DabblerColors colors,
   ) {
-    final onTop = colorScheme.onSurface;
     final interestIds = profile?.interests ?? [];
     final sportsAsync = ref.watch(sportsProvider);
     final allSports = sportsAsync.valueOrNull ?? [];
@@ -989,91 +627,59 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       final profileId = profile?.id;
       final userId = profile?.userId;
       final personaType = profile?.personaType ?? profile?.profileType ?? '';
+      final dsSport = listingSportFor(sport.nameEn as String?);
 
-      return Container(
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap:
-              profileId == null ||
-                  userId == null ||
-                  (personaType != 'player' && personaType != 'organiser')
-              ? null
-              : () {
-                  final args = SportProfileRouteArgs(
-                    profileId: profileId,
-                    userId: userId,
-                    displayName: profile?.displayName ?? '',
-                    personaType: personaType,
-                    sportId: sport.id,
-                    sportKey:
-                        sport.sportKey ??
-                        sport.nameEn.toLowerCase().replaceAll(' ', '_'),
-                    sportName: sport.nameEn,
-                    avatarUrl: profile?.avatarUrl,
-                    sportEmoji: sport.emoji,
-                  );
-                  // Query params keep the route alive across web refresh;
-                  // extra stays as the fast path.
-                  context.push(
-                    Uri(
-                      path: RoutePaths.sportProfile,
-                      queryParameters: args.toQueryParameters(),
-                    ).toString(),
-                    extra: args,
-                  );
-                },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: colorScheme.outline.withValues(alpha: 0.15),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (sport.emoji != null && sport.emoji!.isNotEmpty) ...[
-                  Text(sport.emoji!, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  sport.nameEn,
-                  style: textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      return DabblerChip(
+        label: sport.nameEn,
+        leadingIcon: dsSport == null ? null : DabblerSportIcon(dsSport),
+        onTap:
+            profileId == null ||
+                userId == null ||
+                (personaType != 'player' && personaType != 'organiser')
+            ? null
+            : () {
+                final args = SportProfileRouteArgs(
+                  profileId: profileId,
+                  userId: userId,
+                  displayName: profile?.displayName ?? '',
+                  personaType: personaType,
+                  sportId: sport.id,
+                  sportKey:
+                      sport.sportKey ??
+                      sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+                  sportName: sport.nameEn,
+                  avatarUrl: profile?.avatarUrl,
+                  sportEmoji: sport.emoji,
+                );
+                // Query params keep the route alive across web refresh;
+                // extra stays as the fast path.
+                context.push(
+                  Uri(
+                    path: RoutePaths.sportProfile,
+                    queryParameters: args.toQueryParameters(),
+                  ).toString(),
+                  extra: args,
+                );
+              },
       );
     }).toList();
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppLocalizations.of(context).profile_section_sports,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: onTop,
-            ),
+            style: _t(context, DabblerType.headline, colors.textPrimary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: DabblerSpacing.space3),
           if (isWide)
-            Wrap(spacing: 8, runSpacing: 8, children: chips)
+            Wrap(
+              spacing: DabblerSpacing.space2,
+              runSpacing: DabblerSpacing.space2,
+              children: chips,
+            )
           else
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -1081,7 +687,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 children: chips
                     .map(
                       (c) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsetsDirectional.only(
+                          end: DabblerSpacing.space2,
+                        ),
                         child: c,
                       ),
                     )
@@ -1093,10 +701,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     );
   }
 
+  // ── Actions ──────────────────────────────────────────────────────────
+
   Widget _buildActionButtons(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final myProfileIdAsync = ref.watch(myProfileIdProvider);
-    final buttonTextStyle = Theme.of(context).textTheme.labelMedium;
 
     final myProfileId = myProfileIdAsync.maybeWhen(
       data: (v) => v,
@@ -1108,57 +716,31 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     return Row(
       children: [
+        Expanded(
+          child: (myProfileId == null || targetProfileId == null)
+              ? DabblerButton(
+                  label: AppLocalizations.of(context).user_profile_btn_loading,
+                  tone: DabblerButtonTone.outlined,
+                  loading: true,
+                  fullWidth: true,
+                )
+              : _buildFollowButton(
+                  context,
+                  myProfileId: myProfileId,
+                  targetProfileId: targetProfileId,
+                ),
+        ),
         // KAN-45: chat isn't wired up (this route only reaches a
         // "Coming Soon" placeholder) — hide the button until it ships.
         if (FeatureFlags.messaging) ...[
-          SizedBox(
-            width: 40,
-            height: 40,
-            child: OutlinedButton(
-              onPressed: () => _sendMessage(context),
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.zero,
-                foregroundColor: colorScheme.onSurface,
-                side: BorderSide(
-                  color: colorScheme.onSurface.withValues(alpha: 0.3),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Icon(Iconsax.message_copy, size: 20),
-            ),
+          const SizedBox(width: DabblerSpacing.space3),
+          DabblerButton.icon(
+            icon: 'sms',
+            semanticLabel: 'Message',
+            tone: DabblerButtonTone.outlined,
+            onPressed: () => _sendMessage(context),
           ),
-          const SizedBox(width: 8),
         ],
-        Expanded(
-          child: (myProfileId == null || targetProfileId == null)
-                ? OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    label: Text(AppLocalizations.of(context).user_profile_btn_loading),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(44),
-                      textStyle: buttonTextStyle,
-                      foregroundColor: colorScheme.onSurface,
-                      side: BorderSide(
-                        color: colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  )
-                : _buildFollowButton(
-                    context,
-                    myProfileId: myProfileId,
-                    targetProfileId: targetProfileId,
-                  ),
-        ),
       ],
     );
   }
@@ -1168,11 +750,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     required String myProfileId,
     required String targetProfileId,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final buttonTextStyle = Theme.of(context)
-        .textTheme
-        .labelLarge
-        ?.copyWith(fontWeight: FontWeight.w600);
+    final l10n = AppLocalizations.of(context);
 
     final isBlockedAsync = ref.watch(
       isBlockedProvider((
@@ -1186,26 +764,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     );
 
     if (isBlocked) {
-      return OutlinedButton.icon(
+      return DabblerButton(
+        label: l10n.user_profile_btn_unblock,
+        icon: 'slash',
+        tone: DabblerButtonTone.destructive,
+        fullWidth: true,
         onPressed: () => _unblockUser(context),
-        icon: const Icon(Iconsax.slash_copy),
-        label: Flexible(
-          child: Text(
-            AppLocalizations.of(context).user_profile_btn_unblock,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(44),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          textStyle: buttonTextStyle,
-          foregroundColor: colorScheme.error,
-          side: BorderSide(color: colorScheme.error.withValues(alpha: 0.5)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
       );
     }
 
@@ -1221,93 +785,63 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     );
 
     if (isFollowing) {
-      return OutlinedButton.icon(
+      return DabblerButton(
+        label: l10n.user_profile_btn_following,
+        icon: 'user-tick',
+        tone: DabblerButtonTone.outlined,
+        fullWidth: true,
         onPressed: () => _toggleFollow(
           context,
           myProfileId: myProfileId,
           targetProfileId: targetProfileId,
           currentlyFollowing: true,
         ),
-        icon: const Icon(Iconsax.user_tick_copy),
-        label: Flexible(
-          child: Text(
-            AppLocalizations.of(context).user_profile_btn_following,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        style: OutlinedButton.styleFrom(
-          // minimumSize: const Size.fromHeight(44),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          textStyle: buttonTextStyle,
-          foregroundColor: colorScheme.onSurface,
-          side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
       );
     }
 
-    return OutlinedButton.icon(
+    return DabblerButton(
+      label: l10n.user_profile_btn_follow,
+      icon: 'user-add',
+      tone: DabblerButtonTone.primary,
+      fullWidth: true,
       onPressed: () => _toggleFollow(
         context,
         myProfileId: myProfileId,
         targetProfileId: targetProfileId,
         currentlyFollowing: false,
       ),
-      icon: const Icon(Iconsax.user_add_copy),
-      label: Flexible(
-        child: Text(
-          AppLocalizations.of(context).user_profile_btn_follow,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        // minimumSize: const Size.fromHeight(44),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        textStyle: buttonTextStyle,
-        foregroundColor: colorScheme.onSurface,
-        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.3)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
     );
   }
 
+  // ── Tabbed posts ─────────────────────────────────────────────────────
+
   /// Tabbed posts section
   Widget _buildTabbedPostsSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final profileId = ref.watch(profileControllerProvider).profile?.id;
 
     return Column(
       key: _activitiesKey,
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabAlignment: TabAlignment.start,
-          labelColor: colorScheme.onSurface,
-          unselectedLabelColor: colorScheme.onSurfaceVariant,
-          indicatorColor: colorScheme.primary,
-          indicatorWeight: 3,
-          labelStyle: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+        Padding(
+          padding: _gutter,
+          child: DabblerTabs(
+            scrollable: true,
+            value: _tabIds[_selectedTabIndex],
+            onChanged: (id) =>
+                setState(() => _selectedTabIndex = _tabIds.indexOf(id)),
+            items: [
+              DabblerTabItem(id: _tabIds[0], label: l10n.profile_tab_posts),
+              DabblerTabItem(id: _tabIds[1], label: l10n.profile_tab_replies),
+              DabblerTabItem(id: _tabIds[2], label: l10n.profile_tab_liked),
+              DabblerTabItem(id: _tabIds[3], label: l10n.profile_tab_reposts),
+              DabblerTabItem(id: _tabIds[4], label: l10n.profile_tab_activity),
+            ],
           ),
-          unselectedLabelStyle: textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w400,
-          ),
-          tabs: [
-            Tab(text: AppLocalizations.of(context).profile_tab_posts),
-            Tab(text: AppLocalizations.of(context).profile_tab_replies),
-            Tab(text: AppLocalizations.of(context).profile_tab_liked),
-            Tab(text: AppLocalizations.of(context).profile_tab_reposts),
-            Tab(text: AppLocalizations.of(context).profile_tab_activity),
-          ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: DabblerSpacing.space1),
         _buildTabContent(context, profileId),
       ],
     );
@@ -1330,19 +864,24 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     }
   }
 
+  Widget _tabLoading() => const Padding(
+    padding: EdgeInsets.all(DabblerSpacing.space11),
+    child: Center(child: DabblerSpinner()),
+  );
+
   Widget _buildActivityTabContent(BuildContext context, String? profileId) {
     if (profileId == null) return const SizedBox.shrink();
     final state = ref.watch(userActivitiesProvider(profileId));
 
     if (state.isLoading && state.activities.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return _tabLoading();
     }
 
     if (state.activities.isEmpty) {
-      return _buildEmptyTabContent(context, AppLocalizations.of(context).profile_empty_no_activity);
+      return _buildEmptyTabContent(
+        context,
+        AppLocalizations.of(context).profile_empty_no_activity,
+      );
     }
 
     return Column(
@@ -1358,7 +897,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_posts);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_posts,
+    );
   }
 
   Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
@@ -1366,7 +908,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_replies);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_replies,
+    );
   }
 
   Widget _buildLikedTabContent(BuildContext context, String? profileId) {
@@ -1374,7 +919,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_liked);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_liked,
+    );
   }
 
   Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
@@ -1382,7 +930,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
         ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
         : const AsyncData<List<Post>>([]);
 
-    return _buildPostsList(postsAsync, AppLocalizations.of(context).profile_empty_no_reposts);
+    return _buildPostsList(
+      postsAsync,
+      AppLocalizations.of(context).profile_empty_no_reposts,
+    );
   }
 
   Widget _buildPostsList(
@@ -1398,47 +949,27 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           mainAxisSize: MainAxisSize.min,
           children: posts.map((post) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: DabblerSpacing.space1),
               child: resolvePostLayout(post),
             );
           }).toList(),
         );
       },
-      loading: () => const Padding(
-        padding: EdgeInsets.all(48),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-      error: (_, __) => Padding(
-        padding: const EdgeInsets.all(48),
-        child: Center(child: Text(AppLocalizations.of(context).profile_error_failed_load_posts)),
+      loading: _tabLoading,
+      error: (_, _) => Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space11),
+        child: DabblerEmptyState(
+          icon: 'danger',
+          title: AppLocalizations.of(context).profile_error_failed_load_posts,
+        ),
       ),
     );
   }
 
   Widget _buildEmptyTabContent(BuildContext context, String message) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.article_outlined,
-              size: 48,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space11),
+      child: DabblerEmptyState(icon: 'document-text', title: message),
     );
   }
 
@@ -1459,7 +990,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       },
       loading: () => const SizedBox(
         height: 140,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: DabblerSpinner()),
       ),
       error: (error, stackTrace) => _buildSportProfileEmptyState(context),
     );
@@ -1503,9 +1034,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
     final isBlocked = ref.read(isUserBlockedProvider(userId));
     isBlocked.whenData((blocked) {
       if (blocked) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).user_profile_cannot_message_blocked)),
-        );
+        _toast(AppLocalizations.of(context).user_profile_cannot_message_blocked);
         return;
       }
       context.push('${RoutePaths.socialChat}/$userId');
@@ -1552,25 +1081,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
   Future<void> _blockUser(BuildContext context) async {
     // Confirmation dialog
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDabblerDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        title: Text(AppLocalizations.of(ctx).user_profile_block_dialog_title),
-        content: Text(AppLocalizations.of(ctx).user_profile_block_dialog_body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(AppLocalizations.of(ctx).profile_btn_cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
-            child: Text(AppLocalizations.of(ctx).user_profile_block_btn_block),
-          ),
-        ],
+      builder: (ctx) => DabblerDialog(
+        title: AppLocalizations.of(ctx).user_profile_block_dialog_title,
+        description: AppLocalizations.of(ctx).user_profile_block_dialog_body,
+        destructive: true,
+        onClose: () => Navigator.pop(ctx, false),
+        secondaryAction: DabblerDialogAction(
+          label: AppLocalizations.of(ctx).profile_btn_cancel,
+          onPressed: () => Navigator.pop(ctx, false),
+        ),
+        primaryAction: DabblerDialogAction(
+          label: AppLocalizations.of(ctx).user_profile_block_btn_block,
+          onPressed: () => Navigator.pop(ctx, true),
+        ),
       ),
     );
 
@@ -1583,11 +1108,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     result.fold(
       (err) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${err.message}')));
-        }
+        _toast('Error: ${err.message}', tone: DabblerToastTone.error);
       },
       (_) {
         // Invalidate all block-dependent providers
@@ -1609,9 +1130,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           ref.invalidate(followersListProvider(myProfileId));
         }
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).user_profile_blocked_snack)));
+          _toast(AppLocalizations.of(context).user_profile_blocked_snack);
         }
       },
     );
@@ -1625,11 +1144,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
 
     result.fold(
       (err) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Error: ${err.message}')));
-        }
+        _toast('Error: ${err.message}', tone: DabblerToastTone.error);
       },
       (_) {
         ref.invalidate(blockedUserIdsProvider);
@@ -1650,9 +1165,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           ref.invalidate(followersListProvider(myProfileId));
         }
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).user_profile_unblocked_snack)));
+          _toast(AppLocalizations.of(context).user_profile_unblocked_snack);
         }
       },
     );
@@ -1670,67 +1183,69 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   }
 
   void _showMoreOptions(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final targetUserId = _targetAuthUserId();
     final blocked = targetUserId == null
         ? false
         : ref.read(isUserBlockedProvider(targetUserId)).valueOrNull ?? false;
 
-    showAdaptiveSheet(
+    showDabblerSheet<void>(
       context: context,
-      backgroundColor: colorScheme.surface,
-      showDragHandle: false,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (blocked)
-              ListTile(
-                leading: const Icon(Iconsax.close_circle_copy),
-                title: Text(AppLocalizations.of(context).user_profile_menu_unblock_user),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _unblockUser(this.context);
-                },
-              )
-            else
-              ListTile(
-                leading: const Icon(Iconsax.close_circle_copy),
-                title: Text(AppLocalizations.of(context).user_profile_menu_block_user),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _blockUser(this.context);
+      detent: DabblerSheetDetent.content,
+      builder: (sheetContext) {
+        final l10n = AppLocalizations.of(sheetContext);
+        return Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space6,
+            DabblerSpacing.space2,
+            DabblerSpacing.space6,
+            DabblerSpacing.space8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (blocked)
+                DabblerButton(
+                  label: l10n.user_profile_menu_unblock_user,
+                  icon: 'close-circle',
+                  tone: DabblerButtonTone.neutral,
+                  fullWidth: true,
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    await _unblockUser(this.context);
+                  },
+                )
+              else
+                DabblerButton(
+                  label: l10n.user_profile_menu_block_user,
+                  icon: 'close-circle',
+                  tone: DabblerButtonTone.neutral,
+                  fullWidth: true,
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    await _blockUser(this.context);
+                  },
+                ),
+              const SizedBox(height: DabblerSpacing.space3),
+              DabblerButton(
+                label: l10n.user_profile_menu_report_user,
+                icon: 'warning-2',
+                tone: DabblerButtonTone.neutral,
+                fullWidth: true,
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _reportUser(this.context);
                 },
               ),
-            ListTile(
-              leading: const Icon(Iconsax.warning_2_copy),
-              title: Text(AppLocalizations.of(context).user_profile_menu_report_user),
-              onTap: () {
-                Navigator.pop(context);
-                _reportUser(this.context);
-              },
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class _StatItem {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _StatItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-}
-
-/// Animated pulsing dot for online status
+/// Dot for online status: a pulsing success dot while online, a static
+/// neutral dot otherwise.
 class _OnlineStatusDot extends StatefulWidget {
   final bool isOnline;
   const _OnlineStatusDot({required this.isOnline});
@@ -1777,37 +1292,13 @@ class _OnlineStatusDotState extends State<_OnlineStatusDot>
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.isOnline
-        ? const Color(0xFF4CAF50)
-        : Colors.grey.withValues(alpha: 0.5);
-
     if (!widget.isOnline) {
-      return Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      );
+      return const DabblerBadge.dot(tone: DabblerBadgeTone.withIcon);
     }
 
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: color.withValues(alpha: _animation.value),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: _animation.value * 0.5),
-                blurRadius: 4 * _animation.value,
-                spreadRadius: 1 * _animation.value,
-              ),
-            ],
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: _animation,
+      child: DabblerBadge.dot(status: DabblerColors.of(context).success),
     );
   }
 }

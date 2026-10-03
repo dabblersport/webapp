@@ -1,4 +1,14 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+
+TextStyle _text(
+  BuildContext context,
+  DabblerTypeStyle step,
+  Color color, {
+  FontWeight? weight,
+}) => step
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(color: color, fontWeight: weight);
 
 class SportsSkillIndicator extends StatelessWidget {
   final String sportName;
@@ -22,55 +32,40 @@ class SportsSkillIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = primaryColor ?? theme.primaryColor;
+    final colors = DabblerColors.of(context);
+    final color = primaryColor ?? colors.brandPrimary;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return DabblerSurface.card(
+      padding: const EdgeInsets.all(DabblerSpacing.space5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(_getSportIcon(sportName), color: color, size: 24),
+              DabblerIconTile.tinted(
+                DabblerSportIcon.fromKey(_sportKey(sportName), color: color),
+                color: color,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: DabblerSpacing.space4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       sportName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: _text(
+                        context,
+                        DabblerType.headline,
+                        colors.textPrimary,
                       ),
                     ),
                     if (showLabel)
                       Text(
                         skillLabel,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.textTheme.bodySmall?.color?.withValues(
-                            alpha: 0.7,
-                          ),
+                        style: _text(
+                          context,
+                          DabblerType.footnote,
+                          colors.textSecondary,
                         ),
                       ),
                   ],
@@ -78,67 +73,75 @@ class SportsSkillIndicator extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // Skill level indicator
-          if (isInteractive)
-            _buildInteractiveSkillLevel(context, color)
-          else
-            _buildStaticSkillLevel(context, color),
+          const SizedBox(height: DabblerSpacing.space5),
+          _buildSkillLevel(context, color, interactive: isInteractive),
         ],
       ),
     );
   }
 
-  Widget _buildStaticSkillLevel(BuildContext context, Color color) {
+  Widget _buildSkillLevel(
+    BuildContext context,
+    Color color, {
+    required bool interactive,
+  }) {
+    final colors = DabblerColors.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Skill Level',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(
-              context,
-            ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
+          style: _text(
+            context,
+            DabblerType.footnote,
+            colors.textSecondary,
+            weight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DabblerSpacing.space2),
         Row(
           children: List.generate(5, (index) {
             final isActive = index < skillLevel;
-            return Padding(
-              padding: EdgeInsets.only(right: index < 4 ? 8 : 0),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 40,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: isActive ? color : color.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(4),
+            final segment = DabblerSurface(
+              height: interactive ? 12 : 8,
+              radius: DabblerRadius.pill,
+              fill: isActive ? color : colors.surfaceSunken,
+              borderWidth: 0,
+            );
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsetsDirectional.only(
+                  end: index < 4 ? DabblerSpacing.space2 : 0,
                 ),
+                child: interactive
+                    ? GestureDetector(
+                        onTap: () => onSkillChanged?.call(index + 1),
+                        child: segment,
+                      )
+                    : segment,
               ),
             );
           }),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DabblerSpacing.space2),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Beginner',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+              style: _text(
+                context,
+                DabblerType.caption1,
+                colors.textTertiary,
               ),
             ),
             Text(
               'Expert',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+              style: _text(
+                context,
+                DabblerType.caption1,
+                colors.textTertiary,
               ),
             ),
           ],
@@ -147,112 +150,17 @@ class SportsSkillIndicator extends StatelessWidget {
     );
   }
 
-  Widget _buildInteractiveSkillLevel(BuildContext context, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Skill Level',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: Theme.of(
-              context,
-            ).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: List.generate(5, (index) {
-            final isActive = index < skillLevel;
-            return Padding(
-              padding: EdgeInsets.only(right: index < 4 ? 8 : 0),
-              child: GestureDetector(
-                onTap: () => onSkillChanged?.call(index + 1),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 40,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: isActive ? color : color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: isActive
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Beginner',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-            Text(
-              'Expert',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  IconData _getSportIcon(String sport) {
-    switch (sport.toLowerCase()) {
-      case 'football':
+  /// Display name to the kebab-case DS sport key (`Table Tennis` ->
+  /// `table-tennis`); unknown sports fall to the DS sport-icon fallback.
+  static String _sportKey(String sport) {
+    final key = sport.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
+    switch (key) {
       case 'soccer':
-        return Icons.sports_soccer;
-      case 'basketball':
-        return Icons.sports_basketball;
-      case 'tennis':
-        return Icons.sports_tennis;
-      case 'volleyball':
-        return Icons.sports_volleyball;
-      case 'baseball':
-        return Icons.sports_baseball;
-      case 'golf':
-        return Icons.sports_golf;
-      case 'running':
+        return 'football';
       case 'track':
-        return Icons.directions_run;
-      case 'swimming':
-        return Icons.pool;
-      case 'cycling':
-        return Icons.directions_bike;
-      case 'martial arts':
-      case 'karate':
-        return Icons.sports_martial_arts;
-      case 'hockey':
-        return Icons.sports_hockey;
-      case 'cricket':
-        return Icons.sports_cricket;
-      case 'rugby':
-        return Icons.sports_rugby;
-      case 'badminton':
-        return Icons.sports_tennis; // Using tennis as closest match
-      case 'table tennis':
-        return Icons.sports_tennis;
+        return 'running';
       default:
-        return Icons.sports;
+        return key;
     }
   }
 
@@ -289,27 +197,24 @@ class SportsSkillGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.2,
-      ),
-      itemCount: skills.length,
-      itemBuilder: (context, index) {
-        final skill = skills[index];
-        return SportsSkillIndicator(
-          sportName: skill.sportName,
-          skillLevel: skill.level,
-          skillLabel: SportsSkillIndicator.getSkillLevelLabel(skill.level),
-          isInteractive: isEditable,
-          onSkillChanged: (level) =>
-              onSkillChanged?.call(skill.sportName, level),
-        );
-      },
+    return Wrap(
+      spacing: DabblerSpacing.space5,
+      runSpacing: DabblerSpacing.space5,
+      children: [
+        for (final skill in skills)
+          SizedBox(
+            width: 220,
+            child: SportsSkillIndicator(
+              sportName: skill.sportName,
+              skillLevel: skill.level,
+              skillLabel: SportsSkillIndicator.getSkillLevelLabel(skill.level),
+              primaryColor: skill.color,
+              isInteractive: isEditable,
+              onSkillChanged: (level) =>
+                  onSkillChanged?.call(skill.sportName, level),
+            ),
+          ),
+      ],
     );
   }
 }
