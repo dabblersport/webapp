@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -7,8 +8,8 @@ import 'package:dabbler/core/services/user_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_widgets.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/birth_date_sheet.dart';
 
 class RegistrationData {
   String email;
@@ -268,33 +269,13 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   Future<void> _handleSubmit() async {
     // Validate all fields before proceeding
     if (!_formKey.currentState!.validate()) {
-      final colorScheme = Theme.of(context).colorScheme;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).create_info_error_fill_required,
-          ),
-          backgroundColor: colorScheme.error,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      showOnboardingError(context, AppLocalizations.of(context).create_info_error_fill_required);
       return;
     }
 
     // Additional validation checks
     if (_selectedBirthDate == null) {
-      final colorScheme = Theme.of(context).colorScheme;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context).create_info_error_select_birth,
-          ),
-          backgroundColor: colorScheme.error,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      showOnboardingError(context, AppLocalizations.of(context).create_info_error_select_birth);
       return;
     }
 
@@ -302,32 +283,14 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
     // Age must be >= 16
     if (ageValue < 16) {
-      final colorScheme = Theme.of(context).colorScheme;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context).create_info_error_min_age),
-          backgroundColor: colorScheme.error,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      showOnboardingError(context, AppLocalizations.of(context).create_info_error_min_age);
       return;
     }
 
     if (ageValue > AppConstants.maxAge) {
-      final colorScheme = Theme.of(context).colorScheme;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(
+      showOnboardingError(context, AppLocalizations.of(
               context,
-            ).create_info_error_max_age(AppConstants.maxAge),
-          ),
-          backgroundColor: colorScheme.error,
-          duration: Duration(seconds: 3),
-        ),
-      );
+            ).create_info_error_max_age(AppConstants.maxAge));
       return;
     }
 
@@ -364,19 +327,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       }
     } catch (e) {
       if (mounted) {
-        final colorScheme = Theme.of(context).colorScheme;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AppLocalizations.of(
+        showOnboardingError(context, AppLocalizations.of(
                 context,
-              ).create_info_error_occurred(e.toString()),
-            ),
-            backgroundColor: colorScheme.error,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+              ).create_info_error_occurred(e.toString()));
       }
     } finally {
       if (mounted) {
@@ -406,9 +359,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     return _selectedBirthDate != null;
   }
 
-  /// Show native date picker
+  /// Opens the DS birth-date sheet (calendar with a year list).
   Future<void> _showDatePicker(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? picked = await showBirthDateSheet(
       context: context,
       initialDate:
           _selectedBirthDate ??
@@ -419,16 +372,6 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       lastDate: DateTime.now().subtract(
         const Duration(days: 4745),
       ), // 13 years ago
-      initialDatePickerMode: DatePickerMode.year,
-      initialEntryMode: DatePickerEntryMode.calendarOnly,
-      builder: (context, child) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
-        return Theme(
-          data: isDark ? ThemeData.dark() : ThemeData.light(),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null && picked != _selectedBirthDate) {
@@ -440,259 +383,104 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    if (_isLoadingData) {
-      return Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(
-          child: CircularProgressIndicator(color: colorScheme.primary),
-        ),
-      );
-    }
+    if (_isLoadingData) return const OnboardingLoading();
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-          children: [
-            OnboardingTopBar(onBack: () => context.pop()),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      OnboardingScreenHead(
-                        eyebrow: 'Step 1 of 5',
-                        title: AppLocalizations.of(context).create_info_title,
-                        subtitle: AppLocalizations.of(
-                          context,
-                        ).create_info_subtitle,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildBirthDateCard(context),
-                            const SizedBox(height: 16),
-                            _buildGenderGrid(context),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            OnboardingBottomBar(
-              child: OnboardingCTAButton(
-                label: AppLocalizations.of(context).create_info_continue,
-                onPressed: (_isLoading || !_areAllFieldsValid())
-                    ? null
-                    : _handleSubmit,
-                isLoading: _isLoading,
-              ),
-            ),
-          ],
-            ),
+    final l10n = AppLocalizations.of(context);
+    return OnboardingStepFrame(
+      onBack: () => context.pop(),
+      step: 1,
+      stepLabel: 'Step 1 of 5',
+      title: l10n.create_info_title,
+      subtitle: l10n.create_info_subtitle,
+      ctaLabel: l10n.create_info_continue,
+      ctaLoading: _isLoading,
+      onCta: (_isLoading || !_areAllFieldsValid()) ? null : _handleSubmit,
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildBirthDateField(context),
+              const SizedBox(height: DabblerSpacing.space6),
+              _buildGenderGrid(context),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildBirthDateCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildBirthDateField(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final age = _selectedBirthDate != null
         ? _calculateAge(_selectedBirthDate!)
         : null;
-    final ageText = age != null
-        ? l10n.create_info_age_display(age)
-        : l10n.create_info_birth_date_placeholder;
-
-    return GestureDetector(
-      onTap: () => _showDatePicker(context),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: _selectedBirthDate != null
-              ? colorScheme.primary.withValues(alpha: 0.07)
-              : colorScheme.surfaceContainerLowest,
-          border: Border.all(
-            color: _selectedBirthDate != null
-                ? colorScheme.primary
-                : colorScheme.outlineVariant,
-            width: _selectedBirthDate != null ? 2 : 1.5,
-          ),
-          boxShadow: _selectedBirthDate != null
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.18),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [colorScheme.primary, colorScheme.onPrimaryContainer],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.40),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Iconsax.calendar_1_copy,
-                color: colorScheme.onPrimary,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l10n.create_info_birth_date,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: colorScheme.onSurfaceVariant,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ageText,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: _selectedBirthDate != null
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Iconsax.arrow_right_3,
-              color: _selectedBirthDate != null
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
-      ),
+    return DabblerTextField(
+      variant: DabblerTextFieldVariant.select,
+      label: l10n.create_info_birth_date,
+      placeholder: l10n.create_info_birth_date_placeholder,
+      value: age != null ? l10n.create_info_age_display(age) : null,
+      onPressed: () => _showDatePicker(context),
     );
   }
 
   Widget _buildGenderGrid(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    const genders = [
-      ('male', 'Male', Iconsax.man_copy),
-      ('female', 'Female', Iconsax.woman_copy),
-    ];
+    final colors = DabblerColors.of(context);
+    const genders = [('male', 'Male', 'man'), ('female', 'Female', 'woman')];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           AppLocalizations.of(context).create_info_gender,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
+          style: onboardingType(
+            context,
+            DabblerType.footnote,
+            colors.textSecondary,
+            weight: DabblerType.medium,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: DabblerSpacing.space3),
         Row(
-          children: genders.map((g) {
-            final value = g.$1;
-            final label = g.$2;
-            final icon = g.$3;
-            final selected = _selectedGender == value;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: value != 'other' ? 8 : 0),
-                child: GestureDetector(
+          children: [
+            for (final g in genders) ...[
+              if (g != genders.first)
+                const SizedBox(width: DabblerSpacing.space4),
+              Expanded(
+                child: OnboardingOptionCard(
+                  selected: _selectedGender == g.$1,
+                  semanticLabel: g.$2,
                   // Tapping the selected option clears it — gender is optional.
                   onTap: () => setState(
-                    () => _selectedGender = selected ? '' : value,
+                    () => _selectedGender = _selectedGender == g.$1 ? '' : g.$1,
                   ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: selected
-                          ? colorScheme.primary.withValues(alpha: 0.08)
-                          : colorScheme.surfaceContainerLowest,
-                      border: Border.all(
-                        color: selected
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant,
-                        width: selected ? 2 : 1.5,
-                      ),
-                      boxShadow: selected
-                          ? [
-                              BoxShadow(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.18,
-                                ),
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
+                  child: SizedBox(
+                    height: 66,
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          icon,
-                          size: 28,
-                          color: selected
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
+                        DabblerIcon(
+                          g.$3,
+                          size: DabblerSizing.iconLg,
+                          weight: _selectedGender == g.$1
+                              ? DabblerIconWeight.bold
+                              : DabblerIconWeight.linear,
+                          color: _selectedGender == g.$1
+                              ? colors.brandPrimary
+                              : colors.textSecondary,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: DabblerSpacing.space2),
                         Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: selected
-                                ? colorScheme.onSurface
-                                : colorScheme.onSurfaceVariant,
+                          g.$2,
+                          style: onboardingType(
+                            context,
+                            DabblerType.subheadline,
+                            colors.textPrimary,
+                            weight: DabblerType.medium,
                           ),
                         ),
                       ],
@@ -700,8 +488,8 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                   ),
                 ),
               ),
-            );
-          }).toList(),
+            ],
+          ],
         ),
       ],
     );

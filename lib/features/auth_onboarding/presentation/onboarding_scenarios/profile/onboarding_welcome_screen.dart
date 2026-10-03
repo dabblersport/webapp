@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -133,48 +134,50 @@ class _ProfileOnboardingWelcomeScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: SizedBox(
-              width: double.infinity,
-              child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
-        child: Column(
+    return DabblerPage(
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space8,
+            vertical: DabblerSpacing.space11,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 l10n.onboarding_welcome_title,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colorScheme.onSurface,
-                ),
+                style: DabblerType.title1
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textPrimary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: DabblerSpacing.space3),
               Text(
                 l10n.onboarding_welcome_subtitle,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                style: DabblerType.subheadline
+                    .resolveForDirection(direction)
+                    .copyWith(color: colors.textSecondary),
+              ),
+              const SizedBox(height: DabblerSpacing.space9),
+              switch (_step.status) {
+                _StepStatus.pending => const DabblerProgressBar(value: 0),
+                _StepStatus.running => const DabblerProgressBar.indeterminate(),
+                _StepStatus.done => const DabblerProgressBar(
+                  value: 1,
+                  tone: DabblerProgressBarTone.success,
                 ),
-              ),
-              const SizedBox(height: 48),
-              _StepRow(
-                step: _step,
-                label: l10n.onboarding_welcome_step_profile,
-                colorScheme: colorScheme,
-                theme: theme,
-              ),
+                _StepStatus.error => const DabblerProgressBar(
+                  value: 1,
+                  tone: DabblerProgressBarTone.error,
+                ),
+              },
+              const SizedBox(height: DabblerSpacing.space8),
+              _StepRow(step: _step, label: l10n.onboarding_welcome_step_profile),
             ],
-          ),
-              ),
-            ),
           ),
         ),
       ),
@@ -192,67 +195,69 @@ class _Step {
 class _StepRow extends StatelessWidget {
   final _Step step;
   final String label;
-  final ColorScheme colorScheme;
-  final ThemeData theme;
 
-  const _StepRow({required this.step, required this.label, required this.colorScheme, required this.theme});
+  const _StepRow({required this.step, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    Widget icon;
-    switch (step.status) {
-      case _StepStatus.running:
-        icon = SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-          ),
-        );
-        break;
-      case _StepStatus.done:
-        icon = Icon(Icons.check_circle, color: Colors.green.shade600, size: 24);
-        break;
-      case _StepStatus.error:
-        icon = Icon(Icons.error, color: colorScheme.error, size: 24);
-        break;
-      case _StepStatus.pending:
-        icon = Icon(Icons.radio_button_unchecked, color: colorScheme.outlineVariant, size: 24);
-        break;
-    }
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Row(
-        children: [
-          icon,
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: step.status == _StepStatus.done
-                        ? FontWeight.w600
-                        : FontWeight.normal,
-                    color: step.status == _StepStatus.pending
-                        ? colorScheme.onSurfaceVariant
-                        : colorScheme.onSurface,
-                  ),
-                ),
-                if (step.errorMsg != null)
-                  Text(
-                    step.errorMsg!,
-                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
-                  ),
-              ],
+    final Widget icon = switch (step.status) {
+      _StepStatus.running => const DabblerSpinner(size: DabblerSpinnerSize.sm),
+      _StepStatus.done => DabblerIcon(
+        'tick-circle',
+        weight: DabblerIconWeight.bold,
+        size: 22,
+        color: colors.success.strong,
+      ),
+      _StepStatus.error => DabblerIcon(
+        'danger',
+        weight: DabblerIconWeight.bold,
+        size: 22,
+        color: colors.error.strong,
+      ),
+      _StepStatus.pending => DabblerSurface(
+        width: 9,
+        height: 9,
+        radius: DabblerRadius.pill,
+        fill: colors.borderStrong,
+        borderWidth: 0,
+      ),
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(width: 24, height: 24, child: Center(child: icon)),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: Text(
+                label,
+                style: DabblerType.body
+                    .resolveForDirection(direction)
+                    .copyWith(
+                      fontWeight: step.status == _StepStatus.done
+                          ? DabblerType.semibold
+                          : DabblerType.regular,
+                      color: step.status == _StepStatus.pending
+                          ? colors.textSecondary
+                          : colors.textPrimary,
+                    ),
+              ),
             ),
+          ],
+        ),
+        if (step.errorMsg != null) ...[
+          const SizedBox(height: DabblerSpacing.space4),
+          DabblerBanner(
+            tone: DabblerBannerTone.error,
+            message: step.errorMsg,
           ),
         ],
-      ),
+      ],
     );
   }
 }

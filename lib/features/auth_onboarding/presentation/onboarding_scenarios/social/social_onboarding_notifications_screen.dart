@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/config/notification_preference.dart';
@@ -31,8 +32,11 @@ class _SocialOnboardingNotificationsScreenState
     if (!mounted) return;
     setState(() => _requesting = false);
     if (granted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Notifications enabled')),
+      DabblerToastProvider.of(context).show(
+        const DabblerToastSpec(
+          message: 'Notifications enabled',
+          tone: DabblerToastTone.success,
+        ),
       );
     }
     context.push(RoutePaths.socialOnboardingComplete);
@@ -47,69 +51,79 @@ class _SocialOnboardingNotificationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Notifications',
+        onBack: () => context.pop(),
+      ),
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DabblerButton(
+              label: 'Enable Notifications',
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              loading: _requesting,
+              onPressed: _enableNotifications,
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            DabblerButton(
+              label: 'Maybe Later',
+              tone: DabblerButtonTone.text,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              disabled: _requesting,
+              onPressed: _skip,
+            ),
+          ],
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+          vertical: DabblerSpacing.space6,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LinearProgressIndicator(
+            const DabblerProgressBar(
               value: 1,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest,
+              size: DabblerProgressBarSize.sm,
             ),
-            const SizedBox(height: 32),
-            Icon(
-              Icons.notifications_active_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
+            const SizedBox(height: DabblerSpacing.space10),
+            const Center(
+              child: DabblerIconTile.named('notification-bing', size: 64),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: DabblerSpacing.space8),
             Text(
               'Stay in the Loop',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
             Text(
               'Get notified about game invites, friend requests, and activity '
               'from your circles. You can fine-tune what you receive anytime '
               'in Settings.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: _requesting ? null : _enableNotifications,
-              child: _requesting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Enable Notifications'),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _requesting ? null : _skip,
-              child: const Text('Maybe Later'),
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
             ),
           ],
-        ),
-      ),
         ),
       ),
     );

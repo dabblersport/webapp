@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../utils/constants/route_constants.dart';
@@ -22,66 +23,88 @@ class _SocialOnboardingPrivacyScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Privacy Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Privacy Settings',
+        onBack: () => context.pop(),
+      ),
+      bottomBar: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: DabblerButton(
+                label: 'Back',
+                tone: DabblerButtonTone.outlined,
+                size: DabblerButtonSize.full,
+                fullWidth: true,
+                onPressed: () => context.pop(),
+              ),
+            ),
+            const SizedBox(width: DabblerSpacing.space6),
+            Expanded(
+              child: DabblerButton(
+                label: 'Continue',
+                size: DabblerButtonSize.full,
+                fullWidth: true,
+                onPressed: () {
+                  context.push(RoutePaths.socialOnboardingNotifications);
+                },
+              ),
+            ),
+          ],
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-        padding: const EdgeInsets.all(24),
+      body: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space8,
+          vertical: DabblerSpacing.space6,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Progress Indicator
             Row(
               children: [
-                Expanded(
-                  child: LinearProgressIndicator(
+                const Expanded(
+                  child: DabblerProgressBar(
                     value: 0.75, // 3 out of 4 steps
-                    backgroundColor: Colors.grey[300],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).primaryColor,
-                    ),
+                    size: DabblerProgressBarSize.sm,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: DabblerSpacing.space4),
                 Text(
                   '3 of 4',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  style: DabblerType.footnote
+                      .resolveForDirection(direction)
+                      .copyWith(color: colors.textSecondary),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-
-            // Header
-            Icon(Icons.shield, size: 64, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 24),
-
+            const SizedBox(height: DabblerSpacing.space10),
+            const DabblerIconTile.named('shield-tick', size: 64),
+            const SizedBox(height: DabblerSpacing.space8),
             Text(
               'Privacy & Safety',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: DabblerType.title1
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textPrimary),
             ),
-            const SizedBox(height: 12),
-
+            const SizedBox(height: DabblerSpacing.space4),
             Text(
               'Control who can see your profile and interact with you. You can always change these settings later.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+              style: DabblerType.body
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
             ),
-            const SizedBox(height: 32),
-
-            // Privacy Settings
+            const SizedBox(height: DabblerSpacing.space10),
             Expanded(
               child: ListView(
                 children: [
@@ -138,30 +161,7 @@ class _SocialOnboardingPrivacyScreenState
                 ],
               ),
             ),
-
-            // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => context.pop(),
-                    child: const Text('Back'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.push(RoutePaths.socialOnboardingNotifications);
-                    },
-                    child: const Text('Continue'),
-                  ),
-                ),
-              ],
-            ),
           ],
-        ),
-      ),
         ),
       ),
     );
@@ -173,16 +173,48 @@ class _SocialOnboardingPrivacyScreenState
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: SwitchListTile(
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-        subtitle: Text(subtitle),
-        value: value,
-        onChanged: onChanged,
-        secondary: Icon(
-          value ? Icons.visibility : Icons.visibility_off,
-          color: value ? Colors.green : Colors.grey,
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+      child: DabblerSurface.card(
+        radius: DabblerRadius.lg,
+        padding: const EdgeInsetsDirectional.all(DabblerSpacing.space4),
+        child: Row(
+          children: [
+            DabblerIcon(
+              value ? 'eye' : 'eye-slash',
+              size: 24,
+              color: value ? colors.success.strong : colors.textTertiary,
+            ),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: DabblerType.headline
+                        .resolveForDirection(direction)
+                        .copyWith(color: colors.textPrimary),
+                  ),
+                  Text(
+                    subtitle,
+                    style: DabblerType.footnote
+                        .resolveForDirection(direction)
+                        .copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: DabblerSpacing.space4),
+            DabblerToggle(
+              checked: value,
+              onChanged: onChanged,
+              semanticLabel: title,
+            ),
+          ],
         ),
       ),
     );

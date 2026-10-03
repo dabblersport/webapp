@@ -1,19 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler/core/models/google_sign_in_result.dart';
+import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/utils/identifier_detector.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart' show TextInputAction, TextInputType, AutofillHints;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-
-import 'package:dabbler/core/models/google_sign_in_result.dart';
-import 'package:dabbler/core/utils/identifier_detector.dart';
-import 'package:dabbler/core/services/auth_service.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/widgets/legal_doc_sheet.dart';
 
 import '../providers/auth_providers.dart';
-import 'package:dabbler/l10n/app_localizations.dart';
 
 class EnterPasswordScreen extends ConsumerStatefulWidget {
   final String email;
@@ -25,29 +24,13 @@ class EnterPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  String? _emailError;
+  String? _passwordError;
   bool _isLoading = false;
   String? _errorMessage;
   bool _isEmailValid = false;
-
-  static const double _controlFontSize = 16;
-
-  TextStyle? _controlTextStyle(
-    BuildContext context, {
-    Color? color,
-    FontWeight? fontWeight,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return theme.textTheme.titleMedium?.copyWith(
-      fontSize: _controlFontSize,
-      fontWeight: fontWeight ?? FontWeight.w600,
-      color: color ?? colorScheme.onSurface,
-    );
-  }
 
   // Forgot Password is hidden on the login screen for now.
   static const bool _showForgotPassword = false;
@@ -90,15 +73,30 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
   void _onEmailChanged(String value) {
     final isValid = _isEmailFormatValid(value);
-    if (isValid != _isEmailValid) {
-      setState(() => _isEmailValid = isValid);
+    if (isValid != _isEmailValid || _emailError != null) {
+      setState(() {
+        _isEmailValid = isValid;
+        _emailError = null;
+      });
     }
   }
 
   Future<void> _handleLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final emailError = _validateEmail(_emailController.text);
+    final passwordError = _passwordController.text.isEmpty
+        ? AppLocalizations.of(context).email_password_validate_password_required
+        : null;
+    if (emailError != null || passwordError != null) {
+      setState(() {
+        _emailError = emailError;
+        _passwordError = passwordError;
+      });
+      return;
+    }
 
     setState(() {
+      _emailError = null;
+      _passwordError = null;
       _isLoading = true;
       _errorMessage = null;
     });
@@ -330,450 +328,181 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Scaffold(
-      backgroundColor: Colors.transparent,
+    final l10n = AppLocalizations.of(context);
+    final colors = DabblerColors.of(context);
+    return DabblerPage(
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 40, 24, 28),
-                    child: Form(
-                      key: _formKey,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(
+                        DabblerSpacing.space8,
+                        DabblerSpacing.space10,
+                        DabblerSpacing.space8,
+                        DabblerSpacing.space8,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            AppLocalizations.of(context).email_password_title,
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: colorScheme.onSurface,
+                            l10n.email_password_title,
+                            style: authText(
+                              context,
+                              DabblerType.largeTitle,
+                              color: colors.textPrimary,
                             ),
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: DabblerSpacing.space3),
                           Text(
-                            AppLocalizations.of(context).email_password_subtitle,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: colorScheme.onSurface,
+                            l10n.email_password_subtitle,
+                            style: authText(
+                              context,
+                              DabblerType.body,
+                              color: colors.textSecondary,
                             ),
                           ),
-                          const SizedBox(height: 56),
-                          // Text(
-                          //   'Email',
-                          //   style: theme.textTheme.titleMedium?.copyWith(
-                          //     fontWeight: FontWeight.w700,
-                          //     color: colorScheme.onSurface,
-                          //   ),
-                          // ),
-                          // const SizedBox(height: 14),
+                          const SizedBox(height: DabblerSpacing.space8),
                           _buildEmailField(context),
-                          const SizedBox(height: 16),
-                          // Text(
-                          //   'Password',
-                          //   style: theme.textTheme.titleMedium?.copyWith(
-                          //     fontWeight: FontWeight.w700,
-                          //     color: colorScheme.onSurface,
-                          //   ),
-                          // ),
-                          // const SizedBox(height: 14),
+                          const SizedBox(height: DabblerSpacing.space5),
                           _buildPasswordField(context),
                           if (_showForgotPassword) ...[
-                            const SizedBox(height: 12),
-                            Center(
-                              child: TextButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : () => context.go(
-                                        RoutePaths.forgotPassword,
-                                        extra: {
-                                          'email': _emailController.text.trim(),
-                                        },
-                                      ),
-                                child: Text(
-                                  AppLocalizations.of(
-                                    context,
-                                  ).email_password_forgot,
-                                  style: _controlTextStyle(
-                                    context,
-                                    fontWeight: FontWeight.w700,
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                              ),
+                            const SizedBox(height: DabblerSpacing.space4),
+                            DabblerButton(
+                              label: l10n.email_password_forgot,
+                              tone: DabblerButtonTone.text,
+                              fullWidth: true,
+                              disabled: _isLoading,
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => context.go(
+                                      RoutePaths.forgotPassword,
+                                      extra: {
+                                        'email': _emailController.text.trim(),
+                                      },
+                                    ),
                             ),
                           ],
-                          const SizedBox(height: 12),
-                          _buildLoginButton(context),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: TextButton(
-                              onPressed: _isLoading || !_isEmailValid
-                                  ? null
-                                  : _handleSendEmailOtp,
-                              child: Text(
-                                AppLocalizations.of(context).email_password_send_otp,
-                                style: _controlTextStyle(
-                                  context,
-                                  fontWeight: FontWeight.w700,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
+                          const SizedBox(height: DabblerSpacing.space6),
+                          DabblerButton(
+                            label: l10n.email_password_login_btn,
+                            size: DabblerButtonSize.full,
+                            fullWidth: true,
+                            loading: _isLoading,
+                            disabled: !(_isEmailValid && !_isLoading),
+                            onPressed: (_isEmailValid && !_isLoading)
+                                ? _handleLogin
+                                : null,
+                          ),
+                          const SizedBox(height: DabblerSpacing.space2),
+                          DabblerButton(
+                            label: l10n.email_password_send_otp,
+                            tone: DabblerButtonTone.text,
+                            fullWidth: true,
+                            disabled: _isLoading || !_isEmailValid,
+                            onPressed: _isLoading || !_isEmailValid
+                                ? null
+                                : _handleSendEmailOtp,
                           ),
                           if (_errorMessage != null) ...[
-                            const SizedBox(height: 16),
-                            _InlineMessage(
-                              message: _errorMessage!,
-                              color: colorScheme.error,
-                            ),
+                            const SizedBox(height: DabblerSpacing.space5),
+                            AuthInlineMessage(message: _errorMessage!),
                           ],
                           const Spacer(),
-                          _buildGoogleButton(),
+                          const SizedBox(height: DabblerSpacing.space6),
+                          DabblerButton(
+                            label: l10n.email_password_btn_google,
+                            tone: DabblerButtonTone.outlined,
+                            size: DabblerButtonSize.full,
+                            fullWidth: true,
+                            disabled: _isLoading,
+                            onPressed: _isLoading ? null : _handleGoogleSignIn,
+                          ),
                           if (!kIsWeb &&
                               defaultTargetPlatform == TargetPlatform.iOS) ...[
-                            const SizedBox(height: 14),
-                            _buildAppleButton(context),
+                            const SizedBox(height: DabblerSpacing.space4),
+                            DabblerButton(
+                              label: l10n.email_password_btn_apple,
+                              tone: DabblerButtonTone.outlined,
+                              size: DabblerButtonSize.full,
+                              fullWidth: true,
+                              disabled: _isLoading,
+                              onPressed: _isLoading ? null : _handleAppleSignIn,
+                            ),
                           ],
-                          const SizedBox(height: 12),
+                          const SizedBox(height: DabblerSpacing.space4),
                           _buildSignUpRedirect(context),
-                          const SizedBox(height: 16),
-                          _buildTermsFooter(context),
+                          const SizedBox(height: DabblerSpacing.space5),
+                          const AuthLegalNotice(),
                         ],
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _buildEmailField(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(999);
-
-    return TextFormField(
+    return DabblerTextField(
       controller: _emailController,
+      placeholder: AppLocalizations.of(context).email_password_hint_email,
       keyboardType: TextInputType.emailAddress,
       autofillHints: const [AutofillHints.email],
       textInputAction: TextInputAction.next,
       onChanged: _onEmailChanged,
-      validator: _validateEmail,
-      style: _controlTextStyle(
-        context,
-        fontWeight: FontWeight.w500,
-        color: colorScheme.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: AppLocalizations.of(context).email_password_hint_email,
-        hintStyle: _controlTextStyle(
-          context,
-          fontWeight: FontWeight.w500,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        filled: true,
-        fillColor: colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 22,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-      ),
+      errorText: _emailError,
     );
   }
 
   Widget _buildPasswordField(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final borderRadius = BorderRadius.circular(999);
-
-    return TextFormField(
+    return DabblerTextField(
+      variant: DabblerTextFieldVariant.password,
       controller: _passwordController,
-      obscureText: _obscurePassword,
+      placeholder: AppLocalizations.of(context).email_password_hint_password,
       autofillHints: const [AutofillHints.password],
-      onFieldSubmitted: (_) => _isLoading ? null : _handleLogin(),
       textInputAction: TextInputAction.done,
-      style: _controlTextStyle(
-        context,
-        fontWeight: FontWeight.w500,
-        color: colorScheme.onSurface,
-      ),
-      decoration: InputDecoration(
-        hintText: AppLocalizations.of(context).email_password_hint_password,
-        hintStyle: _controlTextStyle(
-          context,
-          fontWeight: FontWeight.w500,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        filled: true,
-        fillColor: colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 22,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.error),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: borderRadius,
-          borderSide: BorderSide(color: colorScheme.error, width: 2),
-        ),
-        suffixIcon: Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: IconButton(
-            tooltip: _obscurePassword ? AppLocalizations.of(context).email_password_show_password : AppLocalizations.of(context).email_password_hide_password,
-            icon: Icon(
-              _obscurePassword ? Iconsax.eye_copy : Iconsax.eye_slash_copy,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            onPressed: _isLoading
-                ? null
-                : () => setState(() => _obscurePassword = !_obscurePassword),
-          ),
-        ),
-      ),
-      validator: (v) => v == null || v.isEmpty ? AppLocalizations.of(context).email_password_validate_password_required : null,
-    );
-  }
-
-  Widget _buildLoginButton(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final canSubmit = _isEmailValid && !_isLoading;
-
-    return FilledButton(
-      onPressed: canSubmit ? _handleLogin : null,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(58),
-        shape: const StadiumBorder(),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        textStyle: _controlTextStyle(
-          context,
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onPrimary,
-        ),
-      ),
-      child: _isLoading
-          ? const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Text(AppLocalizations.of(context).email_password_login_btn),
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return OutlinedButton(
-      onPressed: _isLoading ? null : _handleGoogleSignIn,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(56),
-        shape: const StadiumBorder(),
-        side: BorderSide(color: colorScheme.outlineVariant),
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
-      ),
-      child: _isLoading
-          ? SizedBox(
-              height: 24,
-              width: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  colorScheme.onSurface,
-                ),
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Iconsax.google_1,
-                  size: 22,
-                  color: colorScheme.onSurface,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  AppLocalizations.of(context).email_password_btn_google,
-                  style: _controlTextStyle(
-                    context,
-                    fontWeight: FontWeight.w700,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildAppleButton(BuildContext context) {
-    return FilledButton(
-      onPressed: _isLoading ? null : _handleAppleSignIn,
-      style: FilledButton.styleFrom(
-        minimumSize: const Size.fromHeight(56),
-        shape: const StadiumBorder(),
-        backgroundColor: const Color(0xFF2C2A33),
-        foregroundColor: Colors.white,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Iconsax.apple,
-            size: 22,
-            color: Colors.white,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            AppLocalizations.of(context).email_password_btn_apple,
-            style: _controlTextStyle(
-              context,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
+      onSubmitted: (_) {
+        if (!_isLoading) _handleLogin();
+      },
+      onChanged: (_) {
+        if (_passwordError != null) setState(() => _passwordError = null);
+      },
+      errorText: _passwordError,
     );
   }
 
   Widget _buildSignUpRedirect(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Center(
-      child: TextButton(
-        onPressed: _isLoading
-            ? null
-            : () => context.go(RoutePaths.emailInput),
-        child: Text.rich(
-          TextSpan(
-            text: 'Not a user? ',
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
-            ),
-            children: [
-              TextSpan(
-                text: 'Sign up',
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
+    final colors = DabblerColors.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          'Not a user?',
+          style: authText(
+            context,
+            DabblerType.subheadline,
+            color: colors.textSecondary,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTermsFooter(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final linkStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: colorScheme.primary,
-    );
-
-    return Text.rich(
-      TextSpan(
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: colorScheme.onSurfaceVariant,
-          height: 1.35,
+        DabblerButton(
+          label: 'Sign up',
+          tone: DabblerButtonTone.text,
+          size: DabblerButtonSize.small,
+          disabled: _isLoading,
+          onPressed: _isLoading ? null : () => context.go(RoutePaths.emailInput),
         ),
-        children: [
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_terms_link,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showTermsSheet(context),
-          ),
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_privacy_link,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showPrivacySheet(context),
-          ),
-          const TextSpan(text: '.'),
-        ],
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-}
-
-class _InlineMessage extends StatelessWidget {
-  const _InlineMessage({required this.message, required this.color});
-
-  final String message;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bg = color.withValues(alpha: 0.10);
-    final border = color.withValues(alpha: 0.30);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: border),
-      ),
-      child: Text(
-        message,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      ],
     );
   }
 }
