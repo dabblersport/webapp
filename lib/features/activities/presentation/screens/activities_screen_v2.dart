@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -6,7 +7,6 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/presentation/widgets/activity_event_card.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
-import 'package:dabbler/widgets/app_background.dart';
 
 /// **Activities Screen** - RPC-based Activity Feed
 ///
@@ -17,6 +17,10 @@ import 'package:dabbler/widgets/app_background.dart';
 /// - Analytics tracking for user interactions
 /// - Empty states, loading states, and error handling
 /// - Future-proof: handles unknown subject types gracefully
+///
+/// Built from the design system only. No design frame exists for this screen:
+/// it keeps its structure (titled bar, category chip rail, time-bucket
+/// sections of activity rows) with design-system defaults.
 class ActivitiesScreenV2 extends ConsumerStatefulWidget {
   const ActivitiesScreenV2({super.key});
 
@@ -88,85 +92,55 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
   Widget build(BuildContext context) {
     final user = _authService.getCurrentUser();
 
-    return Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: SafeArea(
-        child: user == null
-            ? _buildSignInPrompt(context)
-            : RefreshIndicator(
-                onRefresh: () async {
-                  await ref
-                      .read(activityFeedControllerProvider.notifier)
-                      .refresh();
-                },
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
-                  ),
-                  slivers: [
-                    // Header
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                      sliver: SliverToBoxAdapter(child: _buildHeader(context)),
-                    ),
-                    // Category Filter Chips
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                      sliver: SliverToBoxAdapter(
-                        child: _buildCategoryFilters(context),
-                      ),
-                    ),
-                    // Activities List
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 48),
-                      sliver: _buildActivitiesList(context),
-                    ),
-                  ],
-                ),
-              ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'All Activities',
+        onBack: () => context.go('/home'),
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => context.go('/home'),
-          icon: const Icon(Icons.dashboard_rounded),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHigh,
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'All Activities',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
+      body: user == null
+          ? _buildSignInPrompt(context)
+          : DabblerRefresh(
+              onRefresh: () async {
+                await ref
+                    .read(activityFeedControllerProvider.notifier)
+                    .refresh();
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
+                slivers: [
+                  // Category Filter Chips
+                  SliverPadding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      DabblerSpacing.space6,
+                      DabblerSpacing.space4,
+                      DabblerSpacing.space6,
+                      0,
+                    ),
+                    sliver: SliverToBoxAdapter(
+                      child: _buildCategoryFilters(context),
+                    ),
+                  ),
+                  // Activities List
+                  SliverPadding(
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      DabblerSpacing.space6,
+                      DabblerSpacing.space4,
+                      DabblerSpacing.space6,
+                      DabblerSpacing.space11,
+                    ),
+                    sliver: _buildActivitiesList(context),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
     );
   }
 
   Widget _buildCategoryFilters(BuildContext context) {
     final state = ref.watch(activityFeedControllerProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
 
     final categories = <Map<String, String?>>[
       {'name': 'All', 'value': null},
@@ -191,64 +165,19 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
               : _getCategoryCount(state.activities, categoryValue);
 
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
+            padding: const EdgeInsetsDirectional.only(
+              end: DabblerSpacing.space2,
+            ),
+            child: DabblerChip(
+              label: count > 0 ? '$categoryName ($count)' : categoryName,
               selected: isSelected,
-              label: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    categoryName,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurface,
-                    ),
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? colorScheme.onPrimary.withValues(alpha: 0.3)
-                            : colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        count.toString(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: isSelected
-                              ? colorScheme.onPrimary
-                              : colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              onSelected: (selected) {
-                if (selected) {
+              onTap: () {
+                if (!isSelected) {
                   ref
                       .read(activityFeedControllerProvider.notifier)
                       .changeCategory(categoryValue);
                 }
               },
-              selectedColor: colorScheme.primary,
-              backgroundColor: colorScheme.surfaceContainerHigh,
-              side: BorderSide(
-                color: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.outline.withValues(alpha: 0.2),
-                width: 1,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           );
         }).toList(),
@@ -278,26 +207,9 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
 
     // Loading state (initial load)
     if (state.isLoading) {
-      return SliverFillRemaining(
+      return const SliverFillRemaining(
         hasScrollBody: false,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 16),
-                Text(
-                  'Loading activities...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: Center(child: DabblerSpinner(label: 'Loading activities...')),
       );
     }
 
@@ -334,29 +246,35 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
     // Group activities by time_bucket
     final groupedActivities = _groupActivitiesByTimeBucket(filteredActivities);
 
-    // Build list items (headers + activities)
+    // Build list items (one section per time bucket)
     final listItems = <Widget>[];
     for (final entry in groupedActivities.entries) {
       final timeBucket = entry.key;
       final activities = entry.value;
 
-      // Add section header
-      listItems.add(_buildSectionHeader(context, timeBucket));
-
-      // Add activities for this section
-      for (final event in activities) {
-        listItems.add(
-          ActivityEventCard(event: event, onTap: () => _handleItemTap(event)),
-        );
-      }
+      listItems.add(
+        Padding(
+          padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
+          child: DabblerSection(
+            title: _sectionTitle(timeBucket),
+            children: [
+              for (final event in activities)
+                ActivityEventCard(
+                  event: event,
+                  onTap: () => _handleItemTap(event),
+                ),
+            ],
+          ),
+        ),
+      );
     }
 
     // Add loading more indicator
     if (state.isLoadingMore) {
       listItems.add(
         const Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Center(child: CircularProgressIndicator()),
+          padding: EdgeInsets.all(DabblerSpacing.space4),
+          child: Center(child: DabblerSpinner(label: 'Loading more')),
         ),
       );
     }
@@ -365,13 +283,13 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
     if (!state.hasMore && filteredActivities.isNotEmpty) {
       listItems.add(
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(DabblerSpacing.space4),
           child: Center(
             child: Text(
               'No more activities',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+              style: DabblerType.footnote
+                  .resolveForDirection(Directionality.of(context))
+                  .copyWith(color: DabblerColors.of(context).textSecondary),
             ),
           ),
         ),
@@ -414,210 +332,71 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
     return ordered;
   }
 
-  Widget _buildSectionHeader(BuildContext context, String timeBucket) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    String title;
+  String _sectionTitle(String timeBucket) {
     switch (timeBucket) {
       case 'upcoming':
-        title = 'Upcoming';
-        break;
+        return 'Upcoming';
       case 'present':
-        title = 'Present';
-        break;
+        return 'Present';
       case 'past':
-        title = 'All Activities';
-        break;
+        return 'All Activities';
       default:
-        title = timeBucket;
+        return timeBucket;
     }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
-      child: Text(
-        title,
-        style: textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: colorScheme.primary,
-        ),
-      ),
-    );
   }
 
   Widget _buildEmptyState(BuildContext context, String period) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final title = 'No activity yet';
-    final message = 'Create a game to see your activity here.';
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event_busy,
-            size: 48,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          if (period == 'all') ...[
-            const SizedBox(height: 16),
-            FilledButton.icon(
+    return DabblerEmptyState(
+      icon: 'calendar-remove',
+      title: 'No activity yet',
+      text: 'Create a game to see your activity here.',
+      size: DabblerEmptyStateSize.page,
+      action: period == 'all'
+          ? DabblerButton(
+              label: 'Find Sports Games',
+              icon: 'search-normal',
               onPressed: () => context.go('/sports'),
-              icon: const Icon(Icons.search),
-              label: const Text('Find Sports Games'),
-            ),
-          ],
-        ],
-      ),
+            )
+          : null,
     );
   }
 
   Widget _buildEmptyFilteredState(BuildContext context, String category) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.filter_list,
-            size: 48,
-            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No $category activities',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Try selecting a different category or period.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+    return DabblerEmptyState(
+      icon: 'filter-search',
+      title: 'No $category activities',
+      text: 'Try selecting a different category or period.',
+      size: DabblerEmptyStateSize.page,
     );
   }
 
   Widget _buildErrorState(BuildContext context, String error) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 48,
-            color: colorScheme.error.withValues(alpha: 0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Something went wrong',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'We couldn\'t load your activities. Please try again.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () {
-              final state = ref.read(activityFeedControllerProvider);
-              ref
-                  .read(activityFeedControllerProvider.notifier)
-                  .loadActivities(state.currentPeriod);
-            },
-            icon: const Icon(Icons.refresh),
-            label: const Text('Retry'),
-          ),
-        ],
-      ),
+    return DabblerEmptyState.error(
+      title: 'Something went wrong',
+      text: 'We couldn\'t load your activities. Please try again.',
+      retryLabel: 'Retry',
+      onRetry: () {
+        final state = ref.read(activityFeedControllerProvider);
+        ref
+            .read(activityFeedControllerProvider.notifier)
+            .loadActivities(state.currentPeriod);
+      },
     );
   }
 
   Widget _buildSignInPrompt(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_off,
-              size: 64,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Sign in to view activities',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Track your games, bookings, and more',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => context.go(RoutePaths.authWelcome),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 12,
-                ),
-              ),
-              child: const Text('Sign In'),
-            ),
-          ],
+        padding: const EdgeInsets.all(DabblerSpacing.space8),
+        child: DabblerEmptyState(
+          icon: 'user-remove',
+          title: 'Sign in to view activities',
+          text: 'Track your games, bookings, and more',
+          size: DabblerEmptyStateSize.page,
+          action: DabblerButton(
+            label: 'Sign In',
+            onPressed: () => context.go(RoutePaths.authWelcome),
+          ),
         ),
       ),
     );

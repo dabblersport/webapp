@@ -1,42 +1,34 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 /// Simple rewards screen for navigation tab
 /// This serves as the main entry point for the rewards system
+///
+/// Built from the design system: a [DabblerPage] with a titled top bar and a
+/// [DabblerEmptyState] body. No design frame exists for it.
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Rewards'),
-        backgroundColor: colorScheme.surface,
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Rewards',
+        onBack: Navigator.of(context).canPop()
+            ? () => Navigator.of(context).pop()
+            : null,
       ),
-      body: const Center(child: Text('Rewards Screen - Under Construction')),
-    );
-
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(DabblerSpacing.space6),
+          child: DabblerEmptyState(
+            icon: 'medal-star',
+            title: 'Rewards',
+            text: 'Rewards Screen - Under Construction',
+            size: DabblerEmptyStateSize.page,
+          ),
         ),
-        body: content,
-      );
-    }
-    return content;
+      ),
+    );
   }
 }

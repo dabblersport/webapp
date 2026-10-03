@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/activity_feed_event.dart';
 
 /// Reusable widget for rendering an activity event card.
 ///
 /// This widget handles different subject types and verbs gracefully,
-/// with a fallback for unknown combinations.
+/// with a fallback for unknown combinations. Drawn as a
+/// [DabblerActivityRow]: a system tile for the subject type, the title as the
+/// actor line, the payload title as the subject line, the timestamp as the
+/// meta line and the role as the end badge.
 class ActivityEventCard extends StatelessWidget {
   final ActivityFeedEvent event;
   final VoidCallback? onTap;
@@ -14,154 +18,35 @@ class ActivityEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: colorScheme.outline.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildIcon(context),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildTitle(context),
-                        const SizedBox(height: 4),
-                        _buildSubtitle(context),
-                      ],
-                    ),
-                  ),
-                  if (event.payload?['role'] != null) _buildRoleBadge(context),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _buildTimestamp(context),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIcon(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    IconData icon;
-    Color iconColor;
-
-    // Determine icon based on subject type and verb
-    if (event.subjectType == 'game') {
-      icon = Icons.sports_soccer;
-      iconColor = colorScheme.primary;
-    } else if (event.subjectType == 'payment') {
-      icon = Icons.payment;
-      iconColor = Colors.green;
-    } else if (event.subjectType == 'reward') {
-      icon = Icons.military_tech;
-      iconColor = Colors.amber;
-    } else if (event.subjectType == 'social') {
-      icon = Icons.people;
-      iconColor = Colors.blue;
-    } else {
-      // Generic icon for unknown types
-      icon = Icons.event;
-      iconColor = colorScheme.onSurfaceVariant;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: iconColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, size: 20, color: iconColor),
-    );
-  }
-
-  Widget _buildTitle(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final title = _getTitleText();
-
-    return Text(
-      title,
-      style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-    );
-  }
-
-  Widget _buildSubtitle(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final subtitle = _getSubtitleText();
-
-    if (subtitle == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Text(
-      subtitle,
-      style: textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-    );
-  }
-
-  Widget _buildRoleBadge(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final role = event.payload?['role'] as String?;
 
-    if (role == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        role.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: colorScheme.onPrimaryContainer,
-        ),
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
+      child: DabblerActivityRow(
+        leading: DabblerActivitySystemTile(_iconName()),
+        actor: _getTitleText(),
+        subject: _getSubtitleText(),
+        when: _formatDate(event.happenedAt),
+        sportLabel: role?.toUpperCase(),
+        onTap: onTap,
       ),
     );
   }
 
-  Widget _buildTimestamp(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final formattedDate = _formatDate(event.happenedAt);
-
-    return Row(
-      children: [
-        Icon(Icons.access_time, size: 14, color: colorScheme.onSurfaceVariant),
-        const SizedBox(width: 6),
-        Text(
-          formattedDate,
-          style: textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ],
-    );
+  /// Design-system glyph for the subject type; a calendar for unknown types.
+  String _iconName() {
+    switch (event.subjectType) {
+      case 'game':
+        return 'game';
+      case 'payment':
+        return 'card';
+      case 'reward':
+        return 'medal-star';
+      case 'social':
+        return 'people';
+      default:
+        return 'calendar';
+    }
   }
 
   /// Generates the title text based on subject type and verb.
