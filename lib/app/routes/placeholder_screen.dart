@@ -2,9 +2,13 @@
 // change is the removal of the leading underscore, because a private class
 // cannot be reached from a sibling module file.
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
-/// Placeholder screen for routes that don't have screens implemented yet
+/// Placeholder screen for routes that don't have screens implemented yet.
+///
+/// Built from the design system: a [DabblerPage] with a titled top bar (the
+/// back action pops the route) and a [DabblerEmptyState] body.
 class PlaceholderScreen extends StatelessWidget {
   final String title;
 
@@ -12,25 +16,20 @@ class PlaceholderScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: title,
+        onBack: () => Navigator.of(context).pop(),
+      ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.construction, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '$title\nComing Soon',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go Back'),
-            ),
-          ],
+        child: DabblerEmptyState(
+          icon: 'setting-2',
+          title: '$title\nComing Soon',
+          action: DabblerButton(
+            label: 'Go Back',
+            tone: DabblerButtonTone.secondary,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
       ),
     );

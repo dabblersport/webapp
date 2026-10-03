@@ -3,6 +3,8 @@ import 'package:dabbler/core/config/supabase_config.dart';
 
 import 'package:flutter/material.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerTheme;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,6 +25,15 @@ class ThemeService extends ChangeNotifier {
   TimeOfDay _dayStartTime = const TimeOfDay(hour: 6, minute: 0); // 6:00 AM
   TimeOfDay _nightStartTime = const TimeOfDay(hour: 18, minute: 0); // 6:00 PM
   StreamSubscription<AuthState>? _authSubscription;
+
+  /// The design-system theme for the active category — main→main,
+  /// social→social, sports→sport, activity→active, profile→main.
+  DabblerTheme get dabblerTheme => switch (_themeCategory) {
+    'social' => DabblerTheme.social,
+    'sports' => DabblerTheme.sport,
+    'activity' => DabblerTheme.active,
+    _ => DabblerTheme.main,
+  };
 
   // Getters
   ThemeMode get themeMode => _themeMode;

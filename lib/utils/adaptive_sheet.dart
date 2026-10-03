@@ -1,13 +1,22 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show ColorScheme, Material, MaterialType;
+import 'package:flutter/widgets.dart';
 
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-
-/// Shows a modal that adapts to screen width:
-/// - **Narrow** (< 600 px): standard `showModalBottomSheet`.
-/// - **Wide** (≥ 600 px): a centered Material 3 dialog.
+/// Shows a modal bottom sheet built from the design system.
 ///
-/// This replaces all raw `showModalBottomSheet` calls in the app so that
-/// drawers become popup modals on wide / desktop viewports.
+/// Kept as the single entry point the app's many sheet call sites use
+/// (listed in the KAN-413 report); it now delegates to [showDabblerSheet], so a
+/// sheet is the design system's sheet at every width (the centred Material
+/// dialog on wide viewports is gone: the design has no desktop layout).
+///
+/// Sheet contents that are not yet migrated still use Material widgets that
+/// need a Material ancestor, so the content sits in a transparent `Material`
+/// (it paints nothing). That wrapper goes away with the last unmigrated
+/// content.
+///
+/// [isScrollControlled], [useSafeArea], [backgroundColor] and [enableDrag] no
+/// longer change anything: the design-system sheet owns its surface, safe area
+/// and drag handling. They stay in the signature so callers compile unchanged.
 Future<T?> showAdaptiveSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
@@ -21,84 +30,14 @@ Future<T?> showAdaptiveSheet<T>({
   Color? backgroundColor,
   ColorScheme? colorSchemeOverride,
 }) {
-  final width = MediaQuery.sizeOf(context).width;
-  final isWide = width >= AdaptiveBreakpoints.compact;
-
-  // Optionally wrap content in a theme override (e.g. sports category colors).
-  Widget Function(BuildContext) effectiveBuilder;
-  if (colorSchemeOverride != null) {
-    effectiveBuilder = (ctx) => Theme(
-      data: Theme.of(ctx).copyWith(colorScheme: colorSchemeOverride),
+  return showDabblerSheet<T>(
+    context: context,
+    dismissible: isDismissible,
+    dragHandle: showDragHandle,
+    detents: const <double>[0.6, 0.95],
+    builder: (ctx) => Material(
+      type: MaterialType.transparency,
       child: builder(ctx),
-    );
-  } else {
-    effectiveBuilder = builder;
-  }
-
-  if (isWide) {
-    return _showCenteredDialog<T>(
-      context: context,
-      builder: effectiveBuilder,
-      isDismissible: isDismissible,
-      maxWidth: maxDialogWidth,
-      maxHeightFraction: maxDialogHeightFraction,
-      backgroundColor: backgroundColor,
-    );
-  }
-
-  // ── Mobile: bottom sheet ──────────────────────────────────────────────
-  final cs = Theme.of(context).colorScheme;
-  return showModalBottomSheet<T>(
-    context: context,
-    useRootNavigator: true,
-    builder: effectiveBuilder,
-    isDismissible: isDismissible,
-    enableDrag: enableDrag,
-    showDragHandle: showDragHandle,
-    isScrollControlled: isScrollControlled,
-    useSafeArea: useSafeArea,
-    backgroundColor: backgroundColor ?? cs.surfaceContainerHigh,
-    clipBehavior: Clip.antiAlias,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
-  );
-}
-
-/// Internal: renders a centered M3 dialog that wraps the sheet content.
-Future<T?> _showCenteredDialog<T>({
-  required BuildContext context,
-  required WidgetBuilder builder,
-  required bool isDismissible,
-  required double maxWidth,
-  required double maxHeightFraction,
-  Color? backgroundColor,
-}) {
-  final cs = Theme.of(context).colorScheme;
-  final screenHeight = MediaQuery.sizeOf(context).height;
-
-  return showDialog<T>(
-    context: context,
-    useRootNavigator: true,
-    barrierDismissible: isDismissible,
-    builder: (ctx) {
-      return Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: maxWidth,
-            maxHeight: screenHeight * maxHeightFraction,
-          ),
-          child: Material(
-            color: backgroundColor ?? cs.surfaceContainerHigh,
-            elevation: 6,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: builder(ctx),
-          ),
-        ),
-      );
-    },
   );
 }

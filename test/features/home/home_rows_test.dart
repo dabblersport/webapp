@@ -91,6 +91,7 @@ Future<List<String>> _pump(
         vibesProvider.overrideWith((ref) async => []),
       ],
       child: MaterialApp.router(
+        builder: (context, child) => DabblerToastProvider(child: child!),
         routerConfig: router,
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

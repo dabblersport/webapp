@@ -1,5 +1,7 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show MaterialApp, ThemeData, ThemeExtension;
+import 'package:flutter/widgets.dart';
 
 /// Rendered when app bootstrap (env/config/Firebase/Supabase/theme
 /// initialization in `main()`) throws before [runApp] can mount the real
@@ -24,52 +26,49 @@ class BootstrapErrorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The design-system colours resolve without any bootstrap state, so this
+    // screen can always render. `MaterialApp` is only the non-visual host the
+    // design-system components require.
+    final colors = DabblerColors.resolve(
+      theme: DabblerTheme.main,
+      brightness: Brightness.light,
+    );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: const Color(0xFF1A1025),
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Dabbler failed to start',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      theme: ThemeData(extensions: <ThemeExtension<dynamic>>[colors]),
+      home: Builder(
+        builder: (context) {
+          final direction = Directionality.of(context);
+          return DabblerPage(
+            body: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(DabblerSpacing.space8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DabblerBanner(
+                      tone: DabblerBannerTone.error,
+                      title: 'Dabbler failed to start',
+                      message: '$error',
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '$error',
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  if (kDebugMode && stackTrace != null) ...[
-                    const SizedBox(height: 12),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 240),
-                      child: SingleChildScrollView(
-                        child: Text(
-                          '$stackTrace',
-                          style: const TextStyle(
-                            color: Colors.white38,
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
+                    if (kDebugMode && stackTrace != null) ...[
+                      const SizedBox(height: DabblerSpacing.space4),
+                      Text(
+                        '$stackTrace',
+                        maxLines: 16,
+                        overflow: TextOverflow.fade,
+                        style: DabblerType.caption2
+                            .resolveForDirection(direction)
+                            .copyWith(color: colors.textTertiary),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

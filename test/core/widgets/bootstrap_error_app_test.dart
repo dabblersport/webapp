@@ -1,4 +1,5 @@
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerPage;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -25,9 +26,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The screen is never blank: a real MaterialApp/Scaffold mounted.
+      // The screen is never blank: a real MaterialApp host and a design-system
+      // page mounted.
       expect(find.byType(MaterialApp), findsOneWidget);
-      expect(find.byType(Scaffold), findsOneWidget);
+      expect(find.byType(DabblerPage), findsOneWidget);
+      expect(find.byType(Scaffold), findsNothing);
 
       // The actual bootstrap error is surfaced on screen, not just printed
       // to a console nobody watching the device can see.
