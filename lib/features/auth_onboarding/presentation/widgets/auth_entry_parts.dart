@@ -1,0 +1,224 @@
+import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
+    show
+        LegalSection,
+        kLegalLastUpdated,
+        kPrivacyIntro,
+        kPrivacyPolicySections,
+        kTermsIntro,
+        kTermsOfServiceSections;
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/widgets.dart';
+
+/// Shared, design-system-only pieces for the entry screens (landing, welcome,
+/// auth, email, password). Nothing here is Material.
+
+/// A design-system type step resolved for the ambient text direction, with an
+/// optional colour override.
+TextStyle authText(
+  BuildContext context,
+  DabblerTypeStyle step, {
+  Color? color,
+  FontWeight? weight,
+}) {
+  final TextStyle base = step.resolveForDirection(Directionality.of(context));
+  return base.copyWith(color: color, fontWeight: weight);
+}
+
+final RegExp _emojiRun = RegExp(
+  r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]+',
+  unicode: true,
+);
+
+/// Removes emoji from a localized string (the design system carries none).
+String authStripEmoji(String text) =>
+    text.replaceAll(_emojiRun, '').replaceAll(RegExp(r'\s+$'), '');
+
+/// Opens the Terms of Service in a design-system sheet.
+Future<void> showAuthTermsSheet(BuildContext context) => _showLegal(
+  context,
+  title: 'Terms of Service',
+  intro: kTermsIntro,
+  sections: kTermsOfServiceSections,
+);
+
+/// Opens the Privacy Policy in a design-system sheet.
+Future<void> showAuthPrivacySheet(BuildContext context) => _showLegal(
+  context,
+  title: 'Privacy Policy',
+  intro: kPrivacyIntro,
+  sections: kPrivacyPolicySections,
+);
+
+Future<void> _showLegal(
+  BuildContext context, {
+  required String title,
+  required String intro,
+  required List<LegalSection> sections,
+}) {
+  return showDabblerSheet<void>(
+    context: context,
+    title: title,
+    detents: const <double>[0.85],
+    builder: (BuildContext ctx) {
+      final DabblerColors colors = DabblerColors.of(ctx);
+      return Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space8,
+          0,
+          DabblerSpacing.space8,
+          DabblerSpacing.space8,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              intro,
+              style: authText(ctx, DabblerType.subheadline,
+                  color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space2),
+            Text(
+              'Last updated: $kLegalLastUpdated',
+              style: authText(ctx, DabblerType.caption1,
+                  color: colors.textSecondary),
+            ),
+            const SizedBox(height: DabblerSpacing.space6),
+            for (final LegalSection s in sections) ...<Widget>[
+              Text(
+                s.title,
+                style: authText(ctx, DabblerType.headline,
+                    color: colors.brandPrimary),
+              ),
+              const SizedBox(height: DabblerSpacing.space2),
+              Text(
+                s.content,
+                style: authText(ctx, DabblerType.subheadline,
+                    color: colors.textPrimary),
+              ),
+              const SizedBox(height: DabblerSpacing.space6),
+            ],
+          ],
+        ),
+      );
+    },
+  );
+}
+
+/// "By continuing you agree to our Terms and Privacy Policy." with the two
+/// links opening the legal sheets.
+class AuthLegalNotice extends StatefulWidget {
+  const AuthLegalNotice({super.key, this.center = true});
+
+  final bool center;
+
+  @override
+  State<AuthLegalNotice> createState() => _AuthLegalNoticeState();
+}
+
+class _AuthLegalNoticeState extends State<AuthLegalNotice> {
+  late final TapGestureRecognizer _terms = TapGestureRecognizer()
+    ..onTap = () => showAuthTermsSheet(context);
+  late final TapGestureRecognizer _privacy = TapGestureRecognizer()
+    ..onTap = () => showAuthPrivacySheet(context);
+
+  @override
+  void dispose() {
+    _terms.dispose();
+    _privacy.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final DabblerColors colors = DabblerColors.of(context);
+    final TextStyle base = authText(
+      context,
+      DabblerType.caption1,
+      color: colors.textSecondary,
+    );
+    final TextStyle link = base.copyWith(
+      color: colors.brandPrimary,
+      decoration: TextDecoration.underline,
+      decorationColor: colors.brandPrimary,
+    );
+    return Text.rich(
+      TextSpan(
+        style: base,
+        children: <InlineSpan>[
+          TextSpan(text: l10n.email_input_terms_prefix),
+          TextSpan(
+            text: l10n.email_input_terms_link,
+            style: link,
+            recognizer: _terms,
+          ),
+          TextSpan(text: l10n.email_input_terms_and),
+          TextSpan(
+            text: l10n.email_input_privacy_link,
+            style: link,
+            recognizer: _privacy,
+          ),
+          const TextSpan(text: '.'),
+        ],
+      ),
+      textAlign: widget.center ? TextAlign.center : TextAlign.start,
+    );
+  }
+}
+
+/// An inline error (or success) message.
+class AuthInlineMessage extends StatelessWidget {
+  const AuthInlineMessage({
+    super.key,
+    required this.message,
+    this.success = false,
+  });
+
+  final String message;
+  final bool success;
+
+  @override
+  Widget build(BuildContext context) {
+    return DabblerBanner(
+      tone: success ? DabblerBannerTone.success : DabblerBannerTone.error,
+      message: message,
+    );
+  }
+}
+
+/// A tappable row for a picker sheet (language / country): title plus a tick
+/// when selected.
+class AuthPickerRow extends StatelessWidget {
+  const AuthPickerRow({
+    super.key,
+    required this.title,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DabblerInputRow(
+      title: title,
+      onTap: onTap,
+      trailing: selected
+          ? DabblerIcon(
+              'tick-circle',
+              weight: DabblerIconWeight.bold,
+              color: DabblerColors.of(context).brandPrimary,
+            )
+          : null,
+    );
+  }
+}
+
+/// Wraps [child] with a stable semantics identifier for end-to-end tests.
+Widget authIdentify(String? identifier, Widget child) => identifier == null
+    ? child
+    : MergeSemantics(child: Semantics(identifier: identifier, child: child));

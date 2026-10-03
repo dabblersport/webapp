@@ -1,29 +1,17 @@
-import 'dart:ui';
-
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/providers.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/providers.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show SystemUiOverlayStyle;
-import 'package:dabbler/themes/app_theme.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
-import 'package:dabbler/widgets/legal_doc_sheet.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-
-// ── Design tokens from Pencil node fRSW7 (Welcome — Dark) ────────────────────
-const _kText = Color(0xFFE6E0E9);
-const _kTextMuted = Color(0xFFCAC4CF);
-const _kLavender = Color(0xFFC18FFF);
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthWelcomeScreen extends ConsumerStatefulWidget {
   const AuthWelcomeScreen({super.key});
@@ -61,24 +49,26 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     }
   }
 
+  void _toastError(String message) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
+  }
+
   Future<void> _openLanguagePicker() async {
     final current = ref.read(localeProvider);
-    final darkScheme = AppTheme.darkTheme.colorScheme;
-    await showAdaptiveSheet<void>(
+    await showDabblerSheet<void>(
       context: context,
-      colorSchemeOverride: darkScheme,
-      backgroundColor: darkScheme.surfaceContainerHigh,
+      detents: const <double>[0.4],
       builder: (context) => _LanguagePickerSheet(currentLocale: current),
     );
   }
 
   Future<void> _openCountryPicker() async {
     final selected = ref.read(selectedCountryProvider).valueOrNull;
-    final darkScheme = AppTheme.darkTheme.colorScheme;
-    final picked = await showAdaptiveSheet<String>(
+    final picked = await showDabblerSheet<String>(
       context: context,
-      colorSchemeOverride: darkScheme,
-      backgroundColor: darkScheme.surfaceContainerHigh,
+      detents: const <double>[0.6],
       builder: (context) => _CountryPickerSheet(
         countries: _countries,
         loading: _countriesLoading,
@@ -137,22 +127,14 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
           break;
         case GoogleSignInResultError():
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(result.message)));
+            _toastError(result.message);
           }
           break;
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(
-              context,
-            ).auth_welcome_google_error(e.toString()),
-          ),
-        ),
+      _toastError(
+        AppLocalizations.of(context).auth_welcome_google_error(e.toString()),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -201,16 +183,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
           );
           break;
         case GoogleSignInResultError():
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(result.message)));
+          _toastError(result.message);
           break;
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Apple sign-in failed: $e')));
+      _toastError('Apple sign-in failed: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -232,37 +210,10 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
     return englishName;
   }
 
-  Widget _buildTermsText(BuildContext context) {
-    // Terms Notice — node Cqdmf: 13px, #CAC4CF, line-height 1.45, centered.
-    const linkStyle = TextStyle(color: _kLavender);
-
-    return Text.rich(
-      TextSpan(
-        style: const TextStyle(fontSize: 13, color: _kTextMuted, height: 1.45),
-        children: [
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_prefix),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_terms_link,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showTermsSheet(context),
-          ),
-          TextSpan(text: AppLocalizations.of(context).email_input_terms_and),
-          TextSpan(
-            text: AppLocalizations.of(context).email_input_privacy_link,
-            style: linkStyle,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => showPrivacySheet(context),
-          ),
-          const TextSpan(text: '.'),
-        ],
-      ),
-      textAlign: TextAlign.center,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DabblerColors.of(context);
     final countryState = ref.watch(selectedCountryProvider);
     final locale = ref.watch(localeProvider);
     final countryName = countryState.maybeWhen(
@@ -270,301 +221,134 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       orElse: () => 'Global',
     );
     final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
+    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-    // Always dark, matching Pencil node fRSW7 (Welcome — Dark).
-    final darkTheme = AppTheme.darkTheme;
-    return Theme(
-      data: darkTheme,
-      child: AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light,
-        child: Scaffold(
-          backgroundColor: darkTheme.colorScheme.surface,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              const Positioned.fill(
-                child: IgnorePointer(child: DynamicBackground()),
-              ),
-              SafeArea(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) => SingleChildScrollView(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight,
-                          ),
-                          child: IntrinsicHeight(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 20),
-                                  // Welcome Header — node V0fBC
-                                  Text(
-                                    '${AppLocalizations.of(context).auth_welcome_title} 👋',
-                                    style: const TextStyle(
-                                      fontSize: 42,
-                                      fontWeight: FontWeight.w700,
-                                      color: _kText,
-                                      height: 1.05,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    AppLocalizations.of(
-                                      context,
-                                    ).auth_welcome_subtitle,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      height: 1.5,
-                                      color: _kTextMuted,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _TrustBenefitsCard(
-                                    heading: AppLocalizations.of(
-                                      context,
-                                    ).auth_welcome_trust_heading.toUpperCase(),
-                                    benefits: [
-                                      AppLocalizations.of(
-                                        context,
-                                      ).auth_welcome_trust_verified,
-                                      AppLocalizations.of(
-                                        context,
-                                      ).auth_welcome_trust_personalised,
-                                      AppLocalizations.of(
-                                        context,
-                                      ).auth_welcome_trust_privacy,
-                                    ],
-                                  ),
-                                  const Spacer(),
-
-                                  // Continue Actions — node cI24o (gap 12)
-                                  _GlassButton(
-                                    // Glass Button / Dark — node Pnlba
-                                    identifier: 'auth-welcome-continue-google',
-                                    fill: const Color(0xA8241631),
-                                    blur: 18,
-                                    borderGradient: const LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Color(0x80FFFFFF),
-                                        Color(0x8CC18FFF),
-                                        Color(0x1FFFFFFF),
-                                      ],
-                                      stops: [0.0, 0.5, 1.0],
-                                    ),
-                                    shadows: const [
-                                      BoxShadow(
-                                        color: Color(0x66000000),
-                                        blurRadius: 24,
-                                        offset: Offset(0, 10),
-                                      ),
-                                      BoxShadow(
-                                        color: Color(0x33C18FFF),
-                                        blurRadius: 5,
-                                        offset: Offset(0, 1),
-                                      ),
-                                    ],
-                                    onTap: _isLoading ? null : _handleGoogle,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Iconsax.google_1,
-                                          size: 20,
-                                          color: _kText,
-                                        ),
-                                        const SizedBox(width: 10),
-                                        Text(
-                                          AppLocalizations.of(
-                                            context,
-                                          ).auth_welcome_btn_google,
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: _kText,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _GlassButton(
-                                    // Continue with Email — Glass, node MYbIU
-                                    identifier: 'auth-welcome-continue-email',
-                                    fill: const Color(0x66C18FFF),
-                                    blur: 20,
-                                    borderGradient: const LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [
-                                        Color(0xB3FFFFFF),
-                                        Color(0xCCC18FFF),
-                                        Color(0x26FFFFFF),
-                                      ],
-                                      stops: [0.0, 0.48, 1.0],
-                                    ),
-                                    shadows: const [
-                                      BoxShadow(
-                                        color: Color(0x52C18FFF),
-                                        blurRadius: 20,
-                                        offset: Offset(0, 8),
-                                      ),
-                                      BoxShadow(
-                                        color: Color(0x55000000),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                    onTap: _isLoading ? null : _handleEmail,
-                                    child: _isLoading
-                                        ? const SizedBox(
-                                            width: 22,
-                                            height: 22,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              color: Color(0xFFFBF6FF),
-                                            ),
-                                          )
-                                        : Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(
-                                                Iconsax.sms,
-                                                size: 19,
-                                                color: Color(0xFFFBF6FF),
-                                              ),
-                                              const SizedBox(width: 10),
-                                              Text(
-                                                AppLocalizations.of(
-                                                  context,
-                                                ).auth_welcome_btn_email,
-                                                style: const TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Color(0xFFFBF6FF),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                  ),
-                                  if (!kIsWeb &&
-                                      defaultTargetPlatform ==
-                                          TargetPlatform.iOS) ...[
-                                    const SizedBox(height: 12),
-                                    _GlassButton(
-                                      // Continue with Apple — Black, node LQcOo
-                                      identifier: 'auth-welcome-continue-apple',
-                                      fill: const Color(0xFF09090B),
-                                      blur: 16,
-                                      borderColor: const Color(0x54FFFFFF),
-                                      shadows: const [
-                                        BoxShadow(
-                                          color: Color(0x99000000),
-                                          blurRadius: 18,
-                                          offset: Offset(0, 8),
-                                        ),
-                                        BoxShadow(
-                                          color: Color(0x12FFFFFF),
-                                          blurRadius: 2,
-                                          offset: Offset(0, 1),
-                                        ),
-                                      ],
-                                      onTap: _isLoading ? null : _handleApple,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            Iconsax.apple,
-                                            size: 20,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            AppLocalizations.of(
-                                              context,
-                                            ).auth_welcome_btn_apple,
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w700,
-                                              color: _kText,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-
-                                  // Existing Account — node tXd9H
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 47,
-                                    child: TextButton(
-                                      onPressed: _isLoading
-                                          ? null
-                                          : _handleLogin,
-                                      style: TextButton.styleFrom(
-                                        shape: const StadiumBorder(),
-                                      ),
-                                      child: Text(
-                                        AppLocalizations.of(
-                                          context,
-                                        ).auth_welcome_btn_login,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: _kLavender,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  _buildTermsText(context),
-                                  const SizedBox(height: 16),
-
-                                  // Locale Controls — node ll0Ws
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      _LocalePill(
-                                        icon: Iconsax.global,
-                                        label: countryName,
-                                        onTap: _isLoading
-                                            ? () {}
-                                            : _openCountryPicker,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      _LocalePill(
-                                        icon: Iconsax.language_square,
-                                        label: langLabel,
-                                        onTap: _isLoading
-                                            ? () {}
-                                            : _openLanguagePicker,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 16),
-                                ],
-                              ),
-                            ),
+    return DabblerPage(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: DabblerSpacing.space8,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: DabblerSpacing.space6),
+                        Text(
+                          l10n.auth_welcome_title,
+                          style: authText(
+                            context,
+                            DabblerType.largeTitle,
+                            color: colors.textPrimary,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: DabblerSpacing.space3),
+                        Text(
+                          l10n.auth_welcome_subtitle,
+                          style: authText(
+                            context,
+                            DabblerType.body,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: DabblerSpacing.space8),
+                        _TrustBenefitsCard(
+                          heading: l10n.auth_welcome_trust_heading
+                              .toUpperCase(),
+                          benefits: [
+                            (
+                              'verify',
+                              l10n.auth_welcome_trust_verified,
+                            ),
+                            (
+                              'activity',
+                              l10n.auth_welcome_trust_personalised,
+                            ),
+                            (
+                              'lock',
+                              l10n.auth_welcome_trust_privacy,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        const SizedBox(height: DabblerSpacing.space6),
+                        authIdentify(
+                          'auth-welcome-continue-email',
+                          DabblerButton(
+                            label: l10n.auth_welcome_btn_email,
+                            icon: 'sms',
+                            size: DabblerButtonSize.full,
+                            fullWidth: true,
+                            loading: _isLoading,
+                            onPressed: _isLoading ? null : _handleEmail,
+                          ),
+                        ),
+                        const SizedBox(height: DabblerSpacing.space4),
+                        authIdentify(
+                          'auth-welcome-continue-google',
+                          DabblerButton(
+                            label: l10n.auth_welcome_btn_google,
+                            tone: DabblerButtonTone.outlined,
+                            size: DabblerButtonSize.full,
+                            fullWidth: true,
+                            disabled: _isLoading,
+                            onPressed: _isLoading ? null : _handleGoogle,
+                          ),
+                        ),
+                        if (showApple) ...[
+                          const SizedBox(height: DabblerSpacing.space4),
+                          authIdentify(
+                            'auth-welcome-continue-apple',
+                            DabblerButton(
+                              label: l10n.auth_welcome_btn_apple,
+                              tone: DabblerButtonTone.outlined,
+                              size: DabblerButtonSize.full,
+                              fullWidth: true,
+                              disabled: _isLoading,
+                              onPressed: _isLoading ? null : _handleApple,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: DabblerSpacing.space2),
+                        DabblerButton(
+                          label: l10n.auth_welcome_btn_login,
+                          tone: DabblerButtonTone.text,
+                          fullWidth: true,
+                          disabled: _isLoading,
+                          onPressed: _isLoading ? null : _handleLogin,
+                        ),
+                        const SizedBox(height: DabblerSpacing.space4),
+                        const AuthLegalNotice(),
+                        const SizedBox(height: DabblerSpacing.space5),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            DabblerChip(
+                              label: countryName,
+                              leadingIcon: const DabblerIcon('global'),
+                              onTap: _isLoading ? () {} : _openCountryPicker,
+                            ),
+                            const SizedBox(width: DabblerSpacing.space3),
+                            DabblerChip(
+                              label: langLabel,
+                              leadingIcon: const DabblerIcon('language-square'),
+                              onTap: _isLoading ? () {} : _openLanguagePicker,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: DabblerSpacing.space6),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -572,224 +356,61 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   }
 }
 
-// ── Trust Benefits card — node jOETk ─────────────────────────────────────────
+// ── Trust benefits card ──────────────────────────────────────────────────────
 
 class _TrustBenefitsCard extends StatelessWidget {
   const _TrustBenefitsCard({required this.heading, required this.benefits});
 
   final String heading;
-  final List<String> benefits;
+  final List<(String, String)> benefits;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xEE15101E),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: const Color(0x12FFFFFF)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Trust Badge — node KmmCd
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B48E8),
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  heading,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFFEADDFF),
-                  ),
-                ),
-              ),
-              for (var i = 0; i < benefits.length; i++) ...[
-                if (i > 0) Container(height: 1, color: const Color(0x24FFFFFF)),
-                Container(
-                  constraints: BoxConstraints(minHeight: i == 0 ? 50 : 48),
-                  alignment: AlignmentDirectional.centerStart,
-                  child: Text(
-                    benefits[i],
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: _kText,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Glass CTA button — nodes Pnlba / MYbIU / LQcOo ───────────────────────────
-
-class _GlassButton extends StatelessWidget {
-  const _GlassButton({
-    required this.fill,
-    required this.blur,
-    required this.shadows,
-    required this.onTap,
-    required this.child,
-    this.borderGradient,
-    this.borderColor,
-    this.identifier,
-  });
-
-  final Color fill;
-  final double blur;
-  final List<BoxShadow> shadows;
-  final VoidCallback? onTap;
-  final Widget child;
-  final Gradient? borderGradient;
-  final Color? borderColor;
-
-  /// Stable semantics identifier for end-to-end tests.
-  ///
-  /// Surfaces on web as a `flt-semantics-identifier` attribute, letting a test
-  /// target this control without depending on its visible copy. Purely a
-  /// testability hook — it is not exposed to users and changes nothing about
-  /// how the button renders or behaves.
-  final String? identifier;
-
-  @override
-  Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(22);
-    // Attaches [identifier] to the same semantics node the InkWell contributes,
-    // so the test hook and the button role/name land on one DOM element.
-    Widget identify(Widget child) => identifier == null
-        ? child
-        : MergeSemantics(
-            child: Semantics(identifier: identifier, child: child),
-          );
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: DecoratedBox(
-        decoration: BoxDecoration(borderRadius: radius, boxShadow: shadows),
-        child: ClipRRect(
-          borderRadius: radius,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-            child: CustomPaint(
-              foregroundPainter: _GradientBorderPainter(
-                gradient: borderGradient,
-                color: borderColor,
-                radius: 22,
-              ),
-              child: Material(
-                color: fill,
-                child: identify(
-                  InkWell(
-                    onTap: onTap,
-                    child: Center(child: child),
-                  ),
-                ),
-              ),
+    final colors = DabblerColors.of(context);
+    return DabblerCard(
+      variant: DabblerCardVariant.white,
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space5,
+              DabblerSpacing.space5,
+              DabblerSpacing.space5,
+              DabblerSpacing.space2,
+            ),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerBadge(label: heading),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Paints a 1px inner-aligned rounded-rect stroke with a gradient (Flutter's
-/// [Border] can't do gradient strokes).
-class _GradientBorderPainter extends CustomPainter {
-  const _GradientBorderPainter({
-    required this.radius,
-    this.gradient,
-    this.color,
-  });
-
-  final double radius;
-  final Gradient? gradient;
-  final Color? color;
-
-  static const double width = 1;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = width;
-    if (gradient != null) {
-      paint.shader = gradient!.createShader(rect);
-    } else {
-      paint.color = color ?? const Color(0x00000000);
-    }
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        rect.deflate(width / 2),
-        Radius.circular(radius - width / 2),
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _GradientBorderPainter oldDelegate) =>
-      oldDelegate.gradient != gradient ||
-      oldDelegate.color != color ||
-      oldDelegate.radius != radius;
-}
-
-// ── Locale pill — nodes FJ3ef / ZMZ1P ────────────────────────────────────────
-
-class _LocalePill extends StatelessWidget {
-  const _LocalePill({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: const Color(0xE617121E),
-          border: Border.all(color: const Color(0x33FFFFFF)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 15, color: _kText),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: _kText,
+          for (var i = 0; i < benefits.length; i++) ...[
+            if (i > 0) const DabblerDivider(inset: DabblerSpacing.space5),
+            Padding(
+              padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: DabblerSpacing.space5,
+                vertical: DabblerSpacing.space4,
+              ),
+              child: Row(
+                children: [
+                  DabblerIconTile.named(benefits[i].$1),
+                  const SizedBox(width: DabblerSpacing.space4),
+                  Expanded(
+                    child: Text(
+                      benefits[i].$2,
+                      style: authText(
+                        context,
+                        DabblerType.subheadline,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -810,63 +431,58 @@ class _CountryPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
+    final colors = DabblerColors.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space4,
+        0,
+        DabblerSpacing.space4,
+        DabblerSpacing.space6,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space4,
+              DabblerSpacing.space2,
+              DabblerSpacing.space4,
+              DabblerSpacing.space2,
+            ),
             child: Text(
               AppLocalizations.of(context).auth_welcome_country_picker_title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
+              style: authText(
+                context,
+                DabblerType.title3,
+                color: colors.textPrimary,
               ),
             ),
           ),
-        ),
-        if (loading)
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: CircularProgressIndicator(color: colorScheme.primary),
-          )
-        else
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: countries.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final name = countries[index]['name_en'] as String;
-                final arName = countries[index]['name_ar'] as String?;
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.all(DabblerSpacing.space8),
+              child: Center(child: DabblerSpinner()),
+            )
+          else
+            for (final c in countries)
+              () {
+                final name = c['name_en'] as String;
+                final arName = c['name_ar'] as String?;
                 final displayName =
                     (languageCode == 'ar' &&
                         arName != null &&
                         arName.isNotEmpty)
                     ? arName
                     : name;
-                final isSelected = name == selectedCountryName;
-                return ListTile(
-                  title: Text(
-                    displayName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: isSelected ? FontWeight.w800 : null,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? Icon(Iconsax.tick_circle, color: colorScheme.primary)
-                      : null,
+                return AuthPickerRow(
+                  title: displayName,
+                  selected: name == selectedCountryName,
                   onTap: () => Navigator.of(context).pop(name),
                 );
-              },
-            ),
-          ),
-        const SizedBox(height: 12),
-      ],
+              }(),
+        ],
+      ),
     );
   }
 }
@@ -882,48 +498,50 @@ class _LanguagePickerSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = DabblerColors.of(context);
     final current = ref.watch(localeProvider);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space4,
+        0,
+        DabblerSpacing.space4,
+        DabblerSpacing.space6,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space4,
+              DabblerSpacing.space2,
+              DabblerSpacing.space4,
+              DabblerSpacing.space2,
+            ),
             child: Text(
               AppLocalizations.of(context).auth_welcome_language_picker_title,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.onSurface,
+              style: authText(
+                context,
+                DabblerType.title3,
+                color: colors.textPrimary,
               ),
             ),
           ),
-        ),
-        ..._languages.map((lang) {
-          final isSelected = current.languageCode == lang['code'];
-          return ListTile(
-            title: Text(
-              lang['name']!,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: isSelected ? FontWeight.w800 : null,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            trailing: isSelected
-                ? Icon(Iconsax.tick_circle, color: colorScheme.primary)
-                : null,
-            onTap: () {
-              ref
-                  .read(localeProvider.notifier)
-                  .setLocale(Locale(lang['code']!));
-              Navigator.of(context).pop();
-            },
-          );
-        }),
-        const SizedBox(height: 12),
-      ],
+          ..._languages.map((lang) {
+            final isSelected = current.languageCode == lang['code'];
+            return AuthPickerRow(
+              title: lang['name']!,
+              selected: isSelected,
+              onTap: () {
+                ref
+                    .read(localeProvider.notifier)
+                    .setLocale(Locale(lang['code']!));
+                Navigator.of(context).pop();
+              },
+            );
+          }),
+        ],
+      ),
     );
   }
 }
