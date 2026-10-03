@@ -179,6 +179,7 @@ class _LocationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
+      flat: true,
       onTap: onTap,
       leading: const DabblerIcon('location', size: 20),
       title: location.displayName,

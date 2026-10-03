@@ -525,9 +525,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                         ),
                         if (rows[i].onTap != null)
                           DabblerIcon(
-                            Directionality.of(context) == TextDirection.rtl
-                                ? 'arrow-circle-left'
-                                : 'arrow-circle-right',
+                            'arrow-circle-right',
+                            mirrorInRtl: true,
                             size: 18,
                             color: colors.textPrimary,
                           ),

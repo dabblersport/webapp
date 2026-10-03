@@ -521,6 +521,8 @@ void main() {
     expect(find.text('Message'), findsNothing);
     expect(find.text('Message Squad'), findsNothing);
     expect(find.text('Request to join'), findsWidgets);
+    // Back and share over the sport band are on-colour hero buttons.
+    expect(find.byType(DabblerOnColorIconButton), findsNWidgets(2));
     await _unmount(tester);
   });
 

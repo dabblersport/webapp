@@ -278,6 +278,9 @@ void main() {
       expect(find.text('Tuesday 5-a-side'), findsOneWidget);
       expect(find.text('My games'), findsOneWidget);
       expect(find.byType(DabblerCardEventLarge), findsWidgets);
+      // The roster-sized game carries its spots in the progress slot.
+      expect(find.byType(DabblerCardEventPlayers), findsOneWidget);
+      expect(find.text('3 spots left'), findsOneWidget);
       await _shoot(tester, key, 'games-listing-$dir');
     }, variant: desktop);
 
@@ -301,6 +304,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Skill level'), findsOneWidget);
       expect(find.text('Open spots'), findsWidgets);
+      // "Filters" and Reset sit in the sheet header, Reset once.
+      expect(find.text('Filters'), findsOneWidget);
+      expect(find.text('Reset'), findsOneWidget);
       await _shoot(tester, key, 'games-filter-sheet-$dir');
     }, variant: desktop);
 
@@ -323,6 +329,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(dir == 'rtl' ? 'الملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
+      expect(find.byType(DabblerCardVenue), findsWidgets);
       await _shoot(tester, key, 'venues-listing-$dir');
     }, variant: desktop);
 
@@ -334,6 +341,7 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       expect(find.text('Nearby'), findsWidgets);
+      expect(find.text('Reset'), findsOneWidget);
       await _shoot(tester, key, 'venues-filter-sheet-$dir');
     }, variant: desktop);
 

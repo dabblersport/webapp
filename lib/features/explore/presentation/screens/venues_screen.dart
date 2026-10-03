@@ -65,8 +65,8 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
   void _openFilters() {
     showListingFilterSheet(
       context,
+      onReset: _resetFilters,
       builder: (_) => ListingFilterBody(
-        onReset: _resetFilters,
         groups: [
           ListingFilterSection(
             label: 'Nearby',
@@ -166,20 +166,22 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
 /// v_game_card (visibility-gated per viewer) shared by every tab.
 final _upcomingGamesByVenueProvider =
     FutureProvider.autoDispose<Map<String, int>>((ref) async {
-  final rows = await Supabase.instance.client
-      .from(SupabaseConfig.vGameCardTable)
-      .select('venue_id')
-      .eq('is_cancelled', false)
-      .gt('end_at', DateTime.now().toUtc().toIso8601String())
-      .not('venue_id', 'is', null)
-      .limit(300) as List<dynamic>;
-  final counts = <String, int>{};
-  for (final r in rows) {
-    final id = (r as Map)['venue_id'] as String?;
-    if (id != null) counts[id] = (counts[id] ?? 0) + 1;
-  }
-  return counts;
-});
+      final rows =
+          await Supabase.instance.client
+                  .from(SupabaseConfig.vGameCardTable)
+                  .select('venue_id')
+                  .eq('is_cancelled', false)
+                  .gt('end_at', DateTime.now().toUtc().toIso8601String())
+                  .not('venue_id', 'is', null)
+                  .limit(300)
+              as List<dynamic>;
+      final counts = <String, int>{};
+      for (final r in rows) {
+        final id = (r as Map)['venue_id'] as String?;
+        if (id != null) counts[id] = (counts[id] ?? 0) + 1;
+      }
+      return counts;
+    });
 
 class _AllVenuesList extends ConsumerWidget {
   const _AllVenuesList({required this.sport});
@@ -191,10 +193,10 @@ class _AllVenuesList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nearbyEnabled = ref.watch(nearbyVenuesFilterEnabledProvider);
-    final locState =
-        nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
-    final location =
-        locState is ActiveLocationReady ? locState.location : null;
+    final locState = nearbyEnabled
+        ? ref.watch(activeLocationProvider).valueOrNull
+        : null;
+    final location = locState is ActiveLocationReady ? locState.location : null;
     final gameCounts =
         ref.watch(_upcomingGamesByVenueProvider).valueOrNull ?? const {};
 
@@ -222,16 +224,18 @@ class _AllVenuesList extends ConsumerWidget {
             : _buildCards(
                 ref,
                 venues
-                    .map((v) => _VenueCardData(
-                          id: v.id,
-                          name: v.nameEn,
-                          city: v.city,
-                          area: v.area,
-                          pricePerHour: v.pricePerHour,
-                          isIndoor: v.isIndoor,
-                          distanceLabel: v.distanceLabel,
-                          gamesCount: gameCounts[v.id] ?? 0,
-                        ))
+                    .map(
+                      (v) => _VenueCardData(
+                        id: v.id,
+                        name: v.nameEn,
+                        city: v.city,
+                        area: v.area,
+                        pricePerHour: v.pricePerHour,
+                        isIndoor: v.isIndoor,
+                        distanceLabel: v.distanceLabel,
+                        gamesCount: gameCounts[v.id] ?? 0,
+                      ),
+                    )
                     .toList(),
               ),
       );
@@ -248,15 +252,17 @@ class _AllVenuesList extends ConsumerWidget {
           : _buildCards(
               ref,
               venues
-                  .map((v) => _VenueCardData(
-                        id: v.id,
-                        name: v.nameEn,
-                        city: v.city,
-                        area: v.area,
-                        pricePerHour: v.pricePerHour,
-                        isIndoor: v.isIndoor,
-                        gamesCount: gameCounts[v.id] ?? 0,
-                      ))
+                  .map(
+                    (v) => _VenueCardData(
+                      id: v.id,
+                      name: v.nameEn,
+                      city: v.city,
+                      area: v.area,
+                      pricePerHour: v.pricePerHour,
+                      isIndoor: v.isIndoor,
+                      gamesCount: gameCounts[v.id] ?? 0,
+                    ),
+                  )
                   .toList(),
             ),
     );
@@ -278,8 +284,7 @@ class _AllVenuesList extends ConsumerWidget {
         itemCount: venues.length,
         separatorBuilder: (_, __) =>
             const SizedBox(height: DabblerSpacing.space4),
-        itemBuilder: (context, i) =>
-            _VenueCard(venue: venues[i], sport: listingSportFor(sport.nameEn)),
+        itemBuilder: (context, i) => _VenueCard(venue: venues[i]),
       ),
     );
   }
@@ -326,14 +331,14 @@ class _VenueCardData {
   final int gamesCount;
 }
 
-/// A venue on the design system's event card (the Listings frame draws a local
-/// card; the DS card is canonical). The sport tab's artwork stands in for a
-/// cover; distance, price, setting and upcoming games ride in the footer.
+/// A venue on the design system's venue card (`Listings.dc.html:750-820`).
+/// The app has no venue photo, so the card draws no cover; distance, price,
+/// setting and upcoming games keep their old places as the card's area line,
+/// price row and tags.
 class _VenueCard extends StatelessWidget {
-  const _VenueCard({required this.venue, required this.sport});
+  const _VenueCard({required this.venue});
 
   final _VenueCardData venue;
-  final DabblerSport? sport;
 
   @override
   Widget build(BuildContext context) {
@@ -348,13 +353,7 @@ class _VenueCard extends StatelessWidget {
               ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)}/hr'
               : 'Free');
 
-    final badges = <Widget>[
-      // The distance takes the first slot when the nearby filter is on,
-      // otherwise the price does; price moves down beside it.
-      if (venue.distanceLabel != null)
-        DabblerBadge(label: venue.distanceLabel!)
-      else if (priceLabel != null)
-        DabblerBadge(label: priceLabel),
+    final tags = <Widget>[
       if (venue.gamesCount > 0)
         DabblerBadge(
           label: venue.gamesCount == 1
@@ -366,16 +365,14 @@ class _VenueCard extends StatelessWidget {
           label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
           tone: DabblerBadgeTone.warning,
         ),
-      if (venue.distanceLabel != null && priceLabel != null)
-        DabblerBadge(label: priceLabel, tone: DabblerBadgeTone.warning),
     ];
 
-    return DabblerCardEventLarge(
-      title: venue.name,
-      sport: sport,
-      cover: const ListingCover(),
-      location: locationLine,
-      footer: badges.isEmpty ? null : ListingBadgeRow(badges: badges),
+    return DabblerCardVenue(
+      name: venue.name,
+      area: locationLine,
+      distance: venue.distanceLabel,
+      tags: tags,
+      price: priceLabel,
       onTap: () => context.push(RoutePaths.venueDetail(venue.id)),
       semanticLabel: venue.name,
     );

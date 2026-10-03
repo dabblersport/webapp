@@ -23,7 +23,9 @@ class GamesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Only list challenge-eligible sports (sports.is_challenge_sport = true).
-    final sportsAsync = ref.watch(activeChallengeSportsByProfileCountryProvider);
+    final sportsAsync = ref.watch(
+      activeChallengeSportsByProfileCountryProvider,
+    );
 
     return sportsAsync.when(
       loading: () => const ListingPageSpinner(),
@@ -95,7 +97,8 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
   void _openFilters() {
     showListingFilterSheet(
       context,
-      builder: (_) => _GamesFilterSheetBody(onReset: _resetFilters),
+      onReset: _resetFilters,
+      builder: (_) => const _GamesFilterSheetBody(),
     );
   }
 
@@ -153,17 +156,17 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
           items: <DabblerTabItem>[
             const DabblerTabItem(id: 'all', label: 'All'),
             for (final sport in widget.sports)
-              DabblerTabItem(
-                id: sport.id,
-                label: sport.localizedName(context),
-              ),
+              DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
           ],
           pages: List.generate(
             _tabCount,
             // The applied-filters rail sits under the tabs, above each list.
             (i) => Column(
               children: [
-                ListingActiveFilters(filters: active, onClearAll: _resetFilters),
+                ListingActiveFilters(
+                  filters: active,
+                  onClearAll: _resetFilters,
+                ),
                 Expanded(
                   child: _GameTabBody(
                     sportId: _sportIdForTab(i),
@@ -188,9 +191,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
 /// Date window, skill tier and open spots (the old inline chips), plus the
 /// nearby control. Everything writes straight to its provider, as before.
 class _GamesFilterSheetBody extends ConsumerWidget {
-  const _GamesFilterSheetBody({required this.onReset});
-
-  final VoidCallback onReset;
+  const _GamesFilterSheetBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -199,7 +200,6 @@ class _GamesFilterSheetBody extends ConsumerWidget {
     final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
 
     return ListingFilterBody(
-      onReset: onReset,
       groups: [
         ListingFilterGroup(
           label: 'Date',
@@ -209,8 +209,9 @@ class _GamesFilterSheetBody extends ConsumerWidget {
                 DabblerChip(
                   label: f.label,
                   selected: f == dateFilter,
-                  onTap: () => ref.read(gamesDateFilterProvider.notifier).state =
-                      f == dateFilter ? GamesDateFilter.any : f,
+                  onTap: () =>
+                      ref.read(gamesDateFilterProvider.notifier).state =
+                          f == dateFilter ? GamesDateFilter.any : f,
                 ),
           ],
         ),
@@ -222,8 +223,9 @@ class _GamesFilterSheetBody extends ConsumerWidget {
                 DabblerChip(
                   label: f.label,
                   selected: f == skillFilter,
-                  onTap: () => ref.read(gamesSkillFilterProvider.notifier).state =
-                      f == skillFilter ? GamesSkillFilter.any : f,
+                  onTap: () =>
+                      ref.read(gamesSkillFilterProvider.notifier).state =
+                          f == skillFilter ? GamesSkillFilter.any : f,
                 ),
           ],
         ),
@@ -270,10 +272,10 @@ class _GameTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final nearbyEnabled = ref.watch(nearbyGamesFilterEnabledProvider);
-    final locState =
-        nearbyEnabled ? ref.watch(activeLocationProvider).valueOrNull : null;
-    final location =
-        locState is ActiveLocationReady ? locState.location : null;
+    final locState = nearbyEnabled
+        ? ref.watch(activeLocationProvider).valueOrNull
+        : null;
+    final location = locState is ActiveLocationReady ? locState.location : null;
     final sortOrder = ref.watch(nearbyGameSortProvider);
 
     // While the filter is on but location isn't ready yet (locating/denied),
@@ -289,7 +291,8 @@ class _GameTabBody extends ConsumerWidget {
     final gamesAsync = ref.watch(nearbyGamesProvider(params));
     // Pinned section: the viewer's created/joined upcoming games,
     // independent of the location filter.
-    final pinned = ref.watch(myPinnedGamesProvider(sportId)).valueOrNull ??
+    final pinned =
+        ref.watch(myPinnedGamesProvider(sportId)).valueOrNull ??
         const <NearbyGameModel>[];
     final isFiltered = location != null;
 
@@ -306,7 +309,8 @@ class _GameTabBody extends ConsumerWidget {
         final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
         final skillFilter = ref.watch(gamesSkillFilterProvider);
         final now = DateTime.now();
-        final filtersActive = dateFilter != GamesDateFilter.any ||
+        final filtersActive =
+            dateFilter != GamesDateFilter.any ||
             skillFilter != GamesSkillFilter.any ||
             openSpotsOnly;
 
@@ -390,9 +394,7 @@ class _GameTabBody extends ConsumerWidget {
 
 /// A row in the games list: either a section header or a game card.
 class _ListEntry {
-  const _ListEntry.header(String label)
-      : headerLabel = label,
-        gameModel = null;
+  const _ListEntry.header(String label) : headerLabel = label, gameModel = null;
   const _ListEntry.game(NearbyGameModel this.gameModel) : headerLabel = null;
 
   final String? headerLabel;
@@ -433,11 +435,11 @@ class _GameCard extends StatelessWidget {
               : colors.status(DabblerStatusTone.success),
         ),
       _statusBadge(colors, game.status),
-      if (game.spotsRemaining != null)
+      // Spots fall back to a badge only when the roster size is unknown and
+      // the progress slot cannot draw a bar.
+      if (game.spotsRemaining != null && game.playerCount == null)
         DabblerBadge(
-          label: game.spotsRemaining! > 0
-              ? '${game.spotsRemaining} spots left'
-              : 'Full',
+          label: _spotsLabel(game.spotsRemaining!),
           // The DS `warning` tone is the neutral tint.
           tone: DabblerBadgeTone.warning,
           status: game.spotsRemaining! == 0
@@ -450,13 +452,31 @@ class _GameCard extends StatelessWidget {
       title: game.title,
       sport: listingSportFor(game.sportName),
       cover: const ListingCover(),
-      dateTime: game.scheduledAt != null ? _formatTime(game.scheduledAt!) : null,
+      dateTime: game.scheduledAt != null
+          ? _formatTime(game.scheduledAt!)
+          : null,
       location: venueLine.isEmpty ? null : venueLine,
+      // The listing's player-progress slot: the old "N spots left" / "Full"
+      // line, now with the roster bar (DS gaps 6). The model carries no price
+      // and the list never had a join action, so those slots stay empty.
+      progress: game.spotsRemaining != null && game.playerCount != null
+          ? DabblerCardEventPlayers(
+              label: _spotsLabel(game.spotsRemaining!),
+              joined: game.playerCount!,
+              capacity: game.playerCount! + game.spotsRemaining!,
+              tone: game.spotsRemaining! == 0
+                  ? DabblerProgressBarTone.error
+                  : DabblerProgressBarTone.brand,
+            )
+          : null,
       footer: ListingBadgeRow(badges: badges),
       onTap: () => context.push(RoutePaths.gameDetail(game.id)),
       semanticLabel: game.title,
     );
   }
+
+  static String _spotsLabel(int remaining) =>
+      remaining > 0 ? '$remaining spots left' : 'Full';
 
   static Widget _statusBadge(DabblerColors colors, String? status) {
     switch (status?.toLowerCase()) {
@@ -467,7 +487,10 @@ class _GameCard extends StatelessWidget {
           status: colors.status(DabblerStatusTone.error),
         );
       case 'ended':
-        return const DabblerBadge(label: 'Ended', tone: DabblerBadgeTone.warning);
+        return const DabblerBadge(
+          label: 'Ended',
+          tone: DabblerBadgeTone.warning,
+        );
       case 'cancelled':
         return const DabblerBadge(
           label: 'Cancelled',

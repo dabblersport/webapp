@@ -497,16 +497,19 @@ class _HeroSection extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    DabblerButton.icon(
-                      icon: _backIcon(context),
+                    // Translucent on-colour circles over the sport band
+                    // (`Details.dc.html:50-58`).
+                    DabblerOnColorIconButton(
+                      icon: 'arrow-circle-left',
+                      mirrorInRtl: true,
                       semanticLabel: 'Back',
-                      tone: DabblerButtonTone.neutral,
+                      color: onSport,
                       onPressed: onBack,
                     ),
-                    DabblerButton.icon(
+                    DabblerOnColorIconButton(
                       icon: 'share',
                       semanticLabel: 'Share',
-                      tone: DabblerButtonTone.neutral,
+                      color: onSport,
                       onPressed: onShare,
                     ),
                   ],
