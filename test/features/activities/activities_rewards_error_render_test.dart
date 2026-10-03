@@ -29,7 +29,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../support/render_mode.dart';
 
-const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/misc';
+const String _shotsDir = '$kShotsRoot/misc';
 const Key _key = Key('shot');
 
 Future<void> _loadFonts() async {

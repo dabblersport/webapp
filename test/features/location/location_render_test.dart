@@ -32,7 +32,7 @@ import '../../support/render_mode.dart';
 /// source is faked; map tiles are stubbed.
 const String _shotsDir = String.fromEnvironment(
   'PLACES_SHOTS_DIR',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan/places',
+  defaultValue: '$kShotsRoot/places',
 );
 
 const Area _marina = Area(

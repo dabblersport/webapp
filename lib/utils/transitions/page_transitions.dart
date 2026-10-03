@@ -1,5 +1,10 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerMotion, DabblerRadius, DabblerScrimColors, DabblerSheet;
+    show
+        DabblerColors,
+        DabblerMotion,
+        DabblerRadius,
+        DabblerScrimColors,
+        DabblerSheet;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -258,7 +263,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
     this.maxDialogWidth = 720,
     this.maxDialogHeightFraction = 0.88,
     this.mobileHeightFactor = DabblerSheet.maxHeightFraction,
-    this.barrierColorValue,
+    Color? barrierColorValue,
     this.transparentSurface = false,
   }) : super(
          opaque: false,
@@ -309,7 +314,6 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
   final double maxDialogWidth;
   final double maxDialogHeightFraction;
   final double mobileHeightFactor;
-  final Color? barrierColorValue;
   final bool transparentSurface;
 }
 
@@ -332,10 +336,9 @@ class _AdaptiveModalFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isWide = size.width >= _kCompactWidth;
-    final colorScheme = Theme.of(context).colorScheme;
     final sheetColor = transparentSurface
-        ? DabblerScrimColors.transparent
-        : colorScheme.surface;
+        ? DabblerScrimColors.none
+        : DabblerColors.of(context).surfaceCard;
 
     // Non-visual route plumbing: a transparent Material supplies the Material
     // ancestor (ink, text selection, default text style) the routed content

@@ -35,7 +35,7 @@ import '../../support/render_mode.dart';
 /// social-onboarding screens (KAN-414 group B) in LTR and RTL and writes PNGs
 /// to the Alpha plan shots folder. Only OTP and onboarding-welcome have a
 /// design frame (A06, A10/A16); the rest are DS-default renders.
-const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/auth';
+const String _shotsDir = '$kShotsRoot/auth';
 
 Future<void> _loadFonts() async {
   final String dsFonts =

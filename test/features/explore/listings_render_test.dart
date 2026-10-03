@@ -32,7 +32,7 @@ import '../../support/render_mode.dart';
 /// and RTL, and writes PNGs to the Alpha plan folder.
 const String _shotsDir = String.fromEnvironment(
   'PLACES_SHOTS_DIR',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan/places',
+  defaultValue: '$kShotsRoot/places',
 );
 
 class _Location extends ActiveLocationNotifier {
@@ -234,6 +234,7 @@ Future<void> _pump(
   for (var i = 0; i < 8; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+  await settleImages(tester);
 }
 
 /// Opens [builder] in the app's DS-backed adaptive sheet, as sports_screen does.

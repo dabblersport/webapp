@@ -274,26 +274,38 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                         const SizedBox(height: DabblerSpacing.space4),
                         authIdentify(
                           'auth-welcome-continue-google',
-                          DabblerButton(
-                            label: l10n.auth_welcome_btn_google,
-                            tone: DabblerButtonTone.outlined,
-                            size: DabblerButtonSize.full,
-                            fullWidth: true,
-                            disabled: _isLoading,
-                            onPressed: _isLoading ? null : _handleGoogle,
+                          _WithProviderMark(
+                            mark: const DabblerProviderMark.google(
+                              size: DabblerSizing.iconLg,
+                              excludeFromSemantics: true,
+                            ),
+                            child: DabblerButton(
+                              label: l10n.auth_welcome_btn_google,
+                              tone: DabblerButtonTone.outlined,
+                              size: DabblerButtonSize.full,
+                              fullWidth: true,
+                              disabled: _isLoading,
+                              onPressed: _isLoading ? null : _handleGoogle,
+                            ),
                           ),
                         ),
                         if (showApple) ...[
                           const SizedBox(height: DabblerSpacing.space4),
                           authIdentify(
                             'auth-welcome-continue-apple',
-                            DabblerButton(
-                              label: l10n.auth_welcome_btn_apple,
-                              tone: DabblerButtonTone.outlined,
-                              size: DabblerButtonSize.full,
-                              fullWidth: true,
-                              disabled: _isLoading,
-                              onPressed: _isLoading ? null : _handleApple,
+                            _WithProviderMark(
+                              mark: const DabblerProviderMark.apple(
+                                size: DabblerSizing.iconLg,
+                                excludeFromSemantics: true,
+                              ),
+                              child: DabblerButton(
+                                label: l10n.auth_welcome_btn_apple,
+                                tone: DabblerButtonTone.outlined,
+                                size: DabblerButtonSize.full,
+                                fullWidth: true,
+                                disabled: _isLoading,
+                                onPressed: _isLoading ? null : _handleApple,
+                              ),
                             ),
                           ),
                         ],
@@ -507,6 +519,31 @@ class _LanguagePickerSheet extends ConsumerWidget {
           }),
         ],
       ),
+    );
+  }
+}
+
+
+/// A sign-in button with the vendor's official mark at its inline start. The
+/// mark is decoration (the button's label carries the name), so it ignores
+/// pointers and is hidden from semantics.
+class _WithProviderMark extends StatelessWidget {
+  const _WithProviderMark({required this.mark, required this.child});
+
+  final Widget mark;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: AlignmentDirectional.centerStart,
+      children: [
+        child,
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: DabblerSpacing.space4),
+          child: IgnorePointer(child: mark),
+        ),
+      ],
     );
   }
 }

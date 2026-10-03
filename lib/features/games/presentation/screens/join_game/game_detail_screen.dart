@@ -228,10 +228,15 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
                       key: _playersKey,
                       child: _RosterSection(state: state, ctrl: ctrl),
                     ),
-                    SizedBox(
-                      height:
-                          MediaQuery.paddingOf(context).bottom +
-                          DabblerSpacing.stickyActionBarClearance,
+                    // Read inside the page: DabblerPage raises the body's bottom
+                    // padding by the floating bar's height, so the last row
+                    // scrolls clear of the bar.
+                    Builder(
+                      builder: (pageContext) => SizedBox(
+                        height:
+                            MediaQuery.paddingOf(pageContext).bottom +
+                            DabblerSpacing.space6,
+                      ),
                     ),
                   ],
                 ),

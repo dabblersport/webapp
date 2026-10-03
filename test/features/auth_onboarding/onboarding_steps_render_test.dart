@@ -23,7 +23,7 @@ import '../../support/render_mode.dart';
 
 /// Renders onboarding steps 1-5 (A11-A15) on the design system in LTR and
 /// RTL, and writes PNGs to the Alpha plan folder.
-const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/auth';
+const String _shotsDir = '$kShotsRoot/auth';
 
 Future<void> _loadFonts() async {
   final String dsFonts =
