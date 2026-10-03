@@ -234,6 +234,7 @@ Future<void> _pump(
   for (var i = 0; i < 8; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+  await settleImages(tester);
 }
 
 /// Opens [builder] in the app's DS-backed adaptive sheet, as sports_screen does.
