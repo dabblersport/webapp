@@ -1,20 +1,30 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/providers.dart';
 import 'package:dabbler/features/venue_submissions/presentation/widgets/venue_submission_status_badge.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 typedef Result<T> = core.Result<T, Failure>;
 
+TextStyle _type(BuildContext context, DabblerTypeStyle style, Color color,
+        {FontWeight? weight}) =>
+    style
+        .resolveForDirection(Directionality.of(context))
+        .copyWith(color: color, fontWeight: weight);
+
+/// The SnackBar messages, now DS toasts (same text).
+void _toast(BuildContext context, String message) {
+  if (!context.mounted) return;
+  DabblerToastProvider.of(context).show(DabblerToastSpec(message: message));
+}
+
+/// No design frame: design-system defaults in the same structure.
 class VenueSubmissionDetailScreen extends ConsumerWidget {
   final String submissionId;
 
@@ -25,13 +35,14 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
     final submissionAsync = ref.watch(
       venueSubmissionByIdProvider(submissionId),
     );
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: RefreshIndicator(
+    // One layout at every width (AdaptiveScaffold is not a DS component).
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Submission details',
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
+      body: DabblerRefresh(
         onRefresh: () async {
           ref.invalidate(venueSubmissionByIdProvider(submissionId));
           await ref.read(venueSubmissionByIdProvider(submissionId).future);
@@ -42,42 +53,15 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
           ),
           slivers: [
             SliverToBoxAdapter(
-              child: SizedBox(
-                height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
-              ),
-            ),
-            SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    IconButton.filledTonal(
-                      onPressed: () => Navigator.of(context).maybePop(),
-                      icon: const Icon(Iconsax.arrow_left_copy),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        minimumSize: const Size(48, 48),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        'Submission details',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space3,
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space6,
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
                 child: submissionAsync.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => const Center(child: DabblerSpinner()),
                   error: (e, _) => _ErrorState(
                     message: e.toString(),
                     onRetry: () => ref.invalidate(
@@ -91,178 +75,7 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
                         venueSubmissionByIdProvider(submissionId),
                       ),
                     ),
-                    (submission) {
-                      final title =
-                          (submission.nameEn ??
-                                  submission.nameAr ??
-                                  'Untitled venue')
-                              .trim();
-                      final canEdit = submission.isEditable;
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Card.filled(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          title,
-                                          style: textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        VenueSubmissionStatusBadge(
-                                          status: submission.status,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        _kv(
-                                          context,
-                                          label: 'Location',
-                                          value:
-                                              <String?>[
-                                                    submission.city,
-                                                    submission.district,
-                                                    submission.area,
-                                                  ]
-                                                  .where(
-                                                    (v) => (v ?? '')
-                                                        .trim()
-                                                        .isNotEmpty,
-                                                  )
-                                                  .join(', '),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (canEdit)
-                                    IconButton.filledTonal(
-                                      onPressed: () => context.push(
-                                        RoutePaths.createVenueSubmission,
-                                        extra: submission,
-                                      ),
-                                      icon: const Icon(Iconsax.edit_2_copy),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (submission.shouldShowAdminNote &&
-                              (submission.adminNote ?? '').trim().isNotEmpty)
-                            Card.filled(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Admin note',
-                                      style: textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      submission.adminNote!,
-                                      style: textTheme.bodyMedium,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          if (submission.shouldShowAdminNote &&
-                              (submission.adminNote ?? '').trim().isNotEmpty)
-                            const SizedBox(height: 12),
-                          Card.filled(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Details',
-                                    style: textTheme.titleSmall?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  _kv(
-                                    context,
-                                    label: 'Name (EN)',
-                                    value: submission.nameEn,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Name (AR)',
-                                    value: submission.nameAr,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Description (EN)',
-                                    value: submission.descriptionEn,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Description (AR)',
-                                    value: submission.descriptionAr,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Address',
-                                    value: submission.addressLine1,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Phone',
-                                    value: submission.phone,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Website',
-                                    value: submission.website,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Instagram',
-                                    value: submission.instagram,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Indoor',
-                                    value: submission.isIndoor == null
-                                        ? null
-                                        : (submission.isIndoor! ? 'Yes' : 'No'),
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Surface type',
-                                    value: submission.surfaceType,
-                                  ),
-                                  _kv(
-                                    context,
-                                    label: 'Amenities',
-                                    value: submission.amenities.isEmpty
-                                        ? null
-                                        : submission.amenities.join(', '),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _ActionBar(submission: submission),
-                        ],
-                      );
-                    },
+                    (submission) => _Details(submission: submission),
                   ),
                 ),
               ),
@@ -271,41 +84,151 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
         ),
       ),
     );
-
-    if (isWide) {
-      return AdaptiveScaffold(
-        currentIndex: 2,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
+}
 
-  Widget _kv(BuildContext context, {required String label, String? value}) {
-    final textTheme = Theme.of(context).textTheme;
+class _Details extends StatelessWidget {
+  const _Details({required this.submission});
+
+  final VenueSubmissionModel submission;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final title =
+        (submission.nameEn ?? submission.nameAr ?? 'Untitled venue').trim();
+    final canEdit = submission.isEditable;
+    final hasNote = submission.shouldShowAdminNote &&
+        (submission.adminNote ?? '').trim().isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerCard(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: _type(context, DabblerType.title2,
+                          colors.textPrimary,
+                          weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: DabblerSpacing.space2),
+                    VenueSubmissionStatusBadge(status: submission.status),
+                    const SizedBox(height: DabblerSpacing.space3),
+                    _Kv(
+                      label: 'Location',
+                      value: <String?>[
+                        submission.city,
+                        submission.district,
+                        submission.area,
+                      ].where((v) => (v ?? '').trim().isNotEmpty).join(', '),
+                    ),
+                  ],
+                ),
+              ),
+              if (canEdit)
+                DabblerButton.icon(
+                  icon: 'edit-2',
+                  semanticLabel: 'Edit submission',
+                  onPressed: () => context.push(
+                    RoutePaths.createVenueSubmission,
+                    extra: submission,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space3),
+        if (hasNote) ...[
+          DabblerCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Admin note',
+                  style: _type(context, DabblerType.headline,
+                      colors.textPrimary),
+                ),
+                const SizedBox(height: DabblerSpacing.space2),
+                Text(
+                  submission.adminNote!,
+                  style: _type(context, DabblerType.body, colors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: DabblerSpacing.space3),
+        ],
+        DabblerCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Details',
+                style: _type(context, DabblerType.headline, colors.textPrimary),
+              ),
+              const SizedBox(height: DabblerSpacing.space3),
+              _Kv(label: 'Name (EN)', value: submission.nameEn),
+              _Kv(label: 'Name (AR)', value: submission.nameAr),
+              _Kv(label: 'Description (EN)', value: submission.descriptionEn),
+              _Kv(label: 'Description (AR)', value: submission.descriptionAr),
+              _Kv(label: 'Address', value: submission.addressLine1),
+              _Kv(label: 'Phone', value: submission.phone),
+              _Kv(label: 'Website', value: submission.website),
+              _Kv(label: 'Instagram', value: submission.instagram),
+              _Kv(
+                label: 'Indoor',
+                value: submission.isIndoor == null
+                    ? null
+                    : (submission.isIndoor! ? 'Yes' : 'No'),
+              ),
+              _Kv(label: 'Surface type', value: submission.surfaceType),
+              _Kv(
+                label: 'Amenities',
+                value: submission.amenities.isEmpty
+                    ? null
+                    : submission.amenities.join(', '),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space3),
+        _ActionBar(submission: submission),
+      ],
+    );
+  }
+}
+
+class _Kv extends StatelessWidget {
+  const _Kv({required this.label, this.value});
+
+  final String label;
+  final String? value;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
     final v = (value ?? '').trim();
     if (v.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: _type(context, DabblerType.footnote, colors.textSecondary,
+                weight: FontWeight.w700),
           ),
-          const SizedBox(height: 4),
-          Text(v, style: textTheme.bodyMedium),
+          const SizedBox(height: DabblerSpacing.space1),
+          Text(v, style: _type(context, DabblerType.body, colors.textPrimary)),
         ],
       ),
     );
@@ -325,51 +248,39 @@ class _ActionBar extends ConsumerWidget {
     final canSubmit = submission.canSubmitForReview;
     final busy = controller.isSaving;
 
-    return Card.filled(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!submission.isEditable)
-              Text(
-                'This submission is read-only while ${submission.status.name}.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            if (!submission.isEditable) const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: (!canSubmit || busy)
-                  ? null
-                  : () async {
-                      final result = await notifier.submitForReview(
-                        submissionId: submission.id,
-                        existing: submission,
-                      );
-
-                      result.match(
-                        (failure) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(failure.message)),
-                          );
-                        },
-                        (_) {
-                          ref.invalidate(myVenueSubmissionsProvider);
-                          ref.invalidate(
-                            venueSubmissionByIdProvider(submission.id),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Submitted for review.'),
-                            ),
-                          );
-                        },
-                      );
-                    },
-              icon: const Icon(Iconsax.send_2_copy),
-              label: const Text('Submit for review'),
+    return DabblerCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!submission.isEditable) ...[
+            Text(
+              'This submission is read-only while ${submission.status.name}.',
+              style: _type(context, DabblerType.body,
+                  DabblerColors.of(context).textPrimary),
             ),
+            const SizedBox(height: DabblerSpacing.space3),
           ],
-        ),
+          DabblerButton(
+            label: 'Submit for review',
+            icon: 'send-2',
+            fullWidth: true,
+            disabled: !canSubmit || busy,
+            onPressed: () async {
+              final result = await notifier.submitForReview(
+                submissionId: submission.id,
+                existing: submission,
+              );
+              result.match(
+                (failure) => _toast(context, failure.message),
+                (_) {
+                  ref.invalidate(myVenueSubmissionsProvider);
+                  ref.invalidate(venueSubmissionByIdProvider(submission.id));
+                  _toast(context, 'Submitted for review.');
+                },
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -383,34 +294,11 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Iconsax.danger_copy, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'Couldn\'t load submission',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
+    return DabblerEmptyState.error(
+      title: 'Couldn\'t load submission',
+      text: message,
+      retryLabel: 'Retry',
+      onRetry: onRetry,
     );
   }
 }

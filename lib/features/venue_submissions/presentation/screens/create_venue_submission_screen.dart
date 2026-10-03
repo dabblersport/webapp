@@ -1,20 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/fp/result.dart' as core;
 import 'package:dabbler/data/models/venue_submission_model.dart';
+import 'package:dabbler/features/venue_submissions/presentation/controllers/venue_submission_controller.dart';
 import 'package:dabbler/features/venue_submissions/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:dabbler/widgets/input_field.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 typedef Result<T> = core.Result<T, Failure>;
 
+/// No design frame: design-system defaults in the same structure.
 class CreateVenueSubmissionScreen extends ConsumerStatefulWidget {
   final VenueSubmissionModel? initial;
 
@@ -92,6 +90,92 @@ class _CreateVenueSubmissionScreenState
     super.dispose();
   }
 
+  /// The SnackBar messages, now DS toasts (same text).
+  void _toast(String message) {
+    if (!mounted) return;
+    DabblerToastProvider.of(context).show(DabblerToastSpec(message: message));
+  }
+
+  Widget _field(
+    String label,
+    TextEditingController controller,
+    bool enabled, {
+    TextInputType? keyboardType,
+  }) => DabblerTextField(
+    label: label,
+    controller: controller,
+    enabled: enabled,
+    keyboardType: keyboardType,
+  );
+
+  Widget _textArea(
+    String label,
+    TextEditingController controller,
+    bool enabled,
+  ) => DabblerTextField(
+    variant: DabblerTextFieldVariant.multiline,
+    label: label,
+    controller: controller,
+    enabled: enabled,
+    rows: 3,
+  );
+
+  Future<void> _saveDraft(
+    VenueSubmissionModel? initial,
+    VenueSubmissionController notifier,
+  ) async {
+    final organiserIdRes = await ref.read(organiserProfileIdProvider.future);
+    final organiserId = organiserIdRes.fold((_) => null, (id) => id);
+    if (organiserId == null) {
+      _toast(organiserIdRes.requireError.message);
+      return;
+    }
+
+    final draft = _buildDraft(initialId: initial?.id);
+    final saveRes = await notifier.saveDraft(
+      organiserProfileId: organiserId,
+      draft: draft,
+      existing: initial,
+    );
+
+    saveRes.match((failure) => _toast(failure.message), (saved) {
+      ref.invalidate(myVenueSubmissionsProvider);
+      ref.invalidate(venueSubmissionByIdProvider(saved.id));
+      _toast('Draft saved.');
+      if (!mounted) return;
+      context.go(RoutePaths.venueSubmissionDetail(saved.id));
+    });
+  }
+
+  Future<void> _submitForReview(
+    VenueSubmissionModel? initial,
+    VenueSubmissionController notifier,
+  ) async {
+    final id = initial?.id;
+    if (id == null || id.isEmpty) {
+      _toast('Save the draft first.');
+      return;
+    }
+
+    if (!(initial?.canSubmitForReview ?? true)) {
+      _toast('You can only submit drafts or returned submissions.');
+      return;
+    }
+
+    final res = await notifier.submitForReview(
+      submissionId: id,
+      existing: initial,
+    );
+
+    res.match((failure) => _toast(failure.message), (_) {
+      ref.invalidate(myVenueSubmissionsProvider);
+      ref.invalidate(venueSubmissionByIdProvider(id));
+      _toast('Submitted for review.');
+      if (!mounted) return;
+      context.go(RoutePaths.venueSubmissionDetail(id));
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(venueSubmissionControllerProvider);
@@ -100,390 +184,148 @@ class _CreateVenueSubmissionScreenState
     final initial = widget.initial;
     final isEditing = initial != null;
     final isEditable = initial?.isEditable ?? true; // new draft is editable
+    final colors = DabblerColors.of(context);
 
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
+    const gap = SizedBox(height: DabblerSpacing.space3);
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: CustomScrollView(
+    // One layout at every width (AdaptiveScaffold is not a DS component).
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: isEditing ? 'Edit submission' : 'Create submission',
+        onBack: () => Navigator.of(context).maybePop(),
+      ),
+      body: ListView(
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: isWide ? 16 : MediaQuery.of(context).padding.top + 8,
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space3,
+          DabblerSpacing.space6,
+          DabblerSpacing.space6,
+        ),
+        children: [
+          if (isEditing) ...[
+            DabblerBanner(
+              icon: const DabblerIcon('info-circle'),
+              message: isEditable
+                  ? 'You can edit this submission and save as draft.'
+                  : 'This submission is read-only while ${initial.status.name}.',
+            ),
+            gap,
+          ],
+          DabblerCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Venue details',
+                  style: DabblerType.headline
+                      .resolveForDirection(Directionality.of(context))
+                      .copyWith(color: colors.textPrimary),
+                ),
+                gap,
+                _field('Name (English)', _nameEn, isEditable),
+                gap,
+                _field('Name (Arabic)', _nameAr, isEditable),
+                gap,
+                _textArea('Description (English)', _descriptionEn, isEditable),
+                gap,
+                _textArea('Description (Arabic)', _descriptionAr, isEditable),
+                gap,
+                _field('City', _city, isEditable),
+                gap,
+                _field('District', _district, isEditable),
+                gap,
+                _field('Area', _area, isEditable),
+                gap,
+                _field('Address line 1', _addressLine1, isEditable),
+                gap,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _field(
+                        'Latitude',
+                        _lat,
+                        isEditable,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: DabblerSpacing.space3),
+                    Expanded(
+                      child: _field(
+                        'Longitude',
+                        _lng,
+                        isEditable,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                gap,
+                _field(
+                  'Phone',
+                  _phone,
+                  isEditable,
+                  keyboardType: TextInputType.phone,
+                ),
+                gap,
+                _field(
+                  'Website',
+                  _website,
+                  isEditable,
+                  keyboardType: TextInputType.url,
+                ),
+                gap,
+                _field('Instagram', _instagram, isEditable),
+                gap,
+                DabblerInputRow(
+                  title: 'Indoor venue',
+                  enabled: isEditable,
+                  trailing: DabblerToggle(
+                    checked: _isIndoor,
+                    disabled: !isEditable,
+                    semanticLabel: 'Indoor venue',
+                    onChanged: isEditable
+                        ? (v) => setState(() => _isIndoor = v)
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: DabblerSpacing.space2),
+                _field('Surface type', _surfaceType, isEditable),
+                gap,
+                _field('Amenities (comma separated)', _amenities, isEditable),
+              ],
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Iconsax.arrow_left_copy),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.transparent,
-                      minimumSize: const Size(48, 48),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      isEditing ? 'Edit submission' : 'Create submission',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (isEditing)
-                    Card.filled(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            const Icon(Iconsax.info_circle_copy),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                isEditable
-                                    ? 'You can edit this submission and save as draft.'
-                                    : 'This submission is read-only while ${initial.status.name}.',
-                                style: textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (isEditing) const SizedBox(height: 12),
-
-                  Card.filled(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Venue details',
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Name (English)',
-                            controller: _nameEn,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Name (Arabic)',
-                            controller: _nameAr,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomTextArea(
-                            label: 'Description (English)',
-                            controller: _descriptionEn,
-                            enabled: isEditable,
-                            minLines: 3,
-                            maxLines: 6,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomTextArea(
-                            label: 'Description (Arabic)',
-                            controller: _descriptionAr,
-                            enabled: isEditable,
-                            minLines: 3,
-                            maxLines: 6,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'City',
-                            controller: _city,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'District',
-                            controller: _district,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Area',
-                            controller: _area,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Address line 1',
-                            controller: _addressLine1,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CustomInputField(
-                                  label: 'Latitude',
-                                  controller: _lat,
-                                  enabled: isEditable,
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: CustomInputField(
-                                  label: 'Longitude',
-                                  controller: _lng,
-                                  enabled: isEditable,
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Phone',
-                            controller: _phone,
-                            enabled: isEditable,
-                            keyboardType: TextInputType.phone,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Website',
-                            controller: _website,
-                            enabled: isEditable,
-                            keyboardType: TextInputType.url,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Instagram',
-                            controller: _instagram,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          SwitchListTile.adaptive(
-                            value: _isIndoor,
-                            onChanged: isEditable
-                                ? (v) => setState(() => _isIndoor = v)
-                                : null,
-                            title: const Text('Indoor venue'),
-                          ),
-                          const SizedBox(height: 8),
-                          CustomInputField(
-                            label: 'Surface type',
-                            controller: _surfaceType,
-                            enabled: isEditable,
-                          ),
-                          const SizedBox(height: 12),
-                          CustomInputField(
-                            label: 'Amenities (comma separated)',
-                            controller: _amenities,
-                            enabled: isEditable,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Card.filled(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          FilledButton.icon(
-                            onPressed: (!isEditable || controller.isSaving)
-                                ? null
-                                : () async {
-                                    final organiserIdRes = await ref.read(
-                                      organiserProfileIdProvider.future,
-                                    );
-                                    final organiserId = organiserIdRes.fold(
-                                      (_) => null,
-                                      (id) => id,
-                                    );
-                                    if (organiserId == null) {
-                                      final msg =
-                                          organiserIdRes.requireError.message;
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(content: Text(msg)),
-                                      );
-                                      return;
-                                    }
-
-                                    final draft = _buildDraft(
-                                      initialId: initial?.id,
-                                    );
-                                    final saveRes = await notifier.saveDraft(
-                                      organiserProfileId: organiserId,
-                                      draft: draft,
-                                      existing: initial,
-                                    );
-
-                                    saveRes.match(
-                                      (failure) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(failure.message),
-                                          ),
-                                        );
-                                      },
-                                      (saved) {
-                                        ref.invalidate(
-                                          myVenueSubmissionsProvider,
-                                        );
-                                        ref.invalidate(
-                                          venueSubmissionByIdProvider(saved.id),
-                                        );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Draft saved.'),
-                                          ),
-                                        );
-                                        context.go(
-                                          RoutePaths.venueSubmissionDetail(
-                                            saved.id,
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                            icon: const Icon(Iconsax.save_2_copy),
-                            label: const Text('Save as draft'),
-                          ),
-                          const SizedBox(height: 12),
-                          FilledButton.tonal(
-                            onPressed: (!isEditable || controller.isSaving)
-                                ? null
-                                : () async {
-                                    final id = initial?.id;
-                                    if (id == null || id.isEmpty) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Save the draft first.',
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    if (!(initial?.canSubmitForReview ??
-                                        true)) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'You can only submit drafts or returned submissions.',
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    final res = await notifier.submitForReview(
-                                      submissionId: id,
-                                      existing: initial,
-                                    );
-
-                                    res.match(
-                                      (failure) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(failure.message),
-                                          ),
-                                        );
-                                      },
-                                      (_) {
-                                        ref.invalidate(
-                                          myVenueSubmissionsProvider,
-                                        );
-                                        ref.invalidate(
-                                          venueSubmissionByIdProvider(id),
-                                        );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Submitted for review.',
-                                            ),
-                                          ),
-                                        );
-                                        context.go(
-                                          RoutePaths.venueSubmissionDetail(id),
-                                        );
-                                      },
-                                    );
-                                  },
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Iconsax.send_2_copy),
-                                const SizedBox(width: 8),
-                                const Text('Submit for review'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          gap,
+          DabblerCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DabblerButton(
+                  label: 'Save as draft',
+                  icon: 'save-2',
+                  fullWidth: true,
+                  disabled: !isEditable || controller.isSaving,
+                  onPressed: () => _saveDraft(initial, notifier),
+                ),
+                gap,
+                DabblerButton(
+                  label: 'Submit for review',
+                  icon: 'send-2',
+                  tone: DabblerButtonTone.outlined,
+                  fullWidth: true,
+                  disabled: !isEditable || controller.isSaving,
+                  onPressed: () => _submitForReview(initial, notifier),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
-
-    if (isWide) {
-      return AdaptiveScaffold(
-        currentIndex: 2,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 2),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
 
   VenueSubmissionDraft _buildDraft({String? initialId}) {

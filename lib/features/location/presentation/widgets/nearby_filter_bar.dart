@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_sheet.dart';
@@ -12,11 +12,11 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 /// enabled/sort state so the two lists filter independently.
 ///
 /// States:
-/// - Off: outlined "Nearby" chip; tapping enables the filter (which lazily
-///   resolves the active location).
-/// - On + location ready: filled chip with area + radius, an ✕ to disable,
-///   and a trailing filter button that opens [NearbyFilterSheet].
-/// - On + locating: progress chip.
+/// - Off: "Nearby" chip; tapping enables the filter (which lazily resolves
+///   the active location).
+/// - On + location ready: selected chip with area + radius, a close button to
+///   disable, and a trailing "Filter" chip that opens [NearbyFilterSheet].
+/// - On + locating: spinner chip.
 /// - On + denied/error: error chip; tapping retries GPS.
 class NearbyFilterBar extends ConsumerWidget {
   const NearbyFilterBar({
@@ -40,11 +40,18 @@ class NearbyFilterBar extends ConsumerWidget {
     final enabled = ref.watch(enabledProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+      ),
       child: Row(
         children: [
           if (!enabled)
-            _NearbyChip.off(
+            DabblerChip(
+              label: 'Nearby',
+              leadingIcon: const DabblerIcon('location'),
               onTap: () => ref.read(enabledProvider.notifier).state = true,
             )
           else
@@ -63,7 +70,11 @@ class NearbyFilterBar extends ConsumerWidget {
     if (locAsync.isLoading || locState is ActiveLocationLoading) {
       return Row(
         children: [
-          _NearbyChip.locating(onDismiss: disable),
+          const DabblerChip(
+            label: 'Locating…',
+            leadingIcon: DabblerSpinner(size: DabblerSpinnerSize.sm),
+          ),
+          _DismissButton(onTap: disable),
         ],
       );
     }
@@ -74,13 +85,19 @@ class NearbyFilterBar extends ConsumerWidget {
       return Row(
         children: [
           Flexible(
-            child: _NearbyChip.on(
+            child: DabblerChip(
               label: '${loc.area.name} · $km km',
-              onDismiss: disable,
+              selected: true,
+              leadingIcon: const DabblerIcon('location'),
             ),
           ),
-          const SizedBox(width: 8),
-          _FilterButton(onTap: () => _openFilterSheet(context, ref)),
+          _DismissButton(onTap: disable),
+          const SizedBox(width: DabblerSpacing.space2),
+          DabblerChip(
+            label: 'Filter',
+            leadingIcon: const DabblerIcon('setting-4'),
+            onTap: () => _openFilterSheet(context, ref),
+          ),
         ],
       );
     }
@@ -89,165 +106,37 @@ class NearbyFilterBar extends ConsumerWidget {
     return Row(
       children: [
         Flexible(
-          child: _NearbyChip.unavailable(
+          child: DabblerChip(
+            label: 'Location unavailable — tap to retry',
+            leadingIcon: DabblerIcon(
+              'location-slash',
+              color: DabblerColors.of(context).error.solid,
+            ),
             onTap: () =>
                 ref.read(activeLocationProvider.notifier).useGpsLocation(),
-            onDismiss: disable,
           ),
         ),
+        _DismissButton(onTap: disable),
       ],
     );
   }
 }
 
-// =============================================================================
-// CHIP
-// =============================================================================
-
-class _NearbyChip extends StatelessWidget {
-  const _NearbyChip({
-    required this.label,
-    this.onTap,
-    this.onDismiss,
-    this.filled = false,
-    this.error = false,
-    this.busy = false,
-  });
-
-  factory _NearbyChip.off({required VoidCallback onTap}) =>
-      _NearbyChip(label: 'Nearby', onTap: onTap);
-
-  factory _NearbyChip.on({
-    required String label,
-    required VoidCallback onDismiss,
-  }) =>
-      _NearbyChip(label: label, onDismiss: onDismiss, filled: true);
-
-  factory _NearbyChip.locating({required VoidCallback onDismiss}) =>
-      _NearbyChip(label: 'Locating…', onDismiss: onDismiss, busy: true);
-
-  factory _NearbyChip.unavailable({
-    required VoidCallback onTap,
-    required VoidCallback onDismiss,
-  }) =>
-      _NearbyChip(
-        label: 'Location unavailable — tap to retry',
-        onTap: onTap,
-        onDismiss: onDismiss,
-        error: true,
-      );
-
-  final String label;
-  final VoidCallback? onTap;
-  final VoidCallback? onDismiss;
-  final bool filled;
-  final bool error;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    final Color bg;
-    final Color fg;
-    if (filled) {
-      bg = cs.primary;
-      fg = cs.onPrimary;
-    } else if (error) {
-      bg = cs.errorContainer;
-      fg = cs.onErrorContainer;
-    } else {
-      bg = cs.primary.withValues(alpha: 0.1);
-      fg = cs.primary;
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (busy)
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(strokeWidth: 2, color: fg),
-              )
-            else
-              Icon(
-                error ? Iconsax.location_slash_copy : Iconsax.location_copy,
-                size: 14,
-                color: fg,
-              ),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                style: tt.labelLarge?.copyWith(
-                  color: fg,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (onDismiss != null) ...[
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onDismiss,
-                child: Icon(Icons.close, size: 14, color: fg),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// FILTER BUTTON
-// =============================================================================
-
-class _FilterButton extends StatelessWidget {
-  const _FilterButton({required this.onTap});
+/// Disables the nearby filter. DabblerChip has no trailing dismiss slot, so
+/// the close glyph is a small icon button beside the chip.
+class _DismissButton extends StatelessWidget {
+  const _DismissButton({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: cs.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Iconsax.setting_4_copy, size: 14, color: cs.primary),
-            const SizedBox(width: 4),
-            Text(
-              'Filter',
-              style: tt.labelSmall?.copyWith(
-                color: cs.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return DabblerButton.icon(
+      tone: DabblerButtonTone.text,
+      icon: 'close-circle',
+      semanticLabel: 'Turn off nearby',
+      size: DabblerButtonSize.small,
+      onPressed: onTap,
     );
   }
 }

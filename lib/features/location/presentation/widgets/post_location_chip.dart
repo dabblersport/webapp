@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
 import 'package:dabbler/features/location/providers/location_providers.dart';
 
@@ -27,46 +27,40 @@ class PostLocationChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
     // If we already have a location_name, show it directly.
     if (locationName != null && locationName!.isNotEmpty) {
-      return _buildChip(context: context, label: locationName!, cs: cs, tt: tt);
+      return _buildChip(context, locationName!);
     }
 
     // Otherwise resolve the area name from the cached provider.
     final areaNameAsync = ref.watch(areaNameProvider(areaId));
 
     return areaNameAsync.when(
-      data: (name) => _buildChip(context: context, label: name, cs: cs, tt: tt),
-      loading: () => _buildChip(context: context, label: '...', cs: cs, tt: tt),
+      data: (name) => _buildChip(context, name),
+      loading: () => _buildChip(context, '...'),
       error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildChip({
-    required BuildContext context,
-    required String label,
-    required ColorScheme cs,
-    required TextTheme tt,
-  }) {
+  Widget _buildChip(BuildContext context, String label) {
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Iconsax.location, size: 12, color: cs.onSurfaceVariant),
-          const SizedBox(width: 4),
+          DabblerIcon('location', size: 12, color: colors.textSecondary),
+          const SizedBox(width: DabblerSpacing.space1),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: tt.bodySmall?.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+              style: DabblerType.footnote
+                  .resolveForDirection(direction)
+                  .copyWith(color: colors.textSecondary),
             ),
           ),
         ],

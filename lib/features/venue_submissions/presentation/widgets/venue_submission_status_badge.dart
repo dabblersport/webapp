@@ -1,7 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:dabbler/data/models/venue_submission_model.dart';
 
+/// Submission status as a DS badge. No design frame: the status maps onto the
+/// DS badge tones (draft neutral, pending warning, approved success,
+/// returned/rejected error).
 class VenueSubmissionStatusBadge extends StatelessWidget {
   final VenueSubmissionStatus status;
 
@@ -9,32 +13,14 @@ class VenueSubmissionStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    final (bg, fg) = switch (status) {
-      VenueSubmissionStatus.draft => (scheme.surfaceContainerHighest, scheme.onSurfaceVariant),
-      VenueSubmissionStatus.pending => (scheme.tertiaryContainer, scheme.onTertiaryContainer),
-      VenueSubmissionStatus.approved => (scheme.secondaryContainer, scheme.onSecondaryContainer),
-      VenueSubmissionStatus.returned => (scheme.errorContainer, scheme.onErrorContainer),
-      VenueSubmissionStatus.rejected => (scheme.errorContainer, scheme.onErrorContainer),
+    final tone = switch (status) {
+      VenueSubmissionStatus.draft => DabblerBadgeTone.defaultTone,
+      VenueSubmissionStatus.pending => DabblerBadgeTone.warning,
+      VenueSubmissionStatus.approved => DabblerBadgeTone.success,
+      VenueSubmissionStatus.returned => DabblerBadgeTone.error,
+      VenueSubmissionStatus.rejected => DabblerBadgeTone.error,
     };
 
-    final label = status.name.toUpperCase();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: fg,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
+    return DabblerBadge(label: status.name.toUpperCase(), tone: tone);
   }
 }
