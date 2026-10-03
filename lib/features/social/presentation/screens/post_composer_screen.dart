@@ -1,32 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ui' show ImageFilter;
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:dabbler/core/config/environment.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_color_palette.dart';
-import 'package:dabbler/core/design_system/tokens/avatar_tokens.dart';
-import 'package:dabbler/core/design_system/widgets/ds_avatar.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
-
+import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
-import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
-import 'package:dabbler/data/models/social/sport.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
-
-// Composer drawer chrome + glass palette is shared via composer_drawer_kit.dart.
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
 ///
@@ -60,8 +52,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   @override
   void initState() {
     super.initState();
-    // Controller is created here; hashtagColor is set in didChangeDependencies
-    // once the theme is available.
     _bodyController = _HashtagTextEditingController();
     _loadUserProfile();
   }
@@ -69,7 +59,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _bodyController.hashtagColor = Theme.of(context).colorScheme.primary;
+    _bodyController.hashtagColor = DabblerColors.of(context).brandPrimary;
   }
 
   Future<void> _loadUserProfile() async {
@@ -85,6 +75,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     super.dispose();
   }
 
+  void _errorToast(String message) {
+    DabblerToastProvider.of(context).show(
+      DabblerToastSpec(message: message, tone: DabblerToastTone.error),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // SUBMIT
   // ═══════════════════════════════════════════════════════════════════════
@@ -95,12 +91,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     result.fold(
       (err) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(err.message),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _errorToast(err.message);
       },
       (post) {
         if (!mounted) return;
@@ -114,80 +105,40 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   void _showVisibilityPicker() {
-    final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
 
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Who can see this?',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  color: cs.onSurface,
-                ),
-              ),
-            ),
-            // Circle visibility has no picker wired in this composer yet
-            // (KAN-47) — selecting it always fails at submit time.
-            for (final v in PostVisibility.values)
-              if (v != PostVisibility.circle)
-              ListTile(
-                leading: Icon(
-                  _visibilityIcon(v),
-                  color: state.visibility == v ? cs.primary : cs.onSurface,
-                ),
-                title: Text(
-                  _visibilityLabel(v),
-                  style: (state.visibility == v
-                          ? Theme.of(ctx).textTheme.titleMedium
-                          : Theme.of(ctx).textTheme.bodyMedium)
-                      ?.copyWith(
-                    color: state.visibility == v ? cs.primary : cs.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  _visibilityDescription(v),
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                trailing: state.visibility == v
-                    ? Icon(Icons.check_circle, color: cs.primary)
-                    : null,
+    showComposerSheet<void>(
+      context,
+      title: 'Who can see this?',
+      detents: const <double>[0.6],
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Circle visibility has no picker wired in this composer yet
+          // (KAN-47) — selecting it always fails at submit time.
+          for (final v in PostVisibility.values)
+            if (v != PostVisibility.circle)
+              ComposerPickerRow(
+                icon: _visibilityIcon(v),
+                title: _visibilityLabel(v),
+                subtitle: _visibilityDescription(v),
+                selected: state.visibility == v,
                 onTap: () {
                   ref.read(postComposerProvider.notifier).setVisibility(v);
                   Navigator.pop(ctx);
                 },
               ),
-            const SizedBox(height: 16),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   void _showVibesPicker() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.85,
-        minChildSize: 0.5,
-        maxChildSize: 1.0,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _ComposerVibesPickerSheet(scrollController: scrollController),
-      ),
+    showComposerSheet<void>(
+      context,
+      title: 'Vibes',
+      detents: const <double>[0.85],
+      builder: (ctx) => const _ComposerVibesPickerSheet(),
     );
   }
 
@@ -201,10 +152,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           )
         : null;
 
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      isScrollControlled: true,
+    showComposerSheet<void>(
+      context,
+      title: 'Sports',
+      detents: const <double>[0.85],
       builder: (_) => SportSelectionSheet(
         sportsProvider: activeSportsByProfileCountryProvider,
         selectedSport: selectedSport,
@@ -219,111 +170,68 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showExpiryPicker() async {
+  void _showExpiryPicker() {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now.add(const Duration(days: 1)),
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
+    showComposerSheet<void>(
+      context,
+      title: 'Set expiry',
+      detents: const <double>[0.7],
+      builder: (ctx) => _ExpiryPickerSheet(
+        first: now,
+        last: now.add(const Duration(days: 365)),
+        initial: now.add(const Duration(days: 1)),
+        onPicked: (picked) {
+          if (mounted) {
+            ref.read(postComposerProvider.notifier).setExpiresAt(picked);
+          }
+        },
+      ),
     );
-    if (picked != null && mounted) {
-      ref.read(postComposerProvider.notifier).setExpiresAt(picked);
-    }
   }
 
   void _showGamePicker() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 1.0,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _GamePickerSheet(scrollController: scrollController),
-      ),
+    showComposerSheet<void>(
+      context,
+      title: 'Link a Game',
+      detents: const <double>[0.85],
+      builder: (ctx) => const _GamePickerSheet(),
     );
   }
 
   void _showLocationPicker() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      isScrollControlled: true,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (ctx, scrollController) =>
-            _LocationPickerSheet(scrollController: scrollController),
-      ),
+    showComposerSheet<void>(
+      context,
+      title: 'Location',
+      detents: const <double>[0.85],
+      builder: (ctx) => const _LocationPickerSheet(),
     );
   }
 
   void _showPostTypePicker() {
-    final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
     final selectableTypes = PostType.values
         .where((t) => t.isUserSelectable)
         .toList(growable: false);
 
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Post Type',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  color: cs.onSurface,
-                ),
-              ),
+    showComposerSheet<void>(
+      context,
+      title: 'Post Type',
+      detents: const <double>[0.5],
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final t in selectableTypes)
+            ComposerPickerRow(
+              icon: _postTypeIcon(t),
+              title: _postTypeLabel(t),
+              subtitle: _postTypeDescription(t),
+              selected: state.postType == t,
+              onTap: () {
+                ref.read(postComposerProvider.notifier).setPostType(t);
+                Navigator.pop(ctx);
+              },
             ),
-            for (final t in selectableTypes)
-              ListTile(
-                leading: Icon(
-                  _postTypeIcon(t),
-                  color: state.postType == t ? cs.primary : cs.onSurface,
-                ),
-                title: Text(
-                  _postTypeLabel(t),
-                  style: (state.postType == t
-                          ? Theme.of(ctx).textTheme.titleMedium
-                          : Theme.of(ctx).textTheme.bodyMedium)
-                      ?.copyWith(
-                    color: state.postType == t ? cs.primary : cs.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  _postTypeDescription(t),
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                trailing: state.postType == t
-                    ? Icon(Icons.check_circle, color: cs.primary)
-                    : null,
-                onTap: () {
-                  ref.read(postComposerProvider.notifier).setPostType(t);
-                  Navigator.pop(ctx);
-                },
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -331,147 +239,68 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // Retained while the Category row is hidden — see _buildOptionsSection.
   // ignore: unused_element
   void _showContentClassPicker() {
-    final cs = Theme.of(context).colorScheme;
     final state = ref.read(postComposerProvider);
     const classes = ['social', 'editorial'];
 
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Content Class',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                  color: cs.onSurface,
-                ),
-              ),
+    showComposerSheet<void>(
+      context,
+      title: 'Content Class',
+      detents: const <double>[0.4],
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final cc in classes)
+            ComposerPickerRow(
+              icon: cc == 'social' ? 'people' : 'document-text',
+              title: _prettifyLabel(cc),
+              subtitle: cc == 'social'
+                  ? 'Standard social post'
+                  : 'Editorial or long-form content',
+              selected: state.contentClass == cc,
+              onTap: () {
+                ref.read(postComposerProvider.notifier).setContentClass(cc);
+                Navigator.pop(ctx);
+              },
             ),
-            for (final cc in classes)
-              ListTile(
-                leading: Icon(
-                  cc == 'social' ? Icons.people : Icons.article,
-                  color: state.contentClass == cc ? cs.primary : cs.onSurface,
-                ),
-                title: Text(
-                  _prettifyLabel(cc),
-                  style: (state.contentClass == cc
-                          ? Theme.of(ctx).textTheme.titleMedium
-                          : Theme.of(ctx).textTheme.bodyMedium)
-                      ?.copyWith(
-                    color: state.contentClass == cc ? cs.primary : cs.onSurface,
-                  ),
-                ),
-                subtitle: Text(
-                  cc == 'social'
-                      ? 'Standard social post'
-                      : 'Editorial or long-form content',
-                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                trailing: state.contentClass == cc
-                    ? Icon(Icons.check_circle, color: cs.primary)
-                    : null,
-                onTap: () {
-                  ref.read(postComposerProvider.notifier).setContentClass(cc);
-                  Navigator.pop(ctx);
-                },
-              ),
-            const SizedBox(height: 16),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   void _showMediaInput() {
-    final cs = Theme.of(context).colorScheme;
-
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _SheetHandle(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
-                child: Text(
-                  'Add Media',
-                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                    color: cs.onSurface,
-                  ),
-                ),
-              ),
-
-              // Camera option
-              ListTile(
-                leading: Icon(Icons.camera_alt_rounded, color: cs.primary),
-                title: Text(
-                  'Take Photo',
-                  style: TextStyle(color: cs.onSurface),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickAndUploadMedia(ImageSource.camera);
-                },
-              ),
-              const SizedBox(height: 4),
-
-              // Gallery option
-              ListTile(
-                leading: Icon(Icons.photo_library_rounded, color: cs.primary),
-                title: Text(
-                  'Choose from Gallery',
-                  style: TextStyle(color: cs.onSurface),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _pickAndUploadMedia(ImageSource.gallery);
-                },
-              ),
-              const SizedBox(height: 4),
-
-              // GIF option
-              ListTile(
-                leading: Icon(Icons.gif_box_rounded, color: cs.primary),
-                title: Text(
-                  'Search GIFs',
-                  style: TextStyle(color: cs.onSurface),
-                ),
-                subtitle: Text(
-                  'Powered by GIPHY',
-                  style: Theme.of(
-                    ctx,
-                  ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showGifPicker();
-                },
-              ),
-              const SizedBox(height: 16),
-            ],
+    showComposerSheet<void>(
+      context,
+      title: 'Add Media',
+      detents: const <double>[0.45],
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ComposerPickerRow(
+            icon: 'camera',
+            title: 'Take Photo',
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickAndUploadMedia(ImageSource.camera);
+            },
           ),
-        ),
+          ComposerPickerRow(
+            icon: 'gallery',
+            title: 'Choose from Gallery',
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickAndUploadMedia(ImageSource.gallery);
+            },
+          ),
+          ComposerPickerRow(
+            icon: 'image',
+            title: 'Search GIFs',
+            subtitle: 'Powered by GIPHY',
+            onTap: () {
+              Navigator.pop(ctx);
+              _showGifPicker();
+            },
+          ),
+        ],
       ),
     );
   }
@@ -490,29 +319,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _showGifPicker() {
-    showAdaptiveSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (ctx, scrollController) => _GifPickerSheet(
-          scrollController: scrollController,
-          onSelected: (gifUrl) {
-            ref.read(postComposerProvider.notifier).addMediaUrl(gifUrl);
-            Navigator.pop(ctx);
-          },
-        ),
+    showComposerSheet<void>(
+      context,
+      title: 'Search GIFs',
+      detents: const <double>[0.9],
+      builder: (ctx) => _GifPickerSheet(
+        onSelected: (gifUrl) {
+          ref.read(postComposerProvider.notifier).addMediaUrl(gifUrl);
+          Navigator.pop(ctx);
+        },
       ),
     );
   }
 
   Future<void> _showProfileSwitchPicker() async {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final profiles = await ref.read(availableProfilesProvider.future);
 
     if (!mounted || profiles.isEmpty) {
@@ -521,98 +341,84 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     final activeType = ref.read(activeProfileTypeProvider);
 
-    showAdaptiveSheet(
-      context: context,
-      backgroundColor: cs.surfaceContainerHigh,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Text(
-                'Post As',
-                style: tt.titleMedium?.copyWith(color: cs.onSurface),
-              ),
+    showComposerSheet<void>(
+      context,
+      title: 'Post As',
+      detents: const <double>[0.5],
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final profile in profiles)
+            Builder(
+              builder: (_) {
+                final effectiveType =
+                    (profile.personaType ?? profile.profileType ?? '')
+                        .toLowerCase();
+                final isActive =
+                    effectiveType.isNotEmpty &&
+                    effectiveType == activeType?.toLowerCase();
+                final colors = DabblerColors.of(ctx);
+
+                return DabblerInputRow(
+                  leading: DabblerAvatar(
+                    seed: profile.displayName,
+                    imageUrl: profile.avatarUrl,
+                    size: DabblerAvatarSize.sm,
+                  ),
+                  title: profile.displayName,
+                  subtitle: effectiveType.isNotEmpty
+                      ? _prettifyLabel(effectiveType)
+                      : null,
+                  trailing: isActive
+                      ? DabblerIcon(
+                          'tick-circle',
+                          weight: DabblerIconWeight.bold,
+                          size: 20,
+                          color: colors.brandPrimary,
+                        )
+                      : null,
+                  onTap: () async {
+                    if (isActive || effectiveType.isEmpty) {
+                      Navigator.pop(ctx);
+                      return;
+                    }
+
+                    final switched = await ref
+                        .read(personaServiceProvider.notifier)
+                        .switchActiveProfile(effectiveType);
+
+                    if (!switched) {
+                      if (mounted) {
+                        _errorToast(
+                          ref.read(personaServiceProvider).errorMessage ??
+                              'Failed to switch profile',
+                        );
+                      }
+                      return;
+                    }
+
+                    ref.read(activeProfileTypeProvider.notifier).state =
+                        effectiveType;
+                    unawaited(persistActiveProfileType(effectiveType));
+                    ref
+                        .read(postComposerProvider.notifier)
+                        .setPersonaTypeSnapshot(effectiveType);
+
+                    final userId = _authService.getCurrentUser()?.id;
+                    if (userId != null) {
+                      await clearProfileCache(ref, userId);
+                    }
+
+                    await _loadUserProfile();
+
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                    }
+                  },
+                );
+              },
             ),
-            for (final profile in profiles)
-              Builder(
-                builder: (_) {
-                  final effectiveType =
-                      (profile.personaType ?? profile.profileType ?? '')
-                          .toLowerCase();
-                  final isActive =
-                      effectiveType.isNotEmpty &&
-                      effectiveType == activeType?.toLowerCase();
-
-                  return ListTile(
-                    leading: DSAvatar.small(
-                      imageUrl: profile.avatarUrl,
-                      displayName: profile.displayName,
-                      context: AvatarContext.main,
-                    ),
-                    title: Text(
-                      profile.displayName,
-                      style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                    ),
-                    subtitle: effectiveType.isNotEmpty
-                        ? Text(
-                            _prettifyLabel(effectiveType),
-                            style: tt.bodySmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                            ),
-                          )
-                        : null,
-                    trailing: isActive
-                        ? Icon(Icons.check_circle, color: cs.primary)
-                        : null,
-                    onTap: () async {
-                      if (isActive || effectiveType.isEmpty) {
-                        Navigator.pop(ctx);
-                        return;
-                      }
-
-                      final switched = await ref
-                          .read(personaServiceProvider.notifier)
-                          .switchActiveProfile(effectiveType);
-
-                      if (!switched) {
-                        if (context.mounted) {
-                          final errorMsg =
-                              ref.read(personaServiceProvider).errorMessage ??
-                              'Failed to switch profile';
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(errorMsg)));
-                        }
-                        return;
-                      }
-
-                      ref.read(activeProfileTypeProvider.notifier).state =
-                          effectiveType;
-                      unawaited(persistActiveProfileType(effectiveType));
-                      ref
-                          .read(postComposerProvider.notifier)
-                          .setPersonaTypeSnapshot(effectiveType);
-
-                      final userId = _authService.getCurrentUser()?.id;
-                      if (userId != null) {
-                        await clearProfileCache(ref, userId);
-                      }
-
-                      await _loadUserProfile();
-
-                      if (ctx.mounted) {
-                        Navigator.pop(ctx);
-                      }
-                    },
-                  );
-                },
-              ),
-            const SizedBox(height: 12),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -623,8 +429,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final composerState = ref.watch(postComposerProvider);
 
     final shell = ComposerDrawerShell(
@@ -635,35 +439,45 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       onCtaTap: _submit,
       errorMessage: composerState.error,
       children: [
-        // Author row — pad [4, 20, 0, 20] per Pencil
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
-          child: _buildAuthorRow(cs, tt),
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space8,
+            DabblerSpacing.space1,
+            DabblerSpacing.space8,
+            0,
+          ),
+          child: _buildAuthorRow(),
         ),
-        // Post type / visibility row — pad [8, 20]
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: _buildKindVisibilityRow(cs, composerState),
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space8,
+            vertical: DabblerSpacing.space3,
+          ),
+          child: _buildKindVisibilityRow(composerState),
         ),
-        // Input area card — pad [4, 20]
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: _buildTextBoxCard(cs, tt, composerState),
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space8,
+            vertical: DabblerSpacing.space1,
+          ),
+          child: _buildTextBoxCard(composerState),
         ),
-        // Media — pad [6, 20]
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space8,
+            vertical: DabblerSpacing.space2,
+          ),
           child: composerState.hasMedia
-              ? _buildMediaTilesRow(cs, composerState)
-              : _buildMediaActions(cs),
+              ? _buildMediaTilesRow(composerState)
+              : _buildMediaActions(),
         ),
-        _buildOptionsSection(cs, tt, composerState),
+        _buildOptionsSection(composerState),
       ],
     );
 
     // On wide (iPad/desktop) screens, constrain the composer drawer to a
     // comfortable width and align it to the bottom rather than stretching
-    // edge-to-edge. A side nav would fight the composer UX here.
+    // edge-to-edge.
     if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
       return Align(
         alignment: Alignment.bottomCenter,
@@ -680,7 +494,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // AUTHOR ROW
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildAuthorRow(ColorScheme cs, TextTheme tt) {
+  Widget _buildAuthorRow() {
+    final colors = DabblerColors.of(context);
     final displayName =
         _userProfile?['display_name'] as String? ??
         _userProfile?['username'] as String? ??
@@ -701,268 +516,229 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         onTap: canSwitch ? _showProfileSwitchPicker : null,
         child: Row(
           children: [
-            DSAvatar(
-              size: AvatarSize.medium,
-              customDimension: 44,
+            DabblerAvatar(
+              seed: displayName,
               imageUrl: avatarUrl,
-              displayName: displayName,
-              context: AvatarContext.main,
-              backgroundColor: cs.primaryContainer,
-              foregroundColor: cs.onPrimaryContainer,
+              size: DabblerAvatarSize.md,
             ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  displayName,
-                  style: tt.titleSmall?.copyWith(
-                    color: ComposerPalette.of(context).textBright,
-                  ),
-                ),
-                if (canSwitch) ...[
-                  const SizedBox(height: 2),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    _prettifyLabel(
-                      composerState.personaTypeSnapshot ?? activePersona,
-                    ),
-                    style: tt.bodySmall?.copyWith(
-                      color: ComposerPalette.of(context).textMuted,
+                    displayName,
+                    style: composerType(
+                      context,
+                      DabblerType.headline,
+                      colors.textPrimary,
                     ),
                   ),
+                  if (canSwitch)
+                    Text(
+                      _prettifyLabel(
+                        composerState.personaTypeSnapshot ?? activePersona,
+                      ),
+                      style: composerType(
+                        context,
+                        DabblerType.footnote,
+                        colors.textSecondary,
+                      ),
+                    ),
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // KIND + VISIBILITY + ORIGIN ROW
+  // KIND + VISIBILITY ROW
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildKindVisibilityRow(
-    ColorScheme cs,
-    PostComposerState composerState,
-  ) {
+  Widget _buildKindVisibilityRow(PostComposerState composerState) {
+    final colors = DabblerColors.of(context);
     return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: DabblerSpacing.space3,
+      runSpacing: DabblerSpacing.space3,
       children: [
-        _ComposerPill(
-          icon: _postTypeIcon(composerState.postType),
-          label: _postTypeLabel(composerState.postType),
-          semanticLabel:
+        Semantics(
+          label:
               'Post type: ${_postTypeLabel(composerState.postType)}. '
               'Tap to change.',
-          onTap: _showPostTypePicker,
-          filled: true,
+          excludeSemantics: true,
+          child: DabblerChip(
+            label: _postTypeLabel(composerState.postType),
+            selected: true,
+            leadingIcon: DabblerIcon(
+              _postTypeIcon(composerState.postType),
+              size: 14,
+              color: colors.onBrand,
+            ),
+            onTap: _showPostTypePicker,
+          ),
         ),
-        _ComposerPill(
-          icon: _visibilityIcon(composerState.visibility),
-          label: _visibilityLabel(composerState.visibility),
-          semanticLabel:
+        Semantics(
+          label:
               'Visibility: ${_visibilityLabel(composerState.visibility)}. '
               'Tap to change.',
-          onTap: _showVisibilityPicker,
-          filled: false,
+          excludeSemantics: true,
+          child: DabblerChip(
+            label: _visibilityLabel(composerState.visibility),
+            leadingIcon: DabblerIcon(
+              _visibilityIcon(composerState.visibility),
+              size: 14,
+              color: colors.textSecondary,
+            ),
+            onTap: _showVisibilityPicker,
+          ),
         ),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // TEXT BOX CARD (body + tags + enrich toolbar)
+  // TEXT BOX (body + tags + enrich toolbar)
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildTextBoxCard(
-    ColorScheme cs,
-    TextTheme tt,
-    PostComposerState composerState,
-  ) {
+  Widget _buildTextBoxCard(PostComposerState composerState) {
+    final colors = DabblerColors.of(context);
     const maxLen = 2000;
     final bodyLen = composerState.body.length;
     final hasLocation = composerState.locationName != null;
+    final nearLimit = bodyLen > maxLen * 0.9;
 
     final tagPills = <Widget>[
       if (composerState.hasSport && composerState.sportName != null)
-        _BodyTagPill(
-          icon: Icons.emoji_events_rounded,
-          label: composerState.sportName!.toUpperCase(),
-          variant: _BodyTagVariant.primary,
-        ),
-      if (hasLocation)
-        _BodyTagPill(
-          icon: Icons.location_on_rounded,
-          label: composerState.locationName!,
-          variant: _BodyTagVariant.primary,
-        ),
+        _tagBadge('cup', composerState.sportName!.toUpperCase()),
+      if (hasLocation) _tagBadge('location', composerState.locationName!),
       if (composerState.hasGame && composerState.gameName != null)
-        _BodyTagPill(
-          icon: Icons.sports_esports_rounded,
-          label: composerState.gameName!,
-          variant: _BodyTagVariant.tertiary,
-        ),
+        _tagBadge('game', composerState.gameName!),
     ];
 
-    final anyFilled =
-        composerState.hasVibe ||
-        composerState.hasSport ||
-        hasLocation ||
-        composerState.hasGame ||
-        bodyLen > 0;
+    final vibe = composerState.hasVibe && composerState.vibeName != null
+        ? DabblerVibe.fromKey(composerState.vibeName!.toLowerCase())
+        : null;
 
-    final palette = ComposerPalette.of(context);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: palette.bgGlass,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: palette.borderStrong, width: 1),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (tagPills.isNotEmpty) ...[
+          Wrap(
+            spacing: DabblerSpacing.space2,
+            runSpacing: DabblerSpacing.space2,
+            children: tagPills,
           ),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (tagPills.isNotEmpty) ...[
-                Wrap(spacing: 8, runSpacing: 6, children: tagPills),
-                const SizedBox(height: 12),
-              ],
-              TextField(
-                controller: _bodyController,
-                focusNode: _bodyFocusNode,
-                maxLines: null,
-                minLines: 4,
-                style: tt.bodyMedium?.copyWith(
-                  height: 1.5,
-                  color: palette.textBright,
-                ),
-                decoration: InputDecoration(
-                  hintText: "What's on your mind? Use #hashtags",
-                  hintStyle: tt.bodyMedium?.copyWith(
-                    height: 1.5,
-                    color: palette.textFaint,
-                  ),
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                  filled: false,
-                  fillColor: Colors.transparent,
-                ),
-                onChanged: (value) {
-                  ref.read(postComposerProvider.notifier).setBody(value);
-                },
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  if (composerState.hasVibe && composerState.vibeName != null)
-                    _VibeBadge(
-                      emoji: composerState.vibeEmoji,
-                      label: composerState.vibeName!,
-                    ),
-                  const Spacer(),
-                  // Non-colour cue (WCAG 1.4.1): weight bumps to bold near
-                  // the limit alongside the colour change so colour-blind
-                  // users still get the warning.
-                  Text(
-                    '$bodyLen/$maxLen',
-                    semanticsLabel: '$bodyLen of $maxLen characters used',
-                    // labelMedium near limit (heavier per DS) doubles as the
-                    // WCAG 1.4.1 non-colour cue alongside the pink colour swap.
-                    style: (bodyLen > maxLen * 0.9
-                            ? tt.labelMedium
-                            : tt.bodySmall)
-                        ?.copyWith(
-                      color: bodyLen > maxLen * 0.9
-                          ? kComposerPink
-                          : (anyFilled ? palette.textSubtle : palette.textFaint),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: palette.borderGlass, width: 1),
-                  ),
-                ),
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _EnrichToolButton(
-                        icon: Icons.mood_outlined,
-                        filledIcon: Icons.mood_rounded,
-                        active: composerState.hasVibe,
-                        inactiveColor: palette.textMuted,
-                        semanticLabel: composerState.hasVibe
-                            ? 'Vibe: ${composerState.vibeName ?? "set"}. '
-                                  'Tap to change.'
-                            : 'Add vibe',
-                        onTap: _showVibesPicker,
-                      ),
-                    ),
-                    Expanded(
-                      child: _EnrichToolButton(
-                        icon: Icons.emoji_events_outlined,
-                        filledIcon: Icons.emoji_events_rounded,
-                        active: composerState.hasSport,
-                        inactiveColor: palette.textMuted,
-                        semanticLabel: composerState.hasSport
-                            ? 'Sport: ${composerState.sportName ?? "set"}. '
-                                  'Tap to change.'
-                            : 'Add sport',
-                        onTap: _showSportsPicker,
-                      ),
-                    ),
-                    Expanded(
-                      child: _EnrichToolButton(
-                        icon: Icons.location_on_outlined,
-                        filledIcon: Icons.location_on_rounded,
-                        active: hasLocation,
-                        inactiveColor: palette.textMuted,
-                        semanticLabel: hasLocation
-                            ? 'Location: ${composerState.locationName}. '
-                                  'Tap to change.'
-                            : 'Add location',
-                        onTap: _showLocationPicker,
-                      ),
-                    ),
-                    Expanded(
-                      child: _EnrichToolButton(
-                        icon: Icons.sports_esports_outlined,
-                        filledIcon: Icons.sports_esports_rounded,
-                        active: composerState.hasGame,
-                        inactiveColor: palette.textMuted,
-                        semanticLabel: composerState.hasGame
-                            ? 'Game: ${composerState.gameName ?? "set"}. '
-                                  'Tap to change.'
-                            : 'Link a game',
-                        onTap: _showGamePicker,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: DabblerSpacing.space3),
+        ],
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.multiline,
+          controller: _bodyController,
+          focusNode: _bodyFocusNode,
+          rows: 4,
+          placeholder: "What's on your mind? Use #hashtags",
+          onChanged: (value) {
+            ref.read(postComposerProvider.notifier).setBody(value);
+          },
         ),
+        const SizedBox(height: DabblerSpacing.space2),
+        Row(
+          children: [
+            if (composerState.hasVibe && composerState.vibeName != null)
+              _VibeBadge(label: composerState.vibeName!, vibe: vibe),
+            const Spacer(),
+            // Non-colour cue (WCAG 1.4.1): weight bumps to bold near the
+            // limit alongside the colour change.
+            Text(
+              '$bodyLen/$maxLen',
+              semanticsLabel: '$bodyLen of $maxLen characters used',
+              style: composerType(
+                context,
+                DabblerType.caption1,
+                nearLimit ? colors.textPrimary : colors.textTertiary,
+                weight: nearLimit ? FontWeight.w700 : null,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: DabblerSpacing.space2),
+        const DabblerDivider(),
+        Row(
+          children: [
+            Expanded(
+              child: _enrichButton(
+                icon: 'happyemoji',
+                active: composerState.hasVibe,
+                label: composerState.hasVibe
+                    ? 'Vibe: ${composerState.vibeName ?? "set"}. '
+                          'Tap to change.'
+                    : 'Add vibe',
+                onTap: _showVibesPicker,
+              ),
+            ),
+            Expanded(
+              child: _enrichButton(
+                icon: 'cup',
+                active: composerState.hasSport,
+                label: composerState.hasSport
+                    ? 'Sport: ${composerState.sportName ?? "set"}. '
+                          'Tap to change.'
+                    : 'Add sport',
+                onTap: _showSportsPicker,
+              ),
+            ),
+            Expanded(
+              child: _enrichButton(
+                icon: 'location',
+                active: hasLocation,
+                label: hasLocation
+                    ? 'Location: ${composerState.locationName}. '
+                          'Tap to change.'
+                    : 'Add location',
+                onTap: _showLocationPicker,
+              ),
+            ),
+            Expanded(
+              child: _enrichButton(
+                icon: 'game',
+                active: composerState.hasGame,
+                label: composerState.hasGame
+                    ? 'Game: ${composerState.gameName ?? "set"}. '
+                          'Tap to change.'
+                    : 'Link a game',
+                onTap: _showGamePicker,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _tagBadge(String icon, String label) {
+    final colors = DabblerColors.of(context);
+    return DabblerBadge(
+      label: label,
+      tone: DabblerBadgeTone.primary,
+      icon: DabblerIcon(icon, size: 12, color: colors.onBrand),
+    );
+  }
+
+  Widget _enrichButton({
+    required String icon,
+    required bool active,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Center(
+      child: DabblerButton.icon(
+        icon: icon,
+        semanticLabel: label,
+        tone: active ? DabblerButtonTone.primary : DabblerButtonTone.icon,
+        onPressed: onTap,
       ),
     );
   }
@@ -971,27 +747,26 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // MEDIA SECTION
   // ═══════════════════════════════════════════════════════════════════════
 
-  /// Empty state — Media + Add GIF as two side-by-side glass pills sharing
-  /// the row (per-product call: a horizontal pair instead of Pencil's
-  /// stacked layout).
-  Widget _buildMediaActions(ColorScheme cs) {
+  Widget _buildMediaActions() {
     return Row(
       children: [
         Expanded(
-          child: _MediaActionButton(
-            icon: Iconsax.gallery_add,
+          child: DabblerButton(
             label: 'Media',
-            contentGap: 10,
-            onTap: _showMediaInput,
+            icon: 'gallery-add',
+            tone: DabblerButtonTone.outlined,
+            fullWidth: true,
+            onPressed: _showMediaInput,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: DabblerSpacing.space3),
         Expanded(
-          child: _MediaActionButton(
-            icon: Iconsax.image,
+          child: DabblerButton(
             label: 'Add GIF',
-            contentGap: 10,
-            onTap: _showGifPicker,
+            icon: 'image',
+            tone: DabblerButtonTone.outlined,
+            fullWidth: true,
+            onPressed: _showGifPicker,
           ),
         ),
       ],
@@ -999,27 +774,32 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   /// Filled state — horizontal 150-tall row: main 200 wide + extras 100 wide +
-  /// trailing 48-wide "Add More" tile. Each image tile has its own X-remove.
-  Widget _buildMediaTilesRow(ColorScheme cs, PostComposerState state) {
+  /// trailing "Add More" button. Each image tile has its own remove button.
+  Widget _buildMediaTilesRow(PostComposerState state) {
     final items = state.media;
     return SizedBox(
       height: 150,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => const SizedBox(width: DabblerSpacing.space2),
         itemCount: items.length + 1,
         itemBuilder: (_, i) {
           if (i == items.length) {
-            return _AddMoreTile(onTap: _showMediaInput);
+            return Center(
+              child: DabblerButton.icon(
+                icon: 'add',
+                semanticLabel: 'Add more media',
+                tone: DabblerButtonTone.neutral,
+                onPressed: _showMediaInput,
+              ),
+            );
           }
           final url = items[i].toString();
-          final width = i == 0 ? 200.0 : 100.0;
           return _MediaTile(
             url: url,
-            width: width,
-            onRemove: () => ref
-                .read(postComposerProvider.notifier)
-                .removeMediaAt(i),
+            width: i == 0 ? 200.0 : 100.0,
+            onRemove: () =>
+                ref.read(postComposerProvider.notifier).removeMediaAt(i),
           );
         },
       ),
@@ -1030,30 +810,31 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // OPTIONS SECTION
   // ═══════════════════════════════════════════════════════════════════════
 
-  Widget _buildOptionsSection(
-    ColorScheme cs,
-    TextTheme tt,
-    PostComposerState state,
-  ) {
+  Widget _buildOptionsSection(PostComposerState state) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space8,
+        0,
+        DabblerSpacing.space8,
+        DabblerSpacing.space3,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ComposerSettingsRow(
-            icon: Icons.repeat_rounded,
+            icon: 'repeat',
             title: 'Allow reposts',
             subtitle: 'Others can share this post',
             trailing: ComposerToggle(
               value: state.allowReposts,
-              onChanged: (_) => ref
-                  .read(postComposerProvider.notifier)
-                  .toggleAllowReposts(),
+              onChanged: (_) =>
+                  ref.read(postComposerProvider.notifier).toggleAllowReposts(),
             ),
-            showDivider: true,
           ),
           ComposerSettingsRow(
-            icon: Icons.push_pin_outlined,
+            // The design system carries no push-pin glyph; bookmark is the
+            // nearest (listed as a DS gap).
+            icon: 'bookmark',
             title: 'Pin to profile',
             subtitle: 'Keep at the top of your profile',
             trailing: ComposerToggle(
@@ -1061,24 +842,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               onChanged: (_) =>
                   ref.read(postComposerProvider.notifier).togglePinned(),
             ),
-            showDivider: true,
           ),
           // Category hidden for now — re-enable when discovery categories ship.
-          // ComposerSettingsRow(
-          //   icon: Icons.grid_view_outlined,
-          //   title: 'Category',
-          //   subtitle: 'Categorise for discovery',
-          //   trailing: ComposerSelectPill(
-          //     value: _prettifyLabel(state.contentClass),
-          //     caret: ComposerSelectCaret.down,
-          //     onTap: _showContentClassPicker,
-          //   ),
-          //   showDivider: true,
-          // ),
           ComposerSettingsRow(
-            icon: Icons.schedule_outlined,
+            icon: 'clock',
             title: 'Set expiry',
             subtitle: 'Auto-hides after date',
+            showDivider: false,
+            onTap: _showExpiryPicker,
             trailing: ComposerSelectPill(
               value: state.expiresAt != null
                   ? _formatDate(state.expiresAt!)
@@ -1086,7 +857,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               caret: ComposerSelectCaret.right,
               onTap: _showExpiryPicker,
             ),
-            showDivider: false,
           ),
         ],
       ),
@@ -1097,22 +867,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // HELPERS
   // ═══════════════════════════════════════════════════════════════════════
 
-  IconData _visibilityIcon(PostVisibility v) {
-    // Visibility chip uses the outlined-glass style — pair it with outline
-    // icons. `link` and `circle_outlined` only ship as a single weight.
+  String _visibilityIcon(PostVisibility v) {
     switch (v) {
       case PostVisibility.public:
-        return Icons.public_outlined;
+        return 'global';
       case PostVisibility.followers:
-        return Icons.people_outline;
+        return 'people';
       case PostVisibility.circle:
-        return Icons.circle_outlined;
+        return 'record-circle';
       case PostVisibility.squad:
-        return Icons.groups_outlined;
+        return 'profile-2user';
       case PostVisibility.private:
-        return Icons.lock_outline;
+        return 'lock';
       case PostVisibility.link:
-        return Icons.link;
+        return 'link';
     }
   }
 
@@ -1154,16 +922,16 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
-  IconData _postTypeIcon(PostType t) {
+  String _postTypeIcon(PostType t) {
     switch (t) {
       case PostType.moment:
-        return Icons.flash_on_rounded;
+        return 'flash';
       case PostType.dab:
-        return Icons.thumb_up_rounded;
+        return 'like-1';
       case PostType.kickIn:
-        return Icons.people_alt_rounded;
+        return 'people';
       default:
-        return Icons.article_outlined;
+        return 'document-text';
     }
   }
 
@@ -1198,326 +966,36 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 // REUSABLE WIDGETS
 // ═════════════════════════════════════════════════════════════════════════════
 
-// ── Post-specific design helpers ──────────────────────────────────────────────
-// (Drawer handle + Post CTA button now live in composer_drawer_kit.dart.)
-
-
-/// Sheet drag handle.
-class _SheetHandle extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.only(top: 12, bottom: 8),
-      width: 40,
-      height: 4,
-      decoration: BoxDecoration(
-        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-}
-
-/// Compact pill button for kind/visibility selectors.
-///
-/// Two variants matching the Pencil design:
-/// - `filled: true`  → solid primary glass (post-type), white content.
-/// - `filled: false` → translucent surface glass with hairline border
-///   (visibility), muted content.
-///
-/// Both wrap in a BackdropFilter so the chip refracts whatever sits behind
-/// it, matching the Pencil `background_blur: 12` effect.
-class _ComposerPill extends StatelessWidget {
-  const _ComposerPill({
-    required this.icon,
-    required this.label,
-    required this.semanticLabel,
-    required this.onTap,
-    required this.filled,
-  });
-
-  final IconData icon;
-  final String label;
-  final String semanticLabel;
-  final VoidCallback onTap;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final palette = ComposerPalette.of(context);
-
-    // Pencil exact alphas:
-    // filled  → primary @53%, no border, white content (same in both themes)
-    // outline → bgGlass + borderGlass stroke, textMuted content
-    final bg = filled
-        ? cs.primary.withValues(alpha: 0.53)
-        : palette.bgGlass;
-    final fg = filled ? Colors.white : palette.textMuted;
-    final caretColor = filled
-        ? Colors.white.withValues(alpha: 0.67)
-        : palette.textMuted.withValues(alpha: 0.60);
-    final border = filled
-        ? null
-        : Border.all(color: palette.borderGlass, width: 1);
-
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(20),
-                border: border,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 14, color: fg),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: fg,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 14,
-                    color: caretColor,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Visual variant for body tag pills.
-enum _BodyTagVariant { primary, tertiary }
-
-/// Tag pill rendered above the body TextField (sport / location / game).
-///
-/// Pencil exact:
-/// - `primary`  → fill #7328CE99 (cs.primary @60%), no border, white content.
-/// - `tertiary` → fill #FF86DD18 (pink @9%), stroke #FF86DD33 (pink @20%),
-///   pink content.
-/// Both: radius 10, pad [4, 10], gap 6, blur 8, 14px icon, label 10/600.
-class _BodyTagPill extends StatelessWidget {
-  const _BodyTagPill({
-    required this.icon,
-    required this.label,
-    required this.variant,
-  });
-
-  final IconData icon;
-  final String label;
-  final _BodyTagVariant variant;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isPrimary = variant == _BodyTagVariant.primary;
-    final bg = isPrimary
-        ? cs.primary.withValues(alpha: 0.60)
-        : kComposerPink.withValues(alpha: 0.09);
-    final fg = isPrimary ? Colors.white : kComposerPink;
-    final border = isPrimary
-        ? null
-        : Border.all(color: kComposerPink.withValues(alpha: 0.20), width: 1);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(10),
-            border: border,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 14, color: fg),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: fg,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Pink vibe badge shown next to the char counter inside the card.
-/// Pencil "Sport Badge" — fill #FF86DD22 + stroke #FF86DD44 1px, blur 8,
-/// radius 10, pad [2, 8], gap 6, emoji 12 white + label 10/600 pink.
+/// The chosen vibe, tinted with its [DabblerVibe] tokens (a neutral badge
+/// when the vibe is not one the design system knows).
 class _VibeBadge extends StatelessWidget {
-  const _VibeBadge({required this.emoji, required this.label});
+  const _VibeBadge({required this.label, required this.vibe});
 
-  final String? emoji;
   final String label;
+  final DabblerVibe? vibe;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: kComposerPink.withValues(alpha: 0.13),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: kComposerPink.withValues(alpha: 0.27),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (emoji != null && emoji!.isNotEmpty) ...[
-                Text(
-                  emoji!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: kComposerPink,
-                ),
-              ),
-            ],
-          ),
-        ),
+    final colors = DabblerColors.of(context);
+    final tokens = vibe?.resolve(colors);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: tokens?.selectedSurface ?? colors.surfaceSunken,
+        borderRadius: BorderRadius.circular(DabblerRadius.pill),
+        border: Border.all(color: tokens?.selectedBorder ?? colors.borderDefault),
       ),
-    );
-  }
-}
-
-/// Icon-only button for the enrich toolbar at the bottom of the Text Box card.
-/// Outline by default; swaps to the filled variant when `active`.
-class _EnrichToolButton extends StatelessWidget {
-  const _EnrichToolButton({
-    required this.icon,
-    required this.filledIcon,
-    required this.active,
-    required this.inactiveColor,
-    required this.semanticLabel,
-    required this.onTap,
-  });
-
-  /// Outline glyph rendered when `active` is false.
-  final IconData icon;
-
-  /// Filled glyph rendered when `active` is true.
-  final IconData filledIcon;
-  final bool active;
-  final Color inactiveColor;
-
-  /// Spoken label for screen readers ("Add vibe", "Vibe: Passionate", etc.).
-  final String semanticLabel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final color = active ? cs.primary : inactiveColor;
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      selected: active,
-      excludeSemantics: true,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: SizedBox(
-          height: 40,
-          child: Center(
-            child: Icon(active ? filledIcon : icon, size: 22, color: color),
-          ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space3,
+          vertical: DabblerSpacing.space1,
         ),
-      ),
-    );
-  }
-}
-
-/// Full-width glass pill button used in the empty-state media section.
-///
-/// Pencil exact: bg #FFFFFF08 (white @3%) + stroke #FFFFFF12 (white @7%) 1px,
-/// radius 14, blur 16, pad [12, 16]. Content centred: leading icon (20px
-/// #CAC4CF) OR 40×24 GIF badge (radius 6, cs.primary @40%, "GIF" 11/w800
-/// letter 0.8 #E6E0E9), gap, label 14/500 #CAC4CF.
-class _MediaActionButton extends StatelessWidget {
-  const _MediaActionButton({
-    this.icon,
-    required this.label,
-    required this.onTap,
-    required this.contentGap,
-  });
-
-  final IconData? icon;
-  final String label;
-  final VoidCallback onTap;
-  final double contentGap;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = ComposerPalette.of(context);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: palette.bgWeak,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: palette.borderWeak, width: 1),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                
-                  Icon(icon, size: 20, color: palette.textMuted),
-                SizedBox(width: contentGap),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: palette.textMuted,
-                  ),
-                ),
-              ],
-            ),
+        child: Text(
+          label,
+          style: composerType(
+            context,
+            DabblerType.caption1,
+            tokens?.ink ?? colors.textPrimary,
+            weight: FontWeight.w600,
           ),
         ),
       ),
@@ -1547,101 +1025,31 @@ class _MediaTile extends StatelessWidget {
       child: Stack(
         children: [
           Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                color: ComposerPalette.of(context).tilePlaceholder,
-                child: Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 24,
-                      color: ComposerPalette.of(context).textSubtle,
-                    ),
-                  ),
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        value: progress.expectedTotalBytes != null
-                            ? progress.cumulativeBytesLoaded /
-                                  progress.expectedTotalBytes!
-                            : null,
+            child: DabblerImage(
+              url: url,
+              width: width,
+              height: 150,
+              radius: DabblerRadius.lgAll,
+              overlay: _isGif
+                  ? const Align(
+                      alignment: AlignmentDirectional.bottomStart,
+                      child: Padding(
+                        padding: EdgeInsets.all(DabblerSpacing.space2),
+                        child: DabblerBadge(label: 'GIF'),
                       ),
-                    );
-                  },
-                ),
-              ),
+                    )
+                  : null,
             ),
           ),
-          if (_isGif)
-            Positioned(
-              left: 6,
-              bottom: 6,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.40),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'GIF',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          // Remove btn — 24×24 visible chip wrapped in a 44×44 hit area so
-          // the tap target meets WCAG 2.5.8 / iOS HIG.
-          Positioned(
+          PositionedDirectional(
             top: 0,
-            right: 0,
-            child: Semantics(
-              label: 'Remove media',
-              button: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onRemove,
-                child: SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Center(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                        child: Container(
-                          width: 24,
-                          height: 24,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.40),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.close_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+            end: 0,
+            child: DabblerButton.icon(
+              icon: 'close-circle',
+              semanticLabel: 'Remove media',
+              tone: DabblerButtonTone.neutral,
+              size: DabblerButtonSize.small,
+              onPressed: onRemove,
             ),
           ),
         ],
@@ -1650,59 +1058,58 @@ class _MediaTile extends StatelessWidget {
   }
 }
 
-/// 48×150 trailing "Add More" tile — opens the media picker.
-/// Pencil: bg #FFFFFF08 (white @3%) + stroke #FFFFFF15 (white @8%) 1px,
-/// radius 12, blur 12, plus icon 24px #79747E centred.
-class _AddMoreTile extends StatelessWidget {
-  const _AddMoreTile({required this.onTap});
-  final VoidCallback onTap;
+// ═════════════════════════════════════════════════════════════════════════════
+// EXPIRY PICKER SHEET
+// ═════════════════════════════════════════════════════════════════════════════
+
+class _ExpiryPickerSheet extends StatefulWidget {
+  const _ExpiryPickerSheet({
+    required this.first,
+    required this.last,
+    required this.initial,
+    required this.onPicked,
+  });
+
+  final DateTime first;
+  final DateTime last;
+  final DateTime initial;
+  final ValueChanged<DateTime> onPicked;
+
+  @override
+  State<_ExpiryPickerSheet> createState() => _ExpiryPickerSheetState();
+}
+
+class _ExpiryPickerSheetState extends State<_ExpiryPickerSheet> {
+  late DateTime _month = DateTime(widget.initial.year, widget.initial.month);
+  late DateTime _selected = widget.initial;
 
   @override
   Widget build(BuildContext context) {
-    final palette = ComposerPalette.of(context);
-    return Semantics(
-      label: 'Add more media',
-      button: true,
-      child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: 48,
-              height: 150,
-              decoration: BoxDecoration(
-                color: palette.bgWeak,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: palette.borderMid, width: 1),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.add_rounded,
-                  size: 24,
-                  color: palette.textSubtle,
-                ),
-              ),
-            ),
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+      child: DabblerCalendar(
+        month: _month,
+        selected: <DateTime>{_selected},
+        minimum: widget.first,
+        maximum: widget.last,
+        onSelect: (d) => setState(() => _selected = d),
+        onMonthChanged: (m) => setState(() => _month = m),
+        onConfirm: () {
+          widget.onPicked(_selected);
+          Navigator.pop(context);
+        },
+        onCancel: () => Navigator.pop(context),
       ),
     );
   }
 }
-
-// _SettingsRow / _SettingsToggle / _SelectCaret / _SettingsSelectPill now live
-// in composer_drawer_kit.dart as ComposerSettingsRow / ComposerToggle /
-// ComposerSelectCaret / ComposerSelectPill.
 
 // ═════════════════════════════════════════════════════════════════════════════
 // VIBES PICKER SHEET (for composer)
 // ═════════════════════════════════════════════════════════════════════════════
 
 class _ComposerVibesPickerSheet extends ConsumerStatefulWidget {
-  const _ComposerVibesPickerSheet({required this.scrollController});
-  final ScrollController scrollController;
+  const _ComposerVibesPickerSheet();
 
   @override
   ConsumerState<_ComposerVibesPickerSheet> createState() =>
@@ -1715,116 +1122,105 @@ class _ComposerVibesPickerSheetState
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
     final vibesAsync = ref.watch(vibesProvider);
     final composerState = ref.watch(postComposerProvider);
 
-    return SafeArea(
-      child: Column(
-        children: [
-          _SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Vibes',
-                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
-                ),
-                const Spacer(),
-                if (composerState.vibeId != null)
-                  TextButton(
-                    onPressed: () {
-                      ref.read(postComposerProvider.notifier).clearVibe();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Clear', style: TextStyle(color: cs.primary)),
-                  ),
-              ],
-            ),
-          ),
-
-          // Filter chips
-          vibesAsync.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (vibes) {
-              final types =
-                  vibes
-                      .where((v) => v.type != null && v.type!.isNotEmpty)
-                      .map((v) => v.type!)
-                      .toSet()
-                      .toList()
-                    ..sort();
-              if (types.length <= 1) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: SizedBox(
-                  height: 38,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _ComposerFilterChip(
-                        label: 'All',
-                        isSelected: _activeTypeFilter == null,
-                        onTap: () => setState(() => _activeTypeFilter = null),
-                      ),
-                      const SizedBox(width: 8),
-                      for (final type in types) ...[
-                        _ComposerFilterChip(
-                          label: _prettifyLabel(type),
-                          isSelected: _activeTypeFilter == type,
-                          onTap: () => setState(() => _activeTypeFilter = type),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
-                ),
-              );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (composerState.vibeId != null)
+          ComposerClearRow(
+            onClear: () {
+              ref.read(postComposerProvider.notifier).clearVibe();
+              Navigator.pop(context);
             },
           ),
-
-          // Grid
-          Expanded(
-            child: vibesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Text(
-                  'Failed to load vibes',
-                  style: TextStyle(color: cs.error),
+        vibesAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+          data: (vibes) {
+            final types =
+                vibes
+                    .where((v) => v.type != null && v.type!.isNotEmpty)
+                    .map((v) => v.type!)
+                    .toSet()
+                    .toList()
+                  ..sort();
+            if (types.length <= 1) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                DabblerSpacing.space6,
+                0,
+                DabblerSpacing.space6,
+                DabblerSpacing.space3,
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    DabblerChip(
+                      label: 'All',
+                      selected: _activeTypeFilter == null,
+                      onTap: () => setState(() => _activeTypeFilter = null),
+                    ),
+                    for (final type in types) ...[
+                      const SizedBox(width: DabblerSpacing.space2),
+                      DabblerChip(
+                        label: _prettifyLabel(type),
+                        selected: _activeTypeFilter == type,
+                        onTap: () => setState(() => _activeTypeFilter = type),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              data: (vibes) {
-                var filtered = vibes.toList();
-                if (_activeTypeFilter != null) {
-                  filtered = filtered
-                      .where((v) => v.type == _activeTypeFilter)
-                      .toList();
-                }
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No vibes available',
-                      style: TextStyle(color: cs.onSurfaceVariant),
-                    ),
-                  );
-                }
-                return GridView.builder(
-                  controller: widget.scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (ctx, i) {
-                    final vibe = filtered[i];
-                    final isSelected = vibe.id == composerState.vibeId;
-                    return GestureDetector(
+            );
+          },
+        ),
+        ComposerScrollArea(
+          fraction: 0.55,
+          child: vibesAsync.when(
+            loading: () => const ComposerCenteredState.loading(),
+            error: (e, _) =>
+                const ComposerCenteredState.message('Failed to load vibes'),
+            data: (vibes) {
+              var filtered = vibes.toList();
+              if (_activeTypeFilter != null) {
+                filtered = filtered
+                    .where((v) => v.type == _activeTypeFilter)
+                    .toList();
+              }
+              if (filtered.isEmpty) {
+                return const ComposerCenteredState.message(
+                  'No vibes available',
+                );
+              }
+              return GridView.builder(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space1,
+                  DabblerSpacing.space6,
+                  DabblerSpacing.space6,
+                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: DabblerSpacing.space3,
+                  crossAxisSpacing: DabblerSpacing.space3,
+                  childAspectRatio: 2.2,
+                ),
+                itemCount: filtered.length,
+                itemBuilder: (ctx, i) {
+                  final vibe = filtered[i];
+                  final isSelected = vibe.id == composerState.vibeId;
+                  final tokens = DabblerVibe.fromKey(vibe.key)?.resolve(colors);
+                  return Semantics(
+                    button: true,
+                    selected: isSelected,
+                    label: vibe.labelEn,
+                    excludeSemantics: true,
+                    child: GestureDetector(
                       onTap: () {
                         ref
                             .read(postComposerProvider.notifier)
@@ -1835,64 +1231,60 @@ class _ComposerVibesPickerSheetState
                             );
                         Navigator.pop(context);
                       },
-                      child: Container(
+                      child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? cs.primaryContainer
-                              : cs.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                          border: isSelected
-                              ? Border.all(color: cs.primary, width: 2)
-                              : null,
+                              ? (tokens?.selectedSurface ??
+                                    colors.surfaceGrey)
+                              : (tokens?.surface ?? colors.surfaceSunken),
+                          borderRadius: BorderRadius.circular(DabblerRadius.lg),
+                          border: Border.all(
+                            color: isSelected
+                                ? (tokens?.selectedBorder ??
+                                      colors.borderStrong)
+                                : (tokens?.border ?? colors.borderDefault),
+                          ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              vibe.emoji ?? '✨',
-                              style: tt.headlineSmall,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: DabblerSpacing.space2,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
+                            child: Text(
                               vibe.labelEn,
-                              style: (isSelected
-                                      ? tt.titleSmall
-                                      : tt.labelSmall)
-                                  ?.copyWith(
-                                color: isSelected
-                                    ? cs.onPrimaryContainer
-                                    : cs.onSurface,
-                              ),
-                              textAlign: TextAlign.center,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: composerType(
+                                context,
+                                DabblerType.footnote,
+                                tokens?.ink ?? colors.textPrimary,
+                                weight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                             ),
-                          ],
+                          ),
                         ),
                       ),
-                    );
-                  },
-                );
-              },
-            ),
+                    ),
+                  );
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 // LOCATION PICKER SHEET
-
-
-// ═════════════════════════════════════════════════════════════════════════════
-// LOCATION PICKER SHEET
 // ═════════════════════════════════════════════════════════════════════════════
 
 class _LocationPickerSheet extends ConsumerStatefulWidget {
-  const _LocationPickerSheet({required this.scrollController});
-  final ScrollController scrollController;
+  const _LocationPickerSheet();
 
   @override
   ConsumerState<_LocationPickerSheet> createState() =>
@@ -1914,403 +1306,112 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
     super.dispose();
   }
 
+  void _commitManual() {
+    final name = _manualNameController.text.trim();
+    if (name.isNotEmpty) {
+      ref.read(postComposerProvider.notifier).setRawLocation(name: name);
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _SheetHandle(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ComposerClearRow(
+          onClear: () {
+            ref.read(postComposerProvider.notifier).clearLocation();
+            Navigator.pop(context);
+          },
+        ),
+        ComposerSearchField(
+          controller: _searchController,
+          placeholder: 'Search venues...',
+          onChanged: (value) => setState(() => _query = value),
+        ),
+        ComposerPickerRow(
+          icon: 'location-add',
+          title: 'Type a location',
+          trailingText: _showManualEntry ? 'Hide' : null,
+          onTap: () => setState(() => _showManualEntry = !_showManualEntry),
+        ),
+        if (_showManualEntry)
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: DabblerSpacing.space6,
+              vertical: DabblerSpacing.space2,
+            ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  'Location',
-                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    ref.read(postComposerProvider.notifier).clearLocation();
-                    Navigator.pop(context);
-                  },
-                  child: Text('Clear', style: TextStyle(color: cs.primary)),
-                ),
-              ],
-            ),
-          ),
-
-          // Search field
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search venues...',
-                prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-                filled: true,
-                fillColor: cs.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: (value) {
-                setState(() => _query = value);
-              },
-            ),
-          ),
-
-          // Manual entry option
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              children: [
-                ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  leading: Icon(
-                    Icons.edit_location_alt,
-                    color: cs.onSurfaceVariant,
-                  ),
-                  title: Text(
-                    'Type a location',
-                    style: tt.bodyMedium?.copyWith(color: cs.onSurface),
-                  ),
-                  trailing: Icon(
-                    _showManualEntry ? Icons.expand_less : Icons.expand_more,
-                    color: cs.onSurfaceVariant,
-                  ),
-                  onTap: () =>
-                      setState(() => _showManualEntry = !_showManualEntry),
-                ),
-                if (_showManualEntry) ...[
-                  const SizedBox(height: 8),
-                  TextField(
+                Expanded(
+                  child: DabblerTextField(
                     controller: _manualNameController,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. Central Park, NYC',
-                      filled: true,
-                      fillColor: cs.surfaceContainerHighest,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.check, color: cs.primary),
-                        onPressed: () {
-                          final name = _manualNameController.text.trim();
-                          if (name.isNotEmpty) {
-                            ref
-                                .read(postComposerProvider.notifier)
-                                .setRawLocation(name: name);
-                            Navigator.pop(context);
-                          }
-                        },
-                      ),
-                    ),
+                    placeholder: 'e.g. Central Park, NYC',
+                    onSubmitted: (_) => _commitManual(),
                   ),
-                  const SizedBox(height: 8),
-                ],
-                Divider(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                ),
+                const SizedBox(width: DabblerSpacing.space2),
+                DabblerButton.icon(
+                  icon: 'tick-circle',
+                  semanticLabel: 'Use this location',
+                  onPressed: _commitManual,
+                ),
               ],
             ),
           ),
-
-          // Venue search results
-          Expanded(
-            child: _query.trim().length >= 2
-                ? Consumer(
-                    builder: (ctx, ref, _) {
-                      final venuesAsync = ref.watch(
-                        venueSearchProvider(_query),
-                      );
-                      return venuesAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(
-                          child: Text(
-                            'Search failed',
-                            style: TextStyle(color: cs.error),
-                          ),
-                        ),
-                        data: (venues) {
-                          if (venues.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.location_off,
-                                    size: 48,
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'No venues found',
-                                    style: TextStyle(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            controller: widget.scrollController,
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                            itemCount: venues.length,
-                            itemBuilder: (ctx, i) {
-                              final venue = venues[i];
-                              return ListTile(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                leading: Icon(Icons.sports, color: cs.primary),
-                                title: Text(
-                                  venue['name'] as String? ?? 'Venue',
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                subtitle: venue['city'] != null
-                                    ? Text(
-                                        venue['city'] as String,
-                                        style: tt.labelSmall?.copyWith(
-                                          color: cs.onSurfaceVariant,
-                                        ),
-                                      )
-                                    : null,
-                                onTap: () {
-                                  ref
-                                      .read(postComposerProvider.notifier)
-                                      .setVenue(
-                                        id: venue['id'] as String,
-                                        name:
-                                            venue['name'] as String? ?? 'Venue',
-                                        lat: venue['geo_lat'] as double?,
-                                        lng: venue['geo_lng'] as double?,
-                                      );
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
+        const DabblerDivider(),
+        ComposerScrollArea(
+          fraction: 0.4,
+          child: _query.trim().length >= 2
+              ? Consumer(
+                  builder: (ctx, ref, _) {
+                    final venuesAsync = ref.watch(venueSearchProvider(_query));
+                    return venuesAsync.when(
+                      loading: () => const ComposerCenteredState.loading(),
+                      error: (e, _) =>
+                          const ComposerCenteredState.message('Search failed'),
+                      data: (venues) {
+                        if (venues.isEmpty) {
+                          return const ComposerCenteredState.message(
+                            'No venues found',
+                            icon: 'location',
                           );
-                        },
-                      );
-                    },
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.search,
-                          size: 48,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Search for a venue or type a location',
-                          style: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// VENUE PICKER SHEET  (searches public.venues by name_en)
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _VenuePickerSheet extends ConsumerStatefulWidget {
-  const _VenuePickerSheet({required this.scrollController});
-  final ScrollController scrollController;
-
-  @override
-  ConsumerState<_VenuePickerSheet> createState() => _VenuePickerSheetState();
-}
-
-class _VenuePickerSheetState extends ConsumerState<_VenuePickerSheet> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Select Venue',
-                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    ref.read(postComposerProvider.notifier).clearVenue();
-                    Navigator.pop(context);
+                        }
+                        return ListView.builder(
+                          itemCount: venues.length,
+                          itemBuilder: (ctx, i) {
+                            final venue = venues[i];
+                            return ComposerPickerRow(
+                              icon: 'location',
+                              title: venue['name'] as String? ?? 'Venue',
+                              subtitle: venue['city'] as String?,
+                              onTap: () {
+                                ref
+                                    .read(postComposerProvider.notifier)
+                                    .setVenue(
+                                      id: venue['id'] as String,
+                                      name: venue['name'] as String? ?? 'Venue',
+                                      lat: venue['geo_lat'] as double?,
+                                      lng: venue['geo_lng'] as double?,
+                                    );
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
                   },
-                  child: Text('Clear', style: TextStyle(color: cs.primary)),
+                )
+              : const ComposerCenteredState.message(
+                  'Search for a venue or type a location',
+                  icon: 'search-normal',
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search venues...',
-                prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-                filled: true,
-                fillColor: cs.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: (v) => setState(() => _query = v),
-            ),
-          ),
-          Expanded(
-            child: _query.trim().length >= 2
-                ? Consumer(
-                    builder: (ctx, ref, _) {
-                      final async = ref.watch(venueSearchProvider(_query));
-                      return async.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(
-                          child: Text(
-                            'Search failed',
-                            style: TextStyle(color: cs.error),
-                          ),
-                        ),
-                        data: (venues) {
-                          if (venues.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.stadium_outlined,
-                                    size: 48,
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'No venues found',
-                                    style: TextStyle(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            controller: widget.scrollController,
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                            itemCount: venues.length,
-                            itemBuilder: (ctx, i) {
-                              final venue = venues[i];
-                              final name =
-                                  venue['name_en'] as String? ?? 'Venue';
-                              final city = venue['city'] as String? ?? '';
-                              final lat = (venue['geo_lat'] as num?)
-                                  ?.toDouble();
-                              final lng = (venue['geo_lng'] as num?)
-                                  ?.toDouble();
-                              return ListTile(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                leading: Icon(
-                                  Icons.stadium_outlined,
-                                  color: cs.primary,
-                                ),
-                                title: Text(
-                                  name,
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                subtitle: city.isNotEmpty
-                                    ? Text(
-                                        city,
-                                        style: tt.labelSmall?.copyWith(
-                                          color: cs.onSurfaceVariant,
-                                        ),
-                                      )
-                                    : null,
-                                onTap: () {
-                                  ref
-                                      .read(postComposerProvider.notifier)
-                                      .setVenue(
-                                        id: venue['id'] as String,
-                                        name: name,
-                                        lat: lat,
-                                        lng: lng,
-                                      );
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
-                          );
-                        },
-                      );
-                    },
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.stadium_outlined,
-                          size: 48,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Type at least 2 characters to search venues',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -2320,8 +1421,7 @@ class _VenuePickerSheetState extends ConsumerState<_VenuePickerSheet> {
 // ═════════════════════════════════════════════════════════════════════════════
 
 class _GamePickerSheet extends ConsumerStatefulWidget {
-  const _GamePickerSheet({required this.scrollController});
-  final ScrollController scrollController;
+  const _GamePickerSheet();
 
   @override
   ConsumerState<_GamePickerSheet> createState() => _GamePickerSheetState();
@@ -2339,214 +1439,83 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Link a Game',
-                  style: tt.titleLarge?.copyWith(color: cs.onSurface),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    ref.read(postComposerProvider.notifier).clearGame();
-                    Navigator.pop(context);
-                  },
-                  child: Text('Clear', style: TextStyle(color: cs.primary)),
-                ),
-              ],
-            ),
-          ),
-
-          // Search field
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search games by title...',
-                prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-                filled: true,
-                fillColor: cs.surfaceContainerHighest,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onChanged: (value) {
-                setState(() => _query = value);
-              },
-            ),
-          ),
-
-          // Game search results
-          Expanded(
-            child: _query.trim().length >= 2
-                ? Consumer(
-                    builder: (ctx, ref, _) {
-                      final gamesAsync = ref.watch(gameSearchProvider(_query));
-                      return gamesAsync.when(
-                        loading: () =>
-                            const Center(child: CircularProgressIndicator()),
-                        error: (e, _) => Center(
-                          child: Text(
-                            'Search failed',
-                            style: TextStyle(color: cs.error),
-                          ),
-                        ),
-                        data: (games) {
-                          if (games.isEmpty) {
-                            return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.sports_esports,
-                                    size: 48,
-                                    color: cs.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'No games found',
-                                    style: TextStyle(
-                                      color: cs.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          return ListView.builder(
-                            controller: widget.scrollController,
-                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
-                            itemCount: games.length,
-                            itemBuilder: (ctx, i) {
-                              final game = games[i];
-                              final title =
-                                  game['title'] as String? ?? 'Untitled Game';
-                              final sport = game['sport'] as String? ?? '';
-                              final gameType =
-                                  game['game_type'] as String? ?? '';
-                              final startAt = game['start_at'] as String?;
-                              final subtitle = [
-                                if (sport.isNotEmpty) sport,
-                                if (gameType.isNotEmpty) gameType,
-                                if (startAt != null)
-                                  DateTime.tryParse(startAt) != null
-                                      ? '${DateTime.parse(startAt).day}/${DateTime.parse(startAt).month}/${DateTime.parse(startAt).year}'
-                                      : '',
-                              ].where((s) => s.isNotEmpty).join(' · ');
-
-                              return ListTile(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                leading: Icon(
-                                  Icons.sports_esports,
-                                  color: cs.primary,
-                                ),
-                                title: Text(
-                                  title,
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                subtitle: subtitle.isNotEmpty
-                                    ? Text(
-                                        subtitle,
-                                        style: tt.labelSmall?.copyWith(
-                                          color: cs.onSurfaceVariant,
-                                        ),
-                                      )
-                                    : null,
-                                onTap: () {
-                                  ref
-                                      .read(postComposerProvider.notifier)
-                                      .setGame(
-                                        id: game['id'] as String,
-                                        name: title,
-                                      );
-                                  Navigator.pop(context);
-                                },
-                              );
-                            },
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ComposerClearRow(
+          onClear: () {
+            ref.read(postComposerProvider.notifier).clearGame();
+            Navigator.pop(context);
+          },
+        ),
+        ComposerSearchField(
+          controller: _searchController,
+          placeholder: 'Search games by title...',
+          onChanged: (value) => setState(() => _query = value),
+        ),
+        ComposerScrollArea(
+          fraction: 0.5,
+          child: _query.trim().length >= 2
+              ? Consumer(
+                  builder: (ctx, ref, _) {
+                    final gamesAsync = ref.watch(gameSearchProvider(_query));
+                    return gamesAsync.when(
+                      loading: () => const ComposerCenteredState.loading(),
+                      error: (e, _) =>
+                          const ComposerCenteredState.message('Search failed'),
+                      data: (games) {
+                        if (games.isEmpty) {
+                          return const ComposerCenteredState.message(
+                            'No games found',
+                            icon: 'game',
                           );
-                        },
-                      );
-                    },
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.sports_esports,
-                          size: 48,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Search for a game to link to your post',
-                          style: TextStyle(
-                            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                        }
+                        return ListView.builder(
+                          itemCount: games.length,
+                          itemBuilder: (ctx, i) {
+                            final game = games[i];
+                            final title =
+                                game['title'] as String? ?? 'Untitled Game';
+                            final sport = game['sport'] as String? ?? '';
+                            final gameType = game['game_type'] as String? ?? '';
+                            final startAt = game['start_at'] as String?;
+                            final parsed = startAt == null
+                                ? null
+                                : DateTime.tryParse(startAt);
+                            final subtitle = [
+                              if (sport.isNotEmpty) sport,
+                              if (gameType.isNotEmpty) gameType,
+                              if (parsed != null)
+                                '${parsed.day}/${parsed.month}/${parsed.year}',
+                            ].where((s) => s.isNotEmpty).join(' · ');
 
-// ═════════════════════════════════════════════════════════════════════════════
-// SHARED FILTER CHIP (composer version)
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _ComposerFilterChip extends StatelessWidget {
-  const _ComposerFilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? cs.primary : cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? null
-              : Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                            return ComposerPickerRow(
+                              icon: 'game',
+                              title: title,
+                              subtitle: subtitle.isNotEmpty ? subtitle : null,
+                              onTap: () {
+                                ref
+                                    .read(postComposerProvider.notifier)
+                                    .setGame(
+                                      id: game['id'] as String,
+                                      name: title,
+                                    );
+                                Navigator.pop(context);
+                              },
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                )
+              : const ComposerCenteredState.message(
+                  'Search for a game to link to your post',
+                  icon: 'game',
+                ),
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: isSelected ? cs.onPrimary : cs.onSurfaceVariant,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
+      ],
     );
   }
 }
@@ -2564,7 +1533,7 @@ class _HashtagTextEditingController extends TextEditingController {
 
   /// The colour applied to hashtag tokens. Updated from the widget tree
   /// once the theme is available.
-  Color hashtagColor = Colors.blue;
+  Color? hashtagColor;
 
   @override
   TextSpan buildTextSpan({
@@ -2579,13 +1548,11 @@ class _HashtagTextEditingController extends TextEditingController {
     int lastEnd = 0;
 
     for (final match in _hashtagRegex.allMatches(txt)) {
-      // Text before the hashtag.
       if (match.start > lastEnd) {
         spans.add(
           TextSpan(text: txt.substring(lastEnd, match.start), style: style),
         );
       }
-      // The hashtag itself.
       spans.add(
         TextSpan(
           text: match.group(0),
@@ -2595,7 +1562,6 @@ class _HashtagTextEditingController extends TextEditingController {
       lastEnd = match.end;
     }
 
-    // Remaining text after the last hashtag.
     if (lastEnd < txt.length) {
       spans.add(TextSpan(text: txt.substring(lastEnd), style: style));
     }
@@ -2609,12 +1575,8 @@ class _HashtagTextEditingController extends TextEditingController {
 // =============================================================================
 
 class _GifPickerSheet extends StatefulWidget {
-  const _GifPickerSheet({
-    required this.scrollController,
-    required this.onSelected,
-  });
+  const _GifPickerSheet({required this.onSelected});
 
-  final ScrollController scrollController;
   final ValueChanged<String> onSelected;
 
   @override
@@ -2793,7 +1755,6 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
   String? _getGifUrl(Map<String, dynamic> gif) {
     final images = gif['images'] as Map<String, dynamic>?;
     if (images == null) return null;
-    // Prefer original, fall back to downsized
     final original = images['original'] as Map<String, dynamic>?;
     final downsized = images['downsized'] as Map<String, dynamic>?;
     return (original?['url'] as String?) ?? (downsized?['url'] as String?);
@@ -2813,184 +1774,86 @@ class _GifPickerSheetState extends State<_GifPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+
+    final Widget results;
+    if (_error != null) {
+      results = ComposerCenteredState.message(_error!, icon: 'danger');
+    } else if (_loading && _results.isEmpty) {
+      results = const ComposerCenteredState.loading();
+    } else if (_results.isEmpty) {
+      results = const ComposerCenteredState.message('No GIFs found');
+    } else {
+      results = NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification is ScrollEndNotification &&
+              notification.metrics.extentAfter < 200) {
+            _loadMore();
+          }
+          return false;
+        },
+        child: GridView.builder(
+          padding: const EdgeInsets.all(DabblerSpacing.space2),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: DabblerSpacing.space2,
+            mainAxisSpacing: DabblerSpacing.space2,
+          ),
+          itemCount: _results.length + (_loading ? 1 : 0),
+          itemBuilder: (ctx, index) {
+            if (index >= _results.length) {
+              return const Center(
+                child: DabblerSpinner(size: DabblerSpinnerSize.sm),
+              );
+            }
+
+            final gif = _results[index];
+            final previewUrl = _getPreviewUrl(gif);
+            if (previewUrl == null) return const SizedBox.shrink();
+
+            return DabblerImage(
+              url: previewUrl,
+              radius: DabblerRadius.mdAll,
+              semanticLabel: 'GIF',
+              onTap: () {
+                final gifUrl = _getGifUrl(gif);
+                if (gifUrl != null) {
+                  widget.onSelected(gifUrl);
+                }
+              },
+            );
+          },
+        ),
+      );
+    }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Handle
-        Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 4),
-          child: Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+        ComposerSearchField(
+          controller: _searchController,
+          placeholder: 'Search GIPHY...',
+          onChanged: _onSearchChanged,
         ),
-
-        // Title
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Text(
-            'Search GIFs',
-            style: tt.titleMedium?.copyWith(color: cs.onSurface),
-          ),
-        ),
-
-        // Search field
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: TextField(
-            controller: _searchController,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Search GIPHY...',
-              prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: cs.onSurfaceVariant),
-                      onPressed: () {
-                        _searchController.clear();
-                        _loadTrending();
-                      },
-                    )
-                  : null,
-              filled: true,
-              fillColor: cs.surfaceContainerHighest,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
-            onChanged: _onSearchChanged,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Error state
-        if (_error != null)
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: cs.error),
-                  const SizedBox(height: 8),
-                  Text(
-                    _error!,
-                    style: tt.bodyMedium?.copyWith(color: cs.error),
-                  ),
-                ],
-              ),
-            ),
-          )
-        // Loading + empty state
-        else if (_loading && _results.isEmpty)
-          const Expanded(child: Center(child: CircularProgressIndicator()))
-        else if (_results.isEmpty)
-          Expanded(
-            child: Center(
-              child: Text(
-                'No GIFs found',
-                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-              ),
-            ),
-          )
-        // Grid
-        else
-          Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification is ScrollEndNotification &&
-                    notification.metrics.extentAfter < 200) {
-                  _loadMore();
-                }
-                return false;
-              },
-              child: GridView.builder(
-                controller: widget.scrollController,
-                padding: const EdgeInsets.all(8),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemCount: _results.length + (_loading ? 1 : 0),
-                itemBuilder: (ctx, index) {
-                  if (index >= _results.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  }
-
-                  final gif = _results[index];
-                  final previewUrl = _getPreviewUrl(gif);
-                  if (previewUrl == null) return const SizedBox.shrink();
-
-                  return GestureDetector(
-                    onTap: () {
-                      final gifUrl = _getGifUrl(gif);
-                      if (gifUrl != null) {
-                        widget.onSelected(gifUrl);
-                      }
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        color: cs.surfaceContainerHighest,
-                        child: Image.network(
-                          previewUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          loadingBuilder: (_, child, progress) {
-                            if (progress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                value: progress.expectedTotalBytes != null
-                                    ? progress.cumulativeBytesLoaded /
-                                          progress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-
+        ComposerScrollArea(fraction: 0.55, child: results),
         // GIPHY attribution (required by GIPHY ToS)
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.gif_box, size: 16, color: cs.onSurfaceVariant),
-              const SizedBox(width: 4),
-              Text(
-                'Powered by GIPHY',
-                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space4,
+            DabblerSpacing.space1,
+            DabblerSpacing.space4,
+            DabblerSpacing.space2,
+          ),
+          child: Center(
+            child: Text(
+              'Powered by GIPHY',
+              style: composerType(
+                context,
+                DabblerType.caption2,
+                colors.textSecondary,
               ),
-            ],
+            ),
           ),
         ),
       ],
