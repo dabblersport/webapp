@@ -1,47 +1,62 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/core/services/gps_service.dart';
 import 'package:geolocator/geolocator.dart';
+
+import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 
+/// Saved locations. No design frame: DS defaults (DabblerPage, titled top
+/// bar, DabblerSwipeAction rows, a full-width add button in the page's bottom
+/// overlay in place of the extended FAB). The wide-layout AdaptiveScaffold
+/// wrapper is dropped as in the earlier waves; the app shell owns navigation.
 class SavedLocationsScreen extends ConsumerWidget {
   const SavedLocationsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final asyncLocations = ref.watch(profileLocationNotifierProvider);
+    final canPop = Navigator.of(context).canPop();
 
-    final content = Scaffold(
-      appBar: AppBar(
-        title: const Text('Saved Locations'),
-        backgroundColor: cs.surface,
-        surfaceTintColor: Colors.transparent,
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Saved Locations',
+        onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      bottomOverlay: DabblerButton(
+        label: 'Add location',
+        icon: 'location-add',
+        fullWidth: true,
         onPressed: () => _addLocation(context, ref),
-        icon: const Icon(Icons.add_location_alt_outlined),
-        label: const Text('Add location'),
       ),
       body: asyncLocations.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            'Could not load locations',
-            style: tt.bodyMedium?.copyWith(color: cs.error),
-          ),
+        loading: () => const Center(child: DabblerSpinner()),
+        error: (e, _) => const Center(
+          child: DabblerEmptyState.error(title: 'Could not load locations'),
         ),
         data: (locations) {
           if (locations.isEmpty) {
-            return _EmptyState(onAdd: () => _addLocation(context, ref));
+            return Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(DabblerSpacing.space9),
+                child: DabblerEmptyState(
+                  icon: 'location-slash',
+                  title: 'No saved locations yet',
+                  text:
+                      'Save your home, work, or favourite spots so you can '
+                      'quickly tag them in posts.',
+                  size: DabblerEmptyStateSize.page,
+                  action: DabblerButton(
+                    label: 'Add your first location',
+                    icon: 'location-add',
+                    onPressed: () => _addLocation(context, ref),
+                  ),
+                ),
+              ),
+            );
           }
 
           // Primary pinned at top, rest sorted newest first (already from repo)
@@ -50,31 +65,20 @@ class SavedLocationsScreen extends ConsumerWidget {
           final sorted = [...primary, ...rest];
 
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space5,
+              DabblerSpacing.space5,
+              DabblerSpacing.space5,
+              100,
+            ),
             itemCount: sorted.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: DabblerSpacing.space3),
             itemBuilder: (ctx, i) => _LocationTile(location: sorted[i]),
           );
         },
       ),
     );
-
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(cs.onSurface, BlendMode.srcIn),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
 
   Future<void> _addLocation(BuildContext context, WidgetRef ref) async {
@@ -83,34 +87,26 @@ class SavedLocationsScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
+    void toast(String message) => DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message));
+
     switch (result) {
       case LocationDenied():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied')),
-        );
+        toast('Location permission denied');
         return;
       case LocationDeniedForever():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Enable location in Settings to continue'),
-          ),
-        );
+        toast('Enable location in Settings to continue');
         await Geolocator.openAppSettings();
         return;
       case LocationServiceOff():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enable location services')),
-        );
+        toast('Please enable location services');
         return;
       case LocationTimeout():
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get location — try again')),
-        );
+        toast('Could not get location — try again');
         return;
       case LocationError(:final message):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Location error: $message')),
-        );
+        toast('Location error: $message');
         return;
       case LocationSuccess(:final lat, :final lng, :final accuracyMeters):
         // Resolve nearest area
@@ -119,9 +115,7 @@ class SavedLocationsScreen extends ConsumerWidget {
         );
         if (!context.mounted) return;
         if (area == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not resolve area')),
-          );
+          toast('Could not resolve area');
           return;
         }
         await SaveLocationSheet.show(
@@ -146,182 +140,184 @@ class _LocationTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     final notifier = ref.read(profileLocationNotifierProvider.notifier);
 
-    return Dismissible(
+    // Was a Dismissible (end-to-start) with a confirm dialog; the DS swipe
+    // reveals a Delete action that runs the same confirm, then deletes.
+    return DabblerSwipeAction(
       key: ValueKey(location.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: cs.errorContainer,
-          borderRadius: BorderRadius.circular(16),
+      actions: [
+        DabblerSwipeActionItem(
+          label: 'Delete',
+          icon: 'trash',
+          tone: DabblerSwipeActionTone.destructive,
+          onPressed: () async {
+            final confirmed = await _confirmDelete(context);
+            if (confirmed == true) notifier.deleteLocation(location.id);
+          },
         ),
-        child: Icon(Icons.delete_outline, color: cs.onErrorContainer),
-      ),
-      confirmDismiss: (_) => showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Delete location?'),
-          content:
-              Text('Remove "${location.effectiveLabel}" from your saved locations?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
+      ],
+      child: DabblerSurface(
+        radius: DabblerRadius.card,
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space5,
+          DabblerSpacing.space3,
+          DabblerSpacing.space2,
+          DabblerSpacing.space3,
+        ),
+        child: Row(
+          children: [
+            DabblerIconTile.named(
+              _labelIcon(location.label),
+              tone: location.isPrimary
+                  ? DabblerIconTileTone.brand
+                  : DabblerIconTileTone.info,
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: FilledButton.styleFrom(backgroundColor: cs.error),
-              child: const Text('Delete'),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          location.effectiveLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: DabblerType.headline
+                              .resolveForDirection(direction)
+                              .copyWith(color: colors.textPrimary),
+                        ),
+                      ),
+                      if (location.isPrimary) ...[
+                        const SizedBox(width: DabblerSpacing.space2),
+                        // The old badge text carried a star emoji; the star
+                        // is now a DabblerIcon (CEO rule: no emoji).
+                        const DabblerBadge(
+                          label: 'Primary',
+                          icon: DabblerIcon('star'),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (location.areaId != null)
+                    _AreaName(areaId: location.areaId!),
+                ],
+              ),
+            ),
+            // Star = set as primary
+            if (!location.isPrimary)
+              DabblerButton.icon(
+                tone: DabblerButtonTone.text,
+                icon: 'star',
+                semanticLabel: 'Set as primary',
+                onPressed: () => notifier.setPrimary(location.id),
+              ),
+            // Rename
+            DabblerButton.icon(
+              tone: DabblerButtonTone.text,
+              icon: 'edit',
+              semanticLabel: 'Rename',
+              onPressed: () => _rename(context, ref),
             ),
           ],
-        ),
-      ),
-      onDismissed: (_) => notifier.deleteLocation(location.id),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-        ),
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: CircleAvatar(
-            backgroundColor: location.isPrimary
-                ? cs.primaryContainer
-                : cs.surfaceContainerHigh,
-            child: Icon(
-              _labelIcon(location.label),
-              size: 20,
-              color: location.isPrimary ? cs.onPrimaryContainer : cs.onSurface,
-            ),
-          ),
-          title: Row(
-            children: [
-              Text(
-                location.effectiveLabel,
-                style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              if (location.isPrimary) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '⭐ Primary',
-                    style: tt.labelSmall?.copyWith(
-                      color: cs.onPrimaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-          subtitle: location.areaId != null
-              ? _AreaName(areaId: location.areaId!)
-              : null,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Star = set as primary
-              if (!location.isPrimary)
-                IconButton(
-                  icon: const Icon(Icons.star_outline),
-                  tooltip: 'Set as primary',
-                  onPressed: () => notifier.setPrimary(location.id),
-                ),
-              // Rename
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Rename',
-                onPressed: () => _rename(context, ref),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  IconData _labelIcon(ProfileLocationLabel label) {
+  Future<bool?> _confirmDelete(BuildContext context) {
+    return showDabblerDialog<bool>(
+      context: context,
+      builder: (ctx) => DabblerDialog(
+        onClose: () => Navigator.pop(ctx, false),
+        title: 'Delete location?',
+        description:
+            'Remove "${location.effectiveLabel}" from your saved locations?',
+        destructive: true,
+        secondaryAction: DabblerDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(ctx, false),
+        ),
+        primaryAction: DabblerDialogAction(
+          label: 'Delete',
+          onPressed: () => Navigator.pop(ctx, true),
+        ),
+      ),
+    );
+  }
+
+  String _labelIcon(ProfileLocationLabel label) {
     switch (label) {
       case ProfileLocationLabel.home:
-        return Icons.home_outlined;
+        return 'home-2';
       case ProfileLocationLabel.work:
-        return Icons.work_outline;
+        return 'briefcase';
       case ProfileLocationLabel.school:
-        return Icons.school_outlined;
+        return 'teacher';
       case ProfileLocationLabel.current:
-        return Icons.my_location_outlined;
+        return 'gps';
       case ProfileLocationLabel.custom:
-        return Icons.place_outlined;
+        return 'location';
     }
   }
 
   Future<void> _rename(BuildContext context, WidgetRef ref) async {
     ProfileLocationLabel selectedLabel = location.label;
-    final customController =
-        TextEditingController(text: location.labelCustom ?? '');
+    final customController = TextEditingController(
+      text: location.labelCustom ?? '',
+    );
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showDabblerDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: const Text('Rename location'),
-          content: Column(
+        builder: (ctx, setState) => DabblerDialog(
+          onClose: () => Navigator.pop(ctx, false),
+          title: 'Rename location',
+          secondaryAction: DabblerDialogAction(
+            label: 'Cancel',
+            onPressed: () => Navigator.pop(ctx, false),
+          ),
+          primaryAction: DabblerDialogAction(
+            label: 'Save',
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: DabblerSpacing.space3,
+                runSpacing: DabblerSpacing.space3,
                 children: ProfileLocationLabel.values.map((l) {
-                  return ChoiceChip(
-                    label: Text(l.displayName),
+                  return DabblerChip(
+                    label: l.displayName,
                     selected: selectedLabel == l,
-                    onSelected: (_) => setState(() => selectedLabel = l),
+                    onTap: () => setState(() => selectedLabel = l),
                   );
                 }).toList(),
               ),
               if (selectedLabel == ProfileLocationLabel.custom) ...[
-                const SizedBox(height: 12),
-                TextField(
+                const SizedBox(height: DabblerSpacing.space4),
+                DabblerTextField(
                   controller: customController,
-                  decoration: const InputDecoration(
-                    hintText: 'Custom name',
-                    border: OutlineInputBorder(),
-                  ),
+                  placeholder: 'Custom name',
                 ),
               ],
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Save'),
-            ),
-          ],
         ),
       ),
     );
 
     if (confirmed == true) {
-      await ref.read(profileLocationNotifierProvider.notifier).renameLocation(
+      await ref
+          .read(profileLocationNotifierProvider.notifier)
+          .renameLocation(
             location.id,
             selectedLabel,
             customName: selectedLabel == ProfileLocationLabel.custom
@@ -343,62 +339,16 @@ class _AreaName extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
     final areaAsync = ref.watch(areaNameProvider(areaId));
     return areaAsync.maybeWhen(
       data: (name) => Text(
         name,
-        style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+        style: DabblerType.footnote
+            .resolveForDirection(Directionality.of(context))
+            .copyWith(color: colors.textSecondary),
       ),
       orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-// =============================================================================
-// EMPTY STATE
-// =============================================================================
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd});
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.location_off_outlined,
-              size: 64,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No saved locations yet',
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Save your home, work, or favourite spots so you can quickly tag them in posts.',
-              textAlign: TextAlign.center,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_location_alt_outlined),
-              label: const Text('Add your first location'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

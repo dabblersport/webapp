@@ -1,13 +1,14 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
+import 'package:dabbler/features/location/presentation/widgets/autofocus_search_field.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
@@ -84,9 +85,11 @@ class LocationPickerSheet extends ConsumerStatefulWidget {
   const LocationPickerSheet({super.key});
 
   static Future<LocationPickerResult?> show(BuildContext context) {
-    return showAdaptiveSheet<LocationPickerResult>(
+    // Was showAdaptiveSheet + a DraggableScrollableSheet (0.6, 0.4-0.9);
+    // the DabblerSheet snaps between the same 0.6 and 0.9 heights.
+    return showDabblerSheet<LocationPickerResult>(
       context: context,
-      isScrollControlled: true,
+      detents: const <double>[0.6, 0.9],
       builder: (_) => const LocationPickerSheet(),
     );
   }
@@ -125,9 +128,9 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permission denied')),
-        );
+        DabblerToastProvider.of(
+          context,
+        ).show(const DabblerToastSpec(message: 'Location permission denied'));
         setState(() => _loadingGps = false);
         return;
       }
@@ -162,9 +165,9 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
+      DabblerToastProvider.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Could not get location: $e')));
+      ).show(DabblerToastSpec(message: 'Could not get location: $e'));
       setState(() => _loadingGps = false);
     }
   }
@@ -173,66 +176,61 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.6,
-      minChildSize: 0.4,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Column(
-          children: [
-            // ── Handle ──
-            Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(2),
+    // The DabblerSheet body is already a scroll view, so this shrink-wraps
+    // (the old DraggableScrollableSheet hosted its own lists).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ── Title + back ── (handle and close come from DabblerSheet)
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space5,
+            0,
+            DabblerSpacing.space5,
+            DabblerSpacing.space3,
+          ),
+          child: Row(
+            children: [
+              if (_mode != _PickerMode.menu) ...[
+                DabblerButton.icon(
+                  tone: DabblerButtonTone.text,
+                  icon: direction == TextDirection.rtl
+                      ? 'arrow-right'
+                      : 'arrow-left',
+                  semanticLabel: 'Back',
+                  onPressed: () => setState(() => _mode = _PickerMode.menu),
+                ),
+                const SizedBox(width: DabblerSpacing.space2),
+              ],
+              Expanded(
+                child: Text(
+                  _title,
+                  style: DabblerType.headline
+                      .resolveForDirection(direction)
+                      .copyWith(color: colors.textPrimary),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
 
-            // ── Title + back ──
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  if (_mode != _PickerMode.menu)
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => setState(() => _mode = _PickerMode.menu),
-                    ),
-                  Text(
-                    _title,
-                    style: tt.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Content ──
-            Expanded(
-              child: switch (_mode) {
-                _PickerMode.menu => _buildMenu(cs, tt, scrollController),
-                _PickerMode.venue => _buildVenueSearch(
-                  cs,
-                  tt,
-                  scrollController,
-                ),
-                _PickerMode.area => _buildAreaList(cs, tt, scrollController),
-                _PickerMode.placeSearch => _buildPlaceSearch(cs, tt),
-              },
-            ),
-          ],
-        );
-      },
+        // ── Content ──
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: DabblerSpacing.space5,
+          ),
+          child: switch (_mode) {
+            _PickerMode.menu => _buildMenu(),
+            _PickerMode.venue => _buildVenueSearch(),
+            _PickerMode.area => _buildAreaList(),
+            _PickerMode.placeSearch => _buildPlaceSearch(),
+          },
+        ),
+      ],
     );
   }
 
@@ -245,50 +243,36 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   // ── Menu ───────────────────────────────────────────────────────────
 
-  Widget _buildMenu(
-    ColorScheme cs,
-    TextTheme tt,
-    ScrollController scrollController,
-  ) {
-    return ListView(
-      controller: scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+  Widget _buildMenu() {
+    return _Stack(
       children: [
         _MenuTile(
-          icon: Iconsax.gps,
+          icon: 'gps',
           label: 'Use my current location',
           subtitle: 'Attach GPS coordinates',
           isLoading: _loadingGps,
           onTap: _loadingGps ? null : _useCurrentLocation,
-          cs: cs,
-          tt: tt,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DabblerSpacing.space3),
         _MenuTile(
-          icon: Iconsax.building,
+          icon: 'building',
           label: 'Tag a venue',
           subtitle: 'Search for a sports venue',
           onTap: () => setState(() => _mode = _PickerMode.venue),
-          cs: cs,
-          tt: tt,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DabblerSpacing.space3),
         _MenuTile(
-          icon: Iconsax.map,
+          icon: 'map',
           label: 'Pick an area',
           subtitle: 'Select a neighborhood or city',
           onTap: () => setState(() => _mode = _PickerMode.area),
-          cs: cs,
-          tt: tt,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: DabblerSpacing.space3),
         _MenuTile(
-          icon: Iconsax.search_normal,
+          icon: 'search-normal',
           label: 'Search a place',
           subtitle: 'Find an address or point of interest',
           onTap: () => setState(() => _mode = _PickerMode.placeSearch),
-          cs: cs,
-          tt: tt,
         ),
       ],
     );
@@ -296,93 +280,74 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   // ── Venue Search ───────────────────────────────────────────────────
 
-  Widget _buildVenueSearch(
-    ColorScheme cs,
-    TextTheme tt,
-    ScrollController scrollController,
-  ) {
+  Widget _buildVenueSearch() {
+    final colors = DabblerColors.of(context);
     final query = _venueController.text.trim();
     final venuesAsync = query.length >= 2
         ? ref.watch(venueSearchProvider(query))
         : const AsyncData<List<Map<String, dynamic>>>([]);
 
-    return Column(
+    return _Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: TextField(
+          padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
+          child: AutofocusSearchField(
             controller: _venueController,
-            autofocus: true,
+            placeholder: 'Search venues...',
             onChanged: (val) {
               _venueDebounce?.cancel();
               _venueDebounce = Timer(const Duration(milliseconds: 350), () {
                 if (mounted) setState(() {});
               });
             },
-            style: tt.bodyLarge?.copyWith(color: cs.onSurface),
-            decoration: InputDecoration(
-              hintText: 'Search venues...',
-              hintStyle: tt.bodyLarge?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: cs.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
           ),
         ),
-        Expanded(
-          child: venuesAsync.when(
-            data: (venues) {
-              if (venues.isEmpty && query.length >= 2) {
-                return Center(
-                  child: Text(
-                    'No venues found',
-                    style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-                  ),
-                );
-              }
-              return ListView.builder(
-                controller: scrollController,
-                itemCount: venues.length,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemBuilder: (_, i) {
-                  final v = venues[i];
-                  final name = v['name_en'] as String? ?? 'Unknown';
-                  final city = v['city'] as String? ?? '';
-                  return ListTile(
-                    leading: Icon(Iconsax.building, color: cs.primary),
-                    title: Text(name),
-                    subtitle: city.isNotEmpty ? Text(city) : null,
-                    onTap: () {
-                      Navigator.of(context).pop(
-                        LocationPickerResult.venue(
-                          id: v['id'] as String,
-                          name: name,
-                          lat: (v['latitude'] as num?)?.toDouble(),
-                          lng: (v['longitude'] as num?)?.toDouble(),
+        venuesAsync.when(
+          data: (venues) {
+            if (venues.isEmpty && query.length >= 2) {
+              return const _Pad(
+                child: DabblerEmptyState(
+                  icon: 'building',
+                  text: 'No venues found',
+                ),
+              );
+            }
+            return _Stack(
+              children: [
+                for (final v in venues)
+                  Builder(
+                    builder: (_) {
+                      final name = v['name_en'] as String? ?? 'Unknown';
+                      final city = v['city'] as String? ?? '';
+                      return PickerRow(
+                        leading: DabblerIcon(
+                          'building',
+                          size: DabblerSizing.iconMd,
+                          color: colors.brandPrimary,
                         ),
+                        title: name,
+                        subtitle: city.isNotEmpty ? city : null,
+                        onTap: () {
+                          Navigator.of(context).pop(
+                            LocationPickerResult.venue(
+                              id: v['id'] as String,
+                              name: name,
+                              lat: (v['latitude'] as num?)?.toDouble(),
+                              lng: (v['longitude'] as num?)?.toDouble(),
+                            ),
+                          );
+                        },
                       );
                     },
-                  );
-                },
-              );
-            },
-            loading: () =>
-                const Center(child: CircularProgressIndicator.adaptive()),
-            error: (e, _) => Center(
-              child: Text(
-                'Error loading venues',
-                style: tt.bodyMedium?.copyWith(color: cs.error),
-              ),
+                  ),
+              ],
+            );
+          },
+          loading: () => const _Pad(child: DabblerSpinner()),
+          error: (e, _) => const _Pad(
+            child: DabblerEmptyState.error(
+              title: 'Error loading venues',
+              size: DabblerEmptyStateSize.inline,
             ),
           ),
         ),
@@ -392,47 +357,42 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   // ── Area List ──────────────────────────────────────────────────────
 
-  Widget _buildAreaList(
-    ColorScheme cs,
-    TextTheme tt,
-    ScrollController scrollController,
-  ) {
+  Widget _buildAreaList() {
+    final colors = DabblerColors.of(context);
     final areasAsync = ref.watch(activeAreasProvider);
 
     return areasAsync.when(
       data: (areas) {
         if (areas.isEmpty) {
-          return Center(
-            child: Text(
-              'No areas available',
-              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            ),
+          return const _Pad(
+            child: DabblerEmptyState(icon: 'map', text: 'No areas available'),
           );
         }
-        return ListView.builder(
-          controller: scrollController,
-          itemCount: areas.length,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemBuilder: (_, i) {
-            final area = areas[i];
-            return ListTile(
-              leading: Icon(Iconsax.map, color: cs.primary),
-              title: Text(area.name),
-              subtitle: Text('${area.city}, ${area.country}'),
-              onTap: () {
-                Navigator.of(
-                  context,
-                ).pop(LocationPickerResult.area(id: area.id, name: area.name));
-              },
-            );
-          },
+        return _Stack(
+          children: [
+            for (final area in areas)
+              PickerRow(
+                leading: DabblerIcon(
+                  'map',
+                  size: DabblerSizing.iconMd,
+                  color: colors.brandPrimary,
+                ),
+                title: area.name,
+                subtitle: '${area.city}, ${area.country}',
+                onTap: () {
+                  Navigator.of(context).pop(
+                    LocationPickerResult.area(id: area.id, name: area.name),
+                  );
+                },
+              ),
+          ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
-      error: (e, _) => Center(
-        child: Text(
-          'Error loading areas',
-          style: tt.bodyMedium?.copyWith(color: cs.error),
+      loading: () => const _Pad(child: DabblerSpinner()),
+      error: (e, _) => const _Pad(
+        child: DabblerEmptyState.error(
+          title: 'Error loading areas',
+          size: DabblerEmptyStateSize.inline,
         ),
       ),
     );
@@ -440,18 +400,43 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   // ── Mapbox Place Search ────────────────────────────────────────────
 
-  Widget _buildPlaceSearch(ColorScheme cs, TextTheme tt) {
+  Widget _buildPlaceSearch() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
       child: LocationSearchField(
         autofocus: true,
-        hintText: 'Search for an address or place\u2026',
+        hintText: 'Search for an address or place…',
         onSelected: (place) {
           Navigator.of(context).pop(LocationPickerResult.mapboxPlace(place));
         },
       ),
     );
   }
+}
+
+/// A shrink-wrapped, full-width column (the sheet body scrolls).
+class _Stack extends StatelessWidget {
+  const _Stack({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: children,
+  );
+}
+
+/// Centred loading / empty / error block.
+class _Pad extends StatelessWidget {
+  const _Pad({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(DabblerSpacing.space8),
+    child: Center(child: child),
+  );
 }
 
 // ── Picker mode ──────────────────────────────────────────────────────
@@ -465,64 +450,27 @@ class _MenuTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.subtitle,
-    required this.cs,
-    required this.tt,
     this.onTap,
     this.isLoading = false,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final String subtitle;
-  final ColorScheme cs;
-  final TextTheme tt;
   final VoidCallback? onTap;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: cs.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(icon, color: cs.primary, size: 24),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: tt.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              if (isLoading)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
-                )
-              else
-                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
-          ),
-        ),
-      ),
+    return DabblerInputRow(
+      leading: DabblerIconTile.named(icon),
+      title: label,
+      subtitle: subtitle,
+      trailing: isLoading
+          ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
+          : const DabblerChevron(),
+      onTap: onTap,
+      enabled: onTap != null,
     );
   }
 }
