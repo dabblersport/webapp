@@ -12,6 +12,7 @@ import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
@@ -259,8 +260,8 @@ class MyApp extends ConsumerWidget {
         return MaterialApp.router(
           title: 'Dabbler',
           routerConfig: appRouter,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          theme: DabblerDesignSystemTheme.withTokens(AppTheme.lightTheme),
+          darkTheme: DabblerDesignSystemTheme.withTokens(AppTheme.darkTheme),
           themeMode: _themeService.effectiveThemeMode,
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -269,24 +270,12 @@ class MyApp extends ConsumerWidget {
           builder: (context, child) {
             if (child == null) return const SizedBox.shrink();
             final base = Theme.of(context);
-            // Font strategy:
-            //   • iOS  → Apple's San Francisco (SF Pro) — covers Latin + Arabic.
-            //   • Android / web / desktop → the platform's own system font
-            //     stack at Material 3 metrics (set in AppTheme). No family
-            //     overrides: the system font matches other apps, is hinted per
-            //     device, covers Arabic natively (Noto), and adapts to the
-            //     user's font-size / display-size accessibility settings.
-            TextTheme? overrideTextTheme;
-            if (base.platform == TargetPlatform.iOS) {
-              overrideTextTheme = base.textTheme.apply(
-                fontFamily: '.SF Pro Text',
-              );
-            }
-            final wrapped = ResponsiveAppShell(child: child);
-            if (overrideTextTheme == null) return wrapped;
+            // Font root: the design-system sans family (Glory, Meral Sans for
+            // Arabic), bundled by `dabbler_design_system`. Sizes and colours
+            // stay as AppTheme sets them.
             return Theme(
-              data: base.copyWith(textTheme: overrideTextTheme),
-              child: wrapped,
+              data: DabblerDesignSystemTheme.withFonts(base, locale: locale),
+              child: ResponsiveAppShell(child: child),
             );
           },
         );

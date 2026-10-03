@@ -38,6 +38,12 @@ dependencies:
     sdk: flutter
   meta: ^1.12.0
 
+  # Dabbler design system (KAN-407): tokens, typography, bundled fonts and the
+  # Dabbler* components the Alpha redesign renders from. Path dependency: the
+  # package lives beside this repo in the workspace.
+  dabbler_design_system:
+    path: ../dabbler-design-system
+
   # Iconsax - Beautiful outline and bold icons from iconsax.io
   iconsax_flutter: ^1.0.0
 
