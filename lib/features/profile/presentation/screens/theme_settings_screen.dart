@@ -126,6 +126,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
         DabblerTabs(
           variant: DabblerTabsVariant.segmented,
           label: 'Theme Mode',
+          // No mode is highlighted while the time-based theme is on.
+          allowNoSelection: true,
           value: _themeService.autoThemeEnabled ? null : current.$3.name,
           items: [
             for (final m in _kModes)

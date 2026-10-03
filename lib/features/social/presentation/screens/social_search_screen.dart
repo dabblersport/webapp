@@ -65,6 +65,15 @@ String _needle(String query) => query
     .replaceAll(RegExp(r'^/[a-z]\s*'), '')
     .trim();
 
+/// The row title with every typed-word match highlighted, as the
+/// pre-migration result tiles did (`_HighlightedText`).
+InlineSpan _hl(BuildContext context, String text, String query) =>
+    DabblerInputRow.highlightSpan(
+      text,
+      _needle(query),
+      DabblerColors.of(context),
+    );
+
 const EdgeInsetsDirectional _gutter =
     EdgeInsetsDirectional.symmetric(horizontal: DabblerSpacing.space6);
 
@@ -472,23 +481,13 @@ class _RecentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        DabblerChip(
-          label: query,
-          leadingIcon: const DabblerIcon('clock', size: 14),
-          onTap: onTap,
-        ),
-        DabblerButton.icon(
-          key: ValueKey('remove-recent-$query'),
-          icon: 'close-circle',
-          semanticLabel: 'Remove $query',
-          tone: DabblerButtonTone.text,
-          size: DabblerButtonSize.small,
-          onPressed: onRemove,
-        ),
-      ],
+    return DabblerChip(
+      key: ValueKey('recent-$query'),
+      label: query,
+      leadingIcon: const DabblerIcon('clock', size: 14),
+      onTap: onTap,
+      onRemove: onRemove,
+      removeSemanticLabel: 'Remove $query',
     );
   }
 }
@@ -538,7 +537,7 @@ class _ResultsRouter extends StatelessWidget {
           empty: 'No people found',
           children: [
             for (final p in b.profiles)
-              _PersonRow(profile: p, onTap: () => onProfileTap(p)),
+              _PersonRow(profile: p, query: q, onTap: () => onProfileTap(p)),
           ],
         );
       case 2:
@@ -549,12 +548,12 @@ class _ResultsRouter extends StatelessWidget {
       case 3:
         return _ResultList(
           empty: 'No games found',
-          children: [for (final g in b.games) _GameRow(game: g)],
+          children: [for (final g in b.games) _GameRow(game: g, query: q)],
         );
       case 4:
         return _ResultList(
           empty: 'No venues found',
-          children: [for (final v in b.venues) _VenueRow(venue: v)],
+          children: [for (final v in b.venues) _VenueRow(venue: v, query: q)],
         );
       case 5:
         return _ResultList(
@@ -566,12 +565,12 @@ class _ResultsRouter extends StatelessWidget {
       case 6:
         return _ResultList(
           empty: 'No hashtags found',
-          children: _rankedHashtags(context, b.hashtags),
+          children: _rankedHashtags(context, b.hashtags, q),
         );
       case 7:
         return _ResultList(
           empty: 'No meetups found',
-          children: [for (final m in b.meetups) _MeetupRow(meetup: m)],
+          children: [for (final m in b.meetups) _MeetupRow(meetup: m, query: q)],
         );
       default:
         return _AllTabSections(
@@ -628,12 +627,14 @@ class _ResultList extends StatelessWidget {
 List<Widget> _rankedHashtags(
   BuildContext context,
   List<HashtagSearchResult> hashtags,
+  String query,
 ) {
   final colors = DabblerColors.of(context);
   return [
     for (var i = 0; i < hashtags.length; i++)
       _HashtagRow(
         hashtag: hashtags[i],
+        query: query,
         leading: SizedBox(
           width: DabblerSpacing.space8,
           child: Text(
@@ -730,24 +731,25 @@ class _AllTabSections extends StatelessWidget {
         if (b.profiles.isNotEmpty)
           section('People', SearchMode.profiles, [
             for (final p in b.profiles.take(8))
-              _PersonRow(profile: p, onTap: () => onProfileTap(p)),
+              _PersonRow(profile: p, query: q, onTap: () => onProfileTap(p)),
           ]),
         if (b.hashtags.isNotEmpty)
           section('Hashtags', SearchMode.hashtags, [
             for (final h in b.hashtags.take(8))
               _HashtagRow(
                 hashtag: h,
+                query: q,
                 leading: DabblerIcon('hashtag',
                     size: 22, color: colors.brandPrimary),
               ),
           ]),
         if (b.games.isNotEmpty)
           section('Games', SearchMode.games, [
-            for (final g in b.games.take(3)) _GameRow(game: g),
+            for (final g in b.games.take(3)) _GameRow(game: g, query: q),
           ]),
         if (b.venues.isNotEmpty)
           section('Venues', SearchMode.venues, [
-            for (final v in b.venues.take(8)) _VenueRow(venue: v),
+            for (final v in b.venues.take(8)) _VenueRow(venue: v, query: q),
           ]),
         if (b.posts.isNotEmpty)
           section('Posts', SearchMode.posts, [
@@ -760,7 +762,7 @@ class _AllTabSections extends StatelessWidget {
           ]),
         if (b.meetups.isNotEmpty)
           section('Meet-ups', SearchMode.meetups, [
-            for (final m in b.meetups.take(3)) _MeetupRow(meetup: m),
+            for (final m in b.meetups.take(3)) _MeetupRow(meetup: m, query: q),
           ]),
       ],
     );
@@ -772,8 +774,13 @@ class _AllTabSections extends StatelessWidget {
 // =============================================================================
 
 class _PersonRow extends StatelessWidget {
-  const _PersonRow({required this.profile, required this.onTap});
+  const _PersonRow({
+    required this.profile,
+    required this.query,
+    required this.onTap,
+  });
   final Profile profile;
+  final String query;
   final VoidCallback onTap;
 
   @override
@@ -784,7 +791,7 @@ class _PersonRow extends StatelessWidget {
         imageUrl: profile.avatarUrl,
         size: DabblerAvatarSize.sm,
       ),
-      title: profile.displayName,
+      titleSpan: _hl(context, profile.displayName, query),
       subtitle: '@${profile.username}',
       trailing: DabblerButton(
         label: 'Follow',
@@ -797,15 +804,20 @@ class _PersonRow extends StatelessWidget {
 }
 
 class _HashtagRow extends StatelessWidget {
-  const _HashtagRow({required this.hashtag, required this.leading});
+  const _HashtagRow({
+    required this.hashtag,
+    required this.query,
+    required this.leading,
+  });
   final HashtagSearchResult hashtag;
+  final String query;
   final Widget leading;
 
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
       leading: leading,
-      title: '#${hashtag.slug}',
+      titleSpan: _hl(context, '#${hashtag.slug}', query),
       subtitle: '${hashtag.postCount} posts',
       trailing: const DabblerChevron(),
       onTap: () => context.pushNamed(
@@ -818,8 +830,9 @@ class _HashtagRow extends StatelessWidget {
 }
 
 class _GameRow extends StatelessWidget {
-  const _GameRow({required this.game});
+  const _GameRow({required this.game, required this.query});
   final GameModel game;
+  final String query;
 
   @override
   Widget build(BuildContext context) {
@@ -833,7 +846,7 @@ class _GameRow extends StatelessWidget {
         size: 24,
         color: colors.brandPrimary,
       ),
-      title: game.title,
+      titleSpan: _hl(context, game.title, query),
       subtitle: [
         game.sport,
         if ((game.venueName ?? '').isNotEmpty) game.venueName!,
@@ -860,30 +873,32 @@ class _GameRow extends StatelessWidget {
 }
 
 class _VenueRow extends StatelessWidget {
-  const _VenueRow({required this.venue});
+  const _VenueRow({required this.venue, required this.query});
   final Venue venue;
+  final String query;
 
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
       leading: DabblerIcon('buildings',
           size: 24, color: DabblerColors.of(context).brandPrimary),
-      title: venue.name,
+      titleSpan: _hl(context, venue.name, query),
       subtitle: venue.address,
     );
   }
 }
 
 class _MeetupRow extends StatelessWidget {
-  const _MeetupRow({required this.meetup});
+  const _MeetupRow({required this.meetup, required this.query});
   final MeetupSearchResult meetup;
+  final String query;
 
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
       leading: DabblerIcon('calendar',
           size: 24, color: DabblerColors.of(context).brandPrimary),
-      title: meetup.title,
+      titleSpan: _hl(context, meetup.title, query),
       subtitle:
           meetup.startAt != null ? _formatGameWhen(meetup.startAt!) : null,
       trailing: const DabblerBadge(label: 'RSVP'),
@@ -1158,7 +1173,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
         return _ResultList(
           empty: 'No hashtags found',
           children: [
-            ..._rankedHashtags(context, b.hashtags),
+            ..._rankedHashtags(context, b.hashtags, q),
             if (b.hashtags.isNotEmpty)
               const DabblerButton(
                 label: 'Load more',
@@ -1172,18 +1187,18 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
           empty: 'No people found',
           children: [
             for (final p in b.profiles)
-              _PersonRow(profile: p, onTap: () => widget.onProfileTap(p)),
+              _PersonRow(profile: p, query: q, onTap: () => widget.onProfileTap(p)),
           ],
         );
       case SearchMode.games:
         return _ResultList(
           empty: 'No games found',
-          children: [for (final g in b.games) _GameRow(game: g)],
+          children: [for (final g in b.games) _GameRow(game: g, query: q)],
         );
       case SearchMode.venues:
         return _ResultList(
           empty: 'No venues found',
-          children: [for (final v in b.venues) _VenueRow(venue: v)],
+          children: [for (final v in b.venues) _VenueRow(venue: v, query: q)],
         );
       case SearchMode.posts:
         return _ResultList(
@@ -1200,7 +1215,7 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
       case SearchMode.meetups:
         return _ResultList(
           empty: 'No meetups found',
-          children: [for (final m in b.meetups) _MeetupRow(meetup: m)],
+          children: [for (final m in b.meetups) _MeetupRow(meetup: m, query: q)],
         );
       case SearchMode.all:
         return const SizedBox.shrink();

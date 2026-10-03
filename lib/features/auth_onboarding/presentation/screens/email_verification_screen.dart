@@ -100,7 +100,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final email = _userEmail;
     if (email == null || email.isEmpty) {
       setState(() {
-        _errorMessage = AppLocalizations.of(context).email_verify_no_email_error;
+        _errorMessage = AppLocalizations.of(
+          context,
+        ).email_verify_no_email_error;
         _successMessage = null;
       });
       return;

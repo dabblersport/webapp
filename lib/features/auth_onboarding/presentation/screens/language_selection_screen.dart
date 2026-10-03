@@ -60,10 +60,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
     } catch (e) {
       if (mounted) {
         DabblerToastProvider.of(context).show(
-          DabblerToastSpec(
-            message: 'Error: $e',
-            tone: DabblerToastTone.error,
-          ),
+          DabblerToastSpec(message: 'Error: $e', tone: DabblerToastTone.error),
         );
       }
     } finally {
@@ -92,7 +89,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
           DabblerSpacing.space10,
         ),
         child: DabblerButton(
-          label: _isLoading ? l10n.language_select_saving : l10n.landing_continue,
+          label: _isLoading
+              ? l10n.language_select_saving
+              : l10n.landing_continue,
           size: DabblerButtonSize.full,
           fullWidth: true,
           loading: _isLoading,
@@ -151,7 +150,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                           DabblerIcon(
                             'global',
                             size: 22,
-                            color: isSelected ? colors.onBrand : colors.textSecondary,
+                            color: isSelected
+                                ? colors.onBrand
+                                : colors.textSecondary,
                           ),
                           const SizedBox(width: DabblerSpacing.space4),
                           Expanded(

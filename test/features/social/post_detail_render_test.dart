@@ -183,6 +183,15 @@ void main() {
       expect(find.byType(DabblerPostRow), findsOneWidget);
       expect(find.text('Replies'), findsOneWidget);
       expect(find.byType(DabblerAvatar), findsWidgets);
+      expect(find.byType(DabblerCommentRow), findsNWidgets(3));
+      expect(find.byType(DabblerReplyComposer), findsOneWidget);
+      expect(find.byType(DabblerPostDetailLine), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is DabblerChip && w.vibe != null && w.label == 'Energetic',
+        ),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'post-detail-replies-$dir');
       await _settle(tester);
     });
@@ -207,7 +216,35 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerImage), findsWidgets);
+      expect(find.byType(DabblerAttachmentChip), findsOneWidget);
       await _shoot(tester, key, 'post-detail-composing-$dir');
+      await _settle(tester);
+    });
+
+    testWidgets('replying to a reply — $dir', (tester) async {
+      await _pump(tester, locale, key, comments: _comments);
+      await tester.tap(find.text('Reply').first);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Aisha Khan'), findsWidgets);
+      expect(find.text('Replying to'), findsOneWidget);
+      await _shoot(tester, key, 'post-detail-replying-$dir');
+      await tester.tap(find.bySemanticsLabel('Cancel reply'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Replying to'), findsNothing);
+      await _settle(tester);
+    });
+
+    testWidgets('long-press a reply opens its menu — $dir', (tester) async {
+      await _pump(tester, locale, key, comments: _comments);
+      await tester.longPress(
+        find.text('Which ground are you booking?'),
+        warnIfMissed: false,
+      );
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
       await _settle(tester);
     });
 

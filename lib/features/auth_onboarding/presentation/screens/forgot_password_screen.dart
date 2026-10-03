@@ -70,7 +70,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               placeholder: l10n.forgot_password_email_hint,
               errorText: _error,
               keyboardType: TextInputType.emailAddress,
-              autofillHints: const [AutofillHints.username, AutofillHints.email],
+              autofillHints: const [
+                AutofillHints.username,
+                AutofillHints.email,
+              ],
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(context),
             ),
@@ -105,7 +108,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _submit(BuildContext context) async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      setState(() => _error = AppLocalizations.of(context).forgot_password_validate_email);
+      setState(
+        () => _error = AppLocalizations.of(
+          context,
+        ).forgot_password_validate_email,
+      );
       return;
     }
     setState(() {

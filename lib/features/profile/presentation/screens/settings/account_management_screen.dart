@@ -300,9 +300,7 @@ class _AccountManagementScreenState
         format: DataExportFormat.json,
         userEmail: email,
       );
-      AnalyticsService.trackEvent('data_export_requested', {
-        'format': 'json',
-      });
+      AnalyticsService.trackEvent('data_export_requested', {'format': 'json'});
       if (!mounted) return;
       _toast(
         "We're preparing your data export. You'll be notified by email when it's ready.",
@@ -593,45 +591,46 @@ class _AccountManagementScreenState
           ),
           primaryAction: DabblerDialogAction(
             label: 'Delete Account',
-            onPressed: isDeleting
-                ? null
-                : () async {
-                    if (confirmTextController.text != 'DELETE') {
-                      DabblerToastProvider.of(context).show(
-                        const DabblerToastSpec(
-                          message: 'Please type "DELETE" to confirm',
-                          tone: DabblerToastTone.error,
-                        ),
-                      );
-                      return;
-                    }
+            // While deleting, the button shows its spinner and the dialog
+            // cannot be dismissed — the original Material dialog's behaviour.
+            loading: isDeleting,
+            onPressed: () async {
+              if (confirmTextController.text != 'DELETE') {
+                DabblerToastProvider.of(context).show(
+                  const DabblerToastSpec(
+                    message: 'Please type "DELETE" to confirm',
+                    tone: DabblerToastTone.error,
+                  ),
+                );
+                return;
+              }
 
-                    setDialogState(() {
-                      isDeleting = true;
-                    });
+              setDialogState(() {
+                isDeleting = true;
+              });
 
-                    try {
-                      await _deleteAccount();
+              try {
+                await _deleteAccount();
 
-                      if (context.mounted) {
-                        confirmTextController.dispose();
-                        Navigator.of(context).pop();
-                      }
-                    } catch (e) {
-                      setDialogState(() {
-                        isDeleting = false;
-                      });
+                if (context.mounted) {
+                  confirmTextController.dispose();
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                setDialogState(() {
+                  isDeleting = false;
+                });
 
-                      if (context.mounted) {
-                        DabblerToastProvider.of(context).show(
-                          DabblerToastSpec(
-                            message: 'Failed to delete account: $e',
-                            tone: DabblerToastTone.error,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                if (context.mounted) {
+                  DabblerToastProvider.of(context).show(
+                    DabblerToastSpec(
+                      message: 'Failed to delete account: $e',
+                      tone: DabblerToastTone.error,
+                    ),
+                  );
+                }
+              }
+            },
           ),
           child: DeleteAccountDialogContent(
             confirmController: confirmTextController,
@@ -717,18 +716,14 @@ class AccountDangerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return DabblerSection(
       children: [
         DabblerInputRow(
           title: 'Delete Account',
           subtitle: 'Permanently delete your account and all data',
-          leading: DabblerIcon(
-            'trash',
-            size: DabblerSizing.iconMd,
-            color: colors.error.solid,
-          ),
-          trailing: DabblerChevron(color: colors.error.solid),
+          tone: DabblerInputRowTone.destructive,
+          leading: const DabblerIcon('trash', size: DabblerSizing.iconMd),
+          trailing: const DabblerChevron(),
           onTap: onDelete,
         ),
       ],

@@ -654,19 +654,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     required bool isSelected,
     required VoidCallback onTap,
   }) {
-    final colors = DabblerColors.of(context);
     final row = DabblerInputRow(
       title: label,
       subtitle: sublabel,
       onTap: onTap,
-      trailing: isSelected
-          ? DabblerIcon(
-              'tick-circle',
-              weight: DabblerIconWeight.bold,
-              size: DabblerSizing.iconMd,
-              color: colors.brandPrimary,
-            )
-          : null,
+      selected: isSelected,
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),

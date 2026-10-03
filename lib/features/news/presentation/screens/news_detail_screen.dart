@@ -19,6 +19,16 @@ import 'package:dabbler/features/news/providers/news_comments_provider.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider;
 
+/// The user-agent / accept headers the news CDN requires for cover images —
+/// the map the pre-migration cover `CachedNetworkImage` sent. Flutter web
+/// ignores request headers on image loads.
+const Map<String, String> _coverHeaders = <String, String>{
+  'User-Agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+  'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+};
+
 /// One news story (design X01, "Article").
 class NewsDetailScreen extends ConsumerStatefulWidget {
   const NewsDetailScreen({super.key, required this.item});
@@ -137,6 +147,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                       url: item.coverImageUrl,
                       aspectRatio: 4 / 5,
                       semanticLabel: title,
+                      headers: _coverHeaders,
                     ),
                     const SizedBox(height: DabblerSpacing.space6),
                   ],
@@ -210,13 +221,9 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         semanticLabel: 'Like',
                         onPressed: () =>
                             toggleHomeNewsReaction(ref, item.newsId, mine),
-                      ),
-                      DabblerButton(
-                        label: 'React',
-                        icon: 'emoji-happy',
-                        tone: DabblerButtonTone.secondary,
-                        size: DabblerButtonSize.small,
-                        onPressed: () => showHomeNewsReactionPicker(
+                        // Long-press opens the reaction picker, as the
+                        // original like bar did.
+                        onLongPress: () => showHomeNewsReactionPicker(
                           context,
                           ref,
                           item.newsId,

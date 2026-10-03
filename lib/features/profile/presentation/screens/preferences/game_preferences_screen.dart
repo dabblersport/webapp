@@ -1,4 +1,5 @@
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart'
+    show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -104,11 +105,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
         title: 'Game Preferences',
         onBack: () => context.pop(),
         actions: [
-          DabblerNavigationAction(
-            icon: 'tick-circle',
-            label: 'Save',
-            onPressed: _saveSettings,
-          ),
+          DabblerNavigationAction.text(label: 'Save', onPressed: _saveSettings),
         ],
       ),
       body: ListView(
@@ -135,8 +132,11 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     );
   }
 
-  Widget _icon(BuildContext context, String name) =>
-      DabblerIcon(name, size: 20, color: DabblerColors.of(context).textSecondary);
+  Widget _icon(BuildContext context, String name) => DabblerIcon(
+    name,
+    size: 20,
+    color: DabblerColors.of(context).textSecondary,
+  );
 
   Widget _subheading(BuildContext context, String text) => Padding(
     padding: const EdgeInsetsDirectional.only(
@@ -257,6 +257,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     return DabblerTextField(
       label: label,
       placeholder: '$value min',
+      suffixText: 'min',
       keyboardType: TextInputType.number,
       onChanged: (text) {
         final newValue = int.tryParse(text);

@@ -21,16 +21,16 @@ TextStyle onboardingType(
 
 /// Shows an error toast when a [DabblerToastProvider] is mounted.
 void showOnboardingError(BuildContext context, String message) {
-  DabblerToastProvider.maybeOf(context)?.show(
-    DabblerToastSpec(message: message, tone: DabblerToastTone.error),
-  );
+  DabblerToastProvider.maybeOf(
+    context,
+  )?.show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
 }
 
 /// Shows a warning toast when a [DabblerToastProvider] is mounted.
 void showOnboardingWarning(BuildContext context, String message) {
-  DabblerToastProvider.maybeOf(context)?.show(
-    DabblerToastSpec(message: message, tone: DabblerToastTone.warning),
-  );
+  DabblerToastProvider.maybeOf(
+    context,
+  )?.show(DabblerToastSpec(message: message, tone: DabblerToastTone.warning));
 }
 
 /// The full-page loading state used while a step reads its data.
@@ -129,13 +129,13 @@ class OnboardingStepFrame extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       if (step != null) ...[
-                        DabblerProgressBar(
-                          value: step! / totalSteps,
-                          size: DabblerProgressBarSize.sm,
+                        DabblerStepProgress(
+                          count: totalSteps,
+                          current: (step! - 1).clamp(0, totalSteps - 1),
+                          label: stepLabel,
                         ),
-                        const SizedBox(height: DabblerSpacing.space2),
-                      ],
-                      if (stepLabel != null) ...[
+                        const SizedBox(height: DabblerSpacing.space5),
+                      ] else if (stepLabel != null) ...[
                         Text(
                           stepLabel!.toUpperCase(),
                           style: onboardingType(
@@ -262,10 +262,8 @@ class OnboardingOptionCard extends StatelessWidget {
 /// Maps an app [Sport] row to the DS sport, or null when the system has no
 /// glyph for it. Tries `sport_key`, then the English name, kebab-cased.
 DabblerSport? onboardingDsSport(Sport sport) {
-  String norm(String raw) => raw
-      .trim()
-      .toLowerCase()
-      .replaceAll(RegExp(r'[\s_]+'), '-');
+  String norm(String raw) =>
+      raw.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
   const aliases = <String, DabblerSport>{
     'soccer': DabblerSport.football,
     'ping-pong': DabblerSport.tableTennis,
@@ -312,7 +310,11 @@ class OnboardingSportGlyph extends StatelessWidget {
 
 /// The selected / unselected radio glyph of the design's option rows.
 class OnboardingRadioGlyph extends StatelessWidget {
-  const OnboardingRadioGlyph({super.key, required this.selected, this.size = 22});
+  const OnboardingRadioGlyph({
+    super.key,
+    required this.selected,
+    this.size = 22,
+  });
 
   final bool selected;
   final double size;

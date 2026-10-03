@@ -390,7 +390,6 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final isSelf = _targetProfileId == widget.currentProfileId;
 
     final isFollowingAsync = ref.watch(
@@ -431,24 +430,9 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
         size: DabblerAvatarSize.md,
       ),
       title: _displayName,
+      verified: _verified,
       subtitle: '@$_username',
-      trailing: (!_verified && action == null)
-          ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_verified)
-                  DabblerIcon(
-                    'verify',
-                    size: 16,
-                    color: colors.brandPrimary,
-                    weight: DabblerIconWeight.bold,
-                  ),
-                if (_verified && action != null)
-                  const SizedBox(width: DabblerSpacing.space2),
-                ?action,
-              ],
-            ),
+      trailing: action,
     );
   }
 }

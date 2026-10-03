@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart'
+    show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -29,11 +30,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   bool _includeDeviceInfo = true;
   bool _includeAppLogs = true;
 
-  /// Field errors, shown only after a submit attempt (as the old Form did).
-  String? _emailError;
-  String? _titleError;
-  String? _descriptionError;
-  String? _stepsError;
+  final _formKey = GlobalKey<FormState>();
 
   final List<String> _severityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
@@ -76,34 +73,42 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         title: 'Report a Bug',
         onBack: () => context.pop(),
       ),
-      body: ListView(
+      // A non-lazy scroll view so every field stays mounted for
+      // `Form.validate()`.
+      body: SingleChildScrollView(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
           DabblerSpacing.space4,
           DabblerSpacing.space6,
           DabblerSpacing.space10,
         ),
-        children: [
-          const DabblerBanner(
-            tone: DabblerBannerTone.warning,
-            icon: DabblerIcon('danger', size: 20),
-            title: 'Found a Bug?',
-            message:
-                'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const DabblerBanner(
+                tone: DabblerBannerTone.warning,
+                icon: DabblerIcon('danger', size: 20),
+                title: 'Found a Bug?',
+                message:
+                    'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
+              ),
+              const SizedBox(height: DabblerSpacing.space6),
+              _buildBugReportForm(),
+              const SizedBox(height: DabblerSpacing.space6),
+              _buildDeviceInfoSection(context),
+              const SizedBox(height: DabblerSpacing.space7),
+              DabblerButton(
+                label: 'Submit Bug Report',
+                size: DabblerButtonSize.full,
+                fullWidth: true,
+                loading: _isSubmitting,
+                onPressed: _isSubmitting ? null : _submitBugReport,
+              ),
+            ],
           ),
-          const SizedBox(height: DabblerSpacing.space6),
-          _buildBugReportForm(),
-          const SizedBox(height: DabblerSpacing.space6),
-          _buildDeviceInfoSection(context),
-          const SizedBox(height: DabblerSpacing.space7),
-          DabblerButton(
-            label: 'Submit Bug Report',
-            size: DabblerButtonSize.full,
-            fullWidth: true,
-            loading: _isSubmitting,
-            onPressed: _isSubmitting ? null : _submitBugReport,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -118,7 +123,15 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           label: 'Your Email',
           keyboardType: TextInputType.emailAddress,
           prefixIcon: const DabblerIcon('sms', size: 20),
-          errorText: _emailError,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your email';
+            }
+            if (!value.contains('@')) {
+              return 'Please enter a valid email';
+            }
+            return null;
+          },
         ),
         gap,
         DabblerSelect<String>(
@@ -145,7 +158,12 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           controller: _titleController,
           label: 'Bug Title',
           placeholder: 'Brief description of the issue',
-          errorText: _titleError,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter a bug title';
+            }
+            return null;
+          },
         ),
         gap,
         DabblerTextField(
@@ -154,7 +172,15 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           placeholder: 'Describe what happened and what you expected to happen',
           variant: DabblerTextFieldVariant.multiline,
           rows: 4,
-          errorText: _descriptionError,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please describe the bug';
+            }
+            if (value.length < 20) {
+              return 'Please provide more details (at least 20 characters)';
+            }
+            return null;
+          },
         ),
         gap,
         DabblerTextField(
@@ -163,7 +189,12 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           placeholder: '1. Go to...\n2. Click on...\n3. See error',
           variant: DabblerTextFieldVariant.multiline,
           rows: 4,
-          errorText: _stepsError,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please provide steps to reproduce the bug';
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -183,8 +214,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         DabblerInputRow(
           title: 'Include Device Information',
           subtitle: 'OS version, device model, screen size',
-          onTap: () =>
-              setState(() => _includeDeviceInfo = !_includeDeviceInfo),
+          onTap: () => setState(() => _includeDeviceInfo = !_includeDeviceInfo),
           trailing: DabblerToggle(
             checked: _includeDeviceInfo,
             semanticLabel: 'Include Device Information',
@@ -249,33 +279,8 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
     }
   }
 
-  bool _validate() {
-    final email = _emailController.text;
-    final description = _descriptionController.text;
-    setState(() {
-      _emailError = email.isEmpty
-          ? 'Please enter your email'
-          : (!email.contains('@') ? 'Please enter a valid email' : null);
-      _titleError = _titleController.text.isEmpty
-          ? 'Please enter a bug title'
-          : null;
-      _descriptionError = description.isEmpty
-          ? 'Please describe the bug'
-          : (description.length < 20
-                ? 'Please provide more details (at least 20 characters)'
-                : null);
-      _stepsError = _stepsController.text.isEmpty
-          ? 'Please provide steps to reproduce the bug'
-          : null;
-    });
-    return _emailError == null &&
-        _titleError == null &&
-        _descriptionError == null &&
-        _stepsError == null;
-  }
-
   Future<void> _submitBugReport() async {
-    if (!_validate()) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
