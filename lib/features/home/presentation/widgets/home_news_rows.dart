@@ -1,8 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -12,7 +12,6 @@ import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider, postActionsProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'home_feed_parts.dart';
 
@@ -30,128 +29,60 @@ void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   extra: item,
 );
 
-/// A cover photo clipped to the design system's card radius.
+/// One news story, drawn by [DabblerNewsCard].
 ///
-/// DS GAP: no image / media component. The photo is the article's own content;
-/// it is drawn with the framework image and the DS surface as its placeholder.
-class _Cover extends StatelessWidget {
-  const _Cover({required this.url, required this.radius});
-
-  final String? url;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final placeholder = ColoredBox(color: colors.surfaceSunken);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: url == null
-          ? placeholder
-          : Image.network(
-              url!,
-              headers: _coverHeaders,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => placeholder,
-              loadingBuilder: (_, child, progress) =>
-                  progress == null ? child : placeholder,
-            ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Compact news row (Most Recent feed)
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Compact horizontal news row. Swiping it toward the end calls [onDismiss]
-/// ("Hide news"), exactly as the previous row did.
-class HomeNewsCompactRow extends ConsumerWidget {
-  const HomeNewsCompactRow({super.key, required this.item, this.onDismiss});
+/// REMAINING NON-DS USES (until the design-system team ships them):
+///  * the cover photo — the DS card takes a media widget but there is no image
+///    component yet, so the framework's `Image.network` fills the slot;
+///  * swipe-to-hide on the Most Recent feed — no swipe-to-reveal component yet,
+///    so [Dismissible] provides the gesture, with a DS-painted reveal.
+class HomeNewsCard extends ConsumerWidget {
+  const HomeNewsCard({super.key, required this.item, this.onDismiss});
 
   final FeedNewsItem item;
+
+  /// Set on the Most Recent feed: swiping the story toward the end asks to
+  /// hide news (the callback opens the confirmation sheet).
   final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DabblerColors.of(context);
     final lang = ref.watch(localeProvider).languageCode;
-    final rawBody = item.localizedBody(lang);
-    final preview =
-        rawBody.length > 80 ? '${rawBody.substring(0, 80)}…' : rawBody;
+    final mine = ref.watch(myReactionsProvider(item.newsId)).valueOrNull ??
+        const <String>{};
+    final counts =
+        ref.watch(homeNewsReactionCountsProvider(item.newsId)).valueOrNull ??
+        const <String, int>{};
+    final likes = counts.values.fold<int>(0, (a, b) => a + b);
+    final body = item.localizedBody(lang);
+    final url = item.coverImageUrl;
 
-    final Widget row = GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    final Widget card = DabblerNewsCard(
+      media: url == null
+          ? null
+          : Image.network(
+              url,
+              headers: _coverHeaders,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+      sportLabel: item.feedLabel,
+      title: item.localizedTitle(lang),
+      excerpt: body.isEmpty ? null : body,
+      time: timeago.format(item.createdAt, locale: lang),
+      likes: likes,
+      comments: item.commentCount,
+      views: item.viewCount,
+      liked: mine.isNotEmpty,
       onTap: () => _openNews(context, item),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space6,
-          vertical: DabblerSpacing.space3,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 80,
-              height: 80,
-              child: _Cover(url: item.coverImageUrl, radius: DabblerRadius.lg),
-            ),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 80),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (item.sourceLabel != null)
-                      Text(
-                        item.sourceLabel!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: homeType(
-                          context,
-                          DabblerType.caption1,
-                          colors.brandPrimary,
-                          weight: DabblerType.semibold,
-                        ),
-                      ),
-                    Text(
-                      item.localizedTitle(lang),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: homeType(
-                        context,
-                        DabblerType.subheadline,
-                        colors.textPrimary,
-                        weight: DabblerType.semibold,
-                      ),
-                    ),
-                    if (preview.isNotEmpty)
-                      Text(
-                        preview,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: homeType(
-                          context,
-                          DabblerType.footnote,
-                          colors.textSecondary,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+      onLike: () => toggleHomeNewsReaction(ref, item.newsId, mine),
+      onComment: () => _openNews(context, item),
     );
 
     final VoidCallback? hide = onDismiss;
-    if (hide == null) return row;
+    if (hide == null) return card;
 
-    // `Dismissible` is the framework's swipe behaviour (no visual of its own);
-    // the reveal behind the row is design-system painted. The row never leaves
-    // the list: the callback opens the confirmation sheet.
     return Dismissible(
       key: ValueKey<String>('news-${item.newsId}'),
       direction: DismissDirection.endToStart,
@@ -178,152 +109,13 @@ class HomeNewsCompactRow extends ConsumerWidget {
           ),
         ),
       ),
-      child: row,
+      child: card,
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Full news card (News tab)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class HomeNewsCard extends ConsumerWidget {
-  const HomeNewsCard({super.key, required this.item});
-
-  final FeedNewsItem item;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final lang = ref.watch(localeProvider).languageCode;
-    final body = item.localizedBody(lang);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _openNews(context, item),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space4,
-          vertical: DabblerSpacing.space4,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 4 / 5,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _Cover(url: item.coverImageUrl, radius: DabblerRadius.card),
-                  if (item.feedLabel != null)
-                    PositionedDirectional(
-                      top: DabblerSpacing.space3,
-                      start: DabblerSpacing.space3,
-                      child: DabblerBadge(label: item.feedLabel!),
-                    ),
-                  if (item.isPinned)
-                    PositionedDirectional(
-                      top: DabblerSpacing.space3,
-                      end: DabblerSpacing.space3,
-                      child: DabblerIcon(
-                        'bookmark-2',
-                        size: 18,
-                        color: colors.surfaceCard,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space3,
-                vertical: DabblerSpacing.space3,
-              ),
-              child: Row(
-                children: [
-                  HomeNewsReactionButton(newsId: item.newsId),
-                  const Spacer(),
-                  HomeActionItem(
-                    icon: 'message-text',
-                    count: item.commentCount,
-                    color: colors.textSecondary,
-                  ),
-                  const SizedBox(width: DabblerSpacing.space4),
-                  HomeActionItem(
-                    icon: 'eye',
-                    count: item.viewCount,
-                    color: colors.textSecondary,
-                  ),
-                  const SizedBox(width: DabblerSpacing.space4),
-                  Text(
-                    timeago.format(item.createdAt, locale: lang),
-                    style: homeType(
-                      context,
-                      DabblerType.caption1,
-                      colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (item.sourceLabel != null)
-              Padding(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  horizontal: DabblerSpacing.space3,
-                ),
-                child: Text(
-                  item.sourceLabel!,
-                  style: homeType(
-                    context,
-                    DabblerType.caption1,
-                    colors.brandPrimary,
-                    weight: DabblerType.semibold,
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space3,
-              ),
-              child: Text(
-                item.localizedTitle(lang),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: homeType(
-                  context,
-                  DabblerType.headline,
-                  colors.textPrimary,
-                ),
-              ),
-            ),
-            if (body.isNotEmpty)
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space3,
-                  DabblerSpacing.space1,
-                  DabblerSpacing.space3,
-                  0,
-                ),
-                child: Text(
-                  body,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: homeType(
-                    context,
-                    DabblerType.footnote,
-                    colors.textSecondary,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// News reaction button (tap toggles, long-press opens the picker)
+// News reactions (tap the heart toggles the default reaction)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// The six reactions a news item takes (same ids as the previous like bar).
@@ -362,105 +154,30 @@ final homeNewsReactionCountsProvider = FutureProvider.autoDispose
       return counts;
     });
 
-class HomeNewsReactionButton extends ConsumerWidget {
-  const HomeNewsReactionButton({super.key, required this.newsId});
-
-  final String newsId;
-
-  Future<void> _toggle(
-    WidgetRef ref,
-    _NewsReaction reaction,
-    Set<String> mine,
-  ) async {
-    final actions = ref.read(postActionsProvider.notifier);
-    if (mine.contains(reaction.id)) {
-      await actions.removeReaction(newsId, reaction.id);
-    } else {
-      for (final id in mine) {
-        await actions.removeReaction(newsId, id);
-      }
-      await actions.reactToPost(newsId, reaction.id);
+/// Toggles the user's reaction on a news item: tapping when they have reacted
+/// removes it, otherwise the default (the first) reaction is set.
+Future<void> toggleHomeNewsReaction(
+  WidgetRef ref,
+  String newsId,
+  Set<String> mine,
+) async {
+  final actions = ref.read(postActionsProvider.notifier);
+  if (mine.isNotEmpty) {
+    for (final id in mine) {
+      await actions.removeReaction(newsId, id);
     }
-    ref.invalidate(homeNewsReactionCountsProvider(newsId));
-    ref.invalidate(myReactionsProvider(newsId));
+  } else {
+    await actions.reactToPost(newsId, _newsReactions.first.id);
   }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final mine = ref.watch(myReactionsProvider(newsId)).valueOrNull ?? const <String>{};
-    final counts =
-        ref.watch(homeNewsReactionCountsProvider(newsId)).valueOrNull ?? const {};
-    final active = _newsReactions.firstWhere(
-      (r) => mine.contains(r.id),
-      orElse: () => _newsReactions.first,
-    );
-    final total = counts.values.fold<int>(0, (a, b) => a + b);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _toggle(ref, active, mine),
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-        showDabblerSheet<void>(
-          context: context,
-          title: 'React',
-          detents: const <double>[0.4],
-          builder: (ctx) => Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space6,
-              DabblerSpacing.space2,
-              DabblerSpacing.space6,
-              DabblerSpacing.space8,
-            ),
-            child: Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: [
-                for (final r in _newsReactions)
-                  DabblerChip(
-                    label: '${r.emoji} ${r.label}',
-                    selected: mine.contains(r.id),
-                    onTap: () {
-                      Navigator.of(ctx).pop();
-                      _toggle(ref, r, mine);
-                    },
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DabblerIcon(
-            'heart',
-            weight: mine.isNotEmpty
-                ? DabblerIconWeight.bold
-                : DabblerIconWeight.linear,
-            size: 20,
-            color: mine.isNotEmpty ? colors.brandPrimary : colors.textSecondary,
-          ),
-          if (total > 0) ...[
-            const SizedBox(width: DabblerSpacing.space2),
-            Text(
-              homeCompactCount(total),
-              style: homeType(context, DabblerType.caption1, colors.textSecondary),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  ref.invalidate(homeNewsReactionCountsProvider(newsId));
+  ref.invalidate(myReactionsProvider(newsId));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Activity row (Following)
+// Activity (Following)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// A `public_activities` row: avatar, "name action · time", and the news item it
-/// points at when it is a comment on one.
+/// A `public_activities` row, drawn by [DabblerActivityRow].
 class HomeActivityRow extends StatelessWidget {
   const HomeActivityRow({super.key, required this.activity});
 
@@ -468,98 +185,23 @@ class HomeActivityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final hasNewsTarget =
         activity.activityType == PublicActivityType.comment &&
         activity.targetNewsId != null;
     final newsTitle = activity.localizedTargetTitle(locale);
-    final base = homeType(context, DabblerType.subheadline, colors.textPrimary);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space6,
-          vertical: DabblerSpacing.space4,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HomeAvatar(
-              name: activity.actorUsername,
-              imageUrl: activity.actorAvatarUrl,
-            ),
-            const SizedBox(width: DabblerSpacing.space3),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text.rich(
-                    TextSpan(
-                      style: base,
-                      children: [
-                        TextSpan(
-                          text: activity.actorUsername,
-                          style: base.copyWith(fontWeight: DabblerType.semibold),
-                        ),
-                        TextSpan(text: ' ${activity.actionLabel}'),
-                        TextSpan(
-                          text:
-                              '  ·  ${timeago.format(activity.createdAt, allowFromNow: true, locale: locale)}',
-                          style: homeType(
-                            context,
-                            DabblerType.caption1,
-                            colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (hasNewsTarget && newsTitle.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        top: DabblerSpacing.space2,
-                      ),
-                      child: DabblerCard(
-                        padding: const EdgeInsets.all(DabblerSpacing.space3),
-                        child: Row(
-                          children: [
-                            if (activity.targetCoverImageUrl != null) ...[
-                              SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: _Cover(
-                                  url: activity.targetCoverImageUrl,
-                                  radius: DabblerRadius.sm,
-                                ),
-                              ),
-                              const SizedBox(width: DabblerSpacing.space2),
-                            ],
-                            Expanded(
-                              child: Text(
-                                newsTitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: homeType(
-                                  context,
-                                  DabblerType.footnote,
-                                  colors.textSecondary,
-                                  weight: DabblerType.medium,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return DabblerActivityRow(
+      leading: DabblerAvatar(
+        seed: activity.actorUsername,
+        imageUrl: activity.actorAvatarUrl,
+        size: DabblerAvatarSize.sm,
       ),
+      actor: activity.actorUsername,
+      verb: activity.actionLabel,
+      subject: hasNewsTarget && newsTitle.isNotEmpty ? newsTitle : null,
+      when: timeago.format(activity.createdAt, allowFromNow: true, locale: locale),
+      onTap: hasNewsTarget ? () => _navigateToNews(context) : null,
     );
   }
 

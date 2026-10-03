@@ -4,8 +4,6 @@ import 'package:dabbler/data/models/feed/feed_item.dart';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart'
-    show RefreshIndicator, TabBarView, TabController;
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +17,6 @@ import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
-import 'package:dabbler/features/home/presentation/widgets/home_feed_parts.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
@@ -48,25 +45,23 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen>
-    with RouteAware, TickerProviderStateMixin {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final AuthService _authService = AuthService();
   final DabblerToastController _toasts = DabblerToastController();
   UserProfile? _userProfile;
 
   // ── Tab controller ──────────────────────────────────────────────────────────
-  late final TabController _tabController;
+  int _activeIndex = 0;
   static const List<FeedTab> _tabs = FeedTab.values;
 
   // One scroll controller per tab for independent pagination.
   late final List<ScrollController> _scrollControllers;
 
-  FeedTab get _activeTab => _tabs[_tabController.index];
+  FeedTab get _activeTab => _tabs[_activeIndex];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
     _scrollControllers = List.generate(_tabs.length, (_) => ScrollController());
 
     // Attach pagination listeners to each scroll controller.
@@ -75,9 +70,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       final sc = _scrollControllers[i];
       sc.addListener(() => _onScroll(tab, sc));
     }
-
-    // Tab switch → ensure the newly visible tab is loaded (lazy load).
-    _tabController.addListener(_onTabChanged);
 
     _loadUserProfile();
     _checkNotificationPermission();
@@ -102,9 +94,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     for (final sc in _scrollControllers) {
       sc.dispose();
     }
-    _tabController
-      ..removeListener(_onTabChanged)
-      ..dispose();
     AppRouter.routeObserver.unsubscribe(this);
     _toasts.dispose();
     super.dispose();
@@ -230,8 +219,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
-  void _onTabChanged() {
-    if (_tabController.indexIsChanging) return;
+  /// A tab became visible — remember it and lazily load it the first time.
+  void _onTabChanged(int index) {
+    setState(() => _activeIndex = index);
     final tab = _activeTab;
     // Lazily load each tab the first time it is shown.
     switch (tab) {
@@ -310,35 +300,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildHeader() {
-    return _HomeHeader(
-      displayName: _userProfile?.getFullName(),
-      avatarUrl: _userProfile?.avatarUrl,
-    );
-  }
-
-  Widget _buildTabBar() {
-    final l = AppLocalizations.of(context);
-    return AnimatedBuilder(
-      animation: _tabController,
-      builder: (context, _) {
-        return DabblerTabs(
-          scrollable: true,
-          items: <DabblerTabItem>[
-            for (final tab in _tabs)
-              DabblerTabItem(id: tab.name, label: tab.label(l)),
-          ],
-          value: _activeTab.name,
-          onChanged: (id) => _tabController.animateTo(
-            _tabs.indexWhere((tab) => tab.name == id),
-          ),
-        );
-      },
-    );
+    return _HomeHeader(displayName: _userProfile?.getFullName());
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
+    final l = AppLocalizations.of(context);
     final forYouState = ref.watch(feedNotifierProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
@@ -348,65 +316,72 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         color: colors.bgPrimary,
         child: Stack(
           children: [
-            NestedScrollView(
-              // Each tab has its own controller; NestedScrollView uses the
-              // header region for the top bar + tab bar.
-              headerSliverBuilder: (_, innerBoxIsScrolled) => [
-                if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _TabBarDelegate(
-                    tabBar: _buildTabBar(),
-                    background: colors.bgPrimary,
+            Column(
+              children: [
+                if (!isWide) _buildHeader(),
+                Expanded(
+                  // The DS rows and tabs carry no screen gutter of their own.
+                  child: Padding(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                      horizontal: DabblerSpacing.space6,
+                    ),
+                    child: DabblerTabPager(
+                      scrollable: true,
+                      onChanged: _onTabChanged,
+                      items: <DabblerTabItem>[
+                        for (final tab in _tabs)
+                          DabblerTabItem(id: tab.name, label: tab.label(l)),
+                      ],
+                      pages: [
+                        _ForYouTabBody(
+                          state: forYouState,
+                          scrollController: _scrollControllers[0],
+                          onRefresh: _handleRefresh,
+                          onRetry: () =>
+                              ref.read(feedNotifierProvider.notifier).load(),
+                          onClearBadge: () => ref
+                              .read(feedNotifierProvider.notifier)
+                              .clearNewPostsBadge(),
+                        ),
+                        _FollowingFeedTabBody(
+                          scrollController: _scrollControllers[1],
+                          onRefresh: _handleRefresh,
+                          onRetry: () {
+                            ref.read(followingFeedProvider.notifier).load();
+                            ref
+                                .read(followingActivitiesProvider.notifier)
+                                .load();
+                          },
+                        ),
+                        _NearbyFeedTabBody(
+                          state: ref.watch(nearbyFeedProvider),
+                          scrollController: _scrollControllers[2],
+                          onRefresh: _handleRefresh,
+                          onRetry: () =>
+                              ref.read(nearbyFeedProvider.notifier).load(),
+                        ),
+                        _ActiveFeedTabBody(
+                          state: ref.watch(activeFeedProvider),
+                          scrollController: _scrollControllers[3],
+                          onRefresh: _handleRefresh,
+                          onRetry: () =>
+                              ref.read(activeFeedProvider.notifier).load(),
+                        ),
+                        _NewsFeedTabBody(
+                          state: ref.watch(newsTabFeedProvider),
+                          scrollController: _scrollControllers[4],
+                          onRefresh: _handleRefresh,
+                          onRetry: () =>
+                              ref.read(newsTabFeedProvider.notifier).load(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-              body: TabBarView(
-                controller: _tabController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _ForYouTabBody(
-                    state: forYouState,
-                    scrollController: _scrollControllers[0],
-                    onRefresh: _handleRefresh,
-                    onRetry: () =>
-                        ref.read(feedNotifierProvider.notifier).load(),
-                    onClearBadge: () => ref
-                        .read(feedNotifierProvider.notifier)
-                        .clearNewPostsBadge(),
-                  ),
-                  _FollowingFeedTabBody(
-                    scrollController: _scrollControllers[1],
-                    onRefresh: _handleRefresh,
-                    onRetry: () {
-                      ref.read(followingFeedProvider.notifier).load();
-                      ref.read(followingActivitiesProvider.notifier).load();
-                    },
-                  ),
-                  _NearbyFeedTabBody(
-                    state: ref.watch(nearbyFeedProvider),
-                    scrollController: _scrollControllers[2],
-                    onRefresh: _handleRefresh,
-                    onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
-                  ),
-                  _ActiveFeedTabBody(
-                    state: ref.watch(activeFeedProvider),
-                    scrollController: _scrollControllers[3],
-                    onRefresh: _handleRefresh,
-                    onRetry: () => ref.read(activeFeedProvider.notifier).load(),
-                  ),
-                  _NewsFeedTabBody(
-                    state: ref.watch(newsTabFeedProvider),
-                    scrollController: _scrollControllers[4],
-                    onRefresh: _handleRefresh,
-                    onRetry: () =>
-                        ref.read(newsTabFeedProvider.notifier).load(),
-                  ),
-                ],
-              ),
             ),
             // New-posts indicator floats over the For You tab.
-            if (forYouState.hasNewPosts && _tabController.index == 0)
+            if (forYouState.hasNewPosts && _activeIndex == 0)
               SafeArea(
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -433,65 +408,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 } // end _HomeScreenState
-
-// ────────────────────────────────────────────────────────────────────────────
-// SliverPersistentHeaderDelegate for the sticky TabBar
-// ────────────────────────────────────────────────────────────────────────────
-class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate({required this.tabBar, required this.background});
-
-  final Widget tabBar;
-  final Color background;
-
-  @override
-  double get minExtent => 56;
-
-  @override
-  double get maxExtent => 56;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    // Fill the whole extent: the sliver's paint extent must cover its layout
-    // extent. DabblerTabs draws its own baseline track; no extra divider.
-    return SizedBox.expand(
-      child: ColoredBox(
-        color: background,
-        child: Align(alignment: Alignment.bottomCenter, child: tabBar),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_TabBarDelegate oldDelegate) =>
-      oldDelegate.background != background || oldDelegate.tabBar != tabBar;
-}
-
-/// Pull-to-refresh with the design-system colours.
-///
-/// DS GAP: the package has no pull-to-refresh. The framework's behaviour is
-/// kept so refresh keeps working; its only visible part, the spinner, is
-/// painted with design-system tokens instead of Material defaults.
-class _HomeRefresh extends StatelessWidget {
-  const _HomeRefresh({required this.onRefresh, required this.child});
-
-  final Future<void> Function() onRefresh;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      color: colors.brandPrimary,
-      backgroundColor: colors.surfaceCard,
-      child: child,
-    );
-  }
-}
 
 // ────────────────────────────────────────────────────────────────────────────
 // For You tab — wraps existing FeedState (PostFeed + badge)
@@ -559,7 +475,7 @@ class _ForYouTabBody extends ConsumerWidget {
         .toList();
     final itemCount = feedItems.length + (state.isLoadingMore ? 1 : 0);
 
-    return _HomeRefresh(
+    return DabblerRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -572,12 +488,12 @@ class _ForYouTabBody extends ConsumerWidget {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
-              );
+            );
           }
           final item = feedItems[index];
           if (item is FeedPostItem) return HomePostRow.resolve(item.post);
           if (item is FeedNewsItem) {
-            return HomeNewsCompactRow(
+            return HomeNewsCard(
               item: item,
               onDismiss: () => _confirmUnsubscribe(context, ref),
             );
@@ -692,10 +608,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
 
     if (merged.isEmpty) {
       if (postState.error != null) {
-        return _ErrorView(
-          message: postState.error!,
-          onRetry: onRetry,
-        );
+        return _ErrorView(message: postState.error!, onRetry: onRetry);
       }
       return const _EmptyView(
         iconName: 'document-text',
@@ -707,7 +620,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
     final isLoadingMore = postState.isLoadingMore;
     final itemCount = merged.length + (isLoadingMore ? 1 : 0);
 
-    return _HomeRefresh(
+    return DabblerRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -720,12 +633,13 @@ class _FollowingFeedTabBody extends ConsumerWidget {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
-              );
+            );
           }
           final entry = merged[index];
           return switch (entry) {
-            _ActivityEntry(:final activity) =>
-              HomeActivityRow(activity: activity),
+            _ActivityEntry(:final activity) => HomeActivityRow(
+              activity: activity,
+            ),
             _PostEntry(:final post) => HomePostRow.resolve(post),
           };
         },
@@ -792,7 +706,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
     final events = state.events;
     final itemCount = events.length + (state.isLoadingMore ? 1 : 0);
 
-    return _HomeRefresh(
+    return DabblerRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -800,8 +714,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         itemCount: itemCount,
         separatorBuilder: (_, index) {
-          if (index < events.length &&
-              events[index] is PostCreatedEvent) {
+          if (index < events.length && events[index] is PostCreatedEvent) {
             return const DabblerDivider();
           }
           return const SizedBox(height: DabblerSpacing.space2);
@@ -811,7 +724,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
-              );
+            );
           }
           return ActiveEventCard(event: events[index]);
         },
@@ -857,7 +770,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
     final posts = state.posts;
     final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
 
-    return _HomeRefresh(
+    return DabblerRefresh(
       onRefresh: onRefresh,
       child: ListView.separated(
         controller: scrollController,
@@ -870,9 +783,12 @@ class _NearbyFeedTabBody extends StatelessWidget {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
-              );
+            );
           }
-          return HomePostRow.resolve(posts[index], showNearbyChipInHeader: true);
+          return HomePostRow.resolve(
+            posts[index],
+            showNearbyChipInHeader: true,
+          );
         },
       ),
     );
@@ -898,11 +814,7 @@ class _EmptyView extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space10),
-        child: DabblerEmptyState(
-          icon: iconName,
-          title: message,
-          text: hint,
-        ),
+        child: DabblerEmptyState(icon: iconName, title: message, text: hint),
       ),
     );
   }
@@ -1018,7 +930,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
     final headerCount = isUnsubscribed ? 2 : 1;
     final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
 
-    return _HomeRefresh(
+    return DabblerRefresh(
       onRefresh: onRefresh,
       child: ListView.builder(
         controller: scrollController,
@@ -1034,8 +946,9 @@ class _NewsFeedTabBody extends ConsumerWidget {
                 if (context.mounted) {
                   DabblerToastProvider.of(context).show(
                     DabblerToastSpec(
-                      message:
-                          AppLocalizations.of(context).news_resubscribed_snack,
+                      message: AppLocalizations.of(
+                        context,
+                      ).news_resubscribed_snack,
                       duration: const Duration(seconds: 3),
                     ),
                   );
@@ -1048,7 +961,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
-              );
+            );
           }
           return HomeNewsCard(item: filtered[i]);
         },
@@ -1068,9 +981,9 @@ class _NewsResubscribeBanner extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
+        0,
         DabblerSpacing.space1,
-        DabblerSpacing.space6,
+        0,
         DabblerSpacing.space2,
       ),
       child: DabblerBanner(
@@ -1107,13 +1020,12 @@ class _NewsFilterChips extends ConsumerWidget {
         .toList();
 
     // Distinct regions from loaded news
-    final regions = state.items
-        .expand((e) => e.regions)
-        .toSet()
-        .toList()
+    final regions = state.items.expand((e) => e.regions).toSet().toList()
       ..sort();
 
-    if (interestSports.isEmpty && regions.isEmpty) return const SizedBox.shrink();
+    if (interestSports.isEmpty && regions.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     Widget chip(String label, bool selected, VoidCallback onTap) => Padding(
       padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
@@ -1123,9 +1035,9 @@ class _NewsFilterChips extends ConsumerWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
+        0,
         DabblerSpacing.space3,
-        DabblerSpacing.space6,
+        0,
         DabblerSpacing.space2,
       ),
       child: Row(
@@ -1174,20 +1086,17 @@ class _NewsFilterChips extends ConsumerWidget {
 // Header — wordmark + location row, search / notifications / avatar
 // ────────────────────────────────────────────────────────────────────────────
 class _HomeHeader extends ConsumerWidget {
-  const _HomeHeader({this.displayName, this.avatarUrl});
+  const _HomeHeader({this.displayName});
 
   final String? displayName;
-
-  /// The user's photo. DS GAP: [DabblerAvatar] has no image-URL form, so the
-  /// photo is drawn over the bar's seed avatar when present.
-  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DabblerColors.of(context);
     final direction = Directionality.of(context);
     final profile = ref.watch(profileControllerProvider).profile;
-    final name = displayName ?? profile?.displayName ?? profile?.username ?? 'User';
+    final name =
+        displayName ?? profile?.displayName ?? profile?.username ?? 'User';
     final unread = ref.watch(unreadNotificationCountProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
     final locationName = locState is ActiveLocationReady
@@ -1235,73 +1144,27 @@ class _HomeHeader extends ConsumerWidget {
       ],
     );
 
-    // DS GAPS, handled with the bar's own published geometry (no guessed
-    // offsets): the top bar's action has no dot slot, and its avatar is
-    // seed-only. The design's 9px unread dot is laid on the bell's top-end
-    // corner, and the user's real photo (when there is one) is laid exactly over
-    // the bar's 36px seed avatar. Both ignore pointers, so taps still reach the
-    // bar's own buttons.
-    const glyph = DabblerNavigationTopBar.actionGlyphSize;
-    final topInset = MediaQuery.paddingOf(context).top;
-    final avatarBox = DabblerSizing.touchTargetMin;
-    final avatarEnd = DabblerNavigationTopBar.barPaddingInline +
-        (avatarBox - DabblerAvatarSize.sm.diameter) / 2;
-    final dotTop = topInset + (DabblerNavigationTopBar.barHeight - glyph) / 2;
-    final dotEnd = DabblerNavigationTopBar.barPaddingInline +
-        avatarBox +
-        (DabblerNavigationTopBar.actionTarget.width - glyph) / 2 -
-        DabblerSpacing.space1;
-    final photoUrl = avatarUrl ?? profile?.avatarUrl;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        DabblerNavigationTopBar(
-          leading: leading,
-          actions: [
-            DabblerNavigationAction(
-              icon: 'search-normal',
-              label: 'Search',
-              onPressed: () => context.push(RoutePaths.socialSearch),
-            ),
-            DabblerNavigationAction(
-              icon: 'notification-bing',
-              label: unread > 0 ? 'Notifications, $unread unread' : 'Notifications',
-              onPressed: () => context.push(RoutePaths.notifications),
-            ),
-          ],
-          avatarSeed: name,
-          avatarLabel: name,
-          onAvatarPressed: () => context.push(RoutePaths.profile),
+    return DabblerNavigationTopBar(
+      leading: leading,
+      actions: [
+        DabblerNavigationAction(
+          icon: 'search-normal',
+          label: 'Search',
+          onPressed: () => context.push(RoutePaths.socialSearch),
         ),
-        if (photoUrl != null && photoUrl.isNotEmpty)
-          PositionedDirectional(
-            end: avatarEnd,
-            top: topInset +
-                (DabblerNavigationTopBar.barHeight -
-                        DabblerAvatarSize.sm.diameter) /
-                    2,
-            child: IgnorePointer(child: HomeAvatar(name: name, imageUrl: photoUrl)),
-          ),
-        if (unread > 0)
-          PositionedDirectional(
-            top: dotTop,
-            end: dotEnd,
-            child: IgnorePointer(
-              child: SizedBox(
-                key: const Key('home-unread-dot'),
-                width: 9,
-                height: 9,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: colors.brandPrimary,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        DabblerNavigationAction(
+          icon: 'notification-bing',
+          label: 'Notifications',
+          unread: unread > 0,
+          unreadLabel: unread > 0 ? '$unread unread' : null,
+          onPressed: () => context.push(RoutePaths.notifications),
+        ),
       ],
+      // DS GAP: the top bar's avatar is seed-only, so the user's photo is not
+      // shown here until the bar accepts an image URL.
+      avatarSeed: name,
+      avatarLabel: name,
+      onAvatarPressed: () => context.push(RoutePaths.profile),
     );
   }
 

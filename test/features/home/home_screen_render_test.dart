@@ -120,7 +120,7 @@ final FeedData _feed = FeedData(
       isPinned: false,
       priorityScore: 0,
       createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      sourceLabel: 'Gulf Sport',
+      feedLabel: 'Padel',
     ),
     FeedPostItem(
       _post(

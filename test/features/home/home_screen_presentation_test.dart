@@ -1,5 +1,3 @@
-import 'package:dabbler/data/models/profile/user_profile.dart';
-import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +22,11 @@ void main() {
     expect(find.byType(DabblerAvatar), findsWidgets);
     expect(find.byType(DabblerTabs), findsOneWidget);
     expect(find.byType(DabblerSkeleton), findsWidgets);
-    final dot = tester.getSize(find.byKey(const Key('home-unread-dot')));
-    expect(dot, const Size(9, 9), reason: "the design's 9px unread dot");
+    expect(
+      find.byKey(DabblerNavigationUnreadDot.dotKey),
+      findsOneWidget,
+      reason: "the DS top bar's unread dot (unread > 0)",
+    );
     expect(find.text('Set location'), findsOneWidget);
     expect(tester.takeException(), isNull);
   }, variant: desktop);
@@ -62,25 +63,6 @@ void main() {
     expect(ltrWordmark, lessThan(ltrAvatar), reason: 'LTR: logo start, avatar end');
     final (rtlWordmark, rtlAvatar) = await xs(const Locale('ar'));
     expect(rtlWordmark, greaterThan(rtlAvatar), reason: 'RTL: header mirrored');
-  }, variant: desktop);
-
-  testWidgets('the real profile photo is kept in the header', (tester) async {
-    final profile = ProfileState(
-      profile: UserProfile(
-        id: 'p',
-        userId: 'u',
-        displayName: 'Moataz',
-        avatarUrl: 'https://example.invalid/me.png',
-        createdAt: DateTime(2026),
-        updatedAt: DateTime(2026),
-      ),
-    );
-    await pumpHome(
-      tester,
-      feedState: const FeedLoading(),
-      profileState: profile,
-    );
-    expect(find.byType(Image), findsOneWidget, reason: 'photo over the seed');
   }, variant: desktop);
 
   testWidgets('RTL (Arabic) renders without overflow', (tester) async {

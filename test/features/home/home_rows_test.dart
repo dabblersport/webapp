@@ -2,7 +2,6 @@ import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
-import 'package:dabbler/features/home/presentation/widgets/home_feed_parts.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -125,28 +124,39 @@ void main() {
   ) async {
     final visited = await _pump(tester, HomePostRow(post: _post()));
     expect(find.text('Suraj Mehta'), findsOneWidget);
-    expect(find.text('Anyone playing cricket in Dubai this weekend?'), findsOneWidget);
-    expect(find.text('Cricket'), findsOneWidget, reason: 'sport DabblerBadge');
-    expect(find.byType(DabblerBadge), findsWidgets);
+    expect(
+      find.textContaining('Anyone playing cricket', findRichText: true),
+      findsOneWidget,
+      reason: 'body as DabblerPostRow runs',
+    );
+    expect(find.text('Cricket'), findsOneWidget, reason: 'sport label');
+    expect(find.byType(DabblerPostRow), findsOneWidget);
     expect(find.byType(DabblerAvatar), findsOneWidget);
     expect(find.text('12'), findsOneWidget, reason: 'like count');
-    expect(find.text('#cricket'), findsOneWidget);
+    expect(
+      find.textContaining('#cricket', findRichText: true),
+      findsOneWidget,
+      reason: 'hashtag runs',
+    );
+    expect(find.byType(DabblerPostRow), findsOneWidget);
     _noMaterialVisuals();
 
-    await tester.tap(find.text('Anyone playing cricket in Dubai this weekend?'));
+    await tester.tap(
+      find.textContaining('Anyone playing cricket', findRichText: true),
+    );
     await tester.pumpAndSettle();
     expect(visited.last, contains('${RoutePaths.socialPostDetail}/p1'));
   });
 
-  testWidgets('a post photo keeps the photo, no photo falls back to the seed', (
+  testWidgets('DabblerAvatar(imageUrl:) draws the photo; no URL falls back to the seed', (
     tester,
   ) async {
     await _pump(
       tester,
       Column(
         children: const [
-          HomeAvatar(name: 'With Photo', imageUrl: 'https://example.invalid/a.png'),
-          HomeAvatar(name: 'No Photo'),
+          DabblerAvatar(seed: 'With Photo', imageUrl: 'https://example.invalid/a.png'),
+          DabblerAvatar(seed: 'No Photo'),
         ],
       ),
     );
@@ -154,7 +164,7 @@ void main() {
     expect(find.byType(DabblerAvatar), findsWidgets, reason: 'seed fallback');
   });
 
-  testWidgets('HomeNewsCompactRow opens the news detail and offers hide', (
+  testWidgets('a news story is a DabblerNewsCard that opens the detail and can be hidden', (
     tester,
   ) async {
     var hidden = 0;
@@ -170,14 +180,14 @@ void main() {
       isPinned: false,
       priorityScore: 0,
       createdAt: DateTime.now(),
-      sourceLabel: 'Gulf Sport',
+      feedLabel: 'Padel',
     );
     final visited = await _pump(
       tester,
-      HomeNewsCompactRow(item: item, onDismiss: () => hidden++),
+      HomeNewsCard(item: item, onDismiss: () => hidden++),
     );
     expect(find.text('Transfer window opens'), findsOneWidget);
-    expect(find.text('Gulf Sport'), findsOneWidget);
+    expect(find.byType(DabblerNewsCard), findsOneWidget);
     _noMaterialVisuals();
     await tester.drag(find.text('Transfer window opens'), const Offset(-300, 0));
     await tester.pumpAndSettle();
@@ -210,6 +220,9 @@ void main() {
       locale: const Locale('ar'),
     );
     expect(tester.takeException(), isNull);
-    expect(find.text('مرحبا يا لاعبين'), findsOneWidget);
+    expect(
+      find.textContaining('مرحبا يا لاعبين', findRichText: true),
+      findsOneWidget,
+    );
   });
 }

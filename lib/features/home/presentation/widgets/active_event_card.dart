@@ -11,7 +11,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'home_post_row.dart';
 
 /// Top-level router — dispatches each sealed [ActiveEvent] variant to its
-/// dedicated card widget. Exhaustive: a new variant is a compile error.
+/// card. Exhaustive: a new variant is a compile error.
 class ActiveEventCard extends StatelessWidget {
   const ActiveEventCard({super.key, required this.event});
 
@@ -28,10 +28,6 @@ class ActiveEventCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 String _ago(DateTime dt) {
   final diff = DateTime.now().difference(dt);
   if (diff.inMinutes < 1) return 'just now';
@@ -41,208 +37,61 @@ String _ago(DateTime dt) {
   return DateFormat('MMM d').format(dt);
 }
 
-/// A [DabblerType] step resolved for the ambient direction, in [color].
-TextStyle _type(
-  BuildContext context,
-  DabblerTypeStyle step,
-  Color color, {
-  FontWeight? weight,
-}) => step
-    .resolveForDirection(Directionality.of(context))
-    .copyWith(color: color, fontWeight: weight);
-
-const double _gutter = DabblerSpacing.space6;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. GroupedJoinCard  (player_joined_game)
-// ─────────────────────────────────────────────────────────────────────────────
-
+/// Players joined a game (`player_joined_game`).
+///
+/// REMAINING NON-DS USE: the joined players' photos. `DabblerAvatarGroup` takes
+/// seeds and an overflow count only, so the group shows the count (design-system
+/// team: avatar-group images).
 class GroupedJoinCard extends StatelessWidget {
   const GroupedJoinCard({super.key, required this.event});
   final PlayerJoinedEvent event;
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     final int count = event.joinCount;
-    final bool isGrouped = count > 1;
     final String? gameId = event.gameId;
-
-    final String title = isGrouped
-        ? '$count players joined this game'
-        : 'A player joined this game';
-    final String meta = <String>[
-      if (event.sport != null) event.sport!,
-      if (event.venueName != null) event.venueName!,
-      _ago(event.createdAt),
-    ].join(' · ');
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: _gutter,
-        vertical: DabblerSpacing.space1,
-      ),
-      child: DabblerCard(
-        onTap: gameId != null
-            ? () => context.push(RoutePaths.gameDetail(gameId))
-            : null,
-        enabled: gameId != null,
-        padding: const EdgeInsets.all(DabblerSpacing.space4),
-        child: Row(
-          children: <Widget>[
-            const DabblerIconTile.named('flash'),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    title,
-                    style: _type(
-                      context,
-                      DabblerType.subheadline,
-                      colors.textPrimary,
-                      weight: DabblerType.semibold,
-                    ),
-                  ),
-                  if (event.gameTitle != null)
-                    Text(
-                      event.gameTitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: _type(
-                        context,
-                        DabblerType.footnote,
-                        colors.textSecondary,
-                      ),
-                    ),
-                  if (event.venueName != null || event.sport != null)
-                    Text(
-                      meta,
-                      style: _type(
-                        context,
-                        DabblerType.caption1,
-                        colors.textTertiary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (isGrouped) ...<Widget>[
-              const SizedBox(width: DabblerSpacing.space2),
-              DabblerBadge(label: '+$count'),
-            ],
-          ],
-        ),
-      ),
+    return DabblerActivityRow(
+      leading: count > 1
+          ? DabblerAvatarGroup(overflow: count)
+          : const DabblerActivitySystemTile('flash'),
+      actor: count > 1 ? '$count players' : 'A player',
+      verb: 'joined this game',
+      subject: event.gameTitle,
+      place: event.venueName,
+      when: _ago(event.createdAt),
+      sportLabel: event.sport,
+      onTap: gameId != null
+          ? () => context.push(RoutePaths.gameDetail(gameId))
+          : null,
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 2. GameCard  (game_created)
-// ─────────────────────────────────────────────────────────────────────────────
-
+/// A game was created (`game_created`), with its "Join Game" action.
 class GameCard extends StatelessWidget {
   const GameCard({super.key, required this.event});
   final GameCreatedEvent event;
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     final String? gameId = event.gameId;
     void open() => context.push(RoutePaths.gameDetail(gameId!));
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: _gutter,
-        vertical: DabblerSpacing.space1,
-      ),
-      child: DabblerCard(
-        onTap: gameId != null ? open : null,
-        enabled: gameId != null,
-        padding: const EdgeInsets.all(_gutter),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    event.gameTitle ?? 'New Game',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: _type(
-                      context,
-                      DabblerType.headline,
-                      colors.textPrimary,
-                    ),
-                  ),
-                ),
-                if (event.sport != null) ...<Widget>[
-                  const SizedBox(width: DabblerSpacing.space2),
-                  DabblerBadge(label: event.sport!),
-                ],
-              ],
-            ),
-            if (event.venueName != null) ...<Widget>[
-              const SizedBox(height: DabblerSpacing.space2),
-              Row(
-                children: <Widget>[
-                  DabblerIcon(
-                    'location',
-                    size: 16,
-                    color: colors.textSecondary,
-                  ),
-                  const SizedBox(width: DabblerSpacing.space2),
-                  Expanded(
-                    child: Text(
-                      event.venueName!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: _type(
-                        context,
-                        DabblerType.footnote,
-                        colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: DabblerSpacing.space2),
-            Row(
-              children: <Widget>[
-                DabblerIcon('clock', size: 16, color: colors.textSecondary),
-                const SizedBox(width: DabblerSpacing.space2),
-                Text(
-                  _ago(event.createdAt),
-                  style: _type(
-                    context,
-                    DabblerType.footnote,
-                    colors.textSecondary,
-                  ),
-                ),
-                const Spacer(),
-                DabblerButton(
-                  label: 'Join Game',
-                  size: DabblerButtonSize.small,
-                  onPressed: gameId != null ? open : null,
-                  disabled: gameId == null,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    return DabblerActivityRow(
+      leading: const DabblerActivitySystemTile('game'),
+      actor: event.gameTitle ?? 'New Game',
+      verb: 'is open',
+      place: event.venueName,
+      when: _ago(event.createdAt),
+      sportLabel: event.sport,
+      actionLabel: 'Join Game',
+      actionFilled: true,
+      onAction: gameId != null ? open : null,
+      onTap: gameId != null ? open : null,
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. PostCard  (post_created) — renders the real Post via resolvePostLayout
-// ─────────────────────────────────────────────────────────────────────────────
-
+/// A new post (`post_created`) — the real post, through the Home post row.
 class PostCard extends ConsumerWidget {
   const PostCard({super.key, required this.event});
   final PostCreatedEvent event;
@@ -265,69 +114,27 @@ class PostCard extends ConsumerWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. NewUserCard  (user_joined)
-// ─────────────────────────────────────────────────────────────────────────────
-
+/// Someone joined Dabbler (`user_joined`).
 class NewUserCard extends StatelessWidget {
   const NewUserCard({super.key, required this.event});
   final NewUserEvent event;
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     final String name = event.displayName ?? 'Someone';
-    final TextStyle base = _type(
-      context,
-      DabblerType.subheadline,
-      colors.textPrimary,
-    );
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return DabblerActivityRow(
+      leading: DabblerAvatar(
+        seed: name,
+        imageUrl: event.avatarUrl,
+        size: DabblerAvatarSize.sm,
+      ),
+      actor: name,
+      verb: 'joined Dabbler',
+      subject: event.sport,
+      when: _ago(event.createdAt),
       onTap: event.profileId != null
           ? () => context.push(RoutePaths.profile)
           : null,
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: _gutter,
-          vertical: DabblerSpacing.space2,
-        ),
-        child: Row(
-          children: <Widget>[
-            DabblerAvatar(seed: name, size: DabblerAvatarSize.sm),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  style: base,
-                  children: <InlineSpan>[
-                    TextSpan(
-                      text: name,
-                      style: base.copyWith(fontWeight: DabblerType.semibold),
-                    ),
-                    const TextSpan(text: ' joined Dabbler'),
-                    if (event.sport != null)
-                      TextSpan(
-                        text: ' · ${event.sport}',
-                        style: base.copyWith(color: colors.textSecondary),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: DabblerSpacing.space2),
-            Text(
-              _ago(event.createdAt),
-              style: _type(
-                context,
-                DabblerType.footnote,
-                colors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
