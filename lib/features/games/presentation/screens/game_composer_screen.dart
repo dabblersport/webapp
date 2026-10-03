@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,7 +13,6 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show activeChallengeSportsByProfileCountryProvider;
 import 'package:dabbler/services/moderation_service.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -573,11 +573,11 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       context.pop(true);
     } else {
       final err = ref.read(_gameComposerProvider).error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(err ??
-              (_isEditing ? 'Failed to save changes' : 'Failed to create game')),
-          backgroundColor: Theme.of(context).colorScheme.error,
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: err ??
+              (_isEditing ? 'Failed to save changes' : 'Failed to create game'),
+          tone: DabblerToastTone.error,
         ),
       );
     }
@@ -587,6 +587,13 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(_gameComposerProvider);
     final notifier = ref.read(_gameComposerProvider.notifier);
+    const gutter = EdgeInsetsDirectional.symmetric(
+      horizontal: DabblerSpacing.space8,
+    );
+    const block = EdgeInsetsDirectional.symmetric(
+      horizontal: DabblerSpacing.space8,
+      vertical: DabblerSpacing.space4,
+    );
 
     return ComposerDrawerShell(
       title: _isEditing ? 'Edit Game' : 'Quick Game',
@@ -598,12 +605,12 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       children: [
         // ── A. Sport ────────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: block,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const ComposerSectionLabel(label: 'SPORT'),
-              const SizedBox(height: 8),
+              const SizedBox(height: DabblerSpacing.space3),
               // Sport is locked in edit mode — capacity and the roster
               // derive from the sport/format chosen at creation.
               IgnorePointer(
@@ -621,24 +628,22 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             ],
           ),
         ),
-        _SectionDivider(),
+        const DabblerDivider(),
 
         // ── B. Format ───────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: ComposerSettingsRow(
-            icon: Icons.grid_view_outlined,
+            icon: 'category',
             title: 'Format',
             subtitle: 'Game format',
-            showDivider: true,
             trailing: ComposerSelectPill(
               value: state.variantNameEn ??
                   (state.sportId == null
                       ? 'Select sport first'
                       : 'Select format'),
               caret: ComposerSelectCaret.right,
-              // Disabled until a sport is picked, and locked in edit mode —
-              // tap is ignored and the pill renders in the faint text colour.
+              // Disabled until a sport is picked, and locked in edit mode.
               onTap: (state.sportId == null || _isEditing)
                   ? null
                   : () => _openVariantPicker(context),
@@ -648,25 +653,22 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
         // ── C. Date & Time ──────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: ComposerSettingsRow(
-            icon: Icons.calendar_today_outlined,
+            icon: 'calendar',
             title: 'Date & Time',
             subtitle: 'When is the game',
-            showDivider: true,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+            trailing: Wrap(
+              spacing: DabblerSpacing.space2,
               children: [
                 ComposerCompactSelectPill(
                   value: _formatDateChip(state.selectedDate),
                   onTap: () => _pickDate(context),
                 ),
-                const SizedBox(width: 8),
                 ComposerCompactSelectPill(
                   value: _formatTimeChip(context, state.selectedTime),
                   onTap: () => _pickTime(context),
                 ),
-                const SizedBox(width: 8),
                 ComposerCompactSelectPill(
                   value: _formatDurationChip(state.durationMinutes),
                   highlighted: true,
@@ -679,12 +681,11 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
         // ── D. Venue ────────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: ComposerSettingsRow(
-            icon: Icons.location_on_outlined,
+            icon: 'location',
             title: 'Venue',
             subtitle: 'Where to play',
-            showDivider: true,
             trailing: ComposerSelectPill(
               value: _venueLabel(state),
               caret: ComposerSelectCaret.right,
@@ -695,15 +696,15 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
         // ── E. Join Policy ──────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: block,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const ComposerSectionLabel(label: 'JOIN POLICY'),
-              const SizedBox(height: 8),
+              const SizedBox(height: DabblerSpacing.space3),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: DabblerSpacing.space3,
+                runSpacing: DabblerSpacing.space3,
                 children: [
                   for (final entry in const [
                     ('open', 'Open'),
@@ -721,19 +722,19 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             ],
           ),
         ),
-        _SectionDivider(),
+        const DabblerDivider(),
 
         // ── F. Visibility ───────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: block,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const ComposerSectionLabel(label: 'VISIBILITY'),
-              const SizedBox(height: 8),
+              const SizedBox(height: DabblerSpacing.space3),
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: DabblerSpacing.space3,
+                runSpacing: DabblerSpacing.space3,
                 children: [
                   for (final entry in const [
                     ('public', 'Public'),
@@ -750,16 +751,15 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             ],
           ),
         ),
-        _SectionDivider(),
+        const DabblerDivider(),
 
         // ── G. Skill Level ──────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: ComposerSettingsRow(
-            icon: Icons.workspace_premium_outlined,
+            icon: 'medal-star',
             title: 'Skill Level',
             subtitle: 'Player experience',
-            showDivider: true,
             trailing: ComposerSelectPill(
               value: state.skillLevel ?? 'Any level',
               caret: ComposerSelectCaret.down,
@@ -770,14 +770,13 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
         // ── H. Players ──────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: ComposerSettingsRow(
-            icon: Icons.people_outline,
+            icon: 'people',
             title: 'Players',
             subtitle: 'Min & max players',
-            showDivider: true,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
+            trailing: Wrap(
+              spacing: DabblerSpacing.space2,
               children: [
                 ComposerCompactSelectPill(
                   value: state.minPlayers?.toString() ?? '—',
@@ -789,7 +788,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                     onSelect: notifier.setMinPlayers,
                   ),
                 ),
-                const SizedBox(width: 8),
                 ComposerCompactSelectPill(
                   value: state.maxPlayers?.toString() ?? '—',
                   suffixLabel: 'max',
@@ -805,24 +803,22 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           ),
         ),
 
-        // ── Options divider + Options section ───────────────────────────────
-        _SectionDivider(),
+        // ── Options ─────────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: gutter,
           child: Column(
             children: [
               ComposerSettingsRow(
-                icon: Icons.group_outlined,
+                icon: 'profile-2user',
                 title: 'Waitlist',
                 subtitle: 'Let players queue when full',
-                showDivider: true,
                 trailing: ComposerToggle(
                   value: state.allowWaitlist,
                   onChanged: (_) => notifier.toggleWaitlist(),
                 ),
               ),
               ComposerSettingsRow(
-                icon: Icons.visibility_outlined,
+                icon: 'eye',
                 title: 'Spectators',
                 subtitle: 'Allow spectators to watch',
                 showDivider: false,
@@ -837,7 +833,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
         // ── J. Details ──────────────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: block,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -845,13 +841,13 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                 label: 'DETAILS (OPTIONAL)',
                 letterSpacing: 1.2,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,
                 hint: 'Game title',
                 onChanged: notifier.setTitle,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _descController,
                 hint: 'Add a note for players...',
@@ -887,7 +883,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   String _formatTimeChip(BuildContext context, TimeOfDay? time) {
     if (time == null) return 'Time';
-    return time.format(context);
+    return DabblerTimeFormat.format(time);
   }
 
   String _formatDurationChip(int minutes) {
@@ -919,9 +915,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     }
     if (!context.mounted) return;
 
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: 'Select Format',
+      detents: const <double>[0.6],
       builder: (_) => _VariantPickerSheet(
         variants: notifier.variants,
         onSelect: notifier.selectVariant,
@@ -941,9 +938,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         : null;
     if (!context.mounted) return;
 
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: 'Sports',
+      detents: const <double>[0.85],
       builder: (_) => SportSelectionSheet(
         sportsProvider: activeChallengeSportsByProfileCountryProvider,
         selectedSport: selectedSport,
@@ -960,33 +958,39 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: ref.read(_gameComposerProvider).selectedDate ?? now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
+    final initial = ref.read(_gameComposerProvider).selectedDate ?? now;
+    await showComposerSheet<void>(
+      context,
+      title: 'Date',
+      detents: const <double>[0.7],
+      builder: (_) => _DatePickerSheet(
+        first: now,
+        last: now.add(const Duration(days: 365)),
+        initial: initial,
+        onPicked: ref.read(_gameComposerProvider.notifier).selectDate,
+      ),
     );
-    if (picked != null) {
-      ref.read(_gameComposerProvider.notifier).selectDate(picked);
-    }
   }
 
   Future<void> _pickTime(BuildContext context) async {
     final current = ref.read(_gameComposerProvider).selectedTime;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: current ?? const TimeOfDay(hour: 18, minute: 0),
+    await showComposerSheet<void>(
+      context,
+      title: 'Time',
+      detents: const <double>[0.6],
+      builder: (_) => _TimePickerSheet(
+        initial: current ?? const TimeOfDay(hour: 18, minute: 0),
+        onPicked: ref.read(_gameComposerProvider.notifier).selectTime,
+      ),
     );
-    if (picked != null) {
-      ref.read(_gameComposerProvider.notifier).selectTime(picked);
-    }
   }
 
   Future<void> _openDurationPicker(BuildContext context) async {
     final current = ref.read(_gameComposerProvider).durationMinutes;
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: 'Duration',
+      detents: const <double>[0.7],
       builder: (_) => _DurationPickerSheet(
         currentMinutes: current,
         onSelect: ref.read(_gameComposerProvider.notifier).setDuration,
@@ -1000,9 +1004,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final spaces = notifier.venueSpaces;
     if (!context.mounted) return;
 
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: 'Select Venue',
+      detents: const <double>[0.85],
       builder: (_) => _VenuePickerSheet(
         spaces: spaces,
         onSelect: notifier.selectVenueSpace,
@@ -1013,9 +1018,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   }
 
   Future<void> _openSkillPicker(BuildContext context) async {
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: 'Skill Level',
+      detents: const <double>[0.6],
       builder: (_) => _SkillPickerSheet(
         onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
         onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
@@ -1030,27 +1036,14 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     required int initial,
     required ValueChanged<int> onSelect,
   }) async {
-    await showAdaptiveSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+    await showComposerSheet<void>(
+      context,
+      title: title,
+      detents: const <double>[0.45],
       builder: (_) => _PlayerCountPickerSheet(
-        title: title,
         initialValue: initial,
         onSelect: onSelect,
       ),
-    );
-  }
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/// 1px full-width divider used between Pencil "sections".
-class _SectionDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 1,
-      color: ComposerPalette.of(context).divider,
     );
   }
 }
@@ -1073,119 +1066,50 @@ class _SportChipsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!loaded) {
-      return SizedBox(
-        height: 78,
-        child: Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: ComposerPalette.of(context).textMuted,
-            ),
-          ),
-        ),
+      return const SizedBox(
+        height: DabblerSizing.touchTargetMin,
+        child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
       );
     }
     if (sports.isEmpty) {
-      return SizedBox(
-        height: 78,
-        child: Center(
-          child: Text(
-            'No sports available',
-            style: TextStyle(
-              fontSize: 13,
-              color: ComposerPalette.of(context).textSubtle,
-            ),
-          ),
-        ),
+      return const SizedBox(
+        height: DabblerSizing.touchTargetMin,
+        child: ComposerCenteredState.message('No sports available'),
       );
     }
-    return SizedBox(
-      height: 78,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.zero,
-        itemCount: sports.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final sport = sports[i];
-          final id = sport['id'] as String;
-          return _SportChip(
-            label: sport['name_en'] as String? ?? 'Sport',
-            emoji: sport['emoji'] as String?,
-            selected: id == selectedSportId,
-            onTap: () => onSelect(sport),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Sport tile chip.
-/// Pencil: radius 12, padding [16, 12], vertical, gap 8, alignItems/justify
-/// center, 28px Phosphor icon (we render the sport emoji) + label 13/500.
-/// Selected = cs.primary fill, white content. Unselected = bgGlass +
-/// borderGlass stroke, textMuted content.
-class _SportChip extends StatelessWidget {
-  const _SportChip({
-    required this.label,
-    required this.emoji,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final String? emoji;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final palette = ComposerPalette.of(context);
-    return Semantics(
-      label: 'Sport: $label, tap to select',
-      button: true,
-      selected: selected,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          width: 76,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? cs.primary : palette.bgGlass,
-            borderRadius: BorderRadius.circular(12),
-            border: selected
-                ? null
-                : Border.all(color: palette.borderGlass, width: 1),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                emoji ?? '🎯',
-                style: const TextStyle(fontSize: 22),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: selected ? Colors.white : palette.textMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
+    final colors = DabblerColors.of(context);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final sport in sports) ...[
+            Builder(
+              builder: (_) {
+                final id = sport['id'] as String;
+                final label = sport['name_en'] as String? ?? 'Sport';
+                final selected = id == selectedSportId;
+                return Semantics(
+                  label: 'Sport: $label, tap to select',
+                  button: true,
+                  selected: selected,
+                  excludeSemantics: true,
+                  child: DabblerChip(
+                    label: label,
+                    selected: selected,
+                    leadingIcon: DabblerSportIcon.fromKey(
+                      ((sport['sport_key'] as String?) ?? '')
+                          .replaceAll('_', '-'),
+                      size: 16,
+                      color: selected ? colors.onBrand : colors.textSecondary,
+                    ),
+                    onTap: () => onSelect(sport),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: DabblerSpacing.space2),
+          ],
+        ],
       ),
     );
   }
@@ -1204,47 +1128,27 @@ class _VariantPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(
-              'Select Format',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+    if (variants.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
+        child: ComposerCenteredState.message('No formats available'),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final v in variants)
+          ComposerPickerRow(
+            title: v['name_en'] as String,
+            subtitle: (v['required_players'] as int?) != null
+                ? '${v['required_players']} players'
+                : null,
+            onTap: () {
+              onSelect(v);
+              Navigator.pop(context);
+            },
           ),
-          Flexible(
-            child: variants.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(child: Text('No formats available')),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: variants.length,
-                    itemBuilder: (_, i) {
-                      final v = variants[i];
-                      final players = v['required_players'] as int?;
-                      return ListTile(
-                        title: Text(v['name_en'] as String),
-                        subtitle:
-                            players != null ? Text('$players players') : null,
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () {
-                          onSelect(v);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1262,43 +1166,96 @@ class _DurationPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final m in _options)
+          ComposerPickerRow(
+            title: () {
+              final h = m ~/ 60;
+              final min = m % 60;
+              return h > 0
+                  ? (min > 0 ? '$h h $min min' : '$h hour${h > 1 ? 's' : ''}')
+                  : '$m minutes';
+            }(),
+            selected: m == currentMinutes,
+            onTap: () {
+              onSelect(m);
+              Navigator.pop(context);
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _DatePickerSheet extends StatefulWidget {
+  const _DatePickerSheet({
+    required this.first,
+    required this.last,
+    required this.initial,
+    required this.onPicked,
+  });
+
+  final DateTime first;
+  final DateTime last;
+  final DateTime initial;
+  final ValueChanged<DateTime> onPicked;
+
+  @override
+  State<_DatePickerSheet> createState() => _DatePickerSheetState();
+}
+
+class _DatePickerSheetState extends State<_DatePickerSheet> {
+  late DateTime _month = DateTime(widget.initial.year, widget.initial.month);
+  late DateTime _selected = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+      child: DabblerCalendar(
+        month: _month,
+        selected: <DateTime>{_selected},
+        minimum: widget.first,
+        maximum: widget.last,
+        onSelect: (d) => setState(() => _selected = d),
+        onMonthChanged: (m) => setState(() => _month = m),
+        onConfirm: () {
+          widget.onPicked(_selected);
+          Navigator.pop(context);
+        },
+        onCancel: () => Navigator.pop(context),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(
-              'Duration',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              children: _options.map((m) {
-                final h = m ~/ 60;
-                final min = m % 60;
-                final label = h > 0
-                    ? (min > 0
-                        ? '$h h $min min'
-                        : '$h hour${h > 1 ? 's' : ''}')
-                    : '$m minutes';
-                return ListTile(
-                  title: Text(label),
-                  selected: m == currentMinutes,
-                  onTap: () {
-                    onSelect(m);
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        ],
+    );
+  }
+}
+
+class _TimePickerSheet extends StatefulWidget {
+  const _TimePickerSheet({required this.initial, required this.onPicked});
+
+  final TimeOfDay initial;
+  final ValueChanged<TimeOfDay> onPicked;
+
+  @override
+  State<_TimePickerSheet> createState() => _TimePickerSheetState();
+}
+
+class _TimePickerSheetState extends State<_TimePickerSheet> {
+  late TimeOfDay _value = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+      child: DabblerTimePicker(
+        value: _value,
+        onChanged: (t) => setState(() => _value = t),
+        onConfirm: () {
+          widget.onPicked(_value);
+          Navigator.pop(context);
+        },
+        onCancel: () => Navigator.pop(context),
       ),
     );
   }
@@ -1347,132 +1304,59 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final filtered = _filtered();
     final hasAnySpaces = widget.spaces.isNotEmpty;
 
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.85,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Select Venue',
-                  style: tt.titleMedium,
-                ),
-                const Spacer(),
-                if (widget.canClear)
-                  TextButton(
-                    onPressed: () {
-                      widget.onClear();
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Clear',
-                      style: TextStyle(color: cs.primary),
-                    ),
-                  ),
-              ],
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.canClear)
+          ComposerClearRow(
+            onClear: () {
+              widget.onClear();
+              Navigator.pop(context);
+            },
           ),
-
-          // Search — only shown when there are spaces to filter
-          if (hasAnySpaces)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (v) => setState(() => _query = v.trim()),
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'Search venues, spaces or area…',
-                  prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
-                  suffixIcon: _query.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(
-                            Icons.clear_rounded,
-                            color: cs.onSurfaceVariant,
-                          ),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _query = '');
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: cs.surfaceContainerHighest,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: cs.primary, width: 1.5),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-
-          // Results
-          Flexible(
-            child: !hasAnySpaces
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text('No venues available for this format'),
-                    ),
-                  )
-                : filtered.isEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text(
-                            'No matches',
-                            style: TextStyle(color: cs.onSurfaceVariant),
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: filtered.length,
-                        itemBuilder: (_, i) {
-                          final sp = filtered[i];
-                          final venue =
-                              sp['venue'] as Map<String, dynamic>? ?? const {};
-                          final venueName =
-                              venue['name_en'] as String? ?? 'Venue';
-                          final area = venue['area'] as String?;
-                          final spaceName = sp['name_en'] as String?;
-                          return ListTile(
-                            leading: const Icon(Iconsax.location),
-                            title: Text(
-                              '$venueName'
-                              '${spaceName != null ? ' · $spaceName' : ''}',
-                            ),
-                            subtitle: area != null ? Text(area) : null,
-                            onTap: () {
-                              widget.onSelect(sp);
-                              Navigator.pop(context);
-                            },
-                          );
-                        },
-                      ),
+        // Search — only shown when there are spaces to filter
+        if (hasAnySpaces)
+          ComposerSearchField(
+            controller: _searchController,
+            placeholder: 'Search venues, spaces or area…',
+            onChanged: (v) => setState(() => _query = v.trim()),
           ),
-        ],
-      ),
+        ComposerScrollArea(
+          fraction: 0.5,
+          child: !hasAnySpaces
+              ? const ComposerCenteredState.message(
+                  'No venues available for this format',
+                )
+              : filtered.isEmpty
+              ? const ComposerCenteredState.message('No matches')
+              : ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) {
+                    final sp = filtered[i];
+                    final venue =
+                        sp['venue'] as Map<String, dynamic>? ?? const {};
+                    final venueName = venue['name_en'] as String? ?? 'Venue';
+                    final area = venue['area'] as String?;
+                    final spaceName = sp['name_en'] as String?;
+                    return ComposerPickerRow(
+                      icon: 'location',
+                      title:
+                          '$venueName'
+                          '${spaceName != null ? ' · $spaceName' : ''}',
+                      subtitle: area,
+                      onTap: () {
+                        widget.onSelect(sp);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
@@ -1497,58 +1381,28 @@ class _SkillPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.65,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-            child: Row(
-              children: [
-                Text(
-                  'Skill Level',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Spacer(),
-                if (canClear)
-                  TextButton(
-                    onPressed: () {
-                      onClear();
-                      Navigator.pop(context);
-                    },
-                    child: Text(
-                      'Clear',
-                      style: TextStyle(color: cs.primary),
-                    ),
-                  ),
-              ],
-            ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (canClear)
+          ComposerClearRow(
+            onClear: () {
+              onClear();
+              Navigator.pop(context);
+            },
           ),
-          Flexible(
-            child: ListView(
-              shrinkWrap: true,
-              children: _levels.map((l) {
-                return ListTile(
-                  title: Text(l.$1),
-                  subtitle: Text(l.$3),
-                  trailing: Text(
-                    l.$2,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  onTap: () {
-                    onSelect(l.$1);
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
+        for (final l in _levels)
+          ComposerPickerRow(
+            title: l.$1,
+            subtitle: l.$3,
+            trailingText: l.$2,
+            onTap: () {
+              onSelect(l.$1);
+              Navigator.pop(context);
+            },
           ),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -1556,12 +1410,10 @@ class _SkillPickerSheet extends StatelessWidget {
 /// Number stepper sheet shared between Min and Max players.
 class _PlayerCountPickerSheet extends StatefulWidget {
   const _PlayerCountPickerSheet({
-    required this.title,
     required this.initialValue,
     required this.onSelect,
   });
 
-  final String title;
   final int initialValue;
   final ValueChanged<int> onSelect;
 
@@ -1585,101 +1437,51 @@ class _PlayerCountPickerSheetState extends State<_PlayerCountPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return SafeArea(
+    final colors = DabblerColors.of(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space8,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Text(
-              widget.title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _StepButton(
-                  icon: Icons.remove_rounded,
-                  onTap: _value > 1 ? () => _bump(-1) : null,
-                ),
-                Text(
-                  '$_value',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                _StepButton(
-                  icon: Icons.add_rounded,
-                  onTap: _value < 50 ? () => _bump(1) : null,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () {
-                  widget.onSelect(_value);
-                  Navigator.pop(context);
-                },
-                style: FilledButton.styleFrom(
-                  backgroundColor: cs.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              DabblerButton.icon(
+                icon: 'minus',
+                semanticLabel: 'Decrease',
+                tone: DabblerButtonTone.neutral,
+                onPressed: _value > 1 ? () => _bump(-1) : null,
+              ),
+              Text(
+                '$_value',
+                style: composerType(
+                  context,
+                  DabblerType.title1,
+                  colors.textPrimary,
                 ),
               ),
-            ),
+              DabblerButton.icon(
+                icon: 'add',
+                semanticLabel: 'Increase',
+                tone: DabblerButtonTone.neutral,
+                onPressed: _value < 50 ? () => _bump(1) : null,
+              ),
+            ],
           ),
+          const SizedBox(height: DabblerSpacing.space6),
+          DabblerButton(
+            label: 'Done',
+            fullWidth: true,
+            onPressed: () {
+              widget.onSelect(_value);
+              Navigator.pop(context);
+            },
+          ),
+          const SizedBox(height: DabblerSpacing.space6),
         ],
       ),
     );
   }
 }
-
-class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final disabled = onTap == null;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 56,
-        height: 56,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: disabled
-              ? cs.surfaceContainerHighest
-              : cs.primary.withValues(alpha: 0.10),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          icon,
-          size: 28,
-          color: disabled
-              ? cs.onSurfaceVariant.withValues(alpha: 0.5)
-              : cs.primary,
-        ),
-      ),
-    );
-  }
-}
-
