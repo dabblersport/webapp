@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'dart:ui' show ImageFilter;
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
 
-import 'package:flutter/material.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart'
+    show RefreshIndicator, TabBarView, TabController;
+import 'package:go_router/go_router.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/services/auth_service.dart';
@@ -17,21 +17,20 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
-import 'package:dabbler/core/widgets/shimmer_loading.dart';
-import 'package:dabbler/widgets/app_top_bar.dart';
-import 'package:dabbler/widgets/dynamic_background.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
 import 'package:dabbler/app/app_router.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_card.dart';
 import 'package:dabbler/features/news/presentation/widgets/news_compact_card.dart';
+import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
@@ -40,6 +39,7 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Modern home screen for Dabbler
 class HomeScreen extends ConsumerStatefulWidget {
@@ -52,6 +52,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen>
     with RouteAware, TickerProviderStateMixin {
   final AuthService _authService = AuthService();
+  final DabblerToastController _toasts = DabblerToastController();
   UserProfile? _userProfile;
 
   // ── Tab controller ──────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ..removeListener(_onTabChanged)
       ..dispose();
     AppRouter.routeObserver.unsubscribe(this);
+    _toasts.dispose();
     super.dispose();
   }
 
@@ -144,8 +146,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _showNotificationDrawer() async {
-    final didTakeAction = await showAdaptiveSheet<bool>(
+    final didTakeAction = await showDabblerSheet<bool>(
       context: context,
+      detents: const <double>[0.6],
       builder: (context) {
         return NotificationPermissionDrawer(
           onEnableNotifications: () async {
@@ -161,11 +164,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 NotificationPreference.allow,
               );
               if (!mounted) return;
-              ScaffoldMessenger.of(this.context).showSnackBar(
-                const SnackBar(
-                  content: Text('Notifications enabled!'),
-                  behavior: SnackBarBehavior.floating,
-                ),
+              _toasts.show(
+                const DabblerToastSpec(message: 'Notifications enabled!'),
               );
             } else {
               // Don't mark as "allow" unless permission is actually granted.
@@ -311,175 +311,126 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildHeader() {
-    return AppTopBar(
-      avatarContext: AvatarContext.main,
-      avatarUrl: _userProfile?.avatarUrl,
+    return _HomeHeader(
       displayName: _userProfile?.getFullName(),
-      showGlobalActions: true,
+      avatarUrl: _userProfile?.avatarUrl,
     );
   }
 
   Widget _buildTabBar() {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
+    final l = AppLocalizations.of(context);
     return AnimatedBuilder(
       animation: _tabController,
       builder: (context, _) {
-        return SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-            itemCount: _tabs.length,
-            separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final tab = _tabs[index];
-              final isSelected = _tabController.index == index;
-
-              return GestureDetector(
-                onTap: () => _tabController.animateTo(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? cs.primary
-                        : cs.primary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    tab.label(AppLocalizations.of(context)),
-                    style: textTheme.labelLarge?.copyWith(
-                      color: isSelected ? cs.onPrimary : cs.onSurface,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              );
-            },
+        return DabblerTabs(
+          scrollable: true,
+          items: <DabblerTabItem>[
+            for (final tab in _tabs)
+              DabblerTabItem(id: tab.name, label: tab.label(l)),
+          ],
+          value: _activeTab.name,
+          onChanged: (id) => _tabController.animateTo(
+            _tabs.indexWhere((tab) => tab.name == id),
           ),
         );
       },
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     final forYouState = ref.watch(feedNotifierProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(
-            tabController: _tabController,
-            scrollControllers: _scrollControllers,
-          ),
-          NestedScrollView(
-            // Each tab has its own controller; NestedScrollView uses the header
-            // region for the app-bar + tab bar.
-            headerSliverBuilder: (_, innerBoxIsScrolled) => [
-              if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _TabBarDelegate(tabBar: _buildTabBar(), cs: cs),
-              ),
-            ],
-            body: TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _ForYouTabBody(
-                  state: forYouState,
-                  scrollController: _scrollControllers[0],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
-                  onClearBadge: () => ref
-                      .read(feedNotifierProvider.notifier)
-                      .clearNewPostsBadge(),
-                ),
-                _FollowingFeedTabBody(
-                  scrollController: _scrollControllers[1],
-                  onRefresh: _handleRefresh,
-                  onRetry: () {
-                    ref.read(followingFeedProvider.notifier).load();
-                    ref.read(followingActivitiesProvider.notifier).load();
-                  },
-                ),
-                _NearbyFeedTabBody(
-                  state: ref.watch(nearbyFeedProvider),
-                  scrollController: _scrollControllers[2],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
-                ),
-                _ActiveFeedTabBody(
-                  state: ref.watch(activeFeedProvider),
-                  scrollController: _scrollControllers[3],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(activeFeedProvider.notifier).load(),
-                ),
-                _NewsFeedTabBody(
-                  state: ref.watch(newsTabFeedProvider),
-                  scrollController: _scrollControllers[4],
-                  onRefresh: _handleRefresh,
-                  onRetry: () =>
-                      ref.read(newsTabFeedProvider.notifier).load(),
+    return DabblerToastProvider(
+      controller: _toasts,
+      child: ColoredBox(
+        color: colors.bgPrimary,
+        child: Stack(
+          children: [
+            NestedScrollView(
+              // Each tab has its own controller; NestedScrollView uses the
+              // header region for the top bar + tab bar.
+              headerSliverBuilder: (_, innerBoxIsScrolled) => [
+                if (!isWide) SliverToBoxAdapter(child: _buildHeader()),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TabBarDelegate(
+                    tabBar: _buildTabBar(),
+                    background: colors.bgPrimary,
+                  ),
                 ),
               ],
+              body: TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _ForYouTabBody(
+                    state: forYouState,
+                    scrollController: _scrollControllers[0],
+                    onRefresh: _handleRefresh,
+                    onRetry: () =>
+                        ref.read(feedNotifierProvider.notifier).load(),
+                    onClearBadge: () => ref
+                        .read(feedNotifierProvider.notifier)
+                        .clearNewPostsBadge(),
+                  ),
+                  _FollowingFeedTabBody(
+                    scrollController: _scrollControllers[1],
+                    onRefresh: _handleRefresh,
+                    onRetry: () {
+                      ref.read(followingFeedProvider.notifier).load();
+                      ref.read(followingActivitiesProvider.notifier).load();
+                    },
+                  ),
+                  _NearbyFeedTabBody(
+                    state: ref.watch(nearbyFeedProvider),
+                    scrollController: _scrollControllers[2],
+                    onRefresh: _handleRefresh,
+                    onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+                  ),
+                  _ActiveFeedTabBody(
+                    state: ref.watch(activeFeedProvider),
+                    scrollController: _scrollControllers[3],
+                    onRefresh: _handleRefresh,
+                    onRetry: () => ref.read(activeFeedProvider.notifier).load(),
+                  ),
+                  _NewsFeedTabBody(
+                    state: ref.watch(newsTabFeedProvider),
+                    scrollController: _scrollControllers[4],
+                    onRefresh: _handleRefresh,
+                    onRetry: () =>
+                        ref.read(newsTabFeedProvider.notifier).load(),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      // New-posts indicator floats over the For You tab.
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerTop,
-      floatingActionButton: forYouState.hasNewPosts && _tabController.index == 0
-          ? SafeArea(
-              child: GestureDetector(
-                onTap: () {
-                  ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
-                  _scrollControllers[0].animateTo(
-                    0,
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOut,
-                  );
-                },
-                child: Material(
-                  elevation: 4,
-                  borderRadius: BorderRadius.circular(24),
-                  color: cs.primary,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Iconsax.arrow_up_1_copy,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'New posts',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.labelLarge?.copyWith(color: Colors.white),
-                        ),
-                      ],
-                    ),
+            // New-posts indicator floats over the For You tab.
+            if (forYouState.hasNewPosts && _tabController.index == 0)
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: DabblerButton(
+                    label: 'New posts',
+                    icon: 'arrow-circle-up',
+                    size: DabblerButtonSize.small,
+                    onPressed: () {
+                      ref
+                          .read(feedNotifierProvider.notifier)
+                          .clearNewPostsBadge();
+                      _scrollControllers[0].animateTo(
+                        0,
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOut,
+                      );
+                    },
                   ),
                 ),
               ),
-            )
-          : null,
+          ],
+        ),
+      ),
     );
   }
 } // end _HomeScreenState
@@ -488,10 +439,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 // SliverPersistentHeaderDelegate for the sticky TabBar
 // ────────────────────────────────────────────────────────────────────────────
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  const _TabBarDelegate({required this.tabBar, required this.cs});
+  const _TabBarDelegate({required this.tabBar, required this.background});
 
   final Widget tabBar;
-  final ColorScheme cs;
+  final Color background;
 
   @override
   double get minExtent => 56;
@@ -505,36 +456,19 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    final isPinned = overlapsContent || shrinkOffset > 0;
-    final content = Column(
-      children: [
-        const SizedBox(height: 9),
-        Expanded(child: tabBar),
-        const SizedBox(height: 6),
-        Divider(
-          height: 1,
-          thickness: 0,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
-        ),
-      ],
-    );
-    if (!isPinned) {
-      return ColoredBox(color: Colors.transparent, child: content);
-    }
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: ColoredBox(
-          color: cs.surface.withValues(alpha: 0.55),
-          child: content,
-        ),
+    // Fill the whole extent: the sliver's paint extent must cover its layout
+    // extent. DabblerTabs draws its own baseline track; no extra divider.
+    return SizedBox.expand(
+      child: ColoredBox(
+        color: background,
+        child: Align(alignment: Alignment.bottomCenter, child: tabBar),
       ),
     );
   }
 
   @override
   bool shouldRebuild(_TabBarDelegate oldDelegate) =>
-      oldDelegate.cs != cs || oldDelegate.tabBar != tabBar;
+      oldDelegate.background != background || oldDelegate.tabBar != tabBar;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -556,14 +490,9 @@ class _ForYouTabBody extends ConsumerWidget {
   final VoidCallback onClearBadge;
 
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showModalBottomSheet<bool>(
+    final confirmed = await showDabblerSheet<bool>(
       context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      detents: const <double>[0.45],
       builder: (ctx) => _NewsUnsubscribeSheet(
         onConfirm: () => Navigator.pop(ctx, true),
         onCancel: () => Navigator.pop(ctx, false),
@@ -572,10 +501,9 @@ class _ForYouTabBody extends ConsumerWidget {
     if (confirmed == true) {
       await ref.read(updateNewsPreferenceProvider)();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).news_hidden_snack),
-            behavior: SnackBarBehavior.floating,
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: AppLocalizations.of(context).news_hidden_snack,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -585,7 +513,6 @@ class _ForYouTabBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final showNews = ref.watch(newsEnabledProvider);
 
     if (state.isLoading && state.items.isEmpty) {
@@ -599,7 +526,7 @@ class _ForYouTabBody extends ConsumerWidget {
 
     if (state.items.isEmpty) {
       return _EmptyView(
-        iconAsset: 'assets/icons/document-text.svg',
+        iconName: 'document-text',
         message: l.feed_empty_no_posts,
         hint: l.feed_empty_no_posts_hint,
       );
@@ -617,17 +544,13 @@ class _ForYouTabBody extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         itemCount: itemCount,
-        separatorBuilder: (_, index) => Divider(
-          height: 1,
-          thickness: 1,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
-        ),
+        separatorBuilder: (_, index) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == feedItems.length) {
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner()),
+              );
           }
           final item = feedItems[index];
           if (item is FeedPostItem) return resolvePostLayout(item.post);
@@ -658,56 +581,61 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
     final l = AppLocalizations.of(context);
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: cs.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space8,
+        DabblerSpacing.space5,
+        DabblerSpacing.space8,
+        DabblerSpacing.space4,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DabblerIcon(
+            'notification-status',
+            size: 36,
+            color: colors.brandPrimary,
+          ),
+          const SizedBox(height: DabblerSpacing.space4),
+          Text(
+            l.news_hide_sheet_title,
+            style: DabblerType.headline
+                .resolveForDirection(direction)
+                .copyWith(color: colors.textPrimary),
+          ),
+          const SizedBox(height: DabblerSpacing.space2),
+          Text(
+            l.news_hide_sheet_body,
+            textAlign: TextAlign.center,
+            style: DabblerType.subheadline
+                .resolveForDirection(direction)
+                .copyWith(color: colors.textSecondary),
+          ),
+          const SizedBox(height: DabblerSpacing.space8),
+          Row(
+            children: [
+              Expanded(
+                child: DabblerButton(
+                  label: l.news_hide_cancel,
+                  tone: DabblerButtonTone.secondary,
+                  fullWidth: true,
+                  onPressed: onCancel,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            Icon(Iconsax.notification_status_copy, size: 36, color: cs.primary),
-            const SizedBox(height: 12),
-            Text(
-              l.news_hide_sheet_title,
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l.news_hide_sheet_body,
-              textAlign: TextAlign.center,
-              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onCancel,
-                    child: Text(l.news_hide_cancel),
-                  ),
+              const SizedBox(width: DabblerSpacing.space4),
+              Expanded(
+                child: DabblerButton(
+                  label: l.news_hide_confirm,
+                  fullWidth: true,
+                  onPressed: onConfirm,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: onConfirm,
-                    child: Text(l.news_hide_confirm),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -727,7 +655,6 @@ class _FollowingFeedTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final postState = ref.watch(followingFeedProvider);
-    final cs = Theme.of(context).colorScheme;
 
     final isLoading = postState.isLoading && postState.posts.isEmpty;
 
@@ -749,7 +676,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
         );
       }
       return const _EmptyView(
-        iconAsset: 'assets/icons/document-text.svg',
+        iconName: 'document-text',
         message: 'No posts from people you follow yet.',
         hint: 'Follow more people to see their posts here.',
       );
@@ -765,17 +692,13 @@ class _FollowingFeedTabBody extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         itemCount: itemCount,
-        separatorBuilder: (_, __) => Divider(
-          height: 1,
-          thickness: 1,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
-        ),
+        separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == merged.length) {
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner()),
+              );
           }
           final entry = merged[index];
           return switch (entry) {
@@ -838,13 +761,12 @@ class _ActiveFeedTabBody extends StatelessWidget {
 
     if (state.events.isEmpty) {
       return const _EmptyView(
-        iconAsset: 'assets/icons/document-text.svg',
+        iconName: 'document-text',
         message: 'Nothing active right now.',
         hint: 'Check back when games or events kick off near you.',
       );
     }
 
-    final cs = Theme.of(context).colorScheme;
     final events = state.events;
     final itemCount = events.length + (state.isLoadingMore ? 1 : 0);
 
@@ -858,20 +780,16 @@ class _ActiveFeedTabBody extends StatelessWidget {
         separatorBuilder: (_, index) {
           if (index < events.length &&
               events[index] is PostCreatedEvent) {
-            return Divider(
-              height: 1,
-              thickness: 1,
-              color: cs.outlineVariant.withValues(alpha: 0.3),
-            );
+            return const DabblerDivider();
           }
-          return const SizedBox(height: 6);
+          return const SizedBox(height: DabblerSpacing.space2);
         },
         itemBuilder: (_, index) {
           if (index == events.length) {
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner()),
+              );
           }
           return ActiveEventCard(event: events[index]);
         },
@@ -898,8 +816,6 @@ class _NearbyFeedTabBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     if (state.isLoading && state.posts.isEmpty) {
       return const _FeedSkeletonList();
     }
@@ -910,7 +826,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
 
     if (state.posts.isEmpty) {
       return const _EmptyView(
-        iconAsset: 'assets/icons/document-text.svg',
+        iconName: 'document-text',
         message: 'Nothing nearby yet.',
         hint: 'Check back when more activity pops up near you.',
       );
@@ -926,17 +842,13 @@ class _NearbyFeedTabBody extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 24),
         itemCount: itemCount,
-        separatorBuilder: (_, __) => Divider(
-          height: 1,
-          thickness: 1,
-          color: cs.outlineVariant.withValues(alpha: 0.3),
-        ),
+        separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == posts.length) {
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner()),
+              );
           }
           return resolvePostLayout(posts[index], showNearbyChipInHeader: true);
         },
@@ -950,47 +862,24 @@ class _NearbyFeedTabBody extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 class _EmptyView extends StatelessWidget {
   const _EmptyView({
-    required this.iconAsset,
+    required this.iconName,
     required this.message,
     required this.hint,
   });
 
-  final String iconAsset;
+  final String iconName;
   final String message;
   final String hint;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SvgPicture.asset(
-              iconAsset,
-              width: 48,
-              height: 48,
-              colorFilter: ColorFilter.mode(cs.outline, BlendMode.srcIn),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              hint,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: cs.outline),
-            ),
-          ],
+        padding: const EdgeInsets.all(DabblerSpacing.space10),
+        child: DabblerEmptyState(
+          icon: iconName,
+          title: message,
+          text: hint,
         ),
       ),
     );
@@ -1005,26 +894,16 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              message,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: cs.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: onRetry,
-              child: Text(AppLocalizations.of(context).feed_retry),
-            ),
-          ],
+        padding: const EdgeInsets.all(DabblerSpacing.space8),
+        child: DabblerEmptyState(
+          title: message,
+          action: DabblerButton(
+            label: AppLocalizations.of(context).feed_retry,
+            tone: DabblerButtonTone.secondary,
+            onPressed: onRetry,
+          ),
         ),
       ),
     );
@@ -1035,69 +914,23 @@ class _ErrorView extends StatelessWidget {
 // Skeleton loader — shown while the initial feed page is fetching
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Single shimmer card that matches the approximate layout of a [FeedPostCard].
+/// Single skeleton row that matches the approximate layout of a post card.
 class _PostCardSkeleton extends StatelessWidget {
   const _PostCardSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    return const Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: DabblerSpacing.space6,
+        vertical: DabblerSpacing.space5,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar
-          ShimmerLoading(
-            width: 44,
-            height: 44,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Author name + time
-                Row(
-                  children: [
-                    const ShimmerLoading(width: 120, height: 13),
-                    const Spacer(),
-                    const ShimmerLoading(width: 48, height: 11),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Body text lines
-                const ShimmerLoading(height: 13),
-                const SizedBox(height: 6),
-                const ShimmerLoading(height: 13),
-                const SizedBox(height: 6),
-                const ShimmerLoading(width: 160, height: 13),
-                const SizedBox(height: 14),
-                // Action bar placeholder
-                Row(
-                  children: [
-                    ShimmerLoading(
-                      width: 52,
-                      height: 22,
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    const SizedBox(width: 16),
-                    ShimmerLoading(
-                      width: 52,
-                      height: 22,
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    const SizedBox(width: 16),
-                    ShimmerLoading(
-                      width: 52,
-                      height: 22,
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+          DabblerSkeleton.circle(width: 44),
+          SizedBox(width: DabblerSpacing.space3),
+          Expanded(child: DabblerSkeleton.text(lines: 3)),
         ],
       ),
     );
@@ -1111,16 +944,11 @@ class _FeedSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
       itemCount: 6,
-      separatorBuilder: (_, __) => Divider(
-        height: 1,
-        thickness: 1,
-        color: cs.outlineVariant.withValues(alpha: 0.3),
-      ),
+      separatorBuilder: (_, __) => const DabblerDivider(),
       itemBuilder: (_, __) => const _PostCardSkeleton(),
     );
   }
@@ -1155,7 +983,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     if (state.items.isEmpty) {
       return _EmptyView(
-        iconAsset: 'assets/icons/document-text.svg',
+        iconName: 'document-text',
         message: l.news_empty_title,
         hint: l.news_empty_hint,
       );
@@ -1182,12 +1010,10 @@ class _NewsFeedTabBody extends ConsumerWidget {
               onResubscribe: () async {
                 await ref.read(resubscribeNewsProvider)();
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        AppLocalizations.of(context).news_resubscribed_snack,
-                      ),
-                      behavior: SnackBarBehavior.floating,
+                  DabblerToastProvider.of(context).show(
+                    DabblerToastSpec(
+                      message:
+                          AppLocalizations.of(context).news_resubscribed_snack,
                       duration: const Duration(seconds: 3),
                     ),
                   );
@@ -1198,9 +1024,9 @@ class _NewsFeedTabBody extends ConsumerWidget {
           final i = index - headerCount;
           if (i == filtered.length) {
             return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(child: CircularProgressIndicator()),
-            );
+              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+              child: Center(child: DabblerSpinner()),
+              );
           }
           return NewsCard(item: filtered[i]);
         },
@@ -1217,80 +1043,20 @@ class _NewsResubscribeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     final l = AppLocalizations.of(context);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.primary.withValues(alpha: 0.25)),
-      ),
-      child: Row(
-        children: [
-          Icon(Iconsax.notification_status_copy, size: 20, color: cs.primary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              l.news_resubscribe_banner,
-              style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: onResubscribe,
-            child: Text(
-              l.news_resubscribe_action,
-              style: tt.labelSmall?.copyWith(
-                color: cs.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Pill chip matching the home tab bar style.
-class _FilterPill extends StatelessWidget {
-  const _FilterPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
-          decoration: BoxDecoration(
-            color: selected
-                ? cs.primary
-                : cs.primary.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: tt.labelMedium?.copyWith(
-              color: selected ? cs.onPrimary : cs.onSurface,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space1,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+      ),
+      child: DabblerBanner(
+        icon: const DabblerIcon('notification-status'),
+        message: l.news_resubscribe_banner,
+        action: DabblerBannerAction(
+          label: l.news_resubscribe_action,
+          onPressed: onResubscribe,
         ),
       ),
     );
@@ -1306,7 +1072,6 @@ class _NewsFilterChips extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final notifier = ref.read(newsTabFeedProvider.notifier);
 
     final interestIds =
@@ -1328,50 +1093,201 @@ class _NewsFilterChips extends ConsumerWidget {
 
     if (interestSports.isEmpty && regions.isEmpty) return const SizedBox.shrink();
 
+    Widget chip(String label, bool selected, VoidCallback onTap) => Padding(
+      padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
+      child: DabblerChip(label: label, selected: selected, onTap: onTap),
+    );
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        DabblerSpacing.space3,
+        DabblerSpacing.space6,
+        DabblerSpacing.space2,
+      ),
       child: Row(
         children: [
           // ── All chip ────────────────────────────────────────────────
           if (interestSports.isNotEmpty)
-            _FilterPill(
-              label: 'All',
-              selected: state.selectedSportId == null,
-              onTap: () => notifier.setFilterSport(null),
+            chip(
+              'All',
+              state.selectedSportId == null,
+              () => notifier.setFilterSport(null),
             ),
 
           // ── One chip per interest sport ──────────────────────────────
           ...interestSports.map((sport) {
             final selected = state.selectedSportId == sport.id;
-            return _FilterPill(
-              label: '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
-              selected: selected,
-              onTap: () => notifier.setFilterSport(selected ? null : sport.id),
+            return chip(
+              '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
+              selected,
+              () => notifier.setFilterSport(selected ? null : sport.id),
             );
           }),
 
           // ── Divider before region chips ──────────────────────────────
           if (interestSports.isNotEmpty && regions.isNotEmpty)
-            Padding(
-              padding: const EdgeInsetsDirectional.only(end: 8),
-              child: SizedBox(
-                height: 24,
-                child: VerticalDivider(color: cs.outlineVariant, width: 1),
-              ),
+            const Padding(
+              padding: EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
+              child: SizedBox(height: 24, child: DabblerDivider.vertical()),
             ),
 
           // ── Region chips ─────────────────────────────────────────────
           ...regions.map((region) {
             final selected = state.selectedRegion == region;
-            return _FilterPill(
-              label: region,
-              selected: selected,
-              onTap: () => notifier.setFilterRegion(selected ? null : region),
+            return chip(
+              region,
+              selected,
+              () => notifier.setFilterRegion(selected ? null : region),
             );
           }),
         ],
       ),
     );
   }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Header — wordmark + location row, search / notifications / avatar
+// ────────────────────────────────────────────────────────────────────────────
+class _HomeHeader extends ConsumerWidget {
+  const _HomeHeader({this.displayName, this.avatarUrl});
+
+  final String? displayName;
+
+  /// Kept for parity with the previous header's inputs. The design-system
+  /// avatar is seed-based and has no image-URL form (DS gap).
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = DabblerColors.of(context);
+    final direction = Directionality.of(context);
+    final profile = ref.watch(profileControllerProvider).profile;
+    final name = displayName ?? profile?.displayName ?? profile?.username ?? 'User';
+    final unread = ref.watch(unreadNotificationCountProvider);
+    final locState = ref.watch(activeLocationProvider).valueOrNull;
+    final locationName = locState is ActiveLocationReady
+        ? locState.location.area.name
+        : 'Set location';
+
+    final leading = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DabblerWordmark(color: colors.brandPrimary),
+        const SizedBox(height: DabblerSpacing.space1),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openLocationPicker(context),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DabblerIcon(
+                'location',
+                weight: DabblerIconWeight.bold,
+                size: 13,
+                color: colors.brandPrimary,
+              ),
+              const SizedBox(width: DabblerSpacing.space1),
+              Flexible(
+                child: Text(
+                  locationName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DabblerType.caption2
+                      .resolveForDirection(direction)
+                      .copyWith(color: colors.textSecondary),
+                ),
+              ),
+              const SizedBox(width: DabblerSpacing.space1),
+              DabblerIcon(
+                'arrow-circle-down',
+                size: 12,
+                color: colors.textSecondary,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // The unread count sits on the notification glyph's top-end corner. The
+    // bar's action has no badge slot (DS gap), so the badge is anchored with
+    // the bar's own published geometry rather than a guessed offset.
+    const glyph = DabblerNavigationTopBar.actionGlyphSize;
+    final badgeTop = MediaQuery.paddingOf(context).top +
+        (DabblerNavigationTopBar.barHeight - glyph) / 2 -
+        DabblerSpacing.space5;
+    final badgeEnd = DabblerNavigationTopBar.barPaddingInline +
+        DabblerSizing.touchTargetMin +
+        (DabblerNavigationTopBar.actionTarget.width - glyph) / 2 -
+        DabblerSpacing.space4;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        DabblerNavigationTopBar(
+          leading: leading,
+          actions: [
+            DabblerNavigationAction(
+              icon: 'search-normal',
+              label: 'Search',
+              onPressed: () => context.push(RoutePaths.socialSearch),
+            ),
+            DabblerNavigationAction(
+              icon: 'notification-bing',
+              label: 'Notifications',
+              onPressed: () => context.push(RoutePaths.notifications),
+            ),
+          ],
+          avatarSeed: name,
+          avatarLabel: name,
+          onAvatarPressed: () => context.push(RoutePaths.profile),
+        ),
+        if (unread > 0)
+          PositionedDirectional(
+            top: badgeTop,
+            end: badgeEnd,
+            child: IgnorePointer(
+              child: DabblerBadge(
+                label: unread > 99 ? '99+' : '$unread',
+                tone: DabblerBadgeTone.primary,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _openLocationPicker(BuildContext context) {
+    showDabblerSheet<void>(
+      context: context,
+      detents: const <double>[0.85],
+      builder: (_) => const _LocationPickerHost(),
+    );
+  }
+}
+
+/// Owns the scroll controller [HomeLocationPickerSheet] expects from its host.
+class _LocationPickerHost extends StatefulWidget {
+  const _LocationPickerHost();
+
+  @override
+  State<_LocationPickerHost> createState() => _LocationPickerHostState();
+}
+
+class _LocationPickerHostState extends State<_LocationPickerHost> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      HomeLocationPickerSheet(scrollController: _controller);
 }
