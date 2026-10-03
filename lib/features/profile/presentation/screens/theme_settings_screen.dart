@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show ColorScheme, ThemeMode, TimeOfDay;
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/themes/app_theme.dart';
 import 'package:dabbler/core/services/theme_service.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
 class ThemeSettingsScreen extends StatefulWidget {
   const ThemeSettingsScreen({super.key});
@@ -12,214 +11,88 @@ class ThemeSettingsScreen extends StatefulWidget {
   State<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
 }
 
+const _kModes = <(String, String, ThemeMode)>[
+  ('Light', 'Always use light theme', ThemeMode.light),
+  ('Dark', 'Always use dark theme', ThemeMode.dark),
+  ('System', 'Follow device settings', ThemeMode.system),
+];
+
 class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   final ThemeService _themeService = ThemeService();
 
+  TextStyle _type(DabblerTypeStyle s, Color c) =>
+      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: AnimatedBuilder(
-          animation: _themeService,
-          builder: (context, child) {
-            return CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                // Header
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  sliver: SliverToBoxAdapter(child: _buildHeader(context)),
-                ),
-                // Hero Card
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  sliver: SliverToBoxAdapter(child: _buildHeroCard(context)),
-                ),
-                // Content
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
-                  sliver: SliverToBoxAdapter(
-                    child: Column(
-                      children: [
-                        _buildCurrentThemeStatus(),
-                        const SizedBox(height: 20),
-                        _buildThemeCategorySection(),
-                        const SizedBox(height: 20),
-                        _buildThemeModeSection(),
-                        const SizedBox(height: 20),
-                        _buildAutoThemeSection(),
-                        if (_themeService.autoThemeEnabled) ...[
-                          const SizedBox(height: 20),
-                          _buildTimeScheduleSection(),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Theme & Appearance',
+        onBack: () => Navigator.of(context).pop(),
       ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHigh,
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Theme & Appearance',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final previewScheme = _previewSchemeFor(_themeService.themeCategory);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: previewScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            _themeService.currentBrightness == Brightness.dark
-                ? Icons.nightlight_round
-                : Icons.wb_sunny,
-            size: 48,
-            color: previewScheme.primary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Customize your theme',
-            style: textTheme.headlineSmall?.copyWith(
-              color: previewScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w700,
+      body: AnimatedBuilder(
+        animation: _themeService,
+        builder: (context, child) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(
+              DabblerSpacing.space6,
+              DabblerSpacing.space4,
+              DabblerSpacing.space6,
+              DabblerSpacing.space11,
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Choose how the app should look and when themes should automatically switch.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: previewScheme.onPrimaryContainer.withValues(alpha: 0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeCategorySection() {
-    return _buildSettingsCard(
-      'Color Theme',
-      'Apply one token set across the entire app',
-      AppTheme.supportedCategories
-          .map((category) => _buildThemeCategoryOption(category))
-          .toList(growable: false),
-    );
-  }
-
-  Widget _buildCurrentThemeStatus() {
-    final isDark = _themeService.currentBrightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                isDark ? Icons.nightlight_round : Icons.wb_sunny,
-                size: 24,
-                color: colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Current Theme',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _themeService.getThemeDescription(),
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildHero(),
+                const SizedBox(height: DabblerSpacing.space6),
+                _buildCurrentThemeStatus(),
+                const SizedBox(height: DabblerSpacing.space6),
+                _buildThemeModeSection(),
+                const SizedBox(height: DabblerSpacing.space6),
+                _buildThemeCategorySection(),
+                const SizedBox(height: DabblerSpacing.space6),
+                _buildAutoThemeSection(),
+                if (_themeService.autoThemeEnabled) ...[
+                  const SizedBox(height: DabblerSpacing.space6),
+                  _buildTimeScheduleSection(),
                 ],
-              ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  bool get _isDark => _themeService.currentBrightness == Brightness.dark;
+
+  Widget _buildHero() {
+    final colors = DabblerColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: DabblerRadius.xlAll,
+        border: Border.all(color: colors.borderDefault),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DabblerIcon(
+              _isDark ? 'moon' : 'sun-1',
+              size: 48,
+              color: colors.brandPrimary,
+            ),
+            const SizedBox(height: DabblerSpacing.space5),
+            Text(
+              'Customize your theme',
+              style: _type(DabblerType.title2, colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            Text(
+              'Choose how the app should look and when themes should automatically switch.',
+              style: _type(DabblerType.subheadline, colors.textSecondary),
             ),
           ],
         ),
@@ -227,110 +100,106 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     );
   }
 
+  Widget _buildCurrentThemeStatus() {
+    final colors = DabblerColors.of(context);
+    return DabblerInputRow(
+      leading: DabblerIcon(
+        _isDark ? 'moon' : 'sun-1',
+        size: DabblerSizing.iconMd,
+        color: colors.brandPrimary,
+      ),
+      title: 'Current Theme',
+      subtitle: _themeService.getThemeDescription(),
+    );
+  }
+
   Widget _buildThemeModeSection() {
-    return _buildSettingsCard(
-      'Theme Mode',
-      'Choose how the app should appear',
-      [
-        _buildThemeModeOption(
-          'Light',
-          'Always use light theme',
-          Icons.wb_sunny,
-          ThemeMode.light,
+    final colors = DabblerColors.of(context);
+    final current = _kModes.firstWhere(
+      (m) => m.$3 == _themeService.themeMode,
+      orElse: () => _kModes.last,
+    );
+    return DabblerSection(
+      title: 'Theme Mode',
+      subtitle: 'Choose how the app should appear',
+      children: [
+        DabblerTabs(
+          variant: DabblerTabsVariant.segmented,
+          label: 'Theme Mode',
+          value: _themeService.autoThemeEnabled ? null : current.$3.name,
+          items: [
+            for (final m in _kModes)
+              DabblerTabItem(id: m.$3.name, label: m.$1),
+          ],
+          onChanged: (id) {
+            final mode = _kModes.firstWhere((m) => m.$3.name == id).$3;
+            _themeService.setAutoThemeEnabled(false);
+            _themeService.setThemeMode(mode);
+          },
         ),
-        _buildThemeModeOption(
-          'Dark',
-          'Always use dark theme',
-          Icons.nightlight_round,
-          ThemeMode.dark,
-        ),
-        _buildThemeModeOption(
-          'System',
-          'Follow device settings',
-          Icons.computer,
-          ThemeMode.system,
-        ),
+        if (!_themeService.autoThemeEnabled)
+          Text(
+            current.$2,
+            style: _type(DabblerType.footnote, colors.textSecondary),
+          ),
       ],
+    );
+  }
+
+  Widget _buildThemeCategorySection() {
+    return DabblerSection(
+      title: 'Color Theme',
+      subtitle: 'Apply one token set across the entire app',
+      children: AppTheme.supportedCategories
+          .map(_buildThemeCategoryOption)
+          .toList(growable: false),
     );
   }
 
   Widget _buildThemeCategoryOption(String category) {
     final normalized = AppTheme.normalizeCategory(category);
     final isSelected = _themeService.themeCategory == normalized;
-    final previewScheme = _previewSchemeFor(normalized);
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
+    final name = ThemeService.getThemeCategoryDisplayName(normalized);
 
-    return GestureDetector(
-      onTap: () {
-        _themeService.setThemeCategory(normalized);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.05)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? colorScheme.primary.withValues(alpha: 0.3)
-                : colorScheme.outline,
-          ),
-        ),
-        child: Row(
-          children: [
-            _buildThemePreviewSwatches(previewScheme),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    ThemeService.getThemeCategoryDisplayName(normalized),
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? colorScheme.primary : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Use ${ThemeService.getThemeCategoryDisplayName(normalized)} tokens app-wide',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check, size: 16, color: colorScheme.primary),
-          ],
-        ),
-      ),
+    return DabblerInputRow(
+      onTap: () => _themeService.setThemeCategory(normalized),
+      leading: _buildThemePreviewSwatches(_previewSchemeFor(normalized)),
+      title: name,
+      subtitle: 'Use $name tokens app-wide',
+      trailing: isSelected
+          ? DabblerIcon(
+              'tick-circle',
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.iconMd,
+              color: colors.brandPrimary,
+            )
+          : null,
     );
   }
 
+  /// The swatches preview another category's palette, so their colours come
+  /// from that category's [ColorScheme] rather than the active DS tokens.
   Widget _buildThemePreviewSwatches(ColorScheme previewScheme) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _buildThemePreviewDot(previewScheme.primary),
-        const SizedBox(width: 6),
-        _buildThemePreviewDot(previewScheme.secondary),
-        const SizedBox(width: 6),
-        _buildThemePreviewDot(previewScheme.tertiary),
+        _dot(previewScheme.primary),
+        const SizedBox(width: DabblerSpacing.space2),
+        _dot(previewScheme.secondary),
+        const SizedBox(width: DabblerSpacing.space2),
+        _dot(previewScheme.tertiary),
       ],
     );
   }
 
-  Widget _buildThemePreviewDot(Color color) {
-    return Container(
-      width: 14,
-      height: 14,
+  Widget _dot(Color color) => SizedBox(
+    width: 14,
+    height: 14,
+    child: DecoratedBox(
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    );
-  }
+    ),
+  );
 
   ColorScheme _previewSchemeFor(String category) {
     return AppTheme.getColorSchemeSync(
@@ -340,61 +209,25 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildAutoThemeSection() {
-    return _buildSettingsCard(
-      'Automatic Theme',
-      'Automatically switch between light and dark themes',
-      [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+    final colors = DabblerColors.of(context);
+    return DabblerSection(
+      title: 'Automatic Theme',
+      subtitle: 'Automatically switch between light and dark themes',
+      children: [
+        DabblerInputRow(
+          leading: DabblerIcon(
+            'clock',
+            size: DabblerSizing.iconMd,
             color: _themeService.autoThemeEnabled
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _themeService.autoThemeEnabled
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                  : Theme.of(context).colorScheme.outline,
-            ),
+                ? colors.brandPrimary
+                : colors.textSecondary,
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                size: 20,
-                color: _themeService.autoThemeEnabled
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Time-based Theme',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Switch themes based on time of day',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: _themeService.autoThemeEnabled,
-                onChanged: (value) {
-                  _themeService.setAutoThemeEnabled(value);
-                },
-                activeThumbColor: Theme.of(context).colorScheme.primary,
-              ),
-            ],
+          title: 'Time-based Theme',
+          subtitle: 'Switch themes based on time of day',
+          trailing: DabblerToggle(
+            checked: _themeService.autoThemeEnabled,
+            semanticLabel: 'Time-based Theme',
+            onChanged: (value) => _themeService.setAutoThemeEnabled(value),
           ),
         ),
       ],
@@ -402,22 +235,19 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildTimeScheduleSection() {
-    return _buildSettingsCard(
-      'Day & Night Schedule',
-      'Set when light and dark themes should activate',
-      [
+    return DabblerSection(
+      title: 'Day & Night Schedule',
+      subtitle: 'Set when light and dark themes should activate',
+      children: [
         _buildTimeOption(
           'Day starts at',
           'Light theme will activate',
-          Icons.wb_twilight,
           _themeService.dayStartTime,
           (time) => _themeService.setDayStartTime(time),
         ),
-        const SizedBox(height: 12),
         _buildTimeOption(
           'Night starts at',
           'Dark theme will activate',
-          Icons.wb_twilight,
           _themeService.nightStartTime,
           (time) => _themeService.setNightStartTime(time),
         ),
@@ -425,212 +255,64 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     );
   }
 
-  Widget _buildSettingsCard(
-    String title,
-    String subtitle,
-    List<Widget> children,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThemeModeOption(
-    String title,
-    String subtitle,
-    IconData icon,
-    ThemeMode mode,
-  ) {
-    final isSelected =
-        _themeService.themeMode == mode && !_themeService.autoThemeEnabled;
-
-    return GestureDetector(
-      onTap: () {
-        _themeService.setAutoThemeEnabled(false);
-        _themeService.setThemeMode(mode);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
-                : Theme.of(context).colorScheme.outline,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(
-                Icons.check,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTimeOption(
     String title,
     String subtitle,
-    IconData icon,
     TimeOfDay time,
-    Function(TimeOfDay) onTimeChanged,
+    ValueChanged<TimeOfDay> onTimeChanged,
   ) {
-    return GestureDetector(
-      onTap: () => _selectTime(time, onTimeChanged),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline,
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _themeService.formatTime(time),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
+    final colors = DabblerColors.of(context);
+    return DabblerInputRow(
+      onTap: () => _selectTime(title, time, onTimeChanged),
+      leading: DabblerIcon(
+        'sun-fog',
+        size: DabblerSizing.iconMd,
+        color: colors.brandPrimary,
+      ),
+      title: title,
+      subtitle: subtitle,
+      trailing: Text(
+        _themeService.formatTime(time),
+        style: _type(DabblerType.headline, colors.brandPrimary),
       ),
     );
   }
 
   Future<void> _selectTime(
+    String title,
     TimeOfDay currentTime,
-    Function(TimeOfDay) onTimeChanged,
+    ValueChanged<TimeOfDay> onTimeChanged,
   ) async {
-    final time = await showTimePicker(
+    final time = await showDabblerSheet<TimeOfDay>(
       context: context,
-      initialTime: currentTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              dialBackgroundColor: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              dialHandColor: Theme.of(context).colorScheme.primary,
-              dialTextColor: Theme.of(context).textTheme.bodyLarge?.color,
-              entryModeIconColor: Theme.of(context).colorScheme.primary,
-              hourMinuteTextColor: Theme.of(context).colorScheme.primary,
-              dayPeriodTextColor: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      title: title,
+      detent: DabblerSheetDetent.content,
+      builder: (_) => _TimeSheet(initial: currentTime),
     );
+    if (time != null) onTimeChanged(time);
+  }
+}
 
-    if (time != null) {
-      onTimeChanged(time);
-    }
+class _TimeSheet extends StatefulWidget {
+  const _TimeSheet({required this.initial});
+
+  final TimeOfDay initial;
+
+  @override
+  State<_TimeSheet> createState() => _TimeSheetState();
+}
+
+class _TimeSheetState extends State<_TimeSheet> {
+  late TimeOfDay _value = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return DabblerTimePicker(
+      value: _value,
+      minuteStep: 1,
+      onChanged: (t) => setState(() => _value = t),
+      onConfirm: () => Navigator.pop(context, _value),
+      onCancel: () => Navigator.pop(context),
+    );
   }
 }
