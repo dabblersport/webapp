@@ -219,31 +219,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _showGifPicker() {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.75,
-        minChildSize: 0.4,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (ctx, sc) => GifPickerSheet(
-          scrollController: sc,
-          onSelected: (url) {
-            Navigator.pop(ctx);
-            setState(() {
-              _attachedGifUrl = url;
-              _attachedImageUrl = null;
-              _hasText = true;
-            });
-          },
-        ),
-      ),
+    showGifPickerSheet(
+      context,
+      onSelected: (url) {
+        setState(() {
+          _attachedGifUrl = url;
+          _attachedImageUrl = null;
+          _hasText = true;
+        });
+      },
     );
   }
 
