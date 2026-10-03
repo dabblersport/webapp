@@ -1,44 +1,69 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:dabbler/features/venues/providers.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:dabbler/features/games/providers/games_providers.dart'
-    as games_providers;
+
+import 'package:dabbler/data/models/games/venue.dart' as games_venue;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
-import 'package:dabbler/widgets/dynamic_background.dart';
-import 'package:dabbler/data/models/games/venue.dart' as games_venue;
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart'
+    as games_providers;
+import 'package:dabbler/features/venues/providers.dart';
 
-// ─── Sport palette ────────────────────────────────────────────────────────────
+/// Venue details (D03) on the design system only.
+///
+/// Same providers, favourite toggle, directions / call / website actions and
+/// space sheet as before. The booking action stays unbuilt (see the note in
+/// [_VenueDetailScreenState._showSpaceSheet]); only the widget tree changed.
 
-class _SportMeta {
-  final Color color;
-  final String emoji;
-  final String label;
-  const _SportMeta({required this.color, required this.emoji, required this.label});
-}
+TextStyle _t(
+  BuildContext context,
+  DabblerTypeStyle step,
+  Color color, {
+  FontWeight? weight,
+}) => step
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(color: color, fontWeight: weight);
 
-const _sportMeta = <String, _SportMeta>{
-  'football':   _SportMeta(color: Color(0xFF00C853), emoji: '⚽', label: 'Football'),
-  'soccer':     _SportMeta(color: Color(0xFF00C853), emoji: '⚽', label: 'Football'),
-  'basketball': _SportMeta(color: Color(0xFFFF6D00), emoji: '🏀', label: 'Basketball'),
-  'tennis':     _SportMeta(color: Color(0xFFF4C430), emoji: '🎾', label: 'Tennis'),
-  'padel':      _SportMeta(color: Color(0xFF7328CE), emoji: '🏓', label: 'Padel'),
-  'cricket':    _SportMeta(color: Color(0xFF8BC34A), emoji: '🏏', label: 'Cricket'),
-  'swimming':   _SportMeta(color: Color(0xFF00BCD4), emoji: '🏊', label: 'Swimming'),
-  'running':    _SportMeta(color: Color(0xFF00B0FF), emoji: '🏃', label: 'Running'),
-  'gym':        _SportMeta(color: Color(0xFFE040FB), emoji: '🏋', label: 'Gym'),
-  'yoga':       _SportMeta(color: Color(0xFFFF3376), emoji: '🧘', label: 'Yoga'),
+/// The design's section header: 15 / 600 ink.
+TextStyle _section(BuildContext context, DabblerColors colors) => _t(
+  context,
+  DabblerType.subheadline,
+  colors.textPrimary,
+  weight: DabblerType.semibold,
+);
+
+// ─── Sport labels ─────────────────────────────────────────────────────────────
+
+/// The sport's display label. The sport's identity is drawn by
+/// [DabblerSportIcon]; the colour is the design system's, not a per-sport hue.
+const _sportLabels = <String, String>{
+  'football': 'Football',
+  'soccer': 'Football',
+  'basketball': 'Basketball',
+  'tennis': 'Tennis',
+  'padel': 'Padel',
+  'cricket': 'Cricket',
+  'swimming': 'Swimming',
+  'running': 'Running',
+  'gym': 'Gym',
+  'yoga': 'Yoga',
 };
 
-const _green = Color(0xFF00C853);
+String _labelFor(String sport) =>
+    _sportLabels[sport.trim().toLowerCase()] ?? 'Sport';
 
-_SportMeta _metaFor(String sport) =>
-    _sportMeta[sport.trim().toLowerCase()] ??
-    const _SportMeta(color: Color(0xFF7328CE), emoji: '🏟', label: 'Sport');
+String _sportKey(String sport) {
+  final key = sport.trim().toLowerCase();
+  return key == 'soccer' ? 'football' : key;
+}
+
+String _backIcon(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl
+    ? 'arrow-circle-right'
+    : 'arrow-circle-left';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -54,18 +79,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   bool? _favoriteOptimistic;
   bool _favoriteBusy = false;
   final ScrollController _scrollController = ScrollController();
-  late final String _previousCategory;
-
-  @override
-  void initState() {
-    super.initState();
-    _previousCategory = AppTheme.activeCategory;
-    AppTheme.setActiveCategory('sports');
-  }
 
   @override
   void dispose() {
-    AppTheme.setActiveCategory(_previousCategory);
     _scrollController.dispose();
     super.dispose();
   }
@@ -79,145 +95,197 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       orElse: () => false,
     );
     final isFavorited = _favoriteOptimistic ?? isFavoritedFromProvider;
-    final safeTop = MediaQuery.of(context).padding.top;
+    final safeTop = MediaQuery.paddingOf(context).top;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          DynamicBackground(scrollController: _scrollController),
-          venueAsync.when(
-            data: (venue) => _buildContent(venue, isFavorited, safeTop),
-            loading: () => _buildLoading(safeTop),
-            error: (_, __) => _buildError(safeTop),
-          ),
-        ],
+    return DabblerPage(
+      // The hero bleeds under the status bar, so the page must not inset the
+      // top itself: an empty top bar turns that inset off and the hero pads
+      // the safe area on its own.
+      topBar: const SizedBox.shrink(),
+      body: venueAsync.when(
+        data: (venue) => _buildContent(venue, isFavorited, safeTop),
+        loading: () => _buildLoading(safeTop),
+        error: (_, __) => _buildError(safeTop),
       ),
     );
   }
 
   // ─── Content ─────────────────────────────────────────────────────────────────
 
-  Widget _buildContent(games_venue.Venue venue, bool isFavorited, double safeTop) {
-    final cs = Theme.of(context).colorScheme;
-    final sports = venue.supportedSports.isNotEmpty ? venue.supportedSports : ['sport'];
+  Widget _buildContent(
+    games_venue.Venue venue,
+    bool isFavorited,
+    double safeTop,
+  ) {
+    final sports = venue.supportedSports.isNotEmpty
+        ? venue.supportedSports
+        : ['sport'];
     final isOpen = venue.isOpenAt(DateTime.now());
+    const gutter = DabblerSpacing.space6;
 
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 700),
         child: CustomScrollView(
-      controller: _scrollController,
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        // Hero carousel — full width, no horizontal padding
-        SliverToBoxAdapter(
-          child: _HeroCarousel(
-            sports: sports,
-            venueName: venue.name,
-            safeTop: safeTop,
-            isFavorited: isFavorited,
-            favoriteBusy: _favoriteBusy,
-            bgColor: cs.surfaceContainerLowest,
-            primaryColor: cs.primary,
-            onBack: () => Navigator.of(context).maybePop(),
-            onShare: _shareVenue,
-            onFavorite: () => _toggleFavorite(isFavorited),
-          ),
-        ),
-
-        // Title + status pills
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 14),
-            child: _buildTitle(venue, isOpen),
-          ),
-        ),
-
-        // Rating + Spaces card
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-            child: _buildRatingSpacesCard(venue),
-          ),
-        ),
-
-        // Spaces section header
-        if (venue.supportedSports.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-              child: _sectionHeader('Spaces', sub: 'tap for details'),
-            ),
-          ),
-          // Full-bleed horizontal scroll
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 210,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                itemCount: venue.supportedSports.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (ctx, i) => _SpaceCard(
-                  sport: venue.supportedSports[i],
-                  pricePerHour: venue.pricePerHour,
-                  currency: venue.currency,
-                  onTap: () => _showSpaceSheet(ctx, venue.supportedSports[i], venue),
-                ),
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Hero carousel — full width, no horizontal padding
+            SliverToBoxAdapter(
+              child: _HeroCarousel(
+                sports: sports,
+                venueName: venue.name,
+                safeTop: safeTop,
+                isFavorited: isFavorited,
+                favoriteBusy: _favoriteBusy,
+                onBack: () => Navigator.of(context).maybePop(),
+                onFavorite: () => _toggleFavorite(isFavorited),
               ),
             ),
-          ),
-        ],
 
-        // Location card
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 14),
-            child: _buildLocationCard(venue),
-          ),
-        ),
-
-        // Contact card
-        if (_hasContact(venue))
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-              child: _buildContactCard(venue),
+            // Title + status pills
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  gutter,
+                  gutter,
+                  gutter,
+                  DabblerSpacing.space5,
+                ),
+                child: _buildTitle(venue, isOpen),
+              ),
             ),
-          ),
 
-        // Amenities
-        if (venue.amenities.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: _buildAmenities(venue),
+            // Rating + Spaces tiles
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  gutter,
+                  0,
+                  gutter,
+                  DabblerSpacing.space5,
+                ),
+                child: _buildRatingSpacesTiles(venue),
+              ),
             ),
-          ),
 
-        // About
-        if (venue.description.isNotEmpty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-              child: _buildAbout(venue),
+            // Spaces section header
+            if (venue.supportedSports.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    gutter,
+                    0,
+                    gutter,
+                    DabblerSpacing.space3,
+                  ),
+                  child: _sectionHeader('Spaces', sub: 'tap for details'),
+                ),
+              ),
+              // Full-bleed horizontal scroll
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 232,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsetsDirectional.fromSTEB(
+                      gutter,
+                      0,
+                      gutter,
+                      DabblerSpacing.space6,
+                    ),
+                    itemCount: venue.supportedSports.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: DabblerSpacing.space4),
+                    itemBuilder: (ctx, i) => _SpaceCard(
+                      sport: venue.supportedSports[i],
+                      pricePerHour: venue.pricePerHour,
+                      currency: venue.currency,
+                      onTap: () =>
+                          _showSpaceSheet(ctx, venue.supportedSports[i], venue),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+
+            // Location card
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  gutter,
+                  DabblerSpacing.space1,
+                  gutter,
+                  DabblerSpacing.space5,
+                ),
+                child: _buildLocationCard(venue),
+              ),
             ),
-          ),
 
-        // Ratings
-        if (venue.totalRatings > 0)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-              child: _buildRatings(venue),
+            // Contact card
+            if (_hasContact(venue))
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    gutter,
+                    0,
+                    gutter,
+                    DabblerSpacing.space5,
+                  ),
+                  child: _buildContactCard(venue),
+                ),
+              ),
+
+            // Amenities
+            if (venue.amenities.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    gutter,
+                    0,
+                    gutter,
+                    DabblerSpacing.space5,
+                  ),
+                  child: _buildAmenities(venue),
+                ),
+              ),
+
+            // About
+            if (venue.description.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    gutter,
+                    0,
+                    gutter,
+                    DabblerSpacing.space5,
+                  ),
+                  child: _buildAbout(venue),
+                ),
+              ),
+
+            // Ratings
+            if (venue.totalRatings > 0)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    gutter,
+                    0,
+                    gutter,
+                    DabblerSpacing.space10,
+                  ),
+                  child: _buildRatings(venue),
+                ),
+              ),
+
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height:
+                    MediaQuery.paddingOf(context).bottom +
+                    DabblerSpacing.space8,
+              ),
             ),
-          ),
-
-        SliverToBoxAdapter(
-          child: SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
-        ),
-      ],
+          ],
         ),
       ),
     );
@@ -226,31 +294,34 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   // ─── Title ────────────────────────────────────────────────────────────────────
 
   Widget _buildTitle(games_venue.Venue venue, bool isOpen) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           venue.name,
-          style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-            fontWeight: FontWeight.w900,
-            color: cs.onSurface,
-            letterSpacing: -0.5,
-            height: 1.2,
-          ),
+          style: _t(context, DabblerType.title1, colors.textPrimary),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: DabblerSpacing.space3),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: DabblerSpacing.space2,
+          runSpacing: DabblerSpacing.space2,
           children: [
-            _openBadge(isOpen),
+            DabblerBadge(
+              label: isOpen ? 'Open Now' : 'Closed',
+              status: isOpen ? colors.success : colors.error,
+            ),
             if (venue.city.isNotEmpty)
-              _infoPill(icon: Iconsax.location_copy, label: venue.city),
+              DabblerBadge(
+                label: venue.city,
+                tone: DabblerBadgeTone.withIcon,
+                icon: const DabblerIcon('location', size: 12),
+              ),
             if (venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty)
-              _infoPill(
-                icon: Iconsax.clock_copy,
+              DabblerBadge(
                 label: '${venue.openingTime} – ${venue.closingTime}',
+                tone: DabblerBadgeTone.withIcon,
+                icon: const DabblerIcon('clock', size: 12),
               ),
           ],
         ),
@@ -258,116 +329,37 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     );
   }
 
-  Widget _openBadge(bool isOpen) {
-    final color = isOpen ? _green : const Color(0xFFFF3376);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            isOpen ? 'Open Now' : 'Closed',
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w700, color: color),
-          ),
-        ],
-      ),
-    );
-  }
+  // ─── Rating + Spaces tiles ────────────────────────────────────────────────────
 
-  Widget _infoPill({required IconData icon, required String label}) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: cs.onSurfaceVariant),
-          const SizedBox(width: 5),
-          Text(label, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
-        ],
-      ),
-    );
-  }
-
-  // ─── Rating + Spaces card ─────────────────────────────────────────────────────
-
-  Widget _buildRatingSpacesCard(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
-    return _card(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Iconsax.star_copy, size: 13, color: cs.onSurfaceVariant),
-                    const SizedBox(width: 6),
-                    Text('RATING', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  venue.totalRatings == 0 ? '—' : venue.rating.toStringAsFixed(1),
-                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface),
-                ),
-                Text(
-                  venue.totalRatings == 0 ? 'No ratings yet' : '${venue.totalRatings} reviews',
-                  style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          Container(width: 1, height: 44, color: cs.outlineVariant),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Iconsax.calendar_copy, size: 13, color: cs.primary),
-                      const SizedBox(width: 6),
-                      Text('SPACES', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.primary, letterSpacing: 0.5)),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    venue.supportedSports.isNotEmpty ? '${venue.supportedSports.length}' : '—',
-                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.primary),
-                  ),
-                  Text('Bookable areas', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildRatingSpacesTiles(games_venue.Venue venue) {
+    return DabblerStatGrid(
+      children: [
+        DabblerStatTile(
+          value: venue.totalRatings == 0
+              ? '—'
+              : venue.rating.toStringAsFixed(1),
+          label: venue.totalRatings == 0
+              ? 'No ratings yet'
+              : '${venue.totalRatings} reviews',
+          tone: DabblerStatTileTone.amber,
+          span: 3,
+        ),
+        DabblerStatTile(
+          value: venue.supportedSports.isNotEmpty
+              ? '${venue.supportedSports.length}'
+              : '—',
+          label: 'Bookable areas',
+          tone: DabblerStatTileTone.info,
+          span: 3,
+        ),
+      ],
     );
   }
 
   // ─── Location card ────────────────────────────────────────────────────────────
 
   Widget _buildLocationCard(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     final parts = <String>[
       if (venue.addressLine1.isNotEmpty) venue.addressLine1,
       if (venue.city.isNotEmpty) venue.city,
@@ -376,117 +368,87 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     ];
     final address = parts.join(', ');
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          // Mini map
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: GestureDetector(
-              onTap: _getDirections,
-              child: SizedBox(
-                height: 90,
-                child: Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [cs.primary.withValues(alpha: 0.2), cs.primary.withValues(alpha: 0.12)],
-                        ),
-                      ),
-                    ),
-                    CustomPaint(
-                      size: const Size(double.infinity, 90),
-                      painter: _MapGridPainter(color: cs.primary),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: cs.primary,
-                              shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.45), blurRadius: 12, offset: const Offset(0, 4))],
-                            ),
-                            child: const Icon(Iconsax.location_copy, size: 14, color: Colors.white),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Location', style: _section(context, colors)),
+        const SizedBox(height: DabblerSpacing.space3),
+        DabblerSurface.sunken(
+          radius: DabblerRadius.xl,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Map slot: the design's "Map of the venue" frame. Tapping it
+              // opens directions, as before.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _getDirections,
+                child: SizedBox(
+                  height: 120,
+                  child: ColoredBox(
+                    color: colors.bgTertiary,
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: DabblerIcon(
+                            'location',
+                            weight: DabblerIconWeight.bold,
+                            size: 28,
+                            color: colors.brandPrimary,
                           ),
-                          Container(width: 2, height: 6, color: cs.primary),
-                          Container(
-                            width: 6, height: 3,
-                            decoration: BoxDecoration(
-                              color: cs.primary.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(999),
+                        ),
+                        PositionedDirectional(
+                          top: DabblerSpacing.space3,
+                          end: DabblerSpacing.space4,
+                          child: const DabblerBadge(
+                            label: 'Open Map',
+                            tone: DabblerBadgeTone.withIcon,
+                            icon: DabblerIcon('map', size: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(DabblerSpacing.space5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const DabblerIconTile.named('location', size: 36),
+                    const SizedBox(width: DabblerSpacing.space4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LOCATION',
+                            style: _t(
+                              context,
+                              DabblerType.caption2,
+                              colors.textTertiary,
+                            ),
+                          ),
+                          Text(
+                            address.isEmpty ? 'Address unavailable' : address,
+                            style: _t(
+                              context,
+                              DabblerType.subheadline,
+                              colors.textPrimary,
+                              weight: DabblerType.semibold,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Positioned(
-                      top: 8, right: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: cs.surface.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Iconsax.map_copy, size: 12, color: cs.primary),
-                            const SizedBox(width: 4),
-                            Text('Open Map', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.primary)),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-          // Address
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 32, height: 32,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Iconsax.location_copy, size: 16, color: cs.primary),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('LOCATION', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
-                      const SizedBox(height: 3),
-                      Text(
-                        address.isEmpty ? 'Address unavailable' : address,
-                        style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface, height: 1.5),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -498,130 +460,152 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       (v.website?.isNotEmpty ?? false);
 
   Widget _buildContactCard(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
-    final rows = <({IconData icon, String label, Color color, VoidCallback? onTap})>[
+    final colors = DabblerColors.of(context);
+    final rows = <({String icon, String label, VoidCallback? onTap})>[
       if (venue.phone?.isNotEmpty ?? false)
-        (icon: Iconsax.call_copy, label: venue.phone!, color: _green, onTap: () => _callVenue(venue.phone!)),
+        (
+          icon: 'call',
+          label: venue.phone!,
+          onTap: () => _callVenue(venue.phone!),
+        ),
       if (venue.email?.isNotEmpty ?? false)
-        (icon: Iconsax.sms_copy, label: venue.email!, color: cs.primary, onTap: null),
+        (icon: 'sms', label: venue.email!, onTap: null),
       if (venue.website?.isNotEmpty ?? false)
-        (icon: Iconsax.global_copy, label: venue.website!, color: cs.primary, onTap: () => _openWebsite(venue.website!)),
+        (
+          icon: 'global',
+          label: venue.website!,
+          onTap: () => _openWebsite(venue.website!),
+        ),
     ];
 
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('CONTACT', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
-          const SizedBox(height: 12),
-          ...rows.asMap().entries.map((e) {
-            final i = e.key;
-            final row = e.value;
-            return Column(
-              children: [
-                if (i > 0) Container(height: 1, color: cs.outlineVariant, margin: const EdgeInsets.symmetric(vertical: 10)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'CONTACT',
+          style: _t(context, DabblerType.caption2, colors.textTertiary),
+        ),
+        const SizedBox(height: DabblerSpacing.space3),
+        DabblerSurface(
+          fill: DabblerColors.tileInfo.surface,
+          borderColor: DabblerColors.tileInfo.surface,
+          radius: DabblerRadius.xl,
+          child: Column(
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0) const DabblerDivider(),
                 GestureDetector(
-                  onTap: row.onTap,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32, height: 32,
-                        decoration: BoxDecoration(
-                          color: row.color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: rows[i].onTap,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DabblerSpacing.space5,
+                      vertical: DabblerSpacing.space4,
+                    ),
+                    child: Row(
+                      children: [
+                        DabblerIcon(
+                          rows[i].icon,
+                          size: 20,
+                          color: colors.textPrimary,
                         ),
-                        child: Icon(row.icon, size: 16, color: row.color),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          row.label,
-                          style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w600, color: row.onTap != null ? row.color : cs.onSurface),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        const SizedBox(width: DabblerSpacing.space4),
+                        Expanded(
+                          child: Text(
+                            rows[i].label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _t(
+                              context,
+                              DabblerType.subheadline,
+                              colors.textPrimary,
+                              weight: DabblerType.semibold,
+                            ),
+                          ),
                         ),
-                      ),
-                      if (row.onTap != null)
-                        Icon(Icons.chevron_right_rounded, size: 16, color: cs.onSurfaceVariant),
-                    ],
+                        if (rows[i].onTap != null)
+                          DabblerIcon(
+                            Directionality.of(context) == TextDirection.rtl
+                                ? 'arrow-circle-left'
+                                : 'arrow-circle-right',
+                            size: 18,
+                            color: colors.textPrimary,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ],
-            );
-          }),
-        ],
-      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   // ─── Amenities ────────────────────────────────────────────────────────────────
 
   Widget _buildAmenities(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader('Amenities'),
-        const SizedBox(height: 10),
+        const SizedBox(height: DabblerSpacing.space3),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: venue.amenities.map((a) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                border: Border.all(color: cs.outlineVariant, width: 1.5),
-                borderRadius: BorderRadius.circular(999),
+          spacing: DabblerSpacing.space3,
+          runSpacing: DabblerSpacing.space3,
+          children: [
+            for (final a in venue.amenities)
+              DabblerBadge(
+                label: a,
+                tone: DabblerBadgeTone.withIcon,
+                icon: DabblerIcon(_amenityIcon(a), size: 14),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(_amenityIcon(a), size: 14, color: cs.onSurfaceVariant),
-                  const SizedBox(width: 6),
-                  Text(a, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w500, color: cs.onSurface)),
-                ],
-              ),
-            );
-          }).toList(),
+          ],
         ),
       ],
     );
   }
 
-  IconData _amenityIcon(String a) {
+  String _amenityIcon(String a) {
     switch (a.trim().toLowerCase()) {
       case 'parking':
-      case 'free parking':  return Iconsax.car_copy;
-      case 'wifi':          return Iconsax.wifi_square_copy;
-      case 'lighting':      return Iconsax.lamp_on_copy;
-      case 'gym':           return Iconsax.activity_copy;
+      case 'free parking':
+        return 'car';
+      case 'wifi':
+        return 'wifi-square';
+      case 'lighting':
+        return 'lamp-on';
+      case 'gym':
+        return 'activity';
       case 'restaurant':
       case 'cafe':
       case 'cafeteria':
-      case 'snack bar':     return Iconsax.coffee_copy;
+      case 'snack bar':
+        return 'coffee';
       case 'locker rooms':
       case 'changing rooms':
-      case 'changing':      return Iconsax.lock_copy;
-      case 'showers':       return Iconsax.drop;
-      default:              return Iconsax.tick_circle_copy;
+      case 'changing':
+        return 'lock';
+      case 'showers':
+        return 'drop';
+      default:
+        return 'tick-circle';
     }
   }
 
   // ─── About ────────────────────────────────────────────────────────────────────
 
   Widget _buildAbout(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader('About'),
-        const SizedBox(height: 10),
-        _card(
-          child: Text(
-            venue.description,
-            style: Theme.of(context).textTheme.bodyMedium!.copyWith(height: 1.7, color: cs.onSurfaceVariant, fontWeight: FontWeight.w400),
-          ),
+        const SizedBox(height: DabblerSpacing.space3),
+        Text(
+          venue.description,
+          style: _t(context, DabblerType.footnote, colors.textSecondary),
         ),
       ],
     );
@@ -630,7 +614,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   // ─── Ratings ─────────────────────────────────────────────────────────────────
 
   Widget _buildRatings(games_venue.Venue venue) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     final avg = venue.rating;
     final filled = avg.round().clamp(0, 5);
 
@@ -638,60 +622,85 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader('Ratings & Reviews'),
-        const SizedBox(height: 10),
-        _card(
+        const SizedBox(height: DabblerSpacing.space3),
+        DabblerSurface.sunken(
+          radius: DabblerRadius.xl,
+          padding: const EdgeInsets.all(DabblerSpacing.space5),
           child: Row(
             children: [
               Column(
                 children: [
                   Text(
                     avg.toStringAsFixed(1),
-                    style: Theme.of(context).textTheme.displayLarge!.copyWith(fontWeight: FontWeight.w900, color: cs.onSurface, letterSpacing: -2, height: 1),
+                    style: _t(
+                      context,
+                      DabblerType.largeTitle,
+                      colors.textPrimary,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(5, (i) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 1),
-                      child: Icon(
-                        i < filled ? Icons.star_rounded : Icons.star_border_rounded,
-                        size: 14,
-                        color: const Color(0xFFF4C430),
-                      ),
-                    )),
+                  const SizedBox(height: DabblerSpacing.space1),
+                  DabblerRating(
+                    value: filled.toDouble(),
+                    size: DabblerRatingSize.sm,
                   ),
-                  const SizedBox(height: 4),
-                  Text('${venue.totalRatings} reviews', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
+                  const SizedBox(height: DabblerSpacing.space1),
+                  Text(
+                    '${venue.totalRatings} reviews',
+                    style: _t(
+                      context,
+                      DabblerType.caption2,
+                      colors.textTertiary,
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: DabblerSpacing.space6),
               Expanded(
                 child: Column(
-                  children: [5, 4, 3, 2, 1].map((n) {
-                    final fraction = n == filled ? 0.6 : (n == filled + 1 || n == filled - 1) ? 0.3 : 0.1;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          Text('$n', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.star_rounded, size: 10, color: Color(0xFFF4C430)),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(999),
-                              child: LinearProgressIndicator(
-                                value: fraction,
-                                minHeight: 6,
-                                backgroundColor: cs.surfaceContainerLow,
-                                color: n >= 4 ? cs.primary : n == 3 ? const Color(0xFFF4C430) : cs.outlineVariant,
+                  children: [
+                    for (final n in const [5, 4, 3, 2, 1])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: DabblerSpacing.space1,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '$n',
+                              style: _t(
+                                context,
+                                DabblerType.caption2,
+                                colors.textTertiary,
+                                weight: DabblerType.bold,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: DabblerSpacing.space1),
+                            DabblerIcon(
+                              'star',
+                              weight: DabblerIconWeight.bold,
+                              size: 10,
+                              color: colors.warning.base,
+                            ),
+                            const SizedBox(width: DabblerSpacing.space2),
+                            Expanded(
+                              child: DabblerProgressBar(
+                                value: n == filled
+                                    ? 0.6
+                                    : (n == filled + 1 || n == filled - 1)
+                                    ? 0.3
+                                    : 0.1,
+                                size: DabblerProgressBarSize.sm,
+                                tone: n >= 4
+                                    ? DabblerProgressBarTone.brand
+                                    : n == 3
+                                    ? DabblerProgressBarTone.warning
+                                    : DabblerProgressBarTone.info,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  }).toList(),
+                  ],
                 ),
               ),
             ],
@@ -704,122 +713,143 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   Widget _sectionHeader(String title, {String? sub}) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = DabblerColors.of(context);
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
-        Text(title, style: Theme.of(context).textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.1)),
+        Text(title, style: _section(context, colors)),
         if (sub != null) ...[
-          const SizedBox(width: 6),
-          Text('· $sub', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+          const SizedBox(width: DabblerSpacing.space2),
+          Text(
+            '· $sub',
+            style: _t(context, DabblerType.caption1, colors.textTertiary),
+          ),
         ],
       ],
     );
   }
 
-  Widget _card({required Widget child}) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        border: Border.all(color: cs.outlineVariant, width: 1.5),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: child,
-    );
-  }
-
   // ─── Space detail bottom sheet ───────────────────────────────────────────────
 
-  void _showSpaceSheet(BuildContext ctx, String sport, games_venue.Venue venue) {
-    final meta = _metaFor(sport);
-    final cs = Theme.of(ctx).colorScheme;
-    showModalBottomSheet(
+  void _showSpaceSheet(
+    BuildContext ctx,
+    String sport,
+    games_venue.Venue venue,
+  ) {
+    showDabblerSheet<void>(
       context: ctx,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36, height: 4,
-              decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(999)),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Container(
-                  width: 44, height: 44,
-                  decoration: BoxDecoration(
-                    color: meta.color.withValues(alpha: 0.15),
-                    border: Border.all(color: meta.color.withValues(alpha: 0.3), width: 1.5),
-                    borderRadius: BorderRadius.circular(14),
+      detent: DabblerSheetDetent.content,
+      builder: (sheetCtx) {
+        final colors = DabblerColors.of(sheetCtx);
+        final free = venue.pricePerHour == 0;
+        return Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space6,
+            DabblerSpacing.space2,
+            DabblerSpacing.space6,
+            DabblerSpacing.space8,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  DabblerIconTile(
+                    DabblerSportIcon.fromKey(_sportKey(sport), size: 22),
+                    size: 44,
                   ),
-                  child: Center(child: Text(meta.emoji, style: const TextStyle(fontSize: 22))),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(meta.label, style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface)),
-                      Text('Sport Space', style: Theme.of(context).textTheme.bodySmall!.copyWith(color: cs.onSurfaceVariant)),
-                    ],
+                  const SizedBox(width: DabblerSpacing.space4),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _labelFor(sport),
+                          style: _t(
+                            context,
+                            DabblerType.headline,
+                            colors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          'Sport Space',
+                          style: _t(
+                            context,
+                            DabblerType.caption1,
+                            colors.textTertiary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  venue.pricePerHour == 0 ? 'Free' : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr',
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w800, color: venue.pricePerHour == 0 ? _green : meta.color),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                _statTile('Hours', '${venue.openingTime}–${venue.closingTime}', Icons.schedule_rounded),
-                const SizedBox(width: 8),
-                _statTile('Lighting', 'Yes', Icons.lightbulb_outline_rounded),
-                const SizedBox(width: 8),
-                _statTile('Type', 'Outdoor', Icons.landscape_rounded),
-              ],
-            ),
-            // const SizedBox(height: 16),
-            // SizedBox(
-            //   width: double.infinity, height: 48,
-            //   child: FilledButton(
-            //     onPressed: () => Navigator.pop(ctx),
-            //     style: FilledButton.styleFrom(
-            //       backgroundColor: cs.primary,
-            //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            //     ),
-            //     child: const Text('Book Space', style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700)),
-            //   ),
-            // ),
-          ],
-        ),
-      ),
+                  Text(
+                    free
+                        ? 'Free'
+                        : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr',
+                    style: _t(
+                      context,
+                      DabblerType.headline,
+                      free ? colors.success.strong : colors.brandPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: DabblerSpacing.space7),
+              Row(
+                children: [
+                  _statTile(
+                    'Hours',
+                    '${venue.openingTime}–${venue.closingTime}',
+                    'clock',
+                  ),
+                  const SizedBox(width: DabblerSpacing.space3),
+                  _statTile('Lighting', 'Yes', 'lamp-on'),
+                  const SizedBox(width: DabblerSpacing.space3),
+                  _statTile('Type', 'Outdoor', 'sun-1'),
+                ],
+              ),
+              // Booking is not an app feature (and was already commented out):
+              // the design's "Book a space" action stays unbuilt. The original
+              // full-width primary action, kept here as a note:
+              // DabblerButton(
+              //   label: 'Book Space',
+              //   fullWidth: true,
+              //   onPressed: () => Navigator.pop(sheetCtx),
+              // ),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _statTile(String label, String value, IconData icon) {
-    final cs = Theme.of(context).colorScheme;
+  Widget _statTile(String label, String value, String icon) {
+    final colors = DabblerColors.of(context);
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerLowest,
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      child: DabblerSurface.sunken(
+        radius: DabblerRadius.lg,
+        padding: const EdgeInsets.all(DabblerSpacing.space4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 18, color: cs.primary),
-            const SizedBox(height: 4),
-            Text(value, style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface)),
-            Text(label, style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant)),
+            DabblerIcon(icon, size: 18, color: colors.brandPrimary),
+            const SizedBox(height: DabblerSpacing.space1),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _t(
+                context,
+                DabblerType.caption1,
+                colors.textPrimary,
+                weight: DabblerType.bold,
+              ),
+            ),
+            Text(
+              label,
+              style: _t(context, DabblerType.caption2, colors.textTertiary),
+            ),
           ],
         ),
       ),
@@ -832,20 +862,31 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(child: _shimmer(double.infinity, 240 + safeTop, radius: 0)),
         SliverToBoxAdapter(
+          child: DabblerSkeleton.rect(
+            width: double.infinity,
+            height: 240 + safeTop,
+            radius: 0,
+          ),
+        ),
+        const SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            padding: EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space6,
+              DabblerSpacing.space6,
+              DabblerSpacing.space6,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _shimmer(220, 28),
-                const SizedBox(height: 10),
-                _shimmer(160, 20),
-                const SizedBox(height: 16),
-                _shimmer(double.infinity, 80),
-                const SizedBox(height: 12),
-                _shimmer(double.infinity, 100),
+                DabblerSkeleton.rect(width: 220, height: 28),
+                SizedBox(height: DabblerSpacing.space3),
+                DabblerSkeleton.rect(width: 160, height: 20),
+                SizedBox(height: DabblerSpacing.space6),
+                DabblerSkeleton.rect(width: double.infinity, height: 80),
+                SizedBox(height: DabblerSpacing.space4),
+                DabblerSkeleton.rect(width: double.infinity, height: 100),
               ],
             ),
           ),
@@ -854,63 +895,35 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     );
   }
 
-  Widget _shimmer(double w, double h, {double radius = 12}) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: w, height: h,
-      margin: const EdgeInsets.only(bottom: 4),
-      decoration: BoxDecoration(
-        color: cs.onSurfaceVariant.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(radius),
-      ),
-    );
-  }
-
   // ─── Error ────────────────────────────────────────────────────────────────────
 
   Widget _buildError(double safeTop) {
-    final cs = Theme.of(context).colorScheme;
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: safeTop + 8)),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).maybePop(),
-              child: Container(
-                width: 36, height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                ),
-                child: const Icon(Iconsax.arrow_left_copy, size: 18, color: Colors.white),
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space5,
+            safeTop + DabblerSpacing.space3,
+            DabblerSpacing.space5,
+            0,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DabblerButton.icon(
+              icon: _backIcon(context),
+              semanticLabel: 'Back',
+              tone: DabblerButtonTone.neutral,
+              onPressed: () => Navigator.of(context).maybePop(),
             ),
           ),
         ),
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Iconsax.danger_copy, size: 56, color: Color(0xFFFF3376)),
-                  const SizedBox(height: 16),
-                  Text('Failed to load venue', style: Theme.of(context).textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w700, color: cs.onSurface), textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  Text('Please check your connection and try again.', style: TextStyle(color: cs.onSurfaceVariant), textAlign: TextAlign.center),
-                  const SizedBox(height: 24),
-                  FilledButton.tonal(
-                    onPressed: () => ref.refresh(venueDetailProvider(widget.venueId)),
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            ),
+        Expanded(
+          child: DabblerEmptyState.error(
+            title: 'Failed to load venue',
+            text: 'Please check your connection and try again.',
+            retryLabel: 'Retry',
+            onRetry: () => ref.refresh(venueDetailProvider(widget.venueId)),
           ),
         ),
       ],
@@ -919,25 +932,35 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
 
   // ─── Actions ─────────────────────────────────────────────────────────────────
 
-  void _shareVenue() => _snack('Sharing coming soon');
-
   Future<void> _toggleFavorite(bool currentlyFavorited) async {
     if (_favoriteBusy) return;
     final userId = ref.read(currentUserIdProvider);
-    if (userId == null || userId.isEmpty) { _snack('Sign in to save venues'); return; }
-    setState(() { _favoriteBusy = true; _favoriteOptimistic = !currentlyFavorited; });
+    if (userId == null || userId.isEmpty) {
+      _snack('Sign in to save venues');
+      return;
+    }
+    setState(() {
+      _favoriteBusy = true;
+      _favoriteOptimistic = !currentlyFavorited;
+    });
     final repository = ref.read(games_providers.venuesRepositoryProvider);
     final result = await repository.toggleVenueFavorite(widget.venueId, userId);
     if (!mounted) return;
     result.fold(
       (failure) {
-        setState(() { _favoriteBusy = false; _favoriteOptimistic = currentlyFavorited; });
+        setState(() {
+          _favoriteBusy = false;
+          _favoriteOptimistic = currentlyFavorited;
+        });
         _snack(failure.message);
       },
       (_) {
         ref.invalidate(favoriteVenuesForCurrentUserProvider);
         ref.invalidate(favoriteVenueIdsForCurrentUserProvider);
-        setState(() { _favoriteBusy = false; _favoriteOptimistic = null; });
+        setState(() {
+          _favoriteBusy = false;
+          _favoriteOptimistic = null;
+        });
         _snack(currentlyFavorited ? 'Removed from saved' : 'Saved');
       },
     );
@@ -945,12 +968,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
 
   void _getDirections() {
     final async = ref.read(venueDetailProvider(widget.venueId));
-    async.whenData((venue) => _launchUrl('https://www.google.com/maps?q=${venue.latitude},${venue.longitude}'));
+    async.whenData(
+      (venue) => _launchUrl(
+        'https://www.google.com/maps?q=${venue.latitude},${venue.longitude}',
+      ),
+    );
   }
 
   void _callVenue(String phone) => _launchPhoneDialer(phone);
 
-  void _openWebsite(String url) => _launchUrl(url.startsWith('http') ? url : 'https://$url');
+  void _openWebsite(String url) =>
+      _launchUrl(url.startsWith('http') ? url : 'https://$url');
 
   Future<void> _launchUrl(String url) async {
     try {
@@ -962,9 +990,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
 
   Future<void> _launchPhoneDialer(String phone) async {
     final normalized = _normalizePhone(phone);
-    if (normalized.isEmpty) { _snack('Phone number not available'); return; }
+    if (normalized.isEmpty) {
+      _snack('Phone number not available');
+      return;
+    }
     try {
-      final launched = await launchUrl(Uri(scheme: 'tel', path: normalized), mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(
+        Uri(scheme: 'tel', path: normalized),
+        mode: LaunchMode.externalApplication,
+      );
       if (!launched && mounted) _snack('Calling not supported on this device');
     } catch (_) {
       if (mounted) _snack('Could not open phone dialer');
@@ -976,31 +1010,38 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     for (var i = 0; i < input.length; i++) {
       final ch = input[i];
       final code = ch.codeUnitAt(0);
-      if (code >= 48 && code <= 57) { buf.write(ch); continue; }
+      if (code >= 48 && code <= 57) {
+        buf.write(ch);
+        continue;
+      }
       if (ch == '+' && buf.isEmpty) buf.write(ch);
     }
     return buf.toString();
   }
 
   void _snack(String message) {
-    final m = ScaffoldMessenger.maybeOf(context);
-    if (m == null) return;
-    m..clearSnackBars()..showSnackBar(SnackBar(content: Text(message), behavior: SnackBarBehavior.floating));
+    final toasts = DabblerToastProvider.maybeOf(context);
+    if (toasts == null) return;
+    toasts
+      ..clear()
+      ..show(DabblerToastSpec(message: message));
   }
 }
 
 // ─── Hero carousel ────────────────────────────────────────────────────────────
 
+/// The venue's sports, cycling every three seconds (or on tap / dot).
+///
+/// The venue record carries no photographs, so each slide is the design's
+/// photo slot in its empty state: the sunken ground with the sport's glyph and
+/// a label pill.
 class _HeroCarousel extends StatefulWidget {
   final List<String> sports;
   final String venueName;
   final double safeTop;
   final bool isFavorited;
   final bool favoriteBusy;
-  final Color bgColor;
-  final Color primaryColor;
   final VoidCallback onBack;
-  final VoidCallback onShare;
   final VoidCallback onFavorite;
 
   const _HeroCarousel({
@@ -1009,10 +1050,7 @@ class _HeroCarousel extends StatefulWidget {
     required this.safeTop,
     required this.isFavorited,
     required this.favoriteBusy,
-    required this.bgColor,
-    required this.primaryColor,
     required this.onBack,
-    required this.onShare,
     required this.onFavorite,
   });
 
@@ -1042,8 +1080,8 @@ class _HeroCarouselState extends State<_HeroCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final meta = _metaFor(widget.sports[_idx]);
-    final primary = widget.primaryColor;
+    final colors = DabblerColors.of(context);
+    final sport = widget.sports[_idx];
 
     return GestureDetector(
       onTap: () => setState(() => _idx = (_idx + 1) % widget.sports.length),
@@ -1051,136 +1089,99 @@ class _HeroCarouselState extends State<_HeroCarousel> {
         height: 240 + widget.safeTop,
         child: Stack(
           children: [
-            // Animated gradient
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 600),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    HSLColor.fromColor(primary).withLightness(0.18).toColor(),
-                    meta.color.withValues(alpha: 0.75),
-                    meta.color.withValues(alpha: 0.4),
-                  ],
-                ),
-              ),
-            ),
-            // Pink glow blob
+            Positioned.fill(child: ColoredBox(color: colors.surfaceSunken)),
+            // Sport glyph — large, centred
             Positioned(
-              top: -30, right: -30,
-              child: Container(
-                width: 160, height: 160,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0x25FF3376)),
-              ),
-            ),
-            // Grid overlay
-            const Positioned.fill(child: CustomPaint(painter: _HeroGridPainter())),
-            // Sport emoji — large, centred
-            Positioned(
-              left: 0, right: 0,
-              top: 0, bottom: 60,
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 60,
               child: Center(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 400),
-                  child: Text(meta.emoji, key: ValueKey(_idx), style: const TextStyle(fontSize: 80)),
+                  child: DabblerSportIcon.fromKey(
+                    _sportKey(sport),
+                    key: ValueKey(_idx),
+                    size: 80,
+                    color: colors.brandPrimary,
+                  ),
                 ),
               ),
             ),
-            // Bottom info
-            Positioned(
-              left: 20, right: 20, bottom: 30,
+            // Label pill
+            PositionedDirectional(
+              start: DabblerSpacing.space6,
+              bottom: 42,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 350),
-                child: Column(
+                child: DabblerBadge(
                   key: ValueKey(_idx),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${meta.emoji}  ${meta.label}',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white.withValues(alpha: 0.65)),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      widget.venueName,
-                      style: Theme.of(context).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -0.4),
-                    ),
-                  ],
+                  label: _labelFor(sport),
+                  tone: DabblerBadgeTone.success,
                 ),
               ),
             ),
             // Carousel dots
             if (widget.sports.length > 1)
               Positioned(
-                bottom: 12, left: 0, right: 0,
+                bottom: DabblerSpacing.space4,
+                left: 0,
+                right: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(widget.sports.length, (i) => GestureDetector(
-                    onTap: () { _timer?.cancel(); setState(() => _idx = i); },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: i == _idx ? 16 : 5,
-                      height: 5,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        color: i == _idx ? Colors.white : Colors.white.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(999),
+                  children: List.generate(
+                    widget.sports.length,
+                    (i) => GestureDetector(
+                      onTap: () {
+                        _timer?.cancel();
+                        setState(() => _idx = i);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: i == _idx ? 16 : 5,
+                        height: 5,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          color: i == _idx
+                              ? colors.textPrimary
+                              : colors.textPrimary.withValues(alpha: 0.25),
+                          borderRadius: DabblerRadius.pillAll,
+                        ),
                       ),
                     ),
-                  )),
-                ),
-              ),
-            // Bottom fade to bg
-            Positioned(
-              left: 0, right: 0, bottom: 0,
-              child: Container(
-                height: 70,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, widget.bgColor],
                   ),
                 ),
               ),
-            ),
-            // Back / share / save overlay
-            Positioned(
-              top: widget.safeTop + 10,
-              left: 18, right: 18,
+            // Back / save overlay (the share button stays hidden until
+            // sharing is implemented).
+            PositionedDirectional(
+              top: widget.safeTop + DabblerSpacing.space4,
+              start: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _glassBtn(icon: Iconsax.arrow_left_copy, onTap: widget.onBack, primary: primary),
-                  const Spacer(),
-                  // Share button hidden until sharing is implemented.
-                  _glassBtn(
-                    icon: widget.isFavorited ? Iconsax.bookmark_2_copy : Iconsax.bookmark_copy,
-                    onTap: widget.favoriteBusy ? null : widget.onFavorite,
-                    active: widget.isFavorited,
-                    primary: primary,
+                  DabblerButton.icon(
+                    icon: _backIcon(context),
+                    semanticLabel: 'Back',
+                    tone: DabblerButtonTone.neutral,
+                    onPressed: widget.onBack,
+                  ),
+                  DabblerButton.icon(
+                    icon: widget.isFavorited ? 'bookmark-2' : 'bookmark',
+                    semanticLabel: widget.isFavorited
+                        ? 'Unsave venue'
+                        : 'Save venue',
+                    tone: widget.isFavorited
+                        ? DabblerButtonTone.primary
+                        : DabblerButtonTone.neutral,
+                    onPressed: widget.favoriteBusy ? null : widget.onFavorite,
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _glassBtn({required IconData icon, VoidCallback? onTap, bool active = false, required Color primary}) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36, height: 36,
-        decoration: BoxDecoration(
-          color: active ? primary.withValues(alpha: 0.8) : cs.onSurface.withValues(alpha: 0.3),
-          shape: BoxShape.circle,
-          border: Border.all(color: active ? primary : cs.onSurface.withValues(alpha: 0.2)),
-        ),
-        child: Icon(icon, size: 18, color: cs.onPrimary),
       ),
     );
   }
@@ -1203,129 +1204,120 @@ class _SpaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final meta = _metaFor(sport);
-    final color = meta.color;
+    final colors = DabblerColors.of(context);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 160,
-        decoration: BoxDecoration(
-          color: cs.surface,
-          border: Border.all(color: cs.outlineVariant, width: 1.5),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Illustration header
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Container(
-                height: 90,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [color.withValues(alpha: 0.18), color.withValues(alpha: 0.06)],
+      child: SizedBox(
+        width: 180,
+        child: DabblerSurface.sunken(
+          radius: DabblerRadius.xl,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Illustration header
+              SizedBox(
+                height: 96,
+                child: ColoredBox(
+                  color: colors.bgTertiary,
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: DabblerSportIcon.fromKey(
+                          _sportKey(sport),
+                          size: 44,
+                          color: colors.brandPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Stack(
+              ),
+              // Info
+              Padding(
+                padding: const EdgeInsets.all(DabblerSpacing.space5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(child: Text(meta.emoji, style: const TextStyle(fontSize: 44))),
-                    Positioned(
-                      top: 8, left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), borderRadius: BorderRadius.circular(999)),
-                        child: Text('Outdoor', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text(
+                      _labelFor(sport),
+                      style: _t(
+                        context,
+                        DabblerType.footnote,
+                        colors.textPrimary,
+                        weight: DabblerType.semibold,
                       ),
                     ),
-                    Positioned(
-                      top: 8, right: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xE5F4C430), borderRadius: BorderRadius.circular(999)),
-                        child: Text('⚡ Lights', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w700, color: Color(0xFF333333))),
+                    Text(
+                      'Court / Field',
+                      style: _t(
+                        context,
+                        DabblerType.caption2,
+                        colors.textTertiary,
                       ),
+                    ),
+                    const SizedBox(height: DabblerSpacing.space2),
+                    Wrap(
+                      spacing: DabblerSpacing.space2,
+                      runSpacing: DabblerSpacing.space1,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        const DabblerBadge(
+                          label: 'Outdoor',
+                          tone: DabblerBadgeTone.withIcon,
+                        ),
+                        const DabblerBadge(
+                          label: 'Lights',
+                          tone: DabblerBadgeTone.withIcon,
+                          icon: DabblerIcon('flash', size: 11),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: DabblerSpacing.space2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            DabblerIcon(
+                              'people',
+                              size: 13,
+                              color: colors.textTertiary,
+                            ),
+                            const SizedBox(width: DabblerSpacing.space1),
+                            Text(
+                              '10',
+                              style: _t(
+                                context,
+                                DabblerType.caption2,
+                                colors.textTertiary,
+                                weight: DabblerType.semibold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          pricePerHour == 0
+                              ? 'Free'
+                              : '$currency ${pricePerHour.toStringAsFixed(0)}',
+                          style: _t(
+                            context,
+                            DabblerType.footnote,
+                            pricePerHour == 0
+                                ? colors.success.strong
+                                : colors.textPrimary,
+                            weight: DabblerType.bold,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(meta.label, style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w800, color: cs.onSurface, height: 1.3)),
-                  const SizedBox(height: 4),
-                  Text('Court / Field', style: Theme.of(context).textTheme.labelSmall!.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.people_outline_rounded, size: 13, color: cs.onSurfaceVariant),
-                          const SizedBox(width: 3),
-                          Text('10', style: Theme.of(context).textTheme.labelSmall!.copyWith(fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
-                        ],
-                      ),
-                      Text(
-                        pricePerHour == 0 ? 'Free' : '$currency ${pricePerHour.toStringAsFixed(0)}',
-                        style: Theme.of(context).textTheme.bodySmall!.copyWith(fontWeight: FontWeight.w800, color: pricePerHour == 0 ? _green : color),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-// ─── Painters ────────────────────────────────────────────────────────────────
-
-class _HeroGridPainter extends CustomPainter {
-  const _HeroGridPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.07)..strokeWidth = 1;
-    for (var x = 0.0; x < size.width; x += 36) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y < size.height; y += 36) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HeroGridPainter _) => false;
-}
-
-class _MapGridPainter extends CustomPainter {
-  final Color color;
-  const _MapGridPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color.withValues(alpha: 0.15)..strokeWidth = 1;
-    for (var x = 0.0; x < size.width; x += 40) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (var y = 0.0; y < size.height; y += 30) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_MapGridPainter old) => old.color != color;
 }
