@@ -354,17 +354,17 @@ class ComposerGlassInput extends StatelessWidget {
   );
 }
 
-/// Opens [builder] as a design-system sheet. All composer pickers go through
-/// here so they share one sheet chrome.
+/// Opens [builder] as a design-system sheet that sizes to its content (capped
+/// by the design system's content max fraction). All composer pickers go
+/// through here so they share one sheet chrome.
 Future<T?> showComposerSheet<T>(
   BuildContext context, {
   required String title,
   required WidgetBuilder builder,
-  List<double> detents = const <double>[0.7],
 }) => showDabblerSheet<T>(
   context: context,
   title: title,
-  detents: detents,
+  detent: DabblerSheetDetent.content,
   builder: builder,
 );
 

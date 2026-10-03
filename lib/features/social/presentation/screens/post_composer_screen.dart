@@ -110,7 +110,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Who can see this?',
-      detents: const <double>[0.6],
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -137,7 +136,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Vibes',
-      detents: const <double>[0.85],
       builder: (ctx) => const _ComposerVibesPickerSheet(),
     );
   }
@@ -155,7 +153,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Sports',
-      detents: const <double>[0.85],
       builder: (_) => SportSelectionSheet(
         sportsProvider: activeSportsByProfileCountryProvider,
         selectedSport: selectedSport,
@@ -175,7 +172,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Set expiry',
-      detents: const <double>[0.7],
       builder: (ctx) => _ExpiryPickerSheet(
         first: now,
         last: now.add(const Duration(days: 365)),
@@ -193,7 +189,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Link a Game',
-      detents: const <double>[0.85],
       builder: (ctx) => const _GamePickerSheet(),
     );
   }
@@ -202,7 +197,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Location',
-      detents: const <double>[0.85],
       builder: (ctx) => const _LocationPickerSheet(),
     );
   }
@@ -216,7 +210,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Post Type',
-      detents: const <double>[0.5],
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -245,7 +238,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Content Class',
-      detents: const <double>[0.4],
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -271,7 +263,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Add Media',
-      detents: const <double>[0.45],
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -322,7 +313,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Search GIFs',
-      detents: const <double>[0.9],
       builder: (ctx) => _GifPickerSheet(
         onSelected: (gifUrl) {
           ref.read(postComposerProvider.notifier).addMediaUrl(gifUrl);
@@ -344,7 +334,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     showComposerSheet<void>(
       context,
       title: 'Post As',
-      detents: const <double>[0.5],
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [

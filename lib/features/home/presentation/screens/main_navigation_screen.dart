@@ -335,61 +335,51 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _handleSystemBack();
       },
       child: DabblerPage(
-        // The bottom bar below owns the bottom inset; branch pages inside the
-        // shell must not pad for it a second time.
-        body: MediaQuery.removePadding(
-          context: context,
-          removeBottom: true,
-          child: widget.navigationShell,
-        ),
-        // The design sets the bar in a padded container (`12px 18px`).
-        bottomBar: Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space6,
-            vertical: DabblerSpacing.space4,
-          ),
-          child: DabblerNavigationBottomBar(
-            items: <DabblerNavigationItem>[
+        // The page raises the body's bottom padding by the floating bar's
+        // height, so branch pages scroll their last item clear of it. The
+        // fade behind the bar washes the content out to the page colour.
+        body: widget.navigationShell,
+        bottomOverlay: DabblerNavigationBottomBar(
+          items: <DabblerNavigationItem>[
+            DabblerNavigationItem(
+              id: _idHome,
+              icon: 'home-2',
+              label: l.nav_feeds,
+            ),
+            if (FeatureFlags.enableCommunityMobileNav)
               DabblerNavigationItem(
-                id: _idHome,
-                icon: 'home-2',
-                label: l.nav_feeds,
+                id: _idCommunity,
+                icon: 'people',
+                label: l.nav_community,
               ),
-              if (FeatureFlags.enableCommunityMobileNav)
-                DabblerNavigationItem(
-                  id: _idCommunity,
-                  icon: 'people',
-                  label: l.nav_community,
-                ),
-              DabblerNavigationItem(
-                id: _idVenues,
-                icon: 'location',
-                label: l.nav_venues,
-              ),
-              DabblerNavigationItem(
-                id: _idGames,
-                icon: 'game',
-                label: l.nav_games,
-              ),
-            ],
-            active: _activeId,
-            onSelect: _onSelect,
-            menuOpen: _createMenuOpen,
-            onAction: (open) => setState(() => _createMenuOpen = open),
-            createItems: <DabblerNavigationCreateItem>[
-              DabblerNavigationCreateItem(
-                id: _createPost,
-                icon: 'edit-2',
-                label: l.nav_create_post,
-              ),
-              DabblerNavigationCreateItem(
-                id: _createGame,
-                icon: 'game',
-                label: l.nav_create_game,
-              ),
-            ],
-            onCreate: _onCreate,
-          ),
+            DabblerNavigationItem(
+              id: _idVenues,
+              icon: 'location',
+              label: l.nav_venues,
+            ),
+            DabblerNavigationItem(
+              id: _idGames,
+              icon: 'game',
+              label: l.nav_games,
+            ),
+          ],
+          active: _activeId,
+          onSelect: _onSelect,
+          menuOpen: _createMenuOpen,
+          onAction: (open) => setState(() => _createMenuOpen = open),
+          createItems: <DabblerNavigationCreateItem>[
+            DabblerNavigationCreateItem(
+              id: _createPost,
+              icon: 'edit-2',
+              label: l.nav_create_post,
+            ),
+            DabblerNavigationCreateItem(
+              id: _createGame,
+              icon: 'game',
+              label: l.nav_create_game,
+            ),
+          ],
+          onCreate: _onCreate,
         ),
       ),
     );
