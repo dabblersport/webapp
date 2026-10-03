@@ -42,9 +42,14 @@ class HomePostRow extends ConsumerStatefulWidget {
 
   /// The row for [post]: a repost shows its quote and the embedded original, an
   /// allocated kind shows its kind badge, everything else is the plain row.
-  static Widget resolve(Post post, {bool showNearbyChipInHeader = false}) {
+  /// [detail] is the open post's timestamp line (post detail only).
+  static Widget resolve(
+    Post post, {
+    bool showNearbyChipInHeader = false,
+    DabblerPostDetail? detail,
+  }) {
     if (post.originType == OriginType.repost) {
-      return HomeRepostRow(post: post);
+      return HomeRepostRow(post: post, detail: detail);
     }
     return HomePostRow(
       post: post,
@@ -493,9 +498,12 @@ void _showLegacyReportDialog(
 /// A repost: the reposter's header, an optional quote, and the original post
 /// embedded in a [DabblerCard].
 class HomeRepostRow extends ConsumerWidget {
-  const HomeRepostRow({super.key, required this.post});
+  const HomeRepostRow({super.key, required this.post, this.detail});
 
   final Post post;
+
+  /// The open post's timestamp line, drawn under the repost on post detail.
+  final DabblerPostDetail? detail;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -616,6 +624,7 @@ class HomeRepostRow extends ConsumerWidget {
                           ),
                   ),
                 ),
+                if (detail != null) DabblerPostDetailLine(detail: detail!),
               ],
             ),
           ),

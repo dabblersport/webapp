@@ -35,7 +35,16 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
 
   String _tab = _tabTracker;
 
+  // Drives the top bar's scroll-revealed title (the original AppBar title).
+  final ScrollController _scroll = ScrollController();
+
   SportProfileRouteArgs get args => widget.args;
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,13 +55,15 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
     // The page paints immediately; each section resolves independently so a
     // slow query (e.g. post enrichment) never blocks the header/scoreboard.
     return DabblerPage(
-      // The display sport name below is the title (the design fades a nav
-      // title in on scroll); an empty one keeps the titled bar's back button.
+      // The sport name is the bar title (the original AppBar title); the
+      // design fades it in once the display header scrolls away.
       topBar: DabblerNavigationTopBar.titled(
-        title: '',
+        title: args.sportName,
+        scrollController: _scroll,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: ListView(
+        controller: _scroll,
         padding: const EdgeInsets.fromLTRB(
           DabblerSpacing.space6,
           DabblerSpacing.space4,
@@ -70,6 +81,8 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
                   const SizedBox(height: DabblerSpacing.space6),
                   DabblerTabs(
                     variant: DabblerTabsVariant.segmented,
+                    // Arabic labels scale down rather than ellipsise.
+                    labelFit: DabblerTabsLabelFit.fit,
                     value: _tab,
                     onChanged: (id) => setState(() => _tab = id),
                     items: const [
@@ -152,10 +165,27 @@ class _ScoreboardGrid extends StatelessWidget {
 
   final List<SportProfileMetric> metrics;
 
+  /// The glyph each scoreboard metric carried before the DS migration
+  /// (Material glyphs, mapped to DS icon names by label).
+  static const Map<String, String> _metricIcons = {
+    'Matches': 'cup',
+    'Rating': 'star',
+    'Form': 'trend-up',
+    'Reliability': 'verify',
+    'Hosted': 'calendar-tick',
+    'Upcoming': 'clock',
+    'Level': 'ranking',
+    'Active': 'tick-circle',
+  };
+
   @override
   Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
     // Bento: two tiles per row (span 3 of the 6-column grid).
     return DabblerStatGrid(
+      // The original 1.5 aspect tiles were ~100 tall; the default row clips
+      // the restored icon.
+      rowExtent: DabblerStatGrid.detailsRowHeight,
       children: [
         for (final metric in metrics)
           DabblerStatTile(
@@ -163,6 +193,14 @@ class _ScoreboardGrid extends StatelessWidget {
             label: metric.label,
             span: 3,
             rows: 1,
+            // The original tile scaled its content down rather than clip.
+            fitValue: true,
+            icon: _metricIcons[metric.label] == null
+                ? null
+                : DabblerIcon(
+                    _metricIcons[metric.label]!,
+                    color: colors.brandPrimary,
+                  ),
           ),
       ],
     );

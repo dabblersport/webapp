@@ -56,10 +56,10 @@ class ProfileSportsView extends StatelessWidget {
         title: 'Sports Preferences',
         onBack: onBack,
         actions: [
-          DabblerNavigationAction(
-            icon: 'tick-circle',
+          // The original showed a spinner in place of Save while busy; the
+          // DS action has no loading state (DS gap), so it is inert instead.
+          DabblerNavigationAction.text(
             label: 'Save',
-            // Was a spinner in place of the Save button while busy.
             onPressed: isLoading ? null : onSave,
           ),
         ],
@@ -76,7 +76,10 @@ class ProfileSportsView extends StatelessWidget {
           : ListView(
               padding: _gutter,
               children: [
-                _Header(showCreateGame: showCreateGame, onCreateGame: onCreateGame),
+                _Header(
+                  showCreateGame: showCreateGame,
+                  onCreateGame: onCreateGame,
+                ),
                 const SizedBox(height: DabblerSpacing.space8),
                 DabblerSection(
                   title: 'My Sports',
