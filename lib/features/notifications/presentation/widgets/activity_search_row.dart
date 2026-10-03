@@ -1,10 +1,13 @@
 // Extracted from notifications_screen_v2.dart by KAN-152 (pt.C of the split).
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
+//
+// KAN-420: the search box and the filter button were inert placeholders and
+// still are (no handler); they are now DS controls. The field is disabled so it
+// does not take focus or promise typing.
 
-import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 class ActivitySearchRow extends StatelessWidget {
@@ -12,55 +15,27 @@ class ActivitySearchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space6,
+        0,
+        DabblerSpacing.space6,
+        DabblerSpacing.space3,
+      ),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: cs.onSurface.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: cs.onSurface.withValues(alpha: 0.10),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Iconsax.search_normal_copy,
-                    size: 16,
-                    color: cs.onSurface.withValues(alpha: 0.6),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppLocalizations.of(context).activity_search_hint,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: cs.onSurface.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ],
-              ),
+            child: DabblerSearchField(
+              placeholder: AppLocalizations.of(context).activity_search_hint,
+              enabled: false,
+              clearable: false,
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: cs.onSurface.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: cs.onSurface.withValues(alpha: 0.10),
-                width: 1,
-              ),
-            ),
-            child: Icon(Iconsax.filter_copy, size: 16, color: cs.onSurface),
+          const SizedBox(width: DabblerSpacing.space2),
+          const DabblerButton.icon(
+            icon: 'filter',
+            semanticLabel: 'Filter',
+            tone: DabblerButtonTone.outlined,
           ),
         ],
       ),

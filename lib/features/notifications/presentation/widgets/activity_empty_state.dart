@@ -2,9 +2,8 @@
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
 
-import 'package:flutter/material.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/themes/app_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 class ActivityEmptyState extends StatelessWidget {
@@ -12,33 +11,17 @@ class ActivityEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.colorScheme;
+    final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-      child: Column(
-        children: [
-          Icon(
-            Iconsax.activity_copy,
-            size: 64,
-            color: cs.onSurface.withValues(alpha: 0.4),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            AppLocalizations.of(context).activity_empty_no_activity,
-            style: context.textTheme.headlineSmall?.copyWith(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppLocalizations.of(context).activity_empty_subtitle,
-            textAlign: TextAlign.center,
-            style: context.textTheme.bodyMedium?.copyWith(
-              color: cs.onSurface.withValues(alpha: 0.6),
-            ),
-          ),
-        ],
+      padding: const EdgeInsetsDirectional.symmetric(
+        vertical: DabblerSpacing.space11,
+        horizontal: DabblerSpacing.space8,
+      ),
+      child: DabblerEmptyState(
+        icon: 'activity',
+        title: l10n.activity_empty_no_activity,
+        text: l10n.activity_empty_subtitle,
+        size: DabblerEmptyStateSize.page,
       ),
     );
   }

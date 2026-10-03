@@ -1,9 +1,12 @@
 import 'package:dabbler/features/rewards/presentation/widgets/check_in_progress_indicator.dart';
-import 'package:dabbler/core/design_system/tokens/design_tokens.dart';
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
-/// Modal dialog that welcomes early bird testers and prompts for check-in
-/// Follows Material 3 design guidelines with custom theming
+/// Modal dialog that welcomes early bird testers and prompts for check-in.
+///
+/// Built from the design system: a [DabblerDialog] holding a hero icon, the
+/// two-week [CheckInProgressIndicator], the streak badge and the days-left
+/// banner. No design frame exists for it; design-system defaults throughout.
 class EarlyBirdCheckInModal extends StatelessWidget {
   const EarlyBirdCheckInModal({
     super.key,
@@ -22,257 +25,88 @@ class EarlyBirdCheckInModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = DabblerColors.of(context);
+    final textStyle = DabblerType.footnote
+        .resolveForDirection(Directionality.of(context))
+        .copyWith(color: colors.textSecondary);
 
-    return Dialog(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(DesignTokens.spacingLg),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(DesignTokens.spacingLg),
-        ),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(DesignTokens.spacingLg),
+    return DabblerDialog(
+      dismissible: false,
+      title: isCompleted
+          ? 'Early Bird Badge Earned!'
+          : 'Welcome Back, Early Bird!',
+      description: isCompleted
+          ? 'You\'ve completed the 14-day challenge!'
+          : currentDay == 0
+          ? 'Start your journey today!'
+          : 'Day $currentDay of 14',
+      primaryAction: isCompleted
+          ? DabblerDialogAction(
+              label: 'Awesome!',
+              onPressed: () => Navigator.of(context).pop(),
+            )
+          : DabblerDialogAction(label: 'Check In Now', onPressed: onCheckIn),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: DabblerSpacing.space4),
+          Center(
+            child: DabblerHeroIcon(
+              isCompleted ? 'medal-star' : 'sun-1',
+              tone: isCompleted
+                  ? DabblerHeroIconTone.success
+                  : DabblerHeroIconTone.brand,
+            ),
+          ),
+          const SizedBox(height: DabblerSpacing.space4),
+
+          // Progress card
+          DabblerSurface.card(
+            padding: const EdgeInsets.all(DabblerSpacing.space4),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header section with icon
-                Center(
-                  child: Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          colorScheme.primaryContainer,
-                          colorScheme.primaryContainer.withValues(alpha: 0.7),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: colorScheme.primary.withValues(alpha: 0.15),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                Row(
+                  children: [
+                    Text('Progress', style: textStyle),
+                    const Spacer(),
+                    Text(
+                      '$currentDay/14 days',
+                      style: textStyle.copyWith(color: colors.brandPrimary),
                     ),
-                    child: Center(
-                      child: Text(
-                        isCompleted ? '🏆' : '🐦',
-                        style: const TextStyle(fontSize: 48),
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
-
-                const SizedBox(height: DesignTokens.spacingLg),
-
-                // Title
-                Text(
-                  isCompleted
-                      ? 'Early Bird Badge Earned!'
-                      : 'Welcome Back, Early Bird!',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: DesignTokens.fontWeightBold,
-                    color: colorScheme.onSurface,
-                    letterSpacing: -0.5,
-                  ),
-                  textAlign: TextAlign.center,
+                const SizedBox(height: DabblerSpacing.space3),
+                CheckInProgressIndicator(
+                  completedDays: currentDay,
+                  totalDays: 14,
                 ),
-
-                const SizedBox(height: DesignTokens.spacingXs),
-
-                // Subtitle
-                Text(
-                  isCompleted
-                      ? 'You\'ve completed the 14-day challenge! 🎉'
-                      : currentDay == 0
-                      ? 'Start your journey today!'
-                      : 'Day $currentDay of 14',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: DesignTokens.spacingLg),
-
-                // Progress card
-                Container(
-                  padding: const EdgeInsets.all(DesignTokens.spacingMd),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.3,
-                    ),
-                    borderRadius: BorderRadius.circular(DesignTokens.spacingSm),
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Progress label
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Progress',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontWeight: DesignTokens.fontWeightMedium,
-                            ),
-                          ),
-                          Text(
-                            '$currentDay/14 days',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: DesignTokens.fontWeightSemibold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: DesignTokens.spacingSm),
-
-                      // Progress indicator
-                      CheckInProgressIndicator(
-                        completedDays: currentDay,
-                        totalDays: 14,
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Streak badge
-                if (streakCount > 1) ...[
-                  const SizedBox(height: DesignTokens.spacingMd),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DesignTokens.spacingMd,
-                      vertical: DesignTokens.spacingSm,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.orange.shade400,
-                          Colors.deepOrange.shade500,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        DesignTokens.spacingSm,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('🔥', style: TextStyle(fontSize: 24)),
-                        const SizedBox(width: DesignTokens.spacingXs),
-                        Text(
-                          '$streakCount Day Streak!',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: DesignTokens.fontWeightBold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: DesignTokens.spacingLg),
-
-                // Days remaining info
-                if (!isCompleted && daysRemaining > 0)
-                  Container(
-                    padding: const EdgeInsets.all(DesignTokens.spacingSm),
-                    decoration: BoxDecoration(
-                      color: colorScheme.secondaryContainer.withValues(
-                        alpha: 0.3,
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        DesignTokens.spacingXs,
-                      ),
-                    ),
-                    child: Text(
-                      '$daysRemaining ${daysRemaining == 1 ? 'day' : 'days'} left to unlock your badge',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSecondaryContainer,
-                        fontWeight: DesignTokens.fontWeightMedium,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                const SizedBox(height: DesignTokens.spacingLg),
-
-                // Action buttons
-                if (!isCompleted)
-                  FilledButton(
-                    onPressed: onCheckIn,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: DesignTokens.spacingMd,
-                      ),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.spacingSm,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Check In Now',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: colorScheme.onPrimary,
-                        fontWeight: DesignTokens.fontWeightSemibold,
-                      ),
-                    ),
-                  )
-                else
-                  FilledButton.tonal(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: DesignTokens.spacingMd,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          DesignTokens.spacingSm,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      'Awesome!',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: DesignTokens.fontWeightSemibold,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
-        ),
+
+          // Streak badge
+          if (streakCount > 1) ...[
+            const SizedBox(height: DabblerSpacing.space4),
+            Center(
+              child: DabblerBadge(
+                label: '$streakCount Day Streak!',
+                status: colors.warning,
+                icon: const DabblerIcon('flash-1', size: 14),
+              ),
+            ),
+          ],
+
+          // Days remaining info
+          if (!isCompleted && daysRemaining > 0) ...[
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerBanner(
+              tone: DabblerBannerTone.neutral,
+              message:
+                  '$daysRemaining ${daysRemaining == 1 ? 'day' : 'days'} left to unlock your badge',
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -286,9 +120,9 @@ class EarlyBirdCheckInModal extends StatelessWidget {
     required VoidCallback onCheckIn,
     bool isCompleted = false,
   }) {
-    return showDialog<bool>(
+    // Not dismissible: the user must check in or tap Awesome to close.
+    return showDabblerDialog<bool>(
       context: context,
-      barrierDismissible: false, // Must check in or tap Awesome to close
       builder: (context) => EarlyBirdCheckInModal(
         currentDay: currentDay,
         streakCount: streakCount,

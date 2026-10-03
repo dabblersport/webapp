@@ -1,8 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/utils/constants/route_constants.dart';
 
+/// Error route page. Built from the design system: a [DabblerPage] with a
+/// titled top bar and a [DabblerEmptyState.error] whose retry action keeps the
+/// previous behaviour (pop when possible, otherwise go home). No design frame
+/// exists for it.
 class ErrorPage extends StatelessWidget {
   final String? message;
 
@@ -10,41 +15,17 @@ class ErrorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Error', style: Theme.of(context).textTheme.titleLarge),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                message ?? 'An error occurred',
-                style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Please try again or contact support if the problem persists.',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              FilledButton(
-                onPressed: () => context.canPop()
-                    ? context.pop()
-                    : context.go(RoutePaths.home),
-                child: const Text('Retry'),
-              ),
-            ],
+    return DabblerPage(
+      topBar: const DabblerNavigationTopBar.titled(title: 'Error'),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(DabblerSpacing.space6),
+          child: DabblerEmptyState.error(
+            title: message ?? 'An error occurred',
+            text: 'Please try again or contact support if the problem persists.',
+            retryLabel: 'Retry',
+            onRetry: () =>
+                context.canPop() ? context.pop() : context.go(RoutePaths.home),
           ),
         ),
       ),
