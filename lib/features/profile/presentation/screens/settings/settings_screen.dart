@@ -1,35 +1,30 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
-import 'package:dabbler/widgets/app_background.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 // ─── Supported options ────────────────────────────────────────────────────────
 
 const _kSupportedCountries = [
-  (name: 'Egypt',                flag: '🇪🇬'),
-  (name: 'United Arab Emirates', flag: '🇦🇪'),
-  (name: 'Saudi Arabia',         flag: '🇸🇦'),
-  (name: 'Morocco',              flag: '🇲🇦'),
+  (name: 'Egypt'),
+  (name: 'United Arab Emirates'),
+  (name: 'Saudi Arabia'),
+  (name: 'Morocco'),
 ];
 
 const _kSupportedLanguages = [
-  (code: 'en', label: 'English',  native: 'English',  flag: '🇬🇧'),
-  (code: 'ar', label: 'Arabic',   native: 'العربية',  flag: '🇸🇦'),
+  (code: 'en', label: 'English', native: 'English'),
+  (code: 'ar', label: 'Arabic', native: 'العربية'),
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -54,144 +49,99 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   List<SettingsSection> _allSections(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return [
-    SettingsSection(
-      title: l10n.settings_section_account,
-      items: [
-        SettingsItem(
-          id: 'account_management',
-          title: l10n.settings_item_account_management_title,
-          subtitle: l10n.settings_item_account_management_subtitle,
-          icon: Iconsax.profile_circle_copy,
-          route: '/settings/account',
-          searchTerms: ['account', 'email', 'password', 'security', 'login'],
-        ),
-        SettingsItem(
-          id: 'privacy_settings',
-          title: l10n.settings_item_privacy_settings_title,
-          subtitle: l10n.settings_item_privacy_settings_subtitle,
-          icon: Iconsax.slash_copy,
-          route: '/settings/privacy',
-          searchTerms: ['blocked', 'block', 'users', 'privacy', 'safety'],
-        ),
-      ],
-    ),
-    // Release 2: Preferences section
-    // SettingsSection(
-    //   title: 'Preferences',
-    //   items: [
-    //     SettingsItem(
-    //       title: 'Game Preferences',
-    //       subtitle: 'Game types, duration, competition',
-    //       icon: Iconsax.game_copy,
-    //       route: '/preferences/games',
-    //       searchTerms: ['games', 'types', 'duration', 'competition', 'team'],
-    //     ),
-    //     SettingsItem(
-    //       title: 'Availability',
-    //       subtitle: 'Schedule and time preferences',
-    //       icon: Iconsax.calendar_copy,
-    //       route: '/preferences/availability',
-    //       searchTerms: ['availability', 'schedule', 'time', 'calendar'],
-    //     ),
-    //   ],
-    // ),
-    SettingsSection(
-      title: l10n.settings_section_display,
-      items: [
-        SettingsItem(
-          id: 'theme',
-          title: l10n.settings_item_theme_title,
-          subtitle: l10n.settings_item_theme_subtitle,
-          icon: Iconsax.colorfilter_copy,
-          route: '/settings/theme',
-          searchTerms: ['theme', 'dark', 'light', 'appearance'],
-        ),
-        SettingsItem(
-          id: 'language',
-          title: l10n.settings_item_language_title,
-          subtitle: 'English · العربية',
-          icon: Iconsax.language_square_copy,
-          route: '',
-          searchTerms: ['language', 'locale', 'translate', 'arabic', 'english', 'ar', 'en'],
-        ),
-        SettingsItem(
-          id: 'app_country',
-          title: l10n.settings_item_country_title,
-          subtitle: l10n.settings_item_country_default_subtitle,
-          icon: Iconsax.global_copy,
-          route: '',
-          searchTerms: ['country', 'region', 'egypt', 'uae', 'ksa', 'saudi', 'morocco'],
-        ),
-      ],
-    ),
-    // Release 2: Help & Support section
-    // SettingsSection(
-    //   title: 'Help & Support',
-    //   items: [
-    //     SettingsItem(
-    //       title: 'Help Center',
-    //       subtitle: 'FAQs and tutorials',
-    //       icon: Iconsax.info_circle_copy,
-    //       route: '/help/center',
-    //       searchTerms: ['help', 'faq', 'support', 'tutorials'],
-    //     ),
-    //     SettingsItem(
-    //       title: 'Contact Support',
-    //       subtitle: 'Get help from our team',
-    //       icon: Iconsax.message_question_copy,
-    //       route: '/help/contact',
-    //       searchTerms: ['contact', 'support', 'help', 'team'],
-    //     ),
-    //     SettingsItem(
-    //       title: 'Report a Bug',
-    //       subtitle: 'Help us improve the app',
-    //       icon: Iconsax.danger_copy,
-    //       route: '/help/bug-report',
-    //       searchTerms: ['bug', 'report', 'issue', 'problem'],
-    //     ),
-    //   ],
-    // ),
-    SettingsSection(
-      title: l10n.settings_section_about,
-      items: [
-        SettingsItem(
-          id: 'terms_of_service',
-          title: l10n.settings_item_terms_title,
-          subtitle: l10n.settings_item_terms_subtitle,
-          icon: Iconsax.document_text_copy,
-          route: '/about/terms',
-          searchTerms: ['terms', 'service', 'conditions', 'legal'],
-        ),
-        SettingsItem(
-          id: 'privacy_policy',
-          title: l10n.settings_item_privacy_policy_title,
-          subtitle: l10n.settings_item_privacy_policy_subtitle,
-          icon: Iconsax.security_card_copy,
-          route: '/about/privacy',
-          searchTerms: ['privacy', 'policy', 'data', 'legal'],
-        ),
-        SettingsItem(
-          id: 'licenses',
-          title: l10n.settings_item_licenses_title,
-          subtitle: l10n.settings_item_licenses_subtitle,
-          icon: Iconsax.code_circle_copy,
-          route: '/about/licenses',
-          searchTerms: ['licenses', 'open', 'source', 'legal'],
-        ),
-      ],
-    ),
-  ];
+      SettingsSection(
+        title: l10n.settings_section_account,
+        items: [
+          SettingsItem(
+            id: 'account_management',
+            title: l10n.settings_item_account_management_title,
+            subtitle: l10n.settings_item_account_management_subtitle,
+            icon: 'profile-circle',
+            route: '/settings/account',
+            searchTerms: ['account', 'email', 'password', 'security', 'login'],
+          ),
+          SettingsItem(
+            id: 'privacy_settings',
+            title: l10n.settings_item_privacy_settings_title,
+            subtitle: l10n.settings_item_privacy_settings_subtitle,
+            icon: 'slash',
+            route: '/settings/privacy',
+            searchTerms: ['blocked', 'block', 'users', 'privacy', 'safety'],
+          ),
+        ],
+      ),
+      SettingsSection(
+        title: l10n.settings_section_display,
+        items: [
+          SettingsItem(
+            id: 'theme',
+            title: l10n.settings_item_theme_title,
+            subtitle: l10n.settings_item_theme_subtitle,
+            icon: 'colorfilter',
+            route: '/settings/theme',
+            searchTerms: ['theme', 'dark', 'light', 'appearance'],
+          ),
+          SettingsItem(
+            id: 'language',
+            title: l10n.settings_item_language_title,
+            subtitle: 'English · العربية',
+            icon: 'language-square',
+            route: '',
+            searchTerms: [
+              'language', 'locale', 'translate', 'arabic', 'english', 'ar', 'en',
+            ],
+          ),
+          SettingsItem(
+            id: 'app_country',
+            title: l10n.settings_item_country_title,
+            subtitle: l10n.settings_item_country_default_subtitle,
+            icon: 'global',
+            route: '',
+            searchTerms: [
+              'country', 'region', 'egypt', 'uae', 'ksa', 'saudi', 'morocco',
+            ],
+          ),
+        ],
+      ),
+      SettingsSection(
+        title: l10n.settings_section_about,
+        items: [
+          SettingsItem(
+            id: 'terms_of_service',
+            title: l10n.settings_item_terms_title,
+            subtitle: l10n.settings_item_terms_subtitle,
+            icon: 'document-text',
+            route: '/about/terms',
+            searchTerms: ['terms', 'service', 'conditions', 'legal'],
+          ),
+          SettingsItem(
+            id: 'privacy_policy',
+            title: l10n.settings_item_privacy_policy_title,
+            subtitle: l10n.settings_item_privacy_policy_subtitle,
+            icon: 'security-card',
+            route: '/about/privacy',
+            searchTerms: ['privacy', 'policy', 'data', 'legal'],
+          ),
+          SettingsItem(
+            id: 'licenses',
+            title: l10n.settings_item_licenses_title,
+            subtitle: l10n.settings_item_licenses_subtitle,
+            icon: 'code-circle',
+            route: '/about/licenses',
+            searchTerms: ['licenses', 'open', 'source', 'legal'],
+          ),
+        ],
+      ),
+    ];
   }
 
   @override
   void initState() {
     super.initState();
-
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
@@ -202,7 +152,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             curve: Curves.easeOutCubic,
           ),
         );
-
     _animationController.forward();
 
     // Fetch user's active personas for dynamic "Add Profile" section
@@ -218,205 +167,107 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     super.dispose();
   }
 
+  TextStyle _type(DabblerTypeStyle s, Color c) =>
+      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final logoWidget = SvgPicture.asset(
-      'assets/images/dabbler_text_logo.svg',
-      width: 100,
-      height: 18,
-      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-    );
-
-    final content = Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: 24),
-                  _buildHeroCard(context),
-                  _buildSearchBar(context),
-                  _buildProfileSection(context),
-                  ..._buildFilteredSectionsList(context),
-                  _buildSignOutSection(context),
-                  _buildVersionInfo(context),
-                  const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
-
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => context.pop(),
-          icon: const Icon(Iconsax.arrow_left_copy),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.settings_header_title,
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        IconButton.filledTonal(
-          onPressed: () => context.push('/help/center'),
-          icon: const Icon(Iconsax.info_circle_copy),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
-          tooltip: l10n.settings_header_help_tooltip,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final profileAccent = colorScheme.categoryMain;
-    final l10n = AppLocalizations.of(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: profileAccent.withValues(alpha: isDarkMode ? 0.14 : 0.10),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.settings_hero_eyebrow,
-            style: textTheme.labelLarge?.copyWith(
-              color: profileAccent.withValues(alpha: 0.9),
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.settings_hero_title,
-            style: textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.settings_hero_subtitle,
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: l10n.settings_header_title,
+        onBack: () => context.pop(),
+        actions: [
+          DabblerNavigationAction(
+            icon: 'info-circle',
+            label: l10n.settings_header_help_tooltip,
+            onPressed: () => context.push('/help/center'),
           ),
         ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: DabblerSpacing.space4),
+                _buildHero(context),
+                _buildSearchBar(context),
+                _buildProfileSection(context),
+                ..._buildFilteredSectionsList(context),
+                _buildSignOutSection(context),
+                _buildVersionInfo(context),
+                const SizedBox(height: DabblerSpacing.space6),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHero(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: DabblerRadius.xlAll,
+        border: Border.all(color: colors.borderDefault),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.settings_hero_eyebrow,
+              style: _type(DabblerType.label, colors.brandPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space2),
+            Text(
+              l10n.settings_hero_title,
+              style: _type(DabblerType.title3, colors.textPrimary),
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            Text(
+              l10n.settings_hero_subtitle,
+              style: _type(DabblerType.subheadline, colors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSearchBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
-      child: TextField(
+      padding: const EdgeInsets.only(
+        top: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space4,
+      ),
+      child: DabblerSearchField(
         controller: _searchController,
+        placeholder: AppLocalizations.of(context).settings_search_hint,
         onChanged: (value) {
-          setState(() {
-            _searchQuery = value.toLowerCase();
-          });
+          setState(() => _searchQuery = value.toLowerCase());
         },
-        decoration: InputDecoration(
-          hintText: AppLocalizations.of(context).settings_search_hint,
-          prefixIcon: const Icon(Iconsax.search_normal_copy),
-          prefixIconColor: colorScheme.categoryMain,
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                    });
-                  },
-                  icon: const Icon(Iconsax.close_circle_copy),
-                )
-              : null,
-          filled: true,
-          fillColor: colorScheme.categoryMain.withValues(
-            alpha: isDarkMode ? 0.14 : 0.10,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(28),
-            borderSide: BorderSide(color: colorScheme.categoryMain, width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 18,
-          ),
-        ),
+        onCleared: () {
+          _searchController.clear();
+          setState(() => _searchQuery = '');
+        },
       ),
     );
   }
 
   List<Widget> _buildFilteredSectionsList(BuildContext context) {
-    final filteredSections = _getFilteredSections(context);
-
-    return filteredSections.map((section) {
+    return _getFilteredSections(context).map((section) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
         child: _buildSection(context, section),
       );
     }).toList();
@@ -425,7 +276,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   List<SettingsSection> _getFilteredSections(BuildContext context) {
     final allSections = _allSections(context);
     if (_searchQuery.isEmpty) return allSections;
-
     return allSections
         .map((section) {
           final filteredItems = section.items.where((item) {
@@ -433,7 +283,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 item.subtitle.toLowerCase().contains(_searchQuery) ||
                 item.searchTerms.any((term) => term.contains(_searchQuery));
           }).toList();
-
           return SettingsSection(title: section.title, items: filteredItems);
         })
         .where((section) => section.items.isNotEmpty)
@@ -442,55 +291,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Widget _buildSection(BuildContext context, SettingsSection section) {
     if (section.items.isEmpty) return const SizedBox.shrink();
-
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return DabblerSection(
+      title: section.title,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 9, bottom: 12),
-          child: Text(
-            section.title,
-            style: textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ),
-        Card(
-          elevation: 0,
-          color: colorScheme.categoryMain.withValues(
-            alpha: isDarkMode ? 0.08 : 0.06,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            children: section.items.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isLast = index == section.items.length - 1;
-
-              return _buildSettingsItem(context, item, showDivider: !isLast);
-            }).toList(),
-          ),
-        ),
+        for (final item in section.items) _buildSettingsItem(context, item),
       ],
     );
   }
 
-  Widget _buildSettingsItem(
-    BuildContext context,
-    SettingsItem item, {
-    required bool showDivider,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+  Widget _leadingIcon(String name, {Color? color}) {
+    final colors = DabblerColors.of(context);
+    return DabblerIcon(
+      name,
+      size: DabblerSizing.iconMd,
+      color: color ?? colors.textPrimary,
+    );
+  }
 
+  Widget _buildSettingsItem(BuildContext context, SettingsItem item) {
     // Dynamic subtitle for inline-picker items
     String subtitle = item.subtitle;
     if (item.id == 'language') {
@@ -499,83 +317,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         (l) => l.code == langCode,
         orElse: () => _kSupportedLanguages.first,
       );
-      subtitle = '${lang.flag}  ${lang.label} · ${lang.native}';
+      subtitle = '${lang.label} · ${lang.native}';
     } else if (item.id == 'app_country') {
       final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
       if (country.isNotEmpty) {
-        final meta = _kSupportedCountries.where((c) => c.name.toLowerCase() == country.toLowerCase()).firstOrNull;
-        subtitle = meta != null ? '${meta.flag}  ${meta.name}' : country;
+        final meta = _kSupportedCountries
+            .where((c) => c.name.toLowerCase() == country.toLowerCase())
+            .firstOrNull;
+        subtitle = meta != null ? meta.name : country;
       }
     }
 
-    return Column(
-      children: [
-        ListTile(
-          onTap: () => _navigateToSetting(item),
-          leading: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.categoryMain.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(item.icon, color: colorScheme.categoryMain),
-          ),
-          title: Text(
-            item.title,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Icon(
-            Iconsax.arrow_right_3_copy,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 12,
-          ),
-        ),
-        if (showDivider)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(
-              height: 1,
-              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-      ],
+    return DabblerInputRow(
+      onTap: () => _navigateToSetting(item),
+      leading: _leadingIcon(item.icon),
+      title: item.title,
+      subtitle: subtitle,
+      trailing: const DabblerChevron(),
     );
   }
 
   /// Build dynamic "Profile" section based on available personas
   Widget _buildProfileSection(BuildContext context) {
     final personaState = ref.watch(personaServiceProvider);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    if (personaState.isLoading) return const SizedBox.shrink();
 
-    // Don't show if still loading
-    if (personaState.isLoading) {
-      return const SizedBox.shrink();
-    }
-
-    // Check if user is at profile limit
     final isAtLimit = personaState.isAtProfileLimit;
-
-    // Get available personas (only if not at limit)
     final availablePersonas = isAtLimit
         ? <PersonaAvailability>[]
         : personaState.availablePersonas;
 
-    // Filter by search if active
     final filteredPersonas = _searchQuery.isEmpty
         ? availablePersonas
         : availablePersonas.where((p) {
@@ -591,7 +362,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 'add'.contains(searchLower);
           }).toList();
 
-    // Show limit message if at limit (and search matches or empty)
     final showLimitMessage =
         isAtLimit &&
         (_searchQuery.isEmpty ||
@@ -599,228 +369,127 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             'limit'.contains(_searchQuery.toLowerCase()) ||
             'add'.contains(_searchQuery.toLowerCase()));
 
-    // Don't show section if no available personas AND not showing limit message
     if (filteredPersonas.isEmpty && !showLimitMessage) {
       return const SizedBox.shrink();
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
+      child: DabblerSection(
+        title: AppLocalizations.of(context).settings_section_profiles,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 9, bottom: 12),
-            child: Text(
-              AppLocalizations.of(context).settings_section_profiles,
-              style: textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurfaceVariant,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          // Show existing profiles list when at limit
-          if (showLimitMessage)
-            _buildExistingProfilesList(
-              context,
-              colorScheme,
-              textTheme,
-              isDarkMode,
-            ),
-          // Show add options if available
-          if (filteredPersonas.isNotEmpty) ...[
-            if (showLimitMessage) const SizedBox(height: 12),
-            Card(
-              elevation: 0,
-              color: colorScheme.categoryMain.withValues(
-                alpha: isDarkMode ? 0.08 : 0.06,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                children: filteredPersonas.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final availability = entry.value;
-                  final isLast = index == filteredPersonas.length - 1;
-
-                  return _buildPersonaItem(
-                    context,
-                    availability,
-                    showDivider: !isLast,
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
+          if (showLimitMessage) _buildExistingProfilesList(context),
+          for (final availability in filteredPersonas)
+            _buildPersonaItem(context, availability),
         ],
       ),
     );
   }
 
-  Widget _buildExistingProfilesList(
-    BuildContext context,
-    ColorScheme colorScheme,
-    TextTheme textTheme,
-    bool isDarkMode,
-  ) {
+  Widget _buildExistingProfilesList(BuildContext context) {
     final availableProfilesAsync = ref.watch(availableProfilesProvider);
     final activeProfileType = ref.watch(activeProfileTypeProvider);
+    final colors = DabblerColors.of(context);
 
     return availableProfilesAsync.when(
       data: (profiles) {
         if (profiles.isEmpty) return const SizedBox.shrink();
-
-        return Card(
-          elevation: 0,
-          color: colorScheme.categoryMain.withValues(
-            alpha: isDarkMode ? 0.08 : 0.06,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            children: profiles.asMap().entries.map((entry) {
-              final index = entry.key;
-              final profile = entry.value;
-              final isLast = index == profiles.length - 1;
-              final effectiveType = profile.personaType ?? profile.profileType;
-              final isActive =
-                  effectiveType?.toLowerCase() ==
-                  activeProfileType?.toLowerCase();
-
-              return Column(
-                children: [
-                  ListTile(
-                    onTap: () async {
-                      if (!isActive && effectiveType != null) {
-                        // Switch active profile in the database
-                        final switched = await ref
-                            .read(personaServiceProvider.notifier)
-                            .switchActiveProfile(effectiveType);
-
-                        if (!switched) {
-                          if (context.mounted) {
-                            final errorMsg =
-                                ref.read(personaServiceProvider).errorMessage ??
-                                AppLocalizations.of(context)
-                                    .profile_error_switch_profile_failed;
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text(errorMsg)));
-                          }
-                          return;
-                        }
-
-                        // Update local state and persist
-                        ref.read(activeProfileTypeProvider.notifier).state =
-                            effectiveType;
-                        persistActiveProfileType(effectiveType);
-
-                        // Clear cached profile so the profile screen loads fresh data
-                        final userId = AuthService().getCurrentUser()?.id;
-                        if (userId != null) {
-                          final localDS = ref.read(
-                            profileLocalDataSourceProvider,
-                          );
-                          await localDS.clearUserCache(userId);
-                        }
-
-                        if (context.mounted) {
-                          context.go('/profile');
-                        }
-                      }
-                    },
-                    leading: DSAvatar.small(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final profile in profiles)
+              Builder(
+                builder: (context) {
+                  final effectiveType =
+                      profile.personaType ?? profile.profileType;
+                  final isActive =
+                      effectiveType?.toLowerCase() ==
+                      activeProfileType?.toLowerCase();
+                  final name = profile.getDisplayName().isNotEmpty
+                      ? profile.getDisplayName()
+                      : 'Profile';
+                  return DabblerInputRow(
+                    onTap: () => _switchProfile(isActive, effectiveType),
+                    leading: DabblerAvatar(
+                      seed: name,
                       imageUrl: profile.avatarUrl,
-                      displayName: profile.getDisplayName().isNotEmpty
-                          ? profile.getDisplayName()
-                          : 'Profile',
-                      context: AvatarContext.profile,
+                      size: DabblerAvatarSize.sm,
                     ),
-                    title: Text(
-                      profile.getDisplayName().isNotEmpty
-                          ? profile.getDisplayName()
-                          : 'Profile',
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
-                    ),
-                    subtitle: Text(
-                      (effectiveType ?? 'player').toUpperCase(),
-                      style: textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    title: name,
+                    subtitle: (effectiveType ?? 'player').toUpperCase(),
                     trailing: isActive
-                        ? Icon(
-                            Iconsax.tick_circle_copy,
-                            color: colorScheme.categoryMain,
+                        ? DabblerIcon(
+                            'tick-circle',
+                            size: DabblerSizing.iconMd,
+                            color: colors.brandPrimary,
                           )
-                        : Icon(
-                            Iconsax.arrow_right_3_copy,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                  ),
-                  if (!isLast)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Divider(
-                        height: 1,
-                        color: colorScheme.outlineVariant.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            }).toList(),
-          ),
+                        : const DabblerChevron(),
+                  );
+                },
+              ),
+          ],
         );
       },
       loading: () => const Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(DabblerSpacing.space5),
+        child: Center(child: DabblerSpinner()),
       ),
       error: (_, __) => const SizedBox.shrink(),
     );
   }
 
-  Widget _buildPersonaItem(
-    BuildContext context,
-    PersonaAvailability availability, {
-    required bool showDivider,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final l10n = AppLocalizations.of(context);
-    final isConversion = availability.actionType == PersonaActionType.convert;
+  Future<void> _switchProfile(bool isActive, String? effectiveType) async {
+    if (isActive || effectiveType == null) return;
+    // Switch active profile in the database
+    final switched = await ref
+        .read(personaServiceProvider.notifier)
+        .switchActiveProfile(effectiveType);
 
-    // Get icon based on persona type
-    IconData icon;
-    switch (availability.targetPersona) {
-      case PersonaType.player:
-        icon = Iconsax.people_copy;
-        break;
-      case PersonaType.organiser:
-        icon = Iconsax.calendar_edit_copy;
-        break;
-      case PersonaType.host:
-        icon = Iconsax.building_copy;
-        break;
-      case PersonaType.socialiser:
-        icon = Iconsax.message_copy;
-        break;
+    if (!switched) {
+      if (mounted) {
+        final errorMsg =
+            ref.read(personaServiceProvider).errorMessage ??
+            AppLocalizations.of(context).profile_error_switch_profile_failed;
+        _toast(errorMsg);
+      }
+      return;
     }
 
-    // Title based on action type
+    // Update local state and persist
+    ref.read(activeProfileTypeProvider.notifier).state = effectiveType;
+    persistActiveProfileType(effectiveType);
+
+    // Clear cached profile so the profile screen loads fresh data
+    final userId = AuthService().getCurrentUser()?.id;
+    if (userId != null) {
+      final localDS = ref.read(profileLocalDataSourceProvider);
+      await localDS.clearUserCache(userId);
+    }
+
+    if (mounted) context.go('/profile');
+  }
+
+  void _toast(String message, {DabblerToastTone tone = DabblerToastTone.neutral}) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
+  }
+
+  Widget _buildPersonaItem(
+    BuildContext context,
+    PersonaAvailability availability,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final colors = DabblerColors.of(context);
+    final isConversion = availability.actionType == PersonaActionType.convert;
+
+    final String icon = switch (availability.targetPersona) {
+      PersonaType.player => 'people',
+      PersonaType.organiser => 'calendar-edit',
+      PersonaType.host => 'building',
+      PersonaType.socialiser => 'message',
+    };
+
     final title = isConversion
         ? l10n.settings_persona_convert_title(
             availability.targetPersona.displayName,
@@ -829,88 +498,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
             availability.targetPersona.displayName,
           );
 
-    // Subtitle with description
     final subtitle = isConversion
         ? l10n.settings_persona_convert_subtitle(
             availability.convertFrom?.displayName ?? '',
           )
         : availability.targetPersona.description;
 
-    return Column(
-      children: [
-        ListTile(
-          onTap: () => _startPersonaFlow(availability),
-          leading: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: isConversion
-                  ? colorScheme.tertiary.withValues(alpha: 0.12)
-                  : colorScheme.categoryMain.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+    return DabblerInputRow(
+      onTap: () => _startPersonaFlow(availability),
+      leading: _leadingIcon(
+        icon,
+        color: isConversion ? colors.accent : colors.textPrimary,
+      ),
+      title: title,
+      subtitle: subtitle,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isConversion) ...[
+            DabblerBadge(
+              label: l10n.profile_persona_convert_badge.toUpperCase(),
+              tone: DabblerBadgeTone.primary,
             ),
-            child: Icon(
-              icon,
-              color: isConversion
-                  ? colorScheme.tertiary
-                  : colorScheme.categoryMain,
-            ),
-          ),
-          title: Text(
-            title,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isConversion)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.tertiary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    l10n.profile_persona_convert_badge.toUpperCase(),
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.tertiary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 8),
-              Icon(
-                Iconsax.arrow_right_3_copy,
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ],
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 12,
-          ),
-        ),
-        if (showDivider)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Divider(
-              height: 1,
-              color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-            ),
-          ),
-      ],
+            const SizedBox(width: DabblerSpacing.space2),
+          ],
+          const DabblerChevron(),
+        ],
+      ),
     );
   }
 
@@ -920,12 +534,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     // Re-check active profile count before navigation
     if (personaState.isAtProfileLimit &&
         availability.actionType == PersonaActionType.add) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(PersonaRules.profileLimitMessage),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      _toast(PersonaRules.profileLimitMessage, tone: DabblerToastTone.error);
       return;
     }
 
@@ -951,138 +560,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
               : null,
         );
 
-    // Show confirmation for conversion, otherwise start flow directly
     if (availability.actionType == PersonaActionType.convert) {
       _showConversionConfirmDialog(availability);
     } else {
-      // Navigate to first screen of add flow (interests selection)
       context.push(RoutePaths.addPersonaInterests);
     }
   }
 
   void _showConversionConfirmDialog(PersonaAvailability availability) {
-    final colorScheme = Theme.of(context).colorScheme;
     final l10n = AppLocalizations.of(context);
-
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          l10n.profile_convert_to(availability.targetPersona.displayName),
+      builder: (dialogContext) => DabblerDialog(
+        onClose: () => Navigator.of(dialogContext).pop(),
+        title: l10n.profile_convert_to(availability.targetPersona.displayName),
+        description: l10n.settings_persona_convert_confirm_body(
+          availability.convertFrom?.displayName ?? '',
+          availability.targetPersona.displayName,
         ),
-        content: Text(
-          l10n.settings_persona_convert_confirm_body(
-            availability.convertFrom?.displayName ?? '',
-            availability.targetPersona.displayName,
-          ),
+        secondaryAction: DabblerDialogAction(
+          label: l10n.profile_btn_cancel,
+          onPressed: () => Navigator.of(dialogContext).pop(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.profile_btn_cancel),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Navigate to first screen of add flow
-              context.push(RoutePaths.addPersonaInterests);
-            },
-            child: Text(l10n.profile_btn_continue),
-          ),
-        ],
+        primaryAction: DabblerDialogAction(
+          label: l10n.profile_btn_continue,
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+            context.push(RoutePaths.addPersonaInterests);
+          },
+        ),
       ),
     );
   }
 
   Widget _buildSignOutSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.all(0),
-      child: Card(
-        elevation: 0,
-        color: colorScheme.categoryMain.withValues(
-          alpha: isDarkMode ? 0.08 : 0.06,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: ListTile(
-          onTap: _showSignOutDialog,
-          leading: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: colorScheme.error.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Iconsax.logout_copy, color: colorScheme.error),
-          ),
-          title: Text(
-            AppLocalizations.of(context).settings_sign_out_title,
-            style: textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.error,
-            ),
-          ),
-          subtitle: Text(
-            AppLocalizations.of(context).settings_sign_out_subtitle,
-            style: textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          trailing: Icon(
-            Iconsax.arrow_right_3_copy,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
-        ),
+      padding: const EdgeInsets.only(top: DabblerSpacing.space3),
+      child: DabblerInputRow(
+        onTap: _showSignOutDialog,
+        leading: _leadingIcon('logout', color: colors.error.base),
+        title: l10n.settings_sign_out_title,
+        subtitle: l10n.settings_sign_out_subtitle,
+        trailing: const DabblerChevron(),
       ),
     );
   }
 
   Widget _buildVersionInfo(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              AppLocalizations.of(context).settings_version_app_name,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              AppLocalizations.of(context).settings_version_label(_appVersion),
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppLocalizations.of(context).settings_version_copyright,
-              style: textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(DabblerSpacing.space8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.settings_version_app_name,
+            style: _type(DabblerType.headline, colors.textPrimary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: DabblerSpacing.space2),
+          Text(
+            l10n.settings_version_label(_appVersion),
+            style: _type(DabblerType.footnote, colors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: DabblerSpacing.space2),
+          Text(
+            l10n.settings_version_copyright,
+            style: _type(DabblerType.caption1, colors.textTertiary),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -1097,112 +648,109 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
   }
 
+  Widget _pickerRow({
+    required String label,
+    String? sublabel,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    final colors = DabblerColors.of(context);
+    final row = DabblerInputRow(
+      title: label,
+      subtitle: sublabel,
+      onTap: onTap,
+      trailing: isSelected
+          ? DabblerIcon(
+              'tick-circle',
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.iconMd,
+              color: colors.brandPrimary,
+            )
+          : null,
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),
+      child: row,
+    );
+  }
+
   void _showLanguagePicker() {
-    final cs = Theme.of(context).colorScheme;
-    showModalBottomSheet(
+    showDabblerSheet<void>(
       context: context,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(999))),
-            const SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(AppLocalizations.of(context).settings_item_language_title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+      title: AppLocalizations.of(context).settings_item_language_title,
+      detent: DabblerSheetDetent.content,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final lang in _kSupportedLanguages)
+            _pickerRow(
+              label: lang.label,
+              sublabel: lang.native,
+              isSelected: ref.read(localeProvider).languageCode == lang.code,
+              onTap: () {
+                ref.read(localeProvider.notifier).setLocale(Locale(lang.code));
+                Navigator.pop(sheetContext);
+              },
             ),
-            const SizedBox(height: 16),
-            ..._kSupportedLanguages.map((lang) {
-              final currentCode = ref.read(localeProvider).languageCode;
-              final isSelected = currentCode == lang.code;
-              return _PickerTile(
-                flag: lang.flag,
-                label: lang.label,
-                sublabel: lang.native,
-                isSelected: isSelected,
-                onTap: () {
-                  ref.read(localeProvider.notifier).setLocale(Locale(lang.code));
-                  Navigator.pop(context);
-                },
-              );
-            }),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   void _showCountryPicker() {
-    final cs = Theme.of(context).colorScheme;
     final currentCountry = ref.read(selectedCountryProvider).valueOrNull ?? '';
-    showModalBottomSheet(
+    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    showDabblerSheet<void>(
       context: context,
-      backgroundColor: cs.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(width: 36, height: 4, decoration: BoxDecoration(color: cs.outlineVariant, borderRadius: BorderRadius.circular(999))),
-            const SizedBox(height: 20),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(AppLocalizations.of(context).settings_item_country_title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: cs.onSurface)),
+      title: l10n.settings_item_country_title,
+      detent: DabblerSheetDetent.content,
+      builder: (sheetContext) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: DabblerSpacing.space4),
+            child: Text(
+              l10n.settings_country_picker_helper,
+              style: _type(DabblerType.footnote, colors.textSecondary),
             ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(AppLocalizations.of(context).settings_country_picker_helper, style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+          ),
+          for (final c in _kSupportedCountries)
+            _pickerRow(
+              label: c.name,
+              isSelected: currentCountry.toLowerCase() == c.name.toLowerCase(),
+              onTap: () {
+                ref.read(selectedCountryProvider.notifier).setCountry(c.name);
+                Navigator.pop(sheetContext);
+              },
             ),
-            const SizedBox(height: 16),
-            ..._kSupportedCountries.map((c) {
-              final isSelected = currentCountry.toLowerCase() == c.name.toLowerCase();
-              return _PickerTile(
-                flag: c.flag,
-                label: c.name,
-                isSelected: isSelected,
-                onTap: () {
-                  ref.read(selectedCountryProvider.notifier).setCountry(c.name);
-                  Navigator.pop(context);
-                },
-              );
-            }),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   void _showSignOutDialog() {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    showDialog(
+    final l10n = AppLocalizations.of(context);
+    showDabblerDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colorScheme.surface,
-        surfaceTintColor: Colors.transparent,
-        title: Text(AppLocalizations.of(context).settings_sign_out_dialog_title),
-        content: Text(
-          AppLocalizations.of(context).settings_sign_out_dialog_body,
+      builder: (dialogContext) => DabblerDialog(
+        destructive: true,
+        onClose: () => Navigator.of(dialogContext).pop(),
+        title: l10n.settings_sign_out_dialog_title,
+        description: l10n.settings_sign_out_dialog_body,
+        secondaryAction: DabblerDialogAction(
+          label: l10n.settings_sign_out_dialog_cancel,
+          onPressed: () => Navigator.of(dialogContext).pop(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(AppLocalizations.of(context).settings_sign_out_dialog_cancel),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await _signOut();
-            },
-            style: TextButton.styleFrom(foregroundColor: colorScheme.error),
-            child: Text(AppLocalizations.of(context).settings_sign_out_dialog_title),
-          ),
-        ],
+        primaryAction: DabblerDialogAction(
+          label: l10n.settings_sign_out_dialog_title,
+          onPressed: () async {
+            Navigator.of(dialogContext).pop();
+            await _signOut();
+          },
+        ),
       ),
     );
   }
@@ -1210,10 +758,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Future<void> _signOut() async {
     try {
       // Show loading indicator
-      showDialog(
+      showDabblerDialog<void>(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+        builder: (_) => const Center(child: DabblerSpinner()),
       );
 
       // Prefer SimpleAuthNotifier (independent of unimplemented AuthRepository).
@@ -1225,22 +772,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         routerRefreshNotifier.notifyAuthStateChanged();
       }
 
-      // Both signOut paths above already call
-      // routerRefreshNotifier.notifyAuthStateChanged(), which drives GoRouter's
-      // own redirect to /landing via refreshListenable. Don't navigate
-      // manually here — that races with the router's own transition. Dismiss
-      // the loading dialog on the next frame instead of immediately, since
-      // popping while the redirect is mid-transition locks the Navigator
-      // (KAN-99: "!_debugLocked is not true").
+      // Both signOut paths above already notify the router, which redirects
+      // to /landing. Dismiss the loading dialog on the next frame (KAN-99).
       _dismissLoadingDialog();
     } catch (e) {
       _dismissLoadingDialog();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).settings_sign_out_error(e.toString())),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
+        _toast(
+          AppLocalizations.of(context).settings_sign_out_error(e.toString()),
+          tone: DabblerToastTone.error,
         );
       }
     }
@@ -1250,9 +790,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final navigator = Navigator.of(context, rootNavigator: true);
-      if (navigator.canPop()) {
-        navigator.pop();
-      }
+      if (navigator.canPop()) navigator.pop();
     });
   }
 }
@@ -1268,7 +806,9 @@ class SettingsItem {
   final String id;
   final String title;
   final String subtitle;
-  final IconData icon;
+
+  /// Kebab-case icon name drawn through [DabblerIcon].
+  final String icon;
   final String route;
   final List<String> searchTerms;
 
@@ -1280,60 +820,4 @@ class SettingsItem {
     required this.route,
     required this.searchTerms,
   });
-}
-
-// ─── Picker tile ─────────────────────────────────────────────────────────────
-
-class _PickerTile extends StatelessWidget {
-  final String flag;
-  final String label;
-  final String? sublabel;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PickerTile({
-    required this.flag,
-    required this.label,
-    this.sublabel,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: isSelected ? cs.primary.withValues(alpha: 0.10) : cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected ? cs.primary.withValues(alpha: 0.4) : cs.outlineVariant,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(flag, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isSelected ? cs.primary : cs.onSurface)),
-                  if (sublabel != null)
-                    Text(sublabel!, style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ],
-              ),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle_rounded, color: cs.primary, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
 }

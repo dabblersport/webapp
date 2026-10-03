@@ -1,16 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/themes/material3_extensions.dart';
 import '../../../../../core/services/auth_service.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/app_background.dart';
 import 'package:dabbler/features/profile/services/data_export_service.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
@@ -42,9 +38,6 @@ class _AccountManagementScreenState
   // Release 2 placeholder: kept for future security settings UI.
   // ignore: unused_field
   bool _isTwoFactorEnabled = false;
-  bool _isPasswordVisible = false;
-  bool _isNewPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
   String? _errorMessage;
 
   // True when the account already has an email/password credential. OAuth-only
@@ -140,520 +133,159 @@ class _AccountManagementScreenState
     super.dispose();
   }
 
+  void _toast(String message, DabblerToastTone tone) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final logoWidget = SvgPicture.asset(
-      'assets/images/dabbler_text_logo.svg',
-      width: 100,
-      height: 18,
-      colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-    );
+    final generalError =
+        _errorMessage != null &&
+        !_errorMessage!.contains('password') &&
+        !_errorMessage!.contains('email');
 
-    final content = Scaffold(
-      backgroundColor: context.appScaffoldBackground,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 200,
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_errorMessage != null &&
-                            !_errorMessage!.contains('password') &&
-                            !_errorMessage!.contains('email'))
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: colorScheme.errorContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.error_outline,
-                                  color: colorScheme.error,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: TextStyle(
-                                      color: colorScheme.onErrorContainer,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    setState(() {
-                                      _errorMessage = null;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        _buildHeader(context),
-                        const SizedBox(height: 12),
-                        _buildHeroCard(context),
-                        const SizedBox(height: 12),
-                        _buildEmailSection(),
-                        const SizedBox(height: 12),
-                        _buildPasswordSection(),
-                        // Release 2: Security Settings
-                        // const SizedBox(height: 12),
-                        // _buildSecuritySection(),
-                        // KAN-52/KAN-103/P-029: hidden until the export
-                        // mechanism covers every data category — see
-                        // FeatureFlags.enableDataExport.
-                        if (FeatureFlags.enableDataExport) ...[
-                          const SizedBox(height: 12),
-                          _buildDataExportSection(),
-                        ],
-                        const SizedBox(height: 12),
-                        _buildDangerZone(),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Account Management',
+        onBack: () => context.pop(),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space11,
+        ),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: SlideTransition(
+            position: _slideAnimation,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 200,
+                    child: Center(child: DabblerSpinner()),
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (generalError) ...[
+                        DabblerBanner(
+                          tone: DabblerBannerTone.error,
+                          message: _errorMessage,
+                          onDismiss: () {
+                            setState(() {
+                              _errorMessage = null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: DabblerSpacing.space4),
                       ],
-                    ),
-            ),
+                      AccountSecurityIntro(),
+                      const SizedBox(height: DabblerSpacing.space7),
+                      _buildEmailSection(),
+                      const SizedBox(height: DabblerSpacing.space7),
+                      _buildPasswordSection(),
+                      // KAN-52/KAN-103/P-029: hidden until the export
+                      // mechanism covers every data category — see
+                      // FeatureFlags.enableDataExport.
+                      if (FeatureFlags.enableDataExport) ...[
+                        const SizedBox(height: DabblerSpacing.space7),
+                        _buildDataExportSection(),
+                      ],
+                      const SizedBox(height: DabblerSpacing.space7),
+                      AccountDangerZone(onDelete: _showDeleteAccountDialog),
+                    ],
+                  ),
           ),
         ),
-      ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.categoryMain.withValues(alpha: 0.0),
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Account Management',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final profileAccent = colorScheme.primary;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: profileAccent.withValues(alpha: isDarkMode ? 0.14 : 0.10),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Secure your account',
-            style: textTheme.labelLarge?.copyWith(
-              color: profileAccent.withValues(alpha: 0.9),
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage credentials & security',
-            style: textTheme.headlineSmall?.copyWith(
-              color: colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Update your email, password, and security settings to keep your account safe.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
       ),
     );
   }
 
   Widget _buildEmailSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final profileAccent = colorScheme.primary;
-    return Card(
-      elevation: 0,
-      color: profileAccent.withValues(
-        alpha: Theme.of(context).brightness == Brightness.dark ? 0.08 : 0.06,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Email Address',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: profileAccent),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: profileAccent, width: 2),
-                ),
-                prefixIcon: Icon(Icons.email_outlined, color: profileAccent),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            if (_errorMessage != null && _errorMessage!.contains('email'))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            FilledButton.icon(
-              onPressed: _isSaving ? null : _updateEmail,
-              label: Text(_isSaving ? 'Updating...' : 'Update Email'),
-              style: FilledButton.styleFrom(
-                backgroundColor: profileAccent,
-                foregroundColor: colorScheme.onPrimary,
-              ),
-            ),
-          ],
+    final emailError = _errorMessage != null && _errorMessage!.contains('email')
+        ? _errorMessage
+        : null;
+    return DabblerSection(
+      title: 'Email Address',
+      children: [
+        DabblerTextField(
+          controller: _emailController,
+          label: 'Email',
+          prefixIcon: const DabblerIcon('sms', size: DabblerSizing.iconSm),
+          keyboardType: TextInputType.emailAddress,
+          errorText: emailError,
         ),
-      ),
+        DabblerButton(
+          label: _isSaving ? 'Updating...' : 'Update Email',
+          disabled: _isSaving,
+          fullWidth: true,
+          onPressed: _updateEmail,
+        ),
+      ],
     );
   }
 
   Widget _buildPasswordSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final profileAccent = colorScheme.primary;
-    return Card(
-      elevation: 0,
-      color: profileAccent.withValues(
-        alpha: Theme.of(context).brightness == Brightness.dark ? 0.08 : 0.06,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _hasPassword ? 'Change Password' : 'Set Password',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            if (!_hasPassword) ...[
-              const SizedBox(height: 8),
-              Text(
-                'You signed in with Google or Apple. Set a password to also '
+    final passwordError =
+        _errorMessage != null && _errorMessage!.contains('password')
+        ? _errorMessage
+        : null;
+    return DabblerSection(
+      title: _hasPassword ? 'Change Password' : 'Set Password',
+      subtitle: _hasPassword
+          ? null
+          : 'You signed in with Google or Apple. Set a password to also '
                 'sign in with your email.',
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            if (_hasPassword) ...[
-              TextField(
-                controller: _currentPasswordController,
-                decoration: InputDecoration(
-                  labelText: 'Current Password',
-                  labelStyle: TextStyle(color: profileAccent),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: profileAccent, width: 2),
-                  ),
-                  prefixIcon: Icon(Icons.lock_outlined, color: profileAccent),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: profileAccent,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
-                  ),
-                ),
-                obscureText: !_isPasswordVisible,
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextField(
-              controller: _newPasswordController,
-              decoration: InputDecoration(
-                labelText: 'New Password',
-                labelStyle: TextStyle(color: profileAccent),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: profileAccent, width: 2),
-                ),
-                prefixIcon: Icon(Icons.lock_outline, color: profileAccent),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isNewPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: profileAccent,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isNewPasswordVisible = !_isNewPasswordVisible;
-                    });
-                  },
-                ),
-              ),
-              obscureText: !_isNewPasswordVisible,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _confirmPasswordController,
-              decoration: InputDecoration(
-                labelText: 'Confirm New Password',
-                labelStyle: TextStyle(color: profileAccent),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: profileAccent, width: 2),
-                ),
-                prefixIcon: Icon(Icons.lock_outline, color: profileAccent),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isConfirmPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: profileAccent,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
-                    });
-                  },
-                ),
-              ),
-              obscureText: !_isConfirmPasswordVisible,
-            ),
-            const SizedBox(height: 16),
-            if (_errorMessage != null && _errorMessage!.contains('password'))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  _errorMessage!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            FilledButton.icon(
-              onPressed: _isSaving ? null : _changePassword,
-              label: Text(
-                _isSaving
-                    ? (_hasPassword ? 'Changing...' : 'Setting...')
-                    : (_hasPassword ? 'Change Password' : 'Set Password'),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: profileAccent,
-                foregroundColor: colorScheme.onPrimary,
-              ),
-            ),
-          ],
+      children: [
+        if (_hasPassword)
+          DabblerTextField(
+            variant: DabblerTextFieldVariant.password,
+            controller: _currentPasswordController,
+            label: 'Current Password',
+          ),
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.password,
+          controller: _newPasswordController,
+          label: 'New Password',
         ),
-      ),
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.password,
+          controller: _confirmPasswordController,
+          label: 'Confirm New Password',
+          errorText: passwordError,
+        ),
+        DabblerButton(
+          label: _isSaving
+              ? (_hasPassword ? 'Changing...' : 'Setting...')
+              : (_hasPassword ? 'Change Password' : 'Set Password'),
+          disabled: _isSaving,
+          fullWidth: true,
+          onPressed: _changePassword,
+        ),
+      ],
     );
   }
 
-  // Release 2: Security Settings section
-  // Widget _buildSecuritySection() {
-  //   final colorScheme = Theme.of(context).colorScheme;
-  //   final textTheme = Theme.of(context).textTheme;
-
-  //   return Card(
-  //     elevation: 0,
-  //     color: colorScheme.surfaceContainerHigh,
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-  //     child: Padding(
-  //       padding: const EdgeInsets.all(20),
-  //       child: Column(
-  //         crossAxisAlignment: CrossAxisAlignment.start,
-  //         children: [
-  //           Text(
-  //             'Security Settings',
-  //             style: textTheme.titleMedium?.copyWith(
-  //               fontWeight: FontWeight.w700,
-  //               color: colorScheme.onSurface,
-  //             ),
-  //           ),
-  //           const SizedBox(height: 16),
-  //           SwitchListTile(
-  //             title: const Text('Two-Factor Authentication'),
-  //             subtitle: const Text(
-  //               'Add an extra layer of security to your account',
-  //             ),
-  //             value: _isTwoFactorEnabled,
-  //             onChanged: (value) {
-  //               setState(() {
-  //                 _isTwoFactorEnabled = value;
-  //               });
-  //               _toggleTwoFactor(value);
-  //             },
-  //             contentPadding: EdgeInsets.zero,
-  //           ),
-  //           const Divider(),
-  //           ListTile(
-  //             contentPadding: EdgeInsets.zero,
-  //             leading: Container(
-  //               padding: const EdgeInsets.all(10),
-  //               decoration: BoxDecoration(
-  //                 color: colorScheme.primaryContainer.withOpacity(0.5),
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               child: Icon(Icons.devices_outlined, color: colorScheme.primary),
-  //             ),
-  //             title: const Text('Manage Devices'),
-  //             subtitle: const Text('View and manage logged-in devices'),
-  //             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-  //             onTap: _manageDevices,
-  //           ),
-  //           ListTile(
-  //             contentPadding: EdgeInsets.zero,
-  //             leading: Container(
-  //               padding: const EdgeInsets.all(10),
-  //               decoration: BoxDecoration(
-  //                 color: colorScheme.primaryContainer.withOpacity(0.5),
-  //                 borderRadius: BorderRadius.circular(12),
-  //               ),
-  //               child: Icon(Icons.history, color: colorScheme.primary),
-  //             ),
-  //             title: const Text('Login History'),
-  //             subtitle: const Text('View recent login activity'),
-  //             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-  //             onTap: _viewLoginHistory,
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildDataExportSection() {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.outline.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.download_outlined,
-              color: colorScheme.onPrimaryContainer,
-              size: 24,
-            ),
+    final colors = DabblerColors.of(context);
+    return DabblerSection(
+      children: [
+        DabblerInputRow(
+          title: 'Export My Data',
+          subtitle:
+              'Request a copy of your Dabbler data (PDPL data portability)',
+          leading: DabblerIcon(
+            'document-download',
+            size: DabblerSizing.iconMd,
+            color: colors.textSecondary,
           ),
-          title: Text(
-            'Export My Data',
-            style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            'Request a copy of your Dabbler data (PDPL data portability)',
-            style: textTheme.bodySmall,
-          ),
-          trailing: Icon(
-            Icons.arrow_forward_ios,
-            size: 16,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          trailing: const DabblerChevron(),
           onTap: _requestDataExport,
         ),
-      ),
+      ],
     );
   }
 
@@ -672,92 +304,14 @@ class _AccountManagementScreenState
         'format': 'json',
       });
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            "We're preparing your data export. You'll be notified by email when it's ready.",
-          ),
-          backgroundColor: context.successColor,
-        ),
+      _toast(
+        "We're preparing your data export. You'll be notified by email when it's ready.",
+        DabblerToastTone.success,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not request data export: $e')),
-      );
+      _toast('Could not request data export: $e', DabblerToastTone.neutral);
     }
-  }
-
-  Widget _buildDangerZone() {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            colorScheme.errorContainer.withValues(alpha: 0.6),
-            colorScheme.errorContainer.withValues(alpha: 0.25),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.error.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colorScheme.error.withValues(alpha: 0.18),
-                      colorScheme.error.withValues(alpha: 0.30),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.delete_forever_outlined,
-                  color: colorScheme.error,
-                  size: 24,
-                ),
-              ),
-              title: Text(
-                'Delete Account',
-                style: textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onErrorContainer,
-                ),
-              ),
-              subtitle: Text(
-                'Permanently delete your account and all data',
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.error,
-                ),
-              ),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: colorScheme.error,
-              ),
-              onTap: _showDeleteAccountDialog,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _updateEmail() async {
@@ -807,13 +361,9 @@ class _AccountManagementScreenState
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Email update request sent. Please check your new email for verification.',
-            ),
-            backgroundColor: context.successColor,
-          ),
+        _toast(
+          'Email update request sent. Please check your new email for verification.',
+          DabblerToastTone.success,
         );
       }
     } catch (e) {
@@ -823,12 +373,7 @@ class _AccountManagementScreenState
           _errorMessage = 'email: Failed to update email: ${e.toString()}';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update email: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _toast('Failed to update email: $e', DabblerToastTone.error);
       }
     }
   }
@@ -921,15 +466,11 @@ class _AccountManagementScreenState
           _confirmPasswordController.clear();
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              wasSettingPassword
-                  ? 'Password set. You can now sign in with your email and password.'
-                  : 'Password updated successfully',
-            ),
-            backgroundColor: context.successColor,
-          ),
+        _toast(
+          wasSettingPassword
+              ? 'Password set. You can now sign in with your email and password.'
+              : 'Password updated successfully',
+          DabblerToastTone.success,
         );
       }
     } catch (e) {
@@ -940,12 +481,7 @@ class _AccountManagementScreenState
               'password: ${e.toString().replaceAll('Exception: ', '')}';
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to change password: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _toast('Failed to change password: $e', DabblerToastTone.error);
       }
     }
   }
@@ -958,26 +494,13 @@ class _AccountManagementScreenState
         // Enable 2FA - Supabase requires TOTP setup
         // For now, show a message that 2FA setup requires additional configuration
         if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Enable Two-Factor Authentication'),
-              content: const Text(
-                'Two-factor authentication setup requires additional configuration. '
+          _showInfoDialog(
+            'Enable Two-Factor Authentication',
+            'Two-factor authentication setup requires additional configuration. '
                 'Please use the Supabase dashboard or contact support to enable this feature.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    setState(() {
-                      _isTwoFactorEnabled = false;
-                    });
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+            onOk: () => setState(() {
+              _isTwoFactorEnabled = false;
+            }),
           );
         }
       } else {
@@ -987,11 +510,9 @@ class _AccountManagementScreenState
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Two-factor authentication disabled'),
-              backgroundColor: context.successColor,
-            ),
+          _toast(
+            'Two-factor authentication disabled',
+            DabblerToastTone.success,
           );
         }
       }
@@ -1001,12 +522,7 @@ class _AccountManagementScreenState
           _isTwoFactorEnabled = !enabled; // Revert the toggle
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update 2FA: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        _toast('Failed to update 2FA: $e', DabblerToastTone.error);
       }
     }
   }
@@ -1014,43 +530,37 @@ class _AccountManagementScreenState
   // Release 2 placeholder.
   // ignore: unused_element
   void _manageDevices() {
-    // Navigate to device management screen or show dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Manage Devices'),
-        content: const Text(
-          'Device management allows you to view and revoke access from devices where you\'re logged in. '
+    _showInfoDialog(
+      'Manage Devices',
+      'Device management allows you to view and revoke access from devices where you\'re logged in. '
           'This feature will be available in a future update.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
     );
   }
 
   // Release 2 placeholder.
   // ignore: unused_element
   void _viewLoginHistory() {
-    // Navigate to login history screen or show dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Login History'),
-        content: const Text(
-          'Login history shows recent sign-in activity on your account. '
+    _showInfoDialog(
+      'Login History',
+      'Login history shows recent sign-in activity on your account. '
           'This feature will be available in a future update.',
+    );
+  }
+
+  void _showInfoDialog(String title, String body, {VoidCallback? onOk}) {
+    showDabblerDialog<void>(
+      context: context,
+      builder: (dialogContext) => DabblerDialog(
+        title: title,
+        description: body,
+        onClose: () => Navigator.of(dialogContext).pop(),
+        primaryAction: DabblerDialogAction(
+          label: 'OK',
+          onPressed: () {
+            Navigator.of(dialogContext).pop();
+            onOk?.call();
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
   }
@@ -1059,77 +569,74 @@ class _AccountManagementScreenState
     final confirmTextController = TextEditingController();
     bool isDeleting = false;
 
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Delete Account'),
-          content: DeleteAccountDialogContent(
+        builder: (context, setDialogState) => DabblerDialog(
+          title: 'Delete Account',
+          destructive: true,
+          dismissible: !isDeleting,
+          onClose: isDeleting
+              ? null
+              : () {
+                  confirmTextController.dispose();
+                  Navigator.of(context).pop();
+                },
+          secondaryAction: DabblerDialogAction(
+            label: 'Cancel',
+            onPressed: isDeleting
+                ? () {}
+                : () {
+                    confirmTextController.dispose();
+                    Navigator.of(context).pop();
+                  },
+          ),
+          primaryAction: DabblerDialogAction(
+            label: 'Delete Account',
+            onPressed: isDeleting
+                ? null
+                : () async {
+                    if (confirmTextController.text != 'DELETE') {
+                      DabblerToastProvider.of(context).show(
+                        const DabblerToastSpec(
+                          message: 'Please type "DELETE" to confirm',
+                          tone: DabblerToastTone.error,
+                        ),
+                      );
+                      return;
+                    }
+
+                    setDialogState(() {
+                      isDeleting = true;
+                    });
+
+                    try {
+                      await _deleteAccount();
+
+                      if (context.mounted) {
+                        confirmTextController.dispose();
+                        Navigator.of(context).pop();
+                      }
+                    } catch (e) {
+                      setDialogState(() {
+                        isDeleting = false;
+                      });
+
+                      if (context.mounted) {
+                        DabblerToastProvider.of(context).show(
+                          DabblerToastSpec(
+                            message: 'Failed to delete account: $e',
+                            tone: DabblerToastTone.error,
+                          ),
+                        );
+                      }
+                    }
+                  },
+          ),
+          child: DeleteAccountDialogContent(
             confirmController: confirmTextController,
             enabled: !isDeleting,
           ),
-          actions: [
-            TextButton(
-              onPressed: isDeleting
-                  ? null
-                  : () {
-                      confirmTextController.dispose();
-                      Navigator.of(context).pop();
-                    },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: isDeleting
-                  ? null
-                  : () async {
-                      if (confirmTextController.text != 'DELETE') {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('Please type "DELETE" to confirm'),
-                            backgroundColor: Theme.of(context).colorScheme.error,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setDialogState(() {
-                        isDeleting = true;
-                      });
-
-                      try {
-                        await _deleteAccount();
-
-                        if (context.mounted) {
-                          confirmTextController.dispose();
-                          Navigator.of(context).pop();
-                        }
-                      } catch (e) {
-                        setDialogState(() {
-                          isDeleting = false;
-                        });
-
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to delete account: $e'),
-                              backgroundColor: Theme.of(context).colorScheme.error,
-                            ),
-                          );
-                        }
-                      }
-                    },
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.error,
-              ),
-              child: isDeleting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Delete Account'),
-            ),
-          ],
         ),
       ),
     );
@@ -1157,19 +664,75 @@ class _AccountManagementScreenState
         final message = AppLocalizations.of(
           context,
         ).account_delete_success_snack;
+        final toasts = DabblerToastProvider.of(context);
 
         context.go('/auth-welcome');
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: context.successColor,
-          ),
+        toasts.show(
+          DabblerToastSpec(message: message, tone: DabblerToastTone.success),
         );
       }
     } catch (e) {
       throw Exception('Failed to delete account: $e');
     }
+  }
+}
+
+/// The "Secure your account" intro at the top of the account screen.
+///
+/// Public so the render test can pump it without the screen's Supabase
+/// session.
+class AccountSecurityIntro extends StatelessWidget {
+  const AccountSecurityIntro({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Secure your account',
+          style: DabblerType.footnote
+              .resolveForDirection(Directionality.of(context))
+              .copyWith(color: colors.textSecondary),
+        ),
+        const SizedBox(height: DabblerSpacing.space2),
+        const DabblerBanner(
+          tone: DabblerBannerTone.neutral,
+          title: 'Manage credentials & security',
+          message:
+              'Update your email, password, and security settings to keep your account safe.',
+        ),
+      ],
+    );
+  }
+}
+
+/// The delete-account row. Public so the render test can pump it.
+class AccountDangerZone extends StatelessWidget {
+  const AccountDangerZone({super.key, required this.onDelete});
+
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    return DabblerSection(
+      children: [
+        DabblerInputRow(
+          title: 'Delete Account',
+          subtitle: 'Permanently delete your account and all data',
+          leading: DabblerIcon(
+            'trash',
+            size: DabblerSizing.iconMd,
+            color: colors.error.solid,
+          ),
+          trailing: DabblerChevron(color: colors.error.solid),
+          onTap: onDelete,
+        ),
+      ],
+    );
   }
 }
 
@@ -1197,22 +760,28 @@ class DeleteAccountDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             AppLocalizations.of(context).account_delete_dialog_warning,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: DabblerType.body
+                .resolveForDirection(Directionality.of(context))
+                .copyWith(
+                  color: colors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
-          const SizedBox(height: 16),
-          TextField(
+          const SizedBox(height: DabblerSpacing.space5),
+          DabblerTextField(
             controller: confirmController,
-            decoration: const InputDecoration(
-              labelText: 'Type "DELETE" to confirm',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.warning_outlined),
+            label: 'Type "DELETE" to confirm',
+            prefixIcon: const DabblerIcon(
+              'warning-2',
+              size: DabblerSizing.iconSm,
             ),
             enabled: enabled,
           ),

@@ -17,6 +17,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 
 const _enWarning =
@@ -40,14 +42,13 @@ Widget _harness({required Locale locale, required TextEditingController c}) {
       GlobalCupertinoLocalizations.delegate,
     ],
     supportedLocales: AppLocalizations.supportedLocales,
-    home: Scaffold(
-      body: AlertDialog(
-        title: const Text('Delete Account'),
-        content: DeleteAccountDialogContent(
-          confirmController: c,
-          enabled: true,
-        ),
-      ),
+    // The dialog is a design-system DabblerDialog since the W8 migration; its
+    // tokens resolve from the DS theme extension.
+    theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+    home: DabblerDialog(
+      title: 'Delete Account',
+      destructive: true,
+      child: DeleteAccountDialogContent(confirmController: c, enabled: true),
     ),
   );
 }

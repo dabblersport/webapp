@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 
 /// A single titled section of a legal document.
 class LegalSection {
@@ -197,25 +199,29 @@ const List<LegalSection> kPrivacyPolicySections = [
 
 /// Native, scrollable legal-document body. Shared by the in-app drawer
 /// ([showLegalDocSheet]) and the full `/about/*` screens so the legal text has
-/// a single source of truth.
+/// a single source of truth. Drawn from design-system type and colour tokens.
 class LegalDocContent extends StatelessWidget {
   const LegalDocContent({
     super.key,
     required this.intro,
     required this.sections,
     this.controller,
-    this.padding = const EdgeInsets.fromLTRB(20, 8, 20, 24),
+    this.padding = const EdgeInsetsDirectional.fromSTEB(
+      DabblerSpacing.space6,
+      DabblerSpacing.space2,
+      DabblerSpacing.space6,
+      DabblerSpacing.space8,
+    ),
   });
 
   final String intro;
   final List<LegalSection> sections;
   final ScrollController? controller;
-  final EdgeInsets padding;
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colors = DabblerColors.of(context);
 
     return SingleChildScrollView(
       controller: controller,
@@ -226,46 +232,49 @@ class LegalDocContent extends StatelessWidget {
         children: [
           Text(
             intro,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.4,
-            ),
+            style: composerType(
+              context,
+              DabblerType.body,
+              colors.textSecondary,
+            ).copyWith(height: 1.4),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: DabblerSpacing.space4),
           Row(
             children: [
-              Icon(
-                Icons.update,
-                size: 16,
-                color: colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Last updated: $kLegalLastUpdated',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+              DabblerIcon('clock', size: 16, color: colors.textTertiary),
+              const SizedBox(width: DabblerSpacing.space2),
+              Expanded(
+                child: Text(
+                  'Last updated: $kLegalLastUpdated',
+                  style: composerType(
+                    context,
+                    DabblerType.footnote,
+                    colors.textTertiary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: DabblerSpacing.space7),
           for (final section in sections) ...[
             Text(
               section.title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: colorScheme.primary,
+              style: composerType(
+                context,
+                DabblerType.headline,
+                colors.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space3),
             Text(
               section.content,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                height: 1.6,
-                color: colorScheme.onSurface,
-              ),
+              style: composerType(
+                context,
+                DabblerType.body,
+                colors.textPrimary,
+              ).copyWith(height: 1.6),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: DabblerSpacing.space7),
           ],
         ],
       ),

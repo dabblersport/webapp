@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
 import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
@@ -15,7 +14,9 @@ class _KindToggle {
   const _KindToggle(this.title, this.subtitle, this.icon, this.kinds);
   final String title;
   final String subtitle;
-  final IconData icon;
+
+  /// DS icon name rendered through [DabblerIcon].
+  final String icon;
   final List<String> kinds;
 }
 
@@ -28,42 +29,39 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
   static const _gameToggles = <_KindToggle>[
     _KindToggle('Game Invites & Requests', 'Invites, join requests, approvals',
-        Icons.sports_outlined,
-        ['game.invited', 'game.join_request', 'game.join_accepted']),
-    _KindToggle('Game Reminders', 'Reminders for upcoming games',
-        Icons.alarm_outlined, ['game.reminder']),
+        'game', ['game.invited', 'game.join_request', 'game.join_accepted']),
+    _KindToggle('Game Reminders', 'Reminders for upcoming games', 'alarm',
+        ['game.reminder']),
     _KindToggle('Game Updates', 'Changes, waitlist promotions, players joining',
-        Icons.update_outlined,
+        'refresh-circle',
         ['game.updated', 'game.waitlist_promoted', 'game.player_joined']),
-    _KindToggle('Booking Payments', 'When a booking needs payment',
-        Icons.payment_outlined, ['arena.payment_required']),
+    _KindToggle('Booking Payments', 'When a booking needs payment', 'card',
+        ['arena.payment_required']),
   ];
 
   static const _socialToggles = <_KindToggle>[
     _KindToggle('Likes & Reactions', 'Likes and reactions on your content',
-        Icons.favorite_outline,
+        'heart',
         ['social.post_liked', 'social.post_reacted', 'social.comment_liked']),
-    _KindToggle('Comments', 'Comments on your posts', Icons.comment_outlined,
+    _KindToggle('Comments', 'Comments on your posts', 'message-text',
         ['social.post_commented']),
-    _KindToggle('Mentions', 'When someone mentions you',
-        Icons.alternate_email_outlined,
+    _KindToggle('Mentions', 'When someone mentions you', 'tag-user',
         ['social.mentioned_in_post', 'social.mentioned_in_comment']),
-    _KindToggle('New Followers', 'When someone follows you',
-        Icons.person_add_outlined, ['social.followed']),
+    _KindToggle('New Followers', 'When someone follows you', 'user-add',
+        ['social.followed']),
   ];
 
   static const _connectionToggles = <_KindToggle>[
     _KindToggle('Friend Requests', 'New and accepted friend requests',
-        Icons.group_add_outlined, ['friend.requested', 'friend.accepted']),
-    _KindToggle('Squad Invites', 'Invites to join a squad',
-        Icons.shield_outlined, ['squad.invited']),
+        'profile-add', ['friend.requested', 'friend.accepted']),
+    _KindToggle('Squad Invites', 'Invites to join a squad', 'shield-tick',
+        ['squad.invited']),
     _KindToggle('Meetup Invites', 'Invites and players joining meetups',
-        Icons.groups_outlined, ['meetup.invited', 'meetup.player_joined']),
+        'people', ['meetup.invited', 'meetup.player_joined']),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
     final state = ref.watch(notificationSettingsControllerProvider);
 
     // Surface save/load errors without blocking the UI.
@@ -71,58 +69,35 @@ class NotificationSettingsScreen extends ConsumerWidget {
       notificationSettingsControllerProvider,
       (prev, next) {
         if (next.error != null && next.error != prev?.error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Could not update settings: ${next.error}')),
+          DabblerToastProvider.of(context).show(
+            DabblerToastSpec(
+              message: 'Could not update settings: ${next.error}',
+              tone: DabblerToastTone.error,
+            ),
           );
         }
       },
     );
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-              sliver: SliverToBoxAdapter(child: _buildHeader(context)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              sliver: SliverToBoxAdapter(child: _buildHeroCard(context)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
-              sliver: SliverToBoxAdapter(
-                child: _buildBody(context, ref, state),
-              ),
-            ),
-          ],
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Notifications',
+        onBack: () => context.pop(),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space11,
         ),
+        children: [
+          _buildHero(context),
+          const SizedBox(height: DabblerSpacing.space7),
+          _buildBody(context, ref, state),
+        ],
       ),
     );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
   }
 
   Widget _buildBody(
@@ -133,8 +108,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     final settings = state.settings;
     if (settings == null) {
       return const Padding(
-        padding: EdgeInsets.only(top: 48),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.only(top: DabblerSpacing.space11),
+        child: Center(child: DabblerSpinner()),
       );
     }
 
@@ -142,28 +117,26 @@ class NotificationSettingsScreen extends ConsumerWidget {
     final pushOn = settings.pushEnabled;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _buildGeneralSection(context, settings, controller),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         _buildQuietHoursSection(context, settings, controller),
-        const SizedBox(height: 20),
+        const SizedBox(height: DabblerSpacing.space7),
         // Per-kind sections only gate push, so dim them when push is off.
         Opacity(
           opacity: pushOn ? 1 : 0.5,
           child: IgnorePointer(
             ignoring: !pushOn,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildKindSection(
-                    context, 'Game Notifications', _gameToggles, settings,
-                    controller),
-                const SizedBox(height: 20),
-                _buildKindSection(
-                    context, 'Social Notifications', _socialToggles, settings,
-                    controller),
-                const SizedBox(height: 20),
+                _buildKindSection(context, 'Game Notifications', _gameToggles,
+                    settings, controller),
+                const SizedBox(height: DabblerSpacing.space7),
+                _buildKindSection(context, 'Social Notifications',
+                    _socialToggles, settings, controller),
+                const SizedBox(height: DabblerSpacing.space7),
                 _buildKindSection(context, 'Connections', _connectionToggles,
                     settings, controller),
               ],
@@ -174,77 +147,26 @@ class NotificationSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
+  Widget _buildHero(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final dir = Directionality.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        IconButton.filledTonal(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHigh,
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
+        Text(
+          'Stay informed',
+          style: DabblerType.footnote
+              .resolveForDirection(dir)
+              .copyWith(color: colors.textSecondary),
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Text(
-            'Notifications',
-            style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
+        const SizedBox(height: DabblerSpacing.space2),
+        const DabblerBanner(
+          tone: DabblerBannerTone.neutral,
+          title: 'Manage notifications',
+          message:
+              'Control how and when you receive notifications about games, social activity, and account updates.',
         ),
       ],
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF4A148C) : const Color(0xFFE0C7FF),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Stay informed',
-            style: textTheme.labelLarge?.copyWith(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.8)
-                  : Colors.black.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.6,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Manage notifications',
-            style: textTheme.headlineSmall?.copyWith(
-              color: isDarkMode ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Control how and when you receive notifications about games, social activity, and account updates.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onPrimary.withValues(alpha: 0.8),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -253,36 +175,18 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    return _buildCard(
-      context,
-      'General Preferences',
-      [
-        _buildSwitchItem(
-          context,
-          'Push Notifications',
-          'Receive notifications on this device',
-          Icons.notifications_outlined,
-          settings.pushEnabled,
-          controller.setPushEnabled,
-        ),
-        const Divider(height: 24),
-        _buildSwitchItem(
-          context,
-          'Email Notifications',
-          'Receive notifications via email',
-          Icons.email_outlined,
-          settings.emailEnabled,
-          controller.setEmailEnabled,
-        ),
-        const Divider(height: 24),
-        _buildSwitchItem(
-          context,
-          'SMS Notifications',
-          'Receive important updates via SMS',
-          Icons.sms_outlined,
-          settings.smsEnabled,
-          controller.setSmsEnabled,
-        ),
+    return DabblerSection(
+      title: 'General Preferences',
+      children: [
+        _switchRow(context, 'Push Notifications',
+            'Receive notifications on this device', 'notification',
+            settings.pushEnabled, controller.setPushEnabled),
+        _switchRow(context, 'Email Notifications',
+            'Receive notifications via email', 'sms', settings.emailEnabled,
+            controller.setEmailEnabled),
+        _switchRow(context, 'SMS Notifications',
+            'Receive important updates via SMS', 'message', settings.smsEnabled,
+            controller.setSmsEnabled),
       ],
     );
   }
@@ -293,17 +197,16 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettingsController controller,
   ) {
     final enabled = settings.hasQuietHours;
-    return _buildCard(
-      context,
-      'Quiet Hours',
-      [
-        _buildSwitchItem(
+    return DabblerSection(
+      title: 'Quiet Hours',
+      children: [
+        _switchRow(
           context,
           'Mute during quiet hours',
           enabled
               ? 'No push between ${_fmt(context, settings.quietStartMin!)} and ${_fmt(context, settings.quietEndMin!)}'
               : 'Pause push notifications overnight',
-          Icons.bedtime_outlined,
+          'moon',
           enabled,
           (value) {
             if (value) {
@@ -315,27 +218,23 @@ class NotificationSettingsScreen extends ConsumerWidget {
           },
         ),
         if (enabled) ...[
-          const Divider(height: 24),
-          _buildTimeRow(context, 'Start', settings.quietStartMin!,
+          _timeRow(context, 'Start', settings.quietStartMin!,
               (m) => controller.setQuietHours(m, settings.quietEndMin!)),
-          const SizedBox(height: 12),
-          _buildTimeRow(context, 'End', settings.quietEndMin!,
+          _timeRow(context, 'End', settings.quietEndMin!,
               (m) => controller.setQuietHours(settings.quietStartMin!, m)),
-          const Divider(height: 24),
-          _buildSwitchItem(
+          _switchRow(
             context,
             'Allow urgent notifications',
             'High-priority alerts still come through during quiet hours',
-            Icons.priority_high_outlined,
+            'danger',
             settings.allowHighPriorityOverride,
             controller.setAllowHighPriorityOverride,
           ),
-          const Divider(height: 24),
-          _buildSwitchItem(
+          _switchRow(
             context,
             'Allow all notifications',
             'Every push still comes through during quiet hours',
-            Icons.notifications_active_outlined,
+            'notification-bing',
             settings.allowAllOverride,
             controller.setAllowAllOverride,
           ),
@@ -351,86 +250,47 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    final children = <Widget>[];
-    for (var i = 0; i < toggles.length; i++) {
-      final t = toggles[i];
-      final on = !t.kinds.any(settings.isKindMuted);
-      if (i > 0) children.add(const Divider(height: 24));
-      children.add(
-        _buildSwitchItem(
-          context,
-          t.title,
-          t.subtitle,
-          t.icon,
-          on,
-          (value) => controller.setKindsEnabled(t.kinds, value),
-        ),
-      );
-    }
-    return _buildCard(context, title, children);
-  }
-
-  Widget _buildCard(BuildContext context, String title, List<Widget> children) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...children,
-          ],
-        ),
-      ),
+    return DabblerSection(
+      title: title,
+      children: [
+        for (final t in toggles)
+          _switchRow(
+            context,
+            t.title,
+            t.subtitle,
+            t.icon,
+            !t.kinds.any(settings.isKindMuted),
+            (value) => controller.setKindsEnabled(t.kinds, value),
+          ),
+      ],
     );
   }
 
-  Widget _buildTimeRow(
+  Widget _timeRow(
     BuildContext context,
     String label,
     int minutes,
     ValueChanged<int> onPicked,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4),
-          child: Text(label, style: textTheme.bodyLarge),
+    final colors = DabblerColors.of(context);
+    return DabblerInputRow(
+      title: label,
+      leading: DabblerIcon('clock', size: DabblerSizing.iconMd, color: colors.textSecondary),
+      trailing: Text(
+        _fmt(context, minutes),
+        style: DabblerType.callout
+            .resolveForDirection(Directionality.of(context))
+            .copyWith(color: colors.textSecondary),
+      ),
+      onTap: () => showDabblerSheet<void>(
+        context: context,
+        title: label,
+        detent: DabblerSheetDetent.content,
+        builder: (_) => _QuietTimeSheet(
+          initial: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+          onPicked: (t) => onPicked(t.hour * 60 + t.minute),
         ),
-        TextButton(
-          onPressed: () async {
-            final picked = await showTimePicker(
-              context: context,
-              initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
-            );
-            if (picked != null) {
-              onPicked(picked.hour * 60 + picked.minute);
-            }
-          },
-          style: TextButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHighest,
-            foregroundColor: colorScheme.onSurface,
-          ),
-          child: Text(_fmt(context, minutes)),
-        ),
-      ],
+      ),
     );
   }
 
@@ -440,50 +300,54 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return t.format(context);
   }
 
-  Widget _buildSwitchItem(
+  Widget _switchRow(
     BuildContext context,
     String title,
     String subtitle,
-    IconData icon,
+    String icon,
     bool value,
     ValueChanged<bool> onChanged,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final colors = DabblerColors.of(context);
+    return DabblerInputRow(
+      title: title,
+      subtitle: subtitle,
+      leading: DabblerIcon(icon, size: DabblerSizing.iconMd, color: colors.textSecondary),
+      trailing: DabblerToggle(
+        checked: value,
+        onChanged: onChanged,
+        semanticLabel: title,
+      ),
+    );
+  }
+}
 
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, size: 20, color: colorScheme.primary),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Switch(value: value, onChanged: onChanged),
-      ],
+class _QuietTimeSheet extends StatefulWidget {
+  const _QuietTimeSheet({required this.initial, required this.onPicked});
+
+  final TimeOfDay initial;
+  final ValueChanged<TimeOfDay> onPicked;
+
+  @override
+  State<_QuietTimeSheet> createState() => _QuietTimeSheetState();
+}
+
+class _QuietTimeSheetState extends State<_QuietTimeSheet> {
+  late TimeOfDay _value = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+      child: DabblerTimePicker(
+        value: _value,
+        onChanged: (t) => setState(() => _value = t),
+        onConfirm: () {
+          widget.onPicked(_value);
+          Navigator.pop(context);
+        },
+        onCancel: () => Navigator.pop(context),
+      ),
     );
   }
 }
