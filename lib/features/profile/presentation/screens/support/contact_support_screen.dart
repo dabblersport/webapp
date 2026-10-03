@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
-/// Screen for contacting support team
+/// Screen for contacting the support team — a design-system page: an intro
+/// banner, a section of fields (email, category, subject, message) and a send
+/// button. No design frame exists for this screen; it is a DS-default render.
 class ContactSupportScreen extends ConsumerStatefulWidget {
   const ContactSupportScreen({super.key});
 
@@ -14,19 +14,19 @@ class ContactSupportScreen extends ConsumerStatefulWidget {
       _ContactSupportScreenState();
 }
 
-class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  final _formKey = GlobalKey<FormState>();
+class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   final _subjectController = TextEditingController();
   final _messageController = TextEditingController();
   final _emailController = TextEditingController();
 
   String _selectedCategory = 'General';
   bool _isSubmitting = false;
+
+  /// Field errors, shown only after a submit attempt (the old Form validated
+  /// on submit the same way).
+  String? _emailError;
+  String? _subjectError;
+  String? _messageError;
 
   final List<String> _categories = [
     'General',
@@ -42,28 +42,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
     _loadUserEmail();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _animationController.forward();
   }
 
   void _loadUserEmail() {
@@ -72,7 +51,6 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
     _subjectController.dispose();
     _messageController.dispose();
     _emailController.dispose();
@@ -81,395 +59,98 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              slivers: [
-                // Header
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  sliver: SliverToBoxAdapter(child: _buildHeader(context)),
-                ),
-                // Hero Card
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                  sliver: SliverToBoxAdapter(child: _buildHeroCard(context)),
-                ),
-                // Content
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 48),
-                  sliver: SliverToBoxAdapter(
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildContactForm(),
-                          const SizedBox(height: 24),
-                          // Quick Actions (FAQ / Live chat / Phone) hidden until
-                          // implemented — see _buildQuickActionsSection.
-                          _buildSubmitButton(),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Contact Support',
+        onBack: () => context.pop(),
       ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back),
-          style: IconButton.styleFrom(
-            backgroundColor: colorScheme.surfaceContainerHigh,
-            foregroundColor: colorScheme.onSurface,
-            minimumSize: const Size(48, 48),
-          ),
+      body: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space10,
         ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const DabblerBanner(
+            tone: DabblerBannerTone.info,
+            title: 'How can we help?',
+            message:
+                'Send us a message and we\'ll get back to you as soon as possible.',
+          ),
+          const SizedBox(height: DabblerSpacing.space6),
+          DabblerSection(
+            title: 'Contact Information',
             children: [
-              Text(
-                'Contact Support',
-                style: textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurface,
-                ),
+              DabblerTextField(
+                controller: _emailController,
+                label: 'Your Email',
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const DabblerIcon('sms', size: 20),
+                errorText: _emailError,
+              ),
+              const SizedBox(height: DabblerSpacing.space4),
+              DabblerSelect<String>(
+                label: 'Category',
+                value: _selectedCategory,
+                options: [
+                  for (final c in _categories)
+                    DabblerSelectOption<String>(value: c, label: c),
+                ],
+                onChanged: (value) =>
+                    setState(() => _selectedCategory = value),
+              ),
+              const SizedBox(height: DabblerSpacing.space4),
+              DabblerTextField(
+                controller: _subjectController,
+                label: 'Subject',
+                prefixIcon: const DabblerIcon('document-text', size: 20),
+                errorText: _subjectError,
+              ),
+              const SizedBox(height: DabblerSpacing.space4),
+              DabblerTextField(
+                controller: _messageController,
+                label: 'Message',
+                variant: DabblerTextFieldVariant.multiline,
+                rows: 5,
+                errorText: _messageError,
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeroCard(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF4A148C) : const Color(0xFFE0C7FF),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.support_agent,
-            size: 48,
-            color: isDarkMode ? Colors.white : Colors.black87,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'How can we help?',
-            style: textTheme.headlineSmall?.copyWith(
-              color: isDarkMode ? Colors.white : Colors.black87,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Send us a message and we\'ll get back to you as soon as possible.',
-            style: textTheme.bodyMedium?.copyWith(
-              color: isDarkMode
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : Colors.black.withValues(alpha: 0.7),
-            ),
+          const SizedBox(height: DabblerSpacing.space7),
+          DabblerButton(
+            label: 'Send Message',
+            icon: 'send-2',
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            loading: _isSubmitting,
+            onPressed: _isSubmitting ? null : _submitForm,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContactForm() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Contact Information',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Email
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                labelText: 'Your Email',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                prefixIcon: const Icon(Icons.email_outlined),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Category
-            DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                prefixIcon: const Icon(Icons.category_outlined),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem(value: category, child: Text(category));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Subject
-            TextFormField(
-              controller: _subjectController,
-              decoration: InputDecoration(
-                labelText: 'Subject',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                prefixIcon: const Icon(Icons.subject_outlined),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a subject';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Message
-            TextFormField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                labelText: 'Message',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                prefixIcon: const Icon(Icons.message_outlined),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 5,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your message';
-                }
-                if (value.length < 10) {
-                  return 'Message must be at least 10 characters long';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildQuickActionsSection() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Actions',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.help_outline,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
-              ),
-              title: const Text('Browse FAQ'),
-              subtitle: const Text('Find answers to common questions'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('FAQ section coming soon')),
-                );
-              },
-            ),
-
-            const Divider(height: 24),
-
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.chat_outlined,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
-              ),
-              title: const Text('Live Chat'),
-              subtitle: const Text('Chat with our support team'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Live chat coming soon')),
-                );
-              },
-            ),
-
-            const Divider(height: 24),
-
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.phone_outlined,
-                  size: 20,
-                  color: colorScheme.primary,
-                ),
-              ),
-              title: const Text('Call Support'),
-              subtitle: const Text('+1 (555) 123-4567'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Phone call functionality coming soon'),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: _isSubmitting ? null : _submitForm,
-        icon: _isSubmitting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.send),
-        label: const Text('Send Message'),
-        style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      ),
-    );
+  bool _validate() {
+    final email = _emailController.text;
+    final subject = _subjectController.text;
+    final message = _messageController.text;
+    setState(() {
+      _emailError = email.isEmpty
+          ? 'Please enter your email'
+          : (!email.contains('@') ? 'Please enter a valid email' : null);
+      _subjectError = subject.isEmpty ? 'Please enter a subject' : null;
+      _messageError = message.isEmpty
+          ? 'Please enter your message'
+          : (message.length < 10
+                ? 'Message must be at least 10 characters long'
+                : null);
+    });
+    return _emailError == null && _subjectError == null && _messageError == null;
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_validate()) {
       return;
     }
 
@@ -481,20 +162,22 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen>
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Message sent successfully! We\'ll get back to you soon.',
-            ),
+        DabblerToastProvider.of(context).show(
+          const DabblerToastSpec(
+            message: 'Message sent successfully! We\'ll get back to you soon.',
+            tone: DabblerToastTone.success,
           ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: 'Failed to send message: $e',
+            tone: DabblerToastTone.error,
+          ),
+        );
       }
     } finally {
       if (mounted) {
