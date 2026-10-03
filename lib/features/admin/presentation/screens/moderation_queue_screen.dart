@@ -1,14 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:dabbler/services/moderation_service.dart';
-import 'package:dabbler/core/widgets/loading_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'admin_parts.dart';
 
 /// Provider for moderation queue
 final moderationQueueProvider = FutureProvider<List<ModerationReportSummary>>((
@@ -21,7 +19,9 @@ final moderationQueueProvider = FutureProvider<List<ModerationReportSummary>>((
 /// Provider for admin status check
 final isAdminProvider = FutureProvider<bool>((ref) async {
   try {
-    final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
+    final response = await Supabase.instance.client.rpc(
+      SupabaseConfig.isAdminFn,
+    );
     return response == true;
   } catch (e) {
     return false;
@@ -39,18 +39,21 @@ class ModerationQueueScreen extends ConsumerStatefulWidget {
 class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isAdminAsync = ref.watch(isAdminProvider);
     final queueAsync = ref.watch(moderationQueueProvider);
 
-    final content = Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Moderation Queue'),
+    // One layout at every width: the Material AdaptiveScaffold rail wrapper is
+    // not a DS component; the app shell owns wide navigation.
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Moderation Queue',
+        onBack: Navigator.of(context).canPop()
+            ? () => Navigator.of(context).maybePop()
+            : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          DabblerNavigationAction(
+            icon: 'refresh',
+            label: 'Refresh',
             onPressed: () {
               ref.invalidate(moderationQueueProvider);
             },
@@ -59,250 +62,138 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
       ),
       body: isAdminAsync.when(
         data: (isAdmin) {
-          if (!isAdmin) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 64,
-                      color: colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Access Denied',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'You must be an administrator to access this page.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+          if (!isAdmin) return const AdminAccessDenied();
 
           return queueAsync.when(
             data: (reports) {
               if (reports.isEmpty) {
-                return Center(
+                return const Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.check_circle_outline,
-                          size: 64,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'All Clear',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No pending reports in the moderation queue.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    padding: EdgeInsets.all(DabblerSpacing.space7),
+                    child: DabblerEmptyState(
+                      icon: 'tick-circle',
+                      size: DabblerEmptyStateSize.page,
+                      title: 'All Clear',
+                      text: 'No pending reports in the moderation queue.',
                     ),
                   ),
                 );
               }
 
-              return RefreshIndicator(
+              return DabblerRefresh(
                 onRefresh: () async {
                   ref.invalidate(moderationQueueProvider);
                 },
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(DabblerSpacing.space6),
                   itemCount: reports.length,
-                  itemBuilder: (context, index) {
-                    final report = reports[index];
-                    return _buildReportCard(
-                      context,
-                      theme,
-                      colorScheme,
-                      report,
-                    );
-                  },
+                  itemBuilder: (context, index) =>
+                      _buildReportCard(context, reports[index]),
                 ),
               );
             },
-            loading: () => const Center(child: LoadingWidget()),
-            error: (error, stack) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Failed to load moderation queue',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: () {
-                        ref.invalidate(moderationQueueProvider);
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
+            loading: () => const AdminLoading(),
+            error: (error, stack) => AdminErrorState(
+              title: 'Failed to load moderation queue',
+              text: error.toString(),
+              onRetry: () {
+                ref.invalidate(moderationQueueProvider);
+              },
             ),
           );
         },
-        loading: () => const Center(child: LoadingWidget()),
-        error: (error, stack) =>
-            Center(child: Text('Failed to check admin status: $error')),
+        loading: () => const AdminLoading(),
+        error: (error, stack) => Center(
+          child: Text(
+            'Failed to check admin status: $error',
+            style: DabblerType.body
+                .resolveForDirection(Directionality.of(context))
+                .copyWith(color: DabblerColors.of(context).textPrimary),
+          ),
+        ),
       ),
     );
-
-    if (MediaQuery.of(context).size.width >= AdaptiveBreakpoints.compact) {
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: SvgPicture.asset(
-          'assets/images/dabbler_text_logo.svg',
-          width: 100,
-          height: 18,
-          colorFilter: ColorFilter.mode(colorScheme.onSurface, BlendMode.srcIn),
-        ),
-        body: content,
-      );
-    }
-    return content;
   }
 
   Widget _buildReportCard(
     BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
     ModerationReportSummary report,
   ) {
+    final colors = DabblerColors.of(context);
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
-    final statusColor = _getStatusColor(colorScheme, report.status);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () => _showReportDetails(context, report),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
+        child: DabblerSurface.card(
+          padding: const EdgeInsets.all(DabblerSpacing.space6),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      report.status.toPostgresString().toUpperCase(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  DabblerBadge(
+                    label: report.status.toPostgresString().toUpperCase(),
+                    status: _statusColor(colors, report.status),
+                    tone: DabblerBadgeTone.warning,
                   ),
                   const Spacer(),
                   Text(
                     dateFormat.format(report.createdAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: DabblerType.footnote
+                        .resolveForDirection(Directionality.of(context))
+                        .copyWith(color: colors.textSecondary),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: DabblerSpacing.space4),
               Text(
                 '${report.targetType.toPostgresString().toUpperCase()}: ${report.targetId}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: DabblerType.headline
+                    .resolveForDirection(Directionality.of(context))
+                    .copyWith(color: colors.textPrimary),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: DabblerSpacing.space1),
               Text(
                 'Reason: ${report.reason.toPostgresString()}',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: DabblerType.subheadline
+                    .resolveForDirection(Directionality.of(context))
+                    .copyWith(color: colors.textSecondary),
               ),
               if (report.details != null && report.details!.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: DabblerSpacing.space1),
                 Text(
                   'Details: ${report.details}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: DabblerType.footnote
+                      .resolveForDirection(Directionality.of(context))
+                      .copyWith(color: colors.textSecondary),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: DabblerSpacing.space4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton.icon(
+                  DabblerButton(
+                    label: 'Dismiss',
+                    icon: 'close-circle',
+                    tone: DabblerButtonTone.outlined,
+                    size: DabblerButtonSize.small,
                     onPressed: () => _resolveReport(
                       context,
                       report.reportId,
                       ReportStatus.dismissed,
                     ),
-                    icon: const Icon(Icons.close),
-                    label: const Text('Dismiss'),
                   ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
+                  const SizedBox(width: DabblerSpacing.space3),
+                  DabblerButton(
+                    label: 'Take Action',
+                    icon: 'judge',
+                    size: DabblerButtonSize.small,
                     onPressed: () => _showActionDialog(context, report),
-                    icon: const Icon(Icons.gavel),
-                    label: const Text('Take Action'),
                   ),
                 ],
               ),
@@ -313,20 +204,22 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     );
   }
 
-  Color _getStatusColor(ColorScheme colorScheme, ReportStatus status) {
+  /// Report status to a DS status role. The old Material scheme used
+  /// primary/secondary/tertiary; dismissed/duplicate fall back to the neutral
+  /// (warning-tone) badge.
+  DabblerStatusColor? _statusColor(DabblerColors colors, ReportStatus status) {
     switch (status) {
       case ReportStatus.open:
-        return colorScheme.primary;
+        return colors.info;
       case ReportStatus.triage:
-        return colorScheme.secondary;
+        return colors.warning;
       case ReportStatus.escalated:
-        return colorScheme.error;
+        return colors.error;
       case ReportStatus.resolved:
-        return colorScheme.tertiary;
+        return colors.success;
       case ReportStatus.dismissed:
-        return colorScheme.onSurfaceVariant;
       case ReportStatus.duplicate:
-        return colorScheme.onSurfaceVariant;
+        return null;
     }
   }
 
@@ -334,83 +227,56 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     BuildContext context,
     ModerationReportSummary report,
   ) {
-    showAdaptiveSheet(
+    showDabblerSheet<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      title: 'Report Details',
+      detents: const <double>[0.7, 0.95],
+      builder: (context) {
+        final colors = DabblerColors.of(context);
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(DabblerSpacing.space7),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailRow('Target Type', report.targetType.toPostgresString()),
+              _detailRow('Target ID', report.targetId),
+              _detailRow('Reason', report.reason.toPostgresString()),
+              _detailRow('Status', report.status.toPostgresString()),
+              _detailRow('Report ID', report.reportId),
+              _detailRow(
+                'Reported At',
+                DateFormat('MMM dd, yyyy HH:mm').format(report.createdAt),
+              ),
+              if (report.details != null && report.details!.isNotEmpty) ...[
+                const SizedBox(height: DabblerSpacing.space6),
                 Text(
-                  'Report Details',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  'Details',
+                  style: DabblerType.headline
+                      .resolveForDirection(Directionality.of(context))
+                      .copyWith(color: colors.textPrimary),
                 ),
-                const SizedBox(height: 24),
-                _buildDetailRow(
-                  'Target Type',
-                  report.targetType.toPostgresString(),
+                const SizedBox(height: DabblerSpacing.space3),
+                Text(
+                  report.details!,
+                  style: DabblerType.body
+                      .resolveForDirection(Directionality.of(context))
+                      .copyWith(color: colors.textPrimary),
                 ),
-                _buildDetailRow('Target ID', report.targetId),
-                _buildDetailRow('Reason', report.reason.toPostgresString()),
-                _buildDetailRow('Status', report.status.toPostgresString()),
-                _buildDetailRow('Report ID', report.reportId),
-                _buildDetailRow(
-                  'Reported At',
-                  DateFormat('MMM dd, yyyy HH:mm').format(report.createdAt),
-                ),
-                if (report.details != null && report.details!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    'Details',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    report.details!,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
-    );
+  Widget _detailRow(String label, String value) =>
+      AdminInfoRow(label: label, value: value, labelWidth: 120);
+
+  void _toast(String message, DabblerToastTone tone) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
   Future<void> _resolveReport(
@@ -427,51 +293,51 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report resolved successfully')),
-        );
+        _toast('Report resolved successfully', DabblerToastTone.success);
         ref.invalidate(moderationQueueProvider);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to resolve report: $e')));
+        _toast('Failed to resolve report: $e', DabblerToastTone.error);
       }
     }
   }
 
   void _showActionDialog(BuildContext context, ModerationReportSummary report) {
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Take Moderation Action'),
-        content: Column(
+      builder: (dialogContext) => DabblerDialog(
+        title: 'Take Moderation Action',
+        description:
+            'Target: ${report.targetType.toPostgresString()}\nID: ${report.targetId}',
+        onClose: () => Navigator.pop(dialogContext),
+        secondaryAction: DabblerDialogAction(
+          label: 'Cancel',
+          onPressed: () => Navigator.pop(dialogContext),
+        ),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Target: ${report.targetType.toPostgresString()}'),
-            Text('ID: ${report.targetId}'),
-            const SizedBox(height: 16),
-            const Text('Select an action:'),
-            const SizedBox(height: 8),
-            ...ModAction.values.map(
-              (action) => ListTile(
-                title: Text(_getActionLabel(action)),
+            Text(
+              'Select an action:',
+              style: DabblerType.subheadline
+                  .resolveForDirection(Directionality.of(context))
+                  .copyWith(
+                    color: DabblerColors.of(dialogContext).textSecondary,
+                  ),
+            ),
+            const SizedBox(height: DabblerSpacing.space2),
+            for (final action in ModAction.values)
+              DabblerInputRow(
+                title: _getActionLabel(action),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(dialogContext);
                   _takeAction(context, report, action);
                 },
               ),
-            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-        ],
       ),
     );
   }
@@ -516,20 +382,15 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Action "${_getActionLabel(action)}" applied successfully',
-            ),
-          ),
+        _toast(
+          'Action "${_getActionLabel(action)}" applied successfully',
+          DabblerToastTone.success,
         );
         ref.invalidate(moderationQueueProvider);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to take action: $e')));
+        _toast('Failed to take action: $e', DabblerToastTone.error);
       }
     }
   }
