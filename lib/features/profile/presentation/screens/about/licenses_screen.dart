@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
-/// Screen displaying open source licenses and attributions
+/// Screen displaying open source licenses and attributions, on a
+/// design-system page: a search field over a section of license rows; a row
+/// opens the license's details in a design-system sheet.
 class LicensesScreen extends ConsumerStatefulWidget {
   const LicensesScreen({super.key});
 
@@ -14,14 +14,7 @@ class LicensesScreen extends ConsumerStatefulWidget {
   ConsumerState<LicensesScreen> createState() => _LicensesScreenState();
 }
 
-class _LicensesScreenState extends ConsumerState<LicensesScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  final ScrollController _scrollController = ScrollController();
-  bool _isScrolled = false;
+class _LicensesScreenState extends ConsumerState<LicensesScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -90,434 +83,187 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen>
 
   List<LicenseInfo> get _filteredLicenses {
     if (_searchQuery.isEmpty) return _licenses;
+    final q = _searchQuery.toLowerCase();
     return _licenses.where((license) {
-      return license.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          license.description.toLowerCase().contains(
-            _searchQuery.toLowerCase(),
-          ) ||
-          license.license.toLowerCase().contains(_searchQuery.toLowerCase());
+      return license.name.toLowerCase().contains(q) ||
+          license.description.toLowerCase().contains(q) ||
+          license.license.toLowerCase().contains(q);
     }).toList();
   }
 
   @override
-  void initState() {
-    super.initState();
-    _setupAnimations();
-    _setupScrollListener();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _animationController.forward();
-  }
-
-  void _setupScrollListener() {
-    _scrollController.addListener(() {
-      setState(() {
-        _isScrolled = _scrollController.offset > 100;
-      });
-    });
-  }
-
-  @override
   void dispose() {
-    _animationController.dispose();
-    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = Scaffold(
-      appBar: AppBar(
-        title: const Text('Open Source Licenses'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-        elevation: _isScrolled ? 2 : 0,
+    final colors = DabblerColors.of(context);
+    final filtered = _filteredLicenses;
+
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Open Source Licenses',
+        onBack: () => context.pop(),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
+          DabblerNavigationAction(
+            icon: 'info-circle',
+            label: 'About Licenses',
             onPressed: _showLicenseInfo,
-            tooltip: 'About Licenses',
           ),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Column(
-            children: [
-              _buildHeaderSection(),
-              _buildSearchBar(),
-              Expanded(child: _buildLicensesList()),
-            ],
-          ),
+      body: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space8,
         ),
-      ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(
-          Theme.of(context).colorScheme.onSurface,
-          BlendMode.srcIn,
-        ),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeaderSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Card(
-        color: Colors.green.shade50,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Icon(Icons.code, size: 48, color: Colors.green.shade700),
-              const SizedBox(height: 16),
-              Text(
-                'Open Source Licenses',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'This app is built with amazing open source libraries. We thank all contributors for their work.',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                '${_licenses.length} open source packages',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+        children: [
+          Text(
+            'This app is built with amazing open source libraries. We thank all contributors for their work.',
+            style: composerType(context, DabblerType.body, colors.textSecondary),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (value) {
-          setState(() {
-            _searchQuery = value;
-          });
-        },
-        decoration: InputDecoration(
-          hintText: 'Search licenses...',
-          prefixIcon: const Icon(Icons.search),
-          suffixIcon: _searchQuery.isNotEmpty
-              ? IconButton(
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() {
-                      _searchQuery = '';
-                    });
-                  },
-                  icon: const Icon(Icons.clear),
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Theme.of(context).cardColor,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLicensesList() {
-    final filteredLicenses = _filteredLicenses;
-
-    if (filteredLicenses.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'No licenses found',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+          const SizedBox(height: DabblerSpacing.space2),
+          Text(
+            '${_licenses.length} open source packages',
+            style: composerType(
+              context,
+              DabblerType.footnote,
+              colors.textTertiary,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your search query',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(20),
-      itemCount: filteredLicenses.length,
-      itemBuilder: (context, index) {
-        final license = filteredLicenses[index];
-        return _buildLicenseCard(license);
-      },
-    );
-  }
-
-  Widget _buildLicenseCard(LicenseInfo license) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: () => _showLicenseDetails(license),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      license.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getLicenseColor(
-                        license.license,
-                      ).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'v${license.version}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: _getLicenseColor(license.license),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                license.description,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.balance,
-                    size: 16,
-                    color: _getLicenseColor(license.license),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    license.license,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _getLicenseColor(license.license),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Colors.grey[400],
-                  ),
-                ],
-              ),
-            ],
           ),
-        ),
+          const SizedBox(height: DabblerSpacing.space5),
+          DabblerSearchField(
+            controller: _searchController,
+            placeholder: 'Search licenses...',
+            onChanged: (value) => setState(() => _searchQuery = value),
+            onCleared: () => setState(() => _searchQuery = ''),
+          ),
+          const SizedBox(height: DabblerSpacing.space5),
+          if (filtered.isEmpty)
+            const DabblerEmptyState(
+              icon: 'search-status',
+              title: 'No licenses found',
+              text: 'Try adjusting your search query',
+            )
+          else
+            DabblerSection(
+              children: [
+                for (final license in filtered)
+                  DabblerInputRow(
+                    leading: DabblerIcon(
+                      'code',
+                      size: 20,
+                      color: colors.textSecondary,
+                    ),
+                    title: license.name,
+                    subtitle: '${license.license} · v${license.version}',
+                    trailing: const DabblerChevron(),
+                    onTap: () => _showLicenseDetails(license),
+                  ),
+              ],
+            ),
+        ],
       ),
     );
-  }
-
-  Color _getLicenseColor(String license) {
-    switch (license.toLowerCase()) {
-      case 'mit license':
-        return Colors.green;
-      case 'bsd 3-clause license':
-        return Colors.blue;
-      case 'apache license 2.0':
-        return Colors.orange;
-      default:
-        return Colors.purple;
-    }
   }
 
   void _showLicenseDetails(LicenseInfo license) {
-    showAdaptiveSheet(
+    showDabblerSheet<void>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      license.name,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow('Version', license.version),
-              _buildDetailRow('License', license.license),
-              _buildDetailRow('Copyright', license.copyright),
-              _buildDetailRow('URL', license.url),
-              const SizedBox(height: 16),
-              Text(
-                'Description',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                license.description,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Opening ${license.url}')),
-                    );
-                  },
-                  child: const Text('View on Web'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
+      title: license.name,
+      detent: DabblerSheetDetent.content,
+      builder: (sheetContext) => _LicenseDetails(license: license),
     );
   }
 
   void _showLicenseInfo() {
-    showDialog(
+    showDabblerDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About Open Source Licenses'),
-        content: const Text(
-          'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\n'
-          'We are grateful to all the developers and contributors who make their work available under open source licenses.',
+      builder: (dialogContext) => DabblerDialog(
+        title: 'About Open Source Licenses',
+        description:
+            'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\n'
+            'We are grateful to all the developers and contributors who make their work available under open source licenses.',
+        onClose: () => Navigator.of(dialogContext).pop(),
+        primaryAction: DabblerDialogAction(
+          label: 'Got it',
+          onPressed: () => Navigator.of(dialogContext).pop(),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
+      ),
+    );
+  }
+}
+
+/// The license detail sheet body: label/value rows, the description, and the
+/// "View on Web" action (which, as before, only announces the URL).
+class _LicenseDetails extends StatelessWidget {
+  const _LicenseDetails({required this.license});
+
+  final LicenseInfo license;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    Widget detail(String label, String value) => Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: composerType(
+                context,
+                DabblerType.footnote,
+                colors.textTertiary,
+                weight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: composerType(context, DabblerType.body, colors.textPrimary),
+            ),
           ),
         ],
       ),
+    );
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        detail('Version', license.version),
+        detail('License', license.license),
+        detail('Copyright', license.copyright),
+        detail('URL', license.url),
+        const SizedBox(height: DabblerSpacing.space3),
+        Text(
+          'Description',
+          style: composerType(context, DabblerType.headline, colors.textPrimary),
+        ),
+        const SizedBox(height: DabblerSpacing.space2),
+        Text(
+          license.description,
+          style: composerType(context, DabblerType.body, colors.textSecondary),
+        ),
+        const SizedBox(height: DabblerSpacing.space6),
+        DabblerButton(
+          label: 'View on Web',
+          tone: DabblerButtonTone.outlined,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          onPressed: () => DabblerToastProvider.of(
+            context,
+          ).show(DabblerToastSpec(message: 'Opening ${license.url}')),
+        ),
+      ],
     );
   }
 }

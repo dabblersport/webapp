@@ -1,12 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:go_router/go_router.dart';
 import 'dart:io' show Platform;
-import 'package:dabbler/core/constants/adaptive_destinations.dart';
-import 'package:dabbler/widgets/adaptive_scaffold.dart';
 
-/// Screen for reporting bugs and issues
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart' show composerType;
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+/// Screen for reporting bugs and issues — a design-system page: an intro
+/// banner, a "Bug Details" section of fields, an "Additional Information"
+/// section of toggle rows, and the submit button. No design frame exists for
+/// this screen; it is a DS-default render.
 class BugReportScreen extends ConsumerStatefulWidget {
   const BugReportScreen({super.key});
 
@@ -14,13 +17,7 @@ class BugReportScreen extends ConsumerStatefulWidget {
   ConsumerState<BugReportScreen> createState() => _BugReportScreenState();
 }
 
-class _BugReportScreenState extends ConsumerState<BugReportScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  final _formKey = GlobalKey<FormState>();
+class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _stepsController = TextEditingController();
@@ -31,6 +28,12 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
   bool _isSubmitting = false;
   bool _includeDeviceInfo = true;
   bool _includeAppLogs = true;
+
+  /// Field errors, shown only after a submit attempt (as the old Form did).
+  String? _emailError;
+  String? _titleError;
+  String? _descriptionError;
+  String? _stepsError;
 
   final List<String> _severityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
@@ -50,28 +53,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
     _loadUserEmail();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: Curves.easeOutCubic,
-          ),
-        );
-
-    _animationController.forward();
   }
 
   void _loadUserEmail() {
@@ -80,7 +62,6 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     _stepsController.dispose();
@@ -90,359 +71,169 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
 
   @override
   Widget build(BuildContext context) {
-    final content = Scaffold(
-      appBar: AppBar(
-        title: const Text('Report a Bug'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
+    return DabblerPage(
+      topBar: DabblerNavigationTopBar.titled(
+        title: 'Report a Bug',
+        onBack: () => context.pop(),
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderSection(),
-                  const SizedBox(height: 30),
-                  _buildBugReportForm(),
-                  const SizedBox(height: 30),
-                  _buildDeviceInfoSection(),
-                  const SizedBox(height: 30),
-                  _buildSubmitButton(),
-                ],
-              ),
-            ),
+      body: ListView(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space10,
+        ),
+        children: [
+          const DabblerBanner(
+            tone: DabblerBannerTone.warning,
+            icon: DabblerIcon('danger', size: 20),
+            title: 'Found a Bug?',
+            message:
+                'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
           ),
-        ),
-      ),
-    );
-
-    final width = MediaQuery.of(context).size.width;
-    if (width >= AdaptiveBreakpoints.compact) {
-      final logoWidget = SvgPicture.asset(
-        'assets/images/dabbler_text_logo.svg',
-        width: 100,
-        height: 18,
-        colorFilter: ColorFilter.mode(
-          Theme.of(context).colorScheme.onSurface,
-          BlendMode.srcIn,
-        ),
-      );
-      return AdaptiveScaffold(
-        currentIndex: 7,
-        destinations: kAdaptiveDestinations,
-        onDestinationSelected: (i) =>
-            onAdaptiveDestinationSelected(context, i, activeIndex: 7),
-        headerWidget: logoWidget,
-        body: content,
-      );
-    }
-    return content;
-  }
-
-  Widget _buildHeaderSection() {
-    return Card(
-      color: Colors.orange.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Icon(Icons.bug_report, size: 48, color: Colors.orange.shade700),
-            const SizedBox(height: 16),
-            Text(
-              'Found a Bug?',
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          const SizedBox(height: DabblerSpacing.space6),
+          _buildBugReportForm(),
+          const SizedBox(height: DabblerSpacing.space6),
+          _buildDeviceInfoSection(context),
+          const SizedBox(height: DabblerSpacing.space7),
+          DabblerButton(
+            label: 'Submit Bug Report',
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            loading: _isSubmitting,
+            onPressed: _isSubmitting ? null : _submitBugReport,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildBugReportForm() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Bug Details',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+    const gap = SizedBox(height: DabblerSpacing.space4);
+    return DabblerSection(
+      title: 'Bug Details',
+      children: [
+        DabblerTextField(
+          controller: _emailController,
+          label: 'Your Email',
+          keyboardType: TextInputType.emailAddress,
+          prefixIcon: const DabblerIcon('sms', size: 20),
+          errorText: _emailError,
+        ),
+        gap,
+        DabblerSelect<String>(
+          label: 'Bug Category',
+          value: _selectedCategory,
+          options: [
+            for (final c in _categories)
+              DabblerSelectOption<String>(value: c, label: c),
+          ],
+          onChanged: (value) => setState(() => _selectedCategory = value),
+        ),
+        gap,
+        DabblerSelect<String>(
+          label: 'Severity Level',
+          value: _selectedSeverity,
+          options: [
+            for (final s in _severityLevels)
+              DabblerSelectOption<String>(value: s, label: s),
+          ],
+          onChanged: (value) => setState(() => _selectedSeverity = value),
+        ),
+        gap,
+        DabblerTextField(
+          controller: _titleController,
+          label: 'Bug Title',
+          placeholder: 'Brief description of the issue',
+          errorText: _titleError,
+        ),
+        gap,
+        DabblerTextField(
+          controller: _descriptionController,
+          label: 'Detailed Description',
+          placeholder: 'Describe what happened and what you expected to happen',
+          variant: DabblerTextFieldVariant.multiline,
+          rows: 4,
+          errorText: _descriptionError,
+        ),
+        gap,
+        DabblerTextField(
+          controller: _stepsController,
+          label: 'Steps to Reproduce',
+          placeholder: '1. Go to...\n2. Click on...\n3. See error',
+          variant: DabblerTextFieldVariant.multiline,
+          rows: 4,
+          errorText: _stepsError,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDeviceInfoSection(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final lineStyle = composerType(
+      context,
+      DabblerType.footnote,
+      colors.textSecondary,
+    );
+    return DabblerSection(
+      title: 'Additional Information',
+      children: [
+        DabblerInputRow(
+          title: 'Include Device Information',
+          subtitle: 'OS version, device model, screen size',
+          onTap: () =>
+              setState(() => _includeDeviceInfo = !_includeDeviceInfo),
+          trailing: DabblerToggle(
+            checked: _includeDeviceInfo,
+            semanticLabel: 'Include Device Information',
+            onChanged: (value) => setState(() => _includeDeviceInfo = value),
+          ),
+        ),
+        DabblerInputRow(
+          title: 'Include App Logs',
+          subtitle: 'Recent app activity and error logs',
+          onTap: () => setState(() => _includeAppLogs = !_includeAppLogs),
+          trailing: DabblerToggle(
+            checked: _includeAppLogs,
+            semanticLabel: 'Include App Logs',
+            onChanged: (value) => setState(() => _includeAppLogs = value),
+          ),
+        ),
+        if (_includeDeviceInfo)
+          Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space4,
+              DabblerSpacing.space4,
+              DabblerSpacing.space4,
+              0,
             ),
-            const SizedBox(height: 16),
-
-            // Email
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Your Email',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                }
-                if (!value.contains('@')) {
-                  return 'Please enter a valid email';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Category
-            DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Bug Category',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.category),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem(value: category, child: Text(category));
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Severity
-            DropdownButtonFormField<String>(
-              initialValue: _selectedSeverity,
-              decoration: const InputDecoration(
-                labelText: 'Severity Level',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.priority_high),
-              ),
-              items: _severityLevels.map((severity) {
-                return DropdownMenuItem(
-                  value: severity,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 12,
-                        color: _getSeverityColor(severity),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(severity),
-                    ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Device Information to Include:',
+                  style: composerType(
+                    context,
+                    DabblerType.subheadline,
+                    colors.textPrimary,
+                    weight: FontWeight.w600,
                   ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedSeverity = value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Title
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Bug Title',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.title),
-                hintText: 'Brief description of the issue',
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a bug title';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Description
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Detailed Description',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.description),
-                alignLabelWithHint: true,
-                hintText:
-                    'Describe what happened and what you expected to happen',
-              ),
-              maxLines: 4,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please describe the bug';
-                }
-                if (value.length < 20) {
-                  return 'Please provide more details (at least 20 characters)';
-                }
-                return null;
-              },
-            ),
-
-            const SizedBox(height: 16),
-
-            // Steps to reproduce
-            TextFormField(
-              controller: _stepsController,
-              decoration: const InputDecoration(
-                labelText: 'Steps to Reproduce',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.list),
-                alignLabelWithHint: true,
-                hintText: '1. Go to...\n2. Click on...\n3. See error',
-              ),
-              maxLines: 4,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please provide steps to reproduce the bug';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeviceInfoSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Additional Information',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-
-            SwitchListTile(
-              title: const Text('Include Device Information'),
-              subtitle: const Text('OS version, device model, screen size'),
-              value: _includeDeviceInfo,
-              onChanged: (value) {
-                setState(() {
-                  _includeDeviceInfo = value;
-                });
-              },
-            ),
-
-            const Divider(),
-
-            SwitchListTile(
-              title: const Text('Include App Logs'),
-              subtitle: const Text('Recent app activity and error logs'),
-              value: _includeAppLogs,
-              onChanged: (value) {
-                setState(() {
-                  _includeAppLogs = value;
-                });
-              },
-            ),
-
-            if (_includeDeviceInfo) ...[
-              const Divider(),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Device Information to Include:',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('• Platform: ${_getPlatformName()}'),
-                    const Text('• App Version: 1.0.5'),
-                    const Text('• Flutter Version: 3.x.x'),
-                    Text(
-                      '• Screen Resolution: ${MediaQuery.of(context).size.width.toInt()}x${MediaQuery.of(context).size.height.toInt()}',
-                    ),
-                  ],
                 ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isSubmitting ? null : _submitBugReport,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          backgroundColor: Colors.orange.shade600,
-        ),
-        child: _isSubmitting
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+                const SizedBox(height: DabblerSpacing.space2),
+                Text('• Platform: ${_getPlatformName()}', style: lineStyle),
+                Text('• App Version: 1.0.5', style: lineStyle),
+                Text('• Flutter Version: 3.x.x', style: lineStyle),
+                Text(
+                  '• Screen Resolution: ${size.width.toInt()}x${size.height.toInt()}',
+                  style: lineStyle,
                 ),
-              )
-            : const Text(
-                'Submit Bug Report',
-                style: TextStyle(color: Colors.white),
-              ),
-      ),
+              ],
+            ),
+          ),
+      ],
     );
-  }
-
-  Color _getSeverityColor(String severity) {
-    switch (severity) {
-      case 'Low':
-        return Colors.green;
-      case 'Medium':
-        return Colors.orange;
-      case 'High':
-        return Colors.red;
-      case 'Critical':
-        return Colors.red.shade900;
-      default:
-        return Colors.grey;
-    }
   }
 
   String _getPlatformName() {
@@ -458,8 +249,33 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
     }
   }
 
+  bool _validate() {
+    final email = _emailController.text;
+    final description = _descriptionController.text;
+    setState(() {
+      _emailError = email.isEmpty
+          ? 'Please enter your email'
+          : (!email.contains('@') ? 'Please enter a valid email' : null);
+      _titleError = _titleController.text.isEmpty
+          ? 'Please enter a bug title'
+          : null;
+      _descriptionError = description.isEmpty
+          ? 'Please describe the bug'
+          : (description.length < 20
+                ? 'Please provide more details (at least 20 characters)'
+                : null);
+      _stepsError = _stepsController.text.isEmpty
+          ? 'Please provide steps to reproduce the bug'
+          : null;
+    });
+    return _emailError == null &&
+        _titleError == null &&
+        _descriptionError == null &&
+        _stepsError == null;
+  }
+
   Future<void> _submitBugReport() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_validate()) {
       return;
     }
 
@@ -471,22 +287,21 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen>
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Bug report submitted successfully! Thank you for helping us improve.',
-            ),
-            backgroundColor: Colors.green,
+        DabblerToastProvider.of(context).show(
+          const DabblerToastSpec(
+            message:
+                'Bug report submitted successfully! Thank you for helping us improve.',
+            tone: DabblerToastTone.success,
           ),
         );
         context.pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to submit bug report: $e'),
-            backgroundColor: Colors.red,
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: 'Failed to submit bug report: $e',
+            tone: DabblerToastTone.error,
           ),
         );
       }
