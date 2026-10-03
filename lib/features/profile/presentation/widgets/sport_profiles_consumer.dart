@@ -1,6 +1,7 @@
 import 'package:dabbler/core/fp/failure.dart';
 
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/result.dart';
@@ -8,12 +9,17 @@ import 'package:dabbler/data/models/sport_profile.dart';
 
 import '../providers/sport_profiles_providers.dart';
 
+TextStyle _text(BuildContext context, DabblerTypeStyle step, Color color) =>
+    step.resolveForDirection(Directionality.of(context)).copyWith(color: color);
+
 /// Minimal showcase widget for sport profile providers.
 class SportProfilesConsumer extends StatelessWidget {
   const SportProfilesConsumer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+
     return Consumer(
       builder: (context, ref, _) {
         final initialLoad = ref.watch(mySportProfilesProvider);
@@ -25,16 +31,16 @@ class SportProfilesConsumer extends StatelessWidget {
           children: [
             Text(
               'Initial load',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: _text(context, DabblerType.headline, colors.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space2),
             _ResultView(value: initialLoad),
-            const SizedBox(height: 16),
+            const SizedBox(height: DabblerSpacing.space5),
             Text(
               'Realtime updates',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: _text(context, DabblerType.headline, colors.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space2),
             _ResultView(value: realtime),
           ],
         );
@@ -50,21 +56,27 @@ class _ResultView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    Text line(String message) => Text(
+      message,
+      style: _text(context, DabblerType.body, colors.textPrimary),
+    );
+
     return value.when(
       data: (result) => result.fold(
-        (failure) => Text('Error: ${failure.message}'),
+        (failure) => line('Error: ${failure.message}'),
         (sports) => sports.isEmpty
-            ? const Text('No sport preferences yet.')
+            ? line('No sport preferences yet.')
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   for (final sport in sports)
-                    Text('${sport.sportKey} · skill ${sport.skillLevel}'),
+                    line('${sport.sportKey} · skill ${sport.skillLevel}'),
                 ],
               ),
       ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Text('Error: $error'),
+      loading: () => const Center(child: DabblerSpinner()),
+      error: (error, _) => line('Error: $error'),
     );
   }
 }

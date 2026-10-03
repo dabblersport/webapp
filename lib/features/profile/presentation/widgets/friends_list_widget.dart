@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/design_system/design_system.dart';
-
-import 'package:dabbler/widgets/app_card.dart';
 
 class FriendsListWidget extends StatelessWidget {
   final List<Map<String, dynamic>> friends;
@@ -19,63 +17,39 @@ class FriendsListWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      final colorScheme = context.colorScheme;
-
       return Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space5,
+          DabblerSpacing.space5,
+          DabblerSpacing.space5,
+          DabblerSpacing.space8,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                LoadingPlaceholder(
-                  height: 18,
-                  width: 120,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                LoadingPlaceholder(
-                  height: 14,
-                  width: 52,
-                  borderRadius: BorderRadius.circular(6),
-                ),
+                DabblerSkeleton.rect(width: 120, height: 18),
+                DabblerSkeleton.rect(width: 52, height: 14),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: DabblerSpacing.space4),
             SizedBox(
               height: 100,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 0),
                 itemCount: 6,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: DabblerSpacing.space2),
                 itemBuilder: (context, index) {
-                  return SizedBox(
+                  return const SizedBox(
                     width: 80,
                     child: Column(
                       children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: colorScheme.outline.withValues(alpha: 0.2),
-                              width: 2,
-                            ),
-                          ),
-                          child: ClipOval(
-                            child: Container(
-                              color: colorScheme.surfaceContainer,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        LoadingPlaceholder(
-                          height: 12,
-                          width: 56,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
+                        DabblerSkeleton.circle(width: 60),
+                        SizedBox(height: DabblerSpacing.space2),
+                        DabblerSkeleton.rect(width: 56, height: 12),
                       ],
                     ),
                   );
@@ -91,26 +65,33 @@ class FriendsListWidget extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final colors = DabblerColors.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
+          padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Friends (${friends.length})',
-                style: context.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: DabblerType.headline
+                    .resolveForDirection(Directionality.of(context))
+                    .copyWith(color: colors.textPrimary),
               ),
               if (friends.length > 6 && onViewAll != null)
-                TextButton(onPressed: onViewAll, child: const Text('View All')),
+                DabblerButton(
+                  label: 'View All',
+                  tone: DabblerButtonTone.text,
+                  size: DabblerButtonSize.small,
+                  onPressed: onViewAll,
+                ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: DabblerSpacing.space5),
       ],
     );
   }
@@ -124,6 +105,7 @@ class _FriendAvatarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
     final userId = friend['user_id'] as String? ?? friend['id'] as String?;
     final displayName = friend['display_name'] as String? ?? 'User';
     final avatarUrl = friend['avatar_url'] as String?;
@@ -135,59 +117,38 @@ class _FriendAvatarItem extends StatelessWidget {
           context.push('/user-profile/$userId');
         }
       },
-      child: Container(
+      child: SizedBox(
         width: 80,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
         child: Column(
           children: [
             Stack(
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: context.colorScheme.outline.withValues(alpha: 0.2),
-                      width: 2,
-                    ),
-                  ),
-                  child: DSAvatar(
-                    size: AvatarSize.medium,
-                    customDimension: 56,
-                    imageUrl: avatarUrl,
-                    displayName: displayName,
-                    context: AvatarContext.profile,
-                    hasBorder: false,
-                  ),
+                DabblerAvatar(
+                  seed: displayName,
+                  imageUrl: avatarUrl,
+                  size: DabblerAvatarSize.lg,
                 ),
                 if (verified)
-                  Positioned(
-                    right: 0,
+                  PositionedDirectional(
+                    end: 0,
                     bottom: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: context.colorScheme.surface,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.verified,
-                        size: 16,
-                        color: context.colorScheme.primary,
-                      ),
+                    child: DabblerIcon(
+                      'verify',
+                      weight: DabblerIconWeight.bold,
+                      size: 16,
+                      color: colors.brandPrimary,
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: DabblerSpacing.space2),
             Text(
               displayName.length > 10
                   ? '${displayName.substring(0, 10)}...'
                   : displayName,
-              style: context.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: DabblerType.caption1
+                  .resolveForDirection(Directionality.of(context))
+                  .copyWith(color: colors.textPrimary),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
