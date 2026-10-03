@@ -40,7 +40,8 @@ class _ProfileOnboardingWelcomeScreenState
     if (raw.contains('country_fkey') || raw.contains('profiles_country_fkey')) {
       return 'The selected country isn\'t supported yet. Please go back and choose a different country.';
     }
-    if (raw.contains('username') && (raw.contains('unique') || raw.contains('23505'))) {
+    if (raw.contains('username') &&
+        (raw.contains('unique') || raw.contains('23505'))) {
       return 'That username is already taken. Please go back and choose a different one.';
     }
     if (raw.contains('23503')) {
@@ -134,8 +135,6 @@ class _ProfileOnboardingWelcomeScreenState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
@@ -149,18 +148,15 @@ class _ProfileOnboardingWelcomeScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              DabblerText(
                 l10n.onboarding_welcome_title,
-                style: DabblerType.title1
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textPrimary),
+                style: DabblerType.title1,
               ),
               const SizedBox(height: DabblerSpacing.space3),
-              Text(
+              DabblerText(
                 l10n.onboarding_welcome_subtitle,
-                style: DabblerType.subheadline
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textSecondary),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
               const SizedBox(height: DabblerSpacing.space9),
               switch (_step.status) {
@@ -176,7 +172,10 @@ class _ProfileOnboardingWelcomeScreenState
                 ),
               },
               const SizedBox(height: DabblerSpacing.space8),
-              _StepRow(step: _step, label: l10n.onboarding_welcome_step_profile),
+              _StepRow(
+                step: _step,
+                label: l10n.onboarding_welcome_step_profile,
+              ),
             ],
           ),
         ),
@@ -201,25 +200,24 @@ class _StepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
 
     final Widget icon = switch (step.status) {
       _StepStatus.running => const DabblerSpinner(size: DabblerSpinnerSize.sm),
       _StepStatus.done => DabblerIcon(
         'tick-circle',
         weight: DabblerIconWeight.bold,
-        size: 22,
+        size: DabblerSizing.iconRow,
         color: colors.success.strong,
       ),
       _StepStatus.error => DabblerIcon(
         'danger',
         weight: DabblerIconWeight.bold,
-        size: 22,
+        size: DabblerSizing.iconRow,
         color: colors.error.strong,
       ),
       _StepStatus.pending => DabblerSurface(
-        width: 9,
-        height: 9,
+        width: DabblerSizing.dot,
+        height: DabblerSizing.dot,
         radius: DabblerRadius.pill,
         fill: colors.borderStrong,
         borderWidth: 0,
@@ -231,31 +229,28 @@ class _StepRow extends StatelessWidget {
       children: [
         Row(
           children: [
-            SizedBox(width: 24, height: 24, child: Center(child: icon)),
+            SizedBox(
+              width: DabblerSizing.iconMd,
+              height: DabblerSizing.iconMd,
+              child: Center(child: icon),
+            ),
             const SizedBox(width: DabblerSpacing.space4),
             Expanded(
-              child: Text(
+              child: DabblerText(
                 label,
-                style: DabblerType.body
-                    .resolveForDirection(direction)
-                    .copyWith(
-                      fontWeight: step.status == _StepStatus.done
-                          ? DabblerType.semibold
-                          : DabblerType.regular,
-                      color: step.status == _StepStatus.pending
-                          ? colors.textSecondary
-                          : colors.textPrimary,
-                    ),
+                weight: step.status == _StepStatus.done
+                    ? DabblerTextWeight.semibold
+                    : DabblerTextWeight.regular,
+                tone: step.status == _StepStatus.pending
+                    ? DabblerTextTone.secondary
+                    : DabblerTextTone.primary,
               ),
             ),
           ],
         ),
         if (step.errorMsg != null) ...[
           const SizedBox(height: DabblerSpacing.space4),
-          DabblerBanner(
-            tone: DabblerBannerTone.error,
-            message: step.errorMsg,
-          ),
+          DabblerBanner(tone: DabblerBannerTone.error, message: step.errorMsg),
         ],
       ],
     );

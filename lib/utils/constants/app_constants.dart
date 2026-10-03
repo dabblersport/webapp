@@ -6,13 +6,6 @@ class AppConstants {
   static const int buildNumber = 174;
 
   // Animation Durations
-  static const Duration quickDuration = Duration(milliseconds: 200);
-  static const Duration normalDuration = Duration(milliseconds: 300);
-  static const Duration slowDuration = Duration(milliseconds: 500);
-  static const Duration quickAnimation = Duration(milliseconds: 150);
-  static const Duration defaultAnimation = Duration(milliseconds: 300);
-  static const Duration slowAnimation = Duration(milliseconds: 500);
-  static const Duration pageTransition = Duration(milliseconds: 200);
 
   // Layout Constants
   static const double paddingXS = 4.0;
@@ -42,7 +35,6 @@ class AppConstants {
   static const int maxRetryAttempts = 3;
   static const Duration cacheDuration = Duration(days: 7);
   static const Duration sessionTimeout = Duration(minutes: 30);
-  static const Duration retryDelay = Duration(seconds: 1);
   static const Duration defaultCacheDuration = Duration(hours: 24);
   static const Duration shortCacheDuration = Duration(minutes: 30);
   static const Duration longCacheDuration = Duration(days: 7);
@@ -76,7 +68,6 @@ class AppConstants {
   static const int maxAttachmentCount = 5;
 
   // Search
-  static const Duration searchDebounceTime = Duration(milliseconds: 300);
   static const int minSearchLength = 2;
 
   // Error Messages

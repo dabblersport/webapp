@@ -73,7 +73,6 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
@@ -108,20 +107,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
+            DabblerText(
               'Choose Your Language',
+              style: DabblerType.title1,
               textAlign: TextAlign.center,
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
             ),
             const SizedBox(height: DabblerSpacing.space2),
-            Text(
+            DabblerText(
               'Select your preferred language for the app',
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: DabblerSpacing.space11),
             ..._languages.map((language) {
@@ -149,33 +144,29 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                         children: [
                           DabblerIcon(
                             'global',
-                            size: 22,
+                            size: DabblerSizing.iconRow,
                             color: isSelected
                                 ? colors.onBrand
                                 : colors.textSecondary,
                           ),
                           const SizedBox(width: DabblerSpacing.space4),
                           Expanded(
-                            child: Text(
+                            child: DabblerText(
                               language['native']!,
-                              style: DabblerType.body
-                                  .resolveForDirection(direction)
-                                  .copyWith(
-                                    color: isSelected
-                                        ? colors.onBrand
-                                        : colors.textPrimary,
-                                  ),
+                              tone: isSelected
+                                  ? DabblerTextTone.onBrand
+                                  : DabblerTextTone.primary,
                             ),
                           ),
                           if (isSelected)
                             DabblerIcon(
                               'tick-circle',
                               weight: DabblerIconWeight.bold,
-                              size: 20,
+                              size: DabblerSizing.iconRow,
                               color: colors.onBrand,
                             )
                           else
-                            const SizedBox(width: 20),
+                            const SizedBox(width: DabblerSizing.iconRow),
                         ],
                       ),
                     ),

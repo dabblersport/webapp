@@ -30,8 +30,6 @@ class _SocialOnboardingFriendsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final selectedCount = _suggestions.where((s) => s.isSelected).length;
 
     return DabblerPage(
@@ -64,8 +62,7 @@ class _SocialOnboardingFriendsScreenState
               tone: DabblerButtonTone.text,
               size: DabblerButtonSize.full,
               fullWidth: true,
-              onPressed: () =>
-                  context.push(RoutePaths.socialOnboardingPrivacy),
+              onPressed: () => context.push(RoutePaths.socialOnboardingPrivacy),
             ),
             const SizedBox(height: DabblerSpacing.space4),
             const DabblerProgressBar(
@@ -83,28 +80,23 @@ class _SocialOnboardingFriendsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            DabblerText(
               'Find Your Sports Community',
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
+              style: DabblerType.title1,
             ),
             const SizedBox(height: DabblerSpacing.space3),
-            Text(
+            DabblerText(
               'Connect with friends to share game experiences and discover new opportunities.',
-              style: DabblerType.subheadline
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space10),
             Row(
               children: [
                 Expanded(
-                  child: Text(
+                  child: DabblerText(
                     'Suggested for You',
-                    style: DabblerType.headline
-                        .resolveForDirection(direction)
-                        .copyWith(color: colors.textPrimary),
+                    style: DabblerType.headline,
                   ),
                 ),
                 if (selectedCount > 0)
@@ -115,12 +107,11 @@ class _SocialOnboardingFriendsScreenState
             Expanded(
               child: _suggestions.isEmpty
                   ? Center(
-                      child: Text(
+                      child: DabblerText(
                         'Friend suggestions are coming soon.',
+                        style: DabblerType.subheadline,
+                        tone: DabblerTextTone.secondary,
                         textAlign: TextAlign.center,
-                        style: DabblerType.subheadline
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textSecondary),
                       ),
                     )
                   : ListView.builder(
@@ -138,9 +129,6 @@ class _SocialOnboardingFriendsScreenState
   }
 
   Widget _buildFriendSuggestionCard(_ContactSuggestion suggestion, int index) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(
         vertical: DabblerSpacing.space1,
@@ -159,18 +147,12 @@ class _SocialOnboardingFriendsScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      suggestion.name,
-                      style: DabblerType.headline
-                          .resolveForDirection(direction)
-                          .copyWith(color: colors.textPrimary),
-                    ),
+                    DabblerText(suggestion.name, style: DabblerType.headline),
                     if (suggestion.mutualFriends > 0)
-                      Text(
+                      DabblerText(
                         '${suggestion.mutualFriends} mutual friend${suggestion.mutualFriends > 1 ? 's' : ''}',
-                        style: DabblerType.footnote
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textSecondary),
+                        style: DabblerType.footnote,
+                        tone: DabblerTextTone.secondary,
                       ),
                     const SizedBox(height: DabblerSpacing.space1),
                     Align(
@@ -185,7 +167,10 @@ class _SocialOnboardingFriendsScreenState
                 const DabblerBadge(
                   label: 'Added',
                   tone: DabblerBadgeTone.success,
-                  icon: DabblerIcon('tick-circle', size: 14),
+                  icon: DabblerIcon(
+                    'tick-circle',
+                    size: DabblerSizing.iconInline,
+                  ),
                 )
               else
                 DabblerButton(

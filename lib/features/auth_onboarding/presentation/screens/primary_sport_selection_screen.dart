@@ -90,7 +90,6 @@ class _PrimarySportSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
 
     return OnboardingStepFrame(
@@ -110,13 +109,10 @@ class _PrimarySportSelectionScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              DabblerText(
                 'Failed to load sports',
-                style: onboardingType(
-                  context,
-                  DabblerType.subheadline,
-                  colors.textSecondary,
-                ),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
               const SizedBox(height: DabblerSpacing.space5),
               DabblerButton(
@@ -141,13 +137,10 @@ class _PrimarySportSelectionScreenState
 
           if (sports.isEmpty) {
             return Center(
-              child: Text(
+              child: DabblerText(
                 'No sports selected. Please go back.',
-                style: onboardingType(
-                  context,
-                  DabblerType.subheadline,
-                  colors.textSecondary,
-                ),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
             );
           }
@@ -206,16 +199,7 @@ class _SportRow extends StatelessWidget {
             color: isSelected ? colors.brandPrimary : colors.textPrimary,
           ),
           const SizedBox(width: DabblerSpacing.space4),
-          Expanded(
-            child: Text(
-              name,
-              style: onboardingType(
-                context,
-                DabblerType.callout,
-                colors.textPrimary,
-              ),
-            ),
-          ),
+          Expanded(child: DabblerText(name, style: DabblerType.callout)),
           OnboardingRadioGlyph(selected: isSelected),
         ],
       ),

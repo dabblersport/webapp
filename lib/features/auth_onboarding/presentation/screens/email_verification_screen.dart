@@ -270,8 +270,6 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
     final email = _userEmail;
 
@@ -302,27 +300,18 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.email_verify_title,
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
-            ),
+            DabblerText(l10n.email_verify_title, style: DabblerType.title1),
             const SizedBox(height: DabblerSpacing.space4),
-            Text(
+            DabblerText(
               email != null
                   ? l10n.email_verify_body_with_email(email)
                   : l10n.email_verify_body_no_email,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
             ),
             const SizedBox(height: DabblerSpacing.space8),
-            Text(
+            DabblerText(
               l10n.email_verify_instruction,
-              style: DabblerType.footnote
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space10),
             DabblerButton(

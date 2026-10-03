@@ -10,9 +10,6 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     return DabblerPage(
       bottomBar: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
@@ -57,22 +54,23 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: DabblerSpacing.space10),
-            const Center(child: DabblerIconTile.named('people', size: 96)),
+            const Center(
+              child: DabblerIconTile.named(
+                'people',
+                size: DabblerSizing.illustrationLg,
+              ),
+            ),
             const SizedBox(height: DabblerSpacing.space10),
-            Text(
+            DabblerText(
               'Welcome to Social',
+              style: DabblerType.title1,
               textAlign: TextAlign.center,
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
             ),
             const SizedBox(height: DabblerSpacing.space5),
-            Text(
+            DabblerText(
               'Connect with fellow players, share your game experiences, and build your sports community.',
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: DabblerSpacing.space11),
             _buildFeaturesList(context),
@@ -83,8 +81,6 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
   }
 
   Widget _buildFeaturesList(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     const features = [
       _FeatureItem(
         icon: 'user-add',
@@ -118,18 +114,12 @@ class SocialOnboardingWelcomeScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        feature.title,
-                        style: DabblerType.headline
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textPrimary),
-                      ),
+                      DabblerText(feature.title, style: DabblerType.headline),
                       const SizedBox(height: DabblerSpacing.space1),
-                      Text(
+                      DabblerText(
                         feature.description,
-                        style: DabblerType.footnote
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textSecondary),
+                        style: DabblerType.footnote,
+                        tone: DabblerTextTone.secondary,
                       ),
                     ],
                   ),

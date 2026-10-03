@@ -102,7 +102,6 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   Widget build(BuildContext context) {
     if (_isLoadingData) return const OnboardingLoading();
 
-    final colors = DabblerColors.of(context);
     return OnboardingStepFrame(
       onBack: () => context.pop(),
       step: 2,
@@ -136,13 +135,10 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
                   ),
                 );
               }),
-          Text(
+          DabblerText(
             'You can add another way to use Dabbler later in settings.',
-            style: onboardingType(
-              context,
-              DabblerType.footnote,
-              colors.textSecondary,
-            ),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           ),
         ],
       ),
@@ -200,22 +196,12 @@ class _IntentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  option.title,
-                  style: onboardingType(
-                    context,
-                    DabblerType.callout,
-                    colors.textPrimary,
-                  ),
-                ),
+                DabblerText(option.title, style: DabblerType.callout),
                 const SizedBox(height: DabblerSpacing.space1),
-                Text(
+                DabblerText(
                   option.description,
-                  style: onboardingType(
-                    context,
-                    DabblerType.subheadline,
-                    colors.textSecondary,
-                  ),
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
                 ),
               ],
             ),

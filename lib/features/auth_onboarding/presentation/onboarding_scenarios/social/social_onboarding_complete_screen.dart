@@ -10,9 +10,6 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     return DabblerPage(
       bottomBar: Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
@@ -70,24 +67,20 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
               child: DabblerIconTile.named(
                 'tick-circle',
                 tone: DabblerIconTileTone.brand,
-                size: 96,
+                size: DabblerSizing.illustrationLg,
               ),
             ),
             const SizedBox(height: DabblerSpacing.space10),
-            Text(
+            DabblerText(
               'Welcome to Social!',
+              style: DabblerType.title1,
               textAlign: TextAlign.center,
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
             ),
             const SizedBox(height: DabblerSpacing.space5),
-            Text(
+            DabblerText(
               'You\'re all set up! Start connecting with friends, sharing your game experiences, and discovering new players in your area.',
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: DabblerSpacing.space10),
             DabblerSurface.card(
@@ -132,8 +125,6 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
     required String title,
     required String description,
   }) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     return Row(
       children: [
         DabblerIconTile.named(icon),
@@ -142,17 +133,11 @@ class SocialOnboardingCompleteScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: DabblerType.headline
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textPrimary),
-              ),
-              Text(
+              DabblerText(title, style: DabblerType.headline),
+              DabblerText(
                 description,
-                style: DabblerType.footnote
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textSecondary),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
               ),
             ],
           ),

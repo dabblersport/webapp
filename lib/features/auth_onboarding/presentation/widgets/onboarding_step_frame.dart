@@ -86,7 +86,6 @@ class OnboardingStepFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return DabblerPage(
       body: SafeArea(
         child: Center(
@@ -131,34 +130,21 @@ class OnboardingStepFrame extends StatelessWidget {
                         ),
                         const SizedBox(height: DabblerSpacing.space5),
                       ] else if (stepLabel != null) ...[
-                        Text(
+                        DabblerText(
                           stepLabel!.toUpperCase(),
-                          style: onboardingType(
-                            context,
-                            DabblerType.caption1,
-                            colors.textSecondary,
-                            weight: DabblerType.semibold,
-                          ),
+                          style: DabblerType.caption1,
+                          weight: DabblerTextWeight.semibold,
+                          tone: DabblerTextTone.secondary,
                         ),
                         const SizedBox(height: DabblerSpacing.space5),
                       ],
-                      Text(
-                        title,
-                        style: onboardingType(
-                          context,
-                          DabblerType.title1,
-                          colors.textPrimary,
-                        ),
-                      ),
+                      DabblerText(title, style: DabblerType.title1),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
                         const SizedBox(height: DabblerSpacing.space2),
-                        Text(
+                        DabblerText(
                           subtitle!,
-                          style: onboardingType(
-                            context,
-                            DabblerType.subheadline,
-                            colors.textSecondary,
-                          ),
+                          style: DabblerType.subheadline,
+                          tone: DabblerTextTone.secondary,
                         ),
                       ],
                     ],

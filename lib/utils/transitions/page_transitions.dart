@@ -1,10 +1,11 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion, DabblerRadius, DabblerScrimColors;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 /// Below this width a route opens as a bottom sheet; at or above it, as a
 /// centred panel.
 const double _kCompactWidth = 600;
-
 
 /// Professional Page Transitions
 ///
@@ -16,7 +17,7 @@ class FadeTransitionPage extends CustomTransitionPage<void> {
   FadeTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = DabblerMotion.pageTransition,
   }) : super(
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            return FadeTransition(
@@ -24,7 +25,7 @@ class FadeTransitionPage extends CustomTransitionPage<void> {
                Tween<double>(
                  begin: 0.0,
                  end: 1.0,
-               ).chain(CurveTween(curve: Curves.easeInOut)),
+               ).chain(CurveTween(curve: DabblerMotion.standardInOut)),
              ),
              child: child,
            );
@@ -38,7 +39,7 @@ class SlideTransitionPage extends CustomTransitionPage<void> {
   SlideTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 350),
+    Duration duration = DabblerMotion.pageTransitionSlide,
     SlideDirection direction = SlideDirection.fromRight,
   }) : super(
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -46,7 +47,7 @@ class SlideTransitionPage extends CustomTransitionPage<void> {
              Tween<Offset>(
                begin: direction.offset,
                end: Offset.zero,
-             ).chain(CurveTween(curve: Curves.easeOutCubic)),
+             ).chain(CurveTween(curve: DabblerMotion.emphasizedDecelerate)),
            );
 
            return SlideTransition(position: offsetAnimation, child: child);
@@ -60,7 +61,7 @@ class ScaleTransitionPage extends CustomTransitionPage<void> {
   ScaleTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = DabblerMotion.pageTransition,
     Alignment alignment = Alignment.center,
   }) : super(
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -69,7 +70,7 @@ class ScaleTransitionPage extends CustomTransitionPage<void> {
                Tween<double>(
                  begin: 0.8,
                  end: 1.0,
-               ).chain(CurveTween(curve: Curves.easeOutCubic)),
+               ).chain(CurveTween(curve: DabblerMotion.emphasizedDecelerate)),
              ),
              alignment: alignment,
              child: FadeTransition(opacity: animation, child: child),
@@ -84,7 +85,7 @@ class SharedAxisTransitionPage extends CustomTransitionPage<void> {
   SharedAxisTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 350),
+    Duration duration = DabblerMotion.pageTransitionSlide,
     SharedAxisType type = SharedAxisType.horizontal,
   }) : super(
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -104,8 +105,8 @@ class SharedAxisTransitionPage extends CustomTransitionPage<void> {
     required Widget child,
     required SharedAxisType type,
   }) {
-    final primaryCurve = Curves.easeOutCubic;
-    final secondaryCurve = Curves.easeInCubic;
+    final primaryCurve = DabblerMotion.emphasizedDecelerate;
+    final secondaryCurve = DabblerMotion.emphasizedAccelerate;
 
     switch (type) {
       case SharedAxisType.horizontal:
@@ -184,14 +185,18 @@ class FadeThroughTransitionPage extends CustomTransitionPage<void> {
   FadeThroughTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 300),
+    Duration duration = DabblerMotion.pageTransition,
   }) : super(
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            return FadeTransition(
              opacity: animation.drive(
                Tween<double>(begin: 0.0, end: 1.0).chain(
                  CurveTween(
-                   curve: const Interval(0.3, 1.0, curve: Curves.easeInOut),
+                   curve: const Interval(
+                     0.3,
+                     1.0,
+                     curve: DabblerMotion.standardInOut,
+                   ),
                  ),
                ),
              ),
@@ -200,7 +205,7 @@ class FadeThroughTransitionPage extends CustomTransitionPage<void> {
                  Tween<double>(
                    begin: 0.92,
                    end: 1.0,
-                 ).chain(CurveTween(curve: Curves.easeOutCubic)),
+                 ).chain(CurveTween(curve: DabblerMotion.emphasizedDecelerate)),
                ),
                child: child,
              ),
@@ -215,12 +220,12 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
   BottomSheetTransitionPage({
     required super.child,
     super.key,
-    Duration duration = const Duration(milliseconds: 400),
+    Duration duration = DabblerMotion.pageTransitionModal,
   }) : super(
          opaque: false,
          fullscreenDialog: true,
          barrierDismissible: true,
-         barrierColor: Colors.black.withValues(alpha: 0.5),
+         barrierColor: DabblerScrimColors.light,
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
            return SlideTransition(
              position:
@@ -230,8 +235,8 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
                  ).animate(
                    CurvedAnimation(
                      parent: animation,
-                     curve: Curves.easeOutCubic,
-                     reverseCurve: Curves.easeInCubic,
+                     curve: DabblerMotion.emphasizedDecelerate,
+                     reverseCurve: DabblerMotion.emphasizedAccelerate,
                    ),
                  ),
              child: child,
@@ -249,16 +254,16 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
   AdaptiveModalPage({
     required Widget child,
     super.key,
-    Duration duration = const Duration(milliseconds: 320),
+    Duration duration = DabblerMotion.pageTransition,
     this.maxDialogWidth = 720,
     this.maxDialogHeightFraction = 0.88,
     this.mobileHeightFactor = 0.94,
-    this.barrierColorValue = const Color(0x66000000),
+    this.barrierColorValue,
     this.transparentSurface = false,
   }) : super(
          opaque: false,
          barrierDismissible: true,
-         barrierColor: barrierColorValue,
+         barrierColor: barrierColorValue ?? DabblerScrimColors.light,
          child: _AdaptiveModalFrame(
            maxDialogWidth: maxDialogWidth,
            maxDialogHeightFraction: maxDialogHeightFraction,
@@ -267,8 +272,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
            child: child,
          ),
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-           final isWide =
-               MediaQuery.sizeOf(context).width >= _kCompactWidth;
+           final isWide = MediaQuery.sizeOf(context).width >= _kCompactWidth;
 
            if (isWide) {
              return FadeTransition(
@@ -276,14 +280,13 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
                  Tween<double>(
                    begin: 0.0,
                    end: 1.0,
-                 ).chain(CurveTween(curve: Curves.easeOutCubic)),
+                 ).chain(CurveTween(curve: DabblerMotion.emphasizedDecelerate)),
                ),
                child: ScaleTransition(
                  scale: animation.drive(
-                   Tween<double>(
-                     begin: 0.96,
-                     end: 1.0,
-                   ).chain(CurveTween(curve: Curves.easeOutCubic)),
+                   Tween<double>(begin: 0.96, end: 1.0).chain(
+                     CurveTween(curve: DabblerMotion.emphasizedDecelerate),
+                   ),
                  ),
                  child: child,
                ),
@@ -295,7 +298,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
                Tween<Offset>(
                  begin: const Offset(0.0, 1.0),
                  end: Offset.zero,
-               ).chain(CurveTween(curve: Curves.easeOutCubic)),
+               ).chain(CurveTween(curve: DabblerMotion.emphasizedDecelerate)),
              ),
              child: child,
            );
@@ -306,7 +309,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
   final double maxDialogWidth;
   final double maxDialogHeightFraction;
   final double mobileHeightFactor;
-  final Color barrierColorValue;
+  final Color? barrierColorValue;
   final bool transparentSurface;
 }
 
@@ -331,34 +334,16 @@ class _AdaptiveModalFrame extends StatelessWidget {
     final isWide = size.width >= _kCompactWidth;
     final colorScheme = Theme.of(context).colorScheme;
     final sheetColor = transparentSurface
-        ? Colors.transparent
+        ? DabblerScrimColors.transparent
         : colorScheme.surface;
-    final sheetElevation = transparentSurface ? 0.0 : 12.0;
 
-    if (isWide) {
-      return Material(
-        type: MaterialType.transparency,
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: maxDialogWidth,
-                maxHeight: size.height * maxDialogHeightFraction,
-              ),
-              child: Material(
-                color: sheetColor,
-                elevation: sheetElevation,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: child,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+    // Non-visual route plumbing: a transparent Material supplies the Material
+    // ancestor (ink, text selection, default text style) the routed content
+    // needs; it draws nothing.
+    final Widget sheet = ClipRRect(
+      borderRadius: isWide ? DabblerRadius.xxlAll : DabblerRadius.topSheet,
+      child: ColoredBox(color: sheetColor, child: child),
+    );
 
     // Keep the drawer below the status bar: cap its height so a gap of at
     // least the top safe area (plus a small breathing margin) stays exposed.
@@ -366,30 +351,35 @@ class _AdaptiveModalFrame extends StatelessWidget {
 
     return Material(
       type: MaterialType.transparency,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: (size.height * mobileHeightFactor).clamp(
-                0.0,
-                size.height - topGap,
+      child: isWide
+          ? SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: maxDialogWidth,
+                    maxHeight: size.height * maxDialogHeightFraction,
+                  ),
+                  child: sheet,
+                ),
+              ),
+            )
+          : Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(context).bottom,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: (size.height * mobileHeightFactor).clamp(
+                      0.0,
+                      size.height - topGap,
+                    ),
+                  ),
+                  child: sheet,
+                ),
               ),
             ),
-            child: Material(
-              color: sheetColor,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: child,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

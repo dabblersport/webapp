@@ -154,7 +154,6 @@ class _InterestsSelectionScreenState
   Widget build(BuildContext context) {
     final (title, subtitle) = _getPersonaSpecificCopy();
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
-    final colors = DabblerColors.of(context);
 
     return OnboardingStepFrame(
       onBack: _handleBack,
@@ -171,13 +170,10 @@ class _InterestsSelectionScreenState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              DabblerText(
                 'Failed to load sports',
-                style: onboardingType(
-                  context,
-                  DabblerType.subheadline,
-                  colors.textSecondary,
-                ),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
               const SizedBox(height: DabblerSpacing.space5),
               DabblerButton(
@@ -289,17 +285,13 @@ class _SportTile extends StatelessWidget {
                   color: isSelected ? colors.brandPrimary : colors.textPrimary,
                 ),
                 const SizedBox(height: DabblerSpacing.space2),
-                Text(
+                DabblerText(
                   name,
+                  style: DabblerType.caption2,
+                  weight: DabblerTextWeight.medium,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
-                  style: onboardingType(
-                    context,
-                    DabblerType.caption2,
-                    colors.textPrimary,
-                    weight: DabblerType.medium,
-                  ),
                 ),
               ],
             ),
@@ -311,7 +303,7 @@ class _SportTile extends StatelessWidget {
               child: DabblerIcon(
                 'tick-circle',
                 weight: DabblerIconWeight.bold,
-                size: 14,
+                size: DabblerSizing.iconInline,
                 color: colors.brandPrimary,
               ),
             ),

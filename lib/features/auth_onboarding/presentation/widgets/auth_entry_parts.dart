@@ -61,7 +61,6 @@ Future<void> _showLegal(
     title: title,
     detents: const <double>[0.85],
     builder: (BuildContext ctx) {
-      final DabblerColors colors = DabblerColors.of(ctx);
       return Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space8,
@@ -72,42 +71,26 @@ Future<void> _showLegal(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
+            DabblerText(
               intro,
-              style: authText(
-                ctx,
-                DabblerType.subheadline,
-                color: colors.textSecondary,
-              ),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space2),
-            Text(
+            DabblerText(
               'Last updated: $kLegalLastUpdated',
-              style: authText(
-                ctx,
-                DabblerType.caption1,
-                color: colors.textSecondary,
-              ),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space6),
             for (final LegalSection s in sections) ...<Widget>[
-              Text(
+              DabblerText(
                 s.title,
-                style: authText(
-                  ctx,
-                  DabblerType.headline,
-                  color: colors.brandPrimary,
-                ),
+                style: DabblerType.headline,
+                tone: DabblerTextTone.brand,
               ),
               const SizedBox(height: DabblerSpacing.space2),
-              Text(
-                s.content,
-                style: authText(
-                  ctx,
-                  DabblerType.subheadline,
-                  color: colors.textPrimary,
-                ),
-              ),
+              DabblerText(s.content, style: DabblerType.subheadline),
               const SizedBox(height: DabblerSpacing.space6),
             ],
           ],
@@ -127,31 +110,22 @@ class AuthLegalNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    final DabblerColors colors = DabblerColors.of(context);
-    final TextStyle base = authText(
-      context,
-      DabblerType.caption1,
-      color: colors.textSecondary,
-    );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: <InlineSpan>[
-          TextSpan(text: l10n.email_input_terms_prefix),
-          DabblerTextLink.span(
-            label: l10n.email_input_terms_link,
-            style: base,
-            onPressed: () => showAuthTermsSheet(context),
-          ),
-          TextSpan(text: l10n.email_input_terms_and),
-          DabblerTextLink.span(
-            label: l10n.email_input_privacy_link,
-            style: base,
-            onPressed: () => showAuthPrivacySheet(context),
-          ),
-          const TextSpan(text: '.'),
-        ],
-      ),
+    return DabblerText.rich(
+      <DabblerTextSpan>[
+        DabblerTextSpan(l10n.email_input_terms_prefix),
+        DabblerTextSpan(
+          l10n.email_input_terms_link,
+          onTap: () => showAuthTermsSheet(context),
+        ),
+        DabblerTextSpan(l10n.email_input_terms_and),
+        DabblerTextSpan(
+          l10n.email_input_privacy_link,
+          onTap: () => showAuthPrivacySheet(context),
+        ),
+        const DabblerTextSpan('.'),
+      ],
+      style: DabblerType.caption1,
+      tone: DabblerTextTone.secondary,
       textAlign: center ? TextAlign.center : TextAlign.start,
     );
   }

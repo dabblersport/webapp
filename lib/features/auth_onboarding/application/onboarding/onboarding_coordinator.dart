@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -42,7 +44,7 @@ class OnboardingCoordinator {
           .from(SupabaseConfig.usersTable)
           .select('id')
           .eq('user_id', user.id)
-          .timeout(const Duration(seconds: 5));
+          .timeout(DabblerMotion.timeoutShort);
 
       final profileList = List<Map<String, dynamic>>.from(profiles as List);
 

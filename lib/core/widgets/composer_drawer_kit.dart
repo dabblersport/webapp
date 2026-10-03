@@ -63,8 +63,8 @@ class ComposerDrawerShell extends StatelessWidget {
             children: [
               const SizedBox(height: DabblerSpacing.space3),
               Container(
-                width: 36,
-                height: 4,
+                width: DabblerSheet.handleWidth,
+                height: DabblerSheet.handleHeight,
                 decoration: BoxDecoration(
                   color: colors.borderStrong,
                   borderRadius: BorderRadius.circular(DabblerRadius.pill),
@@ -80,14 +80,7 @@ class ComposerDrawerShell extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        title,
-                        style: composerType(
-                          context,
-                          DabblerType.title3,
-                          colors.textPrimary,
-                        ),
-                      ),
+                      child: DabblerText(title, style: DabblerType.title3),
                     ),
                     DabblerButton(
                       label: 'Cancel',
@@ -103,7 +96,10 @@ class ComposerDrawerShell extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisSize: MainAxisSize.min,
-                    children: [...children, SizedBox(height: bottomSpacer)],
+                    children: [
+                      ...children,
+                      SizedBox(height: bottomSpacer),
+                    ],
                   ),
                 ),
               ),
@@ -148,23 +144,23 @@ class ComposerSectionLabel extends StatelessWidget {
   const ComposerSectionLabel({
     super.key,
     required this.label,
+    @Deprecated('The design system text has no tracking; the value is ignored.')
     this.letterSpacing,
   });
 
   final String label;
+
+  /// Ignored: [DabblerText] carries no letter spacing. Kept so existing
+  /// callers compile; remove the argument at the call site.
   final double? letterSpacing;
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return Text(
+    return DabblerText(
       label,
-      style: composerType(
-        context,
-        DabblerType.caption1,
-        colors.textSecondary,
-        weight: FontWeight.w600,
-      ).copyWith(letterSpacing: letterSpacing),
+      style: DabblerType.caption1,
+      weight: DabblerTextWeight.semibold,
+      tone: DabblerTextTone.secondary,
     );
   }
 }
@@ -198,7 +194,11 @@ class ComposerSettingsRow extends StatelessWidget {
         DabblerInputRow(
           title: title,
           subtitle: subtitle,
-          leading: DabblerIcon(icon, size: 20, color: colors.textSecondary),
+          leading: DabblerIcon(
+            icon,
+            size: DabblerSizing.iconRow,
+            color: colors.textSecondary,
+          ),
           trailing: trailing,
           onTap: onTap,
         ),
@@ -265,15 +265,18 @@ class ComposerSelectPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text(
+              child: DabblerText(
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: composerType(context, DabblerType.footnote, color),
+                style: DabblerType.footnote,
+                tone: onTap == null
+                    ? DabblerTextTone.tertiary
+                    : DabblerTextTone.secondary,
               ),
             ),
             const SizedBox(width: DabblerSpacing.space1),
-            DabblerIcon(glyph, size: 14, color: color),
+            DabblerIcon(glyph, size: DabblerSizing.iconInline, color: color),
           ],
         ),
       ),
@@ -398,25 +401,22 @@ class ComposerPickerRow extends StatelessWidget {
           ? null
           : DabblerIcon(
               icon!,
-              size: 20,
+              size: DabblerSizing.iconRow,
               color: selected ? colors.brandPrimary : colors.textSecondary,
             ),
       trailing: selected
           ? DabblerIcon(
               'tick-circle',
               weight: DabblerIconWeight.bold,
-              size: 20,
+              size: DabblerSizing.iconRow,
               color: colors.brandPrimary,
             )
           : (trailingText == null
                 ? null
-                : Text(
+                : DabblerText(
                     trailingText!,
-                    style: composerType(
-                      context,
-                      DabblerType.caption1,
-                      colors.textSecondary,
-                    ),
+                    style: DabblerType.caption1,
+                    tone: DabblerTextTone.secondary,
                   )),
       onTap: onTap,
     );
@@ -455,7 +455,9 @@ class ComposerSearchField extends StatelessWidget {
 
 /// Centred spinner or message for a picker body.
 class ComposerCenteredState extends StatelessWidget {
-  const ComposerCenteredState.loading({super.key}) : message = null, icon = null;
+  const ComposerCenteredState.loading({super.key})
+    : message = null,
+      icon = null;
 
   const ComposerCenteredState.message(this.message, {super.key, this.icon});
 
@@ -503,7 +505,11 @@ class ComposerClearRow extends StatelessWidget {
 /// scrolls its own content, so a long list needs a fixed height of its own to
 /// scroll (and to report scroll position, as the GIF grid's paging does).
 class ComposerScrollArea extends StatelessWidget {
-  const ComposerScrollArea({super.key, required this.child, this.fraction = 0.5});
+  const ComposerScrollArea({
+    super.key,
+    required this.child,
+    this.fraction = 0.5,
+  });
 
   final Widget child;
   final double fraction;

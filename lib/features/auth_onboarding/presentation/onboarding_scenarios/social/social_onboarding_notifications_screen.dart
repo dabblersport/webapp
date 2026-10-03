@@ -26,7 +26,9 @@ class _SocialOnboardingNotificationsScreenState
     final service = PushNotificationService.instance;
     final granted = await service.requestNotificationPermission();
     await service.saveNotificationPreference(
-      granted ? NotificationPreference.allow : NotificationPreference.remindLater,
+      granted
+          ? NotificationPreference.allow
+          : NotificationPreference.remindLater,
     );
 
     if (!mounted) return;
@@ -43,17 +45,15 @@ class _SocialOnboardingNotificationsScreenState
   }
 
   Future<void> _skip() async {
-    await PushNotificationService.instance
-        .saveNotificationPreference(NotificationPreference.remindLater);
+    await PushNotificationService.instance.saveNotificationPreference(
+      NotificationPreference.remindLater,
+    );
     if (!mounted) return;
     context.push(RoutePaths.socialOnboardingComplete);
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Notifications',
@@ -97,31 +97,27 @@ class _SocialOnboardingNotificationsScreenState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const DabblerProgressBar(
-              value: 1,
-              size: DabblerProgressBarSize.sm,
-            ),
+            const DabblerProgressBar(value: 1, size: DabblerProgressBarSize.sm),
             const SizedBox(height: DabblerSpacing.space10),
             const Center(
-              child: DabblerIconTile.named('notification-bing', size: 64),
+              child: DabblerIconTile.named(
+                'notification-bing',
+                size: DabblerSizing.illustrationMd,
+              ),
             ),
             const SizedBox(height: DabblerSpacing.space8),
-            Text(
+            DabblerText(
               'Stay in the Loop',
+              style: DabblerType.title1,
               textAlign: TextAlign.center,
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
             ),
             const SizedBox(height: DabblerSpacing.space4),
-            Text(
+            DabblerText(
               'Get notified about game invites, friend requests, and activity '
               'from your circles. You can fine-tune what you receive anytime '
               'in Settings.',
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
             ),
           ],
         ),

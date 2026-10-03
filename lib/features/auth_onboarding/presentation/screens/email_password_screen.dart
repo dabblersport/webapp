@@ -329,7 +329,6 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = DabblerColors.of(context);
     return DabblerPage(
       body: Center(
         child: ConstrainedBox(
@@ -353,22 +352,14 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text(
+                            DabblerText(
                               l10n.email_password_title,
-                              style: authText(
-                                context,
-                                DabblerType.largeTitle,
-                                color: colors.textPrimary,
-                              ),
+                              style: DabblerType.largeTitle,
                             ),
                             const SizedBox(height: DabblerSpacing.space3),
-                            Text(
+                            DabblerText(
                               l10n.email_password_subtitle,
-                              style: authText(
-                                context,
-                                DabblerType.body,
-                                color: colors.textSecondary,
-                              ),
+                              tone: DabblerTextTone.secondary,
                             ),
                             const SizedBox(height: DabblerSpacing.space8),
                             _buildEmailField(context),
@@ -494,27 +485,17 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   }
 
   Widget _buildSignUpRedirect(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final base = authText(
-      context,
-      DabblerType.subheadline,
-      color: colors.textSecondary,
-    );
     return Center(
-      child: Text.rich(
-        TextSpan(
-          text: 'Not a user? ',
-          style: base,
-          children: [
-            DabblerTextLink.span(
-              label: 'Sign up',
-              style: base,
-              onPressed: _isLoading
-                  ? null
-                  : () => context.go(RoutePaths.emailInput),
-            ),
-          ],
-        ),
+      child: DabblerText.rich(
+        [
+          const DabblerTextSpan('Not a user? '),
+          DabblerTextSpan(
+            'Sign up',
+            onTap: _isLoading ? null : () => context.go(RoutePaths.emailInput),
+          ),
+        ],
+        style: DabblerType.subheadline,
+        tone: DabblerTextTone.secondary,
         textAlign: TextAlign.center,
       ),
     );

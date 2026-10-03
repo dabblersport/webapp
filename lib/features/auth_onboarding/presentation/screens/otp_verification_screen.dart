@@ -74,7 +74,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   void _countdown() {
     if (!mounted) return;
     if (_resendCountdown > 0) {
-      Future.delayed(const Duration(seconds: 1), () {
+      Future.delayed(DabblerMotion.delayRetryLong, () {
         if (mounted) {
           setState(() {
             _resendCountdown--;
@@ -94,7 +94,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   void _onCodeCompleted(String value) {
     FocusScope.of(context).unfocus();
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(DabblerMotion.delayFrame, () {
       if (mounted && !_isLoading) {
         _handleSubmit();
       }
@@ -245,7 +245,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
 
     final isEmail = _identifierType == IdentifierType.email;
@@ -291,19 +290,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: DabblerType.largeTitle
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
-            ),
+            DabblerText(title, style: DabblerType.largeTitle),
             const SizedBox(height: DabblerSpacing.space3),
-            Text(
-              subtitle,
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
-            ),
+            DabblerText(subtitle, tone: DabblerTextTone.secondary),
             const SizedBox(height: DabblerSpacing.space6),
             DabblerSurface.card(
               radius: DabblerRadius.lg,
@@ -315,20 +304,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 children: [
                   DabblerIcon(
                     isEmail ? 'sms' : 'mobile',
-                    size: 20,
+                    size: DabblerSizing.iconRow,
                     color: colors.brandPrimary,
                   ),
                   const SizedBox(width: DabblerSpacing.space4),
                   Expanded(
                     child: Directionality(
                       textDirection: TextDirection.ltr,
-                      child: Text(
+                      child: DabblerText(
                         _identifier,
+                        style: DabblerType.subheadline,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: DabblerType.subheadline
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textPrimary),
                       ),
                     ),
                   ),
@@ -360,22 +347,20 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Text(
+                DabblerText(
                   l10n.otp_verify_didnt_get,
-                  style: DabblerType.subheadline
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
                 ),
                 if (_resendCountdown > 0)
                   Padding(
                     padding: const EdgeInsetsDirectional.only(
                       start: DabblerSpacing.space2,
                     ),
-                    child: Text(
+                    child: DabblerText(
                       l10n.otp_verify_resend_countdown(_resendCountdown),
-                      style: DabblerType.subheadline
-                          .resolveForDirection(direction)
-                          .copyWith(color: colors.textTertiary),
+                      style: DabblerType.subheadline,
+                      tone: DabblerTextTone.tertiary,
                     ),
                   )
                 else
