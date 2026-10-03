@@ -32,7 +32,7 @@ import '../../support/render_mode.dart';
 /// and RTL, and writes PNGs to the Alpha plan folder.
 const String _shotsDir = String.fromEnvironment(
   'PLACES_SHOTS_DIR',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan/places',
+  defaultValue: '$kShotsRoot/places',
 );
 
 class _Location extends ActiveLocationNotifier {

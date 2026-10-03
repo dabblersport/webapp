@@ -24,7 +24,7 @@ import '../../support/render_mode.dart';
 /// PNGs to the Alpha plan folder.
 const String _shotsDir = String.fromEnvironment(
   'AUTH_SHOTS_DIR',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan/auth',
+  defaultValue: '$kShotsRoot/auth',
 );
 
 class _FakeLocation extends StateNotifier<AsyncValue<LocationState>>

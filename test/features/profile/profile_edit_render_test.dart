@@ -23,7 +23,7 @@ import '../../support/render_mode.dart';
 /// KAN-418 group C: edit profile, danger zone and availability calendar.
 /// PNGs go to the Alpha plan folder (override with PROFILE_SHOTS_DIR).
 const String _shotsOverride = String.fromEnvironment('PROFILE_SHOTS_DIR');
-const String _defaultShots = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/profile';
+const String _defaultShots = '$kShotsRoot/profile';
 
 Future<void> _pump(
   WidgetTester tester,

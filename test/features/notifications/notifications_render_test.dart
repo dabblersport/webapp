@@ -24,7 +24,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
 
-const String _shotsDir = '/Users/moataz/Desktop/Dabbler-Alpha-Plan/notifications';
+const String _shotsDir = '$kShotsRoot/notifications';
 const String _userId = 'u-me';
 
 Future<void> _loadFonts() async {
