@@ -170,7 +170,7 @@ class ComposerSectionLabel extends StatelessWidget {
 }
 
 /// One settings row: a DS icon, title, optional subtitle and a trailing
-/// control. [icon] is a DS (Iconsax) icon name.
+/// control. [icon] is a DS icon name.
 class ComposerSettingsRow extends StatelessWidget {
   const ComposerSettingsRow({
     super.key,
