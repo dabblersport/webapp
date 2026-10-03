@@ -864,7 +864,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       child: PostMediaCarousel(
         media: post.media,
-        borderRadius: 16,
+        
         carouselHeight: 280,
       ),
     );

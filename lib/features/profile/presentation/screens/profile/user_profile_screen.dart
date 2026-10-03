@@ -29,7 +29,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
         userRepostedPostsProvider;
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
 import 'package:dabbler/widgets/app_background.dart';
@@ -1399,7 +1399,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           children: posts.map((post) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: FeedPostCard(post: post),
+              child: resolvePostLayout(post),
             );
           }).toList(),
         );
@@ -1661,13 +1661,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
   void _reportUser(BuildContext context) {
     final targetUserId = _targetAuthUserId();
     if (targetUserId == null) return;
-    showDialog(
-      context: context,
-      builder: (_) => ReportDialog(
-        targetType: ReportTargetType.user,
-        targetId: targetUserId,
-        targetUserId: targetUserId,
-      ),
+    showReportDialog(
+      context,
+      targetType: ReportTargetType.user,
+      targetId: targetUserId,
+      targetUserId: targetUserId,
     );
   }
 

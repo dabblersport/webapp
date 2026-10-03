@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
-import 'package:dabbler/features/social/presentation/widgets/feed_post_card.dart';
+import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/widgets/adaptive_scaffold.dart';
 import 'package:dabbler/core/constants/adaptive_destinations.dart';
@@ -232,7 +232,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
           }
 
           final post = _posts[index - 1];
-          return FeedPostCard(post: post);
+          return resolvePostLayout(post);
         },
       ),
     );
