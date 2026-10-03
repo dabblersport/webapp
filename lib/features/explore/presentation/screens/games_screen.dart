@@ -84,7 +84,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     // location-filtered variants refetch, plus the pinned "My games" section.
     ref.invalidate(nearbyGamesProvider);
     ref.invalidate(myPinnedGamesProvider);
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(DabblerMotion.delaySettle);
   }
 
   void _resetFilters() {
@@ -371,13 +371,9 @@ class _GameTabBody extends ConsumerWidget {
             itemBuilder: (_, i) {
               final entry = entries[i];
               if (entry.isHeader) {
-                return Text(
+                return DabblerText(
                   entry.headerLabel!,
-                  style: listingText(
-                    context,
-                    DabblerType.headline,
-                    color: DabblerColors.of(context).textPrimary,
-                  ),
+                  style: DabblerType.headline,
                 );
               }
               return _GameCard(

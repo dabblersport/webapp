@@ -87,11 +87,9 @@ class SafetyOverviewScreen extends ConsumerWidget {
         },
         loading: () => const AdminLoading(),
         error: (error, stack) => Center(
-          child: Text(
+          child: DabblerText(
             'Failed to check admin status: $error',
-            style: DabblerType.body
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: DabblerColors.of(context).textPrimary),
+            style: DabblerType.body,
           ),
         ),
       ),
@@ -124,12 +122,7 @@ class SafetyOverviewScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Overview Information',
-            style: DabblerType.title3
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: DabblerColors.of(context).textPrimary),
-          ),
+          DabblerText('Overview Information', style: DabblerType.title3),
           const SizedBox(height: DabblerSpacing.space6),
           AdminInfoRow(
             label: 'Last Updated',

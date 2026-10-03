@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../utils/enums/social_enums.dart'; // For MessageType enum
@@ -152,7 +153,7 @@ class ChatController extends StateNotifier<ChatState> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(PlayTiming.mockLatencyLong);
 
       // Mock conversations for now
       final conversations = _generateMockConversations();
@@ -181,7 +182,7 @@ class ChatController extends StateNotifier<ChatState> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(PlayTiming.mockLatencyLong);
 
       // Mock messages for now
       final messages = _generateMockMessages(conversationId);
@@ -200,7 +201,7 @@ class ChatController extends StateNotifier<ChatState> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(PlayTiming.mockLatencyLong);
 
       // Mock older messages for now
       final olderMessages = _generateMockOlderMessages(conversationId);
@@ -226,7 +227,7 @@ class ChatController extends StateNotifier<ChatState> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(PlayTiming.mockLatencyMedium);
 
       // Create new message
       final newMessage = ChatMessageModel(
@@ -270,7 +271,7 @@ class ChatController extends StateNotifier<ChatState> {
 
     try {
       // Simulate API call delay
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(PlayTiming.mockLatencyMedium);
 
       // Create new voice message
       final newMessage = ChatMessageModel(
@@ -295,7 +296,7 @@ class ChatController extends StateNotifier<ChatState> {
             url: audioPath,
             type: AttachmentType.audio,
             name: 'voice_message.m4a',
-            size: 0,
+            size: _unknownAttachmentSize,
             mimeType: 'audio/m4a',
           ),
         ],
@@ -739,3 +740,6 @@ class ChatController extends StateNotifier<ChatState> {
     });
   }
 }
+
+/// Byte size recorded for a freshly recorded voice note before upload.
+const int _unknownAttachmentSize = 0;

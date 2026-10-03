@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -61,11 +63,7 @@ final class TabFeedData extends TabFeedState {
   @override
   bool get isLoadingMore => loadingMore;
 
-  TabFeedData copyWith({
-    List<Post>? posts,
-    bool? hasMore,
-    bool? loadingMore,
-  }) {
+  TabFeedData copyWith({List<Post>? posts, bool? hasMore, bool? loadingMore}) {
     return TabFeedData(
       posts: posts ?? this.posts,
       hasMore: hasMore ?? this.hasMore,
@@ -116,10 +114,8 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
 
     result.fold(
       (err) => state = TabFeedFailure(err.message),
-      (posts) => state = TabFeedData(
-        posts: posts,
-        hasMore: posts.length >= _pageSize,
-      ),
+      (posts) =>
+          state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize),
     );
   }
 
@@ -224,7 +220,7 @@ TabFeedNotifier _buildNearbyNotifier(
         }
         final pos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.low,
-          timeLimit: const Duration(seconds: 5),
+          timeLimit: DabblerMotion.timeoutShort,
         );
         lat = pos.latitude;
         lng = pos.longitude;

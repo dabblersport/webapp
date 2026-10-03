@@ -448,14 +448,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        DabblerText(
           AppLocalizations.of(context).create_info_gender,
-          style: onboardingType(
-            context,
-            DabblerType.footnote,
-            colors.textSecondary,
-            weight: DabblerType.medium,
-          ),
+          style: DabblerType.footnote,
+          weight: DabblerTextWeight.medium,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space3),
         Row(
@@ -472,7 +469,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                     () => _selectedGender = _selectedGender == g.$1 ? '' : g.$1,
                   ),
                   child: SizedBox(
-                    height: 66,
+                    height: DabblerSizing.optionTileHeight,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -487,14 +484,10 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
                               : colors.textSecondary,
                         ),
                         const SizedBox(height: DabblerSpacing.space2),
-                        Text(
+                        DabblerText(
                           g.$2,
-                          style: onboardingType(
-                            context,
-                            DabblerType.subheadline,
-                            colors.textPrimary,
-                            weight: DabblerType.medium,
-                          ),
+                          style: DabblerType.subheadline,
+                          weight: DabblerTextWeight.medium,
                         ),
                       ],
                     ),

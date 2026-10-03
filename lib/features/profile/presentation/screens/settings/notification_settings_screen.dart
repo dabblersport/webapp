@@ -28,36 +28,61 @@ class NotificationSettingsScreen extends ConsumerWidget {
   // ── Category → kind-key mappings (only push-capable kinds) ──────────────
 
   static const _gameToggles = <_KindToggle>[
-    _KindToggle('Game Invites & Requests', 'Invites, join requests, approvals',
-        'game', ['game.invited', 'game.join_request', 'game.join_accepted']),
-    _KindToggle('Game Reminders', 'Reminders for upcoming games', 'alarm',
-        ['game.reminder']),
-    _KindToggle('Game Updates', 'Changes, waitlist promotions, players joining',
-        'refresh-circle',
-        ['game.updated', 'game.waitlist_promoted', 'game.player_joined']),
-    _KindToggle('Booking Payments', 'When a booking needs payment', 'card',
-        ['arena.payment_required']),
+    _KindToggle(
+      'Game Invites & Requests',
+      'Invites, join requests, approvals',
+      'game',
+      ['game.invited', 'game.join_request', 'game.join_accepted'],
+    ),
+    _KindToggle('Game Reminders', 'Reminders for upcoming games', 'alarm', [
+      'game.reminder',
+    ]),
+    _KindToggle(
+      'Game Updates',
+      'Changes, waitlist promotions, players joining',
+      'refresh-circle',
+      ['game.updated', 'game.waitlist_promoted', 'game.player_joined'],
+    ),
+    _KindToggle('Booking Payments', 'When a booking needs payment', 'card', [
+      'arena.payment_required',
+    ]),
   ];
 
   static const _socialToggles = <_KindToggle>[
-    _KindToggle('Likes & Reactions', 'Likes and reactions on your content',
-        'heart',
-        ['social.post_liked', 'social.post_reacted', 'social.comment_liked']),
-    _KindToggle('Comments', 'Comments on your posts', 'message-text',
-        ['social.post_commented']),
-    _KindToggle('Mentions', 'When someone mentions you', 'tag-user',
-        ['social.mentioned_in_post', 'social.mentioned_in_comment']),
-    _KindToggle('New Followers', 'When someone follows you', 'user-add',
-        ['social.followed']),
+    _KindToggle(
+      'Likes & Reactions',
+      'Likes and reactions on your content',
+      'heart',
+      ['social.post_liked', 'social.post_reacted', 'social.comment_liked'],
+    ),
+    _KindToggle('Comments', 'Comments on your posts', 'message-text', [
+      'social.post_commented',
+    ]),
+    _KindToggle('Mentions', 'When someone mentions you', 'tag-user', [
+      'social.mentioned_in_post',
+      'social.mentioned_in_comment',
+    ]),
+    _KindToggle('New Followers', 'When someone follows you', 'user-add', [
+      'social.followed',
+    ]),
   ];
 
   static const _connectionToggles = <_KindToggle>[
-    _KindToggle('Friend Requests', 'New and accepted friend requests',
-        'profile-add', ['friend.requested', 'friend.accepted']),
-    _KindToggle('Squad Invites', 'Invites to join a squad', 'shield-tick',
-        ['squad.invited']),
-    _KindToggle('Meetup Invites', 'Invites and players joining meetups',
-        'people', ['meetup.invited', 'meetup.player_joined']),
+    _KindToggle(
+      'Friend Requests',
+      'New and accepted friend requests',
+      'profile-add',
+      ['friend.requested', 'friend.accepted'],
+    ),
+    _KindToggle('Squad Invites', 'Invites to join a squad', 'shield-tick', [
+      'squad.invited',
+    ]),
+    _KindToggle(
+      'Meetup Invites',
+      'Invites and players joining meetups',
+      'people',
+      ['meetup.invited', 'meetup.player_joined'],
+    ),
   ];
 
   @override
@@ -113,7 +138,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
       );
     }
 
-    final controller = ref.read(notificationSettingsControllerProvider.notifier);
+    final controller = ref.read(
+      notificationSettingsControllerProvider.notifier,
+    );
     final pushOn = settings.pushEnabled;
 
     return Column(
@@ -124,23 +151,35 @@ class NotificationSettingsScreen extends ConsumerWidget {
         _buildQuietHoursSection(context, settings, controller),
         const SizedBox(height: DabblerSpacing.space7),
         // Per-kind sections only gate push, so dim them when push is off.
-        Opacity(
-          opacity: pushOn ? 1 : 0.5,
-          child: IgnorePointer(
-            ignoring: !pushOn,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildKindSection(context, 'Game Notifications', _gameToggles,
-                    settings, controller),
-                const SizedBox(height: DabblerSpacing.space7),
-                _buildKindSection(context, 'Social Notifications',
-                    _socialToggles, settings, controller),
-                const SizedBox(height: DabblerSpacing.space7),
-                _buildKindSection(context, 'Connections', _connectionToggles,
-                    settings, controller),
-              ],
-            ),
+        DabblerInert(
+          inert: !pushOn,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildKindSection(
+                context,
+                'Game Notifications',
+                _gameToggles,
+                settings,
+                controller,
+              ),
+              const SizedBox(height: DabblerSpacing.space7),
+              _buildKindSection(
+                context,
+                'Social Notifications',
+                _socialToggles,
+                settings,
+                controller,
+              ),
+              const SizedBox(height: DabblerSpacing.space7),
+              _buildKindSection(
+                context,
+                'Connections',
+                _connectionToggles,
+                settings,
+                controller,
+              ),
+            ],
           ),
         ),
       ],
@@ -148,16 +187,13 @@ class NotificationSettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildHero(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        DabblerText(
           'Stay informed',
-          style: DabblerType.footnote
-              .resolveForDirection(dir)
-              .copyWith(color: colors.textSecondary),
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space2),
         const DabblerBanner(
@@ -178,15 +214,30 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return DabblerSection(
       title: 'General Preferences',
       children: [
-        _switchRow(context, 'Push Notifications',
-            'Receive notifications on this device', 'notification',
-            settings.pushEnabled, controller.setPushEnabled),
-        _switchRow(context, 'Email Notifications',
-            'Receive notifications via email', 'sms', settings.emailEnabled,
-            controller.setEmailEnabled),
-        _switchRow(context, 'SMS Notifications',
-            'Receive important updates via SMS', 'message', settings.smsEnabled,
-            controller.setSmsEnabled),
+        _switchRow(
+          context,
+          'Push Notifications',
+          'Receive notifications on this device',
+          'notification',
+          settings.pushEnabled,
+          controller.setPushEnabled,
+        ),
+        _switchRow(
+          context,
+          'Email Notifications',
+          'Receive notifications via email',
+          'sms',
+          settings.emailEnabled,
+          controller.setEmailEnabled,
+        ),
+        _switchRow(
+          context,
+          'SMS Notifications',
+          'Receive important updates via SMS',
+          'message',
+          settings.smsEnabled,
+          controller.setSmsEnabled,
+        ),
       ],
     );
   }
@@ -218,10 +269,18 @@ class NotificationSettingsScreen extends ConsumerWidget {
           },
         ),
         if (enabled) ...[
-          _timeRow(context, 'Start', settings.quietStartMin!,
-              (m) => controller.setQuietHours(m, settings.quietEndMin!)),
-          _timeRow(context, 'End', settings.quietEndMin!,
-              (m) => controller.setQuietHours(settings.quietStartMin!, m)),
+          _timeRow(
+            context,
+            'Start',
+            settings.quietStartMin!,
+            (m) => controller.setQuietHours(m, settings.quietEndMin!),
+          ),
+          _timeRow(
+            context,
+            'End',
+            settings.quietEndMin!,
+            (m) => controller.setQuietHours(settings.quietStartMin!, m),
+          ),
           _switchRow(
             context,
             'Allow urgent notifications',
@@ -275,7 +334,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
       title: label,
-      leading: DabblerIcon('clock', size: DabblerSizing.iconMd, color: colors.textSecondary),
+      leading: DabblerIcon(
+        'clock',
+        size: DabblerSizing.iconMd,
+        color: colors.textSecondary,
+      ),
       value: _fmt(context, minutes),
       onTap: () => showDabblerSheet<void>(
         context: context,
@@ -307,7 +370,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return DabblerInputRow(
       title: title,
       subtitle: subtitle,
-      leading: DabblerIcon(icon, size: DabblerSizing.iconMd, color: colors.textSecondary),
+      leading: DabblerIcon(
+        icon,
+        size: DabblerSizing.iconMd,
+        color: colors.textSecondary,
+      ),
       trailing: DabblerToggle(
         checked: value,
         onChanged: onChanged,

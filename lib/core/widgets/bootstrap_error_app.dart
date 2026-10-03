@@ -1,6 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' show MaterialApp, ThemeData, ThemeExtension;
+import 'package:flutter/material.dart'
+    show MaterialApp, ThemeData, ThemeExtension;
 import 'package:flutter/widgets.dart';
 
 /// Rendered when app bootstrap (env/config/Firebase/Supabase/theme
@@ -38,7 +39,6 @@ class BootstrapErrorApp extends StatelessWidget {
       theme: ThemeData(extensions: <ThemeExtension<dynamic>>[colors]),
       home: Builder(
         builder: (context) {
-          final direction = Directionality.of(context);
           return DabblerPage(
             body: Center(
               child: SingleChildScrollView(
@@ -54,13 +54,12 @@ class BootstrapErrorApp extends StatelessWidget {
                     ),
                     if (kDebugMode && stackTrace != null) ...[
                       const SizedBox(height: DabblerSpacing.space4),
-                      Text(
+                      DabblerText(
                         '$stackTrace',
                         maxLines: 16,
                         overflow: TextOverflow.fade,
-                        style: DabblerType.caption2
-                            .resolveForDirection(direction)
-                            .copyWith(color: colors.textTertiary),
+                        style: DabblerType.caption2,
+                        tone: DabblerTextTone.tertiary,
                       ),
                     ],
                   ],

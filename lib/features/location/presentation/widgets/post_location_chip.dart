@@ -44,23 +44,25 @@ class PostLocationChip extends ConsumerWidget {
 
   Widget _buildChip(BuildContext context, String label) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          DabblerIcon('location', size: 12, color: colors.textSecondary),
+          DabblerIcon(
+            'location',
+            size: DabblerSizing.iconXs,
+            color: colors.textSecondary,
+          ),
           const SizedBox(width: DabblerSpacing.space1),
           Flexible(
-            child: Text(
+            child: DabblerText(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: DabblerType.footnote
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
           ),
         ],

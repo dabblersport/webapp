@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/usecases/friendship_usecases.dart';
@@ -505,7 +506,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
 
   // Private helper methods (mock implementations)
   Future<List<FriendRequestModel>> _fetchIncomingRequests() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(PlayTiming.mockLatencyMedium);
 
     return List.generate(
       3,
@@ -521,7 +522,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   }
 
   Future<List<FriendRequestModel>> _fetchOutgoingRequests() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(PlayTiming.mockLatencyMedium);
 
     return List.generate(
       2,
@@ -538,7 +539,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   Future<Map<String, core.UserModel>> _fetchUsersInfo(
     List<String> userIds,
   ) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(PlayTiming.mockLatencyShort);
 
     final users = <String, core.UserModel>{};
     for (final userId in userIds) {
@@ -555,7 +556,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   }
 
   Future<core.UserModel?> _fetchUserInfo(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return core.UserModel(
       id: userId,
@@ -568,7 +569,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   }
 
   Future<List<core.UserModel>> _fetchMutualFriends(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 150));
+    await Future.delayed(PlayTiming.mockLatencyShortish);
 
     final mutualCount = DateTime.now().millisecondsSinceEpoch % 5;
     return List.generate(
@@ -585,7 +586,7 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   }
 
   Future<RequestPreviewInfo> _generatePreviewInfo(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return RequestPreviewInfo(
       mutualFriendsCount: DateTime.now().millisecondsSinceEpoch % 10,
@@ -599,17 +600,17 @@ class FriendRequestsController extends StateNotifier<FriendRequestsState> {
   }
 
   Future<bool> _acceptSingleRequest(String requestId) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(PlayTiming.mockLatencyShort);
     return true; // Mock successful acceptance
   }
 
   Future<bool> _declineFriendRequest(String requestId) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(PlayTiming.mockLatencyShort);
     return true; // Mock successful decline
   }
 
   Future<bool> _cancelFriendRequest(String requestId) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(PlayTiming.mockLatencyShort);
     return true; // Mock successful cancellation
   }
 

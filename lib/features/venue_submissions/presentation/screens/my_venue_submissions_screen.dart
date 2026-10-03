@@ -92,9 +92,6 @@ class _SubmissionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -127,31 +124,21 @@ class _SubmissionList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title,
-                            style: DabblerType.headline
-                                .resolveForDirection(dir)
-                                .copyWith(color: colors.textPrimary),
-                          ),
+                          DabblerText(title, style: DabblerType.headline),
                           if (location.isNotEmpty) ...[
                             const SizedBox(height: DabblerSpacing.space1),
-                            Text(
+                            DabblerText(
                               location,
-                              style: DabblerType.footnote
-                                  .resolveForDirection(dir)
-                                  .copyWith(color: colors.textSecondary),
+                              style: DabblerType.footnote,
+                              tone: DabblerTextTone.secondary,
                             ),
                           ],
                           if (hasNote) ...[
                             const SizedBox(height: DabblerSpacing.space2),
-                            Text(
+                            DabblerText(
                               'Admin note: ${s.adminNote}',
-                              style: DabblerType.footnote
-                                  .resolveForDirection(dir)
-                                  .copyWith(
-                                    color: colors.textPrimary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              style: DabblerType.footnote,
+                              weight: DabblerTextWeight.semibold,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),

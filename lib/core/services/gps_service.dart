@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -71,7 +73,7 @@ class GpsService {
     try {
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(DabblerMotion.timeoutNetwork);
       return LocationSuccess(
         lat: pos.latitude,
         lng: pos.longitude,
@@ -90,7 +92,7 @@ class GpsService {
     try {
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.medium,
-      ).timeout(const Duration(seconds: 6));
+      ).timeout(DabblerMotion.timeoutShort);
       return LocationSuccess(
         lat: pos.latitude,
         lng: pos.longitude,

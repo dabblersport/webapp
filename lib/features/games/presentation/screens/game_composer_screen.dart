@@ -145,15 +145,15 @@ class _ComposerState {
       variantId: clearVariant ? null : variantId ?? this.variantId,
       variantKey: clearVariant ? null : variantKey ?? this.variantKey,
       variantNameEn: clearVariant ? null : variantNameEn ?? this.variantNameEn,
-      requiredPlayers:
-          clearVariant ? null : requiredPlayers ?? this.requiredPlayers,
+      requiredPlayers: clearVariant
+          ? null
+          : requiredPlayers ?? this.requiredPlayers,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       venueSpaceId: clearVenue ? null : venueSpaceId ?? this.venueSpaceId,
       venueName: clearVenue ? null : venueName ?? this.venueName,
-      venueSpaceName:
-          clearVenue ? null : venueSpaceName ?? this.venueSpaceName,
+      venueSpaceName: clearVenue ? null : venueSpaceName ?? this.venueSpaceName,
       joinPolicy: joinPolicy ?? this.joinPolicy,
       listingVisibility: listingVisibility ?? this.listingVisibility,
       allowWaitlist: allowWaitlist ?? this.allowWaitlist,
@@ -215,13 +215,13 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           .eq('id', gameId)
           .single();
 
-      final rules =
-          (row['rules'] as Map?)?.cast<String, dynamic>() ?? const {};
+      final rules = (row['rules'] as Map?)?.cast<String, dynamic>() ?? const {};
       // Round-trips the naive-local timestamps exactly as create wrote them
       // (no toLocal — GameView parses the same way for display).
       final startAt = DateTime.parse(row['start_at'] as String);
       final endAt = DateTime.parse(row['end_at'] as String);
-      final duration = rules['duration_minutes'] as int? ??
+      final duration =
+          rules['duration_minutes'] as int? ??
           endAt.difference(startAt).inMinutes;
 
       // Emoji/colour aren't on the view — resolve from the loaded sports.
@@ -275,18 +275,20 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   /// Reverse of [selectSkillLevel]'s (min, max) mapping.
   String? _skillLabelFor(int? min, int? max) => switch ((min, max)) {
-        (1, 3) => 'Beginner',
-        (4, 6) => 'Intermediate',
-        (7, 8) => 'Advanced',
-        (9, 10) => 'Pro',
-        _ => null,
-      };
+    (1, 3) => 'Beginner',
+    (4, 6) => 'Intermediate',
+    (7, 8) => 'Advanced',
+    (9, 10) => 'Pro',
+    _ => null,
+  };
 
   Future<void> loadVariants(String sportId) async {
     try {
       final rows = await _db
           .from(SupabaseConfig.sportVariantsTable)
-          .select('id, variant_key, name_en, required_players, players_per_side')
+          .select(
+            'id, variant_key, name_en, required_players, players_per_side',
+          )
           .eq('sport_id', sportId)
           .eq('is_active', true)
           .order('name_en');
@@ -424,8 +426,13 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
       final date = state.selectedDate!;
       final t = state.selectedTime!;
-      final startAt =
-          DateTime(date.year, date.month, date.day, t.hour, t.minute);
+      final startAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        t.hour,
+        t.minute,
+      );
       final endAt = startAt.add(Duration(minutes: state.durationMinutes));
 
       final rules = <String, dynamic>{
@@ -477,8 +484,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         'p_rules': rules,
         if (state.title != null && state.title!.isNotEmpty)
           'p_title': state.title,
-        if (state.venueSpaceId != null)
-          'p_venue_space_id': state.venueSpaceId,
+        if (state.venueSpaceId != null) 'p_venue_space_id': state.venueSpaceId,
         if (state.minSkill != null) 'p_min_skill': state.minSkill,
         if (state.maxSkill != null) 'p_max_skill': state.maxSkill,
         // Editable Min/Max players — only sent when set. Back-end follow-up:
@@ -499,8 +505,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         'not_host_or_not_found' => 'This game can no longer be edited.',
         'invalid_player_range' => 'Min players cannot exceed max players.',
         'invalid_min_players' ||
-        'invalid_max_players' =>
-          'Player counts must be at least 1.',
+        'invalid_max_players' => 'Player counts must be at least 1.',
         _ => e.message,
       };
       state = state.copyWith(isSubmitting: false, error: msg);
@@ -517,8 +522,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
 final _gameComposerProvider =
     StateNotifierProvider.autoDispose<_ComposerNotifier, _ComposerState>(
-  (_) => _ComposerNotifier(),
-);
+      (_) => _ComposerNotifier(),
+    );
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -555,7 +560,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     } else {
       // Kick off sport load so the chips appear as soon as the drawer opens.
       Future.microtask(
-          () => ref.read(_gameComposerProvider.notifier).ensureSports());
+        () => ref.read(_gameComposerProvider.notifier).ensureSports(),
+      );
     }
   }
 
@@ -575,7 +581,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       final err = ref.read(_gameComposerProvider).error;
       DabblerToastProvider.of(context).show(
         DabblerToastSpec(
-          message: err ??
+          message:
+              err ??
               (_isEditing ? 'Failed to save changes' : 'Failed to create game'),
           tone: DabblerToastTone.error,
         ),
@@ -613,16 +620,13 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
               const SizedBox(height: DabblerSpacing.space3),
               // Sport is locked in edit mode — capacity and the roster
               // derive from the sport/format chosen at creation.
-              IgnorePointer(
-                ignoring: _isEditing,
-                child: Opacity(
-                  opacity: _isEditing ? 0.55 : 1,
-                  child: _SportChipsRow(
-                    sports: state.sports,
-                    loaded: state.sportsLoaded,
-                    selectedSportId: state.sportId,
-                    onSelect: notifier.selectSport,
-                  ),
+              DabblerInert(
+                inert: _isEditing,
+                child: _SportChipsRow(
+                  sports: state.sports,
+                  loaded: state.sportsLoaded,
+                  selectedSportId: state.sportId,
+                  onSelect: notifier.selectSport,
                 ),
               ),
             ],
@@ -638,7 +642,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             title: 'Format',
             subtitle: 'Game format',
             trailing: ComposerSelectPill(
-              value: state.variantNameEn ??
+              value:
+                  state.variantNameEn ??
                   (state.sportId == null
                       ? 'Select sport first'
                       : 'Select format'),
@@ -837,10 +842,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(
-                label: 'DETAILS (OPTIONAL)',
-                letterSpacing: 1.2,
-              ),
+              const ComposerSectionLabel(label: 'DETAILS (OPTIONAL)'),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,
@@ -896,9 +898,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   String _venueLabel(_ComposerState state) {
     if (state.venueSpaceId == null) return 'Select';
-    return [state.venueName, state.venueSpaceName]
-        .whereType<String>()
-        .join(' · ');
+    return [
+      state.venueName,
+      state.venueSpaceName,
+    ].whereType<String>().join(' · ');
   }
 
   // ─── Pickers ───────────────────────────────────────────────────────────────
@@ -1032,10 +1035,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: title,
-      builder: (_) => _PlayerCountPickerSheet(
-        initialValue: initial,
-        onSelect: onSelect,
-      ),
+      builder: (_) =>
+          _PlayerCountPickerSheet(initialValue: initial, onSelect: onSelect),
     );
   }
 }
@@ -1068,13 +1069,10 @@ class _SportChipsRow extends StatelessWidget {
         height: DabblerSizing.touchTargetMin,
         child: Align(
           alignment: AlignmentDirectional.centerStart,
-          child: Text(
+          child: DabblerText(
             'No sports available',
-            style: composerType(
-              context,
-              DabblerType.footnote,
-              DabblerColors.of(context).textSecondary,
-            ),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           ),
         ),
       );
@@ -1099,9 +1097,11 @@ class _SportChipsRow extends StatelessWidget {
                     label: label,
                     selected: selected,
                     leadingIcon: DabblerSportIcon.fromKey(
-                      ((sport['sport_key'] as String?) ?? '')
-                          .replaceAll('_', '-'),
-                      size: 16,
+                      ((sport['sport_key'] as String?) ?? '').replaceAll(
+                        '_',
+                        '-',
+                      ),
+                      size: DabblerSizing.iconInline,
                       color: selected ? colors.onBrand : colors.textSecondary,
                     ),
                     onTap: () => onSelect(sport),
@@ -1120,10 +1120,7 @@ class _SportChipsRow extends StatelessWidget {
 // ─── Picker sheets ────────────────────────────────────────────────────────────
 
 class _VariantPickerSheet extends StatelessWidget {
-  const _VariantPickerSheet({
-    required this.variants,
-    required this.onSelect,
-  });
+  const _VariantPickerSheet({required this.variants, required this.onSelect});
 
   final List<Map<String, dynamic>> variants;
   final void Function(Map<String, dynamic>) onSelect;
@@ -1298,9 +1295,7 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
       final venueName = (venue['name_en'] as String? ?? '').toLowerCase();
       final spaceName = (sp['name_en'] as String? ?? '').toLowerCase();
       final area = (venue['area'] as String? ?? '').toLowerCase();
-      return venueName.contains(q) ||
-          spaceName.contains(q) ||
-          area.contains(q);
+      return venueName.contains(q) || spaceName.contains(q) || area.contains(q);
     }).toList();
   }
 
@@ -1439,7 +1434,6 @@ class _PlayerCountPickerSheetState extends State<_PlayerCountPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(
         horizontal: DabblerSpacing.space8,
@@ -1456,14 +1450,7 @@ class _PlayerCountPickerSheetState extends State<_PlayerCountPickerSheet> {
                 tone: DabblerButtonTone.neutral,
                 onPressed: _value > 1 ? () => _bump(-1) : null,
               ),
-              Text(
-                '$_value',
-                style: composerType(
-                  context,
-                  DabblerType.title1,
-                  colors.textPrimary,
-                ),
-              ),
+              DabblerText('$_value', style: DabblerType.title1),
               DabblerButton.icon(
                 icon: 'add',
                 semanticLabel: 'Increase',

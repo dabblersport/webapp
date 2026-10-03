@@ -26,7 +26,7 @@ class NotificationBadge extends ConsumerWidget {
       label: label,
       status: DabblerColors.of(context).error,
       paddingInline: DabblerSpacing.space1,
-      minWidth: 16,
+      minWidth: DabblerSizing.iconInline,
     );
   }
 }

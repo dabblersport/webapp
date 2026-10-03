@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dabbler/data/models/core/user_model.dart';
@@ -271,7 +273,7 @@ class UserService extends ChangeNotifier {
   // Refresh user data (simulate API call)
   Future<void> refreshUserData() async {
     // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(DabblerMotion.delayRetry);
 
     // In a real app, this would fetch from an API
     // For now, we'll just notify listeners to trigger a refresh

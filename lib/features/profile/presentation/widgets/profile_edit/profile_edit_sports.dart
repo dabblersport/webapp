@@ -26,11 +26,10 @@ class ProfileEditInterestsSection extends StatelessWidget {
       title: 'Interests',
       subtitle:
           'Select sports you\'re interested in. Adding a sport here also creates a sport profile for it.',
-      action: Text(
+      action: DabblerText(
         '${selectedIds.length} selected',
-        style: DabblerType.footnote
-            .resolveForDirection(Directionality.of(context))
-            .copyWith(color: colors.textSecondary),
+        style: DabblerType.footnote,
+        tone: DabblerTextTone.secondary,
       ),
       children: [
         for (final entry in sportsByCategory.entries)
@@ -91,29 +90,25 @@ class _ProfileEditCategorySportsSheetState
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final selectedCount = widget.sports.where(widget.isSelected).length;
     return ListView(
       shrinkWrap: true,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        0,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space8,
       ),
       children: [
-        Text(
+        DabblerText(
           '$selectedCount of ${widget.sports.length} selected',
-          style: DabblerType.subheadline
-              .resolveForDirection(direction)
-              .copyWith(color: colors.textSecondary),
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space2),
-        Text(
+        DabblerText(
           'Select sports you want to add to your interests in this category.',
-          style: DabblerType.footnote
-              .resolveForDirection(direction)
-              .copyWith(color: colors.textSecondary),
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space5),
         for (final sport in widget.sports) ...[
@@ -166,8 +161,6 @@ class ProfileEditSkillLevels extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) return const SizedBox.shrink();
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final options = <DabblerSelectOption<SkillLevel>>[
       for (final level in SkillLevel.values)
         DabblerSelectOption<SkillLevel>(
@@ -183,12 +176,7 @@ class ProfileEditSkillLevels extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  labelOf(entry.key),
-                  style: DabblerType.body
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textPrimary),
-                ),
+                child: DabblerText(labelOf(entry.key), style: DabblerType.body),
               ),
               const SizedBox(width: DabblerSpacing.space4),
               SizedBox(

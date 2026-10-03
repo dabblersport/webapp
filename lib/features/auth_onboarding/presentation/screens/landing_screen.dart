@@ -61,7 +61,7 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _timer = Timer.periodic(DabblerMotion.autoAdvanceHero, (_) {
       if (mounted) setState(() => _idx = (_idx + 1) % _kTestimonials.length);
     });
   }
@@ -95,34 +95,38 @@ class _LandingPageState extends ConsumerState<LandingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Padding(
-                padding: EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space8,
-                  0,
+                padding: EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space8,
+                  top: DabblerSpacing.space4,
+                  end: DabblerSpacing.space8,
                 ),
                 child: DabblerWordmark(),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space9,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space8,
+                    top: DabblerSpacing.space9,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 500),
+                        duration: DabblerMotion.durationOf(
+                          context,
+                          DabblerMotion.heroCrossfade,
+                        ),
                         child: _UserIdentityRow(key: ValueKey(_idx), t: t),
                       ),
                       const SizedBox(height: DabblerSpacing.space8),
                       Expanded(
                         child: SingleChildScrollView(
                           child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 500),
+                            duration: DabblerMotion.durationOf(
+                              context,
+                              DabblerMotion.heroCrossfade,
+                            ),
                             child: _QuoteText(key: ValueKey('q$_idx'), t: t),
                           ),
                         ),
@@ -139,8 +143,13 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                                 end: DabblerSpacing.space2,
                               ),
                               child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 400),
-                                width: active ? 24 : DabblerSpacing.space2,
+                                duration: DabblerMotion.durationOf(
+                                  context,
+                                  DabblerMotion.scrollTo,
+                                ),
+                                width: active
+                                    ? DabblerSpacing.space8
+                                    : DabblerSpacing.space2,
                                 height: DabblerSpacing.space2,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(
@@ -169,13 +178,10 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
+                    DabblerText(
                       'Dabbler connects players, captains, and venues — so you can stop searching and start playing.',
-                      style: authText(
-                        context,
-                        DabblerType.subheadline,
-                        color: colors.textSecondary,
-                      ),
+                      style: DabblerType.subheadline,
+                      tone: DabblerTextTone.secondary,
                     ),
                     const SizedBox(height: DabblerSpacing.space5),
                     authIdentify(
@@ -212,7 +218,6 @@ class _UserIdentityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Row(
       children: [
         DabblerAvatar(seed: t.name, size: DabblerAvatarSize.lg),
@@ -224,14 +229,7 @@ class _UserIdentityRow extends StatelessWidget {
             children: [
               DabblerBadge(label: t.vibe.toUpperCase()),
               const SizedBox(height: DabblerSpacing.space2),
-              Text(
-                t.name,
-                style: authText(
-                  context,
-                  DabblerType.title2,
-                  color: colors.textPrimary,
-                ),
-              ),
+              DabblerText(t.name, style: DabblerType.title2),
             ],
           ),
         ),
@@ -246,26 +244,12 @@ class _QuoteText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final parts = t.quote.split(t.highlightWord);
-    final base = authText(
-      context,
-      DabblerType.title1,
-      color: colors.textPrimary,
-    );
-    return Text.rich(
-      TextSpan(
-        style: base,
-        children: [
-          if (parts.isNotEmpty) TextSpan(text: parts[0]),
-          TextSpan(
-            text: t.highlightWord,
-            style: base.copyWith(color: colors.brandPrimary),
-          ),
-          if (parts.length > 1) TextSpan(text: parts[1]),
-        ],
-      ),
-    );
+    return DabblerText.rich([
+      if (parts.isNotEmpty) DabblerTextSpan(parts[0]),
+      DabblerTextSpan(t.highlightWord, tone: DabblerTextTone.brand),
+      if (parts.length > 1) DabblerTextSpan(parts[1]),
+    ], style: DabblerType.title1);
   }
 }
 
@@ -282,14 +266,12 @@ class _LandingLanguagePickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = ref.watch(localeProvider);
-    final colors = DabblerColors.of(context);
 
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -302,13 +284,9 @@ class _LandingLanguagePickerSheet extends StatelessWidget {
               DabblerSpacing.space4,
               DabblerSpacing.space2,
             ),
-            child: Text(
+            child: DabblerText(
               AppLocalizations.of(context).landing_choose_language,
-              style: authText(
-                context,
-                DabblerType.title3,
-                color: colors.textPrimary,
-              ),
+              style: DabblerType.title3,
             ),
           ),
           ..._languages.map((lang) {

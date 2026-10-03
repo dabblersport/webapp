@@ -5,8 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NewsCommentsNotifier
     extends StateNotifier<AsyncValue<List<NewsComment>>> {
-  NewsCommentsNotifier(this._repo, this._newsId)
-      : super(const AsyncLoading()) {
+  NewsCommentsNotifier(this._repo, this._newsId) : super(const AsyncLoading()) {
     load();
   }
 
@@ -28,8 +27,12 @@ class NewsCommentsNotifier
   }
 }
 
-final newsCommentsProvider = StateNotifierProvider.family<
-    NewsCommentsNotifier, AsyncValue<List<NewsComment>>, String>((ref, newsId) {
-  final repo = ref.watch(newsRepositoryProvider);
-  return NewsCommentsNotifier(repo, newsId);
-});
+final newsCommentsProvider =
+    StateNotifierProvider.family<
+      NewsCommentsNotifier,
+      AsyncValue<List<NewsComment>>,
+      String
+    >((ref, newsId) {
+      final repo = ref.watch(newsRepositoryProvider);
+      return NewsCommentsNotifier(repo, newsId);
+    });

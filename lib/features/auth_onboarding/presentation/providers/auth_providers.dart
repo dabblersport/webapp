@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -245,13 +247,13 @@ class SimpleAuthNotifier extends StateNotifier<SimpleAuthState> {
   // Handle successful login - force a state refresh
   Future<void> handleSuccessfulLogin() async {
     // Add a small delay to ensure Supabase session is fully established
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(DabblerMotion.delayFrame);
 
     await _checkAuthState();
 
     // If still not authenticated after the check, there might be a session issue
     if (!state.isAuthenticated) {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(DabblerMotion.delayRetry);
       await _checkAuthState();
 
       // Final check - if still not authenticated, something is seriously wrong

@@ -121,7 +121,7 @@ class ContentSharingHelper {
       // Download image
       final response = await http
           .get(Uri.parse(imageUrl), headers: {'User-Agent': 'Dabbler-App'})
-          .timeout(const Duration(seconds: 10));
+          .timeout(DabblerMotion.timeoutNetwork);
 
       if (response.statusCode != 200) {
         throw Exception('Failed to download image: ${response.statusCode}');

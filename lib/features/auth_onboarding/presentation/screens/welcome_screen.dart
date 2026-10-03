@@ -40,7 +40,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final personaContent = _getPersonaContent(widget.personaType);
 
     return DabblerPage(
@@ -64,34 +63,22 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     children: [
                       _buildAvatarRow(context, personaContent),
                       const SizedBox(height: DabblerSpacing.space8),
-                      Text(
+                      DabblerText(
                         _getWelcomeTitle(),
-                        style: authText(
-                          context,
-                          DabblerType.largeTitle,
-                          color: colors.textPrimary,
-                        ),
+                        style: DabblerType.largeTitle,
                       ),
                       const SizedBox(height: DabblerSpacing.space4),
-                      Text(
+                      DabblerText(
                         personaContent.guidanceText,
-                        style: authText(
-                          context,
-                          DabblerType.body,
-                          color: colors.textSecondary,
-                        ),
+                        tone: DabblerTextTone.secondary,
                       ),
                       const SizedBox(height: DabblerSpacing.space6),
                       DabblerCard(
                         variant: DabblerCardVariant.white,
                         padding: const EdgeInsets.all(DabblerSpacing.space6),
-                        child: Text(
+                        child: DabblerText(
                           personaContent.philosophyStatement,
-                          style: authText(
-                            context,
-                            DabblerType.title3,
-                            color: colors.textPrimary,
-                          ),
+                          style: DabblerType.title3,
                         ),
                       ),
                       const SizedBox(height: DabblerSpacing.space4),
@@ -114,14 +101,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
+                    DabblerText(
                       personaContent.finalEmphasis,
+                      style: DabblerType.callout,
                       textAlign: TextAlign.center,
-                      style: authText(
-                        context,
-                        DabblerType.callout,
-                        color: colors.textPrimary,
-                      ),
                     ),
                     const SizedBox(height: DabblerSpacing.space5),
                     DabblerButton(
@@ -146,7 +129,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildAvatarRow(BuildContext context, _PersonaContent personaContent) {
-    final colors = DabblerColors.of(context);
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
       builder: (context, snapshot) {
@@ -170,15 +152,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  DabblerText(
                     resolvedName,
+                    style: DabblerType.headline,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: authText(
-                      context,
-                      DabblerType.headline,
-                      color: colors.textPrimary,
-                    ),
                   ),
                   const SizedBox(height: DabblerSpacing.space2),
                   Align(
@@ -195,26 +173,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 
   Widget _buildReminder(BuildContext context, _PersonaContent personaContent) {
-    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        DabblerText(
           AppLocalizations.of(context).welcome_screen_dont_forget,
-          style: authText(
-            context,
-            DabblerType.headline,
-            color: colors.textPrimary,
-          ),
+          style: DabblerType.headline,
         ),
         const SizedBox(height: DabblerSpacing.space2),
-        Text(
+        DabblerText(
           personaContent.reminderText,
-          style: authText(
-            context,
-            DabblerType.subheadline,
-            color: colors.textSecondary,
-          ),
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
         ),
       ],
     );

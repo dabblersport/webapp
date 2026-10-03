@@ -136,7 +136,9 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
         title: _tag,
         onBack: () => Navigator.of(context).maybePop(),
       ),
-      body: _isInitialLoading ? const _HashtagSkeleton() : _buildBody(totalLabel),
+      body: _isInitialLoading
+          ? const _HashtagSkeleton()
+          : _buildBody(totalLabel),
     );
   }
 
@@ -200,7 +202,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
       child: DabblerInputRow(
         leading: DabblerIcon(
           'hashtag',
-          size: 24,
+          size: DabblerSizing.iconMd,
           color: colors.brandPrimary,
         ),
         title: _tag,

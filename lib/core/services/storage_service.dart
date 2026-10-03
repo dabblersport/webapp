@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'dart:convert';
 import 'dart:async';
 
@@ -35,7 +37,7 @@ class StorageService {
       _storage[_draftsListKey] = jsonEncode(drafts);
 
       // Simulate async operation
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(DabblerMotion.delayFrame);
     } catch (e) {
       throw Exception('Failed to save draft: $e');
     }
@@ -82,7 +84,7 @@ class StorageService {
       _storage[_draftsListKey] = jsonEncode(drafts);
 
       // Simulate async operation
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(DabblerMotion.delayFrame);
     } catch (e) {
       throw Exception('Failed to delete draft: $e');
     }
@@ -102,7 +104,7 @@ class StorageService {
       _storage.remove(_draftsListKey);
 
       // Simulate async operation
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(DabblerMotion.delayFrame);
     } catch (e) {
       throw Exception('Failed to clear drafts: $e');
     }

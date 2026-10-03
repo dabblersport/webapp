@@ -126,7 +126,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               final mine = matched != null && myReactions.contains(matched.id);
               final label = matched == null
                   ? vibeKey
-                  : (matched.labelEn.isNotEmpty ? matched.labelEn : matched.key);
+                  : (matched.labelEn.isNotEmpty
+                        ? matched.labelEn
+                        : matched.key);
               return DabblerChip(
                 label: '$label $count',
                 selected: mine,
@@ -202,7 +204,10 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       if (typeLabel != null) DabblerBadge(label: typeLabel),
       if (originLabel != null) DabblerBadge(label: originLabel),
       if (post.requiresModeration)
-        const DabblerBadge(label: 'Pending review', tone: DabblerBadgeTone.warning),
+        const DabblerBadge(
+          label: 'Pending review',
+          tone: DabblerBadgeTone.warning,
+        ),
       if (expiry != null)
         DabblerBadge(label: expiry, tone: DabblerBadgeTone.warning),
     ];
@@ -220,7 +225,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   }
 
   void _toast(String message) {
-    DabblerToastProvider.maybeOf(context)?.show(DabblerToastSpec(message: message));
+    DabblerToastProvider.maybeOf(
+      context,
+    )?.show(DabblerToastSpec(message: message));
   }
 
   // ── Like ────────────────────────────────────────────────────────────
@@ -238,7 +245,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     if (nowLiked) {
       success = await ref.read(postActionsProvider.notifier).likePost(post.id);
     } else {
-      success = await ref.read(postActionsProvider.notifier).unlikePost(post.id);
+      success = await ref
+          .read(postActionsProvider.notifier)
+          .unlikePost(post.id);
     }
 
     if (!success && mounted) {
@@ -345,14 +354,18 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
 
   Future<void> _blockAuthor() async {
     final targetUserId = post.authorUserId;
-    final result = await ref.read(blockRepositoryProvider).blockUser(targetUserId);
+    final result = await ref
+        .read(blockRepositoryProvider)
+        .blockUser(targetUserId);
     if (!mounted) return;
     result.fold(
       (failure) => _toast('Failed to block user: ${failure.message}'),
       (_) {
         // Blocking removes this user's content from the loaded feed at once.
         ref.invalidate(blockedUserIdsProvider);
-        ref.read(feedNotifierProvider.notifier).removePostsByAuthor(targetUserId);
+        ref
+            .read(feedNotifierProvider.notifier)
+            .removePostsByAuthor(targetUserId);
         _toast('User blocked. Their content is now hidden.');
       },
     );
@@ -386,7 +399,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     final l10n = AppLocalizations.of(context);
 
     final hasLiked =
-        _optimisticLiked ?? ref.watch(hasLikedProvider(post.id)).valueOrNull ?? false;
+        _optimisticLiked ??
+        ref.watch(hasLikedProvider(post.id)).valueOrNull ??
+        false;
     final hasReposted =
         ref.watch(hasRepostedProvider(post.id)).valueOrNull ?? false;
     final myReactions =
@@ -395,7 +410,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
     final author = (post.authorDisplayName ?? '').trim();
-    final authorLabel = author.isEmpty ? l10n.post_card_author_anonymous : author;
+    final authorLabel = author.isEmpty
+        ? l10n.post_card_author_anonymous
+        : author;
     final persona = post.personaTypeSnapshot == null
         ? null
         : (post.personaTypeSnapshot == 'organiser'
@@ -428,7 +445,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               ? null
               : () => _navigateToAuthorProfile(context, post),
           roleLabel: persona,
-          distance: widget.showNearbyChipInHeader ? l10n.post_card_near_you : null,
+          distance: widget.showNearbyChipInHeader
+              ? l10n.post_card_near_you
+              : null,
           kindBadge: _badges(post, l10n),
           // The post's photos: one image, or a horizontal list of them.
           media: PostMediaCarousel.imageUrls(post.media).isEmpty
@@ -456,7 +475,8 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           liked: hasLiked,
           vibed: myReactions.isNotEmpty,
           divider: !widget.isEmbedded,
-          onTap: () => context.push('${RoutePaths.socialPostDetail}/${post.id}'),
+          onTap: () =>
+              context.push('${RoutePaths.socialPostDetail}/${post.id}'),
           onLike: () => _handleLikeTap(hasLiked),
           onVibe: () => showHomeReactionSheet(
             context,
@@ -477,7 +497,8 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   List<DabblerPostSegment> _segments(Post post) => <DabblerPostSegment>[
     if (post.body != null && post.body!.trim().isNotEmpty)
       DabblerPostSegment(post.body!),
-    for (final tag in post.tags.skip(1)) DabblerPostSegment(' #$tag', link: true),
+    for (final tag in post.tags.skip(1))
+      DabblerPostSegment(' #$tag', link: true),
   ];
 }
 
@@ -579,16 +600,17 @@ class HomeThreadPreview extends ConsumerWidget {
         final hasLocation =
             comment.locationName != null && comment.locationName!.isNotEmpty;
         return Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            isEmbedded ? 0 : DabblerSpacing.space10 + DabblerSpacing.space4,
-            0,
-            0,
-            DabblerSpacing.space4,
-          ),
+          padding: isEmbedded
+              ? const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4)
+              : const EdgeInsetsDirectional.only(
+                  start: DabblerSpacing.space10 + DabblerSpacing.space4,
+                  bottom: DabblerSpacing.space4,
+                ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DabblerAvatar(seed: name,
+              DabblerAvatar(
+                seed: name,
                 imageUrl: comment.authorAvatarUrl,
                 size: DabblerAvatarSize.xs,
               ),
@@ -600,52 +622,42 @@ class HomeThreadPreview extends ConsumerWidget {
                     Row(
                       children: [
                         Flexible(
-                          child: Text(
+                          child: DabblerText(
                             name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: homeType(
-                              context,
-                              DabblerType.footnote,
-                              colors.textPrimary,
-                              weight: DabblerType.semibold,
-                            ),
+                            style: DabblerType.footnote,
+                            weight: DabblerTextWeight.semibold,
                           ),
                         ),
                         const SizedBox(width: DabblerSpacing.space2),
-                        Text(
+                        DabblerText(
                           homeRelativeTime(comment.createdAt),
-                          style: homeType(
-                            context,
-                            DabblerType.caption1,
-                            colors.textSecondary,
-                          ),
+                          style: DabblerType.caption1,
+                          tone: DabblerTextTone.secondary,
                         ),
                       ],
                     ),
                     if (hasBody)
-                      Text(
+                      DabblerText(
                         comment.body,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: homeType(
-                          context,
-                          DabblerType.footnote,
-                          colors.textPrimary,
-                        ),
+                        style: DabblerType.footnote,
                       ),
                     if (hasLocation)
                       Row(
                         children: [
-                          DabblerIcon('location', size: 12, color: colors.textTertiary),
+                          DabblerIcon(
+                            'location',
+                            size: DabblerSizing.iconXs,
+                            color: colors.textTertiary,
+                          ),
                           const SizedBox(width: DabblerSpacing.space1),
-                          Text(
+                          DabblerText(
                             comment.locationName!,
-                            style: homeType(
-                              context,
-                              DabblerType.caption1,
-                              colors.textSecondary,
-                            ),
+                            style: DabblerType.caption1,
+                            tone: DabblerTextTone.secondary,
                           ),
                         ],
                       ),

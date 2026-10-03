@@ -88,7 +88,10 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                     controller: _emailController,
                     label: 'Your Email',
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const DabblerIcon('sms', size: 20),
+                    prefixIcon: const DabblerIcon(
+                      'sms',
+                      size: DabblerSizing.iconRow,
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -114,7 +117,10 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
                   DabblerTextField(
                     controller: _subjectController,
                     label: 'Subject',
-                    prefixIcon: const DabblerIcon('document-text', size: 20),
+                    prefixIcon: const DabblerIcon(
+                      'document-text',
+                      size: DabblerSizing.iconRow,
+                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a subject';
@@ -166,7 +172,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(DabblerMotion.delayRetryMax);
 
       if (mounted) {
         DabblerToastProvider.of(context).show(

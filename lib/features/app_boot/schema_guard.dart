@@ -39,43 +39,34 @@ class _SchemaMismatchScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(dbSchemaMetaProvider).valueOrNull;
     final app = ref.watch(appSchemaHashProvider).valueOrNull;
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-    final body = DabblerType.body
-        .resolveForDirection(direction)
-        .copyWith(color: colors.textPrimary);
-
     return DabblerPage(
       topBar: const DabblerNavigationTopBar.titled(title: 'Update required'),
       body: Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space5),
-        child: DefaultTextStyle.merge(
-          style: body,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Your app is out of sync with the server schema.',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: DabblerSpacing.space4),
-              Text('App schema: ${app ?? 'unknown'}'),
-              Text('Server schema: ${db?.schemaHash ?? 'unknown'}'),
-              if (db?.notes != null) ...[
-                const SizedBox(height: DabblerSpacing.space3),
-                Text('Notes: ${db!.notes}'),
-              ],
-              const Spacer(),
-              DabblerButton(
-                label: 'Close',
-                onPressed: () {
-                  // You can take users to the store or a custom updater.
-                  // For now, just pop any dialogs and let them restart.
-                  Navigator.of(context).maybePop();
-                },
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const DabblerText(
+              'Your app is out of sync with the server schema.',
+              weight: DabblerTextWeight.bold,
+            ),
+            const SizedBox(height: DabblerSpacing.space4),
+            DabblerText('App schema: ${app ?? 'unknown'}'),
+            DabblerText('Server schema: ${db?.schemaHash ?? 'unknown'}'),
+            if (db?.notes != null) ...[
+              const SizedBox(height: DabblerSpacing.space3),
+              DabblerText('Notes: ${db!.notes}'),
             ],
-          ),
+            const Spacer(),
+            DabblerButton(
+              label: 'Close',
+              onPressed: () {
+                // You can take users to the store or a custom updater.
+                // For now, just pop any dialogs and let them restart.
+                Navigator.of(context).maybePop();
+              },
+            ),
+          ],
         ),
       ),
     );

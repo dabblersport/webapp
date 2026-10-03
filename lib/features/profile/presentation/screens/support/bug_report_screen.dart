@@ -1,7 +1,5 @@
 import 'dart:io' show Platform;
 
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart'
-    show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,7 +87,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
             children: [
               const DabblerBanner(
                 tone: DabblerBannerTone.warning,
-                icon: DabblerIcon('danger', size: 20),
+                icon: DabblerIcon('danger', size: DabblerSizing.iconRow),
                 title: 'Found a Bug?',
                 message:
                     'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
@@ -122,7 +120,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           controller: _emailController,
           label: 'Your Email',
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: const DabblerIcon('sms', size: 20),
+          prefixIcon: const DabblerIcon('sms', size: DabblerSizing.iconRow),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter your email';
@@ -201,13 +199,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   }
 
   Widget _buildDeviceInfoSection(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final size = MediaQuery.sizeOf(context);
-    final lineStyle = composerType(
-      context,
-      DabblerType.footnote,
-      colors.textSecondary,
-    );
     return DabblerSection(
       title: 'Additional Information',
       children: [
@@ -233,31 +225,39 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         ),
         if (_includeDeviceInfo)
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space4,
-              DabblerSpacing.space4,
-              DabblerSpacing.space4,
-              0,
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space4,
+              top: DabblerSpacing.space4,
+              end: DabblerSpacing.space4,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                DabblerText(
                   'Device Information to Include:',
-                  style: composerType(
-                    context,
-                    DabblerType.subheadline,
-                    colors.textPrimary,
-                    weight: FontWeight.w600,
-                  ),
+                  style: DabblerType.subheadline,
+                  weight: DabblerTextWeight.semibold,
                 ),
                 const SizedBox(height: DabblerSpacing.space2),
-                Text('• Platform: ${_getPlatformName()}', style: lineStyle),
-                Text('• App Version: 1.0.5', style: lineStyle),
-                Text('• Flutter Version: 3.x.x', style: lineStyle),
-                Text(
+                DabblerText(
+                  '• Platform: ${_getPlatformName()}',
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
+                const DabblerText(
+                  '• App Version: 1.0.5',
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
+                const DabblerText(
+                  '• Flutter Version: 3.x.x',
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
+                DabblerText(
                   '• Screen Resolution: ${size.width.toInt()}x${size.height.toInt()}',
-                  style: lineStyle,
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
                 ),
               ],
             ),
@@ -289,7 +289,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
     });
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(DabblerMotion.delayRetryMax);
 
       if (mounted) {
         DabblerToastProvider.of(context).show(

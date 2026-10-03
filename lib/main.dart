@@ -12,7 +12,7 @@ import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerColors, DabblerToastProvider;
+    show DabblerColors, DabblerMotion, DabblerToastProvider;
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
@@ -55,13 +55,13 @@ void _pushNotificationRoute(String route) {
       appRouter.push(route);
     } else if (attempts < 20) {
       attempts++;
-      Future.delayed(const Duration(milliseconds: 250), tryPush);
+      Future.delayed(DabblerMotion.delaySettle, tryPush);
     } else {
       debugPrint('Notification tap: navigator never became ready ($route)');
     }
   }
 
-  Future.delayed(const Duration(milliseconds: 300), tryPush);
+  Future.delayed(DabblerMotion.delaySettle, tryPush);
 }
 
 // Feature flags for future functionality

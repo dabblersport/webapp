@@ -113,11 +113,10 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
                 slivers: [
                   // Category Filter Chips
                   SliverPadding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      DabblerSpacing.space6,
-                      DabblerSpacing.space4,
-                      DabblerSpacing.space6,
-                      0,
+                    padding: const EdgeInsetsDirectional.only(
+                      start: DabblerSpacing.space6,
+                      top: DabblerSpacing.space4,
+                      end: DabblerSpacing.space6,
                     ),
                     sliver: SliverToBoxAdapter(
                       child: _buildCategoryFilters(context),
@@ -285,11 +284,10 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
         Padding(
           padding: const EdgeInsets.all(DabblerSpacing.space4),
           child: Center(
-            child: Text(
+            child: DabblerText(
               'No more activities',
-              style: DabblerType.footnote
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(color: DabblerColors.of(context).textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
           ),
         ),

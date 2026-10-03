@@ -44,7 +44,7 @@ class ProfileSportsView extends StatelessWidget {
     DabblerSpacing.space6,
     DabblerSpacing.space4,
     DabblerSpacing.space6,
-    DabblerSpacing.space11 * 2,
+    DabblerSpacing.floatingBarClearance,
   );
 
   @override
@@ -158,7 +158,6 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     return DabblerSurface(
       padding: const EdgeInsetsDirectional.all(DabblerSpacing.space5),
       child: Column(
@@ -173,12 +172,7 @@ class _Header extends StatelessWidget {
               ),
               const SizedBox(width: DabblerSpacing.space4),
               Expanded(
-                child: Text(
-                  'Sports & Games',
-                  style: DabblerType.title3
-                      .resolveForDirection(dir)
-                      .copyWith(color: colors.textPrimary),
-                ),
+                child: DabblerText('Sports & Games', style: DabblerType.title3),
               ),
               if (showCreateGame) ...[
                 const SizedBox(width: DabblerSpacing.space4),
@@ -192,11 +186,10 @@ class _Header extends StatelessWidget {
             ],
           ),
           const SizedBox(height: DabblerSpacing.space3),
-          Text(
+          DabblerText(
             'Customize your sports preferences and skill levels to get the best game recommendations.',
-            style: DabblerType.subheadline
-                .resolveForDirection(dir)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
         ],
       ),
@@ -228,11 +221,7 @@ class _SportItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final enabled = preference.isEnabled;
-    final labelStyle = DabblerType.footnote
-        .resolveForDirection(dir)
-        .copyWith(color: colors.textSecondary);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -263,7 +252,11 @@ class _SportItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Skill Level', style: labelStyle),
+                const DabblerText(
+                  'Skill Level',
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
                 const SizedBox(height: DabblerSpacing.space3),
                 Wrap(
                   spacing: DabblerSpacing.space3,

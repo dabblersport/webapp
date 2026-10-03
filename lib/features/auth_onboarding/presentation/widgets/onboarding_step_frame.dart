@@ -86,7 +86,6 @@ class OnboardingStepFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return DabblerPage(
       body: SafeArea(
         child: Center(
@@ -96,11 +95,10 @@ class OnboardingStepFrame extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space4,
-                    DabblerSpacing.space2,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space4,
+                    top: DabblerSpacing.space2,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
@@ -114,11 +112,10 @@ class OnboardingStepFrame extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space2,
-                    DabblerSpacing.space8,
-                    0,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: DabblerSpacing.space8,
+                    top: DabblerSpacing.space2,
+                    end: DabblerSpacing.space8,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -131,34 +128,21 @@ class OnboardingStepFrame extends StatelessWidget {
                         ),
                         const SizedBox(height: DabblerSpacing.space5),
                       ] else if (stepLabel != null) ...[
-                        Text(
+                        DabblerText(
                           stepLabel!.toUpperCase(),
-                          style: onboardingType(
-                            context,
-                            DabblerType.caption1,
-                            colors.textSecondary,
-                            weight: DabblerType.semibold,
-                          ),
+                          style: DabblerType.caption1,
+                          weight: DabblerTextWeight.semibold,
+                          tone: DabblerTextTone.secondary,
                         ),
                         const SizedBox(height: DabblerSpacing.space5),
                       ],
-                      Text(
-                        title,
-                        style: onboardingType(
-                          context,
-                          DabblerType.title1,
-                          colors.textPrimary,
-                        ),
-                      ),
+                      DabblerText(title, style: DabblerType.title1),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
                         const SizedBox(height: DabblerSpacing.space2),
-                        Text(
+                        DabblerText(
                           subtitle!,
-                          style: onboardingType(
-                            context,
-                            DabblerType.subheadline,
-                            colors.textSecondary,
-                          ),
+                          style: DabblerType.subheadline,
+                          tone: DabblerTextTone.secondary,
                         ),
                       ],
                     ],

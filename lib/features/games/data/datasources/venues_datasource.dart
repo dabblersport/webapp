@@ -89,7 +89,9 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
         venue_photos(url, sort_order)
       ''';
 
-      var query = _supabaseClient.from(SupabaseConfig.venuesTable).select(select);
+      var query = _supabaseClient
+          .from(SupabaseConfig.venuesTable)
+          .select(select);
 
       // Apply filters
       if (filters != null) {

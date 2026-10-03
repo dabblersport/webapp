@@ -35,21 +35,26 @@ class PastGame {
 /// is_creator / is_joined flags scope the result to "my" games — the old
 /// implementation listed everyone's public games (and silently returned
 /// nothing anyway: it read the RLS-locked games table directly).
-final pastGamesProvider =
-    FutureProvider.autoDispose<List<PastGame>>((ref) async {
+final pastGamesProvider = FutureProvider.autoDispose<List<PastGame>>((
+  ref,
+) async {
   final supabase = Supabase.instance.client;
   if (supabase.auth.currentUser == null) return const [];
 
-  final rows = await supabase
-      .from(SupabaseConfig.vGameCardTable)
-      .select('id, title, sport_name_en, start_at, end_at, is_cancelled, '
-          'venue_name, area_name, capacity, roster_count, '
-          'is_creator, is_joined')
-      .or('is_creator.eq.true,is_joined.eq.true')
-      .eq('is_cancelled', false)
-      .lt('end_at', DateTime.now().toUtc().toIso8601String())
-      .order('start_at', ascending: false)
-      .limit(100) as List<dynamic>;
+  final rows =
+      await supabase
+              .from(SupabaseConfig.vGameCardTable)
+              .select(
+                'id, title, sport_name_en, start_at, end_at, is_cancelled, '
+                'venue_name, area_name, capacity, roster_count, '
+                'is_creator, is_joined',
+              )
+              .or('is_creator.eq.true,is_joined.eq.true')
+              .eq('is_cancelled', false)
+              .lt('end_at', DateTime.now().toUtc().toIso8601String())
+              .order('start_at', ascending: false)
+              .limit(100)
+          as List<dynamic>;
 
   final timeFormat = DateFormat('h:mm a');
   return rows.map((r) {

@@ -70,7 +70,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
   void _onDisplayNameChanged() {
     if (_suggestionDebounce?.isActive ?? false) _suggestionDebounce!.cancel();
-    _suggestionDebounce = Timer(const Duration(milliseconds: 800), () {
+    _suggestionDebounce = Timer(DabblerMotion.debounceSuggestion, () {
       final name = _displayNameController.text.trim();
       if (name.length >= 2) _generateSuggestions(name);
     });
@@ -168,7 +168,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
     setState(() => _isCheckingUsername = true);
 
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+    _debounce = Timer(DabblerMotion.debounceValidation, () async {
       try {
         final repo = ref.read(usernameRepositoryProvider);
         final result = await repo.checkAvailabilityRpc(username);
@@ -461,14 +461,11 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
               ),
               const SizedBox(height: DabblerSpacing.space6),
               if (_loadingSuggestions || _suggestions.isNotEmpty) ...[
-                Text(
+                DabblerText(
                   'Suggestions',
-                  style: onboardingType(
-                    context,
-                    DabblerType.footnote,
-                    colors.textSecondary,
-                    weight: DabblerType.medium,
-                  ),
+                  style: DabblerType.footnote,
+                  weight: DabblerTextWeight.medium,
+                  tone: DabblerTextTone.secondary,
                 ),
                 const SizedBox(height: DabblerSpacing.space3),
                 _buildSuggestionChips(),
@@ -481,14 +478,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
                 hintText: l10n.set_username_username_hint,
                 prefixIcon: Center(
                   widthFactor: 1,
-                  child: Text(
-                    '@',
-                    style: onboardingType(
-                      context,
-                      DabblerType.body,
-                      colors.textSecondary,
-                    ),
-                  ),
+                  child: DabblerText('@', tone: DabblerTextTone.secondary),
                 ),
                 extraError: usernameErrorText,
                 onChanged: (v) {

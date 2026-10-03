@@ -18,7 +18,6 @@ class UnreadCounterRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final unread = state.unreadCount as int;
     final total = (state.notifications as List).length;
     return Padding(
@@ -40,18 +39,16 @@ class UnreadCounterRow extends StatelessWidget {
               ),
               if (unread > 0)
                 const PositionedDirectional(
-                  top: -2,
-                  end: -3,
+                  top: -DabblerSpacing.space1,
+                  end: -DabblerSpacing.space1,
                   child: DabblerBadge.dot(),
                 ),
             ],
           ),
           const SizedBox(width: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             '${DabblerType.toWesternDigits('$unread')} unread',
-            style: DabblerType.footnote
-                .resolveForDirection(dir)
-                .copyWith(color: colors.textPrimary),
+            style: DabblerType.footnote,
           ),
           if (unread > 0 && onMarkAll != null) ...[
             const SizedBox(width: DabblerSpacing.space2),
@@ -63,11 +60,10 @@ class UnreadCounterRow extends StatelessWidget {
             ),
           ],
           const Spacer(),
-          Text(
+          DabblerText(
             '${DabblerType.toWesternDigits('$total')} total',
-            style: DabblerType.footnote
-                .resolveForDirection(dir)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           ),
         ],
       ),

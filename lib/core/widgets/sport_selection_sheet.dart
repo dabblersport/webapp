@@ -57,19 +57,19 @@ class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
           data: (sports) {
-            final categories = sports
-                .where((s) => s.category != null && s.category!.isNotEmpty)
-                .map((s) => s.category!)
-                .toSet()
-                .toList()
-              ..sort();
+            final categories =
+                sports
+                    .where((s) => s.category != null && s.category!.isNotEmpty)
+                    .map((s) => s.category!)
+                    .toSet()
+                    .toList()
+                  ..sort();
             if (categories.length <= 1) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                DabblerSpacing.space6,
-                0,
-                DabblerSpacing.space6,
-                DabblerSpacing.space3,
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space3,
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -96,70 +96,68 @@ class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
           },
         ),
         sportsAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space10),
-              child: ComposerCenteredState.loading(),
-            ),
-            error: (_, __) => const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-              child: ComposerCenteredState.message('Failed to load sports'),
-            ),
-            data: (sports) {
-              var items = sports.toList();
-              if (_activeCategoryFilter != null) {
-                items = items
-                    .where((s) => s.category == _activeCategoryFilter)
-                    .toList();
-              }
-              if (items.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: DabblerSpacing.space8,
-                  ),
-                  child: ComposerCenteredState.message('No sports available'),
-                );
-              }
-              final colors = DabblerColors.of(context);
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                itemCount: items.length,
-                itemBuilder: (_, i) {
-                  final sport = items[i];
-                  final isSelected = sport.id == widget.selectedSport?.id;
-                  return DabblerInputRow(
-                    title: sport.localizedName(context),
-                    subtitle: sport.category != null
-                        ? _prettify(sport.category!)
-                        : null,
-                    leading: DabblerSportIcon.fromKey(
-                      (sport.sportKey ?? '').replaceAll('_', '-'),
-                      size: 24,
-                      weight: isSelected
-                          ? DabblerIconWeight.bold
-                          : DabblerIconWeight.linear,
-                      color: isSelected
-                          ? colors.brandPrimary
-                          : colors.textSecondary,
-                    ),
-                    trailing: isSelected
-                        ? DabblerIcon(
-                            'tick-circle',
-                            weight: DabblerIconWeight.bold,
-                            size: 20,
-                            color: colors.brandPrimary,
-                          )
-                        : null,
-                    onTap: () {
-                      widget.onSelect(sport);
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              );
-            },
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space10),
+            child: ComposerCenteredState.loading(),
           ),
+          error: (_, __) => const Padding(
+            padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
+            child: ComposerCenteredState.message('Failed to load sports'),
+          ),
+          data: (sports) {
+            var items = sports.toList();
+            if (_activeCategoryFilter != null) {
+              items = items
+                  .where((s) => s.category == _activeCategoryFilter)
+                  .toList();
+            }
+            if (items.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
+                child: ComposerCenteredState.message('No sports available'),
+              );
+            }
+            final colors = DabblerColors.of(context);
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              itemCount: items.length,
+              itemBuilder: (_, i) {
+                final sport = items[i];
+                final isSelected = sport.id == widget.selectedSport?.id;
+                return DabblerInputRow(
+                  title: sport.localizedName(context),
+                  subtitle: sport.category != null
+                      ? _prettify(sport.category!)
+                      : null,
+                  leading: DabblerSportIcon.fromKey(
+                    (sport.sportKey ?? '').replaceAll('_', '-'),
+                    size: DabblerSizing.iconMd,
+                    weight: isSelected
+                        ? DabblerIconWeight.bold
+                        : DabblerIconWeight.linear,
+                    color: isSelected
+                        ? colors.brandPrimary
+                        : colors.textSecondary,
+                  ),
+                  trailing: isSelected
+                      ? DabblerIcon(
+                          'tick-circle',
+                          weight: DabblerIconWeight.bold,
+                          size: DabblerSizing.iconRow,
+                          color: colors.brandPrimary,
+                        )
+                      : null,
+                  onTap: () {
+                    widget.onSelect(sport);
+                    Navigator.pop(context);
+                  },
+                );
+              },
+            );
+          },
+        ),
       ],
     );
   }

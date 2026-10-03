@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/profile_timing.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
@@ -51,7 +52,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       'amount': 150.00,
       'currency': 'AED',
       'status': 'completed',
-      'date': DateTime.now().subtract(const Duration(days: 2)),
+      'date': DateTime.now().subtract(ProfileTiming.twoDays),
       'paymentMethod': 'Visa •••• 4242',
       'recipient': 'Al Ahly Sports Club',
       'category': 'Sports',
@@ -63,7 +64,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       'amount': 200.00,
       'currency': 'AED',
       'status': 'completed',
-      'date': DateTime.now().subtract(const Duration(days: 5)),
+      'date': DateTime.now().subtract(ProfileTiming.fiveDays),
       'paymentMethod': 'Mastercard •••• 8888',
       'recipient': 'Zayed Sports City',
       'category': 'Bookings',
@@ -75,7 +76,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       'amount': 100.00,
       'currency': 'AED',
       'status': 'completed',
-      'date': DateTime.now().subtract(const Duration(days: 7)),
+      'date': DateTime.now().subtract(ProfileTiming.week),
       'paymentMethod': 'Visa •••• 4242',
       'recipient': 'System Refund',
       'category': 'Refunds',
@@ -87,7 +88,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       'amount': 250.00,
       'currency': 'AED',
       'status': 'pending',
-      'date': DateTime.now().subtract(const Duration(hours: 12)),
+      'date': DateTime.now().subtract(ProfileTiming.halfDay),
       'paymentMethod': 'Apple Pay',
       'recipient': 'The Sevens Stadium',
       'category': 'Sports',
@@ -99,7 +100,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       'amount': 120.00,
       'currency': 'AED',
       'status': 'failed',
-      'date': DateTime.now().subtract(const Duration(days: 1)),
+      'date': DateTime.now().subtract(ProfileTiming.day),
       'paymentMethod': 'Visa •••• 4242',
       'recipient': 'Zabeel Sports District',
       'category': 'Sports',
@@ -126,32 +127,24 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
-            DabblerSpacing.space6,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space4,
+            end: DabblerSpacing.space6,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Transactions',
-                style: DabblerType.title1
-                    .resolveForDirection(Directionality.of(context))
-                    .copyWith(color: colors.textPrimary),
-              ),
+              DabblerText('Transactions', style: DabblerType.title1),
               const SizedBox(height: DabblerSpacing.space1),
-              Text(
+              DabblerText(
                 'View your payment history',
-                style: DabblerType.subheadline
-                    .resolveForDirection(Directionality.of(context))
-                    .copyWith(color: colors.textSecondary),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
               const SizedBox(height: DabblerSpacing.space6),
               DabblerStatGrid(
@@ -167,7 +160,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
                   ),
                   DabblerStatTile(
                     value:
-                        'AED ${_sumCompleted(within: const Duration(days: 30)).toStringAsFixed(0)}',
+                        'AED ${_sumCompleted(within: ProfileTiming.month).toStringAsFixed(0)}',
                     label: 'This Month',
                     span: 3,
                     trailing: const DabblerIcon(
@@ -272,11 +265,10 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
                 padding: const EdgeInsetsDirectional.only(
                   bottom: DabblerSpacing.space4,
                 ),
-                child: Text(
+                child: DabblerText(
                   dateKey,
-                  style: DabblerType.headline
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: DabblerColors.of(context).brandPrimary),
+                  style: DabblerType.headline,
+                  tone: DabblerTextTone.brand,
                 ),
               ),
               ...transactions.map((t) => _TransactionRow(transaction: t)),
@@ -290,7 +282,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
   String _getDateGroup(DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
+    final yesterday = today.subtract(ProfileTiming.day);
     final transactionDate = DateTime(date.year, date.month, date.day);
 
     if (transactionDate == today) return 'Today';
@@ -336,9 +328,9 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
           case 'Today':
             return date.isAfter(DateTime(now.year, now.month, now.day));
           case 'This Week':
-            return date.isAfter(now.subtract(const Duration(days: 7)));
+            return date.isAfter(now.subtract(ProfileTiming.week));
           case 'This Month':
-            return date.isAfter(now.subtract(const Duration(days: 30)));
+            return date.isAfter(now.subtract(ProfileTiming.month));
           case 'This Year':
             return date.year == now.year;
           default:
@@ -356,7 +348,7 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
   }
 
   Future<void> _refreshTransactions() async {
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(DabblerMotion.delayRetryLong);
     setState(() {});
   }
 }
@@ -391,14 +383,10 @@ class _TransactionRow extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
+                          child: DabblerText(
                             transaction['title'],
-                            style: DabblerType.subheadline
-                                .resolveForDirection(Directionality.of(context))
-                                .copyWith(
-                                  color: colors.textPrimary,
-                                  fontWeight: DabblerType.semibold,
-                                ),
+                            style: DabblerType.subheadline,
+                            weight: DabblerTextWeight.semibold,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -412,27 +400,25 @@ class _TransactionRow extends StatelessWidget {
                       children: [
                         DabblerIcon(
                           'building',
-                          size: 12,
+                          size: DabblerSizing.iconXs,
                           color: colors.textSecondary,
                         ),
                         const SizedBox(width: DabblerSpacing.space1),
                         Expanded(
-                          child: Text(
+                          child: DabblerText(
                             transaction['recipient'],
-                            style: DabblerType.footnote
-                                .resolveForDirection(Directionality.of(context))
-                                .copyWith(color: colors.textSecondary),
+                            style: DabblerType.footnote,
+                            tone: DabblerTextTone.secondary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    Text(
+                    DabblerText(
                       transaction['paymentMethod'],
-                      style: DabblerType.caption2
-                          .resolveForDirection(Directionality.of(context))
-                          .copyWith(color: colors.textSecondary),
+                      style: DabblerType.caption2,
+                      tone: DabblerTextTone.secondary,
                     ),
                   ],
                 ),
@@ -441,21 +427,17 @@ class _TransactionRow extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  DabblerText(
                     '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(0)}',
-                    style: DabblerType.headline
-                        .resolveForDirection(Directionality.of(context))
-                        .copyWith(
-                          color: isRefund
-                              ? colors.success.base
-                              : colors.textPrimary,
-                        ),
+                    style: DabblerType.headline,
+                    tone: isRefund
+                        ? DabblerTextTone.success
+                        : DabblerTextTone.primary,
                   ),
-                  Text(
+                  DabblerText(
                     _formatTime(transaction['date']),
-                    style: DabblerType.caption2
-                        .resolveForDirection(Directionality.of(context))
-                        .copyWith(color: colors.textSecondary),
+                    style: DabblerType.caption2,
+                    tone: DabblerTextTone.secondary,
                   ),
                 ],
               ),

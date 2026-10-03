@@ -25,9 +25,7 @@ Future<void> showGifPickerSheet(
   ),
 );
 
-
 // GIF PICKER SHEET (GIPHY)
-
 
 class GifPickerSheet extends StatefulWidget {
   const GifPickerSheet({super.key, required this.onSelected});
@@ -201,7 +199,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
       _search(value);
     });
   }
@@ -229,8 +227,6 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-
     final Widget results;
     if (_error != null) {
       results = ComposerCenteredState.message(_error!, icon: 'danger');
@@ -301,13 +297,10 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
             DabblerSpacing.space2,
           ),
           child: Center(
-            child: Text(
+            child: DabblerText(
               'Powered by GIPHY',
-              style: composerType(
-                context,
-                DabblerType.caption2,
-                colors.textSecondary,
-              ),
+              style: DabblerType.caption2,
+              tone: DabblerTextTone.secondary,
             ),
           ),
         ),

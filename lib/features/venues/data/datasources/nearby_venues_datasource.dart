@@ -26,28 +26,23 @@ class SupabaseNearbyVenuesDatasource implements NearbyVenuesDatasource {
     required int radiusMeters,
     String? sportId,
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
-  }) =>
-      Result.guard(
-        () async {
-          final response = await _svc.client.rpc(
-            'rpc_get_nearby_venues',
-            params: {
-              'p_lat': lat,
-              'p_lng': lng,
-              'p_radius_meters': radiusMeters,
-              if (sportId != null) 'p_sport_id': sportId,
-              'p_sort':
-                  sortOrder == NearbySortOrder.nearest ? 'distance' : 'default',
-            },
-          );
+  }) => Result.guard(() async {
+    final response = await _svc.client.rpc(
+      'rpc_get_nearby_venues',
+      params: {
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_radius_meters': radiusMeters,
+        if (sportId != null) 'p_sport_id': sportId,
+        'p_sort': sortOrder == NearbySortOrder.nearest ? 'distance' : 'default',
+      },
+    );
 
-          final rows = response as List<dynamic>;
-          return rows
-              .map((r) => NearbyVenueModel.fromJson(
-                    Map<String, dynamic>.from(r as Map),
-                  ))
-              .toList();
-        },
-        (e) => Failure.from(e),
-      );
+    final rows = response as List<dynamic>;
+    return rows
+        .map(
+          (r) => NearbyVenueModel.fromJson(Map<String, dynamic>.from(r as Map)),
+        )
+        .toList();
+  }, (e) => Failure.from(e));
 }

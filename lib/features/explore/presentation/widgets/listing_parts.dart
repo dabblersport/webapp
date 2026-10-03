@@ -95,15 +95,11 @@ class ListingHeader extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text(
+                  DabblerText(
                     title,
+                    style: DabblerType.title1,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: listingText(
-                      context,
-                      DabblerType.title1,
-                      color: colors.textPrimary,
-                    ),
                   ),
                   const SizedBox(height: DabblerSpacing.space1),
                   GestureDetector(
@@ -115,26 +111,23 @@ class ListingHeader extends ConsumerWidget {
                         DabblerIcon(
                           'location',
                           weight: DabblerIconWeight.bold,
-                          size: 13,
+                          size: DabblerSizing.iconXs,
                           color: colors.brandPrimary,
                         ),
                         const SizedBox(width: DabblerSpacing.space1),
                         Flexible(
-                          child: Text(
+                          child: DabblerText(
                             locationName,
+                            style: DabblerType.caption2,
+                            tone: DabblerTextTone.secondary,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: listingText(
-                              context,
-                              DabblerType.caption2,
-                              color: colors.textSecondary,
-                            ),
                           ),
                         ),
                         const SizedBox(width: DabblerSpacing.space1),
                         DabblerIcon(
                           'arrow-circle-down',
-                          size: 12,
+                          size: DabblerSizing.iconXs,
                           color: colors.textSecondary,
                         ),
                       ],
@@ -164,7 +157,7 @@ class ListingHeader extends ConsumerWidget {
                       child: DabblerBadge(
                         label: '$filterCount',
                         tone: DabblerBadgeTone.pill,
-                        minWidth: 18,
+                        minWidth: DabblerSizing.iconSm,
                       ),
                     ),
                   ),
@@ -232,7 +225,10 @@ class ListingActiveFilters extends StatelessWidget {
               child: DabblerChip(
                 label: f.label,
                 selected: true,
-                leadingIcon: const DabblerIcon('close-circle', size: 16),
+                leadingIcon: const DabblerIcon(
+                  'close-circle',
+                  size: DabblerSizing.iconInline,
+                ),
                 onTap: f.onClear,
               ),
             ),
@@ -265,19 +261,15 @@ class ListingFilterGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
+        DabblerText(
           label,
-          style: listingText(
-            context,
-            DabblerType.footnote,
-            color: colors.textSecondary,
-            weight: FontWeight.w600,
-          ),
+          style: DabblerType.footnote,
+          weight: DabblerTextWeight.semibold,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space3),
         Wrap(
@@ -304,19 +296,15 @@ class ListingFilterSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Text(
+        DabblerText(
           label,
-          style: listingText(
-            context,
-            DabblerType.footnote,
-            color: colors.textSecondary,
-            weight: FontWeight.w600,
-          ),
+          style: DabblerType.footnote,
+          weight: DabblerTextWeight.semibold,
+          tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space1),
         child,

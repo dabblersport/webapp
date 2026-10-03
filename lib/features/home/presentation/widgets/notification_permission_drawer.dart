@@ -22,15 +22,11 @@ class NotificationPermissionDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
-    final TextDirection direction = Directionality.of(context);
-
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        0,
-        DabblerSpacing.space8,
-        DabblerSpacing.space8,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space8,
+        end: DabblerSpacing.space8,
+        bottom: DabblerSpacing.space8,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -38,19 +34,13 @@ class NotificationPermissionDrawer extends StatelessWidget {
         children: <Widget>[
           const DabblerIconTile.named('notification'),
           const SizedBox(height: DabblerSpacing.space7),
-          Text(
-            'Stay Updated',
-            style: DabblerType.title2
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textPrimary),
-          ),
+          DabblerText('Stay Updated', style: DabblerType.title2),
           const SizedBox(height: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             'Get notified about game invites, squad updates, and messages. '
             'Never miss out on the action!',
-            style: DabblerType.body
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.body,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space10),
           DabblerButton(

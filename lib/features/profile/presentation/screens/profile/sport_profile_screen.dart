@@ -227,14 +227,7 @@ class _Header extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          args.sportName,
-          style: sportProfileText(
-            context,
-            DabblerType.largeTitle,
-            colors.textPrimary,
-          ),
-        ),
+        DabblerText(args.sportName, style: DabblerType.largeTitle),
         const SizedBox(height: DabblerSpacing.space4),
         Row(
           children: [
@@ -248,22 +241,12 @@ class _Header extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    args.displayName,
-                    style: sportProfileText(
-                      context,
-                      DabblerType.headline,
-                      colors.textPrimary,
-                    ),
-                  ),
+                  DabblerText(args.displayName, style: DabblerType.headline),
                   if (subtitle != null)
-                    Text(
+                    DabblerText(
                       subtitle,
-                      style: sportProfileText(
-                        context,
-                        DabblerType.footnote,
-                        colors.textSecondary,
-                      ),
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.secondary,
                     ),
                 ],
               ),
@@ -293,7 +276,7 @@ class _Header extends StatelessWidget {
                 icon: const DabblerIcon(
                   'verify',
                   weight: DabblerIconWeight.bold,
-                  size: 14,
+                  size: DabblerSizing.iconInline,
                 ),
               ),
           ],
@@ -432,7 +415,7 @@ class _SportPreferencesSectionState
           const DabblerToastSpec(
             message: 'Preferences saved',
             tone: DabblerToastTone.success,
-            duration: Duration(seconds: 1),
+            duration: DabblerMotion.toastBrief,
           ),
         );
       }
@@ -454,7 +437,6 @@ class _SportPreferencesSectionState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final positions = _availablePositions;
 
     return SportSectionCard(
@@ -463,14 +445,10 @@ class _SportPreferencesSectionState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Skill level chips
-          Text(
+          DabblerText(
             widget.args.isOrganiserPersona ? 'Organiser Level' : 'Skill Level',
-            style: sportProfileText(
-              context,
-              DabblerType.subheadline,
-              colors.textPrimary,
-              weight: FontWeight.w500,
-            ),
+            style: DabblerType.subheadline,
+            weight: DabblerTextWeight.medium,
           ),
           const SizedBox(height: DabblerSpacing.space2),
           Wrap(
@@ -487,14 +465,10 @@ class _SportPreferencesSectionState
           // Position selector (player only, sports that have positions)
           if (!widget.args.isOrganiserPersona && positions.isNotEmpty) ...[
             const SizedBox(height: DabblerSpacing.space6),
-            Text(
+            DabblerText(
               'Preferred Position',
-              style: sportProfileText(
-                context,
-                DabblerType.subheadline,
-                colors.textPrimary,
-                weight: FontWeight.w500,
-              ),
+              style: DabblerType.subheadline,
+              weight: DabblerTextWeight.medium,
             ),
             const SizedBox(height: DabblerSpacing.space2),
             Wrap(

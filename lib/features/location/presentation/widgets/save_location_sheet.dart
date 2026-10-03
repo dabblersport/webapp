@@ -155,7 +155,6 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final accuracy = _accuracyStatus(colors);
 
     return Padding(
@@ -163,23 +162,17 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       child: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          0,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
+        padding: const EdgeInsetsDirectional.only(
+          start: DabblerSpacing.space6,
+          end: DabblerSpacing.space6,
+          bottom: DabblerSpacing.space8,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Title (handle and close come from DabblerSheet; the emoji the
             // old title carried is dropped, CEO rule).
-            Text(
-              'Save this location',
-              style: DabblerType.title3
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
-            ),
+            DabblerText('Save this location', style: DabblerType.title3),
             const SizedBox(height: DabblerSpacing.space5),
 
             // Mapbox place search
@@ -208,7 +201,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             // surface; the marker is a DS icon.
             DabblerSurface(
               radius: DabblerRadius.card,
-              height: 180,
+              height: DabblerSizing.mediaPreviewHeight,
               child: FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
@@ -231,13 +224,13 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                     markers: [
                       Marker(
                         point: LatLng(_lat, _lng),
-                        width: 32,
-                        height: 32,
+                        width: DabblerSizing.iconLg,
+                        height: DabblerSizing.iconLg,
                         child: DabblerIcon(
                           'location',
                           weight: DabblerIconWeight.bold,
                           color: colors.brandPrimary,
-                          size: 32,
+                          size: DabblerSizing.iconLg,
                         ),
                       ),
                     ],
@@ -250,15 +243,14 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             // Area name + accuracy badge
             Row(
               children: [
-                DabblerIcon('location', size: 16, color: colors.brandPrimary),
+                DabblerIcon(
+                  'location',
+                  size: DabblerSizing.iconInline,
+                  color: colors.brandPrimary,
+                ),
                 const SizedBox(width: DabblerSpacing.space1),
                 Expanded(
-                  child: Text(
-                    _areaName,
-                    style: DabblerType.headline
-                        .resolveForDirection(direction)
-                        .copyWith(color: colors.textPrimary),
-                  ),
+                  child: DabblerText(_areaName, style: DabblerType.headline),
                 ),
                 DabblerBadge(label: _accuracyText(), status: accuracy),
               ],
@@ -266,12 +258,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             const SizedBox(height: DabblerSpacing.space8),
 
             // Label picker
-            Text(
-              'Label',
-              style: DabblerType.headline
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
-            ),
+            DabblerText('Label', style: DabblerType.headline),
             const SizedBox(height: DabblerSpacing.space3),
             Wrap(
               spacing: DabblerSpacing.space3,

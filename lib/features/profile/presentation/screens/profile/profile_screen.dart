@@ -245,9 +245,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     });
   }
 
-  TextStyle _type(DabblerTypeStyle s, Color c) =>
-      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
-
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
@@ -355,7 +352,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     ProfileState profileState,
     SportsProfileState sportsState,
   ) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
     final profile = profileState.profile;
     final displayName = profile?.getDisplayName() ?? '';
@@ -382,13 +378,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                 ),
                 const SizedBox(width: DabblerSpacing.space5),
                 Expanded(
-                  child: Text(
+                  child: DabblerText(
                     displayName.isNotEmpty
                         ? displayName
                         : l10n.profile_complete_your_profile,
+                    style: DabblerType.title2,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: _type(DabblerType.title2, colors.textPrimary),
                   ),
                 ),
               ],
@@ -400,11 +396,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
 
             // ── Bio ──
             const SizedBox(height: DabblerSpacing.space5),
-            Text(
+            DabblerText(
               profile?.bio?.isNotEmpty == true
                   ? profile!.bio!
                   : l10n.profile_bio_placeholder,
-              style: _type(DabblerType.subheadline, colors.textSecondary),
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -513,7 +510,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     required String label,
     VoidCallback? onTap,
   }) {
-    final colors = DabblerColors.of(context);
     return Semantics(
       button: onTap != null,
       label: '$value $label',
@@ -530,14 +526,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                '$value',
-                style: _type(DabblerType.headline, colors.textPrimary),
-              ),
-              const SizedBox(width: DabblerSpacing.space1 + 2),
-              Text(
+              DabblerText('$value', style: DabblerType.headline),
+              const SizedBox(width: DabblerSpacing.space2),
+              DabblerText(
                 label,
-                style: _type(DabblerType.footnote, colors.textSecondary),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
               ),
             ],
           ),
@@ -727,9 +721,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         Row(
           children: [
             Expanded(
-              child: Text(
+              child: DabblerText(
                 l10n.profile_section_sports,
-                style: _type(DabblerType.headline, colors.textPrimary),
+                style: DabblerType.headline,
               ),
             ),
             DabblerButton.icon(
@@ -745,9 +739,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         ),
         const SizedBox(height: DabblerSpacing.space3),
         if (chips.isEmpty)
-          Text(
+          DabblerText(
             l10n.profile_empty_no_sports,
-            style: _type(DabblerType.footnote, colors.textSecondary),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           )
         else if (isWide)
           Wrap(
@@ -913,7 +908,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
           mainAxisSize: MainAxisSize.min,
           children: posts.map((post) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: DabblerSpacing.space1 + 1),
+              padding: const EdgeInsets.only(bottom: DabblerSpacing.space1),
               child: resolvePostLayout(post),
             );
           }).toList(),
@@ -977,12 +972,8 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
     });
   }
 
-  TextStyle _type(DabblerTypeStyle s, Color c) =>
-      s.resolveForDirection(Directionality.of(context)).copyWith(color: c);
-
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
     final availableProfilesAsync = ref.watch(availableProfilesProvider);
     final activeProfileType = ref.watch(activeProfileTypeProvider);
@@ -994,9 +985,10 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
           return Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: Center(
-              child: Text(
+              child: DabblerText(
                 l10n.profile_no_profiles_found,
-                style: _type(DabblerType.subheadline, colors.textSecondary),
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
               ),
             ),
           );
@@ -1058,9 +1050,10 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
       error: (error, _) => Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space8),
         child: Center(
-          child: Text(
+          child: DabblerText(
             l10n.profile_error_loading_profiles,
-            style: _type(DabblerType.subheadline, colors.error.strong),
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.error,
           ),
         ),
       ),

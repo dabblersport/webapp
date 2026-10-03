@@ -68,12 +68,12 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
                 DabblerTabItem(
                   id: '0',
                   label: 'History',
-                  icon: DabblerIcon('clock', size: 18),
+                  icon: DabblerIcon('clock', size: DabblerSizing.iconSm),
                 ),
                 DabblerTabItem(
                   id: '1',
                   label: 'Bookmarks',
-                  icon: DabblerIcon('bookmark', size: 18),
+                  icon: DabblerIcon('bookmark', size: DabblerSizing.iconSm),
                 ),
               ],
             ),
@@ -136,7 +136,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                         ? null
                         : DabblerSportIcon.fromKey(
                             sport.toLowerCase(),
-                            size: 16,
+                            size: DabblerSizing.iconInline,
                           ),
                     onTap: () {
                       setState(() {
@@ -211,17 +211,14 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                           children: [
                             DabblerIcon(
                               'people',
-                              size: 16,
+                              size: DabblerSizing.iconInline,
                               color: colors.brandPrimary,
                             ),
                             const SizedBox(width: DabblerSpacing.space1),
-                            Text(
+                            DabblerText(
                               '${game.sport} · ${game.currentPlayers}/${game.maxPlayers} players',
-                              style: DabblerType.caption1
-                                  .resolveForDirection(
-                                    Directionality.of(context),
-                                  )
-                                  .copyWith(color: colors.textSecondary),
+                              style: DabblerType.caption1,
+                              tone: DabblerTextTone.secondary,
                             ),
                           ],
                         ),

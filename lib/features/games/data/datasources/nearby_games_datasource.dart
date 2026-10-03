@@ -14,9 +14,7 @@ abstract class NearbyGamesDatasource {
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
   });
 
-  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
-    String? sportId,
-  });
+  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({String? sportId});
 
   /// The viewer's own upcoming games — created by them or where they're on
   /// the active roster. Location-independent (pinned "My games" section).
@@ -37,30 +35,25 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
     required int radiusMeters,
     String? sportId,
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
-  }) =>
-      Result.guard(
-        () async {
-          final response = await _svc.client.rpc(
-            'rpc_get_nearby_games',
-            params: {
-              'p_lat': lat,
-              'p_lng': lng,
-              'p_radius_meters': radiusMeters,
-              if (sportId != null) 'p_sport_id': sportId,
-              'p_sort':
-                  sortOrder == NearbySortOrder.nearest ? 'distance' : 'default',
-            },
-          );
+  }) => Result.guard(() async {
+    final response = await _svc.client.rpc(
+      'rpc_get_nearby_games',
+      params: {
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_radius_meters': radiusMeters,
+        if (sportId != null) 'p_sport_id': sportId,
+        'p_sort': sortOrder == NearbySortOrder.nearest ? 'distance' : 'default',
+      },
+    );
 
-          final rows = response as List<dynamic>;
-          return rows
-              .map((r) => NearbyGameModel.fromJson(
-                    Map<String, dynamic>.from(r as Map),
-                  ))
-              .toList();
-        },
-        (e) => Failure.from(e),
-      );
+    final rows = response as List<dynamic>;
+    return rows
+        .map(
+          (r) => NearbyGameModel.fromJson(Map<String, dynamic>.from(r as Map)),
+        )
+        .toList();
+  }, (e) => Failure.from(e));
 
   static const _cardColumns =
       'id, title, sport_name_en, start_at, end_at, is_cancelled, '
@@ -70,46 +63,37 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
     String? sportId,
-  }) =>
-      Result.guard(
-        () async {
-          var query =
-              _svc.client.from(SupabaseConfig.vGameCardTable).select(_cardColumns);
+  }) => Result.guard(() async {
+    var query = _svc.client
+        .from(SupabaseConfig.vGameCardTable)
+        .select(_cardColumns);
 
-          if (sportId != null) {
-            query = query.eq('sport_id', sportId);
-          }
+    if (sportId != null) {
+      query = query.eq('sport_id', sportId);
+    }
 
-          final rows =
-              await query.order('start_at').limit(100) as List<dynamic>;
-          return _mapCardRows(rows);
-        },
-        (e) => Failure.from(e),
-      );
+    final rows = await query.order('start_at').limit(100) as List<dynamic>;
+    return _mapCardRows(rows);
+  }, (e) => Failure.from(e));
 
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getMyUpcomingGames({
     String? sportId,
-  }) =>
-      Result.guard(
-        () async {
-          var query = _svc.client
-              .from(SupabaseConfig.vGameCardTable)
-              .select(_cardColumns)
-              .or('is_creator.eq.true,is_joined.eq.true')
-              .eq('is_cancelled', false)
-              .gt('end_at', DateTime.now().toUtc().toIso8601String());
+  }) => Result.guard(() async {
+    var query = _svc.client
+        .from(SupabaseConfig.vGameCardTable)
+        .select(_cardColumns)
+        .or('is_creator.eq.true,is_joined.eq.true')
+        .eq('is_cancelled', false)
+        .gt('end_at', DateTime.now().toUtc().toIso8601String());
 
-          if (sportId != null) {
-            query = query.eq('sport_id', sportId);
-          }
+    if (sportId != null) {
+      query = query.eq('sport_id', sportId);
+    }
 
-          final rows =
-              await query.order('start_at').limit(50) as List<dynamic>;
-          return _mapCardRows(rows);
-        },
-        (e) => Failure.from(e),
-      );
+    final rows = await query.order('start_at').limit(50) as List<dynamic>;
+    return _mapCardRows(rows);
+  }, (e) => Failure.from(e));
 
   /// Maps v_game_card rows to [NearbyGameModel] (status computed here — the
   /// view has no status column; distance is 0, these paths are location-free).

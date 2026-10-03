@@ -108,22 +108,21 @@ class _ProfileEditAddAvailabilitySheetState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final labelStyle = DabblerType.subheadline
-        .resolveForDirection(Directionality.of(context))
-        .copyWith(color: colors.textPrimary, fontWeight: DabblerType.semibold);
     return SingleChildScrollView(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        0,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space8,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('Day', style: labelStyle),
+          const DabblerText(
+            'Day',
+            style: DabblerType.subheadline,
+            weight: DabblerTextWeight.semibold,
+          ),
           const SizedBox(height: DabblerSpacing.space3),
           Wrap(
             spacing: DabblerSpacing.space3,

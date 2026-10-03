@@ -5,8 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
-import 'home_feed_parts.dart';
-
 /// Opens the vibe picker for [postId] as a design-system sheet.
 ///
 /// Same behaviour as the shared `ReactionPickerSheet`: tapping a vibe adds the
@@ -41,7 +39,6 @@ class HomeReactionSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
     final vibesAsync = ref.watch(vibesProvider);
 
     return Padding(
@@ -54,9 +51,10 @@ class HomeReactionSheet extends ConsumerWidget {
       child: vibesAsync.when(
         data: (vibes) {
           if (vibes.isEmpty) {
-            return Text(
+            return DabblerText(
               'No vibes available',
-              style: homeType(context, DabblerType.body, colors.textSecondary),
+              style: DabblerType.body,
+              tone: DabblerTextTone.secondary,
             );
           }
           return Wrap(
@@ -78,9 +76,10 @@ class HomeReactionSheet extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: DabblerSpinner()),
-        error: (e, _) => Text(
+        error: (e, _) => DabblerText(
           'Failed to load vibes: $e',
-          style: homeType(context, DabblerType.body, colors.textSecondary),
+          style: DabblerType.body,
+          tone: DabblerTextTone.secondary,
         ),
       ),
     );

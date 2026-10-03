@@ -1,5 +1,3 @@
-import 'package:dabbler/core/widgets/composer_drawer_kit.dart'
-    show composerType;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,7 +132,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   Widget _icon(BuildContext context, String name) => DabblerIcon(
     name,
-    size: 20,
+    size: DabblerSizing.iconRow,
     color: DabblerColors.of(context).textSecondary,
   );
 
@@ -143,14 +141,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
       top: DabblerSpacing.space5,
       bottom: DabblerSpacing.space3,
     ),
-    child: Text(
-      text,
-      style: composerType(
-        context,
-        DabblerType.headline,
-        DabblerColors.of(context).textPrimary,
-      ),
-    ),
+    child: DabblerText(text, style: DabblerType.headline),
   );
 
   Widget _toggleRow(

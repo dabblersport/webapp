@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -47,7 +49,7 @@ class OnboardingRepository {
               profile_completion
             ''')
             .eq('user_id', userId)
-            .timeout(const Duration(seconds: 8));
+            .timeout(DabblerMotion.timeoutNetwork);
 
         return List<Map<String, dynamic>>.from(response as List);
       },

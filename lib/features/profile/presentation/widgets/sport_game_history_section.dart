@@ -74,15 +74,11 @@ class SportGameHistorySection extends ConsumerWidget {
   }
 
   Widget _buildGroupHeader(BuildContext context, String label) {
-    final colors = DabblerColors.of(context);
-    return Text(
+    return DabblerText(
       label,
-      style: sportProfileText(
-        context,
-        DabblerType.subheadline,
-        colors.textSecondary,
-        weight: FontWeight.w600,
-      ),
+      style: DabblerType.subheadline,
+      weight: DabblerTextWeight.semibold,
+      tone: DabblerTextTone.secondary,
     );
   }
 
@@ -132,15 +128,16 @@ class _GameHistoryTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              DabblerIcon('people', size: 16, color: colors.brandPrimary),
+              DabblerIcon(
+                'people',
+                size: DabblerSizing.iconInline,
+                color: colors.brandPrimary,
+              ),
               const SizedBox(width: DabblerSpacing.space1),
-              Text(
+              DabblerText(
                 '${game.currentPlayers}/${game.maxPlayers}',
-                style: sportProfileText(
-                  context,
-                  DabblerType.footnote,
-                  colors.textSecondary,
-                ),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
               ),
             ],
           ),

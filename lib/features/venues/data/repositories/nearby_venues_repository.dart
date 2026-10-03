@@ -26,12 +26,11 @@ class NearbyVenuesRepositoryImpl implements NearbyVenuesRepository {
     required int radiusMeters,
     String? sportId,
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
-  }) =>
-      _datasource.getNearbyVenues(
-        lat: lat,
-        lng: lng,
-        radiusMeters: radiusMeters,
-        sportId: sportId,
-        sortOrder: sortOrder,
-      );
+  }) => _datasource.getNearbyVenues(
+    lat: lat,
+    lng: lng,
+    radiusMeters: radiusMeters,
+    sportId: sportId,
+    sortOrder: sortOrder,
+  );
 }

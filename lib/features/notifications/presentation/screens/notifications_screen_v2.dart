@@ -62,11 +62,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     if (userId == null) {
       return DabblerPage(
         body: Center(
-          child: Text(
+          child: DabblerText(
             AppLocalizations.of(context).notif_signin_required,
-            style: DabblerType.body
-                .resolveForDirection(Directionality.of(context))
-                .copyWith(color: DabblerColors.of(context).textPrimary),
+            style: DabblerType.body,
           ),
         ),
       );
@@ -162,20 +160,24 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         slivers: [
           SliverToBoxAdapter(
             child: TopBar(
-              title: isNotif ? AppLocalizations.of(context).notif_title_notifications : AppLocalizations.of(context).notif_title_activity_log,
+              title: isNotif
+                  ? AppLocalizations.of(context).notif_title_notifications
+                  : AppLocalizations.of(context).notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
-              onMarkAllRead: (isNotif && (notificationState.unreadCount as int) > 0)
+              onMarkAllRead:
+                  (isNotif && (notificationState.unreadCount as int) > 0)
                   ? () => ref
-                      .read(notificationsControllerProvider(userId).notifier)
-                      .markAllRead()
+                        .read(notificationsControllerProvider(userId).notifier)
+                        .markAllRead()
                   : null,
             ),
           ),
           SliverToBoxAdapter(
             child: ChipsRow(
-              chips:
-                  isNotif ? _notifChips(notificationState) : _activityChips(),
+              chips: isNotif
+                  ? _notifChips(notificationState)
+                  : _activityChips(),
               activeKey: _selectedFilter,
               onChanged: (key) {
                 setState(() => _selectedFilter = key);
@@ -207,14 +209,16 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
               child: notificationState.hasMore
                   ? LoadMoreButton(
                       onPressed: () => ref
-                          .read(notificationsControllerProvider(userId).notifier)
+                          .read(
+                            notificationsControllerProvider(userId).notifier,
+                          )
                           .loadMore(),
                     )
-                  : const SizedBox(height: 24),
+                  : const DabblerGap.v(DabblerSpacing.listBottomInset),
             )
           else
             const SliverToBoxAdapter(child: ActivitySecurityFooter()),
-          const SliverToBoxAdapter(child: SizedBox(height: 96)),
+          const DabblerGap.sliver(DabblerSpacing.floatingBarClearance),
         ],
       ),
     );
@@ -237,24 +241,30 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         'bookings',
         l10n.notif_chip_bookings,
         'calendar',
-        count: countOf((n) =>
-            n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena')),
+        count: countOf(
+          (n) =>
+              n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena'),
+        ),
       ),
       ChipData(
         'social',
         l10n.notif_chip_social,
         'people',
-        count: countOf((n) =>
-            n.kindKey.startsWith('social') || n.kindKey.startsWith('friend')),
+        count: countOf(
+          (n) =>
+              n.kindKey.startsWith('social') || n.kindKey.startsWith('friend'),
+        ),
       ),
       ChipData(
         'achieve',
         l10n.notif_chip_achievements,
         'cup',
-        count: countOf((n) =>
-            n.kindKey.startsWith('achievement') ||
-            n.kindKey.startsWith('reward') ||
-            n.kindKey.startsWith('loyalty')),
+        count: countOf(
+          (n) =>
+              n.kindKey.startsWith('achievement') ||
+              n.kindKey.startsWith('reward') ||
+              n.kindKey.startsWith('loyalty'),
+        ),
       ),
     ];
   }
@@ -290,8 +300,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       ];
     }
 
-    final filtered =
-        _filterNotifications(state.notifications as List<AppNotification>);
+    final filtered = _filterNotifications(
+      state.notifications as List<AppNotification>,
+    );
     if (filtered.isEmpty) {
       return const [SliverToBoxAdapter(child: NotifEmptyState())];
     }
@@ -312,16 +323,23 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     for (final key in const ['today', 'yesterday', 'earlier']) {
       final items = groups[key];
       if (items == null || items.isEmpty) continue;
-      widgets.add(SliverToBoxAdapter(
-        child: NotifSectionHeader(title: bucketLabels[key]!, count: items.length),
-      ));
-      widgets.add(SliverList.builder(
-        itemCount: items.length,
-        itemBuilder: (context, i) => NotificationRow(
-          notification: items[i],
-          onTap: () => _handleNotificationTap(userId, items[i]),
+      widgets.add(
+        SliverToBoxAdapter(
+          child: NotifSectionHeader(
+            title: bucketLabels[key]!,
+            count: items.length,
+          ),
         ),
-      ));
+      );
+      widgets.add(
+        SliverList.builder(
+          itemCount: items.length,
+          itemBuilder: (context, i) => NotificationRow(
+            notification: items[i],
+            onTap: () => _handleNotificationTap(userId, items[i]),
+          ),
+        ),
+      );
     }
     return widgets;
   }
@@ -375,21 +393,25 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
     final widgets = <Widget>[];
     grouped.forEach((day, items) {
-      widgets.add(SliverToBoxAdapter(
-        child: NotifSectionHeader(
-          title: day,
-          count: items.length,
-          suffix: 'events',
+      widgets.add(
+        SliverToBoxAdapter(
+          child: NotifSectionHeader(
+            title: day,
+            count: items.length,
+            suffix: 'events',
+          ),
         ),
-      ));
-      widgets.add(SliverList.builder(
-        itemCount: items.length,
-        itemBuilder: (context, i) => ActivityRow(
-          event: items[i],
-          isLast: i == items.length - 1,
-          onTap: () => _handleActivityTap(items[i]),
+      );
+      widgets.add(
+        SliverList.builder(
+          itemCount: items.length,
+          itemBuilder: (context, i) => ActivityRow(
+            event: items[i],
+            isLast: i == items.length - 1,
+            onTap: () => _handleActivityTap(items[i]),
+          ),
         ),
-      ));
+      );
     });
     return widgets;
   }
@@ -403,8 +425,10 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final localeCode = Localizations.localeOf(context).languageCode;
     final weekday = DateFormat.E(localeCode).format(dt);
     final month = DateFormat.MMM(localeCode).format(dt);
-    if (diff == 0) return '${l10n.notif_section_today} · $weekday ${dt.day} $month';
-    if (diff == 1) return '${l10n.notif_section_yesterday} · $weekday ${dt.day} $month';
+    if (diff == 0)
+      return '${l10n.notif_section_today} · $weekday ${dt.day} $month';
+    if (diff == 1)
+      return '${l10n.notif_section_yesterday} · $weekday ${dt.day} $month';
     return '$weekday ${dt.day} $month';
   }
 
@@ -412,8 +436,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     String userId,
     AppNotification notification,
   ) async {
-    final controller =
-        ref.read(notificationsControllerProvider(userId).notifier);
+    final controller = ref.read(
+      notificationsControllerProvider(userId).notifier,
+    );
     if (!notification.isRead) controller.markAsRead(notification.id);
     controller.markClicked(notification.id);
     final route = _resolveNotificationRoute(notification);
@@ -448,7 +473,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         return null;
       case 'social.followed':
       case 'social.circle_joined':
-        final actorId = _ctxString(ctx, 'actor_user_id') ??
+        final actorId =
+            _ctxString(ctx, 'actor_user_id') ??
             _ctxFirstInList(ctx, 'follower_user_ids') ??
             _ctxFirstInList(ctx, 'actor_user_ids');
         if (actorId != null) return '${RoutePaths.userProfile}/$actorId';

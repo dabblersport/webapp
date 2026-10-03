@@ -127,11 +127,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                DabblerSpacing.space6,
-                0,
-                DabblerSpacing.space6,
-                DabblerSpacing.space8,
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space8,
               ),
               child: _buildBottomSection(),
             ),
@@ -275,13 +274,13 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
   Widget _buildSkeleton(int count) {
     return Column(
       children: List.generate(count, (_) {
-        return const Padding(
-          padding: EdgeInsets.only(bottom: DabblerSpacing.space4),
+        return Padding(
+          padding: const EdgeInsets.only(bottom: DabblerSpacing.space4),
           child: Row(
             children: [
-              DabblerSkeleton.circle(width: 40),
-              SizedBox(width: DabblerSpacing.space4),
-              Expanded(child: DabblerSkeleton.text(lines: 2)),
+              DabblerSkeleton.circle(width: DabblerAvatarSize.md.diameter),
+              const DabblerGap.h(DabblerSpacing.space4),
+              const Expanded(child: DabblerSkeleton.text(lines: 2)),
             ],
           ),
         );

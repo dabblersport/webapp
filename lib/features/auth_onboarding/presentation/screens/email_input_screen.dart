@@ -123,7 +123,6 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = DabblerColors.of(context);
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
@@ -146,22 +145,14 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
+                DabblerText(
                   l10n.email_input_title,
-                  style: authText(
-                    context,
-                    DabblerType.largeTitle,
-                    color: colors.textPrimary,
-                  ),
+                  style: DabblerType.largeTitle,
                 ),
                 const SizedBox(height: DabblerSpacing.space3),
-                Text(
+                DabblerText(
                   l10n.email_input_subtitle,
-                  style: authText(
-                    context,
-                    DabblerType.body,
-                    color: colors.textSecondary,
-                  ),
+                  tone: DabblerTextTone.secondary,
                 ),
                 const SizedBox(height: DabblerSpacing.space4),
                 const AuthLegalNotice(center: false),
@@ -421,7 +412,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         suffixIcon: suffix == null
             ? null
             : AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
+                duration: DabblerMotion.durationOf(context, DabblerMotion.slow),
                 child: suffix,
               ),
       ),
@@ -429,18 +420,13 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   Widget _buildKeepInLoopRow(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
-          child: Text(
+          child: DabblerText(
             AppLocalizations.of(context).email_input_keep_in_loop,
-            style: authText(
-              context,
-              DabblerType.subheadline,
-              color: colors.textPrimary,
-            ),
+            style: DabblerType.subheadline,
           ),
         ),
         const SizedBox(width: DabblerSpacing.space4),

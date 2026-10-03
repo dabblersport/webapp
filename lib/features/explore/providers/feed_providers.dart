@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -81,7 +83,7 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
       }
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.low,
-        timeLimit: const Duration(seconds: 5),
+        timeLimit: DabblerMotion.timeoutShort,
       );
       lat = pos.latitude;
       lng = pos.longitude;

@@ -29,5 +29,5 @@ class NewsActionsNotifier extends StateNotifier<AsyncValue<void>> {
 
 final newsActionsProvider =
     StateNotifierProvider<NewsActionsNotifier, AsyncValue<void>>((ref) {
-  return NewsActionsNotifier(ref);
-});
+      return NewsActionsNotifier(ref);
+    });

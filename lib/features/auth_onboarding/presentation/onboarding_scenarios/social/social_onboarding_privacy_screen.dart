@@ -23,9 +23,6 @@ class _SocialOnboardingPrivacyScreenState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Privacy Settings',
@@ -80,29 +77,24 @@ class _SocialOnboardingPrivacyScreenState
                   ),
                 ),
                 const SizedBox(width: DabblerSpacing.space4),
-                Text(
+                DabblerText(
                   '3 of 4',
-                  style: DabblerType.footnote
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
                 ),
               ],
             ),
             const SizedBox(height: DabblerSpacing.space10),
-            const DabblerIconTile.named('shield-tick', size: 64),
-            const SizedBox(height: DabblerSpacing.space8),
-            Text(
-              'Privacy & Safety',
-              style: DabblerType.title1
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textPrimary),
+            const DabblerIconTile.named(
+              'shield-tick',
+              size: DabblerSizing.illustrationMd,
             ),
+            const SizedBox(height: DabblerSpacing.space8),
+            DabblerText('Privacy & Safety', style: DabblerType.title1),
             const SizedBox(height: DabblerSpacing.space4),
-            Text(
+            DabblerText(
               'Control who can see your profile and interact with you. You can always change these settings later.',
-              style: DabblerType.body
-                  .resolveForDirection(direction)
-                  .copyWith(color: colors.textSecondary),
+              tone: DabblerTextTone.secondary,
             ),
             const SizedBox(height: DabblerSpacing.space10),
             Expanded(
@@ -174,7 +166,6 @@ class _SocialOnboardingPrivacyScreenState
     required ValueChanged<bool> onChanged,
   }) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
@@ -185,7 +176,7 @@ class _SocialOnboardingPrivacyScreenState
           children: [
             DabblerIcon(
               value ? 'eye' : 'eye-slash',
-              size: 24,
+              size: DabblerSizing.iconMd,
               color: value ? colors.success.strong : colors.textTertiary,
             ),
             const SizedBox(width: DabblerSpacing.space4),
@@ -193,17 +184,11 @@ class _SocialOnboardingPrivacyScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: DabblerType.headline
-                        .resolveForDirection(direction)
-                        .copyWith(color: colors.textPrimary),
-                  ),
-                  Text(
+                  DabblerText(title, style: DabblerType.headline),
+                  DabblerText(
                     subtitle,
-                    style: DabblerType.footnote
-                        .resolveForDirection(direction)
-                        .copyWith(color: colors.textSecondary),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                   ),
                 ],
               ),

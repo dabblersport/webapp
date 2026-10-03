@@ -359,7 +359,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                       ? DabblerIcon(
                           'tick-circle',
                           weight: DabblerIconWeight.bold,
-                          size: 20,
+                          size: DabblerSizing.iconRow,
                           color: colors.brandPrimary,
                         )
                       : null,
@@ -426,11 +426,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       errorMessage: composerState.error,
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space8,
-            DabblerSpacing.space1,
-            DabblerSpacing.space8,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space8,
+            top: DabblerSpacing.space1,
+            end: DabblerSpacing.space8,
           ),
           child: _buildAuthorRow(),
         ),
@@ -481,7 +480,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildAuthorRow() {
-    final colors = DabblerColors.of(context);
     final displayName =
         _userProfile?['display_name'] as String? ??
         _userProfile?['username'] as String? ??
@@ -513,24 +511,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    displayName,
-                    style: composerType(
-                      context,
-                      DabblerType.headline,
-                      colors.textPrimary,
-                    ),
-                  ),
+                  DabblerText(displayName, style: DabblerType.headline),
                   if (canSwitch)
-                    Text(
+                    DabblerText(
                       _prettifyLabel(
                         composerState.personaTypeSnapshot ?? activePersona,
                       ),
-                      style: composerType(
-                        context,
-                        DabblerType.footnote,
-                        colors.textSecondary,
-                      ),
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.secondary,
                     ),
                 ],
               ),
@@ -561,7 +549,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             selected: true,
             leadingIcon: DabblerIcon(
               _postTypeIcon(composerState.postType),
-              size: 14,
+              size: DabblerSizing.iconInline,
               color: colors.onBrand,
             ),
             onTap: _showPostTypePicker,
@@ -576,7 +564,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             label: _visibilityLabel(composerState.visibility),
             leadingIcon: DabblerIcon(
               _visibilityIcon(composerState.visibility),
-              size: 14,
+              size: DabblerSizing.iconInline,
               color: colors.textSecondary,
             ),
             onTap: _showVisibilityPicker,
@@ -591,7 +579,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   // ═══════════════════════════════════════════════════════════════════════
 
   Widget _buildTextBoxCard(PostComposerState composerState) {
-    final colors = DabblerColors.of(context);
     const maxLen = 2000;
     final bodyLen = composerState.body.length;
     final hasLocation = composerState.locationName != null;
@@ -642,15 +629,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             const Spacer(),
             // Non-colour cue (WCAG 1.4.1): weight bumps to bold near the
             // limit alongside the colour change.
-            Text(
+            DabblerText(
               '$bodyLen/$maxLen',
               semanticsLabel: '$bodyLen of $maxLen characters used',
-              style: composerType(
-                context,
-                DabblerType.caption1,
-                nearLimit ? colors.textPrimary : colors.textTertiary,
-                weight: nearLimit ? FontWeight.w700 : null,
-              ),
+              style: DabblerType.caption1,
+              tone: nearLimit
+                  ? DabblerTextTone.primary
+                  : DabblerTextTone.tertiary,
+              weight: nearLimit ? DabblerTextWeight.bold : null,
             ),
           ],
         ),
@@ -713,7 +699,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     return DabblerBadge(
       label: label,
       tone: DabblerBadgeTone.primary,
-      icon: DabblerIcon(icon, size: 12, color: colors.onBrand),
+      icon: DabblerIcon(
+        icon,
+        size: DabblerSizing.iconXs,
+        color: colors.onBrand,
+      ),
     );
   }
 
@@ -768,7 +758,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   Widget _buildMediaTilesRow(PostComposerState state) {
     final items = state.media;
     return SizedBox(
-      height: 150,
+      height: DabblerSizing.mediaRowHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         separatorBuilder: (_, __) =>
@@ -786,9 +776,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             );
           }
           final url = items[i].toString();
+          final isLead = i == 0;
           return _MediaTile(
             url: url,
-            width: i == 0 ? 200.0 : 100.0,
+            width: isLead
+                ? DabblerSizing.railCardWidth
+                : DabblerSizing.illustrationLg,
             onRemove: () =>
                 ref.read(postComposerProvider.notifier).removeMediaAt(i),
           );
@@ -803,11 +796,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   Widget _buildOptionsSection(PostComposerState state) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        0,
-        DabblerSpacing.space8,
-        DabblerSpacing.space3,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space8,
+        end: DabblerSpacing.space8,
+        bottom: DabblerSpacing.space3,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1086,11 +1078,10 @@ class _ComposerVibesPickerSheetState
                   ..sort();
             if (types.length <= 1) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                DabblerSpacing.space6,
-                0,
-                DabblerSpacing.space6,
-                DabblerSpacing.space3,
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space3,
               ),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -1185,18 +1176,26 @@ class _ComposerVibesPickerSheetState
                             padding: const EdgeInsets.symmetric(
                               horizontal: DabblerSpacing.space2,
                             ),
-                            child: Text(
-                              vibe.labelEn,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: composerType(
-                                context,
-                                DabblerType.footnote,
-                                tokens?.ink ?? colors.textPrimary,
+                            // The vibe's ink is a palette colour, not a text
+                            // tone: make it ambient and let the text inherit.
+                            child: DefaultTextStyle.merge(
+                              style:
+                                  DabblerText.resolveStyle(
+                                    context,
+                                    style: DabblerType.footnote,
+                                  ).copyWith(
+                                    color: tokens?.ink ?? colors.textPrimary,
+                                  ),
+                              child: DabblerText(
+                                vibe.labelEn,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: DabblerType.footnote,
+                                tone: DabblerTextTone.inherit,
                                 weight: isSelected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
+                                    ? DabblerTextWeight.bold
+                                    : DabblerTextWeight.medium,
                               ),
                             ),
                           ),

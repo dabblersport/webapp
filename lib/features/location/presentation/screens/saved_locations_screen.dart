@@ -69,7 +69,7 @@ class SavedLocationsScreen extends ConsumerWidget {
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.space5,
-              100,
+              DabblerSpacing.floatingBarClearance,
             ),
             itemCount: sorted.length,
             separatorBuilder: (_, __) =>
@@ -140,8 +140,6 @@ class _LocationTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final notifier = ref.read(profileLocationNotifierProvider.notifier);
 
     // Was a Dismissible (end-to-start) with a confirm dialog; the DS swipe
@@ -184,13 +182,11 @@ class _LocationTile extends ConsumerWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(
+                        child: DabblerText(
                           location.effectiveLabel,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: DabblerType.headline
-                              .resolveForDirection(direction)
-                              .copyWith(color: colors.textPrimary),
+                          style: DabblerType.headline,
                         ),
                       ),
                       if (location.isPrimary) ...[
@@ -339,14 +335,12 @@ class _AreaName extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
     final areaAsync = ref.watch(areaNameProvider(areaId));
     return areaAsync.maybeWhen(
-      data: (name) => Text(
+      data: (name) => DabblerText(
         name,
-        style: DabblerType.footnote
-            .resolveForDirection(Directionality.of(context))
-            .copyWith(color: colors.textSecondary),
+        style: DabblerType.footnote,
+        tone: DabblerTextTone.secondary,
       ),
       orElse: () => const SizedBox.shrink(),
     );

@@ -18,23 +18,6 @@ import 'package:dabbler/features/venues/providers.dart';
 /// space sheet as before. The booking action stays unbuilt (see the note in
 /// [_VenueDetailScreenState._showSpaceSheet]); only the widget tree changed.
 
-TextStyle _t(
-  BuildContext context,
-  DabblerTypeStyle step,
-  Color color, {
-  FontWeight? weight,
-}) => step
-    .resolveForDirection(Directionality.of(context))
-    .copyWith(color: color, fontWeight: weight);
-
-/// The design's section header: 15 / 600 ink.
-TextStyle _section(BuildContext context, DabblerColors colors) => _t(
-  context,
-  DabblerType.subheadline,
-  colors.textPrimary,
-  weight: DabblerType.semibold,
-);
-
 // ─── Sport labels ─────────────────────────────────────────────────────────────
 
 /// The sport's display label. The sport's identity is drawn by
@@ -159,11 +142,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             // Rating + Spaces tiles
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  gutter,
-                  0,
-                  gutter,
-                  DabblerSpacing.space5,
+                padding: const EdgeInsetsDirectional.only(
+                  start: gutter,
+                  end: gutter,
+                  bottom: DabblerSpacing.space5,
                 ),
                 child: _buildRatingSpacesTiles(venue),
               ),
@@ -173,11 +155,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.supportedSports.isNotEmpty) ...[
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space3,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space3,
                   ),
                   child: _sectionHeader('Spaces', sub: 'tap for details'),
                 ),
@@ -185,14 +166,13 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
               // Full-bleed horizontal scroll
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 232,
+                  height: DabblerSizing.heroCoverHeight,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      gutter,
-                      0,
-                      gutter,
-                      DabblerSpacing.space6,
+                    padding: const EdgeInsetsDirectional.only(
+                      start: gutter,
+                      end: gutter,
+                      bottom: DabblerSpacing.space6,
                     ),
                     itemCount: venue.supportedSports.length,
                     separatorBuilder: (_, __) =>
@@ -226,11 +206,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (_hasContact(venue))
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildContactCard(venue),
                 ),
@@ -240,11 +219,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.amenities.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildAmenities(venue),
                 ),
@@ -254,11 +232,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.description.isNotEmpty)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space5,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space5,
                   ),
                   child: _buildAbout(venue),
                 ),
@@ -268,11 +245,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             if (venue.totalRatings > 0)
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    gutter,
-                    0,
-                    gutter,
-                    DabblerSpacing.space10,
+                  padding: const EdgeInsetsDirectional.only(
+                    start: gutter,
+                    end: gutter,
+                    bottom: DabblerSpacing.space10,
                   ),
                   child: _buildRatings(venue),
                 ),
@@ -298,10 +274,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          venue.name,
-          style: _t(context, DabblerType.title1, colors.textPrimary),
-        ),
+        DabblerText(venue.name, style: DabblerType.title1),
         const SizedBox(height: DabblerSpacing.space3),
         Wrap(
           spacing: DabblerSpacing.space2,
@@ -315,13 +288,13 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
               DabblerBadge(
                 label: venue.city,
                 tone: DabblerBadgeTone.withIcon,
-                icon: const DabblerIcon('location', size: 12),
+                icon: const DabblerIcon('location', size: DabblerSizing.iconXs),
               ),
             if (venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty)
               DabblerBadge(
                 label: '${venue.openingTime} – ${venue.closingTime}',
                 tone: DabblerBadgeTone.withIcon,
-                icon: const DabblerIcon('clock', size: 12),
+                icon: const DabblerIcon('clock', size: DabblerSizing.iconXs),
               ),
           ],
         ),
@@ -371,7 +344,11 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Location', style: _section(context, colors)),
+        DabblerText(
+          'Location',
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
+        ),
         const SizedBox(height: DabblerSpacing.space3),
         DabblerSurface.sunken(
           radius: DabblerRadius.xl,
@@ -384,7 +361,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 behavior: HitTestBehavior.opaque,
                 onTap: _getDirections,
                 child: SizedBox(
-                  height: 120,
+                  height: DabblerSizing.mediaPreviewCompactHeight,
                   child: ColoredBox(
                     color: colors.bgTertiary,
                     child: Stack(
@@ -393,7 +370,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                           child: DabblerIcon(
                             'location',
                             weight: DabblerIconWeight.bold,
-                            size: 28,
+                            size: DabblerSizing.iconLg,
                             color: colors.brandPrimary,
                           ),
                         ),
@@ -403,7 +380,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                           child: const DabblerBadge(
                             label: 'Open Map',
                             tone: DabblerBadgeTone.withIcon,
-                            icon: DabblerIcon('map', size: 12),
+                            icon: DabblerIcon(
+                              'map',
+                              size: DabblerSizing.iconXs,
+                            ),
                           ),
                         ),
                       ],
@@ -416,28 +396,24 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const DabblerIconTile.named('location', size: 36),
+                    const DabblerIconTile.named(
+                      'location',
+                      size: DabblerSizing.iconXl,
+                    ),
                     const SizedBox(width: DabblerSpacing.space4),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          DabblerText(
                             'LOCATION',
-                            style: _t(
-                              context,
-                              DabblerType.caption2,
-                              colors.textTertiary,
-                            ),
+                            style: DabblerType.caption2,
+                            tone: DabblerTextTone.tertiary,
                           ),
-                          Text(
+                          DabblerText(
                             address.isEmpty ? 'Address unavailable' : address,
-                            style: _t(
-                              context,
-                              DabblerType.subheadline,
-                              colors.textPrimary,
-                              weight: DabblerType.semibold,
-                            ),
+                            style: DabblerType.subheadline,
+                            weight: DabblerTextWeight.semibold,
                           ),
                         ],
                       ),
@@ -481,9 +457,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        DabblerText(
           'CONTACT',
-          style: _t(context, DabblerType.caption2, colors.textTertiary),
+          style: DabblerType.caption2,
+          tone: DabblerTextTone.tertiary,
         ),
         const SizedBox(height: DabblerSpacing.space3),
         DabblerSurface(
@@ -506,28 +483,24 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       children: [
                         DabblerIcon(
                           rows[i].icon,
-                          size: 20,
+                          size: DabblerSizing.iconRow,
                           color: colors.textPrimary,
                         ),
                         const SizedBox(width: DabblerSpacing.space4),
                         Expanded(
-                          child: Text(
+                          child: DabblerText(
                             rows[i].label,
+                            style: DabblerType.subheadline,
+                            weight: DabblerTextWeight.semibold,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: _t(
-                              context,
-                              DabblerType.subheadline,
-                              colors.textPrimary,
-                              weight: DabblerType.semibold,
-                            ),
                           ),
                         ),
                         if (rows[i].onTap != null)
                           DabblerIcon(
                             'arrow-circle-right',
                             mirrorInRtl: true,
-                            size: 18,
+                            size: DabblerSizing.iconSm,
                             color: colors.textPrimary,
                           ),
                       ],
@@ -558,7 +531,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
               DabblerBadge(
                 label: a,
                 tone: DabblerBadgeTone.withIcon,
-                icon: DabblerIcon(_amenityIcon(a), size: 14),
+                icon: DabblerIcon(
+                  _amenityIcon(a),
+                  size: DabblerSizing.iconInline,
+                ),
               ),
           ],
         ),
@@ -596,15 +572,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   // ─── About ────────────────────────────────────────────────────────────────────
 
   Widget _buildAbout(games_venue.Venue venue) {
-    final colors = DabblerColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionHeader('About'),
         const SizedBox(height: DabblerSpacing.space3),
-        Text(
+        DabblerText(
           venue.description,
-          style: _t(context, DabblerType.footnote, colors.textSecondary),
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
         ),
       ],
     );
@@ -629,13 +605,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             children: [
               Column(
                 children: [
-                  Text(
+                  DabblerText(
                     avg.toStringAsFixed(1),
-                    style: _t(
-                      context,
-                      DabblerType.largeTitle,
-                      colors.textPrimary,
-                    ),
+                    style: DabblerType.largeTitle,
                   ),
                   const SizedBox(height: DabblerSpacing.space1),
                   DabblerRating(
@@ -643,13 +615,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                     size: DabblerRatingSize.sm,
                   ),
                   const SizedBox(height: DabblerSpacing.space1),
-                  Text(
+                  DabblerText(
                     '${venue.totalRatings} reviews',
-                    style: _t(
-                      context,
-                      DabblerType.caption2,
-                      colors.textTertiary,
-                    ),
+                    style: DabblerType.caption2,
+                    tone: DabblerTextTone.tertiary,
                   ),
                 ],
               ),
@@ -664,20 +633,17 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                         ),
                         child: Row(
                           children: [
-                            Text(
+                            DabblerText(
                               '$n',
-                              style: _t(
-                                context,
-                                DabblerType.caption2,
-                                colors.textTertiary,
-                                weight: DabblerType.bold,
-                              ),
+                              style: DabblerType.caption2,
+                              weight: DabblerTextWeight.bold,
+                              tone: DabblerTextTone.tertiary,
                             ),
                             const SizedBox(width: DabblerSpacing.space1),
                             DabblerIcon(
                               'star',
                               weight: DabblerIconWeight.bold,
-                              size: 10,
+                              size: DabblerSizing.iconXs,
                               color: colors.warning.base,
                             ),
                             const SizedBox(width: DabblerSpacing.space2),
@@ -712,17 +678,21 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   Widget _sectionHeader(String title, {String? sub}) {
-    final colors = DabblerColors.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        Text(title, style: _section(context, colors)),
+        DabblerText(
+          title,
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
+        ),
         if (sub != null) ...[
           const SizedBox(width: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             '· $sub',
-            style: _t(context, DabblerType.caption1, colors.textTertiary),
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.tertiary,
           ),
         ],
       ],
@@ -740,7 +710,6 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       context: ctx,
       detent: DabblerSheetDetent.content,
       builder: (sheetCtx) {
-        final colors = DabblerColors.of(sheetCtx);
         final free = venue.pricePerHour == 0;
         return Padding(
           padding: const EdgeInsetsDirectional.fromSTEB(
@@ -755,42 +724,37 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
               Row(
                 children: [
                   DabblerIconTile(
-                    DabblerSportIcon.fromKey(_sportKey(sport), size: 22),
-                    size: 44,
+                    DabblerSportIcon.fromKey(
+                      _sportKey(sport),
+                      size: DabblerSizing.iconRow,
+                    ),
+                    size: DabblerSizing.tileMd,
                   ),
                   const SizedBox(width: DabblerSpacing.space4),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        DabblerText(
                           _labelFor(sport),
-                          style: _t(
-                            context,
-                            DabblerType.headline,
-                            colors.textPrimary,
-                          ),
+                          style: DabblerType.headline,
                         ),
-                        Text(
+                        DabblerText(
                           'Sport Space',
-                          style: _t(
-                            context,
-                            DabblerType.caption1,
-                            colors.textTertiary,
-                          ),
+                          style: DabblerType.caption1,
+                          tone: DabblerTextTone.tertiary,
                         ),
                       ],
                     ),
                   ),
-                  Text(
+                  DabblerText(
                     free
                         ? 'Free'
                         : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)}/hr',
-                    style: _t(
-                      context,
-                      DabblerType.headline,
-                      free ? colors.success.strong : colors.brandPrimary,
-                    ),
+                    style: DabblerType.headline,
+                    tone: free
+                        ? DabblerTextTone.success
+                        : DabblerTextTone.brand,
                   ),
                 ],
               ),
@@ -832,22 +796,23 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DabblerIcon(icon, size: 18, color: colors.brandPrimary),
+            DabblerIcon(
+              icon,
+              size: DabblerSizing.iconSm,
+              color: colors.brandPrimary,
+            ),
             const SizedBox(height: DabblerSpacing.space1),
-            Text(
+            DabblerText(
               value,
+              style: DabblerType.caption1,
+              weight: DabblerTextWeight.bold,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: _t(
-                context,
-                DabblerType.caption1,
-                colors.textPrimary,
-                weight: DabblerType.bold,
-              ),
             ),
-            Text(
+            DabblerText(
               label,
-              style: _t(context, DabblerType.caption2, colors.textTertiary),
+              style: DabblerType.caption2,
+              tone: DabblerTextTone.tertiary,
             ),
           ],
         ),
@@ -864,28 +829,39 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         SliverToBoxAdapter(
           child: DabblerSkeleton.rect(
             width: double.infinity,
-            height: 240 + safeTop,
+            height: DabblerSizing.heroCoverHeight + safeTop,
             radius: 0,
           ),
         ),
         const SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space6,
-              DabblerSpacing.space6,
-              DabblerSpacing.space6,
-              0,
+            padding: EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space6,
+              top: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                DabblerSkeleton.rect(width: 220, height: 28),
+                DabblerSkeleton.rect(
+                  width: DabblerSizing.skeletonWidthLong,
+                  height: DabblerSizing.skeletonTitleHeight,
+                ),
                 SizedBox(height: DabblerSpacing.space3),
-                DabblerSkeleton.rect(width: 160, height: 20),
+                DabblerSkeleton.rect(
+                  width: DabblerSizing.skeletonWidthMedium,
+                  height: DabblerSizing.skeletonTitleHeight,
+                ),
                 SizedBox(height: DabblerSpacing.space6),
-                DabblerSkeleton.rect(width: double.infinity, height: 80),
+                DabblerSkeleton.rect(
+                  width: double.infinity,
+                  height: DabblerSizing.skeletonBlockHeight,
+                ),
                 SizedBox(height: DabblerSpacing.space4),
-                DabblerSkeleton.rect(width: double.infinity, height: 100),
+                DabblerSkeleton.rect(
+                  width: double.infinity,
+                  height: DabblerSizing.skeletonBlockHeight,
+                ),
               ],
             ),
           ),
@@ -901,11 +877,10 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space5,
-            safeTop + DabblerSpacing.space3,
-            DabblerSpacing.space5,
-            0,
+          padding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space5,
+            top: safeTop + DabblerSpacing.space3,
+            end: DabblerSpacing.space5,
           ),
           child: Align(
             alignment: AlignmentDirectional.centerStart,
@@ -1065,7 +1040,7 @@ class _HeroCarouselState extends State<_HeroCarousel> {
   void initState() {
     super.initState();
     if (widget.sports.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _timer = Timer.periodic(DabblerMotion.autoAdvance, (_) {
         if (mounted) setState(() => _idx = (_idx + 1) % widget.sports.length);
       });
     }
@@ -1085,23 +1060,23 @@ class _HeroCarouselState extends State<_HeroCarousel> {
     return GestureDetector(
       onTap: () => setState(() => _idx = (_idx + 1) % widget.sports.length),
       child: SizedBox(
-        height: 240 + widget.safeTop,
+        height: DabblerSizing.heroCoverHeight + widget.safeTop,
         child: Stack(
           children: [
             Positioned.fill(child: ColoredBox(color: colors.surfaceSunken)),
             // Sport glyph — large, centred
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 60,
+            Positioned.fill(
+              bottom: DabblerSpacing.space11 + DabblerSpacing.space4,
               child: Center(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
+                  duration: DabblerMotion.durationOf(
+                    context,
+                    DabblerMotion.contentSwap,
+                  ),
                   child: DabblerSportIcon.fromKey(
                     _sportKey(sport),
                     key: ValueKey(_idx),
-                    size: 80,
+                    size: DabblerSizing.illustrationMd,
                     color: colors.brandPrimary,
                   ),
                 ),
@@ -1110,9 +1085,12 @@ class _HeroCarouselState extends State<_HeroCarousel> {
             // Label pill
             PositionedDirectional(
               start: DabblerSpacing.space6,
-              bottom: 42,
+              bottom: DabblerSpacing.space10 + DabblerSpacing.space2,
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 350),
+                duration: DabblerMotion.durationOf(
+                  context,
+                  DabblerMotion.contentSwap,
+                ),
                 child: DabblerBadge(
                   key: ValueKey(_idx),
                   label: _labelFor(sport),
@@ -1122,10 +1100,9 @@ class _HeroCarouselState extends State<_HeroCarousel> {
             ),
             // Carousel dots
             if (widget.sports.length > 1)
-              Positioned(
+              Positioned.fill(
+                top: null,
                 bottom: DabblerSpacing.space4,
-                left: 0,
-                right: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
@@ -1136,10 +1113,15 @@ class _HeroCarouselState extends State<_HeroCarousel> {
                         setState(() => _idx = i);
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        width: i == _idx ? 16 : 5,
-                        height: 5,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        duration: DabblerMotion.durationOf(
+                          context,
+                          DabblerMotion.contentSwap,
+                        ),
+                        width: i == _idx
+                            ? DabblerSpacing.space5
+                            : DabblerSizing.indicatorThickness,
+                        height: DabblerSizing.indicatorThickness,
+                        margin: DabblerInsets.segmentGap,
                         decoration: BoxDecoration(
                           color: i == _idx
                               ? colors.textPrimary
@@ -1208,7 +1190,7 @@ class _SpaceCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 180,
+        width: DabblerSizing.railCardWidth,
         child: DabblerSurface.sunken(
           radius: DabblerRadius.xl,
           child: Column(
@@ -1216,7 +1198,7 @@ class _SpaceCard extends StatelessWidget {
             children: [
               // Illustration header
               SizedBox(
-                height: 96,
+                height: DabblerSizing.railCardHeight,
                 child: ColoredBox(
                   color: colors.bgTertiary,
                   child: Stack(
@@ -1224,7 +1206,7 @@ class _SpaceCard extends StatelessWidget {
                       Center(
                         child: DabblerSportIcon.fromKey(
                           _sportKey(sport),
-                          size: 44,
+                          size: DabblerSizing.tileMd,
                           color: colors.brandPrimary,
                         ),
                       ),
@@ -1238,22 +1220,15 @@ class _SpaceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    DabblerText(
                       _labelFor(sport),
-                      style: _t(
-                        context,
-                        DabblerType.footnote,
-                        colors.textPrimary,
-                        weight: DabblerType.semibold,
-                      ),
+                      style: DabblerType.footnote,
+                      weight: DabblerTextWeight.semibold,
                     ),
-                    Text(
+                    DabblerText(
                       'Court / Field',
-                      style: _t(
-                        context,
-                        DabblerType.caption2,
-                        colors.textTertiary,
-                      ),
+                      style: DabblerType.caption2,
+                      tone: DabblerTextTone.tertiary,
                     ),
                     const SizedBox(height: DabblerSpacing.space2),
                     Wrap(
@@ -1268,7 +1243,10 @@ class _SpaceCard extends StatelessWidget {
                         const DabblerBadge(
                           label: 'Lights',
                           tone: DabblerBadgeTone.withIcon,
-                          icon: DabblerIcon('flash', size: 11),
+                          icon: DabblerIcon(
+                            'flash',
+                            size: DabblerSizing.iconXs,
+                          ),
                         ),
                       ],
                     ),
@@ -1280,33 +1258,27 @@ class _SpaceCard extends StatelessWidget {
                           children: [
                             DabblerIcon(
                               'people',
-                              size: 13,
+                              size: DabblerSizing.iconXs,
                               color: colors.textTertiary,
                             ),
                             const SizedBox(width: DabblerSpacing.space1),
-                            Text(
+                            DabblerText(
                               '10',
-                              style: _t(
-                                context,
-                                DabblerType.caption2,
-                                colors.textTertiary,
-                                weight: DabblerType.semibold,
-                              ),
+                              style: DabblerType.caption2,
+                              weight: DabblerTextWeight.semibold,
+                              tone: DabblerTextTone.tertiary,
                             ),
                           ],
                         ),
-                        Text(
+                        DabblerText(
                           pricePerHour == 0
                               ? 'Free'
                               : '$currency ${pricePerHour.toStringAsFixed(0)}',
-                          style: _t(
-                            context,
-                            DabblerType.footnote,
-                            pricePerHour == 0
-                                ? colors.success.strong
-                                : colors.textPrimary,
-                            weight: DabblerType.bold,
-                          ),
+                          style: DabblerType.footnote,
+                          weight: DabblerTextWeight.bold,
+                          tone: pricePerHour == 0
+                              ? DabblerTextTone.success
+                              : DabblerTextTone.primary,
                         ),
                       ],
                     ),

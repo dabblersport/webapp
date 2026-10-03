@@ -63,8 +63,7 @@ class NearbyGameModel {
       venueName: json['venue_name'] as String?,
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
-      distanceMeters:
-          (json['distance_meters'] as num?)?.toDouble() ?? 0.0,
+      distanceMeters: (json['distance_meters'] as num?)?.toDouble() ?? 0.0,
       playerCount: json['player_count'] as int?,
       spotsRemaining: json['spots_remaining'] as int?,
       isPublic: json['is_public'] as bool? ?? true,
@@ -81,8 +80,7 @@ class NearbyGameModel {
       return '${distanceMeters.round()} m';
     }
     final km = distanceMeters / 1000;
-    final formatted =
-        km < 10 ? km.toStringAsFixed(1) : km.round().toString();
+    final formatted = km < 10 ? km.toStringAsFixed(1) : km.round().toString();
     return '$formatted km';
   }
 }

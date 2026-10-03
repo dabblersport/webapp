@@ -460,9 +460,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     _ => '',
   };
 
-  TextStyle _type(DabblerTypeStyle step, Color color, {FontWeight? weight}) =>
-      homeType(context, step, color, weight: weight);
-
   // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
@@ -656,7 +653,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   /// Vibes and context badges under the post row; the post row (or the
   /// repost's, via `HomePostRow.resolve(detail:)`) carries the timestamp line.
   Widget _buildDetails(Post post, {required bool isAuthor}) {
-    final colors = DabblerColors.of(context);
     final expiry = _expiryLabel(post.expiresAt);
     final visLabel = _visibilityLabel(post.visibility);
     final hasGeo = post.geoLat != null && post.geoLng != null;
@@ -676,14 +672,17 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       if (hasGeo)
         DabblerBadge(
           label: post.locationName ?? 'Location',
-          icon: const DabblerIcon('location', size: 12),
+          icon: const DabblerIcon('location', size: DabblerSizing.iconXs),
         ),
       if (post.lang?.isNotEmpty == true)
         DabblerBadge(label: post.lang!.toUpperCase()),
       if (visLabel != null)
         DabblerBadge(
           label: visLabel,
-          icon: DabblerIcon(_visibilityIcon(post.visibility), size: 12),
+          icon: DabblerIcon(
+            _visibilityIcon(post.visibility),
+            size: DabblerSizing.iconXs,
+          ),
         ),
       if (post.requiresModeration)
         const DabblerBadge(
@@ -708,13 +707,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             const SizedBox(height: DabblerSpacing.space3),
           ],
           if (isAuthor && post.viewCount > 0)
-            Text(
+            DabblerText(
               '${homeCompactCount(post.viewCount)} Views',
-              style: _type(
-                DabblerType.footnote,
-                colors.textSecondary,
-                weight: FontWeight.w600,
-              ),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
+              weight: DabblerTextWeight.semibold,
             ),
         ],
       ),
@@ -727,7 +724,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     AsyncValue<List<PostComment>> commentsAsync,
     String? myProfileId,
   ) {
-    final colors = DabblerColors.of(context);
     return commentsAsync.when(
       loading: () => const SliverToBoxAdapter(
         child: Padding(
@@ -792,13 +788,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                       top: DabblerSpacing.space5,
                       bottom: DabblerSpacing.space1,
                     ),
-                    child: Text(
+                    child: const DabblerText(
                       'Replies',
-                      style: _type(
-                        DabblerType.headline,
-                        colors.textPrimary,
-                        weight: FontWeight.w700,
-                      ),
+                      style: DabblerType.headline,
+                      weight: DabblerTextWeight.bold,
                     ),
                   ),
                 ),
@@ -851,17 +844,19 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DabblerIcon('location', size: 13, color: colors.brandPrimary),
+            DabblerIcon(
+              'location',
+              size: DabblerSizing.iconXs,
+              color: colors.brandPrimary,
+            ),
             const SizedBox(width: DabblerSpacing.space1),
             Flexible(
-              child: Text(
+              child: DabblerText(
                 c.locationName!,
                 overflow: TextOverflow.ellipsis,
-                style: _type(
-                  DabblerType.caption1,
-                  colors.brandPrimary,
-                  weight: FontWeight.w600,
-                ),
+                style: DabblerType.caption1,
+                tone: DabblerTextTone.brand,
+                weight: DabblerTextWeight.semibold,
               ),
             ),
           ],
@@ -938,8 +933,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
         children: [
           if (_isUploading)
             const SizedBox(
-              width: 60,
-              height: 60,
+              width: DabblerSizing.thumbnail,
+              height: DabblerSizing.thumbnail,
               child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
             ),
           if (_attachedImageUrl != null)

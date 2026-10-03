@@ -61,14 +61,17 @@ class VenueSubmissionController
     try {
       VenueSubmissionModel? resolvedExisting = existing;
 
-      if (resolvedExisting == null && draft.id != null && draft.id!.isNotEmpty) {
+      if (resolvedExisting == null &&
+          draft.id != null &&
+          draft.id!.isNotEmpty) {
         final existingResult = await _getByIdUseCase(draft.id!);
         resolvedExisting = existingResult.fold((_) => null, (s) => s);
       }
 
       if (resolvedExisting != null && !resolvedExisting.isEditable) {
         final failure = ValidationFailure(
-          message: 'This submission cannot be edited while ${resolvedExisting.status.name}.',
+          message:
+              'This submission cannot be edited while ${resolvedExisting.status.name}.',
         );
         state = state.copyWith(isSaving: false, failure: failure);
         return Err(failure);
@@ -111,7 +114,8 @@ class VenueSubmissionController
 
       if (resolvedExisting != null && !resolvedExisting.canSubmitForReview) {
         final failure = ValidationFailure(
-          message: 'You can only submit drafts or returned submissions for review.',
+          message:
+              'You can only submit drafts or returned submissions for review.',
         );
         state = state.copyWith(isSaving: false, failure: failure);
         return Err(failure);

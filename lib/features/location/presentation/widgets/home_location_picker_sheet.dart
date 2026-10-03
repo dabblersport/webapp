@@ -82,7 +82,6 @@ class _HomeLocationPickerSheetState
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final savedAsync = ref.watch(profileLocationNotifierProvider);
     final currentState = ref.watch(activeLocationProvider).valueOrNull;
 
@@ -94,25 +93,18 @@ class _HomeLocationPickerSheetState
       children: [
         // Title row (the emoji the old title carried is dropped, CEO rule).
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            0,
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space4,
           ),
-          child: Text(
-            'Your Location',
-            style: DabblerType.headline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textPrimary),
-          ),
+          child: DabblerText('Your Location', style: DabblerType.headline),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            0,
-            DabblerSpacing.space6,
-            DabblerSpacing.space9,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space9,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -251,17 +243,15 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         top: DabblerSpacing.space5,
         bottom: DabblerSpacing.space2,
       ),
-      child: Text(
+      child: DabblerText(
         label,
-        style: DabblerType.caption1
-            .resolveForDirection(Directionality.of(context))
-            .copyWith(color: colors.textSecondary),
+        style: DabblerType.caption1,
+        tone: DabblerTextTone.secondary,
       ),
     );
   }
@@ -346,8 +336,6 @@ class _AreaBrowser extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final areaRepo = ref.watch(areaRepositoryV2Provider);
 
     return FutureBuilder<Map<String, List<Area>>>(
@@ -407,11 +395,10 @@ class _AreaBrowser extends ConsumerWidget {
                   top: DabblerSpacing.space5,
                   bottom: DabblerSpacing.space2,
                 ),
-                child: Text(
+                child: DabblerText(
                   entry.key,
-                  style: DabblerType.caption1
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.caption1,
+                  tone: DabblerTextTone.secondary,
                 ),
               ),
               ...entry.value.map((area) {
@@ -432,11 +419,10 @@ class _AreaBrowser extends ConsumerWidget {
                   leading: DabblerRadio(selected: isSelected),
                   title: area.name,
                   trailing: distM != null
-                      ? Text(
+                      ? DabblerText(
                           _fmt(distM),
-                          style: DabblerType.footnote
-                              .resolveForDirection(direction)
-                              .copyWith(color: colors.textSecondary),
+                          style: DabblerType.footnote,
+                          tone: DabblerTextTone.secondary,
                         )
                       : null,
                   onTap: () => onSelected(area),

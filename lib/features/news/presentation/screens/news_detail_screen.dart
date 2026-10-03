@@ -64,7 +64,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     if (ctx != null) {
       Scrollable.ensureVisible(
         ctx,
-        duration: const Duration(milliseconds: 400),
+        duration: DabblerMotion.durationOf(context, DabblerMotion.scrollTo),
       );
     }
   }
@@ -93,11 +93,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
       });
     }
   }
-
-  TextStyle _type(DabblerTypeStyle step, Color color, {FontWeight? weight}) =>
-      step
-          .resolveForDirection(Directionality.of(context))
-          .copyWith(color: color, fontWeight: weight);
 
   @override
   Widget build(BuildContext context) {
@@ -133,11 +128,10 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(
-                side,
-                DabblerSpacing.space2,
-                side,
-                0,
+              padding: const EdgeInsetsDirectional.only(
+                start: side,
+                top: DabblerSpacing.space2,
+                end: side,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -160,22 +154,20 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                       if (item.isPinned) ...[
                         DabblerIcon(
                           'bookmark-2',
-                          size: 14,
+                          size: DabblerSizing.iconInline,
                           color: colors.textSecondary,
                         ),
                         const SizedBox(width: DabblerSpacing.space2),
                       ],
-                      Text(
+                      DabblerText(
                         dateStr,
-                        style: _type(DabblerType.caption1, colors.textSecondary),
+                        style: DabblerType.caption1,
+                        tone: DabblerTextTone.secondary,
                       ),
                     ],
                   ),
                   const SizedBox(height: DabblerSpacing.space4),
-                  Text(
-                    title,
-                    style: _type(DabblerType.title1, colors.textPrimary),
-                  ),
+                  DabblerText(title, style: DabblerType.title1),
                   if (item.sourceLabel != null) ...[
                     const SizedBox(height: DabblerSpacing.space4),
                     Row(
@@ -186,13 +178,10 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         ),
                         const SizedBox(width: DabblerSpacing.space3),
                         Expanded(
-                          child: Text(
+                          child: DabblerText(
                             item.sourceLabel!,
-                            style: _type(
-                              DabblerType.subheadline,
-                              colors.textPrimary,
-                              weight: FontWeight.w600,
-                            ),
+                            style: DabblerType.subheadline,
+                            weight: DabblerTextWeight.semibold,
                           ),
                         ),
                       ],
@@ -202,10 +191,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   const DabblerDivider(),
                   const SizedBox(height: DabblerSpacing.space5),
                   if (body.isNotEmpty)
-                    Text(
-                      body,
-                      style: _type(DabblerType.body, colors.textPrimary),
-                    ),
+                    DabblerText(body, style: DabblerType.body),
                   const SizedBox(height: DabblerSpacing.space7),
                   Wrap(
                     spacing: DabblerSpacing.space2,
@@ -255,10 +241,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 side,
                 DabblerSpacing.space1,
               ),
-              child: Text(
-                'Comments',
-                style: _type(DabblerType.headline, colors.textPrimary),
-              ),
+              child: DabblerText('Comments', style: DabblerType.headline),
             ),
           ),
           commentsAsync.when(
@@ -268,7 +251,8 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 child: Center(child: DabblerSpinner()),
               ),
             ),
-            error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+            error: (_, __) =>
+                const SliverToBoxAdapter(child: SizedBox.shrink()),
             data: (comments) => comments.isEmpty
                 ? SliverToBoxAdapter(
                     child: Padding(
@@ -278,12 +262,10 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                         side,
                         DabblerSpacing.space10,
                       ),
-                      child: Text(
+                      child: DabblerText(
                         'Be the first to comment.',
-                        style: _type(
-                          DabblerType.subheadline,
-                          colors.textSecondary,
-                        ),
+                        style: DabblerType.subheadline,
+                        tone: DabblerTextTone.secondary,
                       ),
                     ),
                   )
@@ -313,8 +295,6 @@ class _CommentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final displayName =
         comment.authorDisplayName ?? comment.authorUsername ?? 'User';
     return Padding(
@@ -338,33 +318,23 @@ class _CommentRow extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: DabblerText(
                         displayName,
+                        style: DabblerType.footnote,
+                        weight: DabblerTextWeight.bold,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: DabblerType.footnote
-                            .resolveForDirection(dir)
-                            .copyWith(
-                              color: colors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
                       ),
                     ),
-                    Text(
+                    DabblerText(
                       timeago.format(comment.createdAt, locale: lang),
-                      style: DabblerType.caption2
-                          .resolveForDirection(dir)
-                          .copyWith(color: colors.textSecondary),
+                      style: DabblerType.caption2,
+                      tone: DabblerTextTone.secondary,
                     ),
                   ],
                 ),
                 const SizedBox(height: DabblerSpacing.space1),
-                Text(
-                  comment.body,
-                  style: DabblerType.subheadline
-                      .resolveForDirection(dir)
-                      .copyWith(color: colors.textPrimary),
-                ),
+                DabblerText(comment.body, style: DabblerType.subheadline),
               ],
             ),
           ),

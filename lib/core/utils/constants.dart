@@ -273,9 +273,6 @@ class AppConstants {
   static const double inputHeight = 56.0;
 
   // Animation Durations
-  static const Duration shortAnimation = Duration(milliseconds: 200);
-  static const Duration mediumAnimation = Duration(milliseconds: 300);
-  static const Duration longAnimation = Duration(milliseconds: 500);
 
   // Debounce
   static const int searchDebounceMs = 500;
@@ -364,17 +361,8 @@ class AppConstants {
   static const double statsLabelSize = 12.0;
 
   // Profile Module Animation
-  static const Duration profileRefreshDuration = Duration(milliseconds: 300);
-  static const Duration profileCardAnimationDuration = Duration(
-    milliseconds: 200,
-  );
-  static const Duration profileAvatarAnimationDuration = Duration(
-    milliseconds: 150,
-  );
 
   // Profile Module Loading States
-  static const Duration profileLoadingTimeout = Duration(seconds: 10);
-  static const Duration profileRefreshTimeout = Duration(seconds: 5);
 
   // Profile Module Error Messages
   static const String profileLoadError =

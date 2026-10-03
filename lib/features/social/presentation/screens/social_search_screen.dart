@@ -46,16 +46,6 @@ const List<SearchTab> _kSearchTabs = [
   SearchTab(key: 'meetups', label: 'Meet-ups', icon: 'calendar'),
 ];
 
-TextStyle _type(
-  BuildContext context,
-  DabblerTypeStyle style,
-  Color color, {
-  FontWeight? weight,
-}) =>
-    style
-        .resolveForDirection(Directionality.of(context))
-        .copyWith(color: color, fontWeight: weight);
-
 /// Strips the search grammar (`@`, `#`, `/g `…) so only the typed words are
 /// highlighted — same cleaning the screen always applied.
 String _needle(String query) => query
@@ -73,8 +63,9 @@ InlineSpan _hl(BuildContext context, String text, String query) =>
       DabblerColors.of(context),
     );
 
-const EdgeInsetsDirectional _gutter =
-    EdgeInsetsDirectional.symmetric(horizontal: DabblerSpacing.space6);
+const EdgeInsetsDirectional _gutter = EdgeInsetsDirectional.symmetric(
+  horizontal: DabblerSpacing.space6,
+);
 
 /// Social search screen — empty / results / view-all states.
 class SocialSearchScreen extends ConsumerStatefulWidget {
@@ -131,7 +122,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
 
   void _onSearchChanged(String query) {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), () {
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
       _triggerSearch(query.trim());
     });
   }
@@ -215,14 +206,15 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
               child: DabblerTabs(
                 scrollable: true,
                 value: tab.key,
-                onChanged: (k) => setState(() => _tabIndex =
-                    _kSearchTabs.indexWhere((t) => t.key == k)),
+                onChanged: (k) => setState(
+                  () => _tabIndex = _kSearchTabs.indexWhere((t) => t.key == k),
+                ),
                 items: [
                   for (final t in _kSearchTabs)
                     DabblerTabItem(
                       id: t.key,
                       label: t.label,
-                      icon: DabblerIcon(t.icon, size: 14),
+                      icon: DabblerIcon(t.icon, size: DabblerSizing.iconInline),
                     ),
                 ],
               ),
@@ -254,8 +246,9 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
                         ref.read(recentSearchHistoryProvider.notifier).clear(),
                     onTapGrammar: (prefix) {
                       _searchController.text = prefix;
-                      _searchController.selection =
-                          TextSelection.collapsed(offset: prefix.length);
+                      _searchController.selection = TextSelection.collapsed(
+                        offset: prefix.length,
+                      );
                       _searchFocus.requestFocus();
                     },
                   ),
@@ -290,10 +283,9 @@ class _SearchingIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    return Positioned(
+    return Positioned.fill(
       top: DabblerSpacing.space4,
-      left: 0,
-      right: 0,
+      bottom: null,
       child: Center(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -311,11 +303,11 @@ class _SearchingIndicator extends StatelessWidget {
               children: [
                 const DabblerSpinner(size: DabblerSpinnerSize.sm),
                 const SizedBox(width: DabblerSpacing.space2),
-                Text(
+                const DabblerText(
                   'Searching…',
-                  style: _type(context, DabblerType.footnote,
-                      colors.textSecondary,
-                      weight: FontWeight.w600),
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                  weight: DabblerTextWeight.semibold,
                 ),
               ],
             ),
@@ -369,94 +361,116 @@ class _EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     Widget section(DabblerSection s) => Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space5,
-            DabblerSpacing.space6,
-            0,
-          ),
-          child: s,
-        );
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        top: DabblerSpacing.space5,
+        end: DabblerSpacing.space6,
+      ),
+      child: s,
+    );
     return ListView(
       padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
       children: [
         if (recentSearches.isNotEmpty)
-          section(DabblerSection(
-            title: 'Recent',
-            action: DabblerButton(
-              label: 'Clear',
-              tone: DabblerButtonTone.text,
-              size: DabblerButtonSize.small,
-              onPressed: onClearRecent,
+          section(
+            DabblerSection(
+              title: 'Recent',
+              action: DabblerButton(
+                label: 'Clear',
+                tone: DabblerButtonTone.text,
+                size: DabblerButtonSize.small,
+                onPressed: onClearRecent,
+              ),
+              children: [
+                Wrap(
+                  spacing: DabblerSpacing.space2,
+                  runSpacing: DabblerSpacing.space2,
+                  children: [
+                    for (final q in recentSearches)
+                      _RecentItem(
+                        query: q,
+                        onTap: () => onPickRecent(q),
+                        onRemove: () => onRemoveRecent(q),
+                      ),
+                  ],
+                ),
+              ],
             ),
+          ),
+        section(
+          DabblerSection(
+            children: [
+              for (final c in const [
+                (
+                  icon: 'people',
+                  title: 'People nearby',
+                  sub: 'Find players near you',
+                ),
+                (icon: 'game', title: 'Popular games', sub: 'Open spots today'),
+                (
+                  icon: 'activity',
+                  title: 'Trending posts',
+                  sub: 'What everyone’s on',
+                ),
+              ])
+                DabblerInputRow(
+                  leading: DabblerIcon(
+                    c.icon,
+                    size: DabblerSizing.iconMd,
+                    color: colors.brandPrimary,
+                  ),
+                  title: c.title,
+                  subtitle: c.sub,
+                  trailing: const DabblerChevron(),
+                ),
+            ],
+          ),
+        ),
+        section(
+          DabblerSection(
+            title: 'SEARCH SMARTER',
             children: [
               Wrap(
                 spacing: DabblerSpacing.space2,
                 runSpacing: DabblerSpacing.space2,
                 children: [
-                  for (final q in recentSearches)
-                    _RecentItem(
-                      query: q,
-                      onTap: () => onPickRecent(q),
-                      onRemove: () => onRemoveRecent(q),
+                  for (final g in _grammar)
+                    DabblerChip(
+                      label: 'Search ${g.label}',
+                      leadingIcon: DabblerIcon(
+                        g.icon,
+                        size: DabblerSizing.iconInline,
+                      ),
+                      onTap: () => onTapGrammar(
+                        g.tag == '@' || g.tag == '#' ? g.tag : '${g.tag} ',
+                      ),
                     ),
                 ],
               ),
             ],
-          )),
-        section(DabblerSection(
-          children: [
-            for (final c in const [
-              (icon: 'people', title: 'People nearby', sub: 'Find players near you'),
-              (icon: 'game', title: 'Popular games', sub: 'Open spots today'),
-              (icon: 'activity', title: 'Trending posts', sub: 'What everyone’s on'),
-            ])
-              DabblerInputRow(
-                leading: DabblerIcon(c.icon,
-                    size: 24, color: colors.brandPrimary),
-                title: c.title,
-                subtitle: c.sub,
-                trailing: const DabblerChevron(),
+          ),
+        ),
+        section(
+          DabblerSection(
+            title: 'QUICK FILTERS',
+            children: [
+              Wrap(
+                spacing: DabblerSpacing.space2,
+                runSpacing: DabblerSpacing.space2,
+                children: [
+                  for (final f in _filters)
+                    DabblerChip(
+                      label: f.label,
+                      selected: f.active,
+                      leadingIcon: f.icon.isEmpty
+                          ? null
+                          : DabblerIcon(f.icon, size: DabblerSizing.iconInline),
+                    ),
+                ],
               ),
-          ],
-        )),
-        section(DabblerSection(
-          title: 'SEARCH SMARTER',
-          children: [
-            Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: [
-                for (final g in _grammar)
-                  DabblerChip(
-                    label: 'Search ${g.label}',
-                    leadingIcon: DabblerIcon(g.icon, size: 16),
-                    onTap: () => onTapGrammar(
-                        g.tag == '@' || g.tag == '#' ? g.tag : '${g.tag} '),
-                  ),
-              ],
-            ),
-          ],
-        )),
-        section(DabblerSection(
-          title: 'QUICK FILTERS',
-          children: [
-            Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: [
-                for (final f in _filters)
-                  DabblerChip(
-                    label: f.label,
-                    selected: f.active,
-                    leadingIcon: f.icon.isEmpty
-                        ? null
-                        : DabblerIcon(f.icon, size: 14),
-                  ),
-              ],
-            ),
-          ],
-        )),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -478,7 +492,7 @@ class _RecentItem extends StatelessWidget {
     return DabblerChip(
       key: ValueKey('recent-$query'),
       label: query,
-      leadingIcon: const DabblerIcon('clock', size: 14),
+      leadingIcon: const DabblerIcon('clock', size: DabblerSizing.iconInline),
       onTap: onTap,
       onRemove: onRemove,
       removeSemanticLabel: 'Remove $query',
@@ -564,7 +578,9 @@ class _ResultsRouter extends StatelessWidget {
       case 7:
         return _ResultList(
           empty: 'No meetups found',
-          children: [for (final m in b.meetups) _MeetupRow(meetup: m, query: q)],
+          children: [
+            for (final m in b.meetups) _MeetupRow(meetup: m, query: q),
+          ],
         );
       default:
         return _AllTabSections(
@@ -612,7 +628,8 @@ class _ResultList extends StatelessWidget {
         DabblerSpacing.space11,
       ),
       itemCount: children.length,
-      separatorBuilder: (_, __) => const SizedBox(height: DabblerSpacing.space2),
+      separatorBuilder: (_, __) =>
+          const SizedBox(height: DabblerSpacing.space2),
       itemBuilder: (_, i) => children[i],
     );
   }
@@ -623,7 +640,6 @@ List<Widget> _rankedHashtags(
   List<HashtagSearchResult> hashtags,
   String query,
 ) {
-  final colors = DabblerColors.of(context);
   return [
     for (var i = 0; i < hashtags.length; i++)
       _HashtagRow(
@@ -631,11 +647,12 @@ List<Widget> _rankedHashtags(
         query: query,
         leading: SizedBox(
           width: DabblerSpacing.space8,
-          child: Text(
+          child: DabblerText(
             '${i + 1}',
             textAlign: TextAlign.center,
-            style: _type(context, DabblerType.headline, colors.textSecondary,
-                weight: FontWeight.w800),
+            style: DabblerType.headline,
+            tone: DabblerTextTone.secondary,
+            weight: DabblerTextWeight.heavy,
           ),
         ),
       ),
@@ -663,61 +680,50 @@ class _AllTabSections extends StatelessWidget {
     final b = state.bundle;
     final q = state.query;
 
-    Widget section(String title, SearchMode mode, List<Widget> rows) =>
-        Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space5,
-            DabblerSpacing.space6,
-            0,
-          ),
-          child: DabblerSection(
-            title: title,
-            action: DabblerButton(
-              label: 'View all',
-              tone: DabblerButtonTone.text,
-              size: DabblerButtonSize.small,
-              onPressed: () => onViewAll(mode),
-            ),
-            children: rows,
-          ),
-        );
+    Widget section(String title, SearchMode mode, List<Widget> rows) => Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        top: DabblerSpacing.space5,
+        end: DabblerSpacing.space6,
+      ),
+      child: DabblerSection(
+        title: title,
+        action: DabblerButton(
+          label: 'View all',
+          tone: DabblerButtonTone.text,
+          size: DabblerButtonSize.small,
+          onPressed: () => onViewAll(mode),
+        ),
+        children: rows,
+      ),
+    );
 
     return ListView(
       padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
       children: [
         Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space4,
-            DabblerSpacing.space6,
-            0,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space4,
+            end: DabblerSpacing.space6,
           ),
           child: Row(
             children: [
               Expanded(
-                child: Text.rich(
-                  TextSpan(
-                    children: [
-                      const TextSpan(text: 'Showing results for '),
-                      TextSpan(
-                        text: '"$q"',
-                        style: TextStyle(
-                          color: colors.brandPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                child: DabblerText.rich([
+                  const DabblerTextSpan('Showing results for '),
+                  DabblerTextSpan(
+                    '"$q"',
+                    tone: DabblerTextTone.brand,
+                    weight: DabblerTextWeight.semibold,
                   ),
-                  style: _type(context, DabblerType.footnote,
-                      colors.textPrimary),
-                ),
+                ], style: DabblerType.footnote),
               ),
-              Text(
+              DabblerText(
                 '~${b.totalCount}',
-                style: _type(context, DabblerType.caption1,
-                    colors.textSecondary,
-                    weight: FontWeight.w600),
+                style: DabblerType.caption1,
+                tone: DabblerTextTone.secondary,
+                weight: DabblerTextWeight.semibold,
               ),
             ],
           ),
@@ -733,8 +739,11 @@ class _AllTabSections extends StatelessWidget {
               _HashtagRow(
                 hashtag: h,
                 query: q,
-                leading: DabblerIcon('hashtag',
-                    size: 22, color: colors.brandPrimary),
+                leading: DabblerIcon(
+                  'hashtag',
+                  size: DabblerSizing.iconRow,
+                  color: colors.brandPrimary,
+                ),
               ),
           ]),
         if (b.games.isNotEmpty)
@@ -837,7 +846,7 @@ class _GameRow extends StatelessWidget {
     return DabblerInputRow(
       leading: DabblerSportIcon.fromKey(
         game.sport.toLowerCase(),
-        size: 24,
+        size: DabblerSizing.iconMd,
         color: colors.brandPrimary,
       ),
       titleSpan: _hl(context, game.title, query),
@@ -850,14 +859,15 @@ class _GameRow extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
+          DabblerText(
             spotsText,
-            style: _type(context, DabblerType.subheadline, colors.textPrimary,
-                weight: FontWeight.w800),
+            style: DabblerType.subheadline,
+            weight: DabblerTextWeight.heavy,
           ),
-          Text(
+          const DabblerText(
             'spots',
-            style: _type(context, DabblerType.caption1, colors.textSecondary),
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.secondary,
           ),
         ],
       ),
@@ -874,8 +884,11 @@ class _VenueRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
-      leading: DabblerIcon('buildings',
-          size: 24, color: DabblerColors.of(context).brandPrimary),
+      leading: DabblerIcon(
+        'buildings',
+        size: DabblerSizing.iconMd,
+        color: DabblerColors.of(context).brandPrimary,
+      ),
       titleSpan: _hl(context, venue.name, query),
       subtitle: venue.address,
     );
@@ -890,11 +903,15 @@ class _MeetupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DabblerInputRow(
-      leading: DabblerIcon('calendar',
-          size: 24, color: DabblerColors.of(context).brandPrimary),
+      leading: DabblerIcon(
+        'calendar',
+        size: DabblerSizing.iconMd,
+        color: DabblerColors.of(context).brandPrimary,
+      ),
       titleSpan: _hl(context, meetup.title, query),
-      subtitle:
-          meetup.startAt != null ? _formatGameWhen(meetup.startAt!) : null,
+      subtitle: meetup.startAt != null
+          ? _formatGameWhen(meetup.startAt!)
+          : null,
       trailing: const DabblerBadge(label: 'RSVP'),
     );
   }
@@ -958,7 +975,6 @@ class _PostTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return _TextResult(
       text: post.body,
       query: query,
@@ -971,19 +987,19 @@ class _PostTile extends StatelessWidget {
           ),
           const SizedBox(width: DabblerSpacing.space3),
           Expanded(
-            child: Text(
+            child: DabblerText(
               post.authorDisplayName ?? 'Post',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: _type(context, DabblerType.footnote, colors.textPrimary,
-                  weight: FontWeight.w700),
+              style: DabblerType.footnote,
+              weight: DabblerTextWeight.bold,
             ),
           ),
           if (post.createdAt != null)
-            Text(
+            DabblerText(
               _relativeTime(post.createdAt!),
-              style:
-                  _type(context, DabblerType.caption1, colors.textTertiary),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.tertiary,
             ),
         ],
       ),
@@ -998,7 +1014,6 @@ class _CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return _TextResult(
       text: comment.snippet,
       query: query,
@@ -1006,20 +1021,19 @@ class _CommentTile extends StatelessWidget {
           context.push('${RoutePaths.socialPostDetail}/${comment.postId}'),
       header: comment.postTitle == null
           ? const SizedBox.shrink()
-          : Text.rich(
-              TextSpan(children: [
-                const TextSpan(text: 'on '),
-                TextSpan(
-                  text: comment.postTitle!,
-                  style: TextStyle(
-                    color: colors.brandPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+          : DabblerText.rich(
+              [
+                const DabblerTextSpan('on '),
+                DabblerTextSpan(
+                  comment.postTitle!,
+                  tone: DabblerTextTone.brand,
+                  weight: DabblerTextWeight.semibold,
                 ),
-              ]),
+              ],
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: _type(context, DabblerType.caption1, colors.textSecondary),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
             ),
     );
   }
@@ -1075,7 +1089,6 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final label = _modeLabel(widget.mode);
     final count = _itemCount();
 
@@ -1112,19 +1125,17 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: Text.rich(
-                    TextSpan(children: [
-                      TextSpan(
-                        text: '$count ',
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
+                  child: DabblerText.rich(
+                    [
+                      DabblerTextSpan(
+                        '$count ',
+                        tone: DabblerTextTone.primary,
+                        weight: DabblerTextWeight.heavy,
                       ),
-                      TextSpan(text: '$label · sorted by $_sort'),
-                    ]),
-                    style: _type(context, DabblerType.footnote,
-                        colors.textSecondary),
+                      DabblerTextSpan('$label · sorted by $_sort'),
+                    ],
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                   ),
                 ),
                 const DabblerBadge(label: 'Trending only'),
@@ -1181,7 +1192,11 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
           empty: 'No people found',
           children: [
             for (final p in b.profiles)
-              _PersonRow(profile: p, query: q, onTap: () => widget.onProfileTap(p)),
+              _PersonRow(
+                profile: p,
+                query: q,
+                onTap: () => widget.onProfileTap(p),
+              ),
           ],
         );
       case SearchMode.games:
@@ -1209,7 +1224,9 @@ class _ViewAllScreenState extends State<_ViewAllScreen> {
       case SearchMode.meetups:
         return _ResultList(
           empty: 'No meetups found',
-          children: [for (final m in b.meetups) _MeetupRow(meetup: m, query: q)],
+          children: [
+            for (final m in b.meetups) _MeetupRow(meetup: m, query: q),
+          ],
         );
       case SearchMode.all:
         return const SizedBox.shrink();

@@ -213,7 +213,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = DabblerColors.of(context);
     final countryState = ref.watch(selectedCountryProvider);
     final locale = ref.watch(localeProvider);
     final countryName = countryState.maybeWhen(
@@ -240,22 +239,14 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: DabblerSpacing.space6),
-                        Text(
+                        DabblerText(
                           l10n.auth_welcome_title,
-                          style: authText(
-                            context,
-                            DabblerType.largeTitle,
-                            color: colors.textPrimary,
-                          ),
+                          style: DabblerType.largeTitle,
                         ),
                         const SizedBox(height: DabblerSpacing.space3),
-                        Text(
+                        DabblerText(
                           l10n.auth_welcome_subtitle,
-                          style: authText(
-                            context,
-                            DabblerType.body,
-                            color: colors.textSecondary,
-                          ),
+                          tone: DabblerTextTone.secondary,
                         ),
                         const SizedBox(height: DabblerSpacing.space8),
                         _TrustBenefitsCard(
@@ -369,7 +360,6 @@ class _TrustBenefitsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return DabblerCard(
       variant: DabblerCardVariant.white,
       padding: EdgeInsets.zero,
@@ -400,13 +390,9 @@ class _TrustBenefitsCard extends StatelessWidget {
                   DabblerIconTile.named(benefits[i].$1),
                   const SizedBox(width: DabblerSpacing.space4),
                   Expanded(
-                    child: Text(
+                    child: DabblerText(
                       benefits[i].$2,
-                      style: authText(
-                        context,
-                        DabblerType.subheadline,
-                        color: colors.textPrimary,
-                      ),
+                      style: DabblerType.subheadline,
                     ),
                   ),
                 ],
@@ -434,13 +420,11 @@ class _CountryPickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -453,13 +437,9 @@ class _CountryPickerSheet extends StatelessWidget {
               DabblerSpacing.space4,
               DabblerSpacing.space2,
             ),
-            child: Text(
+            child: DabblerText(
               AppLocalizations.of(context).auth_welcome_country_picker_title,
-              style: authText(
-                context,
-                DabblerType.title3,
-                color: colors.textPrimary,
-              ),
+              style: DabblerType.title3,
             ),
           ),
           if (loading)
@@ -501,14 +481,12 @@ class _LanguagePickerSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
     final current = ref.watch(localeProvider);
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space4,
-        0,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space4,
+        end: DabblerSpacing.space4,
+        bottom: DabblerSpacing.space6,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -521,13 +499,9 @@ class _LanguagePickerSheet extends ConsumerWidget {
               DabblerSpacing.space4,
               DabblerSpacing.space2,
             ),
-            child: Text(
+            child: DabblerText(
               AppLocalizations.of(context).auth_welcome_language_picker_title,
-              style: authText(
-                context,
-                DabblerType.title3,
-                color: colors.textPrimary,
-              ),
+              style: DabblerType.title3,
             ),
           ),
           ..._languages.map((lang) {

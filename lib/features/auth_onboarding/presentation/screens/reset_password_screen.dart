@@ -41,8 +41,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
@@ -59,18 +57,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
+              DabblerText(
                 l10n.reset_password_title,
-                style: DabblerType.largeTitle
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textPrimary),
+                style: DabblerType.largeTitle,
               ),
               const SizedBox(height: DabblerSpacing.space3),
-              Text(
+              DabblerText(
                 l10n.reset_password_subtitle,
-                style: DabblerType.body
-                    .resolveForDirection(direction)
-                    .copyWith(color: colors.textSecondary),
+                tone: DabblerTextTone.secondary,
               ),
               const SizedBox(height: DabblerSpacing.space9),
               DabblerTextField(

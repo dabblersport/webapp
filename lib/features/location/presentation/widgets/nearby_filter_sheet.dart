@@ -47,8 +47,6 @@ class _NearbyFilterSheetState extends ConsumerState<NearbyFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final radiusMeters = ref.watch(nearbyRadiusProvider);
 
     return Padding(
@@ -68,12 +66,7 @@ class _NearbyFilterSheetState extends ConsumerState<NearbyFilterSheet> {
           const SizedBox(height: DabblerSpacing.space8),
 
           // ── Sort by ─────────────────────────────────────────────────────
-          Text(
-            'Sort by',
-            style: DabblerType.headline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textPrimary),
-          ),
+          DabblerText('Sort by', style: DabblerType.headline),
           const SizedBox(height: DabblerSpacing.space3),
           Wrap(
             spacing: DabblerSpacing.space3,

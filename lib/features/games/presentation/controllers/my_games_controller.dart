@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import 'package:dabbler/core/utils/logger.dart';
@@ -434,7 +435,7 @@ class MyGamesController extends StateNotifier<MyGamesState> {
   /// Check in to a game
   Future<void> checkInToGame(String gameId) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(PlayTiming.mockLatencyLong);
 
       // Update game status or refresh data
       await loadUpcomingGames();

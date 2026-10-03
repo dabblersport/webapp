@@ -16,11 +16,10 @@ class ActivitySearchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        0,
-        DabblerSpacing.space6,
-        DabblerSpacing.space3,
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space3,
       ),
       child: Row(
         children: [

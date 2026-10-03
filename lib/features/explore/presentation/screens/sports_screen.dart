@@ -31,15 +31,6 @@ import 'package:dabbler/utils/helpers/date_formatter.dart';
 /// No design frame exists for this screen (route `/sports-explore`): it is
 /// rebuilt with design-system defaults in the same structure.
 
-TextStyle _type(
-  BuildContext context,
-  DabblerTypeStyle style,
-  Color color, {
-  FontWeight? weight,
-}) => style
-    .resolveForDirection(Directionality.of(context))
-    .copyWith(color: color, fontWeight: weight);
-
 const EdgeInsetsDirectional _gutter = EdgeInsetsDirectional.symmetric(
   horizontal: DabblerSpacing.space6,
 );
@@ -336,19 +327,15 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     return StatefulBuilder(
       builder: (context, setModalState) {
-        final colors = DabblerColors.of(context);
-        Widget label(String text) => Text(
+        Widget label(String text) => DabblerText(
           text,
-          style: _type(
-            context,
-            DabblerType.subheadline,
-            colors.textPrimary,
-            weight: FontWeight.w600,
-          ),
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
         );
-        Widget caption(String text) => Text(
+        Widget caption(String text) => DabblerText(
           text,
-          style: _type(context, DabblerType.footnote, colors.textSecondary),
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
         );
 
         void onSportFilter(String key, dynamic value) {
@@ -754,32 +741,25 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                DabblerText(
                   'Sports',
-                  style: _type(
-                    context,
-                    DabblerType.title1,
-                    colors.textPrimary,
-                    weight: FontWeight.w700,
-                  ),
+                  style: DabblerType.title1,
+                  weight: DabblerTextWeight.bold,
                 ),
                 const SizedBox(height: DabblerSpacing.space1),
                 Row(
                   children: [
                     DabblerIcon(
                       'location',
-                      size: 14,
+                      size: DabblerSizing.iconInline,
                       color: colors.brandPrimary,
                     ),
                     const SizedBox(width: DabblerSpacing.space1),
                     Flexible(
-                      child: Text(
+                      child: DabblerText(
                         areaLabel ?? 'Location not available',
-                        style: _type(
-                          context,
-                          DabblerType.footnote,
-                          colors.brandPrimary,
-                        ),
+                        style: DabblerType.footnote,
+                        tone: DabblerTextTone.brand,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -795,7 +775,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       },
                       child: DabblerIcon(
                         'refresh',
-                        size: 14,
+                        size: DabblerSizing.iconInline,
                         color: colors.brandPrimary,
                         semanticLabel: 'Change location',
                       ),
@@ -1104,9 +1084,11 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
         children: List.generate(
           5,
           (index) => Padding(
-            padding: EdgeInsetsDirectional.only(
-              bottom: index == 4 ? 0 : DabblerSpacing.space3,
-            ),
+            padding: index == 4
+                ? EdgeInsets.zero
+                : const EdgeInsetsDirectional.only(
+                    bottom: DabblerSpacing.space3,
+                  ),
             child: const VenueCard(venue: {}, isLoading: true),
           ),
         ),

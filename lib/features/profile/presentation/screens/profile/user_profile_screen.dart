@@ -122,15 +122,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     await _loadProfileData();
   }
 
-  TextStyle _t(
-    BuildContext context,
-    DabblerTypeStyle step,
-    Color color, {
-    FontWeight? weight,
-  }) => step
-      .resolveForDirection(Directionality.of(context))
-      .copyWith(color: color, fontWeight: weight);
-
   void _toast(
     String message, {
     DabblerToastTone tone = DabblerToastTone.neutral,
@@ -170,7 +161,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           icon: 'profile-circle',
           title: l10n.user_profile_error_not_found_title,
           text:
-              profileState.errorMessage ?? l10n.user_profile_error_unable_to_load,
+              profileState.errorMessage ??
+              l10n.user_profile_error_unable_to_load,
           size: DabblerEmptyStateSize.page,
           action: DabblerButton(
             label: l10n.user_profile_btn_go_back,
@@ -217,7 +209,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _buildUnifiedStats(context, profileState, sportsState),
+                          _buildUnifiedStats(
+                            context,
+                            profileState,
+                            sportsState,
+                          ),
                           _buildSportsChipsSection(context, profile, colors),
                           _buildSportProfileHeaderSection(
                             context,
@@ -280,24 +276,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    DabblerText(
                       name,
+                      style: DabblerType.title2,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: _t(context, DabblerType.title2, colors.textPrimary),
                     ),
                     if (profile?.username != null &&
                         profile!.username!.isNotEmpty)
-                      Text(
-                        // LRM keeps the @ on the handle's side in RTL.
+                      // LRM keeps the @ on the handle's side in RTL.
+                      DabblerText(
                         '\u200E@${profile.username}',
+                        style: DabblerType.subheadline,
+                        tone: DabblerTextTone.secondary,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: _t(
-                          context,
-                          DabblerType.subheadline,
-                          colors.textSecondary,
-                        ),
                       ),
                   ],
                 ),
@@ -316,9 +309,10 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           // ── Bio ──
           if (profile?.bio?.isNotEmpty == true) ...[
             const SizedBox(height: DabblerSpacing.space4),
-            Text(
+            DabblerText(
               profile!.bio!,
-              style: _t(context, DabblerType.callout, colors.textSecondary),
+              style: DabblerType.callout,
+              tone: DabblerTextTone.secondary,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
@@ -353,19 +347,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(
+            DabblerText(
               '$value',
-              style: _t(
-                context,
-                DabblerType.headline,
-                colors.textPrimary,
-                weight: FontWeight.w700,
-              ),
+              style: DabblerType.headline,
+              weight: DabblerTextWeight.bold,
             ),
             const SizedBox(width: DabblerSpacing.space1),
-            Text(
+            DabblerText(
               label,
-              style: _t(context, DabblerType.footnote, colors.textSecondary),
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
             ),
           ],
         ),
@@ -418,8 +409,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             if (ctx != null) {
               Scrollable.ensureVisible(
                 ctx,
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOut,
+                duration: DabblerMotion.durationOf(
+                  context,
+                  DabblerMotion.scrollTo,
+                ),
+                curve: DabblerMotion.standardInOut,
               );
             }
           },
@@ -468,14 +462,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         // Pulsing dot for online, static neutral dot for offline
         _OnlineStatusDot(isOnline: isOnline),
         const SizedBox(width: DabblerSpacing.space2),
-        Text(
+        DabblerText(
           lastSeenText,
-          style: _t(
-            context,
-            DabblerType.caption1,
-            isOnline ? colors.success.strong : colors.textTertiary,
-            weight: isOnline ? FontWeight.w600 : FontWeight.w400,
-          ),
+          style: DabblerType.caption1,
+          tone: isOnline ? DabblerTextTone.success : DabblerTextTone.tertiary,
+          weight: isOnline
+              ? DabblerTextWeight.semibold
+              : DabblerTextWeight.regular,
         ),
       ],
     );
@@ -519,20 +512,22 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           DabblerBadge(
             label: sportName,
             tone: DabblerBadgeTone.withIcon,
-            icon: sport == null ? null : DabblerSportIcon(sport, size: 14),
+            icon: sport == null
+                ? null
+                : DabblerSportIcon(sport, size: DabblerSizing.iconInline),
           ),
         if (location.isNotEmpty)
           DabblerBadge(
             label: location,
             tone: DabblerBadgeTone.withIcon,
-            icon: const DabblerIcon('location', size: 14),
+            icon: const DabblerIcon('location', size: DabblerSizing.iconInline),
           ),
         if (profile?.age != null)
           DabblerBadge(
             label:
                 '${profile!.age!} ${AppLocalizations.of(context).user_profile_age_suffix}',
             tone: DabblerBadgeTone.withIcon,
-            icon: const DabblerIcon('cake', size: 14),
+            icon: const DabblerIcon('cake', size: DabblerSizing.iconInline),
           ),
       ],
     );
@@ -670,9 +665,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          DabblerText(
             AppLocalizations.of(context).profile_section_sports,
-            style: _t(context, DabblerType.headline, colors.textPrimary),
+            style: DabblerType.headline,
           ),
           const SizedBox(height: DabblerSpacing.space3),
           if (isWide)
@@ -990,7 +985,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         );
       },
       loading: () => const SizedBox(
-        height: 140,
+        height: DabblerSizing.loadingBlockHeight,
         child: Center(child: DabblerSpinner()),
       ),
       error: (error, stackTrace) => _buildSportProfileEmptyState(context),
@@ -1035,7 +1030,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final isBlocked = ref.read(isUserBlockedProvider(userId));
     isBlocked.whenData((blocked) {
       if (blocked) {
-        _toast(AppLocalizations.of(context).user_profile_cannot_message_blocked);
+        _toast(
+          AppLocalizations.of(context).user_profile_cannot_message_blocked,
+        );
         return;
       }
       context.push('${RoutePaths.socialChat}/$userId');
@@ -1265,12 +1262,11 @@ class _OnlineStatusDotState extends State<_OnlineStatusDot>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: DabblerMotion.ambientLoop,
     );
-    _animation = Tween<double>(
-      begin: 0.4,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: DabblerMotion.standardInOut),
+    );
     if (widget.isOnline) _controller.repeat(reverse: true);
   }
 

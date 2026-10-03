@@ -60,7 +60,7 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
   void _onFocusChange() {
     if (!_focusNode.hasFocus) {
       // Delay removal so tap on overlay item registers first.
-      Future.delayed(const Duration(milliseconds: 200), _removeOverlay);
+      Future.delayed(DabblerMotion.delaySettle, _removeOverlay);
     }
   }
 
@@ -74,7 +74,7 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 300), () {
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
       if (!mounted) return;
       setState(() => _query = trimmed);
       _showOverlay();
@@ -153,12 +153,7 @@ class _ResultsDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final async = ref.watch(mapboxGeocodeProvider(query));
-    final secondary = DabblerType.subheadline
-        .resolveForDirection(direction)
-        .copyWith(color: colors.textSecondary);
 
     return DabblerSurface(
       radius: DabblerRadius.lg,
@@ -171,13 +166,21 @@ class _ResultsDropdown extends ConsumerWidget {
           ),
           error: (_, __) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space5),
-            child: Text('Couldn’t load results', style: secondary),
+            child: DabblerText(
+              'Couldn’t load results',
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
+            ),
           ),
           data: (places) {
             if (places.isEmpty) {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space5),
-                child: Text('No results found', style: secondary),
+                child: DabblerText(
+                  'No results found',
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
+                ),
               );
             }
             return ListView.separated(
@@ -202,20 +205,17 @@ class _ResultsDropdown extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        DabblerText(
                           place.name,
-                          style: DabblerType.headline
-                              .resolveForDirection(direction)
-                              .copyWith(color: colors.textPrimary),
+                          style: DabblerType.headline,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: DabblerSpacing.space1),
-                        Text(
+                        DabblerText(
                           place.fullAddress,
-                          style: DabblerType.footnote
-                              .resolveForDirection(direction)
-                              .copyWith(color: colors.textSecondary),
+                          style: DabblerType.footnote,
+                          tone: DabblerTextTone.secondary,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
