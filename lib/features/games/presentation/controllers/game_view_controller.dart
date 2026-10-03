@@ -1,3 +1,5 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,7 +34,8 @@ class GameRosterEntry {
       profileId: j['profile_id'] as String,
       userId: j['user_id'] as String,
       role: j['role'] as String? ?? 'player',
-      displayName: profile['display_name'] as String? ??
+      displayName:
+          profile['display_name'] as String? ??
           profile['username'] as String? ??
           'Player',
       avatarUrl: profile['avatar_url'] as String?,
@@ -62,7 +65,8 @@ class GameWaitlistEntry {
       profileId: j['profile_id'] as String,
       userId: j['user_id'] as String,
       position: j['position'] as int? ?? 0,
-      displayName: profile['display_name'] as String? ??
+      displayName:
+          profile['display_name'] as String? ??
           profile['username'] as String? ??
           'Player',
       avatarUrl: profile['avatar_url'] as String?,
@@ -93,7 +97,8 @@ class GameJoinRequestEntry {
       id: j['id'] as String,
       profileId: j['from_profile_id'] as String,
       userId: j['from_user_id'] as String,
-      displayName: profile['display_name'] as String? ??
+      displayName:
+          profile['display_name'] as String? ??
           profile['username'] as String? ??
           'Player',
       avatarUrl: profile['avatar_url'] as String?,
@@ -293,8 +298,8 @@ class GameViewController extends StateNotifier<GameViewState> {
     required SupabaseClient supabase,
     required this.gameId,
     required this.currentUserId,
-  })  : _db = supabase,
-        super(const GameViewState()) {
+  }) : _db = supabase,
+       super(const GameViewState()) {
     _load();
     _subscribeToChanges();
   }
@@ -329,10 +334,10 @@ class GameViewController extends StateNotifier<GameViewState> {
   /// of truth.
   void _subscribeToChanges() {
     PostgresChangeFilter byGame(String column) => PostgresChangeFilter(
-          type: PostgresChangeFilterType.eq,
-          column: column,
-          value: gameId,
-        );
+      type: PostgresChangeFilterType.eq,
+      column: column,
+      value: gameId,
+    );
 
     _channel = _db.channel('game_view_$gameId')
       ..onPostgresChanges(
@@ -363,7 +368,7 @@ class GameViewController extends StateNotifier<GameViewState> {
   /// insert) into a single reload.
   void _scheduleRealtimeRefresh() {
     _refreshDebounce?.cancel();
-    _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
+    _refreshDebounce = Timer(DabblerMotion.debounceSearch, () {
       if (mounted) _load();
     });
   }
@@ -408,12 +413,16 @@ class GameViewController extends StateNotifier<GameViewState> {
     try {
       final rows = await _db
           .from(SupabaseConfig.gameRosterTable)
-          .select('profile_id, user_id, role, profiles(display_name, username, avatar_url)')
+          .select(
+            'profile_id, user_id, role, profiles(display_name, username, avatar_url)',
+          )
           .eq('game_id', gameId)
           .eq('status', 'active')
           .order('joined_at');
       state = state.copyWith(
-        roster: (rows as List).map((r) => GameRosterEntry.fromJson(r as Map<String, dynamic>)).toList(),
+        roster: (rows as List)
+            .map((r) => GameRosterEntry.fromJson(r as Map<String, dynamic>))
+            .toList(),
       );
     } catch (_) {}
   }
@@ -422,11 +431,15 @@ class GameViewController extends StateNotifier<GameViewState> {
     try {
       final rows = await _db
           .from(SupabaseConfig.gameWaitlistTable)
-          .select('profile_id, user_id, position, profiles(display_name, username, avatar_url)')
+          .select(
+            'profile_id, user_id, position, profiles(display_name, username, avatar_url)',
+          )
           .eq('game_id', gameId)
           .order('position');
       state = state.copyWith(
-        waitlist: (rows as List).map((r) => GameWaitlistEntry.fromJson(r as Map<String, dynamic>)).toList(),
+        waitlist: (rows as List)
+            .map((r) => GameWaitlistEntry.fromJson(r as Map<String, dynamic>))
+            .toList(),
       );
     } catch (_) {}
   }
@@ -436,14 +449,16 @@ class GameViewController extends StateNotifier<GameViewState> {
       final rows = await _db
           .from(SupabaseConfig.gameJoinRequestsTable)
           .select(
-              'id, from_profile_id, from_user_id, profiles(display_name, username, avatar_url)')
+            'id, from_profile_id, from_user_id, profiles(display_name, username, avatar_url)',
+          )
           .eq('game_id', gameId)
           .eq('status', 'pending')
           .order('created_at', ascending: true);
       state = state.copyWith(
         pendingRequests: (rows as List)
-            .map((r) =>
-                GameJoinRequestEntry.fromJson(r as Map<String, dynamic>))
+            .map(
+              (r) => GameJoinRequestEntry.fromJson(r as Map<String, dynamic>),
+            )
             .toList(),
       );
     } catch (_) {}
@@ -465,14 +480,12 @@ class GameViewController extends StateNotifier<GameViewState> {
 
   // ── Derived booleans the screen needs ─────────────────────────────────────
 
-  bool get isHost => state.roster.any(
-        (r) => r.userId == currentUserId && r.isHost,
-      );
+  bool get isHost =>
+      state.roster.any((r) => r.userId == currentUserId && r.isHost);
 
   bool get isOnRoster => state.roster.any((r) => r.userId == currentUserId);
 
-  bool get isOnWaitlist =>
-      state.waitlist.any((r) => r.userId == currentUserId);
+  bool get isOnWaitlist => state.waitlist.any((r) => r.userId == currentUserId);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -482,10 +495,12 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      final rows = await _db.rpc(SupabaseConfig.rpcJoinGameFn, params: {
-        'p_actor_type': 'player',
-        'p_game_id': gameId,
-      }) as List;
+      final rows =
+          await _db.rpc(
+                SupabaseConfig.rpcJoinGameFn,
+                params: {'p_actor_type': 'player', 'p_game_id': gameId},
+              )
+              as List;
 
       if (rows.isEmpty) {
         state = state.copyWith(isActing: false, error: 'Unexpected response');
@@ -540,12 +555,15 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      await _db.rpc(SupabaseConfig.rpcLeaveGameFn, params: {
-        'p_actor_type': 'player',
-        'p_game_id': gameId,
-      });
+      await _db.rpc(
+        SupabaseConfig.rpcLeaveGameFn,
+        params: {'p_actor_type': 'player', 'p_game_id': gameId},
+      );
       await _load();
-      state = state.copyWith(isActing: false, lastAction: JoinActionResult.left);
+      state = state.copyWith(
+        isActing: false,
+        lastAction: JoinActionResult.left,
+      );
     } catch (e) {
       state = state.copyWith(isActing: false, error: _extractRpcError(e));
     }
@@ -579,10 +597,10 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      await _db.rpc(SupabaseConfig.rpcDecideJoinRequestFn, params: {
-        'p_request_id': requestId,
-        'p_approve': approve,
-      });
+      await _db.rpc(
+        SupabaseConfig.rpcDecideJoinRequestFn,
+        params: {'p_request_id': requestId, 'p_approve': approve},
+      );
       await _load();
       state = state.copyWith(isActing: false);
     } catch (e) {
@@ -598,10 +616,10 @@ class GameViewController extends StateNotifier<GameViewState> {
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
-      await _db.rpc(SupabaseConfig.rpcRemovePlayerFn, params: {
-        'p_game_id': gameId,
-        'p_profile_id': profileId,
-      });
+      await _db.rpc(
+        SupabaseConfig.rpcRemovePlayerFn,
+        params: {'p_game_id': gameId, 'p_profile_id': profileId},
+      );
       await _load();
       state = state.copyWith(isActing: false);
     } catch (e) {
@@ -628,11 +646,11 @@ class GameViewController extends StateNotifier<GameViewState> {
 
 final gameViewControllerProvider = StateNotifierProvider.family
     .autoDispose<GameViewController, GameViewState, String>((ref, gameId) {
-  final supabase = Supabase.instance.client;
-  final currentUserId = supabase.auth.currentUser?.id;
-  return GameViewController(
-    supabase: supabase,
-    gameId: gameId,
-    currentUserId: currentUserId,
-  );
-});
+      final supabase = Supabase.instance.client;
+      final currentUserId = supabase.auth.currentUser?.id;
+      return GameViewController(
+        supabase: supabase,
+        gameId: gameId,
+        currentUserId: currentUserId,
+      );
+    });

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -346,7 +347,7 @@ class VenuesController extends StateNotifier<VenuesState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(PlayTiming.mockLatencyLong);
 
       final filteredVenues = state.venues.where((venueWithDistance) {
         final venue = venueWithDistance.venue;
@@ -372,7 +373,7 @@ class VenuesController extends StateNotifier<VenuesState> {
     required String endTime,
   }) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(PlayTiming.mockLatencyMedium);
 
       // Mock implementation - randomly return availability
       return DateTime.now().millisecond % 3 != 0;
@@ -403,7 +404,7 @@ class VenuesController extends StateNotifier<VenuesState> {
   /// Add venue to favorites
   Future<void> addToFavorites(String venueId) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(PlayTiming.mockLatencyShort);
 
       final venue = state.venues
           .firstWhere((vwd) => vwd.venue.id == venueId)
@@ -421,7 +422,7 @@ class VenuesController extends StateNotifier<VenuesState> {
   /// Remove venue from favorites
   Future<void> removeFromFavorites(String venueId) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(PlayTiming.mockLatencyShort);
 
       final updatedFavorites = state.favoriteVenues
           .where((venue) => venue.id != venueId)

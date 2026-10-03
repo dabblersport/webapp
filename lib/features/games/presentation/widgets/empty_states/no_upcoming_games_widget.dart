@@ -1,9 +1,6 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
-TextStyle _text(BuildContext context, DabblerTypeStyle step, Color color) =>
-    step.resolveForDirection(Directionality.of(context)).copyWith(color: color);
-
 /// Empty state widget when user has no upcoming games
 class NoUpcomingGamesWidget extends StatelessWidget {
   final VoidCallback? onCreateGame;
@@ -33,23 +30,27 @@ class NoUpcomingGamesWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const DabblerIconTile.named('calendar-tick', size: 72),
+            const DabblerIconTile.named(
+              'calendar-tick',
+              size: DabblerSizing.illustrationMd,
+            ),
 
             const SizedBox(height: DabblerSpacing.space8),
 
             // Title
-            Text(
+            DabblerText(
               'No upcoming games',
-              style: _text(context, DabblerType.headline, colors.textPrimary),
+              style: DabblerType.headline,
               textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: DabblerSpacing.space4),
 
             // Message
-            Text(
+            DabblerText(
               'You don\'t have any games scheduled. Start playing by creating your own game or joining one nearby!',
-              style: _text(context, DabblerType.body, colors.textSecondary),
+              style: DabblerType.body,
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
             ),
 
@@ -78,9 +79,10 @@ class NoUpcomingGamesWidget extends StatelessWidget {
 
             // Additional navigation options if available
             if (hasJoinedGames || hasPastGames) ...[
-              Text(
+              DabblerText(
                 'Or check your other games:',
-                style: _text(context, DabblerType.footnote, colors.textSecondary),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
                 textAlign: TextAlign.center,
               ),
 
@@ -126,26 +128,29 @@ class NoUpcomingGamesWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      DabblerIcon('lamp-on', size: 20, color: colors.textSecondary),
+                      DabblerIcon(
+                        'lamp-on',
+                        size: DabblerSizing.iconRow,
+                        color: colors.textSecondary,
+                      ),
                       const SizedBox(width: DabblerSpacing.space2),
-                      Text(
+                      DabblerText(
                         'Pro Tips',
-                        style: _text(
-                          context,
-                          DabblerType.subheadline,
-                          colors.textSecondary,
-                        ).copyWith(fontWeight: FontWeight.w600),
+                        style: DabblerType.subheadline,
+                        weight: DabblerTextWeight.semibold,
+                        tone: DabblerTextTone.secondary,
                       ),
                     ],
                   ),
 
                   const SizedBox(height: DabblerSpacing.space2),
 
-                  Text(
+                  DabblerText(
                     '• Create games in advance to give players time to join\n'
                     '• Set up recurring games for regular play sessions\n'
                     '• Join games early - popular ones fill up fast!',
-                    style: _text(context, DabblerType.footnote, colors.textSecondary),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                   ),
                 ],
               ),
@@ -172,8 +177,6 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space10),
@@ -182,23 +185,28 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
           children: [
             // Welcome mark (a flat brand tile; the old gradient is not in the
             // design system).
-            const DabblerIconTile.named('game', weight: DabblerIconWeight.bold, size: 72),
+            const DabblerIconTile.named(
+              'game',
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.illustrationMd,
+            ),
 
             const SizedBox(height: DabblerSpacing.space8),
 
             // Welcome title
-            Text(
+            DabblerText(
               'Welcome to Dabbler!',
-              style: _text(context, DabblerType.headline, colors.textPrimary),
+              style: DabblerType.headline,
               textAlign: TextAlign.center,
             ),
 
             const SizedBox(height: DabblerSpacing.space4),
 
             // Welcome message
-            Text(
+            DabblerText(
               'Ready to get in the game? Create your first game or join one nearby to start connecting with other players!',
-              style: _text(context, DabblerType.body, colors.textSecondary),
+              style: DabblerType.body,
+              tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
             ),
 
@@ -240,10 +248,7 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
               padding: const EdgeInsets.all(DabblerSpacing.space6),
               child: Column(
                 children: [
-                  Text(
-                    'What you can do:',
-                    style: _text(context, DabblerType.headline, colors.textPrimary),
-                  ),
+                  DabblerText('What you can do:', style: DabblerType.headline),
 
                   const SizedBox(height: DabblerSpacing.space5),
 
@@ -286,8 +291,6 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
     String title,
     String description,
   ) {
-    final DabblerColors colors = DabblerColors.of(context);
-
     return Row(
       children: [
         DabblerIconTile.named(icon),
@@ -298,14 +301,15 @@ class FirstTimeUserGamesWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              DabblerText(
                 title,
-                style: _text(context, DabblerType.subheadline, colors.textPrimary)
-                    .copyWith(fontWeight: FontWeight.w600),
+                style: DabblerType.subheadline,
+                weight: DabblerTextWeight.semibold,
               ),
-              Text(
+              DabblerText(
                 description,
-                style: _text(context, DabblerType.footnote, colors.textSecondary),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
               ),
             ],
           ),

@@ -49,8 +49,7 @@ class NewsTabState {
       final regionMatch =
           selectedRegion == null || item.regions.contains(selectedRegion);
       return sportMatch && regionMatch;
-    }).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return result;
   }
 
@@ -63,21 +62,20 @@ class NewsTabState {
     Object? error = _sentinel,
     Object? selectedSportId = _sentinel,
     Object? selectedRegion = _sentinel,
-  }) =>
-      NewsTabState(
-        items: items ?? this.items,
-        isLoading: isLoading ?? this.isLoading,
-        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-        hasMore: hasMore ?? this.hasMore,
-        loaded: loaded ?? this.loaded,
-        error: error == _sentinel ? this.error : error as String?,
-        selectedSportId: selectedSportId == _sentinel
-            ? this.selectedSportId
-            : selectedSportId as String?,
-        selectedRegion: selectedRegion == _sentinel
-            ? this.selectedRegion
-            : selectedRegion as String?,
-      );
+  }) => NewsTabState(
+    items: items ?? this.items,
+    isLoading: isLoading ?? this.isLoading,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    hasMore: hasMore ?? this.hasMore,
+    loaded: loaded ?? this.loaded,
+    error: error == _sentinel ? this.error : error as String?,
+    selectedSportId: selectedSportId == _sentinel
+        ? this.selectedSportId
+        : selectedSportId as String?,
+    selectedRegion: selectedRegion == _sentinel
+        ? this.selectedRegion
+        : selectedRegion as String?,
+  );
 
   static const Object _sentinel = Object();
 }
@@ -121,10 +119,7 @@ class NewsTabNotifier extends StateNotifier<NewsTabState> {
   }
 
   void clearFilters() {
-    state = state.copyWith(
-      selectedSportId: null,
-      selectedRegion: null,
-    );
+    state = state.copyWith(selectedSportId: null, selectedRegion: null);
   }
 
   Future<void> loadMore() async {
@@ -152,9 +147,9 @@ class NewsTabNotifier extends StateNotifier<NewsTabState> {
 /// Paginated news tab feed. Not autoDispose — caches across tab switches.
 final newsTabFeedProvider =
     StateNotifierProvider<NewsTabNotifier, NewsTabState>((ref) {
-  final repo = ref.watch(newsRepositoryProvider);
-  return NewsTabNotifier(repo);
-});
+      final repo = ref.watch(newsRepositoryProvider);
+      return NewsTabNotifier(repo);
+    });
 
 // ---------------------------------------------------------------------------
 // News preference — optimistic local override + async DB persist

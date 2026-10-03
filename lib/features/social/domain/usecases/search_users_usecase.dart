@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -45,7 +46,7 @@ class SearchUsersUseCase {
   ) async {
     try {
       // Mock implementation - in real app, this would call repository
-      await Future.delayed(const Duration(milliseconds: 300));
+      await Future.delayed(PlayTiming.mockLatencyMedium);
 
       final mockUsers = [
         UserProfile(

@@ -12,12 +12,6 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 
 typedef Result<T> = core.Result<T, Failure>;
 
-TextStyle _type(BuildContext context, DabblerTypeStyle style, Color color,
-        {FontWeight? weight}) =>
-    style
-        .resolveForDirection(Directionality.of(context))
-        .copyWith(color: color, fontWeight: weight);
-
 /// The snack messages, now DS toasts (same text).
 void _toast(BuildContext context, String message) {
   if (!context.mounted) return;
@@ -94,11 +88,11 @@ class _Details extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final title =
-        (submission.nameEn ?? submission.nameAr ?? 'Untitled venue').trim();
+    final title = (submission.nameEn ?? submission.nameAr ?? 'Untitled venue')
+        .trim();
     final canEdit = submission.isEditable;
-    final hasNote = submission.shouldShowAdminNote &&
+    final hasNote =
+        submission.shouldShowAdminNote &&
         (submission.adminNote ?? '').trim().isNotEmpty;
 
     return Column(
@@ -112,11 +106,10 @@ class _Details extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    DabblerText(
                       title,
-                      style: _type(context, DabblerType.title2,
-                          colors.textPrimary,
-                          weight: FontWeight.w800),
+                      style: DabblerType.title2,
+                      weight: DabblerTextWeight.heavy,
                     ),
                     const SizedBox(height: DabblerSpacing.space2),
                     VenueSubmissionStatusBadge(status: submission.status),
@@ -150,16 +143,9 @@ class _Details extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Admin note',
-                  style: _type(context, DabblerType.headline,
-                      colors.textPrimary),
-                ),
+                DabblerText('Admin note', style: DabblerType.headline),
                 const SizedBox(height: DabblerSpacing.space2),
-                Text(
-                  submission.adminNote!,
-                  style: _type(context, DabblerType.body, colors.textPrimary),
-                ),
+                DabblerText(submission.adminNote!, style: DabblerType.body),
               ],
             ),
           ),
@@ -169,10 +155,7 @@ class _Details extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Details',
-                style: _type(context, DabblerType.headline, colors.textPrimary),
-              ),
+              DabblerText('Details', style: DabblerType.headline),
               const SizedBox(height: DabblerSpacing.space3),
               _Kv(label: 'Name (EN)', value: submission.nameEn),
               _Kv(label: 'Name (AR)', value: submission.nameAr),
@@ -213,7 +196,6 @@ class _Kv extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final v = (value ?? '').trim();
     if (v.isEmpty) return const SizedBox.shrink();
 
@@ -222,13 +204,14 @@ class _Kv extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          DabblerText(
             label,
-            style: _type(context, DabblerType.footnote, colors.textSecondary,
-                weight: FontWeight.w700),
+            style: DabblerType.footnote,
+            weight: DabblerTextWeight.bold,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space1),
-          Text(v, style: _type(context, DabblerType.body, colors.textPrimary)),
+          DabblerText(v, style: DabblerType.body),
         ],
       ),
     );
@@ -253,10 +236,9 @@ class _ActionBar extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (!submission.isEditable) ...[
-            Text(
+            DabblerText(
               'This submission is read-only while ${submission.status.name}.',
-              style: _type(context, DabblerType.body,
-                  DabblerColors.of(context).textPrimary),
+              style: DabblerType.body,
             ),
             const SizedBox(height: DabblerSpacing.space3),
           ],
@@ -270,14 +252,11 @@ class _ActionBar extends ConsumerWidget {
                 submissionId: submission.id,
                 existing: submission,
               );
-              result.match(
-                (failure) => _toast(context, failure.message),
-                (_) {
-                  ref.invalidate(myVenueSubmissionsProvider);
-                  ref.invalidate(venueSubmissionByIdProvider(submission.id));
-                  _toast(context, 'Submitted for review.');
-                },
-              );
+              result.match((failure) => _toast(context, failure.message), (_) {
+                ref.invalidate(myVenueSubmissionsProvider);
+                ref.invalidate(venueSubmissionByIdProvider(submission.id));
+                _toast(context, 'Submitted for review.');
+              });
             },
           ),
         ],

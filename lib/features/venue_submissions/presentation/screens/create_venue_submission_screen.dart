@@ -184,7 +184,6 @@ class _CreateVenueSubmissionScreenState
     final initial = widget.initial;
     final isEditing = initial != null;
     final isEditable = initial?.isEditable ?? true; // new draft is editable
-    final colors = DabblerColors.of(context);
 
     const gap = SizedBox(height: DabblerSpacing.space3);
 
@@ -218,12 +217,7 @@ class _CreateVenueSubmissionScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Venue details',
-                  style: DabblerType.headline
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(color: colors.textPrimary),
-                ),
+                DabblerText('Venue details', style: DabblerType.headline),
                 gap,
                 _field('Name (English)', _nameEn, isEditable),
                 gap,

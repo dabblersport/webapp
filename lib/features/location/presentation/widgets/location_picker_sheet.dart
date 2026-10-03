@@ -175,9 +175,6 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     // The DabblerSheet body is already a scroll view, so this shrink-wraps
     // (the old DraggableScrollableSheet hosted its own lists).
     return Column(
@@ -204,14 +201,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
                 ),
                 const SizedBox(width: DabblerSpacing.space2),
               ],
-              Expanded(
-                child: Text(
-                  _title,
-                  style: DabblerType.headline
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textPrimary),
-                ),
-              ),
+              Expanded(child: DabblerText(_title, style: DabblerType.headline)),
             ],
           ),
         ),
@@ -280,7 +270,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
 
   void _onVenueQueryChanged(String _) {
     _venueDebounce?.cancel();
-    _venueDebounce = Timer(const Duration(milliseconds: 350), () {
+    _venueDebounce = Timer(DabblerMotion.debounceSearch, () {
       if (mounted) setState(() {});
     });
   }

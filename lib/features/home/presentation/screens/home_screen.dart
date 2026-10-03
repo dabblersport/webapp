@@ -294,7 +294,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       case FeedTab.news:
         await ref.read(newsTabFeedProvider.notifier).load();
     }
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(DabblerMotion.delaySettle);
   }
 
   Widget _buildHeader() {
@@ -389,8 +389,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                         .clearNewPostsBadge();
                     _scrollControllers[0].animateTo(
                       0,
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOut,
+                      duration: DabblerMotion.durationOf(
+                        context,
+                        DabblerMotion.scrollTo,
+                      ),
+                      curve: DabblerMotion.easeOut,
                     );
                   },
                 ),
@@ -435,7 +438,7 @@ class _ForYouTabBody extends ConsumerWidget {
         DabblerToastProvider.of(context).show(
           DabblerToastSpec(
             message: AppLocalizations.of(context).news_hidden_snack,
-            duration: const Duration(seconds: 3),
+            duration: DabblerMotion.toastLong,
           ),
         );
       }
@@ -473,7 +476,7 @@ class _ForYouTabBody extends ConsumerWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: DabblerInsets.listBottom,
         itemCount: itemCount,
         separatorBuilder: (_, index) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -513,7 +516,6 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -527,23 +529,17 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
         children: [
           DabblerIcon(
             'notification-status',
-            size: 36,
+            size: DabblerSizing.iconXl,
             color: colors.brandPrimary,
           ),
           const SizedBox(height: DabblerSpacing.space4),
-          Text(
-            l.news_hide_sheet_title,
-            style: DabblerType.headline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textPrimary),
-          ),
+          DabblerText(l.news_hide_sheet_title, style: DabblerType.headline),
           const SizedBox(height: DabblerSpacing.space2),
-          Text(
+          DabblerText(
             l.news_hide_sheet_body,
             textAlign: TextAlign.center,
-            style: DabblerType.subheadline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textSecondary),
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space8),
           Row(
@@ -618,7 +614,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: DabblerInsets.listBottom,
         itemCount: itemCount,
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -704,7 +700,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: DabblerInsets.rowVertical,
         itemCount: itemCount,
         separatorBuilder: (_, index) {
           if (index < events.length && events[index] is PostCreatedEvent) {
@@ -768,7 +764,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: DabblerInsets.listBottom,
         itemCount: itemCount,
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -847,15 +843,15 @@ class _PostCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
         horizontal: DabblerSpacing.space6,
         vertical: DabblerSpacing.space5,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DabblerSkeleton.circle(width: 44),
+          DabblerSkeleton.circle(width: DabblerAvatarSize.md.diameter),
           SizedBox(width: DabblerSpacing.space3),
           Expanded(child: DabblerSkeleton.text(lines: 3)),
         ],
@@ -928,7 +924,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
       child: ListView.builder(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: DabblerInsets.listBottom,
         itemCount: itemCount + headerCount,
         itemBuilder: (_, index) {
           if (index == 0) return _NewsFilterChips(state: state);
@@ -942,7 +938,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
                       message: AppLocalizations.of(
                         context,
                       ).news_resubscribed_snack,
-                      duration: const Duration(seconds: 3),
+                      duration: DabblerMotion.toastLong,
                     ),
                   );
                 }
@@ -1057,7 +1053,10 @@ class _NewsFilterChips extends ConsumerWidget {
           if (interestSports.isNotEmpty && regions.isNotEmpty)
             const Padding(
               padding: EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-              child: SizedBox(height: 24, child: DabblerDivider.vertical()),
+              child: SizedBox(
+                height: DabblerSpacing.space8,
+                child: DabblerDivider.vertical(),
+              ),
             ),
 
           // ── Region chips ─────────────────────────────────────────────
@@ -1089,7 +1088,6 @@ class _HomeHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final profile = ref.watch(profileControllerProvider).profile;
     final name =
         displayName ?? profile?.displayName ?? profile?.username ?? 'User';
@@ -1114,24 +1112,23 @@ class _HomeHeader extends ConsumerWidget {
               DabblerIcon(
                 'location',
                 weight: DabblerIconWeight.bold,
-                size: 13,
+                size: DabblerSizing.iconXs,
                 color: colors.brandPrimary,
               ),
               const SizedBox(width: DabblerSpacing.space1),
               Flexible(
-                child: Text(
+                child: DabblerText(
                   locationName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: DabblerType.caption2
-                      .resolveForDirection(direction)
-                      .copyWith(color: colors.textSecondary),
+                  style: DabblerType.caption2,
+                  tone: DabblerTextTone.secondary,
                 ),
               ),
               const SizedBox(width: DabblerSpacing.space1),
               DabblerIcon(
                 'arrow-circle-down',
-                size: 12,
+                size: DabblerSizing.iconXs,
                 color: colors.textSecondary,
               ),
             ],

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/usecases/friendship_usecases.dart';
@@ -533,7 +534,7 @@ class FriendsController extends StateNotifier<FriendsState> {
   // Private methods for data fetching (mock implementations)
   Future<List<UserModel>> _fetchFriendsByStatus(FriendStatus status) async {
     // Mock implementation - replace with actual repository call
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return List.generate(
       5,
@@ -550,7 +551,7 @@ class FriendsController extends StateNotifier<FriendsState> {
 
   Future<List<FriendRequestModel>> _fetchIncomingRequests() async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return List.generate(
       3,
@@ -566,7 +567,7 @@ class FriendsController extends StateNotifier<FriendsState> {
 
   Future<List<FriendRequestModel>> _fetchOutgoingRequests() async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return List.generate(
       2,
@@ -582,13 +583,13 @@ class FriendsController extends StateNotifier<FriendsState> {
 
   Future<List<UserModel>> _fetchBlockedUsers() async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
     return [];
   }
 
   Future<UserModel?> _fetchUserById(String userId) async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(PlayTiming.mockLatencyBrief);
 
     return UserModel(
       id: userId,
@@ -602,19 +603,19 @@ class FriendsController extends StateNotifier<FriendsState> {
 
   Future<bool> _acceptRequest(String requestId) async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(PlayTiming.mockLatencyLong);
     return true;
   }
 
   Future<bool> _declineRequest(String requestId) async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(PlayTiming.mockLatencyLong);
     return true;
   }
 
   Future<bool> _unblockUser(String userId) async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(PlayTiming.mockLatencyLong);
     return true;
   }
 
@@ -623,7 +624,7 @@ class FriendsController extends StateNotifier<FriendsState> {
     FriendStatus status,
   ) async {
     // Mock implementation
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(PlayTiming.mockLatencyMedium);
   }
 
   Future<void> _updateOnlineStatus() async {
@@ -641,7 +642,7 @@ class FriendsController extends StateNotifier<FriendsState> {
     // Setup WebSocket or real-time connection for online status
     _onlineStatusSubscription =
         Stream.periodic(
-          const Duration(seconds: 30),
+          PlayTiming.onlineStatusRefresh,
           (index) => <String, bool>{},
         ).listen((statusUpdates) {
           _updateOnlineStatus();

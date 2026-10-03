@@ -52,7 +52,6 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final dir = Directionality.of(context);
     final original = widget.originalPost;
     final authorLabel = (original.authorDisplayName ?? '').trim().isEmpty
         ? 'Anonymous'
@@ -88,27 +87,22 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  DabblerText(
                     authorLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: DabblerType.subheadline
-                        .resolveForDirection(dir)
-                        .copyWith(
-                          color: colors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: DabblerType.subheadline,
+                    weight: DabblerTextWeight.semibold,
                   ),
                   if (original.body != null &&
                       original.body!.trim().isNotEmpty) ...[
                     const SizedBox(height: DabblerSpacing.space1),
-                    Text(
+                    DabblerText(
                       original.body!,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: DabblerType.footnote
-                          .resolveForDirection(dir)
-                          .copyWith(color: colors.textSecondary),
+                      style: DabblerType.footnote,
+                      tone: DabblerTextTone.secondary,
                     ),
                   ],
                 ],

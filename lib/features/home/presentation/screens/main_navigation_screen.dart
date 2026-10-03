@@ -1,3 +1,4 @@
+import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -61,7 +62,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
       // Check after first frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(DabblerMotion.delayRetry, () {
           if (mounted) _checkAndShowModal();
         });
       });
@@ -145,12 +146,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                       ? 'Congratulations! You earned the Early Bird badge!'
                       : 'Checked in! Day $completedDays of 14',
                   tone: DabblerToastTone.success,
-                  duration: const Duration(seconds: 3),
+                  duration: DabblerMotion.toastLong,
                 ),
               );
 
               if (completedDays >= 14) {
-                await Future.delayed(const Duration(milliseconds: 500));
+                await Future.delayed(DabblerMotion.delayRetry);
                 if (mounted) {
                   final finalStatus = ref
                       .read(checkInControllerProvider)
@@ -170,7 +171,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               DabblerToastProvider.of(context).show(
                 const DabblerToastSpec(
                   message: 'Already checked in today!',
-                  duration: Duration(seconds: 2),
+                  duration: DabblerMotion.toastShort,
                 ),
               );
             }
@@ -294,13 +295,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     _lastBackPressAt = now;
 
     final pressedRecently =
-        last != null && now.difference(last) < const Duration(seconds: 2);
+        last != null && now.difference(last) < PlayTiming.backExitWindow;
 
     if (!pressedRecently) {
       DabblerToastProvider.of(context).show(
         DabblerToastSpec(
           message: AppLocalizations.of(context).nav_press_back_to_exit,
-          duration: const Duration(seconds: 2),
+          duration: DabblerMotion.toastShort,
         ),
       );
       return;

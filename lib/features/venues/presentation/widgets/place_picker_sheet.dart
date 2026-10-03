@@ -63,7 +63,7 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
 
     setState(() => _loading = true);
 
-    _debounce = Timer(const Duration(milliseconds: 350), () {
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
       _search(query.trim());
     });
   }
@@ -109,9 +109,6 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-
     // The DabblerSheet body is already a scroll view, so this shrink-wraps.
     const pad = EdgeInsets.all(DabblerSpacing.space8);
     return Column(
@@ -126,12 +123,7 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
             DabblerSpacing.space5,
             DabblerSpacing.space3,
           ),
-          child: Text(
-            'Add Location',
-            style: DabblerType.headline
-                .resolveForDirection(direction)
-                .copyWith(color: colors.textPrimary),
-          ),
+          child: DabblerText('Add Location', style: DabblerType.headline),
         ),
 
         // ── Search field ──

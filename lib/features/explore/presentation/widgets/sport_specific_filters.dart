@@ -1,5 +1,4 @@
 import 'package:dabbler/core/config/sport_filters_config.dart';
-import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,17 +14,9 @@ abstract class SportSpecificFilters extends StatelessWidget {
   });
 
   Widget buildSectionTitle(BuildContext context, String title) {
-    final DabblerColors colors = DabblerColors.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
-      child: Text(
-        title,
-        style: listingText(
-          context,
-          DabblerType.headline,
-          color: colors.textPrimary,
-        ),
-      ),
+      child: DabblerText(title, style: DabblerType.headline),
     );
   }
 

@@ -32,7 +32,6 @@ class PickerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final bool accent = brand || selected;
     final row = DabblerInputRow(
       flat: true,
@@ -41,9 +40,11 @@ class PickerRow extends StatelessWidget {
       titleSpan: accent
           ? TextSpan(
               text: title,
-              style: TextStyle(
-                color: colors.brandPrimary,
-                fontWeight: selected ? FontWeight.w600 : null,
+              style: DabblerText.resolveStyle(
+                context,
+                style: DabblerType.subheadline,
+                weight: selected ? DabblerTextWeight.semibold : null,
+                tone: DabblerTextTone.brand,
               ),
             )
           : null,

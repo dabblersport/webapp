@@ -1,6 +1,5 @@
 import 'package:dabbler/core/constants/uae_locations.dart';
 import 'package:dabbler/core/services/location_service.dart';
-import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -109,20 +108,14 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final DabblerColors colors = DabblerColors.of(context);
-
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
+        DabblerText(
           'Select Location',
+          style: DabblerType.headline,
           textAlign: TextAlign.center,
-          style: listingText(
-            context,
-            DabblerType.headline,
-            color: colors.textPrimary,
-          ),
         ),
         const SizedBox(height: DabblerSpacing.space6),
         DabblerButton(
@@ -181,7 +174,7 @@ class _LocationTile extends StatelessWidget {
     return DabblerInputRow(
       flat: true,
       onTap: onTap,
-      leading: const DabblerIcon('location', size: 20),
+      leading: const DabblerIcon('location', size: DabblerSizing.iconRow),
       title: location.displayName,
       subtitle: location.city,
       trailing: const DabblerChevron(),

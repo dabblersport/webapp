@@ -15,9 +15,7 @@ final nearbyVenuesDatasourceProvider = Provider<NearbyVenuesDatasource>((ref) {
 });
 
 final nearbyVenuesRepositoryProvider = Provider<NearbyVenuesRepository>((ref) {
-  return NearbyVenuesRepositoryImpl(
-    ref.watch(nearbyVenuesDatasourceProvider),
-  );
+  return NearbyVenuesRepositoryImpl(ref.watch(nearbyVenuesDatasourceProvider));
 });
 
 /// Per-screen sort state for nearby venues.
@@ -69,16 +67,18 @@ typedef NearbyVenuesParams = ({
 /// ```
 final nearbyVenuesProvider = FutureProvider.autoDispose
     .family<List<NearbyVenueModel>, NearbyVenuesParams>((ref, params) async {
-  final result = await ref.read(nearbyVenuesRepositoryProvider).getNearbyVenues(
-        lat: params.lat,
-        lng: params.lng,
-        radiusMeters: params.radiusMeters,
-        sportId: params.sportId,
-        sortOrder: params.sortOrder,
-      );
+      final result = await ref
+          .read(nearbyVenuesRepositoryProvider)
+          .getNearbyVenues(
+            lat: params.lat,
+            lng: params.lng,
+            radiusMeters: params.radiusMeters,
+            sportId: params.sportId,
+            sortOrder: params.sortOrder,
+          );
 
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (venues) => venues,
-  );
-});
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (venues) => venues,
+      );
+    });

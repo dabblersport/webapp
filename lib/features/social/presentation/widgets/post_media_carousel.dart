@@ -74,7 +74,8 @@ class PostMediaCarousel extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: padding ?? EdgeInsets.zero,
         itemCount: urls.length,
-        separatorBuilder: (_, __) => const SizedBox(width: DabblerSpacing.space2),
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: DabblerSpacing.space2),
         itemBuilder: (_, i) => DabblerImage(
           url: urls[i],
           width: width,
@@ -98,7 +99,11 @@ class PostMediaCarousel extends StatelessWidget {
 /// down to dismiss (the image follows the finger and the header fades; release
 /// past the threshold, or fling, to close), or close from the top bar.
 class MediaViewer extends StatefulWidget {
-  const MediaViewer({super.key, required this.urls, required this.initialIndex});
+  const MediaViewer({
+    super.key,
+    required this.urls,
+    required this.initialIndex,
+  });
 
   final List<String> urls;
   final int initialIndex;
@@ -125,15 +130,24 @@ class _MediaViewerState extends State<MediaViewer>
     super.initState();
     _index = widget.initialIndex;
     _pageController = PageController(initialPage: widget.initialIndex);
-    _snapBack = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 220),
-    )..addListener(() {
-        setState(() {
-          _dragOffset =
-              _dragOffset * (1 - Curves.easeOut.transform(_snapBack.value));
-        });
-      });
+    _snapBack =
+        AnimationController(vsync: this, duration: DabblerMotion.snapBack)
+          ..addListener(() {
+            setState(() {
+              _dragOffset =
+                  _dragOffset *
+                  (1 - DabblerMotion.easeOut.transform(_snapBack.value));
+            });
+          });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _snapBack.duration = DabblerMotion.durationOf(
+      context,
+      DabblerMotion.snapBack,
+    );
   }
 
   @override
@@ -157,7 +171,8 @@ class _MediaViewerState extends State<MediaViewer>
     if (_zoomed) return;
     final velocity = details.velocity.pixelsPerSecond.dy;
     final shouldDismiss =
-        _dragOffset.abs() > _dismissDistance || velocity.abs() > _dismissVelocity;
+        _dragOffset.abs() > _dismissDistance ||
+        velocity.abs() > _dismissVelocity;
     if (shouldDismiss) {
       Navigator.of(context).pop();
     } else if (_dragOffset != 0) {

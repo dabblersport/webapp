@@ -64,7 +64,6 @@ class _ReadyBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
     final radiusKm = (radius / 1000).round();
     final subtitle =
         '${location.area.district} · ${location.area.city}  ·  $radiusKm km';
@@ -94,27 +93,24 @@ class _ReadyBar extends StatelessWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(
+                        child: DabblerText(
                           location.area.name,
-                          style: DabblerType.headline
-                              .resolveForDirection(direction)
-                              .copyWith(color: colors.textPrimary),
+                          style: DabblerType.headline,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: DabblerSpacing.space1),
                       DabblerIcon(
                         'arrow-down-1',
-                        size: 14,
+                        size: DabblerSizing.iconInline,
                         color: colors.textSecondary,
                       ),
                     ],
                   ),
-                  Text(
+                  DabblerText(
                     subtitle,
-                    style: DabblerType.footnote
-                        .resolveForDirection(direction)
-                        .copyWith(color: colors.textSecondary),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
@@ -148,13 +144,17 @@ class _SourceBadge extends StatelessWidget {
     final colors = DabblerColors.of(context);
     switch (location.source) {
       case ActiveLocationSource.gps:
-        return DabblerIcon('gps', size: 14, color: colors.brandPrimary);
+        return DabblerIcon(
+          'gps',
+          size: DabblerSizing.iconInline,
+          color: colors.brandPrimary,
+        );
       case ActiveLocationSource.saved:
         return DabblerBadge(label: location.savedLocationLabel ?? 'Saved');
       case ActiveLocationSource.manual:
         return DabblerIcon(
           'location-tick',
-          size: 14,
+          size: DabblerSizing.iconInline,
           color: colors.brandPrimary,
         );
     }
@@ -179,9 +179,15 @@ class _SkeletonBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          DabblerSkeleton.rect(width: 140, height: 14),
+          DabblerSkeleton.rect(
+            width: DabblerSizing.skeletonWidthShort,
+            height: DabblerSizing.skeletonLineHeight,
+          ),
           SizedBox(height: DabblerSpacing.space1),
-          DabblerSkeleton.rect(width: 100, height: 10),
+          DabblerSkeleton.rect(
+            width: DabblerSizing.skeletonWidthMeta,
+            height: DabblerSizing.skeletonLineHeight,
+          ),
         ],
       ),
     );
@@ -214,11 +220,10 @@ class _DeniedBar extends StatelessWidget {
               color: ink,
             ),
             const SizedBox(width: DabblerSpacing.space3),
-            Text(
+            DabblerText(
               'Set your location',
-              style: DabblerType.headline
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(color: ink),
+              style: DabblerType.headline,
+              tone: DabblerTextTone.error,
             ),
             const SizedBox(width: DabblerSpacing.space1),
             DabblerChevron(color: ink),

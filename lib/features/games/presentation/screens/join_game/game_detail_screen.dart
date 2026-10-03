@@ -16,23 +16,6 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 /// Same provider, controller, routes, join / leave / request / remove flows and
 /// deep-link behaviour as before: only the widget tree changed.
 
-TextStyle _t(
-  BuildContext context,
-  DabblerTypeStyle step,
-  Color color, {
-  FontWeight? weight,
-}) => step
-    .resolveForDirection(Directionality.of(context))
-    .copyWith(color: color, fontWeight: weight);
-
-/// The design's section header: 15 / 600 ink.
-TextStyle _section(BuildContext context, DabblerColors colors) => _t(
-  context,
-  DabblerType.subheadline,
-  colors.textPrimary,
-  weight: DabblerType.semibold,
-);
-
 /// The colours the design draws the hero in (`--sport-p-600`): the sport
 /// theme's brand pair, read through the design system rather than a literal.
 DabblerColors _sportColors(DabblerColors colors) => DabblerColors.resolve(
@@ -182,8 +165,11 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         if (ctx != null && mounted) {
           Scrollable.ensureVisible(
             ctx,
-            duration: const Duration(milliseconds: 550),
-            curve: Curves.easeOutCubic,
+            duration: DabblerMotion.durationOf(
+              context,
+              DabblerMotion.heroCrossfade,
+            ),
+            curve: DabblerMotion.emphasizedDecelerate,
             alignment: 0.08,
           );
         }
@@ -342,7 +328,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                DabblerText(
                   inGame
                       ? "You're in"
                       : game.isFree
@@ -350,18 +336,18 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
                       : game.costCover.replaceAll('_', ' ').capitalize(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _t(
-                    context,
-                    DabblerType.title3,
-                    inGame ? colors.success.strong : colors.textPrimary,
-                    weight: DabblerType.bold,
-                  ),
+                  style: DabblerType.title3,
+                  weight: DabblerTextWeight.bold,
+                  tone: inGame
+                      ? DabblerTextTone.success
+                      : DabblerTextTone.primary,
                 ),
-                Text(
+                DabblerText(
                   _formatDateShort(game.startAt),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: _t(context, DabblerType.caption2, colors.textTertiary),
+                  style: DabblerType.caption2,
+                  tone: DabblerTextTone.tertiary,
                 ),
               ],
             ),
@@ -526,36 +512,38 @@ class _HeroSection extends StatelessWidget {
                       fill: glass,
                       icon: DabblerSportIcon.fromKey(
                         game.sportKey ?? '',
-                        size: 12,
+                        size: DabblerSizing.iconXs,
                         color: onSport,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: DabblerSpacing.space3),
-                Text(
+                DabblerText(
                   game.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: _t(context, DabblerType.largeTitle, onSport),
+                  style: DabblerType.largeTitle,
+                  tone: DabblerTextTone.onBrand,
                 ),
                 if (place.isNotEmpty) ...[
                   const SizedBox(height: DabblerSpacing.space2),
                   Row(
                     children: [
-                      DabblerIcon('location', size: 14, color: onSport),
+                      DabblerIcon(
+                        'location',
+                        size: DabblerSizing.iconInline,
+                        color: onSport,
+                      ),
                       const SizedBox(width: DabblerSpacing.space1),
                       Expanded(
-                        child: Text(
+                        child: DabblerText(
                           place,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: _t(
-                            context,
-                            DabblerType.footnote,
-                            onSport,
-                            weight: DabblerType.semibold,
-                          ),
+                          style: DabblerType.footnote,
+                          weight: DabblerTextWeight.semibold,
+                          tone: DabblerTextTone.onBrand,
                         ),
                       ),
                     ],
@@ -581,7 +569,6 @@ class _SquadSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final game = state.game!;
     final fill = game.capacity > 0
         ? (game.rosterCount / game.capacity).clamp(0.0, 1.0)
@@ -608,22 +595,17 @@ class _SquadSummary extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  DabblerText(
                     '${game.rosterCount} of ${game.capacity} players in',
-                    style: _t(
-                      context,
-                      DabblerType.title3,
-                      colors.textPrimary,
-                      weight: DabblerType.bold,
-                    ),
+                    style: DabblerType.title3,
+                    weight: DabblerTextWeight.bold,
                   ),
-                  Text(
+                  DabblerText(
                     game.isFull ? 'Full' : '${game.spotsLeft} spots left',
-                    style: _t(
-                      context,
-                      DabblerType.caption1,
-                      game.isFull ? colors.error.strong : colors.textTertiary,
-                    ),
+                    style: DabblerType.caption1,
+                    tone: game.isFull
+                        ? DabblerTextTone.error
+                        : DabblerTextTone.tertiary,
                   ),
                 ],
               ),
@@ -699,7 +681,6 @@ class _HostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final name = game.creatorDisplayName ?? game.creatorUsername ?? 'Creator';
     final creatorProfileId = game.creatorProfileId;
     return GestureDetector(
@@ -731,22 +712,15 @@ class _HostCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  DabblerText(
                     'Created by',
-                    style: _t(
-                      context,
-                      DabblerType.caption2,
-                      colors.textPrimary.withValues(alpha: 0.6),
-                    ),
+                    style: DabblerType.caption2,
+                    tone: DabblerTextTone.secondary,
                   ),
-                  Text(
+                  DabblerText(
                     name,
-                    style: _t(
-                      context,
-                      DabblerType.subheadline,
-                      colors.textPrimary,
-                      weight: DabblerType.semibold,
-                    ),
+                    style: DabblerType.subheadline,
+                    weight: DabblerTextWeight.semibold,
                   ),
                 ],
               ),
@@ -766,7 +740,6 @@ class _VenueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final rows = <({String icon, String label, String value})>[
       if (game.venueName != null)
         (icon: 'buildings', label: 'VENUE', value: game.venueName!),
@@ -778,7 +751,11 @@ class _VenueCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Where', style: _section(context, colors)),
+        DabblerText(
+          'Where',
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
+        ),
         const SizedBox(height: DabblerSpacing.space3),
         DabblerSurface.sunken(
           radius: DabblerRadius.xl,
@@ -812,7 +789,6 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: DabblerSpacing.space5,
@@ -820,24 +796,21 @@ class _InfoRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          DabblerIconTile.named(icon, size: 36),
+          DabblerIconTile.named(icon, size: DabblerSizing.iconXl),
           const SizedBox(width: DabblerSpacing.space4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                DabblerText(
                   label,
-                  style: _t(context, DabblerType.caption2, colors.textTertiary),
+                  style: DabblerType.caption2,
+                  tone: DabblerTextTone.tertiary,
                 ),
-                Text(
+                DabblerText(
                   value,
-                  style: _t(
-                    context,
-                    DabblerType.subheadline,
-                    colors.textPrimary,
-                    weight: DabblerType.semibold,
-                  ),
+                  style: DabblerType.subheadline,
+                  weight: DabblerTextWeight.semibold,
                 ),
               ],
             ),
@@ -856,7 +829,6 @@ class _DetailsChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final chips = [
       (
         label: switch (game.listingVisibility) {
@@ -885,7 +857,11 @@ class _DetailsChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Details', style: _section(context, colors)),
+        DabblerText(
+          'Details',
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
+        ),
         const SizedBox(height: DabblerSpacing.space3),
         Wrap(
           spacing: DabblerSpacing.space3,
@@ -895,7 +871,7 @@ class _DetailsChips extends StatelessWidget {
               DabblerBadge(
                 label: c.label,
                 tone: DabblerBadgeTone.withIcon,
-                icon: DabblerIcon(c.icon, size: 13),
+                icon: DabblerIcon(c.icon, size: DabblerSizing.iconXs),
               ),
           ],
         ),
@@ -983,17 +959,17 @@ class _OpenInAppBannerState extends State<_OpenInAppBanner> {
         ),
         child: Row(
           children: [
-            DabblerIcon('flash', size: 20, color: colors.brandPrimary),
+            DabblerIcon(
+              'flash',
+              size: DabblerSizing.iconRow,
+              color: colors.brandPrimary,
+            ),
             const SizedBox(width: DabblerSpacing.space3),
             Expanded(
-              child: Text(
+              child: DabblerText(
                 'Dabbler is better in the app',
-                style: _t(
-                  context,
-                  DabblerType.footnote,
-                  colors.textPrimary,
-                  weight: DabblerType.bold,
-                ),
+                style: DabblerType.footnote,
+                weight: DabblerTextWeight.bold,
               ),
             ),
             DabblerButton(
@@ -1054,22 +1030,24 @@ class _RosterSection extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Players', style: _section(context, colors)),
+            DabblerText(
+              'Players',
+              style: DabblerType.subheadline,
+              weight: DabblerTextWeight.semibold,
+            ),
             const SizedBox(width: DabblerSpacing.space2),
-            Text(
+            DabblerText(
               '· ${game.rosterCount} of ${game.capacity}',
-              style: _t(context, DabblerType.caption1, colors.textTertiary),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.tertiary,
             ),
             const Spacer(),
             if (game.spotsLeft > 0)
-              Text(
+              DabblerText(
                 '${game.spotsLeft} spots left',
-                style: _t(
-                  context,
-                  DabblerType.caption1,
-                  colors.brandPrimary,
-                  weight: DabblerType.bold,
-                ),
+                style: DabblerType.caption1,
+                weight: DabblerTextWeight.bold,
+                tone: DabblerTextTone.brand,
               ),
           ],
         ),
@@ -1089,14 +1067,11 @@ class _RosterSection extends StatelessWidget {
                     DabblerSpacing.space5,
                     0,
                   ),
-                  child: Text(
+                  child: DabblerText(
                     '${requests.length} join ${requests.length == 1 ? 'request' : 'requests'}',
-                    style: _t(
-                      context,
-                      DabblerType.caption2,
-                      colors.brandPrimary,
-                      weight: DabblerType.bold,
-                    ),
+                    style: DabblerType.caption2,
+                    weight: DabblerTextWeight.bold,
+                    tone: DabblerTextTone.brand,
                   ),
                 ),
                 for (var i = 0; i < requests.length; i++)
@@ -1208,7 +1183,6 @@ class _OpenSpotsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return DabblerSurface.sunken(
       radius: DabblerRadius.xl,
       padding: const EdgeInsets.all(DabblerSpacing.space5),
@@ -1217,25 +1191,22 @@ class _OpenSpotsCard extends StatelessWidget {
           const DabblerIconTile.named(
             'people',
             tone: DabblerIconTileTone.amber,
-            size: 36,
+            size: DabblerSizing.iconXl,
           ),
           const SizedBox(width: DabblerSpacing.space4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                DabblerText(
                   '$spotsLeft open spots',
-                  style: _t(
-                    context,
-                    DabblerType.footnote,
-                    colors.textPrimary,
-                    weight: DabblerType.semibold,
-                  ),
+                  style: DabblerType.footnote,
+                  weight: DabblerTextWeight.semibold,
                 ),
-                Text(
+                DabblerText(
                   'Invite friends to fill the squad',
-                  style: _t(context, DabblerType.caption1, colors.textTertiary),
+                  style: DabblerType.caption1,
+                  tone: DabblerTextTone.tertiary,
                 ),
               ],
             ),
@@ -1265,7 +1236,6 @@ class _RequestRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     return Column(
       children: [
         Padding(
@@ -1295,22 +1265,15 @@ class _RequestRow extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            DabblerText(
                               request.displayName,
-                              style: _t(
-                                context,
-                                DabblerType.footnote,
-                                colors.textPrimary,
-                                weight: DabblerType.semibold,
-                              ),
+                              style: DabblerType.footnote,
+                              weight: DabblerTextWeight.semibold,
                             ),
-                            Text(
+                            DabblerText(
                               'Wants to join',
-                              style: _t(
-                                context,
-                                DabblerType.caption2,
-                                colors.textTertiary,
-                              ),
+                              style: DabblerType.caption2,
+                              tone: DabblerTextTone.tertiary,
                             ),
                           ],
                         ),
@@ -1398,23 +1361,16 @@ class _PlayerRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      DabblerText(
                         name,
-                        style: _t(
-                          context,
-                          DabblerType.footnote,
-                          colors.textPrimary,
-                          weight: DabblerType.semibold,
-                        ),
+                        style: DabblerType.footnote,
+                        weight: DabblerTextWeight.semibold,
                       ),
                       if (isHost || isWaitlisted)
-                        Text(
+                        DabblerText(
                           isHost ? 'Creator' : 'Waitlisted',
-                          style: _t(
-                            context,
-                            DabblerType.caption1,
-                            colors.textTertiary,
-                          ),
+                          style: DabblerType.caption1,
+                          tone: DabblerTextTone.tertiary,
                         ),
                     ],
                   ),
@@ -1432,7 +1388,11 @@ class _PlayerRow extends StatelessWidget {
                         : DabblerBadgeTone.withIcon,
                   )
                 else if (isWaitlisted)
-                  DabblerIcon('clock', size: 16, color: colors.textTertiary),
+                  DabblerIcon(
+                    'clock',
+                    size: DabblerSizing.iconInline,
+                    color: colors.textTertiary,
+                  ),
                 if (onRemove != null) ...[
                   const SizedBox(width: DabblerSpacing.space3),
                   DabblerButton.icon(
@@ -1476,17 +1436,31 @@ class _LoadingBody extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const DabblerSkeleton.rect(width: double.infinity, height: 70),
+                const DabblerSkeleton.rect(
+                  width: double.infinity,
+                  height: DabblerSizing.skeletonBlockHeight,
+                ),
                 const SizedBox(height: DabblerSpacing.space5),
                 Row(
                   children: const [
-                    Expanded(child: DabblerSkeleton.rect(height: 90)),
+                    Expanded(
+                      child: DabblerSkeleton.rect(
+                        height: DabblerSizing.skeletonBlockHeight,
+                      ),
+                    ),
                     SizedBox(width: DabblerSpacing.space3),
-                    Expanded(child: DabblerSkeleton.rect(height: 90)),
+                    Expanded(
+                      child: DabblerSkeleton.rect(
+                        height: DabblerSizing.skeletonBlockHeight,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: DabblerSpacing.space5),
-                const DabblerSkeleton.rect(width: double.infinity, height: 100),
+                const DabblerSkeleton.rect(
+                  width: double.infinity,
+                  height: DabblerSizing.skeletonBlockHeight,
+                ),
               ],
             ),
           ),

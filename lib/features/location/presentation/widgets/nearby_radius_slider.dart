@@ -34,12 +34,6 @@ class _NearbyRadiusSliderState extends ConsumerState<NearbyRadiusSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final direction = Directionality.of(context);
-    final caption = DabblerType.caption1
-        .resolveForDirection(direction)
-        .copyWith(color: colors.textSecondary);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -73,8 +67,16 @@ class _NearbyRadiusSliderState extends ConsumerState<NearbyRadiusSlider> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(_label(_min), style: caption),
-            Text(_label(_max), style: caption),
+            DabblerText(
+              _label(_min),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
+            DabblerText(
+              _label(_max),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
           ],
         ),
       ],
