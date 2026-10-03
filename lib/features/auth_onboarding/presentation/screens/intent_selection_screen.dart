@@ -190,7 +190,9 @@ class _IntentCard extends StatelessWidget {
           DabblerIcon(
             option.icon,
             size: DabblerSizing.iconMd,
-            weight: selected ? DabblerIconWeight.bold : DabblerIconWeight.linear,
+            weight: selected
+                ? DabblerIconWeight.bold
+                : DabblerIconWeight.linear,
             color: colors.brandPrimary,
           ),
           const SizedBox(width: DabblerSpacing.space4),

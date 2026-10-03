@@ -630,7 +630,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         Row(
           children: [
             if (composerState.hasVibe && composerState.vibeName != null)
-              _VibeBadge(label: composerState.vibeName!, vibe: vibe),
+              DabblerChip(
+                label: composerState.vibeName!,
+                vibe: vibe,
+                selected: true,
+              ),
             const Spacer(),
             // Non-colour cue (WCAG 1.4.1): weight bumps to bold near the
             // limit alongside the colour change.
@@ -947,43 +951,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 // ═════════════════════════════════════════════════════════════════════════════
 // REUSABLE WIDGETS
 // ═════════════════════════════════════════════════════════════════════════════
-
-/// The chosen vibe, tinted with its [DabblerVibe] tokens (a neutral badge
-/// when the vibe is not one the design system knows).
-class _VibeBadge extends StatelessWidget {
-  const _VibeBadge({required this.label, required this.vibe});
-
-  final String label;
-  final DabblerVibe? vibe;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final tokens = vibe?.resolve(colors);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: tokens?.selectedSurface ?? colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(DabblerRadius.pill),
-        border: Border.all(color: tokens?.selectedBorder ?? colors.borderDefault),
-      ),
-      child: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space3,
-          vertical: DabblerSpacing.space1,
-        ),
-        child: Text(
-          label,
-          style: composerType(
-            context,
-            DabblerType.caption1,
-            tokens?.ink ?? colors.textPrimary,
-            weight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// Single image/GIF tile in the filled-state media row.
 class _MediaTile extends StatelessWidget {

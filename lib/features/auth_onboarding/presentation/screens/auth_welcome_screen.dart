@@ -262,18 +262,9 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                           heading: l10n.auth_welcome_trust_heading
                               .toUpperCase(),
                           benefits: [
-                            (
-                              'verify',
-                              l10n.auth_welcome_trust_verified,
-                            ),
-                            (
-                              'activity',
-                              l10n.auth_welcome_trust_personalised,
-                            ),
-                            (
-                              'lock',
-                              l10n.auth_welcome_trust_privacy,
-                            ),
+                            ('verify', l10n.auth_welcome_trust_verified),
+                            ('activity', l10n.auth_welcome_trust_personalised),
+                            ('lock', l10n.auth_welcome_trust_privacy),
                           ],
                         ),
                         const Spacer(),

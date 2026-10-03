@@ -276,12 +276,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return DabblerInputRow(
       title: label,
       leading: DabblerIcon('clock', size: DabblerSizing.iconMd, color: colors.textSecondary),
-      trailing: Text(
-        _fmt(context, minutes),
-        style: DabblerType.callout
-            .resolveForDirection(Directionality.of(context))
-            .copyWith(color: colors.textSecondary),
-      ),
+      value: _fmt(context, minutes),
       onTap: () => showDabblerSheet<void>(
         context: context,
         title: label,

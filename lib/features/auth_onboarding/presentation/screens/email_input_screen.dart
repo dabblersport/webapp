@@ -21,13 +21,13 @@ class EmailInputScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   String? _successMessage;
   bool _isEmailValid = false;
   bool _getUpdates = true;
-  String? _fieldError;
 
   @override
   void initState() {
@@ -57,21 +57,13 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
   void _onEmailChanged(String value) {
     final isValid = _validateEmail(value) == null;
-    setState(() {
-      _isEmailValid = isValid;
-      _fieldError = null;
-    });
+    setState(() => _isEmailValid = isValid);
   }
 
   Future<void> _handleSubmit() async {
-    final fieldError = _validateEmail(_emailController.text);
-    if (fieldError != null) {
-      setState(() => _fieldError = fieldError);
-      return;
-    }
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
-      _fieldError = null;
       _isLoading = true;
       _errorMessage = null;
       _successMessage = null;
@@ -368,7 +360,9 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
         case GoogleSignInResultError():
           setState(() {
-            _errorMessage = AppLocalizations.of(context).email_input_google_failed;
+            _errorMessage = AppLocalizations.of(
+              context,
+            ).email_input_google_failed;
           });
           break;
       }
@@ -409,24 +403,28 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
               color: colors.error.strong,
             );
     }
-    return DabblerTextField(
-      controller: _emailController,
-      label: AppLocalizations.of(context).email_input_label,
-      placeholder: AppLocalizations.of(context).email_input_hint,
-      keyboardType: TextInputType.emailAddress,
-      autofillHints: const [AutofillHints.email],
-      textInputAction: TextInputAction.done,
-      onChanged: _onEmailChanged,
-      onSubmitted: (_) {
-        if (_isEmailValid && !_isLoading) _handleSubmit();
-      },
-      errorText: _fieldError,
-      suffixIcon: suffix == null
-          ? null
-          : AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: suffix,
-            ),
+    return Form(
+      key: _formKey,
+      child: DabblerTextField(
+        controller: _emailController,
+        label: AppLocalizations.of(context).email_input_label,
+        placeholder: AppLocalizations.of(context).email_input_hint,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        textInputAction: TextInputAction.done,
+        onChanged: _onEmailChanged,
+        onSubmitted: (_) {
+          if (_isEmailValid && !_isLoading) _handleSubmit();
+        },
+        validator: _validateEmail,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        suffixIcon: suffix == null
+            ? null
+            : AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: suffix,
+              ),
+      ),
     );
   }
 
@@ -464,4 +462,3 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     context.go(RoutePaths.enterPassword);
   }
 }
-

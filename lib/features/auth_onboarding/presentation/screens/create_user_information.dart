@@ -269,13 +269,19 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   Future<void> _handleSubmit() async {
     // Validate all fields before proceeding
     if (!_formKey.currentState!.validate()) {
-      showOnboardingError(context, AppLocalizations.of(context).create_info_error_fill_required);
+      showOnboardingError(
+        context,
+        AppLocalizations.of(context).create_info_error_fill_required,
+      );
       return;
     }
 
     // Additional validation checks
     if (_selectedBirthDate == null) {
-      showOnboardingError(context, AppLocalizations.of(context).create_info_error_select_birth);
+      showOnboardingError(
+        context,
+        AppLocalizations.of(context).create_info_error_select_birth,
+      );
       return;
     }
 
@@ -283,14 +289,20 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
 
     // Age must be >= 16
     if (ageValue < 16) {
-      showOnboardingError(context, AppLocalizations.of(context).create_info_error_min_age);
+      showOnboardingError(
+        context,
+        AppLocalizations.of(context).create_info_error_min_age,
+      );
       return;
     }
 
     if (ageValue > AppConstants.maxAge) {
-      showOnboardingError(context, AppLocalizations.of(
-              context,
-            ).create_info_error_max_age(AppConstants.maxAge));
+      showOnboardingError(
+        context,
+        AppLocalizations.of(
+          context,
+        ).create_info_error_max_age(AppConstants.maxAge),
+      );
       return;
     }
 
@@ -327,9 +339,10 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       }
     } catch (e) {
       if (mounted) {
-        showOnboardingError(context, AppLocalizations.of(
-                context,
-              ).create_info_error_occurred(e.toString()));
+        showOnboardingError(
+          context,
+          AppLocalizations.of(context).create_info_error_occurred(e.toString()),
+        );
       }
     } finally {
       if (mounted) {

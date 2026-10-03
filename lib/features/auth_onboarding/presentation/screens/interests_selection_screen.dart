@@ -195,9 +195,8 @@ class _InterestsSelectionScreenState
               ? sports
               : sports
                     .where(
-                      (s) => s.nameEn.toLowerCase().contains(
-                        _query.toLowerCase(),
-                      ),
+                      (s) =>
+                          s.nameEn.toLowerCase().contains(_query.toLowerCase()),
                     )
                     .toList();
 
@@ -227,13 +226,12 @@ class _InterestsSelectionScreenState
                   DabblerSpacing.space8,
                 ),
                 sliver: SliverGrid.builder(
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        crossAxisSpacing: DabblerSpacing.space3,
-                        mainAxisSpacing: DabblerSpacing.space3,
-                        childAspectRatio: 0.9,
-                      ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: DabblerSpacing.space3,
+                    mainAxisSpacing: DabblerSpacing.space3,
+                    childAspectRatio: 0.9,
+                  ),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final sport = filtered[index];

@@ -125,7 +125,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                     const SizedBox(height: DabblerSpacing.space5),
                     DabblerButton(
-                      label: AppLocalizations.of(context).welcome_screen_continue,
+                      label: AppLocalizations.of(
+                        context,
+                      ).welcome_screen_continue,
                       size: DabblerButtonSize.full,
                       fullWidth: true,
                       onPressed: () {

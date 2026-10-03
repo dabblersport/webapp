@@ -180,6 +180,16 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerPage), findsOneWidget);
       expect(find.byType(DabblerImage), findsOneWidget);
+      final cover = tester.widget<DabblerImage>(find.byType(DabblerImage));
+      expect(cover.headers?['User-Agent'], contains('Mozilla/5.0'));
+      expect(cover.headers?['Accept'], startsWith('image/avif'));
+      expect(find.text('React'), findsNothing);
+      final like = tester.widget<DabblerButton>(
+        find.byWidgetPredicate(
+          (w) => w is DabblerButton && w.semanticLabel == 'Like',
+        ),
+      );
+      expect(like.onLongPress, isNotNull);
       expect(find.text('Dabbler Sports Desk'), findsOneWidget);
       expect(find.byType(DabblerTextField), findsOneWidget);
       await _shoot(tester, key, 'news-detail-article-$dir');

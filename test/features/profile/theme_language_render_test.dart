@@ -132,6 +132,14 @@ void main() {
       await _settle(tester);
       expect(tester.takeException(), isNull);
       await _shoot(tester, _key, 'appearance-toggled-$dir');
+      // Whichever state the toggle reached, the tabs permit no selection and
+      // show none exactly while the time-based theme is on.
+      final tabs = tester.widget<DabblerTabs>(find.byType(DabblerTabs));
+      expect(tabs.allowNoSelection, isTrue);
+      final auto = tester
+          .widget<DabblerToggle>(find.byType(DabblerToggle))
+          .checked;
+      expect(tabs.value == null, auto);
       // restore singleton state
       await tester.tap(find.byType(DabblerToggle));
       await _settle(tester);

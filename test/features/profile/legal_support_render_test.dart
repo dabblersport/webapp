@@ -195,6 +195,9 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Please enter a subject'), findsOneWidget);
       expect(find.text('Please enter your message'), findsOneWidget);
+      // Validation runs through a Form (DabblerTextField.validator), as the
+      // original TextFormFields did.
+      expect(find.byType(Form), findsOneWidget);
       await _shoot(tester, _shotKey, 'contact-support-errors-$dir');
     });
 
@@ -215,6 +218,7 @@ void main() {
         find.text('Please provide steps to reproduce the bug'),
         findsOneWidget,
       );
+      expect(find.byType(Form), findsOneWidget);
       await _shoot(tester, _shotKey, 'bug-report-errors-$dir');
     });
 
