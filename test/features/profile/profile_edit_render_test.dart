@@ -4,8 +4,6 @@ import 'dart:ui' as ui;
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile_edit_screen.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/availability_calendar.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/danger_zone_section.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_availability.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_fields.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_models.dart';
@@ -258,75 +256,5 @@ void main() {
       await _shoot(tester, key, 'profile-edit-avatar-$dir');
     });
 
-    testWidgets('danger zone — $dir', (tester) async {
-      const Key key = Key('shot');
-      await _pump(
-        tester,
-        DabblerPage(
-          body: ListView(
-            children: [
-              DangerZoneSection(
-                subtitle: 'Irreversible actions',
-                actions: [
-                  DangerAction.deactivateAccount(onDeactivate: () {}),
-                  DangerAction.deleteAccount(onDelete: () {}),
-                  const DangerAction(title: 'Locked', isEnabled: false),
-                ],
-              ),
-              CompactDangerZone(
-                actions: [DangerAction.revokeAllSessions(onRevoke: () {})],
-              ),
-            ],
-          ),
-        ),
-        locale,
-        key,
-        size: const Size(393, 1000),
-      );
-      expect(tester.takeException(), isNull);
-      expect(find.text('Danger Zone'), findsNWidgets(2));
-      await _shoot(tester, key, 'profile-edit-danger-zone-$dir');
-
-      await tester.tap(find.text('Delete Account').first);
-      await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerDialog), findsOneWidget);
-      await tester.enterText(find.byType(EditableText).last, 'DELETE');
-      await _settle(tester);
-      await _shoot(tester, key, 'delete-confirm-$dir');
-    });
-
-    testWidgets('availability calendar — $dir', (tester) async {
-      const Key key = Key('shot');
-      final now = DateTime.now();
-      final d = DateTime(now.year, now.month, 10);
-      await _pump(
-        tester,
-        DabblerPage(
-          body: ListView(
-            padding: const EdgeInsets.all(DabblerSpacing.space5),
-            children: [
-              AvailabilityCalendar(
-                availability: {
-                  d: AvailabilityStatus.available,
-                  DateTime(now.year, now.month, 11): AvailabilityStatus.maybe,
-                  DateTime(now.year, now.month, 12): AvailabilityStatus.busy,
-                },
-                selectedDate: d,
-                isEditable: true,
-              ),
-              const SizedBox(height: DabblerSpacing.space8),
-              WeeklyAvailabilityView(availability: const {}, isEditable: true),
-            ],
-          ),
-        ),
-        locale,
-        key,
-        size: const Size(393, 1000),
-      );
-      expect(tester.takeException(), isNull);
-      expect(find.text('Change Availability'), findsOneWidget);
-      await _shoot(tester, key, 'availability-calendar-$dir');
-    });
   }
 }

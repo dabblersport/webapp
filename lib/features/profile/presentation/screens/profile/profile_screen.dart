@@ -9,7 +9,6 @@ import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
-import 'package:dabbler/utils/adaptive_sheet.dart';
 import '../../../../../app/app_router.dart';
 import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
@@ -741,10 +740,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               size: DabblerButtonSize.small,
               semanticLabel: l10n.profile_btn_edit,
               onPressed: () {
-                showAdaptiveSheet(
-                  context: context,
-                  builder: (_) => const ManageSportsSheet(),
-                );
+                ManageSportsSheet.show(context);
               },
             ),
           ],
