@@ -433,11 +433,10 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           roleLabel: persona,
           distance: widget.showNearbyChipInHeader ? l10n.post_card_near_you : null,
           kindBadge: _badges(post, l10n),
-          // KAN-410's media component has not landed in alpha-ds yet, so the
-          // slot carries the shared carousel (non-DS, listed in the report).
+          // The post's photos: one image, or a horizontal list of them.
           media: PostMediaCarousel.imageUrls(post.media).isEmpty
               ? null
-              : PostMediaCarousel(media: post.media, borderRadius: DabblerRadius.lg),
+              : HomePostMedia(urls: PostMediaCarousel.imageUrls(post.media)),
           onRepost: canRepost
               ? () {
                   if (hasReposted) {
@@ -741,6 +740,47 @@ class HomeThreadPreview extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// A post's photos in the [DabblerPostRow] media slot: one [DabblerImage], or a
+/// horizontal list of them with a position badge. Tapping a photo opens the
+/// fullscreen viewer at that photo, as the carousel tiles always did.
+class HomePostMedia extends StatelessWidget {
+  const HomePostMedia({super.key, required this.urls});
+
+  final List<String> urls;
+
+  static const double listHeight = 240;
+
+  @override
+  Widget build(BuildContext context) {
+    if (urls.length == 1) {
+      return DabblerImage(
+        url: urls.first,
+        aspectRatio: 16 / 9,
+        radius: DabblerRadius.lgAll,
+        onTap: () => PostMediaCarousel.openViewer(context, urls, 0),
+      );
+    }
+    final itemWidth = MediaQuery.sizeOf(context).width * 0.72;
+    return SizedBox(
+      height: listHeight,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: urls.length,
+        separatorBuilder: (_, __) =>
+            const SizedBox(width: DabblerSpacing.space2),
+        itemBuilder: (context, index) => DabblerImage(
+          url: urls[index],
+          width: itemWidth,
+          height: listHeight,
+          radius: DabblerRadius.lgAll,
+          overlay: DabblerBadge(label: '${index + 1}/${urls.length}'),
+          onTap: () => PostMediaCarousel.openViewer(context, urls, index),
+        ),
+      ),
     );
   }
 }

@@ -202,7 +202,10 @@ void main() {
     expect(find.text('Transfer window opens'), findsOneWidget);
     expect(find.byType(DabblerNewsCard), findsOneWidget);
     _noMaterialVisuals();
+    // DabblerSwipeAction: swipe toward the end to reveal Hide, then press it.
     await tester.drag(find.text('Transfer window opens'), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hide'));
     await tester.pumpAndSettle();
     expect(hidden, 1);
     await tester.tap(find.text('Transfer window opens'));
@@ -319,5 +322,23 @@ void main() {
     );
     await _pump(tester, HomeActivityRow(activity: activity));
     expect(find.byType(Image), findsOneWidget);
+  });
+
+  testWidgets('post media: DabblerImage tiles, with a position badge', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      HomePostMedia(
+        urls: const ['https://example.invalid/1.png', 'https://example.invalid/2.png'],
+      ),
+    );
+    expect(find.byType(DabblerImage), findsNWidgets(2));
+    expect(find.text('1/2'), findsOneWidget);
+    await _pump(
+      tester,
+      HomePostMedia(urls: const ['https://example.invalid/1.png']),
+    );
+    expect(find.byType(DabblerImage), findsOneWidget);
   });
 }
