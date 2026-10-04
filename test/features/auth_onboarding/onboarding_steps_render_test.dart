@@ -171,6 +171,10 @@ Future<void> _settle(WidgetTester tester) async {
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 100));
   }
+  // Two more frames: a chip rail learns it overflows (and fades its edge) one
+  // frame after it is laid out, as it does on a device.
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 /// Answers the availability RPC: `marcus` is taken, everything else is free.
