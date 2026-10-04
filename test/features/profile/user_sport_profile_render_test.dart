@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/data/models/profile/profile_statistics.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/data/models/profile/sports_profile.dart' as sp;
 import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_badge.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_tier.dart';
@@ -118,7 +120,29 @@ class _FakeProfile extends StateNotifier<ProfileState>
 
 class _FakeSports extends StateNotifier<SportsProfileState>
     implements SportsProfileController {
-  _FakeSports() : super(const SportsProfileState());
+  _FakeSports()
+    : super(
+        const SportsProfileState(
+          profiles: <sp.SportProfile>[
+            sp.SportProfile(
+              sportId: 's-padel',
+              sportName: 'Padel',
+              skillLevel: sp.SkillLevel.advanced,
+              isPrimarySport: true,
+              gamesPlayed: 120,
+              averageRating: 4.9,
+            ),
+            sp.SportProfile(
+              sportId: 's-tennis',
+              sportName: 'Tennis',
+              skillLevel: sp.SkillLevel.intermediate,
+              isPrimarySport: true,
+              gamesPlayed: 60,
+              averageRating: 4.9,
+            ),
+          ],
+        ),
+      );
   @override
   Future<void> loadSportsProfiles(String userId, {String? profileId}) async {}
   @override
@@ -139,6 +163,11 @@ UserProfile _aisha() => UserProfile(
   personaType: 'player',
   preferredSport: 's-padel',
   interests: const ['s-padel', 's-tennis', 's-football'],
+  statistics: const ProfileStatistics(
+    totalGamesPlayed: 180,
+    totalHoursPlayed: 54,
+    averageRating: 4.9,
+  ),
   lastSeen: DateTime.now(),
 );
 
@@ -283,22 +312,10 @@ Future<void> _pumpSport(
           metrics: empty
               ? const []
               : const [
-                  SportProfileMetric(
-                    label: 'Matches',
-                    value: '86',
-                  ),
-                  SportProfileMetric(
-                    label: 'Rating',
-                    value: '4.9',
-                  ),
-                  SportProfileMetric(
-                    label: 'Form',
-                    value: '7.2',
-                  ),
-                  SportProfileMetric(
-                    label: 'Reliability',
-                    value: '99',
-                  ),
+                  SportProfileMetric(label: 'Matches', value: '86'),
+                  SportProfileMetric(label: 'Rating', value: '4.9'),
+                  SportProfileMetric(label: 'Form', value: '7.2'),
+                  SportProfileMetric(label: 'Reliability', value: '99'),
                 ],
         ),
       ),
@@ -307,7 +324,11 @@ Future<void> _pumpSport(
           badges: empty
               ? const []
               : const [
-                  SportProfileBadge(id: 'b1', key: 'streak', name: '5-win streak'),
+                  SportProfileBadge(
+                    id: 'b1',
+                    key: 'streak',
+                    name: '5-win streak',
+                  ),
                   SportProfileBadge(id: 'b2', key: 'regular', name: 'Regular'),
                 ],
           recentEvents: empty
@@ -339,9 +360,8 @@ Future<void> _pumpSport(
 String _fakeSession(String userId) {
   String b64(Map<String, dynamic> m) =>
       base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
-  final int exp = DateTime.now()
-          .add(const Duration(days: 30))
-          .millisecondsSinceEpoch ~/
+  final int exp =
+      DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch ~/
       1000;
   final String jwt =
       '${b64({'alg': 'HS256', 'typ': 'JWT'})}.${b64({'sub': userId, 'exp': exp, 'aud': 'authenticated', 'role': 'authenticated'})}.sig';

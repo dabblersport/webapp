@@ -391,10 +391,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               posts: posts,
               sportsCount: mySports.length,
               gamesPlayed: sportProfiles.isEmpty
-                  ? null
+                  ? (personaType == 'socialiser'
+                        ? null
+                        : profile?.statistics.totalGamesPlayed)
                   : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
               rating: shown.isEmpty
-                  ? null
+                  ? (sportProfiles.isEmpty && personaType != 'socialiser'
+                        ? profile?.statistics.averageRating
+                        : null)
                   : shown.fold<double>(0, (a, p) => a + p.averageRating) /
                         shown.length,
               minutesPlayed: personaType == 'player'
