@@ -129,7 +129,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerPage), findsOneWidget);
       expect(find.textContaining('#padel'), findsWidgets);
-      expect(find.text('2 posts'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_posts_count(2)), findsOneWidget);
       expect(find.byType(DabblerPostRow), findsNWidgets(2));
       await _shoot(tester, key, 'hashtag-feed-posts-$dir');
     }, variant: desktop);
@@ -139,7 +139,7 @@ void main() {
       await _pump(tester, const <Post>[], locale, key);
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
-      expect(find.text('No posts found for #padel'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_hashtag_empty('padel')), findsOneWidget);
       await _shoot(tester, key, 'hashtag-feed-empty-$dir');
     }, variant: desktop);
   }

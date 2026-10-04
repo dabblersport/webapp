@@ -6004,6 +6004,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Games should follow official rules closely'**
   String get game_prefs_referee_strict_sub;
+
+  /// No description provided for @sfx_search_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people, games, posts…'**
+  String get sfx_search_placeholder;
+
+  /// No description provided for @sfx_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get sfx_recent;
+
+  /// No description provided for @sfx_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get sfx_clear;
+
+  /// No description provided for @sfx_remove_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {query}'**
+  String sfx_remove_recent(String query);
+
+  /// No description provided for @sfx_quick_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick filters'**
+  String get sfx_quick_filters;
+
+  /// No description provided for @sfx_near_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Near me'**
+  String get sfx_near_me;
+
+  /// No description provided for @sfx_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get sfx_today;
+
+  /// No description provided for @sfx_this_week.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get sfx_this_week;
+
+  /// No description provided for @sfx_friends_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends only'**
+  String get sfx_friends_only;
+
+  /// No description provided for @sfx_popular.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get sfx_popular;
+
+  /// No description provided for @sfx_free_entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Free entry'**
+  String get sfx_free_entry;
+
+  /// No description provided for @sfx_people_nearby.
+  ///
+  /// In en, this message translates to:
+  /// **'People nearby'**
+  String get sfx_people_nearby;
+
+  /// No description provided for @sfx_people_nearby_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Find players near you'**
+  String get sfx_people_nearby_sub;
+
+  /// No description provided for @sfx_popular_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular games'**
+  String get sfx_popular_games;
+
+  /// No description provided for @sfx_popular_games_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open spots today'**
+  String get sfx_popular_games_sub;
+
+  /// No description provided for @sfx_trending_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending posts'**
+  String get sfx_trending_posts;
+
+  /// No description provided for @sfx_trending_posts_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'What everyone’s on'**
+  String get sfx_trending_posts_sub;
+
+  /// No description provided for @sfx_showing_results_for.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing results for'**
+  String get sfx_showing_results_for;
+
+  /// No description provided for @sfx_view_all.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get sfx_view_all;
+
+  /// No description provided for @sfx_people.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get sfx_people;
+
+  /// No description provided for @sfx_hashtags.
+  ///
+  /// In en, this message translates to:
+  /// **'Hashtags'**
+  String get sfx_hashtags;
+
+  /// No description provided for @sfx_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get sfx_games;
+
+  /// No description provided for @sfx_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sfx_venues;
+
+  /// No description provided for @sfx_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sfx_posts;
+
+  /// No description provided for @sfx_comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get sfx_comments;
+
+  /// No description provided for @sfx_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet-ups'**
+  String get sfx_meetups;
+
+  /// No description provided for @sfx_follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get sfx_follow;
+
+  /// No description provided for @sfx_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get sfx_join;
+
+  /// No description provided for @sfx_kind_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get sfx_kind_game;
+
+  /// No description provided for @sfx_kind_meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet-up'**
+  String get sfx_kind_meetup;
+
+  /// No description provided for @sfx_spots.
+  ///
+  /// In en, this message translates to:
+  /// **'spots'**
+  String get sfx_spots;
+
+  /// No description provided for @sfx_spots_meta.
+  ///
+  /// In en, this message translates to:
+  /// **'{joined}/{max} spots'**
+  String sfx_spots_meta(int joined, int max);
+
+  /// No description provided for @sfx_posts_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} posts'**
+  String sfx_posts_count(int count);
+
+  /// No description provided for @sfx_on_post.
+  ///
+  /// In en, this message translates to:
+  /// **'on {title}'**
+  String sfx_on_post(String title);
+
+  /// No description provided for @sfx_no_results_for.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for \"{query}\"'**
+  String sfx_no_results_for(String query);
+
+  /// No description provided for @sfx_none_found.
+  ///
+  /// In en, this message translates to:
+  /// **'No {label} found'**
+  String sfx_none_found(String label);
+
+  /// No description provided for @sfx_list_header.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} {label} for \"{query}\"'**
+  String sfx_list_header(int count, String label, String query);
+
+  /// No description provided for @sfx_hashtag_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts found for #{slug}'**
+  String sfx_hashtag_empty(String slug);
+
+  /// No description provided for @sfx_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get sfx_retry;
+
+  /// No description provided for @sfx_news.
+  ///
+  /// In en, this message translates to:
+  /// **'News'**
+  String get sfx_news;
+
+  /// No description provided for @sfx_add_comment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment'**
+  String get sfx_add_comment;
+
+  /// No description provided for @sfx_discuss.
+  ///
+  /// In en, this message translates to:
+  /// **'Discuss'**
+  String get sfx_discuss;
+
+  /// No description provided for @sfx_be_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to comment.'**
+  String get sfx_be_first;
+
+  /// No description provided for @sfx_like.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get sfx_like;
+
+  /// No description provided for @sfx_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get sfx_send;
 }
 
 class _AppLocalizationsDelegate

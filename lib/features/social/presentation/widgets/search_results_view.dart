@@ -1,6 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:dabbler/l10n/app_localizations.dart';
+
 import 'package:dabbler/core/utils/search_query_parser.dart';
 import 'package:dabbler/data/models/profile.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
@@ -38,7 +40,7 @@ class SearchResultsView extends StatelessWidget {
       return Center(
         child: DabblerEmptyState(
           icon: 'search-normal',
-          title: 'No results for "${state.query}"',
+          title: AppLocalizations.of(context).sfx_no_results_for(state.query),
           size: DabblerEmptyStateSize.page,
         ),
       );
@@ -63,15 +65,15 @@ class SearchResultsView extends StatelessWidget {
   }
 }
 
-String _modeLabel(SearchMode mode) => switch (mode) {
-  SearchMode.profiles => 'people',
-  SearchMode.hashtags => 'hashtags',
-  SearchMode.games => 'games',
-  SearchMode.venues => 'venues',
-  SearchMode.posts => 'posts',
-  SearchMode.comments => 'comments',
-  SearchMode.meetups => 'meet-ups',
-  SearchMode.all => 'results',
+String _modeLabel(AppLocalizations l10n, SearchMode mode) => switch (mode) {
+  SearchMode.profiles => l10n.sfx_people,
+  SearchMode.hashtags => l10n.sfx_hashtags,
+  SearchMode.games => l10n.sfx_games,
+  SearchMode.venues => l10n.sfx_venues,
+  SearchMode.posts => l10n.sfx_posts,
+  SearchMode.comments => l10n.sfx_comments,
+  SearchMode.meetups => l10n.sfx_meetups,
+  SearchMode.all => '',
 };
 
 class _Overview extends StatelessWidget {
@@ -87,6 +89,7 @@ class _Overview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final b = state.bundle;
     final q = state.query;
 
@@ -100,7 +103,7 @@ class _Overview extends StatelessWidget {
       icon: icon,
       title: title,
       action: DabblerTextLink(
-        label: 'View all',
+        label: l10n.sfx_view_all,
         underline: false,
         trailingIcon: 'arrow-circle-right',
         onPressed: () => onViewAll(mode),
@@ -138,9 +141,9 @@ class _Overview extends StatelessWidget {
                   Expanded(
                     child: DabblerText.rich(
                       [
-                        const DabblerTextSpan('Showing results for '),
+                        DabblerTextSpan('${l10n.sfx_showing_results_for} '),
                         DabblerTextSpan(
-                          '"$q"',
+                          '\u2066"$q"\u2069',
                           tone: DabblerTextTone.brand,
                           weight: DabblerTextWeight.semibold,
                         ),
@@ -159,7 +162,7 @@ class _Overview extends StatelessWidget {
             ),
             if (b.profiles.isNotEmpty)
               section(
-                'People',
+                l10n.sfx_people,
                 'people',
                 SearchMode.profiles,
                 SingleChildScrollView(
@@ -182,7 +185,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.hashtags.isNotEmpty)
               section(
-                'Hashtags',
+                l10n.sfx_hashtags,
                 'hashtag',
                 SearchMode.hashtags,
                 Wrap(
@@ -196,7 +199,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.games.isNotEmpty)
               section(
-                'Games',
+                l10n.sfx_games,
                 'game',
                 SearchMode.games,
                 stack([
@@ -206,7 +209,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.venues.isNotEmpty)
               section(
-                'Venues',
+                l10n.sfx_venues,
                 'buildings',
                 SearchMode.venues,
                 stack([
@@ -216,7 +219,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.posts.isNotEmpty)
               section(
-                'Posts',
+                l10n.sfx_posts,
                 'message-text',
                 SearchMode.posts,
                 stack([
@@ -226,7 +229,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.comments.isNotEmpty)
               section(
-                'Comments',
+                l10n.sfx_comments,
                 'sms',
                 SearchMode.comments,
                 stack([
@@ -236,7 +239,7 @@ class _Overview extends StatelessWidget {
               ),
             if (b.meetups.isNotEmpty)
               section(
-                'Meet-ups',
+                l10n.sfx_meetups,
                 'calendar',
                 SearchMode.meetups,
                 stack([
@@ -264,6 +267,7 @@ class _FullList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final b = state.bundle;
     final q = state.query;
     final List<Widget> rows = switch (mode) {
@@ -298,12 +302,12 @@ class _FullList extends StatelessWidget {
       ],
       SearchMode.all => const [],
     };
-    final label = _modeLabel(mode);
+    final label = _modeLabel(l10n, mode);
     if (rows.isEmpty || (mode == SearchMode.hashtags && b.hashtags.isEmpty)) {
       return Center(
         child: DabblerEmptyState(
           icon: 'search-normal',
-          title: 'No $label found',
+          title: l10n.sfx_none_found(label),
         ),
       );
     }
@@ -314,7 +318,7 @@ class _FullList extends StatelessWidget {
       padding: _gutter,
       children: [
         DabblerText(
-          '$count $label for "$q"',
+          l10n.sfx_list_header(count, label.toLowerCase(), q),
           style: DabblerType.footnote,
           tone: DabblerTextTone.secondary,
         ),

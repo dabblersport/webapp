@@ -9,6 +9,7 @@ import 'package:dabbler/features/news/presentation/screens/news_detail_screen.da
 import 'package:dabbler/features/news/providers/news_comments_provider.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -79,6 +80,12 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   });
 }
 
+class _FixedLocale extends LocaleNotifier {
+  _FixedLocale(Locale l) {
+    state = l;
+  }
+}
+
 class _Comments extends StateNotifier<AsyncValue<List<NewsComment>>>
     implements NewsCommentsNotifier {
   _Comments(List<NewsComment> c) : super(AsyncData(c));
@@ -123,6 +130,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        localeProvider.overrideWith((ref) => _FixedLocale(locale)),
         myReactionsProvider.overrideWith((ref, id) async => <String>{}),
         homeNewsReactionCountsProvider.overrideWith(
           (ref, id) async => const {'x': 4},
@@ -187,13 +195,13 @@ void main() {
       expect(find.text('React'), findsNothing);
       final like = tester.widget<DabblerButton>(
         find.byWidgetPredicate(
-          (w) => w is DabblerButton && w.semanticLabel == 'Like',
+          (w) => w is DabblerButton && w.semanticLabel == lookupAppLocalizations(locale).sfx_like,
         ),
       );
       expect(like.onLongPress, isNotNull);
       expect(find.text('Dabbler Sports Desk'), findsOneWidget);
       await _shoot(tester, key, 'news-detail-article-$dir');
-      await tester.tap(find.text('Discuss'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).sfx_discuss));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

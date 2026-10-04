@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/utils/search_query_parser.dart';
+import 'package:dabbler/data/models/games/game_model.dart';
+import 'package:dabbler/data/models/search/meetup_search_result.dart';
 import 'package:dabbler/data/models/profile.dart';
 import 'package:dabbler/data/models/search/hashtag_search_result.dart';
 import 'package:dabbler/data/models/search/post_search_result.dart';
@@ -29,46 +31,6 @@ import '../../support/render_mode.dart';
 /// `--dart-define=SOCIAL_SHOTS_DIR=<dir>`.
 const String _shotsDir = String.fromEnvironment('SOCIAL_SHOTS_DIR');
 
-Future<void> _loadFonts() async {
-  final String dsFonts =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
-  Future<void> family(String name, List<String> files) async {
-    final FontLoader loader = FontLoader(name);
-    for (final String f in files) {
-      final File file = File('$dsFonts/$f');
-      if (!file.existsSync()) return;
-      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
-    }
-    await loader.load();
-  }
-
-  const String pkg = 'packages/dabbler_design_system';
-  const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
-  ];
-  const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
-  ];
-  for (final String prefix in <String>['$pkg/', '']) {
-    await family('${prefix}Glory', glory);
-    await family('${prefix}Gloock', <String>['Gloock-Regular.ttf']);
-    await family('${prefix}Meral Sans', meral);
-    await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
-  }
-  final String home = Platform.environment['HOME'] ?? '';
-  final File iconsax = File(
-    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
-  );
-  if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
-    await loader.load();
-  }
-}
-
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   if (_shotsDir.isEmpty) return;
   await tester.runAsync(() async {
@@ -82,7 +44,25 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   });
 }
 
-const SearchResultBundle _bundle = SearchResultBundle(
+final SearchResultBundle _bundle = SearchResultBundle(
+  games: [
+    GameModel.fromJson({
+      'id': 'g1',
+      'title': 'Football night at the marina',
+      'sport': 'football',
+      'venue_name': 'Al Maryah Island',
+      'start_at': DateTime.now().add(const Duration(hours: 5)).toIso8601String(),
+      'max_players': 10,
+      'current_players': 3,
+    }),
+  ],
+  meetups: [
+    MeetupSearchResult(
+      id: 'm1',
+      title: 'Football community meetup',
+      startAt: DateTime.now().add(const Duration(days: 2)),
+    ),
+  ],
   profiles: [
     Profile(
       id: 'p1',
@@ -130,14 +110,16 @@ Future<void> _pump(
   Locale locale,
   Key key, {
   String? query,
-  Result<SearchResultBundle, Failure> result = const Ok(_bundle),
+  Result<SearchResultBundle, Failure>? result,
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [searchRepositoryProvider.overrideWithValue(_FakeRepo(result))],
+      overrides: [
+        searchRepositoryProvider.overrideWithValue(_FakeRepo(result ?? Ok(_bundle))),
+      ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         builder: (context, child) => DabblerToastProvider(
@@ -159,6 +141,8 @@ Future<void> _pump(
   }
 }
 
+Future<void> _loadFonts() => loadRenderFonts();
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -175,7 +159,7 @@ void main() {
       });
       await _pump(tester, locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text('Recent'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_recent), findsOneWidget);
       expect(find.byType(DabblerSearchField), findsOneWidget);
       await _shoot(tester, key, 'search-default-$dir');
     });
@@ -193,19 +177,34 @@ void main() {
     testWidgets('view all — $dir', (tester) async {
       SharedPreferences.setMockInitialValues({});
       await _pump(tester, locale, key, query: 'foot');
-      await tester.tap(find.text('View all').first);
+      await tester.tap(find.text(lookupAppLocalizations(locale).sfx_view_all).first);
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('2 people for "foot"'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_list_header(2, lookupAppLocalizations(locale).sfx_people.toLowerCase(), 'foot')), findsOneWidget);
       await _shoot(tester, key, 'search-viewall-$dir');
     });
+
+    for (final (String, int, String) v in <(String, int, String)>[
+      ('hashtags', 1, 'search-viewall-hashtags'),
+      ('events', 2, 'search-viewall-events'),
+      ('posts', 3, 'search-viewall-posts'),
+    ]) {
+      testWidgets('view all ${v.$1} — $dir', (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        await _pump(tester, locale, key, query: 'foot');
+        await tester.tap(find.text(locale.languageCode == 'ar' ? 'عرض الكل' : 'View all').at(v.$2));
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        await _shoot(tester, key, '${v.$3}-$dir');
+      });
+    }
 
     testWidgets('empty — $dir', (tester) async {
       SharedPreferences.setMockInitialValues({});
       await _pump(tester, locale, key,
           query: 'zzz', result: const Ok(SearchResultBundle.empty));
       expect(tester.takeException(), isNull);
-      expect(find.text('No results for "zzz"'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_no_results_for('zzz')), findsOneWidget);
       await _shoot(tester, key, 'search-empty-$dir');
     });
 

@@ -1,6 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/services.dart' show TextInputAction;
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
@@ -18,7 +20,7 @@ Future<void> showNewsCommentsSheet(
 }) {
   return showDabblerSheet<void>(
     context: context,
-    title: 'Comments',
+    title: AppLocalizations.of(context).sfx_comments,
     detents: const [0.75],
     builder: (_) => _CommentsList(newsId: item.newsId, lang: lang),
     footerBuilder: (_) => _CommentComposer(item: item, onPosted: onPosted),
@@ -39,8 +41,8 @@ class _CommentsList extends ConsumerWidget {
           loading: () => const Center(child: DabblerSpinner()),
           error: (_, __) => const SizedBox.shrink(),
           data: (comments) => comments.isEmpty
-              ? const DabblerText(
-                  'Be the first to comment.',
+              ? DabblerText(
+                  AppLocalizations.of(context).sfx_be_first,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
                 )
@@ -110,14 +112,14 @@ class _CommentComposerState extends ConsumerState<_CommentComposer> {
         Expanded(
           child: DabblerTextField(
             controller: _controller,
-            placeholder: 'Add a comment',
+            placeholder: AppLocalizations.of(context).sfx_add_comment,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _submit(),
           ),
         ),
         DabblerButton.icon(
           icon: 'send-2',
-          semanticLabel: 'Send',
+          semanticLabel: AppLocalizations.of(context).sfx_send,
           loading: _submitting,
           onPressed: _submit,
         ),

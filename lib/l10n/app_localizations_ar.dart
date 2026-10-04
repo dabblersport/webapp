@@ -3268,4 +3268,155 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get game_prefs_referee_strict_sub =>
       'يجب أن تتبع المباريات القواعد الرسمية بدقة';
+
+  @override
+  String get sfx_search_placeholder => 'ابحث عن أشخاص وألعاب ومنشورات…';
+
+  @override
+  String get sfx_recent => 'الأخيرة';
+
+  @override
+  String get sfx_clear => 'مسح';
+
+  @override
+  String sfx_remove_recent(String query) {
+    return 'إزالة $query';
+  }
+
+  @override
+  String get sfx_quick_filters => 'فلاتر سريعة';
+
+  @override
+  String get sfx_near_me => 'بالقرب مني';
+
+  @override
+  String get sfx_today => 'اليوم';
+
+  @override
+  String get sfx_this_week => 'هذا الأسبوع';
+
+  @override
+  String get sfx_friends_only => 'الأصدقاء فقط';
+
+  @override
+  String get sfx_popular => 'الأكثر شعبية';
+
+  @override
+  String get sfx_free_entry => 'دخول مجاني';
+
+  @override
+  String get sfx_people_nearby => 'أشخاص بالقرب منك';
+
+  @override
+  String get sfx_people_nearby_sub => 'اعثر على لاعبين قريبين منك';
+
+  @override
+  String get sfx_popular_games => 'الألعاب الشائعة';
+
+  @override
+  String get sfx_popular_games_sub => 'أماكن متاحة اليوم';
+
+  @override
+  String get sfx_trending_posts => 'المنشورات الرائجة';
+
+  @override
+  String get sfx_trending_posts_sub => 'ما يتحدث عنه الجميع';
+
+  @override
+  String get sfx_showing_results_for => 'عرض النتائج لـ';
+
+  @override
+  String get sfx_view_all => 'عرض الكل';
+
+  @override
+  String get sfx_people => 'الأشخاص';
+
+  @override
+  String get sfx_hashtags => 'الوسوم';
+
+  @override
+  String get sfx_games => 'الألعاب';
+
+  @override
+  String get sfx_venues => 'الملاعب';
+
+  @override
+  String get sfx_posts => 'المنشورات';
+
+  @override
+  String get sfx_comments => 'التعليقات';
+
+  @override
+  String get sfx_meetups => 'اللقاءات';
+
+  @override
+  String get sfx_follow => 'متابعة';
+
+  @override
+  String get sfx_join => 'انضم';
+
+  @override
+  String get sfx_kind_game => 'لعبة';
+
+  @override
+  String get sfx_kind_meetup => 'لقاء';
+
+  @override
+  String get sfx_spots => 'أماكن';
+
+  @override
+  String sfx_spots_meta(int joined, int max) {
+    return '$joined/$max أماكن';
+  }
+
+  @override
+  String sfx_posts_count(int count) {
+    return '$count منشور';
+  }
+
+  @override
+  String sfx_on_post(String title) {
+    return 'على $title';
+  }
+
+  @override
+  String sfx_no_results_for(String query) {
+    return 'لا نتائج لـ \"$query\"';
+  }
+
+  @override
+  String sfx_none_found(String label) {
+    return 'لم يتم العثور على $label';
+  }
+
+  @override
+  String sfx_list_header(int count, String label, String query) {
+    return '$count $label لـ \"$query\"';
+  }
+
+  @override
+  String sfx_hashtag_empty(String slug) {
+    return 'لا منشورات للوسم #$slug';
+  }
+
+  @override
+  String get sfx_retry => 'إعادة المحاولة';
+
+  @override
+  String get sfx_news => 'الأخبار';
+
+  @override
+  String get sfx_add_comment => 'أضف تعليقًا';
+
+  @override
+  String get sfx_discuss => 'ناقش';
+
+  @override
+  String get sfx_be_first => 'كن أول من يعلّق.';
+
+  @override
+  String get sfx_like => 'إعجاب';
+
+  @override
+  String get sfx_send => 'إرسال';
 }

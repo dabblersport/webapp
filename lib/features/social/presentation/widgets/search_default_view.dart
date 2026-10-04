@@ -1,6 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:dabbler/l10n/app_localizations.dart';
+
 /// The empty-query state (`Search_default`): recent searches, quick filters and
 /// the three shortcut cards.
 class SearchDefaultView extends StatelessWidget {
@@ -17,23 +19,23 @@ class SearchDefaultView extends StatelessWidget {
   final ValueChanged<String> onRemoveRecent;
   final VoidCallback onClearRecent;
 
-  static const _filters = [
-    (label: 'Near me', icon: 'location', active: true),
-    (label: 'Today', icon: 'clock', active: false),
-    (label: 'This week', icon: '', active: false),
-    (label: 'Friends only', icon: '', active: false),
-    (label: 'Popular', icon: '', active: false),
-    (label: 'Free entry', icon: '', active: false),
-  ];
-
-  static const _shortcuts = [
-    (icon: 'people', title: 'People nearby', sub: 'Find players near you'),
-    (icon: 'game', title: 'Popular games', sub: 'Open spots today'),
-    (icon: 'activity', title: 'Trending posts', sub: 'What everyone’s on'),
-  ];
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final filters = [
+      (label: l10n.sfx_near_me, icon: 'location', active: true),
+      (label: l10n.sfx_today, icon: 'clock', active: false),
+      (label: l10n.sfx_this_week, icon: '', active: false),
+      (label: l10n.sfx_friends_only, icon: '', active: false),
+      (label: l10n.sfx_popular, icon: '', active: false),
+      (label: l10n.sfx_free_entry, icon: '', active: false),
+    ];
+    final shortcuts = [
+      (icon: 'people', title: l10n.sfx_people_nearby, sub: l10n.sfx_people_nearby_sub),
+      (icon: 'game', title: l10n.sfx_popular_games, sub: l10n.sfx_popular_games_sub),
+      (icon: 'activity', title: l10n.sfx_trending_posts, sub: l10n.sfx_trending_posts_sub),
+    ];
     return ListView(
       padding: const EdgeInsetsDirectional.fromSTEB(
         DabblerSpacing.space6,
@@ -52,9 +54,9 @@ class SearchDefaultView extends StatelessWidget {
                 icon: 'clock',
                 iconWeight: DabblerIconWeight.linear,
                 iconColor: DabblerColors.of(context).textPrimary,
-                title: 'Recent',
+                title: l10n.sfx_recent,
                 action: DabblerTextLink(
-                  label: 'Clear',
+                  label: l10n.sfx_clear,
                   underline: false,
                   onPressed: onClearRecent,
                 ),
@@ -66,15 +68,16 @@ class SearchDefaultView extends StatelessWidget {
                       for (final q in recentSearches)
                         DabblerChip(
                           key: ValueKey('recent-$q'),
-                          label: q,
-                          leadingIcon: const DabblerIcon(
+                          label: '\u2066$q\u2069',
+                          leadingIcon: DabblerIcon(
                             'clock',
                             size: DabblerSizing.iconXs,
+                            color: DabblerColors.of(context).textTertiary,
                           ),
                           onTap: () => onPickRecent(q),
                           onRemove: () => onRemoveRecent(q),
                           mutedRemove: true,
-                          removeSemanticLabel: 'Remove $q',
+                          removeSemanticLabel: l10n.sfx_remove_recent(q),
                         ),
                     ],
                   ),
@@ -83,13 +86,13 @@ class SearchDefaultView extends StatelessWidget {
             DabblerSection(
               compact: true,
               icon: 'filter',
-              title: 'Quick filters',
+              title: l10n.sfx_quick_filters,
               children: [
                 Wrap(
                   spacing: DabblerSpacing.space2,
                   runSpacing: DabblerSpacing.space2,
                   children: [
-                    for (final f in _filters)
+                    for (final f in filters)
                       DabblerChip(
                         label: f.label,
                         selected: f.active,
@@ -108,7 +111,7 @@ class SearchDefaultView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               spacing: DabblerSpacing.space3,
               children: [
-                for (final s in _shortcuts)
+                for (final s in shortcuts)
                   DabblerCard(
                     variant: DabblerCardVariant.white,
                     radius: DabblerRadius.lg,

@@ -3327,4 +3327,155 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get game_prefs_referee_strict_sub =>
       'Games should follow official rules closely';
+
+  @override
+  String get sfx_search_placeholder => 'Search people, games, posts…';
+
+  @override
+  String get sfx_recent => 'Recent';
+
+  @override
+  String get sfx_clear => 'Clear';
+
+  @override
+  String sfx_remove_recent(String query) {
+    return 'Remove $query';
+  }
+
+  @override
+  String get sfx_quick_filters => 'Quick filters';
+
+  @override
+  String get sfx_near_me => 'Near me';
+
+  @override
+  String get sfx_today => 'Today';
+
+  @override
+  String get sfx_this_week => 'This week';
+
+  @override
+  String get sfx_friends_only => 'Friends only';
+
+  @override
+  String get sfx_popular => 'Popular';
+
+  @override
+  String get sfx_free_entry => 'Free entry';
+
+  @override
+  String get sfx_people_nearby => 'People nearby';
+
+  @override
+  String get sfx_people_nearby_sub => 'Find players near you';
+
+  @override
+  String get sfx_popular_games => 'Popular games';
+
+  @override
+  String get sfx_popular_games_sub => 'Open spots today';
+
+  @override
+  String get sfx_trending_posts => 'Trending posts';
+
+  @override
+  String get sfx_trending_posts_sub => 'What everyone’s on';
+
+  @override
+  String get sfx_showing_results_for => 'Showing results for';
+
+  @override
+  String get sfx_view_all => 'View all';
+
+  @override
+  String get sfx_people => 'People';
+
+  @override
+  String get sfx_hashtags => 'Hashtags';
+
+  @override
+  String get sfx_games => 'Games';
+
+  @override
+  String get sfx_venues => 'Venues';
+
+  @override
+  String get sfx_posts => 'Posts';
+
+  @override
+  String get sfx_comments => 'Comments';
+
+  @override
+  String get sfx_meetups => 'Meet-ups';
+
+  @override
+  String get sfx_follow => 'Follow';
+
+  @override
+  String get sfx_join => 'Join';
+
+  @override
+  String get sfx_kind_game => 'Game';
+
+  @override
+  String get sfx_kind_meetup => 'Meet-up';
+
+  @override
+  String get sfx_spots => 'spots';
+
+  @override
+  String sfx_spots_meta(int joined, int max) {
+    return '$joined/$max spots';
+  }
+
+  @override
+  String sfx_posts_count(int count) {
+    return '$count posts';
+  }
+
+  @override
+  String sfx_on_post(String title) {
+    return 'on $title';
+  }
+
+  @override
+  String sfx_no_results_for(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String sfx_none_found(String label) {
+    return 'No $label found';
+  }
+
+  @override
+  String sfx_list_header(int count, String label, String query) {
+    return '$count $label for \"$query\"';
+  }
+
+  @override
+  String sfx_hashtag_empty(String slug) {
+    return 'No posts found for #$slug';
+  }
+
+  @override
+  String get sfx_retry => 'Retry';
+
+  @override
+  String get sfx_news => 'News';
+
+  @override
+  String get sfx_add_comment => 'Add a comment';
+
+  @override
+  String get sfx_discuss => 'Discuss';
+
+  @override
+  String get sfx_be_first => 'Be the first to comment.';
+
+  @override
+  String get sfx_like => 'Like';
+
+  @override
+  String get sfx_send => 'Send';
 }

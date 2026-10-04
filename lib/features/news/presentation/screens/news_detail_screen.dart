@@ -1,5 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -88,7 +90,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             tone: mine.isNotEmpty
                 ? DabblerButtonTone.primary
                 : DabblerButtonTone.outlined,
-            semanticLabel: 'Like',
+            semanticLabel: AppLocalizations.of(context).sfx_like,
             onPressed: () => toggleHomeNewsReaction(ref, item.newsId, mine),
             // Long-press opens the reaction picker, as the original like bar
             // did.
@@ -99,11 +101,14 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             label: '$_localCommentCount',
             icon: 'message-text',
             tone: DabblerButtonTone.outlined,
-            semanticLabel: 'Comments',
+            semanticLabel: AppLocalizations.of(context).sfx_comments,
             onPressed: () => _openComments(lang),
           ),
           const Spacer(),
-          DabblerButton(label: 'Discuss', onPressed: () => _openComments(lang)),
+          DabblerButton(
+            label: AppLocalizations.of(context).sfx_discuss,
+            onPressed: () => _openComments(lang),
+          ),
         ],
       ),
       body: ListView(

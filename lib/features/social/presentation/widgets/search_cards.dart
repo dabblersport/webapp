@@ -1,5 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -103,7 +105,7 @@ class SearchPersonCard extends StatelessWidget {
           ],
         ),
         DabblerButton(
-          label: 'Follow',
+          label: AppLocalizations.of(context).sfx_follow,
           size: DabblerButtonSize.small,
           fullWidth: true,
           onPressed: onTap,
@@ -141,7 +143,7 @@ class SearchPersonRow extends StatelessWidget {
     ),
     subtitle: '\u2066@${profile.username}\u2069',
     trailing: DabblerButton(
-      label: 'Follow',
+      label: AppLocalizations.of(context).sfx_follow,
       size: DabblerButtonSize.small,
       onPressed: onTap,
     ),
@@ -190,7 +192,7 @@ class SearchHashtagCard extends StatelessWidget {
               maxLines: 1,
             ),
             DabblerText(
-              '${hashtag.postCount} posts',
+              AppLocalizations.of(context).sfx_posts_count(hashtag.postCount),
               style: DabblerType.caption1,
               tone: DabblerTextTone.secondary,
             ),
@@ -274,7 +276,7 @@ class SearchGameCard extends StatelessWidget {
       meta: Row(
         spacing: DabblerSpacing.space2,
         children: [
-          DabblerBadge(label: game.sport),
+          DabblerBadge(label: game.sport, tone: DabblerBadgeTone.warning),
           Expanded(
             child: DabblerText(
               _formatWhen(game.scheduledDate),
@@ -295,8 +297,8 @@ class SearchGameCard extends StatelessWidget {
             tone: DabblerTextTone.brand,
             weight: DabblerTextWeight.bold,
           ),
-          const DabblerText(
-            'spots',
+          DabblerText(
+            AppLocalizations.of(context).sfx_spots,
             style: DabblerType.caption2,
             tone: DabblerTextTone.secondary,
           ),
@@ -351,7 +353,6 @@ class SearchMeetupCard extends StatelessWidget {
             style: DabblerType.caption1,
             tone: DabblerTextTone.secondary,
           ),
-    trailing: const DabblerBadge(label: 'RSVP'),
   );
 }
 
@@ -428,7 +429,7 @@ class SearchCommentCard extends StatelessWidget {
               const DabblerIcon('message-text', size: DabblerSizing.iconXs),
               Expanded(
                 child: DabblerText(
-                  'on ${comment.postTitle}',
+                  AppLocalizations.of(context).sfx_on_post(comment.postTitle!),
                   style: DabblerType.caption1,
                   tone: DabblerTextTone.secondary,
                   maxLines: 1,
@@ -461,16 +462,16 @@ class SearchGameEventCard extends StatelessWidget {
     return DabblerCardEventResult(
       month: DateFormat('MMM').format(d),
       day: DateFormat('d').format(d),
-      kind: 'Game',
+      kind: AppLocalizations.of(context).sfx_kind_game,
       kindIcon: 'game',
       time: _formatWhen(d),
       title: game.title,
       query: searchNeedle(query),
       place: (game.venueName ?? '').isEmpty ? null : game.venueName,
       meta: game.maxPlayers > 0
-          ? '${game.currentPlayers}/${game.maxPlayers} spots'
+          ? AppLocalizations.of(context).sfx_spots_meta(game.currentPlayers, game.maxPlayers)
           : null,
-      actionLabel: 'Join',
+      actionLabel: AppLocalizations.of(context).sfx_join,
       onAction: open,
       onTap: open,
     );
@@ -495,7 +496,7 @@ class SearchMeetupEventCard extends StatelessWidget {
     return DabblerCardEventResult(
       month: d == null ? '' : DateFormat('MMM').format(d),
       day: d == null ? '' : DateFormat('d').format(d),
-      kind: 'Meet-up',
+      kind: AppLocalizations.of(context).sfx_kind_meetup,
       kindIcon: 'calendar',
       time: d == null ? '' : _formatWhen(d),
       title: meetup.title,
