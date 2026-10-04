@@ -1,7 +1,9 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
+import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Screen displaying open source licenses and attributions, on a
 /// design-system page: a search field over a section of license rows; a row
@@ -101,15 +103,16 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
     final colors = DabblerColors.of(context);
     final filtered = _filteredLicenses;
 
+    final l10n = AppLocalizations.of(context);
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Open Source Licenses',
-        onBack: () => context.pop(),
-        actions: [
+      topBar: settingsInnerTopBar(
+        context,
+        title: l10n.licenses_title,
+        showHelp: false,
+        extraActions: [
           DabblerNavigationAction(
             icon: 'info-circle',
-            label: 'About Licenses',
+            label: l10n.licenses_about_tooltip,
             onPressed: _showLicenseInfo,
           ),
         ],
@@ -123,38 +126,43 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
         ),
         children: [
           DabblerText(
-            'This app is built with amazing open source libraries. We thank all contributors for their work.',
+            l10n.licenses_intro,
             style: DabblerType.body,
             tone: DabblerTextTone.secondary,
           ),
           const SizedBox(height: DabblerSpacing.space2),
           DabblerText(
-            '${_licenses.length} open source packages',
+            l10n.licenses_count(
+              DabblerType.toWesternDigits('${_licenses.length}'),
+            ),
             style: DabblerType.footnote,
             tone: DabblerTextTone.tertiary,
           ),
           const SizedBox(height: DabblerSpacing.space5),
           DabblerSearchField(
             controller: _searchController,
-            placeholder: 'Search licenses...',
+            placeholder: l10n.licenses_search_hint,
             onChanged: (value) => setState(() => _searchQuery = value),
             onCleared: () => setState(() => _searchQuery = ''),
           ),
           const SizedBox(height: DabblerSpacing.space5),
           if (filtered.isEmpty)
-            const DabblerEmptyState(
+            DabblerEmptyState(
               icon: 'search-status',
-              title: 'No licenses found',
-              text: 'Try adjusting your search query',
+              title: l10n.licenses_empty_title,
+              text: l10n.licenses_empty_text,
             )
           else
-            DabblerSection(
+            DabblerRowGroup(
               children: [
                 for (final license in filtered)
                   DabblerInputRow(
+                    flat: true,
+                    showDivider: false,
+                    dense: true,
                     leading: DabblerIcon(
                       'code',
-                      size: DabblerSizing.iconRow,
+                      size: DabblerSizing.iconMd,
                       color: colors.textSecondary,
                     ),
                     title: license.name,
@@ -182,13 +190,11 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
     showDabblerDialog<void>(
       context: context,
       builder: (dialogContext) => DabblerDialog(
-        title: 'About Open Source Licenses',
-        description:
-            'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\n'
-            'We are grateful to all the developers and contributors who make their work available under open source licenses.',
+        title: AppLocalizations.of(context).licenses_info_title,
+        description: AppLocalizations.of(context).licenses_info_body,
         onClose: () => Navigator.of(dialogContext).pop(),
         primaryAction: DabblerDialogAction(
-          label: 'Got it',
+          label: AppLocalizations.of(context).licenses_got_it,
           onPressed: () => Navigator.of(dialogContext).pop(),
         ),
       ),
@@ -205,6 +211,7 @@ class _LicenseDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     Widget detail(String label, String value) => Padding(
       padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
       child: Row(
@@ -228,12 +235,15 @@ class _LicenseDetails extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        detail('Version', license.version),
-        detail('License', license.license),
-        detail('Copyright', license.copyright),
-        detail('URL', license.url),
+        detail(l10n.licenses_detail_version, license.version),
+        detail(l10n.licenses_detail_license, license.license),
+        detail(l10n.licenses_detail_copyright, license.copyright),
+        detail(l10n.licenses_detail_url, license.url),
         const SizedBox(height: DabblerSpacing.space3),
-        DabblerText('Description', style: DabblerType.headline),
+        DabblerText(
+          l10n.licenses_detail_description,
+          style: DabblerType.headline,
+        ),
         const SizedBox(height: DabblerSpacing.space2),
         DabblerText(
           license.description,
@@ -242,13 +252,13 @@ class _LicenseDetails extends StatelessWidget {
         ),
         const SizedBox(height: DabblerSpacing.space6),
         DabblerButton(
-          label: 'View on Web',
+          label: l10n.licenses_view_web,
           tone: DabblerButtonTone.outlined,
           size: DabblerButtonSize.full,
           fullWidth: true,
           onPressed: () => DabblerToastProvider.of(
             context,
-          ).show(DabblerToastSpec(message: 'Opening ${license.url}')),
+          ).show(DabblerToastSpec(message: l10n.licenses_opening(license.url))),
         ),
       ],
     );

@@ -40,12 +40,18 @@ Future<void> _loadFonts() async {
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
+    'Glory-Light.ttf',
+    'Glory-Regular.ttf',
+    'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf',
+    'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
+    'meral-sans-light.ttf',
+    'meral-sans-regular.ttf',
+    'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf',
+    'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -58,9 +64,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -73,8 +79,9 @@ Future<void> _shoot(WidgetTester tester, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(_shotKey)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png =
-        await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -150,8 +157,9 @@ final Map<String, SportPreference> _prefs = {
   ),
 };
 
-List<String> _positions(String key) =>
-    key == 'football' ? ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'] : [];
+List<String> _positions(String key) => key == 'football'
+    ? ['Goalkeeper', 'Defender', 'Midfielder', 'Forward']
+    : [];
 
 Widget _view({bool createGame = true}) => ProfileSportsView(
   isLoading: false,
@@ -180,29 +188,28 @@ void main() {
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final AppLocalizations l10n = lookupAppLocalizations(locale);
 
     testWidgets('profile sports view — $dir', (tester) async {
       await _pump(tester, _view(), locale, height: 1500);
       expect(tester.takeException(), isNull);
-      expect(find.text('Sports Preferences'), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_title), findsOneWidget);
       expect(find.byType(DabblerToggle), findsNWidgets(6));
       expect(find.byType(DabblerChip), findsNWidgets(3));
       expect(find.byType(DabblerSelect<String>), findsOneWidget);
       expect(find.byType(DabblerSportIcon), findsNWidgets(3));
-      expect(find.text('Create game'), findsNWidgets(2));
+      expect(find.text(l10n.sports_prefs_create_game), findsOneWidget);
       await _shoot(tester, 'profile-sports-$dir');
     });
 
-    testWidgets('profile sports screen without backend — $dir', (
-      tester,
-    ) async {
+    testWidgets('profile sports screen without backend — $dir', (tester) async {
       // No Supabase in tests: the load fails and surfaces as a DS toast.
       await _pump(tester, const ProfileSportsScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('Sports Preferences'), findsOneWidget);
-      expect(find.text('My Sports'), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_title), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_my_sports), findsOneWidget);
       expect(
-        find.textContaining('Failed to load sports preferences'),
+        find.textContaining(l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), '')),
         findsOneWidget,
       );
     });

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2583,6 +2584,748 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
 
   @override
+  String get settings_identity_subtitle => 'Account, password & security';
+
+  @override
+  String get settings_tile_privacy_preset => 'Privacy preset';
+
+  @override
+  String get settings_preset_public => 'Public';
+
+  @override
+  String get settings_preset_friends => 'Friends only';
+
+  @override
+  String get settings_preset_private => 'Private';
+
+  @override
+  String get settings_theme_light => 'Light';
+
+  @override
+  String get settings_theme_dark => 'Dark';
+
+  @override
+  String get settings_theme_system => 'System';
+
+  @override
+  String get settings_country_short_eg => 'Egypt';
+
+  @override
+  String get settings_country_short_ae => 'UAE';
+
+  @override
+  String get settings_country_short_sa => 'Saudi';
+
+  @override
+  String get settings_country_short_ma => 'Morocco';
+
+  @override
+  String get settings_organiser_title => 'Become an organiser';
+
+  @override
+  String get settings_organiser_subtitle => 'Create and manage sports events';
+
+  @override
+  String get settings_organiser_info_body =>
+      'Organisers create games, set venues and prices, and manage who joins. Setting one up takes a few minutes and you keep your player profile.';
+
+  @override
+  String get settings_organiser_start => 'Start setup';
+
+  @override
+  String get settings_about_title => 'About Dabbler';
+
+  @override
+  String get settings_about_subtitle => 'Terms, privacy policy, licenses';
+
+  @override
+  String settings_search_results(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_search_no_match => 'No settings match that';
+
+  @override
+  String get settings_path_account => 'Account & security';
+
+  @override
+  String get settings_path_privacy => 'Privacy';
+
+  @override
+  String get settings_path_privacy_safety => 'Privacy › Safety';
+
+  @override
+  String get settings_path_appearance => 'Appearance';
+
+  @override
+  String get settings_path_profiles => 'Settings › Profiles';
+
+  @override
+  String get settings_path_root => 'Settings';
+
+  @override
+  String get settings_sign_out_confirm_body =>
+      'You will be signed out on this device. Your games and profile stay on your account.';
+
+  @override
+  String notif_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_prefs_title => 'What reaches you';
+
+  @override
+  String get notif_prefs_done => 'Done';
+
+  @override
+  String get notif_pref_invites_title => 'Game invites';
+
+  @override
+  String get notif_pref_invites_sub => 'When someone adds you to a game';
+
+  @override
+  String get notif_pref_waitlist_title => 'Waitlist spots';
+
+  @override
+  String get notif_pref_waitlist_sub => 'The moment a place frees up';
+
+  @override
+  String get notif_pref_payments_title => 'Payments and splits';
+
+  @override
+  String get notif_pref_payments_sub => 'Requests, receipts, refunds';
+
+  @override
+  String get notif_pref_social_title => 'Social activity';
+
+  @override
+  String get notif_pref_social_sub => 'Follows, replies, mentions';
+
+  @override
+  String get notif_quiet_hours_title => 'Quiet hours';
+
+  @override
+  String get notif_quiet_hours_sub => 'Nothing buzzes between these times';
+
+  @override
+  String get notif_quiet_hours_off => 'Off';
+
+  @override
+  String notif_quiet_hours_range(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get acct_title => 'Account';
+
+  @override
+  String get acct_group_signin => 'Sign-in';
+
+  @override
+  String get acct_row_email => 'Email address';
+
+  @override
+  String get acct_row_password => 'Password';
+
+  @override
+  String get acct_group_security => 'Security';
+
+  @override
+  String get acct_group_security_note =>
+      'Protect your account with additional security measures';
+
+  @override
+  String get acct_2fa_title => 'Two-factor authentication';
+
+  @override
+  String get acct_2fa_sub => 'Add an extra layer of security';
+
+  @override
+  String get acct_alerts_title => 'Login alerts';
+
+  @override
+  String get acct_alerts_sub => 'Get notified of new sign-ins';
+
+  @override
+  String get acct_group_danger => 'Danger zone';
+
+  @override
+  String get acct_delete_title => 'Delete account';
+
+  @override
+  String get acct_delete_sub => 'Permanently delete your account and all data';
+
+  @override
+  String get acct_delete_body =>
+      'This permanently deletes your account and all data, including games, stats and messages. It cannot be undone.';
+
+  @override
+  String get acct_delete_confirm => 'Delete permanently';
+
+  @override
+  String get acct_cancel => 'Cancel';
+
+  @override
+  String get acct_delete_type_error => 'Please type \"DELETE\" to confirm';
+
+  @override
+  String acct_delete_failed(String error) {
+    return 'Failed to delete account: $error';
+  }
+
+  @override
+  String get acct_email_sheet_title => 'Email address';
+
+  @override
+  String get acct_email_field => 'Email';
+
+  @override
+  String get acct_email_helper =>
+      'We send a confirmation link to the new address before it replaces the old one.';
+
+  @override
+  String get acct_email_update => 'Update email';
+
+  @override
+  String get acct_email_updating => 'Updating…';
+
+  @override
+  String get acct_email_empty => 'Email cannot be empty';
+
+  @override
+  String get acct_email_invalid => 'Please enter a valid email address';
+
+  @override
+  String get acct_email_same => 'New email is the same as current email';
+
+  @override
+  String get acct_email_sent => 'Confirmation sent';
+
+  @override
+  String acct_email_failed(String error) {
+    return 'Failed to update email: $error';
+  }
+
+  @override
+  String get acct_password_change_title => 'Change password';
+
+  @override
+  String get acct_password_set_title => 'Set password';
+
+  @override
+  String get acct_password_set_note =>
+      'You signed in with Google or Apple. Set a password to also sign in with your email.';
+
+  @override
+  String get acct_password_current => 'Current password';
+
+  @override
+  String get acct_password_new => 'New password';
+
+  @override
+  String get acct_password_new_helper => 'At least 6 characters';
+
+  @override
+  String get acct_password_confirm => 'Confirm new password';
+
+  @override
+  String get acct_password_change => 'Change password';
+
+  @override
+  String get acct_password_set => 'Set password';
+
+  @override
+  String get acct_password_changing => 'Changing…';
+
+  @override
+  String get acct_password_setting => 'Setting…';
+
+  @override
+  String get acct_password_changed => 'Password changed';
+
+  @override
+  String get acct_password_was_set =>
+      'Password set. You can now sign in with your email and password.';
+
+  @override
+  String get acct_password_err_current => 'Please enter your current password';
+
+  @override
+  String get acct_password_err_new => 'Please enter a new password';
+
+  @override
+  String get acct_password_err_short =>
+      'Password must be at least 6 characters long';
+
+  @override
+  String get acct_password_err_mismatch => 'Passwords do not match';
+
+  @override
+  String get acct_password_err_same =>
+      'New password must be different from current password';
+
+  @override
+  String get acct_password_err_incorrect => 'Current password is incorrect';
+
+  @override
+  String acct_password_failed(String error) {
+    return 'Failed to change password: $error';
+  }
+
+  @override
+  String acct_load_failed(String error) {
+    return 'Failed to load account data: $error';
+  }
+
+  @override
+  String get acct_export_title => 'Export my data';
+
+  @override
+  String get acct_export_sub =>
+      'Request a copy of your Dabbler data (PDPL data portability)';
+
+  @override
+  String get acct_export_started =>
+      'We\'re preparing your data export. You\'ll be notified by email when it\'s ready.';
+
+  @override
+  String acct_export_failed(String error) {
+    return 'Could not request data export: $error';
+  }
+
+  @override
+  String get priv_title => 'Privacy';
+
+  @override
+  String get priv_preset_header => 'Privacy preset';
+
+  @override
+  String get priv_preset_note =>
+      'Choose a preset to quickly configure your privacy settings';
+
+  @override
+  String get priv_preset_public => 'Public';
+
+  @override
+  String get priv_preset_public_desc =>
+      'Your profile is visible to everyone for easy discovery';
+
+  @override
+  String get priv_preset_friends => 'Friends only';
+
+  @override
+  String get priv_preset_friends_desc =>
+      'Only your friends can see your full profile';
+
+  @override
+  String get priv_preset_private => 'Private';
+
+  @override
+  String get priv_preset_private_desc =>
+      'Minimal information is shared publicly';
+
+  @override
+  String priv_preset_applied(String preset) {
+    return '$preset preset applied';
+  }
+
+  @override
+  String get priv_preset_custom => 'Custom';
+
+  @override
+  String get priv_preset_custom_desc => 'Your own mix of the settings below';
+
+  @override
+  String get priv_hint =>
+      'You can always customize individual settings below. Changes save automatically.';
+
+  @override
+  String get priv_group_see => 'What others see';
+
+  @override
+  String get priv_profile_title => 'Profile & identity';
+
+  @override
+  String get priv_profile_sub => 'Photo, name, bio, age, contact details';
+
+  @override
+  String get priv_activity_title => 'Activity & stats';
+
+  @override
+  String get priv_activity_sub => 'Status, check-ins, history, achievements';
+
+  @override
+  String get priv_discover_title => 'Discoverability';
+
+  @override
+  String get priv_discover_sub => 'Search indexing and nearby players';
+
+  @override
+  String get priv_group_comm => 'Communication';
+
+  @override
+  String get priv_contact_title => 'Who can contact you';
+
+  @override
+  String get priv_contact_sub => 'Messages, game invites, friend requests';
+
+  @override
+  String get priv_group_data => 'Data';
+
+  @override
+  String get priv_data_title => 'Data & analytics';
+
+  @override
+  String get priv_data_sub => 'Location, recommendations, analytics';
+
+  @override
+  String get priv_notif_title => 'Notifications';
+
+  @override
+  String get priv_notif_sub => 'Push and email';
+
+  @override
+  String get priv_group_safety => 'Safety';
+
+  @override
+  String get priv_blocked_title => 'Blocked accounts';
+
+  @override
+  String get priv_blocked_sub => 'People you\'ve blocked from contacting you';
+
+  @override
+  String priv_count_all(int total) {
+    return 'All $total on';
+  }
+
+  @override
+  String get priv_count_none => 'All off';
+
+  @override
+  String priv_count_some(int on, int total) {
+    return '$on of $total on';
+  }
+
+  @override
+  String get priv_contact_nav => 'Contact';
+
+  @override
+  String get priv_dm_title => 'Direct messages';
+
+  @override
+  String get priv_dm_sub => 'Who can send you messages';
+
+  @override
+  String get priv_invites_title => 'Game invites';
+
+  @override
+  String get priv_invites_sub => 'Who can invite you to games';
+
+  @override
+  String get priv_requests_title => 'Friend requests';
+
+  @override
+  String get priv_requests_sub => 'Who can send you friend requests';
+
+  @override
+  String get priv_audience_anyone => 'Anyone';
+
+  @override
+  String get priv_audience_friends => 'Friends only';
+
+  @override
+  String get priv_audience_organizers => 'Organizers only';
+
+  @override
+  String get priv_audience_none => 'No one';
+
+  @override
+  String get priv_unblock => 'Unblock';
+
+  @override
+  String get priv_unblocked => 'Unblocked';
+
+  @override
+  String get priv_blocked_empty => 'You haven\'t blocked anyone.';
+
+  @override
+  String priv_blocked_failed(String error) {
+    return 'Failed to unblock: $error';
+  }
+
+  @override
+  String priv_blocked_load_failed(String error) {
+    return 'Failed to load blocked accounts: $error';
+  }
+
+  @override
+  String get priv_save_failed => 'Failed to save settings. Please try again.';
+
+  @override
+  String get priv_saved => 'Saved';
+
+  @override
+  String get priv_t_photo => 'Profile photo';
+
+  @override
+  String get priv_t_photo_sub => 'Show your profile picture';
+
+  @override
+  String get priv_t_name => 'Real name';
+
+  @override
+  String get priv_t_name_sub => 'Show your full name';
+
+  @override
+  String get priv_t_bio => 'Bio';
+
+  @override
+  String get priv_t_bio_sub => 'Show your bio on your profile';
+
+  @override
+  String get priv_t_age => 'Age';
+
+  @override
+  String get priv_t_age_sub => 'Show your age on your profile';
+
+  @override
+  String get priv_t_email => 'Email address';
+
+  @override
+  String get priv_t_email_sub => 'Show your email to others';
+
+  @override
+  String get priv_t_phone => 'Phone number';
+
+  @override
+  String get priv_t_phone_sub => 'Show your phone number';
+
+  @override
+  String get priv_t_location => 'Location';
+
+  @override
+  String get priv_t_location_sub => 'Show your general location';
+
+  @override
+  String get priv_t_friends => 'Friends list';
+
+  @override
+  String get priv_t_friends_sub => 'Show your friends publicly';
+
+  @override
+  String get priv_t_online => 'Online status';
+
+  @override
+  String get priv_t_online_sub => 'Show when you\'re online';
+
+  @override
+  String get priv_t_activity => 'Activity status';
+
+  @override
+  String get priv_t_activity_sub => 'Show your recent activity';
+
+  @override
+  String get priv_t_checkins => 'Check-ins';
+
+  @override
+  String get priv_t_checkins_sub => 'Show your venue check-ins';
+
+  @override
+  String get priv_t_posts => 'Posts to public';
+
+  @override
+  String get priv_t_posts_sub => 'Make your posts visible to everyone';
+
+  @override
+  String get priv_t_sports => 'Sports profiles';
+
+  @override
+  String get priv_t_sports_sub => 'Show your sports and skill levels';
+
+  @override
+  String get priv_t_history => 'Game history';
+
+  @override
+  String get priv_t_history_sub => 'Show your past games';
+
+  @override
+  String get priv_t_stats => 'Statistics';
+
+  @override
+  String get priv_t_stats_sub => 'Show your performance stats';
+
+  @override
+  String get priv_t_achievements => 'Achievements';
+
+  @override
+  String get priv_t_achievements_sub => 'Show your earned achievements';
+
+  @override
+  String get priv_t_indexing => 'Search engine indexing';
+
+  @override
+  String get priv_t_indexing_sub =>
+      'Allow external services to find your profile';
+
+  @override
+  String get priv_t_nearby => 'Hide from nearby';
+
+  @override
+  String get priv_t_nearby_sub => 'Don\'t appear in nearby player searches';
+
+  @override
+  String get priv_t_tracking => 'Location tracking';
+
+  @override
+  String get priv_t_tracking_sub => 'Allow location-based features';
+
+  @override
+  String get priv_t_recs => 'Game recommendations';
+
+  @override
+  String get priv_t_recs_sub => 'Personalized game suggestions';
+
+  @override
+  String get priv_t_analytics => 'Anonymous analytics';
+
+  @override
+  String get priv_t_analytics_sub => 'Help improve the app';
+
+  @override
+  String get priv_t_push => 'Push notifications';
+
+  @override
+  String get priv_t_push_sub => 'Receive push notifications on your device';
+
+  @override
+  String get priv_t_mail => 'Email notifications';
+
+  @override
+  String get priv_t_mail_sub => 'Receive notifications via email';
+
+  @override
+  String get appr_title => 'Appearance';
+
+  @override
+  String get appr_group_theme => 'Theme';
+
+  @override
+  String get appr_light => 'Light';
+
+  @override
+  String get appr_dark => 'Dark';
+
+  @override
+  String get appr_system => 'System';
+
+  @override
+  String appr_theme_applied(String theme) {
+    return '$theme theme';
+  }
+
+  @override
+  String get appr_group_color => 'Color theme';
+
+  @override
+  String get appr_group_color_note =>
+      'Apply one token set across the entire app';
+
+  @override
+  String appr_color_use(String name) {
+    return 'Use $name tokens app-wide';
+  }
+
+  @override
+  String get appr_group_auto => 'Automatic theme';
+
+  @override
+  String get appr_group_auto_note =>
+      'Automatically switch between light and dark themes';
+
+  @override
+  String get appr_auto_title => 'Time-based theme';
+
+  @override
+  String get appr_auto_sub => 'Switch themes based on time of day';
+
+  @override
+  String get appr_group_schedule => 'Day & night schedule';
+
+  @override
+  String get appr_group_schedule_note =>
+      'Set when light and dark themes should activate';
+
+  @override
+  String get appr_day_title => 'Day starts at';
+
+  @override
+  String get appr_day_sub => 'Light theme will activate';
+
+  @override
+  String get appr_night_title => 'Night starts at';
+
+  @override
+  String get appr_night_sub => 'Dark theme will activate';
+
+  @override
+  String get region_title => 'Language & region';
+
+  @override
+  String get region_language => 'Language';
+
+  @override
+  String get region_language_sub => 'App and content language';
+
+  @override
+  String get region_language_updated => 'Language updated';
+
+  @override
+  String get region_country => 'App country';
+
+  @override
+  String get region_country_sub => 'Games, venues and currency';
+
+  @override
+  String get region_country_updated => 'Country updated';
+
+  @override
+  String get region_lang_en => 'English · English';
+
+  @override
+  String get region_lang_ar => 'Arabic · العربية';
+
+  @override
+  String get region_country_Egypt => 'Egypt';
+
+  @override
+  String get region_country_UAE => 'United Arab Emirates';
+
+  @override
+  String get region_country_KSA => 'Saudi Arabia';
+
+  @override
+  String get region_country_Morocco => 'Morocco';
+
+  @override
+  String region_error(String error) {
+    return 'Error: $error';
+  }
+
+  @override
   String get listing_set_location => 'Set location';
 
   @override
@@ -3329,175 +4072,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Games should follow official rules closely';
 
   @override
-  String get sfx_search_placeholder => 'Search people, games, posts…';
-
-  @override
-  String get sfx_recent => 'Recent';
-
-  @override
-  String get sfx_clear => 'Clear';
-
-  @override
-  String sfx_remove_recent(String query) {
-    return 'Remove $query';
-  }
-
-  @override
-  String get sfx_quick_filters => 'Quick filters';
-
-  @override
-  String get sfx_near_me => 'Near me';
-
-  @override
-  String get sfx_today => 'Today';
-
-  @override
-  String get sfx_this_week => 'This week';
-
-  @override
-  String get sfx_friends_only => 'Friends only';
-
-  @override
-  String get sfx_popular => 'Popular';
-
-  @override
-  String get sfx_free_entry => 'Free entry';
-
-  @override
-  String get sfx_people_nearby => 'People nearby';
-
-  @override
-  String get sfx_people_nearby_sub => 'Find players near you';
-
-  @override
-  String get sfx_popular_games => 'Popular games';
-
-  @override
-  String get sfx_popular_games_sub => 'Open spots today';
-
-  @override
-  String get sfx_trending_posts => 'Trending posts';
-
-  @override
-  String get sfx_trending_posts_sub => 'What everyone’s on';
-
-  @override
-  String get sfx_showing_results_for => 'Showing results for';
-
-  @override
-  String get sfx_view_all => 'View all';
-
-  @override
-  String get sfx_people => 'People';
-
-  @override
-  String get sfx_hashtags => 'Hashtags';
-
-  @override
-  String get sfx_games => 'Games';
-
-  @override
-  String get sfx_venues => 'Venues';
-
-  @override
-  String get sfx_posts => 'Posts';
-
-  @override
-  String get sfx_comments => 'Comments';
-
-  @override
-  String get sfx_meetups => 'Meet-ups';
-
-  @override
-  String get sfx_follow => 'Follow';
-
-  @override
-  String get sfx_join => 'Join';
-
-  @override
-  String get sfx_kind_game => 'Game';
-
-  @override
-  String get sfx_kind_meetup => 'Meet-up';
-
-  @override
-  String get sfx_spots => 'spots';
-
-  @override
-  String sfx_spots_meta(int joined, int max) {
-    return '$joined/$max spots';
-  }
-
-  @override
-  String sfx_posts_count(int count) {
-    return '$count posts';
-  }
-
-  @override
-  String sfx_on_post(String title) {
-    return 'on $title';
-  }
-
-  @override
-  String sfx_no_results_for(String query) {
-    return 'No results for \"$query\"';
-  }
-
-  @override
-  String sfx_none_found(String label) {
-    return 'No $label found';
-  }
-
-  @override
-  String sfx_list_header(int count, String label, String query) {
-    return '$count $label for \"$query\"';
-  }
-
-  @override
-  String sfx_hashtag_empty(String slug) {
-    return 'No posts found for #$slug';
-  }
-
-  @override
-  String get sfx_retry => 'Retry';
-
-  @override
-  String get sfx_news => 'News';
-
-  @override
-  String get sfx_add_comment => 'Add a comment';
-
-  @override
-  String get sfx_discuss => 'Discuss';
-
-  @override
-  String get sfx_be_first => 'Be the first to comment.';
-
-  @override
-  String get sfx_like => 'Like';
-
-  @override
-  String get sfx_send => 'Send';
-
-  @override
-  String get sfx_share => 'Share';
-
-  @override
-  String get sfx_share_article => 'Share article';
-
-  @override
-  String get sfx_copy_link => 'Copy link';
-
-  @override
-  String get sfx_share_to => 'Share to…';
-
-  @override
-  String get sfx_link_copied => 'Link copied';
-
-  @override
-  String get sfx_events => 'games and meet-ups';
-
-  @override
   String get composer_cancel => 'Cancel';
 
   @override
@@ -3968,6 +4542,625 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get post_detail_cancel_reply => 'Cancel reply';
+
+  @override
+  String get help_center_title => 'Help center';
+
+  @override
+  String get help_center_empty_title => 'Help center';
+
+  @override
+  String get help_center_empty_text => 'This screen is under development';
+
+  @override
+  String get contact_title => 'Contact support';
+
+  @override
+  String get contact_intro_title => 'How can we help?';
+
+  @override
+  String get contact_intro_message =>
+      'Send us a message and we\'ll get back to you as soon as possible.';
+
+  @override
+  String get contact_section => 'Contact information';
+
+  @override
+  String get contact_email => 'Your email';
+
+  @override
+  String get contact_category => 'Category';
+
+  @override
+  String get contact_subject => 'Subject';
+
+  @override
+  String get contact_message => 'Message';
+
+  @override
+  String get contact_send => 'Send message';
+
+  @override
+  String get contact_cat_general => 'General';
+
+  @override
+  String get contact_cat_account => 'Account issues';
+
+  @override
+  String get contact_cat_technical => 'Technical problem';
+
+  @override
+  String get contact_cat_billing => 'Payment & billing';
+
+  @override
+  String get contact_cat_feature => 'Feature request';
+
+  @override
+  String get contact_cat_abuse => 'Report abuse';
+
+  @override
+  String get contact_cat_privacy => 'Privacy concern';
+
+  @override
+  String get contact_cat_other => 'Other';
+
+  @override
+  String get contact_err_email_required => 'Please enter your email';
+
+  @override
+  String get contact_err_email_invalid => 'Please enter a valid email';
+
+  @override
+  String get contact_err_subject_required => 'Please enter a subject';
+
+  @override
+  String get contact_err_message_required => 'Please enter your message';
+
+  @override
+  String get contact_err_message_short =>
+      'Message must be at least 10 characters long';
+
+  @override
+  String get contact_sent => 'Message sent. We\'ll get back to you soon.';
+
+  @override
+  String contact_send_failed(String error) {
+    return 'Failed to send message: $error';
+  }
+
+  @override
+  String get bug_title => 'Report a bug';
+
+  @override
+  String get bug_intro_title => 'Found a bug?';
+
+  @override
+  String get bug_intro_message =>
+      'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it.';
+
+  @override
+  String get bug_details => 'Bug details';
+
+  @override
+  String get bug_category => 'Bug category';
+
+  @override
+  String get bug_severity => 'Severity level';
+
+  @override
+  String get bug_field_title => 'Bug title';
+
+  @override
+  String get bug_field_title_hint => 'Brief description of the issue';
+
+  @override
+  String get bug_field_description => 'Detailed description';
+
+  @override
+  String get bug_field_description_hint =>
+      'Describe what happened and what you expected to happen';
+
+  @override
+  String get bug_field_steps => 'Steps to reproduce';
+
+  @override
+  String get bug_field_steps_hint =>
+      '1. Go to...\n2. Tap on...\n3. See the error';
+
+  @override
+  String get bug_cat_general => 'General bug';
+
+  @override
+  String get bug_cat_ui => 'UI / visual issue';
+
+  @override
+  String get bug_cat_performance => 'Performance issue';
+
+  @override
+  String get bug_cat_crash => 'Crash / freeze';
+
+  @override
+  String get bug_cat_login => 'Login / authentication';
+
+  @override
+  String get bug_cat_profile => 'Profile / settings';
+
+  @override
+  String get bug_cat_games => 'Games / activities';
+
+  @override
+  String get bug_cat_notifications => 'Notifications';
+
+  @override
+  String get bug_cat_social => 'Social features';
+
+  @override
+  String get bug_cat_other => 'Other';
+
+  @override
+  String get bug_sev_low => 'Low';
+
+  @override
+  String get bug_sev_medium => 'Medium';
+
+  @override
+  String get bug_sev_high => 'High';
+
+  @override
+  String get bug_sev_critical => 'Critical';
+
+  @override
+  String get bug_additional => 'Additional information';
+
+  @override
+  String get bug_include_device => 'Include device information';
+
+  @override
+  String get bug_include_device_sub => 'OS version, device model, screen size';
+
+  @override
+  String get bug_include_logs => 'Include app logs';
+
+  @override
+  String get bug_include_logs_sub => 'Recent app activity and error logs';
+
+  @override
+  String get bug_device_heading => 'Device information to include:';
+
+  @override
+  String bug_device_platform(String value) {
+    return 'Platform: $value';
+  }
+
+  @override
+  String bug_device_app_version(String value) {
+    return 'App version: $value';
+  }
+
+  @override
+  String bug_device_resolution(String value) {
+    return 'Screen resolution: $value';
+  }
+
+  @override
+  String get bug_platform_unknown => 'Unknown';
+
+  @override
+  String get bug_platform_web => 'Web';
+
+  @override
+  String get bug_err_email_required => 'Please enter your email';
+
+  @override
+  String get bug_err_title_required => 'Please enter a bug title';
+
+  @override
+  String get bug_err_description_required => 'Please describe the bug';
+
+  @override
+  String get bug_err_description_short =>
+      'Please provide more details (at least 20 characters)';
+
+  @override
+  String get bug_err_steps_required =>
+      'Please provide steps to reproduce the bug';
+
+  @override
+  String get bug_submit => 'Submit bug report';
+
+  @override
+  String get bug_submitted =>
+      'Bug report submitted. Thank you for helping us improve.';
+
+  @override
+  String bug_submit_failed(String error) {
+    return 'Failed to submit bug report: $error';
+  }
+
+  @override
+  String get sports_prefs_title => 'Sports preferences';
+
+  @override
+  String get sports_prefs_save => 'Save';
+
+  @override
+  String get sports_prefs_create_game => 'Create game';
+
+  @override
+  String get sports_prefs_my_sports => 'My sports';
+
+  @override
+  String get sports_prefs_my_sports_note =>
+      'Enable sports you want to play and set your skill level';
+
+  @override
+  String get sports_prefs_general => 'General preferences';
+
+  @override
+  String get sports_prefs_auto_join => 'Auto-join compatible games';
+
+  @override
+  String get sports_prefs_auto_join_sub =>
+      'Automatically join games that match your preferences';
+
+  @override
+  String get sports_prefs_location => 'Use location for recommendations';
+
+  @override
+  String get sports_prefs_location_sub =>
+      'Find games near your current location';
+
+  @override
+  String get sports_prefs_flexible => 'Flexible timing';
+
+  @override
+  String get sports_prefs_flexible_sub =>
+      'Show games with flexible start times';
+
+  @override
+  String get sports_prefs_disabled => 'Disabled';
+
+  @override
+  String get sports_prefs_skill_level => 'Skill level';
+
+  @override
+  String get sports_prefs_position => 'Preferred position';
+
+  @override
+  String get sports_prefs_level_beginner => 'Beginner';
+
+  @override
+  String get sports_prefs_level_intermediate => 'Intermediate';
+
+  @override
+  String get sports_prefs_level_advanced => 'Advanced';
+
+  @override
+  String sports_prefs_load_failed(String error) {
+    return 'Failed to load sports preferences: $error';
+  }
+
+  @override
+  String get sports_prefs_saved => 'Sports preferences saved';
+
+  @override
+  String sports_prefs_save_failed(String error) {
+    return 'Failed to save preferences: $error';
+  }
+
+  @override
+  String sports_prefs_enable_failed(String error) {
+    return 'Failed to enable sport: $error';
+  }
+
+  @override
+  String sports_prefs_remove_failed(String error) {
+    return 'Failed to remove sport: $error';
+  }
+
+  @override
+  String get sports_prefs_need_one =>
+      'You must have at least one sport enabled';
+
+  @override
+  String sports_prefs_remove_title(String sport) {
+    return 'Remove $sport?';
+  }
+
+  @override
+  String sports_prefs_remove_body(String sport) {
+    return 'Are you sure you want to remove $sport from your profile?';
+  }
+
+  @override
+  String get sports_prefs_cancel => 'Cancel';
+
+  @override
+  String get sports_prefs_remove => 'Remove';
+
+  @override
+  String get sports_pos_goalkeeper => 'Goalkeeper';
+
+  @override
+  String get sports_pos_defender => 'Defender';
+
+  @override
+  String get sports_pos_midfielder => 'Midfielder';
+
+  @override
+  String get sports_pos_forward => 'Forward';
+
+  @override
+  String get sports_pos_point_guard => 'Point Guard';
+
+  @override
+  String get sports_pos_shooting_guard => 'Shooting Guard';
+
+  @override
+  String get sports_pos_small_forward => 'Small Forward';
+
+  @override
+  String get sports_pos_power_forward => 'Power Forward';
+
+  @override
+  String get sports_pos_center => 'Center';
+
+  @override
+  String get sports_pos_setter => 'Setter';
+
+  @override
+  String get sports_pos_outside_hitter => 'Outside Hitter';
+
+  @override
+  String get sports_pos_middle_blocker => 'Middle Blocker';
+
+  @override
+  String get sports_pos_opposite_hitter => 'Opposite Hitter';
+
+  @override
+  String get sports_pos_libero => 'Libero';
+
+  @override
+  String get about_terms_intro =>
+      'Please read these terms carefully before using our service.';
+
+  @override
+  String get about_privacy_intro =>
+      'Your privacy is important to us. This policy explains how we collect, use, and protect your information.';
+
+  @override
+  String about_last_updated(String date) {
+    return 'Last updated: $date';
+  }
+
+  @override
+  String get about_privacy_settings_tooltip => 'Privacy settings';
+
+  @override
+  String get licenses_title => 'Open source licenses';
+
+  @override
+  String get licenses_about_tooltip => 'About licenses';
+
+  @override
+  String get licenses_intro =>
+      'This app is built with amazing open source libraries. We thank all contributors for their work.';
+
+  @override
+  String licenses_count(String count) {
+    return '$count open source packages';
+  }
+
+  @override
+  String get licenses_search_hint => 'Search licenses...';
+
+  @override
+  String get licenses_empty_title => 'No licenses found';
+
+  @override
+  String get licenses_empty_text => 'Try adjusting your search query';
+
+  @override
+  String get licenses_info_title => 'About open source licenses';
+
+  @override
+  String get licenses_info_body =>
+      'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\nWe are grateful to all the developers and contributors who make their work available under open source licenses.';
+
+  @override
+  String get licenses_got_it => 'Got it';
+
+  @override
+  String get licenses_detail_version => 'Version';
+
+  @override
+  String get licenses_detail_license => 'License';
+
+  @override
+  String get licenses_detail_copyright => 'Copyright';
+
+  @override
+  String get licenses_detail_url => 'URL';
+
+  @override
+  String get licenses_detail_description => 'Description';
+
+  @override
+  String get licenses_view_web => 'View on web';
+
+  @override
+  String licenses_opening(String url) {
+    return 'Opening $url';
+  }
+
+  @override
+  String get sfx_search_placeholder => 'Search people, games, posts…';
+
+  @override
+  String get sfx_recent => 'Recent';
+
+  @override
+  String get sfx_clear => 'Clear';
+
+  @override
+  String sfx_remove_recent(String query) {
+    return 'Remove $query';
+  }
+
+  @override
+  String get sfx_quick_filters => 'Quick filters';
+
+  @override
+  String get sfx_near_me => 'Near me';
+
+  @override
+  String get sfx_today => 'Today';
+
+  @override
+  String get sfx_this_week => 'This week';
+
+  @override
+  String get sfx_friends_only => 'Friends only';
+
+  @override
+  String get sfx_popular => 'Popular';
+
+  @override
+  String get sfx_free_entry => 'Free entry';
+
+  @override
+  String get sfx_people_nearby => 'People nearby';
+
+  @override
+  String get sfx_people_nearby_sub => 'Find players near you';
+
+  @override
+  String get sfx_popular_games => 'Popular games';
+
+  @override
+  String get sfx_popular_games_sub => 'Open spots today';
+
+  @override
+  String get sfx_trending_posts => 'Trending posts';
+
+  @override
+  String get sfx_trending_posts_sub => 'What everyone’s on';
+
+  @override
+  String get sfx_showing_results_for => 'Showing results for';
+
+  @override
+  String get sfx_view_all => 'View all';
+
+  @override
+  String get sfx_people => 'People';
+
+  @override
+  String get sfx_hashtags => 'Hashtags';
+
+  @override
+  String get sfx_games => 'Games';
+
+  @override
+  String get sfx_venues => 'Venues';
+
+  @override
+  String get sfx_posts => 'Posts';
+
+  @override
+  String get sfx_comments => 'Comments';
+
+  @override
+  String get sfx_meetups => 'Meet-ups';
+
+  @override
+  String get sfx_follow => 'Follow';
+
+  @override
+  String get sfx_join => 'Join';
+
+  @override
+  String get sfx_kind_game => 'Game';
+
+  @override
+  String get sfx_kind_meetup => 'Meet-up';
+
+  @override
+  String get sfx_spots => 'spots';
+
+  @override
+  String sfx_spots_meta(int joined, int max) {
+    return '$joined/$max spots';
+  }
+
+  @override
+  String sfx_posts_count(int count) {
+    return '$count posts';
+  }
+
+  @override
+  String sfx_on_post(String title) {
+    return 'on $title';
+  }
+
+  @override
+  String sfx_no_results_for(String query) {
+    return 'No results for \"$query\"';
+  }
+
+  @override
+  String sfx_none_found(String label) {
+    return 'No $label found';
+  }
+
+  @override
+  String sfx_list_header(int count, String label, String query) {
+    return '$count $label for \"$query\"';
+  }
+
+  @override
+  String sfx_hashtag_empty(String slug) {
+    return 'No posts found for #$slug';
+  }
+
+  @override
+  String get sfx_retry => 'Retry';
+
+  @override
+  String get sfx_news => 'News';
+
+  @override
+  String get sfx_add_comment => 'Add a comment';
+
+  @override
+  String get sfx_discuss => 'Discuss';
+
+  @override
+  String get sfx_be_first => 'Be the first to comment.';
+
+  @override
+  String get sfx_like => 'Like';
+
+  @override
+  String get sfx_send => 'Send';
+
+  @override
+  String get sfx_share => 'Share';
+
+  @override
+  String get sfx_share_article => 'Share article';
+
+  @override
+  String get sfx_copy_link => 'Copy link';
+
+  @override
+  String get sfx_share_to => 'Share to…';
+
+  @override
+  String get sfx_link_copied => 'Link copied';
+
+  @override
+  String get sfx_events => 'games and meet-ups';
 
   @override
   String get composer_place_search => 'Search venues and areas';

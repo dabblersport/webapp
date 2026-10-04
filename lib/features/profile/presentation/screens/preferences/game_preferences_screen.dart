@@ -120,6 +120,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   }) => DabblerInputRow(
     flat: true,
     showDivider: false,
+    dense: true,
     leading: _icon(context, icon),
     title: title,
     subtitle: subtitle,

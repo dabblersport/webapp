@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -2537,6 +2538,743 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
 
   @override
+  String get settings_identity_subtitle => 'الحساب وكلمة المرور والأمان';
+
+  @override
+  String get settings_tile_privacy_preset => 'إعداد الخصوصية';
+
+  @override
+  String get settings_preset_public => 'عام';
+
+  @override
+  String get settings_preset_friends => 'الأصدقاء فقط';
+
+  @override
+  String get settings_preset_private => 'خاص';
+
+  @override
+  String get settings_theme_light => 'فاتح';
+
+  @override
+  String get settings_theme_dark => 'داكن';
+
+  @override
+  String get settings_theme_system => 'النظام';
+
+  @override
+  String get settings_country_short_eg => 'مصر';
+
+  @override
+  String get settings_country_short_ae => 'الإمارات';
+
+  @override
+  String get settings_country_short_sa => 'السعودية';
+
+  @override
+  String get settings_country_short_ma => 'المغرب';
+
+  @override
+  String get settings_organiser_title => 'كن منظّمًا';
+
+  @override
+  String get settings_organiser_subtitle => 'أنشئ الفعاليات الرياضية وأدرها';
+
+  @override
+  String get settings_organiser_info_body =>
+      'ينشئ المنظّمون المباريات ويحددون الملاعب والأسعار ويديرون المنضمّين. الإعداد يستغرق دقائق وتحتفظ بملف اللاعب.';
+
+  @override
+  String get settings_organiser_start => 'ابدأ الإعداد';
+
+  @override
+  String get settings_about_title => 'حول دابلر';
+
+  @override
+  String get settings_about_subtitle => 'الشروط، سياسة الخصوصية، التراخيص';
+
+  @override
+  String settings_search_results(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count نتيجة',
+      few: '$count نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_search_no_match => 'لا إعدادات تطابق ذلك';
+
+  @override
+  String get settings_path_account => 'الحساب والأمان';
+
+  @override
+  String get settings_path_privacy => 'الخصوصية';
+
+  @override
+  String get settings_path_privacy_safety => 'الخصوصية › السلامة';
+
+  @override
+  String get settings_path_appearance => 'المظهر';
+
+  @override
+  String get settings_path_profiles => 'الإعدادات › الملفات';
+
+  @override
+  String get settings_path_root => 'الإعدادات';
+
+  @override
+  String get settings_sign_out_confirm_body =>
+      'سيتم تسجيل خروجك على هذا الجهاز. تبقى مبارياتك وملفك في حسابك.';
+
+  @override
+  String notif_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصرًا',
+      few: '$count عناصر',
+      two: 'عنصران',
+      one: 'عنصر واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_prefs_title => 'ما يصلك';
+
+  @override
+  String get notif_prefs_done => 'تم';
+
+  @override
+  String get notif_pref_invites_title => 'دعوات المباريات';
+
+  @override
+  String get notif_pref_invites_sub => 'عندما يضيفك أحد إلى مباراة';
+
+  @override
+  String get notif_pref_waitlist_title => 'أماكن قائمة الانتظار';
+
+  @override
+  String get notif_pref_waitlist_sub => 'لحظة توفّر مكان';
+
+  @override
+  String get notif_pref_payments_title => 'المدفوعات والمشاركة';
+
+  @override
+  String get notif_pref_payments_sub => 'الطلبات والإيصالات والمبالغ المستردة';
+
+  @override
+  String get notif_pref_social_title => 'النشاط الاجتماعي';
+
+  @override
+  String get notif_pref_social_sub => 'المتابعات والردود والإشارات';
+
+  @override
+  String get notif_quiet_hours_title => 'ساعات الهدوء';
+
+  @override
+  String get notif_quiet_hours_sub => 'لا اهتزازات بين هذين الوقتين';
+
+  @override
+  String get notif_quiet_hours_off => 'مغلق';
+
+  @override
+  String notif_quiet_hours_range(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get acct_title => 'الحساب';
+
+  @override
+  String get acct_group_signin => 'تسجيل الدخول';
+
+  @override
+  String get acct_row_email => 'البريد الإلكتروني';
+
+  @override
+  String get acct_row_password => 'كلمة المرور';
+
+  @override
+  String get acct_group_security => 'الأمان';
+
+  @override
+  String get acct_group_security_note => 'احمِ حسابك بإجراءات أمان إضافية';
+
+  @override
+  String get acct_2fa_title => 'التحقق بخطوتين';
+
+  @override
+  String get acct_2fa_sub => 'أضف طبقة حماية إضافية';
+
+  @override
+  String get acct_alerts_title => 'تنبيهات الدخول';
+
+  @override
+  String get acct_alerts_sub => 'تلقَّ إشعارًا بعمليات الدخول الجديدة';
+
+  @override
+  String get acct_group_danger => 'منطقة الخطر';
+
+  @override
+  String get acct_delete_title => 'حذف الحساب';
+
+  @override
+  String get acct_delete_sub => 'احذف حسابك وكل بياناتك نهائيًا';
+
+  @override
+  String get acct_delete_body =>
+      'يحذف هذا حسابك وكل بياناتك نهائيًا، بما فيها المباريات والإحصاءات والرسائل. لا يمكن التراجع.';
+
+  @override
+  String get acct_delete_confirm => 'حذف نهائي';
+
+  @override
+  String get acct_cancel => 'إلغاء';
+
+  @override
+  String get acct_delete_type_error => 'اكتب \"DELETE\" للتأكيد';
+
+  @override
+  String acct_delete_failed(String error) {
+    return 'تعذّر حذف الحساب: $error';
+  }
+
+  @override
+  String get acct_email_sheet_title => 'البريد الإلكتروني';
+
+  @override
+  String get acct_email_field => 'البريد';
+
+  @override
+  String get acct_email_helper =>
+      'نرسل رابط تأكيد إلى العنوان الجديد قبل أن يحل محل القديم.';
+
+  @override
+  String get acct_email_update => 'تحديث البريد';
+
+  @override
+  String get acct_email_updating => 'جارٍ التحديث…';
+
+  @override
+  String get acct_email_empty => 'لا يمكن ترك البريد فارغًا';
+
+  @override
+  String get acct_email_invalid => 'أدخل بريدًا إلكترونيًا صالحًا';
+
+  @override
+  String get acct_email_same => 'البريد الجديد هو نفسه الحالي';
+
+  @override
+  String get acct_email_sent => 'تم إرسال التأكيد';
+
+  @override
+  String acct_email_failed(String error) {
+    return 'تعذّر تحديث البريد: $error';
+  }
+
+  @override
+  String get acct_password_change_title => 'تغيير كلمة المرور';
+
+  @override
+  String get acct_password_set_title => 'تعيين كلمة المرور';
+
+  @override
+  String get acct_password_set_note =>
+      'سجّلت الدخول عبر Google أو Apple. عيّن كلمة مرور لتسجّل الدخول ببريدك أيضًا.';
+
+  @override
+  String get acct_password_current => 'كلمة المرور الحالية';
+
+  @override
+  String get acct_password_new => 'كلمة المرور الجديدة';
+
+  @override
+  String get acct_password_new_helper => '6 أحرف على الأقل';
+
+  @override
+  String get acct_password_confirm => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get acct_password_change => 'تغيير كلمة المرور';
+
+  @override
+  String get acct_password_set => 'تعيين كلمة المرور';
+
+  @override
+  String get acct_password_changing => 'جارٍ التغيير…';
+
+  @override
+  String get acct_password_setting => 'جارٍ التعيين…';
+
+  @override
+  String get acct_password_changed => 'تم تغيير كلمة المرور';
+
+  @override
+  String get acct_password_was_set =>
+      'تم تعيين كلمة المرور. يمكنك الآن تسجيل الدخول ببريدك وكلمة المرور.';
+
+  @override
+  String get acct_password_err_current => 'أدخل كلمة المرور الحالية';
+
+  @override
+  String get acct_password_err_new => 'أدخل كلمة مرور جديدة';
+
+  @override
+  String get acct_password_err_short => 'يجب ألا تقل كلمة المرور عن 6 أحرف';
+
+  @override
+  String get acct_password_err_mismatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get acct_password_err_same =>
+      'يجب أن تختلف كلمة المرور الجديدة عن الحالية';
+
+  @override
+  String get acct_password_err_incorrect => 'كلمة المرور الحالية غير صحيحة';
+
+  @override
+  String acct_password_failed(String error) {
+    return 'تعذّر تغيير كلمة المرور: $error';
+  }
+
+  @override
+  String acct_load_failed(String error) {
+    return 'تعذّر تحميل بيانات الحساب: $error';
+  }
+
+  @override
+  String get acct_export_title => 'صدّر بياناتي';
+
+  @override
+  String get acct_export_sub =>
+      'اطلب نسخة من بياناتك في دابلر (نقل البيانات وفق PDPL)';
+
+  @override
+  String get acct_export_started =>
+      'نجهّز تصدير بياناتك. سنخبرك عبر البريد عندما يصبح جاهزًا.';
+
+  @override
+  String acct_export_failed(String error) {
+    return 'تعذّر طلب تصدير البيانات: $error';
+  }
+
+  @override
+  String get priv_title => 'الخصوصية';
+
+  @override
+  String get priv_preset_header => 'إعداد الخصوصية';
+
+  @override
+  String get priv_preset_note => 'اختر إعدادًا مسبقًا لضبط خصوصيتك بسرعة';
+
+  @override
+  String get priv_preset_public => 'عام';
+
+  @override
+  String get priv_preset_public_desc => 'ملفك ظاهر للجميع لسهولة الاكتشاف';
+
+  @override
+  String get priv_preset_friends => 'الأصدقاء فقط';
+
+  @override
+  String get priv_preset_friends_desc => 'أصدقاؤك فقط يرون ملفك الكامل';
+
+  @override
+  String get priv_preset_private => 'خاص';
+
+  @override
+  String get priv_preset_private_desc =>
+      'الحد الأدنى من المعلومات يُشارك علنًا';
+
+  @override
+  String priv_preset_applied(String preset) {
+    return 'تم تطبيق إعداد $preset';
+  }
+
+  @override
+  String get priv_preset_custom => 'مخصّص';
+
+  @override
+  String get priv_preset_custom_desc => 'مزيجك الخاص من الإعدادات أدناه';
+
+  @override
+  String get priv_hint =>
+      'يمكنك دائمًا تخصيص الإعدادات أدناه. تُحفظ التغييرات تلقائيًا.';
+
+  @override
+  String get priv_group_see => 'ما يراه الآخرون';
+
+  @override
+  String get priv_profile_title => 'الملف والهوية';
+
+  @override
+  String get priv_profile_sub => 'الصورة، الاسم، النبذة، العمر، بيانات الاتصال';
+
+  @override
+  String get priv_activity_title => 'النشاط والإحصاءات';
+
+  @override
+  String get priv_activity_sub => 'الحالة، تسجيلات الحضور، السجل، الإنجازات';
+
+  @override
+  String get priv_discover_title => 'إمكانية الاكتشاف';
+
+  @override
+  String get priv_discover_sub => 'فهرسة البحث واللاعبون القريبون';
+
+  @override
+  String get priv_group_comm => 'التواصل';
+
+  @override
+  String get priv_contact_title => 'من يمكنه التواصل معك';
+
+  @override
+  String get priv_contact_sub => 'الرسائل، دعوات المباريات، طلبات الصداقة';
+
+  @override
+  String get priv_group_data => 'البيانات';
+
+  @override
+  String get priv_data_title => 'البيانات والتحليلات';
+
+  @override
+  String get priv_data_sub => 'الموقع، التوصيات، التحليلات';
+
+  @override
+  String get priv_notif_title => 'الإشعارات';
+
+  @override
+  String get priv_notif_sub => 'الإشعارات والبريد';
+
+  @override
+  String get priv_group_safety => 'السلامة';
+
+  @override
+  String get priv_blocked_title => 'الحسابات المحظورة';
+
+  @override
+  String get priv_blocked_sub => 'الأشخاص الذين حظرتهم من التواصل معك';
+
+  @override
+  String priv_count_all(int total) {
+    return 'الكل مفعّل ($total)';
+  }
+
+  @override
+  String get priv_count_none => 'الكل مغلق';
+
+  @override
+  String priv_count_some(int on, int total) {
+    return '$on من $total مفعّل';
+  }
+
+  @override
+  String get priv_contact_nav => 'التواصل';
+
+  @override
+  String get priv_dm_title => 'الرسائل المباشرة';
+
+  @override
+  String get priv_dm_sub => 'من يمكنه مراسلتك';
+
+  @override
+  String get priv_invites_title => 'دعوات المباريات';
+
+  @override
+  String get priv_invites_sub => 'من يمكنه دعوتك للمباريات';
+
+  @override
+  String get priv_requests_title => 'طلبات الصداقة';
+
+  @override
+  String get priv_requests_sub => 'من يمكنه إرسال طلبات صداقة';
+
+  @override
+  String get priv_audience_anyone => 'أي شخص';
+
+  @override
+  String get priv_audience_friends => 'الأصدقاء فقط';
+
+  @override
+  String get priv_audience_organizers => 'المنظّمون فقط';
+
+  @override
+  String get priv_audience_none => 'لا أحد';
+
+  @override
+  String get priv_unblock => 'إلغاء الحظر';
+
+  @override
+  String get priv_unblocked => 'تم إلغاء الحظر';
+
+  @override
+  String get priv_blocked_empty => 'لم تحظر أحدًا.';
+
+  @override
+  String priv_blocked_failed(String error) {
+    return 'تعذّر إلغاء الحظر: $error';
+  }
+
+  @override
+  String priv_blocked_load_failed(String error) {
+    return 'تعذّر تحميل الحسابات المحظورة: $error';
+  }
+
+  @override
+  String get priv_save_failed => 'تعذّر حفظ الإعدادات. حاول مرة أخرى.';
+
+  @override
+  String get priv_saved => 'تم الحفظ';
+
+  @override
+  String get priv_t_photo => 'صورة الملف';
+
+  @override
+  String get priv_t_photo_sub => 'أظهر صورة ملفك';
+
+  @override
+  String get priv_t_name => 'الاسم الحقيقي';
+
+  @override
+  String get priv_t_name_sub => 'أظهر اسمك الكامل';
+
+  @override
+  String get priv_t_bio => 'النبذة';
+
+  @override
+  String get priv_t_bio_sub => 'أظهر نبذتك في ملفك';
+
+  @override
+  String get priv_t_age => 'العمر';
+
+  @override
+  String get priv_t_age_sub => 'أظهر عمرك في ملفك';
+
+  @override
+  String get priv_t_email => 'البريد الإلكتروني';
+
+  @override
+  String get priv_t_email_sub => 'أظهر بريدك للآخرين';
+
+  @override
+  String get priv_t_phone => 'رقم الهاتف';
+
+  @override
+  String get priv_t_phone_sub => 'أظهر رقم هاتفك';
+
+  @override
+  String get priv_t_location => 'الموقع';
+
+  @override
+  String get priv_t_location_sub => 'أظهر موقعك العام';
+
+  @override
+  String get priv_t_friends => 'قائمة الأصدقاء';
+
+  @override
+  String get priv_t_friends_sub => 'أظهر أصدقاءك علنًا';
+
+  @override
+  String get priv_t_online => 'حالة الاتصال';
+
+  @override
+  String get priv_t_online_sub => 'أظهر متى تكون متصلًا';
+
+  @override
+  String get priv_t_activity => 'حالة النشاط';
+
+  @override
+  String get priv_t_activity_sub => 'أظهر نشاطك الأخير';
+
+  @override
+  String get priv_t_checkins => 'تسجيلات الحضور';
+
+  @override
+  String get priv_t_checkins_sub => 'أظهر تسجيلات حضورك في الملاعب';
+
+  @override
+  String get priv_t_posts => 'المنشورات للعامة';
+
+  @override
+  String get priv_t_posts_sub => 'اجعل منشوراتك ظاهرة للجميع';
+
+  @override
+  String get priv_t_sports => 'ملفات الرياضات';
+
+  @override
+  String get priv_t_sports_sub => 'أظهر رياضاتك ومستوياتك';
+
+  @override
+  String get priv_t_history => 'سجل المباريات';
+
+  @override
+  String get priv_t_history_sub => 'أظهر مبارياتك السابقة';
+
+  @override
+  String get priv_t_stats => 'الإحصاءات';
+
+  @override
+  String get priv_t_stats_sub => 'أظهر إحصاءات أدائك';
+
+  @override
+  String get priv_t_achievements => 'الإنجازات';
+
+  @override
+  String get priv_t_achievements_sub => 'أظهر إنجازاتك';
+
+  @override
+  String get priv_t_indexing => 'فهرسة محركات البحث';
+
+  @override
+  String get priv_t_indexing_sub => 'اسمح للخدمات الخارجية بإيجاد ملفك';
+
+  @override
+  String get priv_t_nearby => 'إخفاء من القريبين';
+
+  @override
+  String get priv_t_nearby_sub => 'لا تظهر في بحث اللاعبين القريبين';
+
+  @override
+  String get priv_t_tracking => 'تتبع الموقع';
+
+  @override
+  String get priv_t_tracking_sub => 'اسمح بالميزات المعتمدة على الموقع';
+
+  @override
+  String get priv_t_recs => 'توصيات المباريات';
+
+  @override
+  String get priv_t_recs_sub => 'اقتراحات مباريات مخصّصة';
+
+  @override
+  String get priv_t_analytics => 'تحليلات مجهولة';
+
+  @override
+  String get priv_t_analytics_sub => 'ساعد في تحسين التطبيق';
+
+  @override
+  String get priv_t_push => 'الإشعارات الفورية';
+
+  @override
+  String get priv_t_push_sub => 'تلقَّ إشعارات فورية على جهازك';
+
+  @override
+  String get priv_t_mail => 'إشعارات البريد';
+
+  @override
+  String get priv_t_mail_sub => 'تلقَّ الإشعارات عبر البريد';
+
+  @override
+  String get appr_title => 'المظهر';
+
+  @override
+  String get appr_group_theme => 'السمة';
+
+  @override
+  String get appr_light => 'فاتح';
+
+  @override
+  String get appr_dark => 'داكن';
+
+  @override
+  String get appr_system => 'النظام';
+
+  @override
+  String appr_theme_applied(String theme) {
+    return 'سمة $theme';
+  }
+
+  @override
+  String get appr_group_color => 'سمة الألوان';
+
+  @override
+  String get appr_group_color_note => 'طبّق مجموعة ألوان واحدة على التطبيق كله';
+
+  @override
+  String appr_color_use(String name) {
+    return 'استخدم ألوان $name في التطبيق كله';
+  }
+
+  @override
+  String get appr_group_auto => 'السمة التلقائية';
+
+  @override
+  String get appr_group_auto_note => 'بدّل تلقائيًا بين السمة الفاتحة والداكنة';
+
+  @override
+  String get appr_auto_title => 'سمة حسب الوقت';
+
+  @override
+  String get appr_auto_sub => 'بدّل السمة حسب وقت اليوم';
+
+  @override
+  String get appr_group_schedule => 'جدول النهار والليل';
+
+  @override
+  String get appr_group_schedule_note => 'حدد متى تعمل السمة الفاتحة والداكنة';
+
+  @override
+  String get appr_day_title => 'يبدأ النهار عند';
+
+  @override
+  String get appr_day_sub => 'تعمل السمة الفاتحة';
+
+  @override
+  String get appr_night_title => 'يبدأ الليل عند';
+
+  @override
+  String get appr_night_sub => 'تعمل السمة الداكنة';
+
+  @override
+  String get region_title => 'اللغة والمنطقة';
+
+  @override
+  String get region_language => 'اللغة';
+
+  @override
+  String get region_language_sub => 'لغة التطبيق والمحتوى';
+
+  @override
+  String get region_language_updated => 'تم تحديث اللغة';
+
+  @override
+  String get region_country => 'دولة التطبيق';
+
+  @override
+  String get region_country_sub => 'المباريات والملاعب والعملة';
+
+  @override
+  String get region_country_updated => 'تم تحديث الدولة';
+
+  @override
+  String get region_lang_en => 'English · English';
+
+  @override
+  String get region_lang_ar => 'Arabic · العربية';
+
+  @override
+  String get region_country_Egypt => 'مصر';
+
+  @override
+  String get region_country_UAE => 'الإمارات';
+
+  @override
+  String get region_country_KSA => 'السعودية';
+
+  @override
+  String get region_country_Morocco => 'المغرب';
+
+  @override
+  String region_error(String error) {
+    return 'خطأ: $error';
+  }
+
+  @override
   String get listing_set_location => 'حدد الموقع';
 
   @override
@@ -3270,175 +4008,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'يجب أن تتبع المباريات القواعد الرسمية بدقة';
 
   @override
-  String get sfx_search_placeholder => 'ابحث عن أشخاص وألعاب ومنشورات…';
-
-  @override
-  String get sfx_recent => 'الأخيرة';
-
-  @override
-  String get sfx_clear => 'مسح';
-
-  @override
-  String sfx_remove_recent(String query) {
-    return 'إزالة $query';
-  }
-
-  @override
-  String get sfx_quick_filters => 'فلاتر سريعة';
-
-  @override
-  String get sfx_near_me => 'بالقرب مني';
-
-  @override
-  String get sfx_today => 'اليوم';
-
-  @override
-  String get sfx_this_week => 'هذا الأسبوع';
-
-  @override
-  String get sfx_friends_only => 'الأصدقاء فقط';
-
-  @override
-  String get sfx_popular => 'الأكثر شعبية';
-
-  @override
-  String get sfx_free_entry => 'دخول مجاني';
-
-  @override
-  String get sfx_people_nearby => 'أشخاص بالقرب منك';
-
-  @override
-  String get sfx_people_nearby_sub => 'اعثر على لاعبين قريبين منك';
-
-  @override
-  String get sfx_popular_games => 'الألعاب الشائعة';
-
-  @override
-  String get sfx_popular_games_sub => 'أماكن متاحة اليوم';
-
-  @override
-  String get sfx_trending_posts => 'المنشورات الرائجة';
-
-  @override
-  String get sfx_trending_posts_sub => 'ما يتحدث عنه الجميع';
-
-  @override
-  String get sfx_showing_results_for => 'عرض النتائج لـ';
-
-  @override
-  String get sfx_view_all => 'عرض الكل';
-
-  @override
-  String get sfx_people => 'الأشخاص';
-
-  @override
-  String get sfx_hashtags => 'الوسوم';
-
-  @override
-  String get sfx_games => 'الألعاب';
-
-  @override
-  String get sfx_venues => 'الملاعب';
-
-  @override
-  String get sfx_posts => 'المنشورات';
-
-  @override
-  String get sfx_comments => 'التعليقات';
-
-  @override
-  String get sfx_meetups => 'اللقاءات';
-
-  @override
-  String get sfx_follow => 'متابعة';
-
-  @override
-  String get sfx_join => 'انضم';
-
-  @override
-  String get sfx_kind_game => 'لعبة';
-
-  @override
-  String get sfx_kind_meetup => 'لقاء';
-
-  @override
-  String get sfx_spots => 'أماكن';
-
-  @override
-  String sfx_spots_meta(int joined, int max) {
-    return '$joined/$max أماكن';
-  }
-
-  @override
-  String sfx_posts_count(int count) {
-    return '‏$count منشور';
-  }
-
-  @override
-  String sfx_on_post(String title) {
-    return 'على $title';
-  }
-
-  @override
-  String sfx_no_results_for(String query) {
-    return 'لا نتائج لـ \"$query\"';
-  }
-
-  @override
-  String sfx_none_found(String label) {
-    return 'لم يتم العثور على $label';
-  }
-
-  @override
-  String sfx_list_header(int count, String label, String query) {
-    return '$count $label لـ \"$query\"';
-  }
-
-  @override
-  String sfx_hashtag_empty(String slug) {
-    return 'لا منشورات للوسم #$slug';
-  }
-
-  @override
-  String get sfx_retry => 'إعادة المحاولة';
-
-  @override
-  String get sfx_news => 'الأخبار';
-
-  @override
-  String get sfx_add_comment => 'أضف تعليقًا';
-
-  @override
-  String get sfx_discuss => 'ناقش';
-
-  @override
-  String get sfx_be_first => 'كن أول من يعلّق.';
-
-  @override
-  String get sfx_like => 'إعجاب';
-
-  @override
-  String get sfx_send => 'إرسال';
-
-  @override
-  String get sfx_share => 'مشاركة';
-
-  @override
-  String get sfx_share_article => 'مشاركة المقال';
-
-  @override
-  String get sfx_copy_link => 'نسخ الرابط';
-
-  @override
-  String get sfx_share_to => 'مشاركة عبر…';
-
-  @override
-  String get sfx_link_copied => 'تم نسخ الرابط';
-
-  @override
-  String get sfx_events => 'الألعاب واللقاءات';
-
-  @override
   String get composer_cancel => 'إلغاء';
 
   @override
@@ -3913,6 +4482,620 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get post_detail_cancel_reply => 'إلغاء الرد';
+
+  @override
+  String get help_center_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_text => 'هذه الشاشة قيد التطوير';
+
+  @override
+  String get contact_title => 'التواصل مع الدعم';
+
+  @override
+  String get contact_intro_title => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get contact_intro_message =>
+      'أرسل لنا رسالة وسنرد عليك في أقرب وقت ممكن.';
+
+  @override
+  String get contact_section => 'بيانات التواصل';
+
+  @override
+  String get contact_email => 'بريدك الإلكتروني';
+
+  @override
+  String get contact_category => 'الفئة';
+
+  @override
+  String get contact_subject => 'الموضوع';
+
+  @override
+  String get contact_message => 'الرسالة';
+
+  @override
+  String get contact_send => 'إرسال الرسالة';
+
+  @override
+  String get contact_cat_general => 'عام';
+
+  @override
+  String get contact_cat_account => 'مشاكل الحساب';
+
+  @override
+  String get contact_cat_technical => 'مشكلة تقنية';
+
+  @override
+  String get contact_cat_billing => 'الدفع والفواتير';
+
+  @override
+  String get contact_cat_feature => 'طلب ميزة';
+
+  @override
+  String get contact_cat_abuse => 'الإبلاغ عن إساءة';
+
+  @override
+  String get contact_cat_privacy => 'مخاوف الخصوصية';
+
+  @override
+  String get contact_cat_other => 'أخرى';
+
+  @override
+  String get contact_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get contact_err_email_invalid => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get contact_err_subject_required => 'يرجى إدخال الموضوع';
+
+  @override
+  String get contact_err_message_required => 'يرجى إدخال رسالتك';
+
+  @override
+  String get contact_err_message_short => 'يجب ألا تقل الرسالة عن 10 أحرف';
+
+  @override
+  String get contact_sent => 'تم إرسال الرسالة. سنرد عليك قريبًا.';
+
+  @override
+  String contact_send_failed(String error) {
+    return 'تعذّر إرسال الرسالة: $error';
+  }
+
+  @override
+  String get bug_title => 'الإبلاغ عن خطأ';
+
+  @override
+  String get bug_intro_title => 'وجدت خطأ؟';
+
+  @override
+  String get bug_intro_message =>
+      'ساعدنا على التحسّن بالإبلاغ عن أي مشكلة تواجهها. كلما زادت التفاصيل أسرعنا في إصلاحها.';
+
+  @override
+  String get bug_details => 'تفاصيل الخطأ';
+
+  @override
+  String get bug_category => 'فئة الخطأ';
+
+  @override
+  String get bug_severity => 'مستوى الخطورة';
+
+  @override
+  String get bug_field_title => 'عنوان الخطأ';
+
+  @override
+  String get bug_field_title_hint => 'وصف موجز للمشكلة';
+
+  @override
+  String get bug_field_description => 'وصف تفصيلي';
+
+  @override
+  String get bug_field_description_hint => 'صف ما حدث وما كنت تتوقع حدوثه';
+
+  @override
+  String get bug_field_steps => 'خطوات إعادة الحدوث';
+
+  @override
+  String get bug_field_steps_hint =>
+      '1. اذهب إلى...\n2. اضغط على...\n3. شاهد الخطأ';
+
+  @override
+  String get bug_cat_general => 'خطأ عام';
+
+  @override
+  String get bug_cat_ui => 'مشكلة في الواجهة';
+
+  @override
+  String get bug_cat_performance => 'مشكلة في الأداء';
+
+  @override
+  String get bug_cat_crash => 'تعطّل / تجمّد';
+
+  @override
+  String get bug_cat_login => 'تسجيل الدخول / التوثيق';
+
+  @override
+  String get bug_cat_profile => 'الملف / الإعدادات';
+
+  @override
+  String get bug_cat_games => 'المباريات / الأنشطة';
+
+  @override
+  String get bug_cat_notifications => 'الإشعارات';
+
+  @override
+  String get bug_cat_social => 'الميزات الاجتماعية';
+
+  @override
+  String get bug_cat_other => 'أخرى';
+
+  @override
+  String get bug_sev_low => 'منخفضة';
+
+  @override
+  String get bug_sev_medium => 'متوسطة';
+
+  @override
+  String get bug_sev_high => 'عالية';
+
+  @override
+  String get bug_sev_critical => 'حرجة';
+
+  @override
+  String get bug_additional => 'معلومات إضافية';
+
+  @override
+  String get bug_include_device => 'تضمين معلومات الجهاز';
+
+  @override
+  String get bug_include_device_sub => 'إصدار النظام، طراز الجهاز، حجم الشاشة';
+
+  @override
+  String get bug_include_logs => 'تضمين سجلات التطبيق';
+
+  @override
+  String get bug_include_logs_sub => 'نشاط التطبيق الأخير وسجلات الأخطاء';
+
+  @override
+  String get bug_device_heading => 'معلومات الجهاز المضمّنة:';
+
+  @override
+  String bug_device_platform(String value) {
+    return 'المنصة: $value';
+  }
+
+  @override
+  String bug_device_app_version(String value) {
+    return 'إصدار التطبيق: $value';
+  }
+
+  @override
+  String bug_device_resolution(String value) {
+    return 'دقة الشاشة: $value';
+  }
+
+  @override
+  String get bug_platform_unknown => 'غير معروف';
+
+  @override
+  String get bug_platform_web => 'الويب';
+
+  @override
+  String get bug_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get bug_err_title_required => 'يرجى إدخال عنوان الخطأ';
+
+  @override
+  String get bug_err_description_required => 'يرجى وصف الخطأ';
+
+  @override
+  String get bug_err_description_short =>
+      'يرجى تقديم مزيد من التفاصيل (20 حرفًا على الأقل)';
+
+  @override
+  String get bug_err_steps_required => 'يرجى ذكر خطوات إعادة حدوث الخطأ';
+
+  @override
+  String get bug_submit => 'إرسال بلاغ الخطأ';
+
+  @override
+  String get bug_submitted => 'تم إرسال البلاغ. شكرًا لمساعدتك في تحسيننا.';
+
+  @override
+  String bug_submit_failed(String error) {
+    return 'تعذّر إرسال البلاغ: $error';
+  }
+
+  @override
+  String get sports_prefs_title => 'تفضيلات الرياضات';
+
+  @override
+  String get sports_prefs_save => 'حفظ';
+
+  @override
+  String get sports_prefs_create_game => 'إنشاء مباراة';
+
+  @override
+  String get sports_prefs_my_sports => 'رياضاتي';
+
+  @override
+  String get sports_prefs_my_sports_note =>
+      'فعّل الرياضات التي تريد ممارستها وحدد مستواك';
+
+  @override
+  String get sports_prefs_general => 'تفضيلات عامة';
+
+  @override
+  String get sports_prefs_auto_join => 'الانضمام التلقائي للمباريات المناسبة';
+
+  @override
+  String get sports_prefs_auto_join_sub =>
+      'انضم تلقائيًا إلى المباريات التي تطابق تفضيلاتك';
+
+  @override
+  String get sports_prefs_location => 'استخدام الموقع للتوصيات';
+
+  @override
+  String get sports_prefs_location_sub =>
+      'اعثر على مباريات قريبة من موقعك الحالي';
+
+  @override
+  String get sports_prefs_flexible => 'توقيت مرن';
+
+  @override
+  String get sports_prefs_flexible_sub =>
+      'أظهر المباريات ذات أوقات البدء المرنة';
+
+  @override
+  String get sports_prefs_disabled => 'معطّل';
+
+  @override
+  String get sports_prefs_skill_level => 'مستوى المهارة';
+
+  @override
+  String get sports_prefs_position => 'المركز المفضل';
+
+  @override
+  String get sports_prefs_level_beginner => 'مبتدئ';
+
+  @override
+  String get sports_prefs_level_intermediate => 'متوسط';
+
+  @override
+  String get sports_prefs_level_advanced => 'متقدم';
+
+  @override
+  String sports_prefs_load_failed(String error) {
+    return 'تعذّر تحميل تفضيلات الرياضات: $error';
+  }
+
+  @override
+  String get sports_prefs_saved => 'تم حفظ تفضيلات الرياضات';
+
+  @override
+  String sports_prefs_save_failed(String error) {
+    return 'تعذّر حفظ التفضيلات: $error';
+  }
+
+  @override
+  String sports_prefs_enable_failed(String error) {
+    return 'تعذّر تفعيل الرياضة: $error';
+  }
+
+  @override
+  String sports_prefs_remove_failed(String error) {
+    return 'تعذّرت إزالة الرياضة: $error';
+  }
+
+  @override
+  String get sports_prefs_need_one => 'يجب تفعيل رياضة واحدة على الأقل';
+
+  @override
+  String sports_prefs_remove_title(String sport) {
+    return 'إزالة $sport؟';
+  }
+
+  @override
+  String sports_prefs_remove_body(String sport) {
+    return 'هل تريد بالتأكيد إزالة $sport من ملفك؟';
+  }
+
+  @override
+  String get sports_prefs_cancel => 'إلغاء';
+
+  @override
+  String get sports_prefs_remove => 'إزالة';
+
+  @override
+  String get sports_pos_goalkeeper => 'حارس مرمى';
+
+  @override
+  String get sports_pos_defender => 'مدافع';
+
+  @override
+  String get sports_pos_midfielder => 'لاعب وسط';
+
+  @override
+  String get sports_pos_forward => 'مهاجم';
+
+  @override
+  String get sports_pos_point_guard => 'صانع ألعاب';
+
+  @override
+  String get sports_pos_shooting_guard => 'مدافع مسدد';
+
+  @override
+  String get sports_pos_small_forward => 'جناح';
+
+  @override
+  String get sports_pos_power_forward => 'جناح قوي';
+
+  @override
+  String get sports_pos_center => 'مركز';
+
+  @override
+  String get sports_pos_setter => 'ممرر';
+
+  @override
+  String get sports_pos_outside_hitter => 'مهاجم خارجي';
+
+  @override
+  String get sports_pos_middle_blocker => 'حاجز أوسط';
+
+  @override
+  String get sports_pos_opposite_hitter => 'مهاجم معاكس';
+
+  @override
+  String get sports_pos_libero => 'ليبرو';
+
+  @override
+  String get about_terms_intro =>
+      'يرجى قراءة هذه الشروط بعناية قبل استخدام خدمتنا.';
+
+  @override
+  String get about_privacy_intro =>
+      'خصوصيتك مهمة بالنسبة لنا. توضح هذه السياسة كيف نجمع معلوماتك ونستخدمها ونحميها.';
+
+  @override
+  String about_last_updated(String date) {
+    return 'آخر تحديث: $date';
+  }
+
+  @override
+  String get about_privacy_settings_tooltip => 'إعدادات الخصوصية';
+
+  @override
+  String get licenses_title => 'تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_about_tooltip => 'حول التراخيص';
+
+  @override
+  String get licenses_intro =>
+      'بُني هذا التطبيق بمكتبات مفتوحة المصدر رائعة. نشكر جميع المساهمين على عملهم.';
+
+  @override
+  String licenses_count(String count) {
+    return '$count حزمة مفتوحة المصدر';
+  }
+
+  @override
+  String get licenses_search_hint => 'ابحث في التراخيص...';
+
+  @override
+  String get licenses_empty_title => 'لم يتم العثور على تراخيص';
+
+  @override
+  String get licenses_empty_text => 'جرّب تعديل عبارة البحث';
+
+  @override
+  String get licenses_info_title => 'حول تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_info_body =>
+      'يستخدم هذا التطبيق مكتبات وحزمًا مفتوحة المصدر متعددة. يحدد كل ترخيص شروط استخدام الشيفرة وتعديلها وتوزيعها.\n\nنحن ممتنون لجميع المطورين والمساهمين الذين يتيحون أعمالهم بتراخيص مفتوحة المصدر.';
+
+  @override
+  String get licenses_got_it => 'حسنًا';
+
+  @override
+  String get licenses_detail_version => 'الإصدار';
+
+  @override
+  String get licenses_detail_license => 'الترخيص';
+
+  @override
+  String get licenses_detail_copyright => 'حقوق النشر';
+
+  @override
+  String get licenses_detail_url => 'الرابط';
+
+  @override
+  String get licenses_detail_description => 'الوصف';
+
+  @override
+  String get licenses_view_web => 'عرض على الويب';
+
+  @override
+  String licenses_opening(String url) {
+    return 'جارٍ فتح $url';
+  }
+
+  @override
+  String get sfx_search_placeholder => 'ابحث عن أشخاص وألعاب ومنشورات…';
+
+  @override
+  String get sfx_recent => 'الأخيرة';
+
+  @override
+  String get sfx_clear => 'مسح';
+
+  @override
+  String sfx_remove_recent(String query) {
+    return 'إزالة $query';
+  }
+
+  @override
+  String get sfx_quick_filters => 'فلاتر سريعة';
+
+  @override
+  String get sfx_near_me => 'بالقرب مني';
+
+  @override
+  String get sfx_today => 'اليوم';
+
+  @override
+  String get sfx_this_week => 'هذا الأسبوع';
+
+  @override
+  String get sfx_friends_only => 'الأصدقاء فقط';
+
+  @override
+  String get sfx_popular => 'الأكثر شعبية';
+
+  @override
+  String get sfx_free_entry => 'دخول مجاني';
+
+  @override
+  String get sfx_people_nearby => 'أشخاص بالقرب منك';
+
+  @override
+  String get sfx_people_nearby_sub => 'اعثر على لاعبين قريبين منك';
+
+  @override
+  String get sfx_popular_games => 'الألعاب الشائعة';
+
+  @override
+  String get sfx_popular_games_sub => 'أماكن متاحة اليوم';
+
+  @override
+  String get sfx_trending_posts => 'المنشورات الرائجة';
+
+  @override
+  String get sfx_trending_posts_sub => 'ما يتحدث عنه الجميع';
+
+  @override
+  String get sfx_showing_results_for => 'عرض النتائج لـ';
+
+  @override
+  String get sfx_view_all => 'عرض الكل';
+
+  @override
+  String get sfx_people => 'الأشخاص';
+
+  @override
+  String get sfx_hashtags => 'الوسوم';
+
+  @override
+  String get sfx_games => 'الألعاب';
+
+  @override
+  String get sfx_venues => 'الملاعب';
+
+  @override
+  String get sfx_posts => 'المنشورات';
+
+  @override
+  String get sfx_comments => 'التعليقات';
+
+  @override
+  String get sfx_meetups => 'اللقاءات';
+
+  @override
+  String get sfx_follow => 'متابعة';
+
+  @override
+  String get sfx_join => 'انضم';
+
+  @override
+  String get sfx_kind_game => 'لعبة';
+
+  @override
+  String get sfx_kind_meetup => 'لقاء';
+
+  @override
+  String get sfx_spots => 'أماكن';
+
+  @override
+  String sfx_spots_meta(int joined, int max) {
+    return '$joined/$max أماكن';
+  }
+
+  @override
+  String sfx_posts_count(int count) {
+    return '‏$count منشور';
+  }
+
+  @override
+  String sfx_on_post(String title) {
+    return 'على $title';
+  }
+
+  @override
+  String sfx_no_results_for(String query) {
+    return 'لا نتائج لـ \"$query\"';
+  }
+
+  @override
+  String sfx_none_found(String label) {
+    return 'لم يتم العثور على $label';
+  }
+
+  @override
+  String sfx_list_header(int count, String label, String query) {
+    return '$count $label لـ \"$query\"';
+  }
+
+  @override
+  String sfx_hashtag_empty(String slug) {
+    return 'لا منشورات للوسم #$slug';
+  }
+
+  @override
+  String get sfx_retry => 'إعادة المحاولة';
+
+  @override
+  String get sfx_news => 'الأخبار';
+
+  @override
+  String get sfx_add_comment => 'أضف تعليقًا';
+
+  @override
+  String get sfx_discuss => 'ناقش';
+
+  @override
+  String get sfx_be_first => 'كن أول من يعلّق.';
+
+  @override
+  String get sfx_like => 'إعجاب';
+
+  @override
+  String get sfx_send => 'إرسال';
+
+  @override
+  String get sfx_share => 'مشاركة';
+
+  @override
+  String get sfx_share_article => 'مشاركة المقال';
+
+  @override
+  String get sfx_copy_link => 'نسخ الرابط';
+
+  @override
+  String get sfx_share_to => 'مشاركة عبر…';
+
+  @override
+  String get sfx_link_copied => 'تم نسخ الرابط';
+
+  @override
+  String get sfx_events => 'الألعاب واللقاءات';
 
   @override
   String get composer_place_search => 'Search venues and areas';

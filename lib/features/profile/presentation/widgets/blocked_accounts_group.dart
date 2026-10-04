@@ -45,6 +45,7 @@ class BlockedAccountsGroup extends ConsumerWidget {
     return DabblerInputRow(
       flat: true,
       showDivider: false,
+      dense: true,
       title: displayName,
       subtitle: username.isNotEmpty ? '\u2066@$username\u2069' : null,
       leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.md),

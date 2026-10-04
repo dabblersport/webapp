@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../home/home_test_harness.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_screen.dart';
 import '../../support/render_mode.dart';
+import 'settings_test_overrides.dart';
 
 const String _shotsDir = String.fromEnvironment('SETTINGS_SHOTS_DIR');
 
@@ -84,6 +85,7 @@ Future<void> _pump(WidgetTester tester, Widget screen, Locale locale) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
+      overrides: settingsDataOverrides(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         builder: (context, child) => DabblerToastProvider(
@@ -112,6 +114,7 @@ Future<void> _settle(WidgetTester tester) async {
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
+    await signInFakeUser();
     await _loadFonts();
   });
 
@@ -130,48 +133,80 @@ void main() {
       await _shoot(tester, _key, 'settings-about-$dir');
     });
 
-    testWidgets('settings search filters rows — $dir', (tester) async {
+    testWidgets('settings search lists results — $dir', (tester) async {
       await _pump(tester, const SettingsScreen(), locale);
-      await tester.enterText(find.byType(EditableText), 'licen');
+      await tester.enterText(find.byType(EditableText), 'priv');
       await _settle(tester);
       expect(tester.takeException(), isNull);
+      expect(find.byType(DabblerStatTile), findsNothing);
+      expect(find.byType(DabblerInputRow), findsWidgets);
       await _shoot(tester, _key, 'settings-search-$dir');
+
+      await tester.enterText(find.byType(EditableText), 'zzzz');
+      await _settle(tester);
+      expect(
+        find.text(
+          AppLocalizations.of(
+            tester.element(find.byType(SettingsScreen)),
+          ).settings_search_no_match,
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('country and language sheets render — $dir', (tester) async {
+    testWidgets('tiles show the design set with real data — $dir', (
+      tester,
+    ) async {
+      await _pump(tester, const SettingsScreen(), locale);
+      expect(find.byType(DabblerStatTile), findsNWidgets(7));
+      expect(find.text('Egypt'), locale.languageCode == 'en' ? findsOneWidget : findsNothing);
+    });
+
+    testWidgets('language & region, about and organiser sheets — $dir', (
+      tester,
+    ) async {
       await _pump(tester, const SettingsScreen(), locale);
       final l10n = AppLocalizations.of(
         tester.element(find.byType(SettingsScreen)),
       );
-      await tester.scrollUntilVisible(
-        find.text(l10n.settings_item_country_title),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.text(l10n.settings_item_country_title));
+      await tester.tap(find.text(l10n.settings_tile_language_region));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Morocco'), findsOneWidget);
-      await _shoot(tester, _key, 'settings-country-sheet-$dir');
+      expect(find.text('العربية'), findsWidgets);
+      await _shoot(tester, _key, 'settings-language-sheet-$dir');
       Navigator.of(
-        tester.element(find.text('Morocco')),
+        tester.element(find.text('العربية').first),
         rootNavigator: true,
       ).pop();
       await _settle(tester);
 
       await tester.scrollUntilVisible(
-        find.text(l10n.settings_item_language_title),
+        find.text(l10n.settings_organiser_title),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.tap(find.text(l10n.settings_item_language_title));
+      await tester.tap(find.text(l10n.settings_organiser_title));
       await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.text('العربية'), findsWidgets);
-      await _shoot(tester, _key, 'settings-language-sheet-$dir');
+      expect(find.text(l10n.settings_organiser_start), findsOneWidget);
+      await _shoot(tester, _key, 'settings-organiser-sheet-$dir');
+      Navigator.of(
+        tester.element(find.text(l10n.settings_organiser_start)),
+        rootNavigator: true,
+      ).pop();
+      await _settle(tester);
+
+      await tester.scrollUntilVisible(
+        find.text(l10n.settings_about_title),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text(l10n.settings_about_title));
+      await _settle(tester);
+      expect(find.text(l10n.settings_item_licenses_title), findsOneWidget);
+      await _shoot(tester, _key, 'settings-about-sheet-$dir');
     });
 
-    testWidgets('sign-out dialog renders — $dir', (tester) async {
+    testWidgets('sign-out sheet renders — $dir', (tester) async {
       await _pump(tester, const SettingsScreen(), locale);
       final l10n = AppLocalizations.of(
         tester.element(find.byType(SettingsScreen)),
@@ -184,8 +219,8 @@ void main() {
       await tester.tap(find.text(l10n.settings_sign_out_title));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerDialog), findsOneWidget);
-      await _shoot(tester, _key, 'settings-signout-dialog-$dir');
+      expect(find.text(l10n.settings_sign_out_confirm_body), findsOneWidget);
+      await _shoot(tester, _key, 'settings-signout-sheet-$dir');
     });
   }
 }

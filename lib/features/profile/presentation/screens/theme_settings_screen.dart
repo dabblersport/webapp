@@ -1,9 +1,14 @@
+import 'package:dabbler/core/services/theme_categories.dart';
+import 'package:dabbler/core/services/theme_service.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' show ThemeMode, TimeOfDay;
 import 'package:flutter/widgets.dart';
-import 'package:dabbler/core/services/theme_categories.dart';
-import 'package:dabbler/core/services/theme_service.dart';
 
+/// Appearance — `Settings.dc.html` route `appearance`: the light / dark /
+/// system segments. The colour theme and the time-based schedule are features
+/// the frame does not draw; they follow with the design system's defaults.
 class ThemeSettingsScreen extends StatefulWidget {
   const ThemeSettingsScreen({super.key});
 
@@ -11,100 +16,97 @@ class ThemeSettingsScreen extends StatefulWidget {
   State<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
 }
 
-const _kModes = <(String, String, ThemeMode, String)>[
-  ('Light', 'Always use light theme', ThemeMode.light, 'sun-1'),
-  ('Dark', 'Always use dark theme', ThemeMode.dark, 'moon'),
-  ('System', 'Follow device settings', ThemeMode.system, 'mobile'),
+const _kModes = <(ThemeMode, String)>[
+  (ThemeMode.light, 'sun-1'),
+  (ThemeMode.dark, 'moon'),
+  (ThemeMode.system, 'mobile'),
 ];
 
 class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   final ThemeService _themeService = ThemeService();
 
+  String _modeLabel(AppLocalizations l10n, ThemeMode mode) => switch (mode) {
+    ThemeMode.light => l10n.appr_light,
+    ThemeMode.dark => l10n.appr_dark,
+    ThemeMode.system => l10n.appr_system,
+  };
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        title: 'Theme & Appearance',
-        border: true,
+      topBar: settingsTopBar(
+        context,
+        title: l10n.appr_title,
         onBack: () => Navigator.of(context).pop(),
       ),
       body: AnimatedBuilder(
         animation: _themeService,
         builder: (context, child) {
-          return SingleChildScrollView(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space5,
-              DabblerSpacing.space6,
-              DabblerSpacing.space5,
-              DabblerSpacing.space10,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _buildThemeModeSection(),
-                const DabblerGap.v(DabblerSpacing.space6),
-                _buildThemeCategorySection(),
-                const DabblerGap.v(DabblerSpacing.space6),
-                _buildAutoThemeSection(),
-                if (_themeService.autoThemeEnabled) ...[
-                  const DabblerGap.v(DabblerSpacing.space6),
-                  _buildTimeScheduleSection(),
-                ],
+          return ListView(
+            padding: kSettingsBodyPadding,
+            children: [
+              _buildThemeModeSection(l10n),
+              kSettingsGroupGap,
+              _buildThemeCategorySection(l10n),
+              kSettingsGroupGap,
+              _buildAutoThemeSection(l10n),
+              if (_themeService.autoThemeEnabled) ...[
+                kSettingsGroupGap,
+                _buildTimeScheduleSection(l10n),
               ],
-            ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildThemeModeSection() {
-    final current = _kModes.firstWhere(
-      (m) => m.$3 == _themeService.themeMode,
-      orElse: () => _kModes.last,
-    );
-    return DabblerRowGroup(
-      header: 'Theme Mode',
-      note: _themeService.autoThemeEnabled
-          ? 'Choose how the app should appear'
-          : current.$2,
+  Widget _buildThemeModeSection(AppLocalizations l10n) {
+    return DabblerRowGroup.stack(
+      header: l10n.appr_group_theme,
       children: [
-        DabblerTabs(
-          variant: DabblerTabsVariant.segmented,
-          label: 'Theme Mode',
-          fullWidth: true,
+        DabblerOptionSegments(
+          semanticLabel: l10n.appr_group_theme,
           // No mode is highlighted while the time-based theme is on.
-          allowNoSelection: true,
-          value: _themeService.autoThemeEnabled ? null : current.$3.name,
+          value: _themeService.autoThemeEnabled
+              ? null
+              : _themeService.themeMode.name,
           items: [
             for (final m in _kModes)
-              DabblerTabItem(
-                id: m.$3.name,
-                label: m.$1,
-                icon: DabblerIcon(m.$4),
+              DabblerOptionSegment(
+                id: m.$1.name,
+                label: _modeLabel(l10n, m.$1),
+                icon: m.$2,
               ),
           ],
           onChanged: (id) {
-            final mode = _kModes.firstWhere((m) => m.$3.name == id).$3;
+            final mode = _kModes.firstWhere((m) => m.$1.name == id).$1;
             _themeService.setAutoThemeEnabled(false);
             _themeService.setThemeMode(mode);
+            DabblerToastProvider.of(context).show(
+              DabblerToastSpec(
+                message: l10n.appr_theme_applied(_modeLabel(l10n, mode)),
+                tone: DabblerToastTone.success,
+              ),
+            );
           },
         ),
       ],
     );
   }
 
-  Widget _buildThemeCategorySection() {
+  Widget _buildThemeCategorySection(AppLocalizations l10n) {
     return DabblerRowGroup(
-      header: 'Color Theme',
-      note: 'Apply one token set across the entire app',
+      header: l10n.appr_group_color,
+      note: l10n.appr_group_color_note,
       children: ThemeCategories.supported
-          .map(_buildThemeCategoryOption)
+          .map((c) => _buildThemeCategoryOption(l10n, c))
           .toList(growable: false),
     );
   }
 
-  Widget _buildThemeCategoryOption(String category) {
+  Widget _buildThemeCategoryOption(AppLocalizations l10n, String category) {
     final normalized = ThemeCategories.normalize(category);
     final isSelected = _themeService.themeCategory == normalized;
     final colors = DabblerColors.of(context);
@@ -116,7 +118,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
       onTap: () => _themeService.setThemeCategory(normalized),
       leading: _buildThemePreviewSwatches(_previewFor(normalized)),
       title: name,
-      subtitle: 'Use $name tokens app-wide',
+      subtitle: l10n.appr_color_use(name),
       trailing: isSelected
           ? DabblerIcon(
               'tick-circle',
@@ -141,27 +143,20 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     brightness: _themeService.currentBrightness,
   );
 
-  Widget _buildAutoThemeSection() {
-    final colors = DabblerColors.of(context);
+  Widget _buildAutoThemeSection(AppLocalizations l10n) {
     return DabblerRowGroup(
-      header: 'Automatic Theme',
-      note: 'Automatically switch between light and dark themes',
+      header: l10n.appr_group_auto,
+      note: l10n.appr_group_auto_note,
       children: [
         DabblerInputRow(
           flat: true,
           showDivider: false,
-          leading: DabblerIcon(
-            'clock',
-            size: DabblerSizing.iconMd,
-            color: _themeService.autoThemeEnabled
-                ? colors.brandPrimary
-                : colors.textSecondary,
-          ),
-          title: 'Time-based Theme',
-          subtitle: 'Switch themes based on time of day',
+          leading: settingsRowIcon(context, 'clock'),
+          title: l10n.appr_auto_title,
+          subtitle: l10n.appr_auto_sub,
           trailing: DabblerToggle(
             checked: _themeService.autoThemeEnabled,
-            semanticLabel: 'Time-based Theme',
+            semanticLabel: l10n.appr_auto_title,
             onChanged: (value) => _themeService.setAutoThemeEnabled(value),
           ),
         ),
@@ -169,20 +164,20 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     );
   }
 
-  Widget _buildTimeScheduleSection() {
+  Widget _buildTimeScheduleSection(AppLocalizations l10n) {
     return DabblerRowGroup(
-      header: 'Day & Night Schedule',
-      note: 'Set when light and dark themes should activate',
+      header: l10n.appr_group_schedule,
+      note: l10n.appr_group_schedule_note,
       children: [
         _buildTimeOption(
-          'Day starts at',
-          'Light theme will activate',
+          l10n.appr_day_title,
+          l10n.appr_day_sub,
           _themeService.dayStartTime,
           (time) => _themeService.setDayStartTime(time),
         ),
         _buildTimeOption(
-          'Night starts at',
-          'Dark theme will activate',
+          l10n.appr_night_title,
+          l10n.appr_night_sub,
           _themeService.nightStartTime,
           (time) => _themeService.setNightStartTime(time),
         ),
@@ -196,23 +191,14 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     TimeOfDay time,
     ValueChanged<TimeOfDay> onTimeChanged,
   ) {
-    final colors = DabblerColors.of(context);
     return DabblerInputRow(
       flat: true,
       showDivider: false,
       onTap: () => _selectTime(title, time, onTimeChanged),
-      leading: DabblerIcon(
-        'sun-fog',
-        size: DabblerSizing.iconMd,
-        color: colors.brandPrimary,
-      ),
+      leading: settingsRowIcon(context, 'sun-fog'),
       title: title,
       subtitle: subtitle,
-      trailing: DabblerText(
-        _themeService.formatTime(time),
-        style: DabblerType.headline,
-        tone: DabblerTextTone.brand,
-      ),
+      value: _themeService.formatTime(time),
     );
   }
 
@@ -225,6 +211,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
       context: context,
       title: title,
       detent: DabblerSheetDetent.content,
+      showCloseButton: false,
       builder: (_) => _TimeSheet(initial: currentTime),
     );
     if (time != null) onTimeChanged(time);

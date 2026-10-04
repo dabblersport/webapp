@@ -14,6 +14,7 @@ import '../providers/notification_center_badge_providers.dart';
 import '../widgets/notif_chips.dart';
 import '../widgets/notif_list_states.dart';
 import '../widgets/notif_section_header.dart';
+import '../widgets/notif_prefs_sheet.dart';
 import '../widgets/notif_top_bar.dart';
 import '../widgets/notif_empty_state.dart';
 import '../widgets/notif_row.dart';
@@ -161,6 +162,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                   : AppLocalizations.of(context).notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
+              onOpenSettings: () => showNotifPrefsSheet(context),
               onMarkAllRead:
                   (isNotif && (notificationState.unreadCount as int) > 0)
                   ? () => ref

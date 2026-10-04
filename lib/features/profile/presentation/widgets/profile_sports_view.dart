@@ -2,10 +2,12 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:dabbler/features/profile/presentation/screens/settings/profile_sports_screen.dart'
-    show SkillLevel, SportPreference;
+    show SkillLevel, SportPreference, sportPositionLabel;
+import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The design-system widget tree of [ProfileSportsScreen] (no design frame:
-/// DS defaults). Pure presentation: all state and every action stay in the
+/// the Settings inner-page pattern with DS defaults). Pure presentation: all state and every action stay in the
 /// screen's state object and arrive here as values and callbacks.
 class ProfileSportsView extends StatelessWidget {
   const ProfileSportsView({
@@ -49,17 +51,17 @@ class ProfileSportsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     // One layout at every width: the wide-screen rail wrapper
     // is not a DS component (same call as sports_library_screen, W5).
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Sports Preferences',
-        onBack: onBack,
-        actions: [
+      topBar: settingsInnerTopBar(
+        context,
+        title: l10n.sports_prefs_title,
+        extraActions: [
           // A spinner replaces Save while busy, as the original did.
           DabblerNavigationAction.text(
-            label: 'Save',
+            label: l10n.sports_prefs_save,
             loading: isLoading,
             onPressed: isLoading ? null : onSave,
           ),
@@ -67,7 +69,7 @@ class ProfileSportsView extends StatelessWidget {
       ),
       bottomOverlay: showCreateGame
           ? DabblerButton(
-              label: 'Create game',
+              label: l10n.sports_prefs_create_game,
               icon: 'add-circle',
               onPressed: onCreateGame,
             )
@@ -77,15 +79,9 @@ class ProfileSportsView extends StatelessWidget {
           : ListView(
               padding: _gutter,
               children: [
-                _Header(
-                  showCreateGame: showCreateGame,
-                  onCreateGame: onCreateGame,
-                ),
-                const DabblerGap.v(DabblerSpacing.space8),
-                DabblerSection(
-                  title: 'My Sports',
-                  subtitle:
-                      'Enable sports you want to play and set your skill level',
+                DabblerRowGroup(
+                  header: l10n.sports_prefs_my_sports,
+                  note: l10n.sports_prefs_my_sports_note,
                   children: [
                     for (final entry in sportPreferences.entries)
                       _SportItem(
@@ -103,28 +99,28 @@ class ProfileSportsView extends StatelessWidget {
                       ),
                   ],
                 ),
-                const DabblerGap.v(DabblerSpacing.space8),
-                DabblerSection(
-                  title: 'General Preferences',
+                const DabblerGap.v(DabblerSpacing.space6),
+                DabblerRowGroup(
+                  header: l10n.sports_prefs_general,
                   children: [
                     // These three switches were inert in the old screen
                     // (no-op onChanged); kept inert, same values.
                     _staticToggle(
                       'people',
-                      'Auto-join compatible games',
-                      'Automatically join games that match your preferences',
+                      l10n.sports_prefs_auto_join,
+                      l10n.sports_prefs_auto_join_sub,
                       true,
                     ),
                     _staticToggle(
                       'building',
-                      'Use location for recommendations',
-                      'Find games near your current location',
+                      l10n.sports_prefs_location,
+                      l10n.sports_prefs_location_sub,
                       true,
                     ),
                     _staticToggle(
                       'clock',
-                      'Flexible timing',
-                      'Show games with flexible start times',
+                      l10n.sports_prefs_flexible,
+                      l10n.sports_prefs_flexible_sub,
                       false,
                     ),
                   ],
@@ -137,6 +133,9 @@ class ProfileSportsView extends StatelessWidget {
   Widget _staticToggle(String icon, String title, String subtitle, bool on) {
     return Builder(
       builder: (context) => DabblerInputRow(
+        flat: true,
+        showDivider: false,
+        dense: true,
         leading: DabblerIcon(
           icon,
           size: DabblerSizing.iconMd,
@@ -145,54 +144,6 @@ class ProfileSportsView extends StatelessWidget {
         title: title,
         subtitle: subtitle,
         trailing: DabblerToggle(checked: on, onChanged: (_) {}),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.showCreateGame, required this.onCreateGame});
-
-  final bool showCreateGame;
-  final VoidCallback onCreateGame;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return DabblerSurface(
-      padding: const EdgeInsetsDirectional.all(DabblerSpacing.space5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              DabblerIcon(
-                'game',
-                size: DabblerSizing.iconMd,
-                color: colors.brandPrimary,
-              ),
-              const DabblerGap.h(DabblerSpacing.space4),
-              Expanded(
-                child: DabblerText('Sports & Games', style: DabblerType.title3),
-              ),
-              if (showCreateGame) ...[
-                const DabblerGap.h(DabblerSpacing.space4),
-                DabblerButton(
-                  label: 'Create game',
-                  icon: 'add-circle',
-                  size: DabblerButtonSize.small,
-                  onPressed: onCreateGame,
-                ),
-              ],
-            ],
-          ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          DabblerText(
-            'Customize your sports preferences and skill levels to get the best game recommendations.',
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-        ],
       ),
     );
   }
@@ -222,19 +173,25 @@ class _SportItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final enabled = preference.isEnabled;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
+          dense: true,
           // The sport emoji is replaced by the DS sport glyph.
           leading: DabblerSportIcon.fromKey(
             sportKey.replaceAll('_', '-'),
             color: enabled ? colors.textPrimary : colors.textTertiary,
           ),
           title: preference.name,
-          subtitle: enabled ? preference.skillLevel.displayName : 'Disabled',
+          subtitle: enabled
+              ? preference.skillLevel.label(l10n)
+              : l10n.sports_prefs_disabled,
           trailing: DabblerToggle(
             checked: enabled,
             onChanged: onEnabledChanged,
@@ -253,8 +210,8 @@ class _SportItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const DabblerText(
-                  'Skill Level',
+                DabblerText(
+                  l10n.sports_prefs_skill_level,
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.secondary,
                 ),
@@ -265,7 +222,7 @@ class _SportItem extends StatelessWidget {
                   children: [
                     for (final level in SkillLevel.values)
                       DabblerChip(
-                        label: level.displayName,
+                        label: level.label(l10n),
                         selected: preference.skillLevel == level,
                         onTap: () => onSkillLevel(level),
                       ),
@@ -275,11 +232,14 @@ class _SportItem extends StatelessWidget {
                     positions.isNotEmpty) ...[
                   const DabblerGap.v(DabblerSpacing.space5),
                   DabblerSelect<String>(
-                    label: 'Preferred Position',
+                    label: l10n.sports_prefs_position,
                     value: preference.preferredPosition,
                     options: [
                       for (final p in positions)
-                        DabblerSelectOption<String>(value: p, label: p),
+                        DabblerSelectOption<String>(
+                          value: p,
+                          label: sportPositionLabel(l10n, p),
+                        ),
                     ],
                     onChanged: onPosition,
                   ),
