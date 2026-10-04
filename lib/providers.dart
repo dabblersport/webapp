@@ -34,6 +34,7 @@ export 'features/explore/providers/feed_providers.dart';
 export 'features/games/providers/game_history_providers.dart';
 
 // News
+export 'features/meetups/presentation/providers/meetup_providers.dart';
 export 'features/news/providers/news_providers.dart';
 export 'features/news/providers/news_actions_provider.dart';
 export 'features/news/providers/news_comments_provider.dart';

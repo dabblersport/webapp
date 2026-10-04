@@ -9,6 +9,11 @@ class FeatureFlags {
   // LIVE FEATURE GATES
   // ============================================================================
 
+  /// Meetups (KAN-428). Pilot, default OFF: the data layer ships first and
+  /// every Meetups surface (nav item, create entry, listings tab, details
+  /// route) must be gated on this flag. Free, public, organiser-created only.
+  static const bool enableMeetups = false;
+
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 

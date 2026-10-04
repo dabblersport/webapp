@@ -142,6 +142,11 @@ class SupabaseConfig {
   static const String spaceSlotGridTable = 'space_slot_grid';
   static const String spaceSlotHoldsTable = 'space_slot_holds';
   static const String sportsTable = 'sports';
+  static const String meetupsTable = 'meetups';
+  static const String meetupRsvpsTable = 'meetup_rsvps';
+  static const String vMeetupListView = 'v_meetup_list';
+  // Meetups composer: only sports where this column is true can host a meetup.
+  static const String sportsCanSoloColumn = 'can_solo';
   static const String squadInvitesTable = 'squad_invites';
   static const String squadJoinRequestsTable = 'squad_join_requests';
   static const String squadLinkTokensTable = 'squad_link_tokens';
@@ -165,6 +170,17 @@ class SupabaseConfig {
   // ---- P4-1: RPC name constants ----
   static const String isAdminFn = 'is_admin';
   static const String rpcBlockUserFn = 'rpc_block_user';
+  // Meetups (canonical overloads only; rpc_meetup_create and
+  // rpc_meetup_rsvp(profile_type,status) are retired and must never be called).
+  static const String rpcCreateMeetupFn = 'rpc_create_meetup';
+  static const String rpcMeetupRsvpFn = 'rpc_meetup_rsvp';
+  static const String rpcMeetupCancelFn = 'rpc_meetup_cancel';
+  static const String rpcMeetupCardFn = 'rpc_meetup_card';
+  static const String rpcMeetupAttendeesFn = 'rpc_meetup_attendees';
+  static const String rpcMeetupUpdateFn = 'rpc_meetup_update'; // requires KAN-427 migration
+  static const String getNearbyMeetupsFn = 'getnearbymeetups';
+  static const String canCreateMeetupFn = 'can_create_meetup';
+  static const String canCurrentUserRsvpMeetupFn = 'can_current_user_rsvp_meetup';
   static const String rpcCircleListFn = 'rpc_circle_list';
   static const String rpcFriendRequestsInboxFn = 'rpc_friend_requests_inbox';
   static const String rpcFriendRequestsOutboxFn = 'rpc_friend_requests_outbox';
