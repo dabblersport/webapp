@@ -8,6 +8,7 @@ import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
+
 // import '../domain/entities/user_profile.dart';
 // import 'package:dabbler/core/utils/logger.dart';
 // import '../../../core/error/exceptions.dart';
@@ -753,17 +754,15 @@ class DataExportService {
       final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
       final response = await _supabase.rpc(
         SupabaseConfig.getMyLoginHistoryFn,
-        params: {
-          'p_since': sixMonthsAgo.toIso8601String(),
-          'p_limit': 1000,
-        },
+        params: {'p_since': sixMonthsAgo.toIso8601String(), 'p_limit': 1000},
       );
 
       return (response as List)
           .map<Map<String, dynamic>>(
             (item) => {
               ...(item as Map<String, dynamic>),
-              'data_source': 'auth.audit_log_entries (via get_my_login_history)',
+              'data_source':
+                  'auth.audit_log_entries (via get_my_login_history)',
               'purpose': 'Security monitoring and fraud prevention',
               'legal_basis': 'Legitimate interest (security)',
               'retention_period': '6 months',
@@ -785,9 +784,7 @@ class DataExportService {
       final follows = await _supabase
           .from(SupabaseConfig.profileFollowsTable)
           .select()
-          .or(
-            'follower_profile_id.eq.$userId,following_profile_id.eq.$userId',
-          );
+          .or('follower_profile_id.eq.$userId,following_profile_id.eq.$userId');
 
       final blockedUsers = await _supabase
           .from(SupabaseConfig.userBlocksTable)

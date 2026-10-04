@@ -60,27 +60,32 @@ Future<void> _pump(
 }
 
 Future<void> _loadFonts() async {
-  final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
+  final String dsFonts =
+      '${Directory.current.parent.path}/dabbler-design-system/fonts';
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
     for (final String f in files) {
       final File file = File('$dsFonts/$f');
       if (!file.existsSync()) return;
-      loader.addFont(
-        file.readAsBytes().then((b) => ByteData.sublistView(b)),
-      );
+      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
     }
     await loader.load();
   }
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
+    'Glory-Light.ttf',
+    'Glory-Regular.ttf',
+    'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf',
+    'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
+    'meral-sans-light.ttf',
+    'meral-sans-regular.ttf',
+    'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf',
+    'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -93,8 +98,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader('packages/iconsax_flutter/FlutterIconsax')
-      ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -105,13 +111,13 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
 }
-
-
 
 class _FakeRepo implements NotificationSettingsRepository {
   _FakeRepo(this.settings);
@@ -122,12 +128,15 @@ class _FakeRepo implements NotificationSettingsRepository {
   @override
   Future<Result<NotificationSettings, Failure>> load() {
     final s = settings;
-    if (s == null) return Completer<Result<NotificationSettings, Failure>>().future;
+    if (s == null)
+      return Completer<Result<NotificationSettings, Failure>>().future;
     return Future.value(Ok(s));
   }
 
   @override
-  Future<Result<NotificationSettings, Failure>> save(NotificationSettings s) async => Ok(s);
+  Future<Result<NotificationSettings, Failure>> save(
+    NotificationSettings s,
+  ) async => Ok(s);
 }
 
 void main() {
@@ -161,8 +170,9 @@ void main() {
           key,
           size: const Size(393, 1900),
           overrides: [
-            notificationSettingsRepositoryProvider
-                .overrideWithValue(_FakeRepo(entry.value)),
+            notificationSettingsRepositoryProvider.overrideWithValue(
+              _FakeRepo(entry.value),
+            ),
           ],
         );
         expect(tester.takeException(), isNull);
@@ -181,7 +191,9 @@ void main() {
       });
     }
 
-    testWidgets('notification settings quiet-time sheet — $dir', (tester) async {
+    testWidgets('notification settings quiet-time sheet — $dir', (
+      tester,
+    ) async {
       const Key key = Key('shot');
       await _pump(
         tester,
@@ -191,11 +203,13 @@ void main() {
         size: const Size(393, 1900),
         overrides: [
           notificationSettingsRepositoryProvider.overrideWithValue(
-            _FakeRepo(const NotificationSettings(
-              userId: 'u1',
-              quietStartMin: 22 * 60,
-              quietEndMin: 8 * 60,
-            )),
+            _FakeRepo(
+              const NotificationSettings(
+                userId: 'u1',
+                quietStartMin: 22 * 60,
+                quietEndMin: 8 * 60,
+              ),
+            ),
           ),
         ],
       );

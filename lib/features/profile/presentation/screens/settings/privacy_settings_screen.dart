@@ -1,306 +1,33 @@
+import 'package:dabbler/data/models/profile/privacy_settings.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/privacy_presets.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/privacy_toggles.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
+import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/features/social/block_providers.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
-    show currentUserIdProvider;
-import 'package:dabbler/data/models/profile/privacy_settings.dart';
 
-enum PrivacyPreset { public, friendsOnly, private }
+export 'package:dabbler/features/profile/presentation/screens/settings/privacy_presets.dart'
+    show PrivacyPreset;
 
-/// One switch row: label, DS icon name, controller key, explainer, reader.
-typedef _Toggle = (
-  String title,
-  String subtitle,
-  String icon,
-  String key,
-  String tooltip,
-  bool Function(PrivacySettings) read,
-);
-
-/// One preference row: label, DS icon name, controller key, reader.
-typedef _Pref = (
-  String title,
-  String subtitle,
-  String icon,
-  String key,
-  CommunicationPreference Function(PrivacySettings) read,
-);
-
-const List<_Toggle> _profileToggles = [
-  (
-    'Profile Photo',
-    'Show your profile picture',
-    'profile-circle',
-    'showProfilePhoto',
-    'Your profile photo helps others recognize you',
-    _showProfilePhoto,
-  ),
-  (
-    'Real Name',
-    'Show your full name',
-    'user',
-    'showRealName',
-    'Others will see your real name instead of username',
-    _showRealName,
-  ),
-  (
-    'Bio',
-    'Show your bio on your profile',
-    'document-text',
-    'showBio',
-    'Your bio text will be visible on your profile',
-    _showBio,
-  ),
-  (
-    'Age',
-    'Show your age on your profile',
-    'cake',
-    'showAge',
-    'Your age will be calculated from your date of birth',
-    _showAge,
-  ),
-  (
-    'Email Address',
-    'Show your email to others',
-    'sms',
-    'showEmail',
-    'Not recommended for privacy reasons',
-    _showEmail,
-  ),
-  (
-    'Phone Number',
-    'Show your phone number',
-    'call',
-    'showPhone',
-    'Only visible to teammates for coordination',
-    _showPhone,
-  ),
-  (
-    'Location',
-    'Show your general location',
-    'location',
-    'showLocation',
-    'Helps with local game matching',
-    _showLocation,
-  ),
-  (
-    'Friends List',
-    'Show your friends publicly',
-    'people',
-    'showFriendsList',
-    'Others can see who you\'re connected with',
-    _showFriendsList,
-  ),
-];
-
-const List<_Pref> _communicationPrefs = [
-  (
-    'Direct Messages',
-    'Who can send you messages',
-    'message',
-    'messagePreference',
-    _messagePref,
-  ),
-  (
-    'Game Invites',
-    'Who can invite you to games',
-    'game',
-    'gameInvitePreference',
-    _gameInvitePref,
-  ),
-  (
-    'Friend Requests',
-    'Who can send you friend requests',
-    'user-add',
-    'friendRequestPreference',
-    _friendRequestPref,
-  ),
-];
-
-const List<_Toggle> _activityToggles = [
-  (
-    'Online Status',
-    'Show when you\'re online',
-    'status',
-    'showOnlineStatus',
-    'Let others know when you\'re available',
-    _showOnlineStatus,
-  ),
-  (
-    'Activity Status',
-    'Show your recent activity',
-    'activity',
-    'showActivityStatus',
-    'Others can see what you\'ve been up to',
-    _showActivityStatus,
-  ),
-  (
-    'Check-ins',
-    'Show your venue check-ins',
-    'location-tick',
-    'showCheckIns',
-    'Others can see where you\'ve checked in',
-    _showCheckIns,
-  ),
-  (
-    'Posts to Public',
-    'Make your posts visible to everyone',
-    'global',
-    'showPostsToPublic',
-    'When off, posts are only visible to friends',
-    _showPostsToPublic,
-  ),
-  (
-    'Sports Profiles',
-    'Show your sports and skill levels',
-    'medal',
-    'showSportsProfiles',
-    'Essential for finding suitable games',
-    _showSportsProfiles,
-  ),
-  (
-    'Game History',
-    'Show your past games',
-    'clock',
-    'showGameHistory',
-    'Demonstrates your experience level',
-    _showGameHistory,
-  ),
-  (
-    'Statistics',
-    'Show your performance stats',
-    'chart',
-    'showStats',
-    'Your game statistics and win/loss record',
-    _showStats,
-  ),
-  (
-    'Achievements',
-    'Show your earned achievements',
-    'cup',
-    'showAchievements',
-    'Badges and trophies you\'ve earned',
-    _showAchievements,
-  ),
-];
-
-const List<_Toggle> _discoverToggles = [
-  (
-    'Search Engine Indexing',
-    'Allow external services to find your profile',
-    'search-normal',
-    'allowProfileIndexing',
-    'Your profile may appear in search engine results',
-    _allowProfileIndexing,
-  ),
-  (
-    'Hide from Nearby',
-    'Don\'t appear in nearby player searches',
-    'location-slash',
-    'hideFromNearby',
-    'You won\'t show up when people search for nearby players',
-    _hideFromNearby,
-  ),
-];
-
-const List<_Toggle> _dataToggles = [
-  (
-    'Location Tracking',
-    'Allow location-based features',
-    'gps',
-    'allowLocationTracking',
-    'Used for finding nearby games and venues',
-    _allowLocationTracking,
-  ),
-  (
-    'Game Recommendations',
-    'Personalized game suggestions',
-    'star',
-    'allowGameRecommendations',
-    'Uses your preferences and skill level to suggest games',
-    _allowGameRecommendations,
-  ),
-  (
-    'Anonymous Analytics',
-    'Help improve the app',
-    'chart-2',
-    'allowDataAnalytics',
-    'Anonymous usage data for app improvements',
-    _allowDataAnalytics,
-  ),
-];
-
-const List<_Toggle> _notificationToggles = [
-  (
-    'Push Notifications',
-    'Receive push notifications on your device',
-    'notification',
-    'allowPushNotifications',
-    'Game reminders, messages, and activity alerts',
-    _allowPush,
-  ),
-  (
-    'Email Notifications',
-    'Receive notifications via email',
-    'sms-notification',
-    'allowEmailNotifications',
-    'Weekly digests, game invites, and important updates',
-    _allowEmail,
-  ),
-];
-
-const List<_Toggle> _securityToggles = [
-  (
-    'Two-Factor Authentication',
-    'Add an extra layer of security',
-    'security-user',
-    'twoFactorEnabled',
-    'Requires a verification code when signing in',
-    _twoFactor,
-  ),
-  (
-    'Login Alerts',
-    'Get notified of new sign-ins',
-    'key',
-    'loginAlerts',
-    'Receive alerts when your account is accessed from a new device',
-    _loginAlerts,
-  ),
-];
-
-bool _showProfilePhoto(PrivacySettings s) => s.showProfilePhoto;
-bool _showRealName(PrivacySettings s) => s.showRealName;
-bool _showBio(PrivacySettings s) => s.showBio;
-bool _showAge(PrivacySettings s) => s.showAge;
-bool _showEmail(PrivacySettings s) => s.showEmail;
-bool _showPhone(PrivacySettings s) => s.showPhone;
-bool _showLocation(PrivacySettings s) => s.showLocation;
-bool _showFriendsList(PrivacySettings s) => s.showFriendsList;
-bool _showOnlineStatus(PrivacySettings s) => s.showOnlineStatus;
-bool _showActivityStatus(PrivacySettings s) => s.showActivityStatus;
-bool _showCheckIns(PrivacySettings s) => s.showCheckIns;
-bool _showPostsToPublic(PrivacySettings s) => s.showPostsToPublic;
-bool _showSportsProfiles(PrivacySettings s) => s.showSportsProfiles;
-bool _showGameHistory(PrivacySettings s) => s.showGameHistory;
-bool _showStats(PrivacySettings s) => s.showStats;
-bool _showAchievements(PrivacySettings s) => s.showAchievements;
-bool _allowProfileIndexing(PrivacySettings s) => s.allowProfileIndexing;
-bool _hideFromNearby(PrivacySettings s) => s.hideFromNearby;
-bool _allowLocationTracking(PrivacySettings s) => s.allowLocationTracking;
-bool _allowGameRecommendations(PrivacySettings s) => s.allowGameRecommendations;
-bool _allowDataAnalytics(PrivacySettings s) => s.allowDataAnalytics;
-bool _allowPush(PrivacySettings s) => s.allowPushNotifications;
-bool _allowEmail(PrivacySettings s) => s.allowEmailNotifications;
-bool _twoFactor(PrivacySettings s) => s.twoFactorEnabled;
-bool _loginAlerts(PrivacySettings s) => s.loginAlerts;
-CommunicationPreference _messagePref(PrivacySettings s) => s.messagePreference;
-CommunicationPreference _gameInvitePref(PrivacySettings s) =>
-    s.gameInvitePreference;
-CommunicationPreference _friendRequestPref(PrivacySettings s) =>
-    s.friendRequestPreference;
+/// The privacy pages of `Settings.dc.html`: a hub (preset cards, then a row per
+/// group of switches) and the pages it opens. The pages are states of this one
+/// screen — the route stays `/settings/privacy`.
+enum _Page {
+  hub,
+  profile,
+  activity,
+  discovery,
+  contact,
+  data,
+  notifications,
+  blocked,
+}
 
 class PrivacySettingsScreen extends ConsumerStatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -310,42 +37,14 @@ class PrivacySettingsScreen extends ConsumerStatefulWidget {
       _PrivacySettingsScreenState();
 }
 
-class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  // Privacy preset
+class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   PrivacyPreset _selectedPreset = PrivacyPreset.public;
-
+  _Page _page = _Page.hub;
   bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-
-    _animationController = AnimationController(
-      duration: DabblerMotion.screenEntrance,
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: DabblerMotion.standardInOut,
-      ),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: DabblerMotion.emphasizedDecelerate,
-          ),
-        );
-
-    _animationController.forward();
-
     // Load privacy settings from Supabase
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userId = ref.read(currentUserIdProvider);
@@ -358,13 +57,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 
   @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final privacyState = ref.watch(privacyControllerProvider);
     final settings = privacyState.settings;
 
@@ -372,207 +66,355 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     if (settings != null && !_initialized) {
       _initialized = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _selectedPreset = _detectPreset(settings);
-        });
+        if (mounted) {
+          setState(() => _selectedPreset = detectPrivacyPreset(settings));
+        }
       });
     }
 
-    final topBar = DabblerNavigationTopBar.titled(
-        border: true,
-      title: 'Privacy Settings',
-      onBack: () => context.pop(),
-      actions: [
-        DabblerNavigationAction.text(label: 'Save', onPressed: _saveSettings),
-      ],
-    );
-
-    if (privacyState.isLoading) {
-      return DabblerPage(
-        topBar: topBar,
-        body: const Center(child: DabblerSpinner()),
-      );
-    }
-
-    final ctrl = ref.read(privacyControllerProvider.notifier);
-    return DabblerPage(
-      topBar: topBar,
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              DabblerSpacing.space6,
-              DabblerSpacing.space4,
-              DabblerSpacing.space6,
-              DabblerSpacing.space11,
-            ),
-            children: [
-              _buildPresetsSection(),
-              if (settings != null) ...[
-                _gap,
-                _toggleSection(
-                  'Profile & Identity',
-                  'Control what personal information others can see',
-                  _profileToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-                _gap,
-                DabblerRowGroup(
-                  header: 'Communication',
-                  note: 'Control who can contact you and how',
-                  children: [
-                    for (final p in _communicationPrefs)
-                      _prefRow(p, settings, ctrl.updateSetting),
-                  ],
-                ),
-                _gap,
-                _toggleSection(
-                  'Activity & Stats',
-                  'Control visibility of your activity and performance data',
-                  _activityToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-                _gap,
-                _toggleSection(
-                  'Discoverability',
-                  'Control how others can find your profile',
-                  _discoverToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-                _gap,
-                _toggleSection(
-                  'Data & Analytics',
-                  'Control how your data is used to improve your experience',
-                  _dataToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-                _gap,
-                _toggleSection(
-                  'Notifications',
-                  'Control how you receive notifications',
-                  _notificationToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-                _gap,
-                _toggleSection(
-                  'Security',
-                  'Protect your account with additional security measures',
-                  _securityToggles,
-                  settings,
-                  ctrl.updateSetting,
-                ),
-              ],
-              _gap,
-              _buildBlockedUsersSection(),
-            ],
-          ),
+    return PopScope(
+      canPop: _page == _Page.hub,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _page = _Page.hub);
+      },
+      child: DabblerPage(
+        topBar: settingsTopBar(
+          context,
+          title: _title(l10n),
+          onBack: () => _page == _Page.hub
+              ? context.pop()
+              : setState(() => _page = _Page.hub),
         ),
+        body: privacyState.isLoading
+            ? const Center(child: DabblerSpinner())
+            : ListView(
+                padding: kSettingsBodyPadding,
+                children: _page == _Page.blocked
+                    ? _blockedPage(l10n)
+                    : settings == null
+                    ? const []
+                    : _pageBody(l10n, settings),
+              ),
       ),
     );
   }
 
-  static const Widget _gap = SizedBox(height: DabblerSpacing.space7);
+  String _title(AppLocalizations l10n) => switch (_page) {
+    _Page.hub => l10n.priv_title,
+    _Page.profile => l10n.priv_profile_title,
+    _Page.activity => l10n.priv_activity_title,
+    _Page.discovery => l10n.priv_discover_title,
+    _Page.contact => l10n.priv_contact_nav,
+    _Page.data => l10n.priv_data_title,
+    _Page.notifications => l10n.priv_notif_title,
+    _Page.blocked => l10n.priv_blocked_title,
+  };
 
-  Widget _icon(String name) => DabblerIcon(
-    name,
-    size: DabblerSizing.iconMd,
-    color: DabblerColors.of(context).textSecondary,
-  );
-
-  Widget _buildPresetsSection() {
-    return DabblerRowGroup(
-      header: 'Privacy Presets',
-      note: 'Choose a preset to quickly configure your privacy settings',
-      children: [
-        for (final preset in PrivacyPreset.values)
-          DabblerInputRow(
-            flat: true,
-            showDivider: false,
-            title: _presetTitle(preset),
-            subtitle: _presetDescription(preset),
-            leading: _icon(_presetIcon(preset)),
-            trailing: DabblerRadio(
-              selected: _selectedPreset == preset,
-              semanticLabel: _presetTitle(preset),
-            ),
-            onTap: () {
-              setState(() {
-                _selectedPreset = preset;
-                _applyPreset(preset);
-              });
-            },
-          ),
-        const DabblerBanner(
-          tone: DabblerBannerTone.info,
-          message: 'You can always customize individual settings below',
-        ),
+  List<Widget> _pageBody(AppLocalizations l10n, PrivacySettings s) {
+    return switch (_page) {
+      _Page.hub => _hub(l10n, s),
+      _Page.profile => [_toggleGroup(privacyProfileToggles, s, l10n, true)],
+      _Page.activity => [_toggleGroup(privacyActivityToggles, s, l10n, true)],
+      _Page.discovery => [_toggleGroup(privacyDiscoveryToggles, s, l10n, true)],
+      _Page.data => [_toggleGroup(privacyDataToggles, s, l10n, false)],
+      _Page.notifications => [
+        _toggleGroup(privacyNotificationToggles, s, l10n, false),
       ],
+      _Page.contact => [_contactGroup(l10n, s)],
+      _Page.blocked => const [],
+    };
+  }
+
+  // ─── Hub ────────────────────────────────────────────────────────────────
+
+  List<Widget> _hub(AppLocalizations l10n, PrivacySettings s) {
+    final blockedCount =
+        ref.watch(blockedUsersWithProfilesProvider).valueOrNull?.length ?? 0;
+    return [
+      DabblerRowGroup.stack(
+        header: l10n.priv_preset_header,
+        note: l10n.priv_preset_note,
+        children: _presetCards(l10n),
+      ),
+      kSettingsGroupGap,
+      DabblerRowHint(text: l10n.priv_hint),
+      kSettingsGroupGap,
+      DabblerRowGroup(
+        header: l10n.priv_group_see,
+        children: [
+          _navRow(
+            'profile-circle',
+            l10n.priv_profile_title,
+            l10n.priv_profile_sub,
+            _count(l10n, privacyProfileToggles, s),
+            _Page.profile,
+          ),
+          _navRow(
+            'activity',
+            l10n.priv_activity_title,
+            l10n.priv_activity_sub,
+            _count(l10n, privacyActivityToggles, s),
+            _Page.activity,
+          ),
+          _navRow(
+            'search-normal',
+            l10n.priv_discover_title,
+            l10n.priv_discover_sub,
+            _count(l10n, privacyDiscoveryToggles, s),
+            _Page.discovery,
+          ),
+        ],
+      ),
+      kSettingsGroupGap,
+      DabblerRowGroup(
+        header: l10n.priv_group_comm,
+        children: [
+          _navRow(
+            'message-text',
+            l10n.priv_contact_title,
+            l10n.priv_contact_sub,
+            _audienceLabel(l10n, s.messagePreference),
+            _Page.contact,
+          ),
+        ],
+      ),
+      kSettingsGroupGap,
+      DabblerRowGroup(
+        header: l10n.priv_group_data,
+        children: [
+          _navRow(
+            'chart',
+            l10n.priv_data_title,
+            l10n.priv_data_sub,
+            _count(l10n, privacyDataToggles, s),
+            _Page.data,
+          ),
+          _navRow(
+            'notification',
+            l10n.priv_notif_title,
+            l10n.priv_notif_sub,
+            _count(l10n, privacyNotificationToggles, s),
+            _Page.notifications,
+          ),
+        ],
+      ),
+      kSettingsGroupGap,
+      DabblerRowGroup(
+        header: l10n.priv_group_safety,
+        children: [
+          _navRow(
+            'slash',
+            l10n.priv_blocked_title,
+            l10n.priv_blocked_sub,
+            DabblerType.toWesternDigits('$blockedCount'),
+            _Page.blocked,
+          ),
+        ],
+      ),
+    ];
+  }
+
+  Widget _navRow(
+    String icon,
+    String title,
+    String subtitle,
+    String value,
+    _Page page,
+  ) {
+    return DabblerInputRow(
+      flat: true,
+      showDivider: false,
+      leading: settingsRowIcon(context, icon),
+      title: title,
+      subtitle: subtitle,
+      value: value,
+      onTap: () => setState(() => _page = page),
     );
   }
 
-  Widget _toggleSection(
-    String title,
-    String description,
-    List<_Toggle> toggles,
-    PrivacySettings settings,
-    void Function(String, dynamic) update,
+  String _count(
+    AppLocalizations l10n,
+    List<PrivacyToggle> toggles,
+    PrivacySettings s,
+  ) {
+    final on = privacyOnCount(toggles, s);
+    final label = on == toggles.length
+        ? l10n.priv_count_all(toggles.length)
+        : on == 0
+        ? l10n.priv_count_none
+        : l10n.priv_count_some(on, toggles.length);
+    return DabblerType.toWesternDigits(label);
+  }
+
+  // ─── Presets ────────────────────────────────────────────────────────────
+
+  List<Widget> _presetCards(AppLocalizations l10n) {
+    final cards = <(PrivacyPreset, String, String, String)>[
+      (
+        PrivacyPreset.public,
+        'global',
+        l10n.priv_preset_public,
+        l10n.priv_preset_public_desc,
+      ),
+      (
+        PrivacyPreset.friendsOnly,
+        'people',
+        l10n.priv_preset_friends,
+        l10n.priv_preset_friends_desc,
+      ),
+      (
+        PrivacyPreset.private,
+        'lock',
+        l10n.priv_preset_private,
+        l10n.priv_preset_private_desc,
+      ),
+      if (_selectedPreset == PrivacyPreset.custom)
+        (
+          PrivacyPreset.custom,
+          'setting-4',
+          l10n.priv_preset_custom,
+          l10n.priv_preset_custom_desc,
+        ),
+    ];
+    return [
+      for (final c in cards)
+        DabblerPresetCard(
+          icon: c.$2,
+          title: c.$3,
+          description: c.$4,
+          selected: _selectedPreset == c.$1,
+          onTap: () => _applyPreset(c.$1, c.$3),
+        ),
+    ];
+  }
+
+  Future<void> _applyPreset(PrivacyPreset preset, String label) async {
+    if (preset == PrivacyPreset.custom) return;
+    setState(() => _selectedPreset = preset);
+    ref
+        .read(privacyControllerProvider.notifier)
+        .applyPreset(privacyPresetSettings(preset));
+    await _save(AppLocalizations.of(context).priv_preset_applied(label));
+  }
+
+  // ─── Switches ───────────────────────────────────────────────────────────
+
+  Widget _toggleGroup(
+    List<PrivacyToggle> toggles,
+    PrivacySettings s,
+    AppLocalizations l10n,
+    bool breaksPreset,
   ) {
     return DabblerRowGroup(
-      header: title,
-      note: description,
       children: [
         for (final t in toggles)
           DabblerInputRow.toggle(
             flat: true,
             showDivider: false,
-            title: t.$1,
-            subtitle: t.$2,
-            leading: _icon(t.$3),
-            checked: t.$6(settings),
-            onChanged: (value) => update(t.$4, value),
-            toggleSemanticLabel: t.$1,
-            onInfo: () => _showTooltip(t.$1, t.$5),
-            infoSemanticLabel: '${t.$1} info',
+            leading: settingsRowIcon(context, t.icon),
+            title: t.title(l10n),
+            subtitle: t.subtitle(l10n),
+            checked: t.read(s),
+            toggleSemanticLabel: t.title(l10n),
+            onChanged: (value) {
+              ref
+                  .read(privacyControllerProvider.notifier)
+                  .updateSetting(t.key, value);
+              if (breaksPreset) {
+                setState(() => _selectedPreset = PrivacyPreset.custom);
+              }
+              _save(l10n.priv_saved);
+            },
           ),
       ],
     );
   }
 
+  /// Every change applies at once — there is no Save button.
+  Future<void> _save(String savedMessage) async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    final saved = await ref
+        .read(privacyControllerProvider.notifier)
+        .saveAllChanges(userId);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    _toast(
+      saved ? savedMessage : l10n.priv_save_failed,
+      saved ? DabblerToastTone.neutral : DabblerToastTone.error,
+    );
+  }
+
+  // ─── Contact ────────────────────────────────────────────────────────────
+
+  Widget _contactGroup(AppLocalizations l10n, PrivacySettings s) {
+    return DabblerRowGroup(
+      children: [
+        _prefRow(
+          'message-text',
+          l10n.priv_dm_title,
+          l10n.priv_dm_sub,
+          'messagePreference',
+          s.messagePreference,
+        ),
+        _prefRow(
+          'game',
+          l10n.priv_invites_title,
+          l10n.priv_invites_sub,
+          'gameInvitePreference',
+          s.gameInvitePreference,
+        ),
+        _prefRow(
+          'user-add',
+          l10n.priv_requests_title,
+          l10n.priv_requests_sub,
+          'friendRequestPreference',
+          s.friendRequestPreference,
+        ),
+      ],
+    );
+  }
+
   Widget _prefRow(
-    _Pref p,
-    PrivacySettings settings,
-    void Function(String, dynamic) update,
+    String icon,
+    String title,
+    String subtitle,
+    String key,
+    CommunicationPreference value,
   ) {
-    final value = p.$5(settings);
+    final l10n = AppLocalizations.of(context);
     return DabblerInputRow(
       flat: true,
       showDivider: false,
-      title: p.$1,
-      subtitle: p.$2,
-      leading: _icon(p.$3),
-      value: _communicationPrefLabel(value),
+      leading: settingsRowIcon(context, icon),
+      title: title,
+      subtitle: subtitle,
+      value: _audienceLabel(l10n, value),
       onTap: () => showDabblerSheet<void>(
         context: context,
-        title: p.$1,
+        title: title,
         detent: DabblerSheetDetent.content,
+        showCloseButton: false,
         builder: (sheetContext) => Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final pref in CommunicationPreference.values)
-              DabblerInputRow(
-                title: _communicationPrefLabel(pref),
-                selected: pref == value,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  update(p.$4, pref);
-                },
+              Padding(
+                padding: const EdgeInsetsDirectional.only(
+                  bottom: DabblerSpacing.space2,
+                ),
+                child: DabblerOptionRow(
+                  label: _audienceLabel(l10n, pref),
+                  selected: pref == value,
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    ref
+                        .read(privacyControllerProvider.notifier)
+                        .updateSetting(key, pref);
+                    _save(l10n.priv_saved);
+                  },
+                ),
               ),
           ],
         ),
@@ -580,49 +422,38 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     );
   }
 
-  String _communicationPrefLabel(CommunicationPreference pref) {
-    switch (pref) {
-      case CommunicationPreference.anyone:
-        return 'Anyone';
-      case CommunicationPreference.friendsOnly:
-        return 'Friends Only';
-      case CommunicationPreference.organizersOnly:
-        return 'Organizers';
-      case CommunicationPreference.none:
-        return 'Nobody';
-    }
-  }
+  String _audienceLabel(AppLocalizations l10n, CommunicationPreference pref) =>
+      switch (pref) {
+        CommunicationPreference.anyone => l10n.priv_audience_anyone,
+        CommunicationPreference.friendsOnly => l10n.priv_audience_friends,
+        CommunicationPreference.organizersOnly => l10n.priv_audience_organizers,
+        CommunicationPreference.none => l10n.priv_audience_none,
+      };
 
-  Widget _buildBlockedUsersSection() {
-    final blockedUsersAsync = ref.watch(blockedUsersWithProfilesProvider);
+  // ─── Blocked accounts ───────────────────────────────────────────────────
 
-    return blockedUsersAsync.when(
-      loading: () => const Center(child: DabblerSpinner()),
-      error: (e, _) => DabblerRowGroup(
-        header: 'Blocked Users',
-        note: 'Failed to load blocked users',
-        children: [
-          DabblerBanner(tone: DabblerBannerTone.error, message: 'Error: $e'),
-        ],
-      ),
-      data: (blockedUsers) => DabblerRowGroup(
-        header: 'Blocked Users',
-        note: 'Manage users you\'ve blocked from contacting you',
-        children: [
-          if (blockedUsers.isEmpty)
-            const DabblerEmptyState(
-              icon: 'tick-circle',
-              text: 'You haven\'t blocked any users',
-            )
-          else
-            for (final user in blockedUsers) _blockedRow(user),
-        ],
-      ),
+  List<Widget> _blockedPage(AppLocalizations l10n) {
+    final blocked = ref.watch(blockedUsersWithProfilesProvider);
+    return blocked.when(
+      loading: () => const [Center(child: DabblerSpinner())],
+      error: (e, _) => [
+        DabblerBanner(
+          tone: DabblerBannerTone.error,
+          message: l10n.priv_blocked_load_failed(e.toString()),
+        ),
+      ],
+      data: (users) => users.isEmpty
+          ? [DabblerRowHint(text: l10n.priv_blocked_empty)]
+          : [
+              DabblerRowGroup(
+                children: [for (final user in users) _blockedRow(l10n, user)],
+              ),
+            ],
     );
   }
 
-  Widget _blockedRow(Map<String, dynamic> user) {
-    final displayName = user['display_name'] as String? ?? 'Unknown';
+  Widget _blockedRow(AppLocalizations l10n, Map<String, dynamic> user) {
+    final displayName = user['display_name'] as String? ?? '';
     final username = user['username'] as String? ?? '';
     final userId = user['user_id'] as String;
     return DabblerInputRow(
@@ -630,166 +461,29 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
       showDivider: false,
       title: displayName,
       subtitle: username.isNotEmpty ? '@$username' : null,
-      leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.sm),
-      trailing: DabblerButton(
-        label: 'Unblock',
-        tone: DabblerButtonTone.outlined,
-        size: DabblerButtonSize.small,
-        onPressed: () => _unblockUser(userId, displayName),
+      leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.md),
+      trailing: DabblerRowAction(
+        label: l10n.priv_unblock,
+        onPressed: () => _unblockUser(userId),
       ),
     );
   }
 
-  String _presetTitle(PrivacyPreset preset) => switch (preset) {
-    PrivacyPreset.public => 'Public',
-    PrivacyPreset.friendsOnly => 'Friends Only',
-    PrivacyPreset.private => 'Private',
-  };
+  Future<void> _unblockUser(String userId) async {
+    final l10n = AppLocalizations.of(context);
+    final repo = ref.read(blockRepositoryProvider);
+    final result = await repo.unblockUser(userId);
 
-  String _presetDescription(PrivacyPreset preset) => switch (preset) {
-    PrivacyPreset.public =>
-      'Your profile is visible to everyone for easy discovery',
-    PrivacyPreset.friendsOnly => 'Only your friends can see your full profile',
-    PrivacyPreset.private => 'Minimal information is shared publicly',
-  };
-
-  String _presetIcon(PrivacyPreset preset) => switch (preset) {
-    PrivacyPreset.public => 'global',
-    PrivacyPreset.friendsOnly => 'people',
-    PrivacyPreset.private => 'lock',
-  };
-
-  void _applyPreset(PrivacyPreset preset) {
-    final ctrl = ref.read(privacyControllerProvider.notifier);
-    final PrivacySettings presetSettings;
-
-    switch (preset) {
-      case PrivacyPreset.public:
-        presetSettings = const PrivacySettings(
-          profileVisibility: ProfileVisibility.public,
-          showRealName: true,
-          showAge: false,
-          showLocation: true,
-          showPhone: false,
-          showEmail: false,
-          showBio: true,
-          showProfilePhoto: true,
-          showFriendsList: true,
-          allowProfileIndexing: true,
-          showStats: true,
-          showSportsProfiles: true,
-          showGameHistory: true,
-          showAchievements: true,
-          showOnlineStatus: true,
-          showActivityStatus: true,
-          showCheckIns: true,
-          showPostsToPublic: true,
-          messagePreference: CommunicationPreference.anyone,
-          gameInvitePreference: CommunicationPreference.anyone,
-          friendRequestPreference: CommunicationPreference.anyone,
-          allowPushNotifications: true,
-          allowEmailNotifications: true,
-          allowLocationTracking: true,
-          allowDataAnalytics: true,
-          dataSharingLevel: DataSharingLevel.full,
-          allowGameRecommendations: true,
-          hideFromNearby: false,
-          twoFactorEnabled: false,
-          loginAlerts: true,
-        );
-      case PrivacyPreset.friendsOnly:
-        presetSettings = const PrivacySettings(
-          profileVisibility: ProfileVisibility.friends,
-          showRealName: true,
-          showAge: false,
-          showLocation: true,
-          showPhone: false,
-          showEmail: false,
-          showBio: true,
-          showProfilePhoto: true,
-          showFriendsList: false,
-          allowProfileIndexing: false,
-          showStats: false,
-          showSportsProfiles: true,
-          showGameHistory: false,
-          showAchievements: true,
-          showOnlineStatus: true,
-          showActivityStatus: true,
-          showCheckIns: false,
-          showPostsToPublic: false,
-          messagePreference: CommunicationPreference.friendsOnly,
-          gameInvitePreference: CommunicationPreference.friendsOnly,
-          friendRequestPreference: CommunicationPreference.anyone,
-          allowPushNotifications: true,
-          allowEmailNotifications: true,
-          allowLocationTracking: true,
-          allowDataAnalytics: true,
-          dataSharingLevel: DataSharingLevel.limited,
-          allowGameRecommendations: true,
-          hideFromNearby: false,
-          twoFactorEnabled: false,
-          loginAlerts: true,
-        );
-      case PrivacyPreset.private:
-        presetSettings = const PrivacySettings(
-          profileVisibility: ProfileVisibility.private,
-          showRealName: false,
-          showAge: false,
-          showLocation: false,
-          showPhone: false,
-          showEmail: false,
-          showBio: false,
-          showProfilePhoto: false,
-          showFriendsList: false,
-          allowProfileIndexing: false,
-          showStats: false,
-          showSportsProfiles: true,
-          showGameHistory: false,
-          showAchievements: false,
-          showOnlineStatus: false,
-          showActivityStatus: false,
-          showCheckIns: false,
-          showPostsToPublic: false,
-          messagePreference: CommunicationPreference.friendsOnly,
-          gameInvitePreference: CommunicationPreference.friendsOnly,
-          friendRequestPreference: CommunicationPreference.friendsOnly,
-          allowPushNotifications: true,
-          allowEmailNotifications: false,
-          allowLocationTracking: false,
-          allowDataAnalytics: false,
-          dataSharingLevel: DataSharingLevel.minimal,
-          allowGameRecommendations: false,
-          hideFromNearby: true,
-          twoFactorEnabled: false,
-          loginAlerts: true,
-        );
-    }
-
-    ctrl.applyPreset(presetSettings);
-  }
-
-  PrivacyPreset _detectPreset(PrivacySettings s) {
-    if (s.profileVisibility == ProfileVisibility.private) {
-      return PrivacyPreset.private;
-    }
-    if (s.profileVisibility == ProfileVisibility.friends) {
-      return PrivacyPreset.friendsOnly;
-    }
-    return PrivacyPreset.public;
-  }
-
-  void _showTooltip(String title, String description) {
-    showDabblerDialog<void>(
-      context: context,
-      builder: (dialogContext) => DabblerDialog(
-        title: title,
-        description: description,
-        onClose: () => Navigator.of(dialogContext).pop(),
-        primaryAction: DabblerDialogAction(
-          label: 'Got it',
-          onPressed: () => Navigator.of(dialogContext).pop(),
-        ),
-      ),
+    result.fold(
+      (err) {
+        _toast(l10n.priv_blocked_failed(err.message), DabblerToastTone.neutral);
+      },
+      (_) {
+        ref.invalidate(blockedUserIdsProvider);
+        ref.invalidate(blockedUsersWithProfilesProvider);
+        ref.invalidate(isUserBlockedProvider(userId));
+        _toast(l10n.priv_unblocked, DabblerToastTone.neutral);
+      },
     );
   }
 
@@ -798,49 +492,15 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
       context,
     ).show(DabblerToastSpec(message: message, tone: tone));
   }
-
-  Future<void> _unblockUser(String userId, String displayName) async {
-    final repo = ref.read(blockRepositoryProvider);
-    final result = await repo.unblockUser(userId);
-
-    result.fold(
-      (err) {
-        _toast('Failed to unblock: ${err.message}', DabblerToastTone.neutral);
-      },
-      (_) {
-        ref.invalidate(blockedUserIdsProvider);
-        ref.invalidate(blockedUsersWithProfilesProvider);
-        ref.invalidate(isUserBlockedProvider(userId));
-        _toast('$displayName has been unblocked', DabblerToastTone.neutral);
-      },
-    );
-  }
-
-  Future<void> _saveSettings() async {
-    final userId = ref.read(currentUserIdProvider);
-    if (userId == null) return;
-
-    final success = await ref
-        .read(privacyControllerProvider.notifier)
-        .saveAllChanges(userId);
-
-    if (!mounted) return;
-
-    _toast(
-      success
-          ? 'Privacy settings saved!'
-          : 'Failed to save settings. Please try again.',
-      success ? DabblerToastTone.success : DabblerToastTone.error,
-    );
-  }
 }
 
 /// How many of the profile-visibility toggles are on, as `n/total`.
-String privacyProfileShownCount(PrivacySettings s) => _count(_profileToggles, s);
+String privacyProfileShownCount(PrivacySettings s) =>
+    _shown(privacyProfileToggles, s);
 
 /// How many of the activity-visibility toggles are on, as `n/total`.
 String privacyActivityShownCount(PrivacySettings s) =>
-    _count(_activityToggles, s);
+    _shown(privacyActivityToggles, s);
 
-String _count(List<_Toggle> toggles, PrivacySettings s) =>
-    '${toggles.where((t) => t.$6(s)).length}/${toggles.length}';
+String _shown(List<PrivacyToggle> toggles, PrivacySettings s) =>
+    '${privacyOnCount(toggles, s)}/${toggles.length}';

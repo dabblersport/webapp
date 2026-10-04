@@ -117,9 +117,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
           DabblerSpacing.space6,
           DabblerSpacing.space11,
         ),
-        children: [
-          _buildBody(context, ref, state),
-        ],
+        children: [_buildBody(context, ref, state)],
       ),
     );
   }

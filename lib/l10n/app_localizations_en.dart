@@ -1992,4 +1992,596 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
+
+  @override
+  String get acct_title => 'Account';
+
+  @override
+  String get acct_group_signin => 'Sign-in';
+
+  @override
+  String get acct_row_email => 'Email address';
+
+  @override
+  String get acct_row_password => 'Password';
+
+  @override
+  String get acct_group_security => 'Security';
+
+  @override
+  String get acct_group_security_note =>
+      'Protect your account with additional security measures';
+
+  @override
+  String get acct_2fa_title => 'Two-factor authentication';
+
+  @override
+  String get acct_2fa_sub => 'Add an extra layer of security';
+
+  @override
+  String get acct_alerts_title => 'Login alerts';
+
+  @override
+  String get acct_alerts_sub => 'Get notified of new sign-ins';
+
+  @override
+  String get acct_group_danger => 'Danger zone';
+
+  @override
+  String get acct_delete_title => 'Delete account';
+
+  @override
+  String get acct_delete_sub => 'Permanently delete your account and all data';
+
+  @override
+  String get acct_delete_confirm => 'Delete permanently';
+
+  @override
+  String get acct_cancel => 'Cancel';
+
+  @override
+  String get acct_delete_type_error => 'Please type \"DELETE\" to confirm';
+
+  @override
+  String acct_delete_failed(String error) {
+    return 'Failed to delete account: $error';
+  }
+
+  @override
+  String get acct_email_sheet_title => 'Email address';
+
+  @override
+  String get acct_email_field => 'Email';
+
+  @override
+  String get acct_email_helper =>
+      'We send a confirmation link to the new address before it replaces the old one.';
+
+  @override
+  String get acct_email_update => 'Update email';
+
+  @override
+  String get acct_email_updating => 'Updating…';
+
+  @override
+  String get acct_email_empty => 'Email cannot be empty';
+
+  @override
+  String get acct_email_invalid => 'Please enter a valid email address';
+
+  @override
+  String get acct_email_same => 'New email is the same as current email';
+
+  @override
+  String get acct_email_sent => 'Confirmation sent';
+
+  @override
+  String acct_email_failed(String error) {
+    return 'Failed to update email: $error';
+  }
+
+  @override
+  String get acct_password_change_title => 'Change password';
+
+  @override
+  String get acct_password_set_title => 'Set password';
+
+  @override
+  String get acct_password_set_note =>
+      'You signed in with Google or Apple. Set a password to also sign in with your email.';
+
+  @override
+  String get acct_password_current => 'Current password';
+
+  @override
+  String get acct_password_new => 'New password';
+
+  @override
+  String get acct_password_new_helper => 'At least 8 characters';
+
+  @override
+  String get acct_password_confirm => 'Confirm new password';
+
+  @override
+  String get acct_password_change => 'Change password';
+
+  @override
+  String get acct_password_set => 'Set password';
+
+  @override
+  String get acct_password_changing => 'Changing…';
+
+  @override
+  String get acct_password_setting => 'Setting…';
+
+  @override
+  String get acct_password_changed => 'Password changed';
+
+  @override
+  String get acct_password_was_set =>
+      'Password set. You can now sign in with your email and password.';
+
+  @override
+  String get acct_password_err_current => 'Please enter your current password';
+
+  @override
+  String get acct_password_err_new => 'Please enter a new password';
+
+  @override
+  String get acct_password_err_short =>
+      'Password must be at least 6 characters long';
+
+  @override
+  String get acct_password_err_mismatch => 'Passwords do not match';
+
+  @override
+  String get acct_password_err_same =>
+      'New password must be different from current password';
+
+  @override
+  String get acct_password_err_incorrect => 'Current password is incorrect';
+
+  @override
+  String acct_password_failed(String error) {
+    return 'Failed to change password: $error';
+  }
+
+  @override
+  String acct_load_failed(String error) {
+    return 'Failed to load account data: $error';
+  }
+
+  @override
+  String get acct_export_title => 'Export my data';
+
+  @override
+  String get acct_export_sub =>
+      'Request a copy of your Dabbler data (PDPL data portability)';
+
+  @override
+  String get acct_export_started =>
+      'We\'re preparing your data export. You\'ll be notified by email when it\'s ready.';
+
+  @override
+  String acct_export_failed(String error) {
+    return 'Could not request data export: $error';
+  }
+
+  @override
+  String get priv_title => 'Privacy';
+
+  @override
+  String get priv_preset_header => 'Privacy preset';
+
+  @override
+  String get priv_preset_note =>
+      'Choose a preset to quickly configure your privacy settings';
+
+  @override
+  String get priv_preset_public => 'Public';
+
+  @override
+  String get priv_preset_public_desc =>
+      'Your profile is visible to everyone for easy discovery';
+
+  @override
+  String get priv_preset_friends => 'Friends only';
+
+  @override
+  String get priv_preset_friends_desc =>
+      'Only your friends can see your full profile';
+
+  @override
+  String get priv_preset_private => 'Private';
+
+  @override
+  String get priv_preset_private_desc =>
+      'Minimal information is shared publicly';
+
+  @override
+  String priv_preset_applied(String preset) {
+    return '$preset preset applied';
+  }
+
+  @override
+  String get priv_preset_custom => 'Custom';
+
+  @override
+  String get priv_preset_custom_desc => 'Your own mix of the settings below';
+
+  @override
+  String get priv_hint =>
+      'You can always customize individual settings below. Changes save automatically.';
+
+  @override
+  String get priv_group_see => 'What others see';
+
+  @override
+  String get priv_profile_title => 'Profile & identity';
+
+  @override
+  String get priv_profile_sub => 'Photo, name, bio, age, contact details';
+
+  @override
+  String get priv_activity_title => 'Activity & stats';
+
+  @override
+  String get priv_activity_sub => 'Status, check-ins, history, achievements';
+
+  @override
+  String get priv_discover_title => 'Discoverability';
+
+  @override
+  String get priv_discover_sub => 'Search indexing and nearby players';
+
+  @override
+  String get priv_group_comm => 'Communication';
+
+  @override
+  String get priv_contact_title => 'Who can contact you';
+
+  @override
+  String get priv_contact_sub => 'Messages, game invites, friend requests';
+
+  @override
+  String get priv_group_data => 'Data';
+
+  @override
+  String get priv_data_title => 'Data & analytics';
+
+  @override
+  String get priv_data_sub => 'Location, recommendations, analytics';
+
+  @override
+  String get priv_notif_title => 'Notifications';
+
+  @override
+  String get priv_notif_sub => 'Push and email';
+
+  @override
+  String get priv_group_safety => 'Safety';
+
+  @override
+  String get priv_blocked_title => 'Blocked accounts';
+
+  @override
+  String get priv_blocked_sub => 'People you\'ve blocked from contacting you';
+
+  @override
+  String priv_count_all(int total) {
+    return 'All $total on';
+  }
+
+  @override
+  String get priv_count_none => 'All off';
+
+  @override
+  String priv_count_some(int on, int total) {
+    return '$on of $total on';
+  }
+
+  @override
+  String get priv_contact_nav => 'Contact';
+
+  @override
+  String get priv_dm_title => 'Direct messages';
+
+  @override
+  String get priv_dm_sub => 'Who can send you messages';
+
+  @override
+  String get priv_invites_title => 'Game invites';
+
+  @override
+  String get priv_invites_sub => 'Who can invite you to games';
+
+  @override
+  String get priv_requests_title => 'Friend requests';
+
+  @override
+  String get priv_requests_sub => 'Who can send you friend requests';
+
+  @override
+  String get priv_audience_anyone => 'Anyone';
+
+  @override
+  String get priv_audience_friends => 'Friends only';
+
+  @override
+  String get priv_audience_organizers => 'Organizers only';
+
+  @override
+  String get priv_audience_none => 'No one';
+
+  @override
+  String get priv_unblock => 'Unblock';
+
+  @override
+  String get priv_unblocked => 'Unblocked';
+
+  @override
+  String get priv_blocked_empty => 'You haven\'t blocked anyone.';
+
+  @override
+  String priv_blocked_failed(String error) {
+    return 'Failed to unblock: $error';
+  }
+
+  @override
+  String priv_blocked_load_failed(String error) {
+    return 'Failed to load blocked accounts: $error';
+  }
+
+  @override
+  String get priv_save_failed => 'Failed to save settings. Please try again.';
+
+  @override
+  String get priv_saved => 'Saved';
+
+  @override
+  String get priv_t_photo => 'Profile photo';
+
+  @override
+  String get priv_t_photo_sub => 'Show your profile picture';
+
+  @override
+  String get priv_t_name => 'Real name';
+
+  @override
+  String get priv_t_name_sub => 'Show your full name';
+
+  @override
+  String get priv_t_bio => 'Bio';
+
+  @override
+  String get priv_t_bio_sub => 'Show your bio on your profile';
+
+  @override
+  String get priv_t_age => 'Age';
+
+  @override
+  String get priv_t_age_sub => 'Show your age on your profile';
+
+  @override
+  String get priv_t_email => 'Email address';
+
+  @override
+  String get priv_t_email_sub => 'Show your email to others';
+
+  @override
+  String get priv_t_phone => 'Phone number';
+
+  @override
+  String get priv_t_phone_sub => 'Show your phone number';
+
+  @override
+  String get priv_t_location => 'Location';
+
+  @override
+  String get priv_t_location_sub => 'Show your general location';
+
+  @override
+  String get priv_t_friends => 'Friends list';
+
+  @override
+  String get priv_t_friends_sub => 'Show your friends publicly';
+
+  @override
+  String get priv_t_online => 'Online status';
+
+  @override
+  String get priv_t_online_sub => 'Show when you\'re online';
+
+  @override
+  String get priv_t_activity => 'Activity status';
+
+  @override
+  String get priv_t_activity_sub => 'Show your recent activity';
+
+  @override
+  String get priv_t_checkins => 'Check-ins';
+
+  @override
+  String get priv_t_checkins_sub => 'Show your venue check-ins';
+
+  @override
+  String get priv_t_posts => 'Posts to public';
+
+  @override
+  String get priv_t_posts_sub => 'Make your posts visible to everyone';
+
+  @override
+  String get priv_t_sports => 'Sports profiles';
+
+  @override
+  String get priv_t_sports_sub => 'Show your sports and skill levels';
+
+  @override
+  String get priv_t_history => 'Game history';
+
+  @override
+  String get priv_t_history_sub => 'Show your past games';
+
+  @override
+  String get priv_t_stats => 'Statistics';
+
+  @override
+  String get priv_t_stats_sub => 'Show your performance stats';
+
+  @override
+  String get priv_t_achievements => 'Achievements';
+
+  @override
+  String get priv_t_achievements_sub => 'Show your earned achievements';
+
+  @override
+  String get priv_t_indexing => 'Search engine indexing';
+
+  @override
+  String get priv_t_indexing_sub =>
+      'Allow external services to find your profile';
+
+  @override
+  String get priv_t_nearby => 'Hide from nearby';
+
+  @override
+  String get priv_t_nearby_sub => 'Don\'t appear in nearby player searches';
+
+  @override
+  String get priv_t_tracking => 'Location tracking';
+
+  @override
+  String get priv_t_tracking_sub => 'Allow location-based features';
+
+  @override
+  String get priv_t_recs => 'Game recommendations';
+
+  @override
+  String get priv_t_recs_sub => 'Personalized game suggestions';
+
+  @override
+  String get priv_t_analytics => 'Anonymous analytics';
+
+  @override
+  String get priv_t_analytics_sub => 'Help improve the app';
+
+  @override
+  String get priv_t_push => 'Push notifications';
+
+  @override
+  String get priv_t_push_sub => 'Receive push notifications on your device';
+
+  @override
+  String get priv_t_mail => 'Email notifications';
+
+  @override
+  String get priv_t_mail_sub => 'Receive notifications via email';
+
+  @override
+  String get appr_title => 'Appearance';
+
+  @override
+  String get appr_group_theme => 'Theme';
+
+  @override
+  String get appr_light => 'Light';
+
+  @override
+  String get appr_dark => 'Dark';
+
+  @override
+  String get appr_system => 'System';
+
+  @override
+  String appr_theme_applied(String theme) {
+    return '$theme theme';
+  }
+
+  @override
+  String get appr_group_color => 'Color theme';
+
+  @override
+  String get appr_group_color_note =>
+      'Apply one token set across the entire app';
+
+  @override
+  String appr_color_use(String name) {
+    return 'Use $name tokens app-wide';
+  }
+
+  @override
+  String get appr_group_auto => 'Automatic theme';
+
+  @override
+  String get appr_group_auto_note =>
+      'Automatically switch between light and dark themes';
+
+  @override
+  String get appr_auto_title => 'Time-based theme';
+
+  @override
+  String get appr_auto_sub => 'Switch themes based on time of day';
+
+  @override
+  String get appr_group_schedule => 'Day & night schedule';
+
+  @override
+  String get appr_group_schedule_note =>
+      'Set when light and dark themes should activate';
+
+  @override
+  String get appr_day_title => 'Day starts at';
+
+  @override
+  String get appr_day_sub => 'Light theme will activate';
+
+  @override
+  String get appr_night_title => 'Night starts at';
+
+  @override
+  String get appr_night_sub => 'Dark theme will activate';
+
+  @override
+  String get region_title => 'Language & region';
+
+  @override
+  String get region_language => 'Language';
+
+  @override
+  String get region_language_sub => 'App and content language';
+
+  @override
+  String get region_language_updated => 'Language updated';
+
+  @override
+  String get region_country => 'App country';
+
+  @override
+  String get region_country_sub => 'Games, venues and currency';
+
+  @override
+  String get region_country_updated => 'Country updated';
+
+  @override
+  String get region_lang_en => 'English · English';
+
+  @override
+  String get region_lang_ar => 'Arabic · العربية';
+
+  @override
+  String get region_country_Egypt => 'Egypt';
+
+  @override
+  String get region_country_UAE => 'United Arab Emirates';
+
+  @override
+  String get region_country_KSA => 'Saudi Arabia';
+
+  @override
+  String get region_country_Morocco => 'Morocco';
+
+  @override
+  String region_error(String error) {
+    return 'Error: $error';
+  }
 }

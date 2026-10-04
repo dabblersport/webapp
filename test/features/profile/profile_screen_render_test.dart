@@ -26,7 +26,10 @@ import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
 
-const String _shotsDir = String.fromEnvironment('PROFILE_SHOTS_DIR', defaultValue: '$kShotsRoot/profile');
+const String _shotsDir = String.fromEnvironment(
+  'PROFILE_SHOTS_DIR',
+  defaultValue: '$kShotsRoot/profile',
+);
 const Key _key = Key('shot');
 
 Future<void> _loadFonts() async {
@@ -141,9 +144,19 @@ UserProfile _profile(String persona, {String? name}) => UserProfile(
 );
 
 const List<Sport> _sports = [
-  Sport(id: 'sport-football', nameEn: 'Football', sportKey: 'football', emoji: 'x'),
+  Sport(
+    id: 'sport-football',
+    nameEn: 'Football',
+    sportKey: 'football',
+    emoji: 'x',
+  ),
   Sport(id: 'sport-padel', nameEn: 'Padel', sportKey: 'padel', emoji: 'x'),
-  Sport(id: 'sport-basketball', nameEn: 'Basketball', sportKey: 'basketball', emoji: 'x'),
+  Sport(
+    id: 'sport-basketball',
+    nameEn: 'Basketball',
+    sportKey: 'basketball',
+    emoji: 'x',
+  ),
 ];
 
 Future<void> _pump(
@@ -161,10 +174,7 @@ Future<void> _pump(
   final router = GoRouter(
     routes: [
       GoRoute(path: '/', builder: (_, __) => const ProfileScreen()),
-      GoRoute(
-        path: '/:rest(.*)',
-        builder: (_, __) => const SizedBox.shrink(),
-      ),
+      GoRoute(path: '/:rest(.*)', builder: (_, __) => const SizedBox.shrink()),
     ],
   );
   addTearDown(router.dispose);
@@ -286,7 +296,9 @@ void main() {
         locale: locale,
         profileState: ProfileState(profile: _profile('player')),
       );
-      final l10n = AppLocalizations.of(tester.element(find.byType(ProfileScreen)));
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(ProfileScreen)),
+      );
       await tester.ensureVisible(find.text(l10n.profile_tab_activity));
       await tester.tap(find.text(l10n.profile_tab_activity));
       await _settle(tester);
@@ -311,8 +323,12 @@ void main() {
           ],
         ),
       );
-      final l10n = AppLocalizations.of(tester.element(find.byType(ProfileScreen)));
-      await tester.tap(find.bySemanticsLabel(l10n.profile_btn_manage_profiles_tooltip));
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(ProfileScreen)),
+      );
+      await tester.tap(
+        find.bySemanticsLabel(l10n.profile_btn_manage_profiles_tooltip),
+      );
       await _settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerSheet), findsOneWidget);

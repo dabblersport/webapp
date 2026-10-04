@@ -3592,6 +3592,1104 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You unlocked a new achievement'**
   String get notif_kind_achievement_earned;
+
+  /// No description provided for @acct_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get acct_title;
+
+  /// No description provided for @acct_group_signin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in'**
+  String get acct_group_signin;
+
+  /// No description provided for @acct_row_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get acct_row_email;
+
+  /// No description provided for @acct_row_password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get acct_row_password;
+
+  /// No description provided for @acct_group_security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get acct_group_security;
+
+  /// No description provided for @acct_group_security_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your account with additional security measures'**
+  String get acct_group_security_note;
+
+  /// No description provided for @acct_2fa_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Two-factor authentication'**
+  String get acct_2fa_title;
+
+  /// No description provided for @acct_2fa_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an extra layer of security'**
+  String get acct_2fa_sub;
+
+  /// No description provided for @acct_alerts_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Login alerts'**
+  String get acct_alerts_title;
+
+  /// No description provided for @acct_alerts_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified of new sign-ins'**
+  String get acct_alerts_sub;
+
+  /// No description provided for @acct_group_danger.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get acct_group_danger;
+
+  /// No description provided for @acct_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get acct_delete_title;
+
+  /// No description provided for @acct_delete_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete your account and all data'**
+  String get acct_delete_sub;
+
+  /// No description provided for @acct_delete_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get acct_delete_confirm;
+
+  /// No description provided for @acct_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get acct_cancel;
+
+  /// No description provided for @acct_delete_type_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Please type \"DELETE\" to confirm'**
+  String get acct_delete_type_error;
+
+  /// No description provided for @acct_delete_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account: {error}'**
+  String acct_delete_failed(String error);
+
+  /// No description provided for @acct_email_sheet_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get acct_email_sheet_title;
+
+  /// No description provided for @acct_email_field.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get acct_email_field;
+
+  /// No description provided for @acct_email_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'We send a confirmation link to the new address before it replaces the old one.'**
+  String get acct_email_helper;
+
+  /// No description provided for @acct_email_update.
+  ///
+  /// In en, this message translates to:
+  /// **'Update email'**
+  String get acct_email_update;
+
+  /// No description provided for @acct_email_updating.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating…'**
+  String get acct_email_updating;
+
+  /// No description provided for @acct_email_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Email cannot be empty'**
+  String get acct_email_empty;
+
+  /// No description provided for @acct_email_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get acct_email_invalid;
+
+  /// No description provided for @acct_email_same.
+  ///
+  /// In en, this message translates to:
+  /// **'New email is the same as current email'**
+  String get acct_email_same;
+
+  /// No description provided for @acct_email_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation sent'**
+  String get acct_email_sent;
+
+  /// No description provided for @acct_email_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update email: {error}'**
+  String acct_email_failed(String error);
+
+  /// No description provided for @acct_password_change_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get acct_password_change_title;
+
+  /// No description provided for @acct_password_set_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Set password'**
+  String get acct_password_set_title;
+
+  /// No description provided for @acct_password_set_note.
+  ///
+  /// In en, this message translates to:
+  /// **'You signed in with Google or Apple. Set a password to also sign in with your email.'**
+  String get acct_password_set_note;
+
+  /// No description provided for @acct_password_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get acct_password_current;
+
+  /// No description provided for @acct_password_new.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get acct_password_new;
+
+  /// No description provided for @acct_password_new_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'At least 8 characters'**
+  String get acct_password_new_helper;
+
+  /// No description provided for @acct_password_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get acct_password_confirm;
+
+  /// No description provided for @acct_password_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get acct_password_change;
+
+  /// No description provided for @acct_password_set.
+  ///
+  /// In en, this message translates to:
+  /// **'Set password'**
+  String get acct_password_set;
+
+  /// No description provided for @acct_password_changing.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing…'**
+  String get acct_password_changing;
+
+  /// No description provided for @acct_password_setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting…'**
+  String get acct_password_setting;
+
+  /// No description provided for @acct_password_changed.
+  ///
+  /// In en, this message translates to:
+  /// **'Password changed'**
+  String get acct_password_changed;
+
+  /// No description provided for @acct_password_was_set.
+  ///
+  /// In en, this message translates to:
+  /// **'Password set. You can now sign in with your email and password.'**
+  String get acct_password_was_set;
+
+  /// No description provided for @acct_password_err_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your current password'**
+  String get acct_password_err_current;
+
+  /// No description provided for @acct_password_err_new.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a new password'**
+  String get acct_password_err_new;
+
+  /// No description provided for @acct_password_err_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters long'**
+  String get acct_password_err_short;
+
+  /// No description provided for @acct_password_err_mismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
+  String get acct_password_err_mismatch;
+
+  /// No description provided for @acct_password_err_same.
+  ///
+  /// In en, this message translates to:
+  /// **'New password must be different from current password'**
+  String get acct_password_err_same;
+
+  /// No description provided for @acct_password_err_incorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password is incorrect'**
+  String get acct_password_err_incorrect;
+
+  /// No description provided for @acct_password_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to change password: {error}'**
+  String acct_password_failed(String error);
+
+  /// No description provided for @acct_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load account data: {error}'**
+  String acct_load_failed(String error);
+
+  /// No description provided for @acct_export_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Export my data'**
+  String get acct_export_title;
+
+  /// No description provided for @acct_export_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a copy of your Dabbler data (PDPL data portability)'**
+  String get acct_export_sub;
+
+  /// No description provided for @acct_export_started.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'re preparing your data export. You\'ll be notified by email when it\'s ready.'**
+  String get acct_export_started;
+
+  /// No description provided for @acct_export_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not request data export: {error}'**
+  String acct_export_failed(String error);
+
+  /// No description provided for @priv_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get priv_title;
+
+  /// No description provided for @priv_preset_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy preset'**
+  String get priv_preset_header;
+
+  /// No description provided for @priv_preset_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a preset to quickly configure your privacy settings'**
+  String get priv_preset_note;
+
+  /// No description provided for @priv_preset_public.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get priv_preset_public;
+
+  /// No description provided for @priv_preset_public_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile is visible to everyone for easy discovery'**
+  String get priv_preset_public_desc;
+
+  /// No description provided for @priv_preset_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends only'**
+  String get priv_preset_friends;
+
+  /// No description provided for @priv_preset_friends_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your friends can see your full profile'**
+  String get priv_preset_friends_desc;
+
+  /// No description provided for @priv_preset_private.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get priv_preset_private;
+
+  /// No description provided for @priv_preset_private_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal information is shared publicly'**
+  String get priv_preset_private_desc;
+
+  /// No description provided for @priv_preset_applied.
+  ///
+  /// In en, this message translates to:
+  /// **'{preset} preset applied'**
+  String priv_preset_applied(String preset);
+
+  /// No description provided for @priv_preset_custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get priv_preset_custom;
+
+  /// No description provided for @priv_preset_custom_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Your own mix of the settings below'**
+  String get priv_preset_custom_desc;
+
+  /// No description provided for @priv_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can always customize individual settings below. Changes save automatically.'**
+  String get priv_hint;
+
+  /// No description provided for @priv_group_see.
+  ///
+  /// In en, this message translates to:
+  /// **'What others see'**
+  String get priv_group_see;
+
+  /// No description provided for @priv_profile_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile & identity'**
+  String get priv_profile_title;
+
+  /// No description provided for @priv_profile_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo, name, bio, age, contact details'**
+  String get priv_profile_sub;
+
+  /// No description provided for @priv_activity_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity & stats'**
+  String get priv_activity_title;
+
+  /// No description provided for @priv_activity_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Status, check-ins, history, achievements'**
+  String get priv_activity_sub;
+
+  /// No description provided for @priv_discover_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Discoverability'**
+  String get priv_discover_title;
+
+  /// No description provided for @priv_discover_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Search indexing and nearby players'**
+  String get priv_discover_sub;
+
+  /// No description provided for @priv_group_comm.
+  ///
+  /// In en, this message translates to:
+  /// **'Communication'**
+  String get priv_group_comm;
+
+  /// No description provided for @priv_contact_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can contact you'**
+  String get priv_contact_title;
+
+  /// No description provided for @priv_contact_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages, game invites, friend requests'**
+  String get priv_contact_sub;
+
+  /// No description provided for @priv_group_data.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get priv_group_data;
+
+  /// No description provided for @priv_data_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Data & analytics'**
+  String get priv_data_title;
+
+  /// No description provided for @priv_data_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Location, recommendations, analytics'**
+  String get priv_data_sub;
+
+  /// No description provided for @priv_notif_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get priv_notif_title;
+
+  /// No description provided for @priv_notif_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Push and email'**
+  String get priv_notif_sub;
+
+  /// No description provided for @priv_group_safety.
+  ///
+  /// In en, this message translates to:
+  /// **'Safety'**
+  String get priv_group_safety;
+
+  /// No description provided for @priv_blocked_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked accounts'**
+  String get priv_blocked_title;
+
+  /// No description provided for @priv_blocked_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'People you\'ve blocked from contacting you'**
+  String get priv_blocked_sub;
+
+  /// No description provided for @priv_count_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All {total} on'**
+  String priv_count_all(int total);
+
+  /// No description provided for @priv_count_none.
+  ///
+  /// In en, this message translates to:
+  /// **'All off'**
+  String get priv_count_none;
+
+  /// No description provided for @priv_count_some.
+  ///
+  /// In en, this message translates to:
+  /// **'{on} of {total} on'**
+  String priv_count_some(int on, int total);
+
+  /// No description provided for @priv_contact_nav.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get priv_contact_nav;
+
+  /// No description provided for @priv_dm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages'**
+  String get priv_dm_title;
+
+  /// No description provided for @priv_dm_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send you messages'**
+  String get priv_dm_sub;
+
+  /// No description provided for @priv_invites_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game invites'**
+  String get priv_invites_title;
+
+  /// No description provided for @priv_invites_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can invite you to games'**
+  String get priv_invites_sub;
+
+  /// No description provided for @priv_requests_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get priv_requests_title;
+
+  /// No description provided for @priv_requests_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can send you friend requests'**
+  String get priv_requests_sub;
+
+  /// No description provided for @priv_audience_anyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone'**
+  String get priv_audience_anyone;
+
+  /// No description provided for @priv_audience_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends only'**
+  String get priv_audience_friends;
+
+  /// No description provided for @priv_audience_organizers.
+  ///
+  /// In en, this message translates to:
+  /// **'Organizers only'**
+  String get priv_audience_organizers;
+
+  /// No description provided for @priv_audience_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No one'**
+  String get priv_audience_none;
+
+  /// No description provided for @priv_unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get priv_unblock;
+
+  /// No description provided for @priv_unblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked'**
+  String get priv_unblocked;
+
+  /// No description provided for @priv_blocked_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t blocked anyone.'**
+  String get priv_blocked_empty;
+
+  /// No description provided for @priv_blocked_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to unblock: {error}'**
+  String priv_blocked_failed(String error);
+
+  /// No description provided for @priv_blocked_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load blocked accounts: {error}'**
+  String priv_blocked_load_failed(String error);
+
+  /// No description provided for @priv_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save settings. Please try again.'**
+  String get priv_save_failed;
+
+  /// No description provided for @priv_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get priv_saved;
+
+  /// No description provided for @priv_t_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile photo'**
+  String get priv_t_photo;
+
+  /// No description provided for @priv_t_photo_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your profile picture'**
+  String get priv_t_photo_sub;
+
+  /// No description provided for @priv_t_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Real name'**
+  String get priv_t_name;
+
+  /// No description provided for @priv_t_name_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your full name'**
+  String get priv_t_name_sub;
+
+  /// No description provided for @priv_t_bio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get priv_t_bio;
+
+  /// No description provided for @priv_t_bio_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your bio on your profile'**
+  String get priv_t_bio_sub;
+
+  /// No description provided for @priv_t_age.
+  ///
+  /// In en, this message translates to:
+  /// **'Age'**
+  String get priv_t_age;
+
+  /// No description provided for @priv_t_age_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your age on your profile'**
+  String get priv_t_age_sub;
+
+  /// No description provided for @priv_t_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get priv_t_email;
+
+  /// No description provided for @priv_t_email_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your email to others'**
+  String get priv_t_email_sub;
+
+  /// No description provided for @priv_t_phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get priv_t_phone;
+
+  /// No description provided for @priv_t_phone_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your phone number'**
+  String get priv_t_phone_sub;
+
+  /// No description provided for @priv_t_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get priv_t_location;
+
+  /// No description provided for @priv_t_location_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your general location'**
+  String get priv_t_location_sub;
+
+  /// No description provided for @priv_t_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends list'**
+  String get priv_t_friends;
+
+  /// No description provided for @priv_t_friends_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your friends publicly'**
+  String get priv_t_friends_sub;
+
+  /// No description provided for @priv_t_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Online status'**
+  String get priv_t_online;
+
+  /// No description provided for @priv_t_online_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show when you\'re online'**
+  String get priv_t_online_sub;
+
+  /// No description provided for @priv_t_activity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity status'**
+  String get priv_t_activity;
+
+  /// No description provided for @priv_t_activity_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your recent activity'**
+  String get priv_t_activity_sub;
+
+  /// No description provided for @priv_t_checkins.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-ins'**
+  String get priv_t_checkins;
+
+  /// No description provided for @priv_t_checkins_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your venue check-ins'**
+  String get priv_t_checkins_sub;
+
+  /// No description provided for @priv_t_posts.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts to public'**
+  String get priv_t_posts;
+
+  /// No description provided for @priv_t_posts_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Make your posts visible to everyone'**
+  String get priv_t_posts_sub;
+
+  /// No description provided for @priv_t_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports profiles'**
+  String get priv_t_sports;
+
+  /// No description provided for @priv_t_sports_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your sports and skill levels'**
+  String get priv_t_sports_sub;
+
+  /// No description provided for @priv_t_history.
+  ///
+  /// In en, this message translates to:
+  /// **'Game history'**
+  String get priv_t_history;
+
+  /// No description provided for @priv_t_history_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your past games'**
+  String get priv_t_history_sub;
+
+  /// No description provided for @priv_t_stats.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get priv_t_stats;
+
+  /// No description provided for @priv_t_stats_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your performance stats'**
+  String get priv_t_stats_sub;
+
+  /// No description provided for @priv_t_achievements.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievements'**
+  String get priv_t_achievements;
+
+  /// No description provided for @priv_t_achievements_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your earned achievements'**
+  String get priv_t_achievements_sub;
+
+  /// No description provided for @priv_t_indexing.
+  ///
+  /// In en, this message translates to:
+  /// **'Search engine indexing'**
+  String get priv_t_indexing;
+
+  /// No description provided for @priv_t_indexing_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow external services to find your profile'**
+  String get priv_t_indexing_sub;
+
+  /// No description provided for @priv_t_nearby.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide from nearby'**
+  String get priv_t_nearby;
+
+  /// No description provided for @priv_t_nearby_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t appear in nearby player searches'**
+  String get priv_t_nearby_sub;
+
+  /// No description provided for @priv_t_tracking.
+  ///
+  /// In en, this message translates to:
+  /// **'Location tracking'**
+  String get priv_t_tracking;
+
+  /// No description provided for @priv_t_tracking_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow location-based features'**
+  String get priv_t_tracking_sub;
+
+  /// No description provided for @priv_t_recs.
+  ///
+  /// In en, this message translates to:
+  /// **'Game recommendations'**
+  String get priv_t_recs;
+
+  /// No description provided for @priv_t_recs_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Personalized game suggestions'**
+  String get priv_t_recs_sub;
+
+  /// No description provided for @priv_t_analytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous analytics'**
+  String get priv_t_analytics;
+
+  /// No description provided for @priv_t_analytics_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve the app'**
+  String get priv_t_analytics_sub;
+
+  /// No description provided for @priv_t_push.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get priv_t_push;
+
+  /// No description provided for @priv_t_push_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive push notifications on your device'**
+  String get priv_t_push_sub;
+
+  /// No description provided for @priv_t_mail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email notifications'**
+  String get priv_t_mail;
+
+  /// No description provided for @priv_t_mail_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications via email'**
+  String get priv_t_mail_sub;
+
+  /// No description provided for @appr_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appr_title;
+
+  /// No description provided for @appr_group_theme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get appr_group_theme;
+
+  /// No description provided for @appr_light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get appr_light;
+
+  /// No description provided for @appr_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get appr_dark;
+
+  /// No description provided for @appr_system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get appr_system;
+
+  /// No description provided for @appr_theme_applied.
+  ///
+  /// In en, this message translates to:
+  /// **'{theme} theme'**
+  String appr_theme_applied(String theme);
+
+  /// No description provided for @appr_group_color.
+  ///
+  /// In en, this message translates to:
+  /// **'Color theme'**
+  String get appr_group_color;
+
+  /// No description provided for @appr_group_color_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply one token set across the entire app'**
+  String get appr_group_color_note;
+
+  /// No description provided for @appr_color_use.
+  ///
+  /// In en, this message translates to:
+  /// **'Use {name} tokens app-wide'**
+  String appr_color_use(String name);
+
+  /// No description provided for @appr_group_auto.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic theme'**
+  String get appr_group_auto;
+
+  /// No description provided for @appr_group_auto_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically switch between light and dark themes'**
+  String get appr_group_auto_note;
+
+  /// No description provided for @appr_auto_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Time-based theme'**
+  String get appr_auto_title;
+
+  /// No description provided for @appr_auto_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch themes based on time of day'**
+  String get appr_auto_sub;
+
+  /// No description provided for @appr_group_schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Day & night schedule'**
+  String get appr_group_schedule;
+
+  /// No description provided for @appr_group_schedule_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Set when light and dark themes should activate'**
+  String get appr_group_schedule_note;
+
+  /// No description provided for @appr_day_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Day starts at'**
+  String get appr_day_title;
+
+  /// No description provided for @appr_day_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Light theme will activate'**
+  String get appr_day_sub;
+
+  /// No description provided for @appr_night_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Night starts at'**
+  String get appr_night_title;
+
+  /// No description provided for @appr_night_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme will activate'**
+  String get appr_night_sub;
+
+  /// No description provided for @region_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Language & region'**
+  String get region_title;
+
+  /// No description provided for @region_language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get region_language;
+
+  /// No description provided for @region_language_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'App and content language'**
+  String get region_language_sub;
+
+  /// No description provided for @region_language_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Language updated'**
+  String get region_language_updated;
+
+  /// No description provided for @region_country.
+  ///
+  /// In en, this message translates to:
+  /// **'App country'**
+  String get region_country;
+
+  /// No description provided for @region_country_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Games, venues and currency'**
+  String get region_country_sub;
+
+  /// No description provided for @region_country_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Country updated'**
+  String get region_country_updated;
+
+  /// No description provided for @region_lang_en.
+  ///
+  /// In en, this message translates to:
+  /// **'English · English'**
+  String get region_lang_en;
+
+  /// No description provided for @region_lang_ar.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic · العربية'**
+  String get region_lang_ar;
+
+  /// No description provided for @region_country_Egypt.
+  ///
+  /// In en, this message translates to:
+  /// **'Egypt'**
+  String get region_country_Egypt;
+
+  /// No description provided for @region_country_UAE.
+  ///
+  /// In en, this message translates to:
+  /// **'United Arab Emirates'**
+  String get region_country_UAE;
+
+  /// No description provided for @region_country_KSA.
+  ///
+  /// In en, this message translates to:
+  /// **'Saudi Arabia'**
+  String get region_country_KSA;
+
+  /// No description provided for @region_country_Morocco.
+  ///
+  /// In en, this message translates to:
+  /// **'Morocco'**
+  String get region_country_Morocco;
+
+  /// No description provided for @region_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {error}'**
+  String region_error(String error);
 }
 
 class _AppLocalizationsDelegate
