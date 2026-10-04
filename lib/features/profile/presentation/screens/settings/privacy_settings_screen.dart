@@ -842,3 +842,13 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     );
   }
 }
+
+/// How many of the profile-visibility toggles are on, as `n/total`.
+String privacyProfileShownCount(PrivacySettings s) => _count(_profileToggles, s);
+
+/// How many of the activity-visibility toggles are on, as `n/total`.
+String privacyActivityShownCount(PrivacySettings s) =>
+    _count(_activityToggles, s);
+
+String _count(List<_Toggle> toggles, PrivacySettings s) =>
+    '${toggles.where((t) => t.$6(s)).length}/${toggles.length}';
