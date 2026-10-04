@@ -644,6 +644,48 @@ bool _skipped(String rel) =>
     rel.endsWith('.gen.dart') ||
     rel.startsWith('lib/l10n/');
 
+// ---------------------------------------------------------------------------
+// Fidelity gate (KAN-425/426): app presentation code composes Dabbler*
+// components and layout only. Any visual primitive in a widget file under
+// lib/features/**/presentation means the app is painting something by hand
+// that belongs in the design system.
+//
+// Ratchet: files that predate the fidelity rebuild are listed in
+// test/fidelity_pending.txt. That list may only shrink: a file that is not
+// listed must have zero hits, and a listed file with zero hits is stale and
+// must be removed. FIDELITY_ALLOW below is for the rare permanent exception
+// and must stay tiny, each with a reason.
+final RegExp _visualPrimitive = RegExp(
+  r'(?<![A-Za-z0-9_.])(Container|DecoratedBox|ColoredBox|CustomPaint|ClipRRect|'
+  r'ClipOval|ClipPath|ClipRect|PhysicalModel|PhysicalShape|BackdropFilter|'
+  r'ShaderMask|Stack|BoxDecoration|ShapeDecoration|RoundedRectangleBorder|'
+  r'CircleBorder|StadiumBorder|LinearGradient|RadialGradient|BoxShadow|'
+  r'CustomPainter|Ink)\s*(<[^()]*>)?\s*\(',
+);
+final RegExp _widgetClass = RegExp(
+  r'class\s+\w+\s+extends\s+(StatelessWidget|StatefulWidget|ConsumerWidget|'
+  r'ConsumerStatefulWidget|HookWidget|HookConsumerWidget|State<[^>]*>|'
+  r'ConsumerState<[^>]*>|CustomPainter)',
+);
+
+/// Reasoned, permanent exceptions to the fidelity gate (path -> reason).
+const Map<String, String> fidelityAllow = {};
+
+List<GateHit> scanStructure(String path, String src) {
+  final code = stripCode(src);
+  if (!_widgetClass.hasMatch(code)) return const [];
+  final lines = src.split('\n');
+  final hits = <GateHit>[];
+  for (final m in _visualPrimitive.allMatches(code)) {
+    final l = '\n'.allMatches(code.substring(0, m.start)).length;
+    hits.add(GateHit(path, l + 1, 'App-local visual primitive', lines[l]));
+  }
+  return hits;
+}
+
+bool _isPresentation(String rel) =>
+    rel.startsWith('lib/features/') && rel.contains('/presentation/');
+
 void main() {
   group('design system gate (self-test)', () {
     List<String> kindsOf(String snippet) =>
@@ -769,4 +811,84 @@ void main() {
       reason: 'Stale allow-list entries (they suppress nothing; remove them).',
     );
   });
+
+  group('fidelity gate (self-test)', () {
+    List<GateHit> h(String src) => scanStructure('x.dart', src);
+    test('catches hand-built visuals in a widget', () {
+      for (final w in [
+        'Container(child: c)',
+        'DecoratedBox(decoration: d)',
+        'ClipRRect(child: c)',
+        'CustomPaint(painter: p)',
+        'Stack(children: [])',
+        'ColoredBox(color: c)',
+      ]) {
+        expect(
+          h('class A extends StatelessWidget { Widget build(c) => $w; }'),
+          isNotEmpty,
+          reason: w,
+        );
+      }
+    });
+    test('allows DS components and layout', () {
+      expect(
+        h(
+          'class A extends ConsumerWidget { Widget build(c, r) => '
+          'Column(children: [DabblerCard(child: Padding(padding: p, '
+          'child: Row(children: [Expanded(child: DabblerText(a))])))]); }',
+        ),
+        isEmpty,
+      );
+    });
+    test('ignores files with no widget class', () {
+      expect(h('final x = Container(child: c);'), isEmpty);
+    });
+  });
+
+  test('app presentation widgets compose design-system components only', () {
+    final pending = File('test/fidelity_pending.txt')
+        .readAsLinesSync()
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty && !l.startsWith('#'))
+        .toSet();
+    final dump = <String>{};
+    final newViolations = <GateHit>[];
+    final withHits = <String>{};
+    for (final f in Directory('lib/features').listSync(recursive: true)) {
+      if (f is! File || !f.path.endsWith('.dart')) continue;
+      final rel = f.path.replaceAll(r'\', '/');
+      if (_skipped(rel) || !_isPresentation(rel)) continue;
+      if (fidelityAllow.containsKey(rel)) continue;
+      final hits = scanStructure(rel, f.readAsStringSync());
+      if (hits.isEmpty) continue;
+      withHits.add(rel);
+      dump.add(rel);
+      if (!pending.contains(rel)) newViolations.addAll(hits);
+    }
+    if (const bool.fromEnvironment('FIDELITY_DUMP')) {
+      final sorted = dump.toList()..sort();
+      File('test/fidelity_pending.txt').writeAsStringSync(
+        '# Files that still paint by hand (pre-fidelity). This list may only '
+        'shrink: remove a file as soon as its screen is rebuilt.\n'
+        '${sorted.join('\n')}\n',
+      );
+      return;
+    }
+    expect(
+      newViolations.map((h) => h.toString()).toList(),
+      isEmpty,
+      reason:
+          'App widgets must compose Dabbler* components and layout only. '
+          'Move the visual into the design system (alpha-ds), then use it.',
+    );
+    final stale = pending.where((p) => !withHits.contains(p)).toList()..sort();
+    expect(
+      stale,
+      isEmpty,
+      reason:
+          'These files are clean now: remove them from '
+          'test/fidelity_pending.txt (the ratchet only shrinks).',
+    );
+  });
+
 }
