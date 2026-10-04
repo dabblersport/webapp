@@ -2769,6 +2769,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get acct_delete_sub => 'Permanently delete your account and all data';
 
   @override
+  String get acct_delete_body =>
+      'This permanently deletes your account and all data, including games, stats and messages. It cannot be undone.';
+
+  @override
   String get acct_delete_confirm => 'Delete permanently';
 
   @override
@@ -2832,7 +2836,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get acct_password_new => 'New password';
 
   @override
-  String get acct_password_new_helper => 'At least 8 characters';
+  String get acct_password_new_helper => 'At least 6 characters';
 
   @override
   String get acct_password_confirm => 'Confirm new password';

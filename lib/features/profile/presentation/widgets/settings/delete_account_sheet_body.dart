@@ -34,8 +34,16 @@ class DeleteAccountSheetBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerText(
-          l10n.account_delete_dialog_warning,
+          l10n.acct_delete_body,
           style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
+        ),
+        // The approved retention disclosure (KAN-160) stays: the frame's body
+        // does not mention the payment and booking records that are kept.
+        const DabblerGap.v(DabblerSpacing.space3),
+        DabblerText(
+          l10n.account_delete_dialog_warning,
+          style: DabblerType.caption1,
           tone: DabblerTextTone.secondary,
         ),
         const DabblerGap.v(DabblerSpacing.space5),

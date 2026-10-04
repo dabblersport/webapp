@@ -4985,6 +4985,12 @@ abstract class AppLocalizations {
   /// **'Permanently delete your account and all data'**
   String get acct_delete_sub;
 
+  /// No description provided for @acct_delete_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your account and all data, including games, stats and messages. It cannot be undone.'**
+  String get acct_delete_body;
+
   /// No description provided for @acct_delete_confirm.
   ///
   /// In en, this message translates to:
@@ -5102,7 +5108,7 @@ abstract class AppLocalizations {
   /// No description provided for @acct_password_new_helper.
   ///
   /// In en, this message translates to:
-  /// **'At least 8 characters'**
+  /// **'At least 6 characters'**
   String get acct_password_new_helper;
 
   /// No description provided for @acct_password_confirm.
