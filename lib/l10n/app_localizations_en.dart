@@ -5577,4 +5577,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetups_action_failed => 'That didn\'t work. Try again.';
+
+  @override
+  String get meetups_share => 'Share';
+
+  @override
+  String meetups_share_headline(String title) {
+    return 'Join me for $title on Dabbler!';
+  }
+
+  @override
+  String get meetups_more => 'More';
+
+  @override
+  String get meetups_report => 'Report meetup';
+
+  @override
+  String get meetups_report_note => 'Tell us what is wrong with this meet-up';
 }

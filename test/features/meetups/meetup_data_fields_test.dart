@@ -218,11 +218,8 @@ void main() {
       });
     }
 
-    testWidgets('no share or favourite placeholder in the header', (
-      tester,
-    ) async {
+    testWidgets('no favourite placeholder in the header', (tester) async {
       await pump(tester);
-      expect(find.bySemanticsLabel('Share'), findsNothing);
       expect(find.bySemanticsLabel('Favourite'), findsNothing);
     });
 

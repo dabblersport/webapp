@@ -5,6 +5,8 @@ import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
+import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show isFollowingProvider, myProfileIdProvider;
 import 'package:dabbler/features/meetups/presentation/rsvp_state.dart';
@@ -152,6 +154,38 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     return l.meetups_names_and_others(named.join(', '), others);
   }
 
+  Future<void> _share(MeetupCard c) {
+    final l = AppLocalizations.of(context);
+    return ref.read(meetupShareProvider)(
+      RoutePaths.meetupLink(c.id),
+      l.meetups_share_headline(c.title ?? ''),
+    );
+  }
+
+  /// The overflow menu: Report. A host does not report their own meetup.
+  void _openMore(MeetupCard c) {
+    final l = AppLocalizations.of(context);
+    showDabblerSheet<void>(
+      context: context,
+      detent: DabblerSheetDetent.content,
+      title: l.meetups_more,
+      builder: (ctx) => DabblerActionRow(
+        icon: 'danger',
+        label: l.meetups_report,
+        note: l.meetups_report_note,
+        destructive: true,
+        onTap: () {
+          Navigator.of(ctx).pop();
+          showReportDialog(
+            context,
+            targetType: ReportTargetType.meetup,
+            targetId: c.id,
+          );
+        },
+      ),
+    );
+  }
+
   Widget _backButton(VoidCallback back) => DabblerOnColorIconButton(
     onTile: true,
     icon: 'arrow-circle-left',
@@ -213,6 +247,21 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
       header: DabblerDetailHeader(
         tile: DabblerDetailHeaderTile.amber,
         leading: _backButton(back),
+        actions: <Widget>[
+          DabblerOnColorIconButton(
+            onTile: true,
+            icon: 'share',
+            semanticLabel: l.meetups_share,
+            onPressed: () => _share(c),
+          ),
+          if (!c.isHost)
+            DabblerOnColorIconButton(
+              onTile: true,
+              icon: 'more',
+              semanticLabel: l.meetups_more,
+              onPressed: () => _openMore(c),
+            ),
+        ],
         chips: <String>[
           if (c.isCancelled) l.meetups_cta_cancelled,
           ?_sportName(c),

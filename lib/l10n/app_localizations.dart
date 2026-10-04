@@ -10120,6 +10120,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That didn\'t work. Try again.'**
   String get meetups_action_failed;
+
+  /// No description provided for @meetups_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get meetups_share;
+
+  /// No description provided for @meetups_share_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Join me for {title} on Dabbler!'**
+  String meetups_share_headline(String title);
+
+  /// No description provided for @meetups_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get meetups_more;
+
+  /// No description provided for @meetups_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report meetup'**
+  String get meetups_report;
+
+  /// No description provided for @meetups_report_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what is wrong with this meet-up'**
+  String get meetups_report_note;
 }
 
 class _AppLocalizationsDelegate

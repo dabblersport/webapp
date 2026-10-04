@@ -12,7 +12,8 @@ enum ReportTargetType {
   game,
   venue,
   profile,
-  message;
+  message,
+  meetup;
 
   ModTarget toModTarget() {
     switch (this) {
@@ -30,6 +31,8 @@ enum ReportTargetType {
         return ModTarget.profile;
       case ReportTargetType.message:
         return ModTarget.message;
+      case ReportTargetType.meetup:
+        return ModTarget.meetup;
     }
   }
 
@@ -49,6 +52,8 @@ enum ReportTargetType {
         return 'profile';
       case ReportTargetType.message:
         return 'message';
+      case ReportTargetType.meetup:
+        return 'meet-up';
     }
   }
 }

@@ -11,6 +11,10 @@ class RoutePaths {
   static const String webLinkBase = 'https://app.dabbler.pro';
   static String gameLink(String gameId) => '$webLinkBase/game/$gameId';
 
+  /// The public link to a meetup; the same host serves /meetups/:id, which the
+  /// router opens (behind FeatureFlags.enableMeetups).
+  static String meetupLink(String meetupId) => '$webLinkBase/meetups/$meetupId';
+
   /// Store listings for the "get the app" banner on mobile web.
   /// Empty until the apps are published — the banner hides install buttons
   /// when these are empty.

@@ -164,6 +164,8 @@ class AppRouter {
         String? deepLinkTarget;
         if (loc.startsWith('/sports/games/')) {
           deepLinkTarget = loc;
+        } else if (loc.startsWith('/meetups/')) {
+          deepLinkTarget = loc;
         } else if (loc.startsWith('/game/')) {
           final id = loc.substring('/game/'.length);
           if (id.isNotEmpty) deepLinkTarget = '/sports/games/$id';

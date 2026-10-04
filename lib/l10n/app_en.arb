@@ -1971,5 +1971,11 @@
   "meetups_err_attendee_not_found": "That person is no longer on this meet-up.",
   "meetups_err_no_pending": "That request is no longer pending.",
   "meetups_save_failed": "Couldn't save the changes",
-  "meetups_action_failed": "That didn't work. Try again."
+  "meetups_action_failed": "That didn't work. Try again.",
+  "meetups_share": "Share",
+  "meetups_share_headline": "Join me for {title} on Dabbler!",
+  "@meetups_share_headline": {"placeholders": {"title": {"type": "String"}}},
+  "meetups_more": "More",
+  "meetups_report": "Report meetup",
+  "meetups_report_note": "Tell us what is wrong with this meet-up"
 }
