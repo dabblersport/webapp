@@ -106,6 +106,7 @@ class _LandingPageState extends State<LandingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   DabblerWordmark(
+                    size: DabblerWordmark.landingSize,
                     color: DabblerColors.of(context).brandPrimary,
                   ),
                   const DabblerGap.v(DabblerSpacing.space9),

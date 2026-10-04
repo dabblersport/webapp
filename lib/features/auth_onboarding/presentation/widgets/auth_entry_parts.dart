@@ -248,10 +248,14 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
                 ('en', 'English'),
                 ('ar', 'العربية'),
               ])
-                DabblerInputRow(
-                  flat: true,
+                DabblerInputRow.option(
                   title: name,
                   selected: current == code,
+                  // The language's own name reads in its own script
+                  // (`Auth and Onboarding.dc.html:2124`).
+                  textDirection: code == 'ar'
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
                   onTap: () =>
                       ref.read(localeProvider.notifier).setLocale(Locale(code)),
                 ),
@@ -285,8 +289,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 for (final Map<String, dynamic> c in _countries)
-                  DabblerInputRow(
-                    flat: true,
+                  DabblerInputRow.option(
                     title: _localized(c['name_en'] as String, languageCode),
                     selected: c['name_en'] == selected,
                     onTap: () => ref
@@ -315,9 +318,14 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        DabblerChip(label: countryName, onTap: _openRegion),
+        DabblerChip(
+          label: countryName,
+          compactHitArea: true,
+          onTap: _openRegion,
+        ),
         const DabblerGap.h(DabblerSpacing.space3),
         DabblerChip(
+          compactHitArea: true,
           label: languageCode == 'ar' ? 'العربية' : 'English',
           onTap: _openLanguage,
         ),

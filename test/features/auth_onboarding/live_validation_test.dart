@@ -63,12 +63,18 @@ void main() {
     tester,
   ) async {
     await _pump(tester, const EmailInputScreen());
-    expect(find.text('That does not look like an email address.'), findsNothing);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
     expect(_button(tester, 'Send me a code').onPressed, isNull);
 
     await tester.enterText(_field(0), 'abc');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsOneWidget);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsOneWidget,
+    );
     expect(_button(tester, 'Send me a code').onPressed, isNull);
 
     await tester.enterText(_field(0), '');
@@ -77,7 +83,10 @@ void main() {
 
     await tester.enterText(_field(0), 'a@b.co');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsNothing);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
     expect(find.text('Email is required'), findsNothing);
     expect(_button(tester, 'Send me a code').onPressed, isNotNull);
   });
@@ -88,24 +97,28 @@ void main() {
 
     await tester.enterText(_field(0), 'nope');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsOneWidget);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsOneWidget,
+    );
     expect(_button(tester, 'Log in').onPressed, isNull);
 
     await tester.enterText(_field(0), 'a@b.co');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsNothing);
-    expect(_button(tester, 'Log in').onPressed, isNotNull);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
+    // The frame keeps Log in off until there is a password.
+    expect(_button(tester, 'Log in').onPressed, isNull);
 
     await tester.enterText(_field(1), 'x');
     await tester.pump();
+    expect(_button(tester, 'Log in').onPressed, isNotNull);
     await tester.enterText(_field(1), '');
     await tester.pump();
     expect(find.text('Enter password'), findsOneWidget);
-
-    // Submitting with an empty password is stopped by Form.validate().
-    await tester.tap(find.widgetWithText(DabblerButton, 'Log in').first);
-    await tester.pump();
-    expect(find.text('Enter password'), findsOneWidget);
+    expect(_button(tester, 'Log in').onPressed, isNull);
     expect(_button(tester, 'Log in').loading, isFalse);
   });
 

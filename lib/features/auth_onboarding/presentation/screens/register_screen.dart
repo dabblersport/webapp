@@ -26,6 +26,7 @@ class RegisterScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DabblerTextField(
+              borderOutside: true,
               label: l10n.email_input_label,
               errorText: state.error,
               onChanged: controller.updateEmail,
@@ -34,6 +35,7 @@ class RegisterScreen extends ConsumerWidget {
             ),
             const DabblerGap.v(DabblerSpacing.space6),
             DabblerTextField(
+              borderOutside: true,
               variant: DabblerTextFieldVariant.password,
               label: l10n.set_password_password_label,
               onChanged: controller.updatePassword,

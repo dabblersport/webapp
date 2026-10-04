@@ -45,6 +45,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       subtitleStyle: DabblerType.lead,
       content: [
         DabblerTextField(
+          borderOutside: true,
           controller: _emailController,
           placeholder: l10n.forgot_password_email_hint,
           errorText: _error,

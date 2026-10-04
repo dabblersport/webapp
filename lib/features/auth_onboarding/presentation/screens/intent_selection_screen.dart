@@ -129,6 +129,12 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
           (o) => !_hiddenPersonas.contains(o.value),
         ))
           _card(l10n, opt),
+        // `Auth and Onboarding.dc.html:393`.
+        DabblerText(
+          l10n.onb_persona_footnote,
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.tertiary,
+        ),
       ],
       primaryLabel: l10n.onb_continue,
       primaryLoading: _isLoading,
@@ -141,6 +147,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   Widget _card(AppLocalizations l10n, _PersonaOption opt) {
     final (name, hook, body) = _copy(l10n, opt.value);
     return DabblerSelectableCard(
+      borderOutside: true,
       icon: opt.icon,
       caption: name,
       title: hook,

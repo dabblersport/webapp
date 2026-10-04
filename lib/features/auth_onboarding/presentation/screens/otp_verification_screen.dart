@@ -292,10 +292,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final List<Widget> body = <Widget>[
       DabblerSurface.card(
         radius: DabblerRadius.lg,
+        // The frame's card pads 12 / 15 inside a hairline drawn outside it.
+        borderOutside: true,
         padding: const EdgeInsetsDirectional.symmetric(
-          // The frame's card pads 12 / 15 outside its 1px hairline.
-          horizontal: DabblerSpacing.space5 + DabblerSizing.borderDefault,
-          vertical: DabblerSpacing.space4 + DabblerSizing.borderDefault,
+          horizontal: DabblerSpacing.space5,
+          vertical: DabblerSpacing.space4,
         ),
         child: Row(
           children: <Widget>[

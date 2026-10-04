@@ -76,9 +76,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }

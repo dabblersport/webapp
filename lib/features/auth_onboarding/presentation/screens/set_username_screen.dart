@@ -435,6 +435,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       subtitleStyle: DabblerType.copy,
       content: [
         DabblerTextField(
+          borderOutside: true,
           controller: _displayNameController,
           label: l10n.onb_display_name_label,
           placeholder: l10n.set_username_display_name_hint,
@@ -465,6 +466,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
             ],
           ),
         DabblerTextField(
+          borderOutside: true,
           controller: _usernameController,
           label: l10n.onb_username_label,
           placeholder: l10n.onb_username_placeholder,

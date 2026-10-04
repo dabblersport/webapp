@@ -197,6 +197,7 @@ class _PrimarySportSelectionScreenState
     final selected = _selectedSportId == sport.id;
     final tone = onboardingSportTone(sport);
     return DabblerSelectableCard(
+      borderOutside: true,
       layout: DabblerSelectableCardLayout.listRow,
       leading: OnboardingSportGlyph(
         sport: sport,

@@ -122,6 +122,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
     final List<Widget> body = <Widget>[
       DabblerTextField(
+        borderOutside: true,
         controller: _emailController,
         label: l10n.auth_email_label,
         placeholder: l10n.auth_email_placeholder,
@@ -145,6 +146,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           ),
           const DabblerGap.h(DabblerSpacing.space4),
           DabblerToggle(
+            compactHitArea: true,
             checked: _getUpdates,
             semanticLabel: l10n.auth_email_marketing,
             onChanged: _isLoading

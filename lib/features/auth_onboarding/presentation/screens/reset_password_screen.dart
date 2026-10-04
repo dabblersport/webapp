@@ -59,6 +59,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DabblerTextField(
+                borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
                 label: l10n.reset_password_new_label,
                 onChanged: (v) => _password = v,
@@ -76,6 +77,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const DabblerGap.v(DabblerSpacing.space4),
               DabblerTextField(
+                borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
                 label: l10n.reset_password_confirm_label,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
