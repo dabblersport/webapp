@@ -19,14 +19,11 @@ class RewardsScreen extends StatelessWidget {
             : null,
       ),
       body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(DabblerSpacing.space6),
-          child: DabblerEmptyState(
-            icon: 'medal-star',
-            title: 'Rewards',
-            text: 'Rewards Screen - Under Construction',
-            size: DabblerEmptyStateSize.page,
-          ),
+        child: DabblerEmptyState(
+          icon: 'medal-star',
+          title: 'Rewards',
+          text: 'Rewards Screen - Under Construction',
+          size: DabblerEmptyStateSize.page,
         ),
       ),
     );

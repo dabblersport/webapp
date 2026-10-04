@@ -18,15 +18,12 @@ class ErrorPage extends StatelessWidget {
     return DabblerPage(
       topBar: const DabblerNavigationTopBar.titled(title: 'Error'),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(DabblerSpacing.space6),
-          child: DabblerEmptyState.error(
-            title: message ?? 'An error occurred',
-            text: 'Please try again or contact support if the problem persists.',
-            retryLabel: 'Retry',
-            onRetry: () =>
-                context.canPop() ? context.pop() : context.go(RoutePaths.home),
-          ),
+        child: DabblerEmptyState.error(
+          title: message ?? 'An error occurred',
+          text: 'Please try again or contact support if the problem persists.',
+          retryLabel: 'Retry',
+          onRetry: () =>
+              context.canPop() ? context.pop() : context.go(RoutePaths.home),
         ),
       ),
     );

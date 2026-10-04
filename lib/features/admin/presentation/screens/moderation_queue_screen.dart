@@ -68,14 +68,11 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
             data: (reports) {
               if (reports.isEmpty) {
                 return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(DabblerSpacing.space7),
-                    child: DabblerEmptyState(
-                      icon: 'tick-circle',
-                      size: DabblerEmptyStateSize.page,
-                      title: 'All Clear',
-                      text: 'No pending reports in the moderation queue.',
-                    ),
+                  child: DabblerEmptyState(
+                    icon: 'tick-circle',
+                    size: DabblerEmptyStateSize.page,
+                    title: 'All Clear',
+                    text: 'No pending reports in the moderation queue.',
                   ),
                 );
               }
@@ -84,9 +81,11 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
                 onRefresh: () async {
                   ref.invalidate(moderationQueueProvider);
                 },
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(DabblerSpacing.space6),
+                child: ListView.separated(
+                  padding: DabblerInsets.screen,
                   itemCount: reports.length,
+                  separatorBuilder: (_, _) =>
+                      const DabblerGap.v(DabblerSpacing.space4),
                   itemBuilder: (context, index) =>
                       _buildReportCard(context, reports[index]),
                 ),
@@ -120,79 +119,70 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     final colors = DabblerColors.of(context);
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _showReportDetails(context, report),
-        child: DabblerSurface.card(
-          padding: const EdgeInsets.all(DabblerSpacing.space6),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  DabblerBadge(
-                    label: report.status.toPostgresString().toUpperCase(),
-                    status: _statusColor(colors, report.status),
-                    tone: DabblerBadgeTone.warning,
-                  ),
-                  const Spacer(),
-                  DabblerText(
-                    dateFormat.format(report.createdAt),
-                    style: DabblerType.footnote,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                ],
-              ),
-              const SizedBox(height: DabblerSpacing.space4),
-              DabblerText(
-                '${report.targetType.toPostgresString().toUpperCase()}: ${report.targetId}',
-                style: DabblerType.headline,
-              ),
-              const SizedBox(height: DabblerSpacing.space1),
-              DabblerText(
-                'Reason: ${report.reason.toPostgresString()}',
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
-              ),
-              if (report.details != null && report.details!.isNotEmpty) ...[
-                const SizedBox(height: DabblerSpacing.space1),
-                DabblerText(
-                  'Details: ${report.details}',
-                  style: DabblerType.footnote,
-                  tone: DabblerTextTone.secondary,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-              const SizedBox(height: DabblerSpacing.space4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  DabblerButton(
-                    label: 'Dismiss',
-                    icon: 'close-circle',
-                    tone: DabblerButtonTone.outlined,
-                    size: DabblerButtonSize.small,
-                    onPressed: () => _resolveReport(
-                      context,
-                      report.reportId,
-                      ReportStatus.dismissed,
-                    ),
-                  ),
-                  const SizedBox(width: DabblerSpacing.space3),
-                  DabblerButton(
-                    label: 'Take Action',
-                    icon: 'judge',
-                    size: DabblerButtonSize.small,
-                    onPressed: () => _showActionDialog(context, report),
-                  ),
-                ],
-              ),
-            ],
+    return DabblerCard(
+      onTap: () => _showReportDetails(context, report),
+      header: Row(
+        children: [
+          DabblerBadge(
+            label: report.status.toPostgresString().toUpperCase(),
+            status: _statusColor(colors, report.status),
+            tone: DabblerBadgeTone.warning,
           ),
-        ),
+          const Spacer(),
+          DabblerText(
+            dateFormat.format(report.createdAt),
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
+          ),
+        ],
+      ),
+      footer: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          DabblerButton(
+            label: 'Dismiss',
+            icon: 'close-circle',
+            tone: DabblerButtonTone.outlined,
+            size: DabblerButtonSize.small,
+            onPressed: () => _resolveReport(
+              context,
+              report.reportId,
+              ReportStatus.dismissed,
+            ),
+          ),
+          const DabblerGap.h(DabblerSpacing.space3),
+          DabblerButton(
+            label: 'Take Action',
+            icon: 'judge',
+            size: DabblerButtonSize.small,
+            onPressed: () => _showActionDialog(context, report),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          DabblerText(
+            '${report.targetType.toPostgresString().toUpperCase()}: ${report.targetId}',
+            style: DabblerType.headline,
+          ),
+          const DabblerGap.v(DabblerSpacing.space1),
+          DabblerText(
+            'Reason: ${report.reason.toPostgresString()}',
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
+          ),
+          if (report.details != null && report.details!.isNotEmpty) ...[
+            const DabblerGap.v(DabblerSpacing.space1),
+            DabblerText(
+              'Details: ${report.details}',
+              style: DabblerType.footnote,
+              tone: DabblerTextTone.secondary,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -225,35 +215,32 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
       title: 'Report Details',
       detents: const <double>[0.7, 0.95],
       builder: (context) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(DabblerSpacing.space7),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _detailRow('Target Type', report.targetType.toPostgresString()),
-              _detailRow('Target ID', report.targetId),
-              _detailRow('Reason', report.reason.toPostgresString()),
-              _detailRow('Status', report.status.toPostgresString()),
-              _detailRow('Report ID', report.reportId),
-              _detailRow(
-                'Reported At',
-                DateFormat('MMM dd, yyyy HH:mm').format(report.createdAt),
+        return ListView(
+          padding: DabblerInsets.screen,
+          children: [
+            _detailRow('Target Type', report.targetType.toPostgresString()),
+            _detailRow('Target ID', report.targetId),
+            _detailRow('Reason', report.reason.toPostgresString()),
+            _detailRow('Status', report.status.toPostgresString()),
+            _detailRow('Report ID', report.reportId),
+            _detailRow(
+              'Reported At',
+              DateFormat('MMM dd, yyyy HH:mm').format(report.createdAt),
+            ),
+            if (report.details != null && report.details!.isNotEmpty)
+              DabblerKeyValueRow(
+                label: 'Details',
+                value: report.details,
+                layout: DabblerKeyValueLayout.stacked,
               ),
-              if (report.details != null && report.details!.isNotEmpty) ...[
-                const SizedBox(height: DabblerSpacing.space6),
-                DabblerText('Details', style: DabblerType.headline),
-                const SizedBox(height: DabblerSpacing.space3),
-                DabblerText(report.details!, style: DabblerType.body),
-              ],
-            ],
-          ),
+          ],
         );
       },
     );
   }
 
   Widget _detailRow(String label, String value) =>
-      AdminInfoRow(label: label, value: value, labelWidth: DabblerSizing.labelColumnWidth);
+      DabblerKeyValueRow(label: label, value: value);
 
   void _toast(String message, DabblerToastTone tone) {
     DabblerToastProvider.of(
@@ -306,7 +293,7 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
             ),
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
             for (final action in ModAction.values)
               DabblerInputRow(
                 title: _getActionLabel(action),
