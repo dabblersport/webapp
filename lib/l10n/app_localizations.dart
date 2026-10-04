@@ -2756,6 +2756,54 @@ abstract class AppLocalizations {
   /// **'Version {version}'**
   String settings_version_label(String version);
 
+  /// No description provided for @settings_tile_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settings_tile_privacy;
+
+  /// No description provided for @settings_tile_profile_shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown on your profile'**
+  String get settings_tile_profile_shown;
+
+  /// No description provided for @settings_tile_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settings_tile_notifications;
+
+  /// No description provided for @settings_tile_appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settings_tile_appearance;
+
+  /// No description provided for @settings_tile_language_region.
+  ///
+  /// In en, this message translates to:
+  /// **'Language & region'**
+  String get settings_tile_language_region;
+
+  /// No description provided for @settings_tile_activity_shown.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity & stats shown'**
+  String get settings_tile_activity_shown;
+
+  /// No description provided for @settings_tile_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked accounts'**
+  String get settings_tile_blocked;
+
+  /// No description provided for @settings_tile_privacy_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings'**
+  String get settings_tile_privacy_label;
+
   /// No description provided for @settings_version_copyright.
   ///
   /// In en, this message translates to:

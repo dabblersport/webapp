@@ -41,6 +41,7 @@ class TopBar extends StatelessWidget {
         DabblerNavigationTopBar.titled(
           title: title,
           safeArea: false,
+          border: true,
           onBack: () => context.canPop() ? context.pop() : context.go('/home'),
           actions: [
             DabblerNavigationAction(

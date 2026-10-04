@@ -409,14 +409,6 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
               DabblerSpacing.space11,
             ),
             children: [
-              const DabblerBanner(
-                tone: DabblerBannerTone.neutral,
-                icon: DabblerIcon('shield-tick'),
-                title: 'Control your privacy',
-                message:
-                    'Manage what information others can see about you and how your data is used.',
-              ),
-              _gap,
               _buildPresetsSection(),
               if (settings != null) ...[
                 _gap,
@@ -842,3 +834,13 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     );
   }
 }
+
+/// How many of the profile-visibility toggles are on, as `n/total`.
+String privacyProfileShownCount(PrivacySettings s) => _count(_profileToggles, s);
+
+/// How many of the activity-visibility toggles are on, as `n/total`.
+String privacyActivityShownCount(PrivacySettings s) =>
+    _count(_activityToggles, s);
+
+String _count(List<_Toggle> toggles, PrivacySettings s) =>
+    '${toggles.where((t) => t.$6(s)).length}/${toggles.length}';

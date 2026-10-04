@@ -476,11 +476,19 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 
+  bool get _composing =>
+      _hasText ||
+      _attachedImageUrl != null ||
+      _attachedGifUrl != null ||
+      _attachedPlace != null ||
+      _isUploading ||
+      _replyingTo != null;
+
   Widget _buildScrollContent(Post post, String? myProfileId) {
     final commentsAsync = ref.watch(postCommentsProvider(widget.postId));
     final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
-    return CustomScrollView(
+    final scroll = CustomScrollView(
       controller: _scrollController,
       slivers: [
         SliverToBoxAdapter(
@@ -493,10 +501,36 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 )
               : _buildOpenPost(post, isAuthor, myProfileId),
         ),
-        _buildCommentsSection(commentsAsync, myProfileId, post.commentCount),
+        _buildCommentsSection(
+          commentsAsync,
+          myProfileId,
+          post.commentCount,
+          showHeader: !_composing,
+        ),
         const SliverToBoxAdapter(
           child: SizedBox(height: DabblerSpacing.space6),
         ),
+      ],
+    );
+    if (!_composing) return scroll;
+    // Composing frame: the replies count is pinned above the scrolling post.
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space6,
+            vertical: DabblerSpacing.space2,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: DabblerText(
+              '${post.commentCount} replies',
+              style: DabblerType.footnote,
+              weight: DabblerTextWeight.semibold,
+            ),
+          ),
+        ),
+        Expanded(child: scroll),
       ],
     );
   }
@@ -533,6 +567,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       name: label,
       seed: label,
       imageUrl: post.authorAvatarUrl,
+      badgeLabel: post.postType == PostType.dab ? 'Dab' : null,
       roleLabel: post.personaTypeSnapshot == null
           ? null
           : (post.personaTypeSnapshot == 'organiser' ? 'Org' : 'Player'),
@@ -602,8 +637,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   Widget _buildCommentsSection(
     AsyncValue<List<PostComment>> commentsAsync,
     String? myProfileId,
-    int replyCount,
-  ) {
+    int replyCount, {
+    bool showHeader = true,
+  }) {
     return commentsAsync.when(
       loading: () => const SliverToBoxAdapter(
         child: Padding(
@@ -669,7 +705,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           ),
           sliver: SliverMainAxisGroup(
             slivers: [
-              if (topLevel.isNotEmpty)
+              if (topLevel.isNotEmpty && showHeader)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsetsDirectional.only(
@@ -789,7 +825,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final canAttach = !hasVisual && !_isUploading;
     final replyName = (_replyingTo?.authorDisplayName ?? '').trim();
     final showAttachments = hasVisual || _attachedPlace != null || _isUploading;
-    final composing = _hasText || showAttachments || _replyingTo != null;
+    final composing = _composing;
 
     return DabblerReplyComposer(
       controller: _commentController,

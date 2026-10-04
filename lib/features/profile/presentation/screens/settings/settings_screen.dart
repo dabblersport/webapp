@@ -12,6 +12,12 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/core/services/theme_service.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart' show currentUserIdProvider;
+import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart'
+    show privacyProfileShownCount, privacyActivityShownCount;
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:dabbler/l10n/app_localizations.dart';
 
 // ─── Supported options ────────────────────────────────────────────────────────
@@ -148,6 +154,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     // Fetch user's active personas for dynamic "Add Profile" section
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = ref.read(currentUserIdProvider);
+      if (uid != null) {
+        ref.read(privacyControllerProvider.notifier).loadPrivacySettings(uid);
+      }
       ref.read(personaServiceProvider.notifier).fetchUserPersonas();
     });
   }
@@ -240,42 +250,94 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _buildTiles(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final blocked = ref.watch(blockedUsersWithProfilesProvider);
-    final blockedCount = blocked.valueOrNull?.length;
+    final privacy = ref.watch(privacyControllerProvider).settings;
+    final notif = ref.watch(notificationSettingsControllerProvider).settings;
+    final themeMode = ThemeService().themeMode;
+    final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
+    final themeLabel = switch (themeMode) {
+      ThemeMode.light => l10n.settings_item_theme_title,
+      ThemeMode.dark => l10n.settings_item_theme_title,
+      ThemeMode.system => l10n.settings_item_theme_title,
+    };
+    final notifOn = notif == null
+        ? null
+        : '${[notif.pushEnabled, notif.emailEnabled].where((e) => e).length}/2';
     return DabblerStatGrid(
       rowExtent: DabblerStatGrid.detailsRowHeight,
       children: [
         DabblerStatTile(
           size: DabblerStatTileSize.setting,
+          span: 3,
           tone: DabblerStatTileTone.brand,
           icon: const DabblerIcon('shield-tick'),
-          value: l10n.settings_item_privacy_settings_title,
-          label: '',
+          value: l10n.settings_tile_privacy,
+          label: l10n.settings_tile_privacy_label,
           fitValue: true,
           onTap: () => context.push('/settings/privacy'),
         ),
+        if (privacy != null)
+          DabblerStatTile(
+            size: DabblerStatTileSize.setting,
+            span: 3,
+            tone: DabblerStatTileTone.amber,
+            icon: const DabblerIcon('profile-circle'),
+            value: DabblerType.toWesternDigits(
+              privacyProfileShownCount(privacy),
+            ),
+            label: l10n.settings_tile_profile_shown,
+            fitValue: true,
+            onTap: () => context.push('/settings/privacy'),
+          ),
+        if (notifOn != null)
+          DabblerStatTile(
+            size: DabblerStatTileSize.setting,
+            span: 2,
+            tone: DabblerStatTileTone.accent,
+            icon: const DabblerIcon('notification'),
+            value: DabblerType.toWesternDigits(notifOn),
+            label: l10n.settings_tile_notifications,
+            fitValue: true,
+            onTap: () => context.push('/settings/notifications'),
+          ),
         DabblerStatTile(
           size: DabblerStatTileSize.setting,
-          tone: DabblerStatTileTone.accent,
-          icon: const DabblerIcon('notification'),
-          value: l10n.notif_title_notifications,
-          label: '',
-          fitValue: true,
-          onTap: () => context.push('/settings/notifications'),
-        ),
-        DabblerStatTile(
-          size: DabblerStatTileSize.setting,
+          span: 2,
           icon: const DabblerIcon('colorfilter'),
-          value: l10n.settings_item_theme_title,
-          label: l10n.settings_item_theme_subtitle,
+          value: themeLabel,
+          label: l10n.settings_tile_appearance,
           fitValue: true,
           onTap: () => context.push('/settings/theme'),
         ),
-        if (blockedCount != null)
+        DabblerStatTile(
+          size: DabblerStatTileSize.setting,
+          span: 2,
+          tone: DabblerStatTileTone.sunken,
+          icon: const DabblerIcon('global'),
+          value: country.isEmpty ? '-' : country,
+          label: l10n.settings_tile_language_region,
+          fitValue: true,
+          onTap: _showLanguagePicker,
+        ),
+        if (privacy != null)
           DabblerStatTile(
             size: DabblerStatTileSize.setting,
+            span: 3,
+            tone: DabblerStatTileTone.sunken,
+            icon: const DabblerIcon('activity'),
+            value: DabblerType.toWesternDigits(
+              privacyActivityShownCount(privacy),
+            ),
+            label: l10n.settings_tile_activity_shown,
+            fitValue: true,
+            onTap: () => context.push('/settings/privacy'),
+          ),
+        if (blocked.valueOrNull != null)
+          DabblerStatTile(
+            size: DabblerStatTileSize.setting,
+            span: 3,
             icon: const DabblerIcon('slash'),
-            value: '$blockedCount',
-            label: l10n.settings_item_privacy_settings_subtitle,
+            value: DabblerType.toWesternDigits('${blocked.valueOrNull!.length}'),
+            label: l10n.settings_tile_blocked,
             fitValue: true,
             onTap: () => context.push('/settings/privacy'),
           ),
