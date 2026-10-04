@@ -45,7 +45,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get venues_search_disabled_mvp => 'Search is disabled in the MVP';
 
   @override
-  String get tab_most_recent => 'Most Recent';
+  String get tab_most_recent => 'For you';
 
   @override
   String get tab_following => 'Following';
@@ -84,7 +84,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get news_hide_sheet_body =>
-      'News cards will no longer appear in Most Recent. You can still read all news in the News tab.';
+      'News cards will no longer appear in For you. You can still read all news in the News tab.';
 
   @override
   String get news_hide_confirm => 'Hide news';
@@ -93,13 +93,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get news_hide_cancel => 'Cancel';
 
   @override
-  String get news_hidden_snack => 'News hidden from Most Recent';
+  String get news_hidden_snack => 'News hidden from For you';
 
   @override
-  String get news_resubscribed_snack => 'News will now appear in Most Recent';
+  String get news_resubscribed_snack => 'News will now appear in For you';
 
   @override
-  String get news_resubscribe_banner => 'News is hidden from Most Recent.';
+  String get news_resubscribe_banner => 'News is hidden from For you.';
 
   @override
   String get news_resubscribe_action => 'Show again';
@@ -1968,4 +1968,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
+
+  @override
+  String get home_upcoming_title => 'Upcoming';
+
+  @override
+  String home_upcoming_title_count(int count) {
+    return 'Upcoming · $count';
+  }
+
+  @override
+  String home_upcoming_strip_count(int count) {
+    return '$count upcoming';
+  }
+
+  @override
+  String home_upcoming_more(int count) {
+    return '$count more this week';
+  }
+
+  @override
+  String get home_upcoming_show_less => 'Show less';
+
+  @override
+  String get home_upcoming_hide => 'Hide';
+
+  @override
+  String home_upcoming_see_all(int count) {
+    return 'See all $count upcoming';
+  }
+
+  @override
+  String get home_upcoming_day => 'day';
+
+  @override
+  String get home_upcoming_days => 'days';
+
+  @override
+  String get home_upcoming_hour => 'hour';
+
+  @override
+  String get home_upcoming_hours => 'hours';
+
+  @override
+  String get home_upcoming_min => 'min';
+
+  @override
+  String home_upcoming_in_days(int days) {
+    return 'in ${days}d';
+  }
+
+  @override
+  String home_upcoming_in_hours(int hours, int minutes) {
+    return 'in ${hours}h ${minutes}m';
+  }
+
+  @override
+  String home_upcoming_in_minutes(int minutes) {
+    return 'in ${minutes}m';
+  }
+
+  @override
+  String get home_post_options_title => 'Post options';
+
+  @override
+  String home_post_options_by(String name) {
+    return 'Posted by $name';
+  }
+
+  @override
+  String get home_post_report => 'Report post';
+
+  @override
+  String get home_post_report_note => 'Tell us what is wrong with this post';
+
+  @override
+  String get home_post_block => 'Block user';
+
+  @override
+  String get home_vibe_title => 'What\'s the vibe?';
+
+  @override
+  String get home_location_title => 'Change location';
+
+  @override
+  String get home_location_done => 'Done';
+
+  @override
+  String get home_location_search => 'Search area, street or city';
+
+  @override
+  String get home_location_use_current => 'Use current location';
+
+  @override
+  String get home_location_add => 'Add location';
+
+  @override
+  String home_location_no_match(String query) {
+    return 'No areas match \"$query\"';
+  }
 }

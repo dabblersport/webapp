@@ -307,35 +307,39 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   }
 
   void _showMoreMenu({required bool isAuthor, required String authorName}) {
+    final l10n = AppLocalizations.of(context);
     showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      titleWidget: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const DabblerText('Post options', style: DabblerType.title3),
-          DabblerText(
-            'Posted by $authorName',
-            style: DabblerType.caption1,
-            tone: DabblerTextTone.secondary,
-          ),
-        ],
-      ),
+      dragHandle: true,
+      pageBackground: true,
       builder: (ctx) => Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space4,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
+        padding: const EdgeInsetsDirectional.only(
+          start: DabblerSpacing.space6,
+          end: DabblerSpacing.space6,
+          bottom: DabblerSpacing.space8,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // The frame's own header: title, who posted it, then a hairline.
+            DabblerText(
+              l10n.home_post_options_title,
+              style: DabblerType.title3,
+            ),
+            DabblerText(
+              l10n.home_post_options_by(authorName),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
+            const SizedBox(height: DabblerSpacing.space3),
+            const DabblerDivider(),
+            const SizedBox(height: DabblerSpacing.space4),
             DabblerActionRow(
               icon: 'danger',
-              label: 'Report post',
-              note: 'Tell us what is wrong with this post',
+              label: l10n.home_post_report,
+              note: l10n.home_post_report_note,
               destructive: true,
               onTap: () {
                 Navigator.of(ctx).pop();
@@ -351,7 +355,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               const SizedBox(height: DabblerSpacing.space3),
               DabblerActionRow(
                 icon: 'user-remove',
-                label: 'Block user',
+                label: l10n.home_post_block,
                 destructive: true,
                 onTap: () {
                   Navigator.of(ctx).pop();

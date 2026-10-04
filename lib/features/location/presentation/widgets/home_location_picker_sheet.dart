@@ -15,6 +15,7 @@ import 'package:dabbler/features/location/presentation/screens/saved_locations_s
 import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Home-screen location picker (design H06, City picker).
 ///
@@ -35,7 +36,8 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context) {
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.85],
+      detents: const <double>[0.66],
+      pageBackground: true,
       builder: (_) => const _PickerHost(),
     );
   }
@@ -81,98 +83,101 @@ class _HomeLocationPickerSheetState
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
     final savedAsync = ref.watch(profileLocationNotifierProvider);
     final currentState = ref.watch(activeLocationProvider).valueOrNull;
 
-    // The DabblerSheet body already scrolls, so this shrink-wraps rather than
-    // hosting its own ListView ([scrollController] is kept for the callers).
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Title row (the emoji the old title carried is dropped, CEO rule).
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space6,
-            end: DabblerSpacing.space6,
-            bottom: DabblerSpacing.space4,
-          ),
-          child: DabblerText('Your Location', style: DabblerType.headline),
-        ),
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space6,
-            end: DabblerSpacing.space6,
-            bottom: DabblerSpacing.space9,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    // The frame's order: header with Done, search, saved places as chips,
+    // "Use current location", then the areas grouped by district. The
+    // DabblerSheet body already scrolls, so this shrink-wraps.
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space9,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
-              // ── GPS ────────────────────────────────────────────────────
-              const _SectionLabel(label: 'Current Location'),
-              _GpsTile(isLoading: _gpsLoading, onTap: () => _useGps()),
-
-              // ── Saved locations ────────────────────────────────────────
-              const _SectionLabel(label: 'Saved Locations'),
-              savedAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: DabblerSpacing.space3,
-                  ),
-                  child: DabblerSkeleton.text(lines: 2),
-                ),
-                error: (_, __) => const SizedBox.shrink(),
-                data: (locations) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ...locations.map(
-                      (loc) => _SavedTile(
-                        location: loc,
-                        isSelected:
-                            currentState is ActiveLocationReady &&
-                            currentState.location.savedLocationId == loc.id,
-                        onTap: () => _useSaved(loc),
-                      ),
-                    ),
-                    PickerRow(
-                      leading: DabblerIcon(
-                        'location-add',
-                        size: DabblerSizing.iconSm,
-                        color: colors.textPrimary,
-                      ),
-                      title: 'Add location',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SavedLocationsScreen(),
-                        ),
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: DabblerText(
+                  l10n.home_location_title,
+                  style: DabblerType.headline,
                 ),
               ),
-
-              // ── Browse by area ─────────────────────────────────────────
-              const _SectionLabel(label: 'Browse by Area'),
-              DabblerSearchField(
-                controller: _searchController,
-                placeholder: 'Search areas…',
-                onChanged: (v) => setState(() => _query = v.trim()),
-                onCleared: () => setState(() => _query = ''),
-              ),
-              const SizedBox(height: DabblerSpacing.space2),
-              _AreaBrowser(
-                query: _query,
-                currentState: currentState,
-                onSelected: (area) => _useManual(area),
+              DabblerButton(
+                label: l10n.home_location_done,
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: DabblerSpacing.space3),
+          DabblerSearchField(
+            controller: _searchController,
+            placeholder: l10n.home_location_search,
+            onChanged: (v) => setState(() => _query = v.trim()),
+            onCleared: () => setState(() => _query = ''),
+          ),
+          const SizedBox(height: DabblerSpacing.space3),
+          savedAsync.when(
+            loading: () => const DabblerSkeleton.text(lines: 1),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (locations) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final loc in locations)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        end: DabblerSpacing.space2,
+                      ),
+                      child: DabblerChip(
+                        label: loc.effectiveLabel,
+                        selected:
+                            currentState is ActiveLocationReady &&
+                            currentState.location.savedLocationId == loc.id,
+                        leadingIcon: DabblerIcon(_savedIcon(loc)),
+                        onTap: () => _useSaved(loc),
+                      ),
+                    ),
+                  DabblerChip(
+                    label: l10n.home_location_add,
+                    leadingIcon: const DabblerIcon('location-add'),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SavedLocationsScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: DabblerSpacing.space3),
+          _GpsTile(isLoading: _gpsLoading, onTap: () => _useGps()),
+          _AreaBrowser(
+            query: _query,
+            currentState: currentState,
+            onSelected: (area) => _useManual(area),
+          ),
+        ],
+      ),
     );
   }
+
+  static String _savedIcon(ProfileLocation location) =>
+      switch (location.label) {
+        ProfileLocationLabel.home => 'home-2',
+        ProfileLocationLabel.work => 'briefcase',
+        ProfileLocationLabel.school => 'teacher',
+        ProfileLocationLabel.current => 'gps',
+        ProfileLocationLabel.custom => 'location',
+      };
 
   void _toast(String message) {
     DabblerToastProvider.of(context).show(DabblerToastSpec(message: message));
@@ -236,27 +241,6 @@ class _HomeLocationPickerSheetState
 // HELPERS
 // =============================================================================
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        top: DabblerSpacing.space5,
-        bottom: DabblerSpacing.space2,
-      ),
-      child: DabblerText(
-        label,
-        style: DabblerType.caption1,
-        tone: DabblerTextTone.secondary,
-      ),
-    );
-  }
-}
-
 class _GpsTile extends StatelessWidget {
   const _GpsTile({required this.isLoading, required this.onTap});
 
@@ -270,51 +254,15 @@ class _GpsTile extends StatelessWidget {
       brand: true,
       leading: DabblerIcon(
         'gps',
-        size: DabblerSizing.iconSm,
+        size: DabblerSizing.iconMd,
+        weight: DabblerIconWeight.bold,
         color: colors.brandPrimary,
       ),
-      title: 'Use my current location',
-      subtitle: isLoading ? 'Detecting…' : null,
+      title: AppLocalizations.of(context).home_location_use_current,
       trailing: isLoading
           ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
           : null,
       onTap: isLoading ? null : onTap,
-    );
-  }
-}
-
-class _SavedTile extends StatelessWidget {
-  const _SavedTile({
-    required this.location,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final ProfileLocation location;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  String _icon() => switch (location.label) {
-    ProfileLocationLabel.home => 'home-2',
-    ProfileLocationLabel.work => 'briefcase',
-    ProfileLocationLabel.school => 'teacher',
-    ProfileLocationLabel.current => 'gps',
-    ProfileLocationLabel.custom => 'location',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return PickerRow(
-      selected: isSelected,
-      leading: DabblerIcon(
-        _icon(),
-        size: DabblerSizing.iconSm,
-        color: isSelected ? colors.brandPrimary : colors.textPrimary,
-      ),
-      title: location.effectiveLabel,
-      trailing: DabblerRadio(selected: isSelected),
-      onTap: onTap,
     );
   }
 }
@@ -336,6 +284,7 @@ class _AreaBrowser extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final colors = DabblerColors.of(context);
     final areaRepo = ref.watch(areaRepositoryV2Provider);
 
     return FutureBuilder<Map<String, List<Area>>>(
@@ -374,7 +323,7 @@ class _AreaBrowser extends ConsumerWidget {
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
               icon: 'search-normal',
-              text: 'No areas match "$query"',
+              text: AppLocalizations.of(context).home_location_no_match(query),
             ),
           );
         }
@@ -416,13 +365,24 @@ class _AreaBrowser extends ConsumerWidget {
                         area.id;
                 return PickerRow(
                   selected: isSelected,
-                  leading: DabblerRadio(selected: isSelected),
+                  leading: DabblerIcon(
+                    'location',
+                    size: DabblerSizing.iconMd,
+                    weight: isSelected
+                        ? DabblerIconWeight.bold
+                        : DabblerIconWeight.linear,
+                    color: isSelected
+                        ? colors.brandPrimary
+                        : colors.textSecondary,
+                  ),
                   title: area.name,
-                  trailing: distM != null
-                      ? DabblerText(
-                          _fmt(distM),
-                          style: DabblerType.footnote,
-                          tone: DabblerTextTone.secondary,
+                  subtitle: distM != null ? _fmt(distM) : area.city,
+                  trailing: isSelected
+                      ? DabblerIcon(
+                          'tick-circle',
+                          size: DabblerSizing.iconMd,
+                          weight: DabblerIconWeight.bold,
+                          color: colors.brandPrimary,
                         )
                       : null,
                   onTap: () => onSelected(area),

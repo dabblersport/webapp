@@ -25,27 +25,32 @@ import 'home_test_harness.dart';
 const String _shotsDir = String.fromEnvironment('HOME_SHOTS_DIR');
 
 Future<void> _loadFonts() async {
-  final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
+  final String dsFonts =
+      '${Directory.current.parent.path}/dabbler-design-system/fonts';
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
     for (final String f in files) {
       final File file = File('$dsFonts/$f');
       if (!file.existsSync()) return;
-      loader.addFont(
-        file.readAsBytes().then((b) => ByteData.sublistView(b)),
-      );
+      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
     }
     await loader.load();
   }
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
+    'Glory-Light.ttf',
+    'Glory-Regular.ttf',
+    'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf',
+    'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
+    'meral-sans-light.ttf',
+    'meral-sans-regular.ttf',
+    'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf',
+    'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -58,8 +63,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader('packages/iconsax_flutter/FlutterIconsax')
-      ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -70,31 +76,39 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
 }
 
-Post _post(String id, String name, String body, String sport, int likes,
-        {int comments = 0, Duration ago = const Duration(hours: 2)}) =>
-    Post(
-      id: id,
-      authorProfileId: 'prof-$id',
-      authorUserId: 'user-$id',
-      authorDisplayName: name,
-      kind: PostKind.original,
-      visibility: PostVisibility.public,
-      postType: PostType.dab,
-      personaTypeSnapshot: 'player',
-      body: body,
-      sport: sport,
-      tags: const <String>['dabblersport'],
-      likeCount: likes,
-      commentCount: comments,
-      createdAt: DateTime.now().subtract(ago),
-      updatedAt: DateTime.now(),
-    );
+Post _post(
+  String id,
+  String name,
+  String body,
+  String sport,
+  int likes, {
+  int comments = 0,
+  Duration ago = const Duration(hours: 2),
+}) => Post(
+  id: id,
+  authorProfileId: 'prof-$id',
+  authorUserId: 'user-$id',
+  authorDisplayName: name,
+  kind: PostKind.original,
+  visibility: PostVisibility.public,
+  postType: PostType.dab,
+  personaTypeSnapshot: 'player',
+  body: body,
+  sport: sport,
+  tags: const <String>['dabblersport'],
+  likeCount: likes,
+  commentCount: comments,
+  createdAt: DateTime.now().subtract(ago),
+  updatedAt: DateTime.now(),
+);
 
 final FeedData _feed = FeedData(
   items: <FeedItem>[
@@ -326,7 +340,10 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Report post'), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).home_post_report),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'home-more-sheet-$dir');
     }, variant: desktop);
 
