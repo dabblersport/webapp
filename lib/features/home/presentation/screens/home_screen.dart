@@ -1086,6 +1086,7 @@ class _NewsFilterChips extends ConsumerWidget {
                 () => notifier.setFilterRegion(selected ? null : region),
                 leading: const DabblerIcon(
                   'location',
+                  size: DabblerHomeFrame.subChipGlyph,
                   weight: DabblerIconWeight.bold,
                 ),
               );
