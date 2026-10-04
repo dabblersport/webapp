@@ -11,10 +11,10 @@ class ThemeSettingsScreen extends StatefulWidget {
   State<ThemeSettingsScreen> createState() => _ThemeSettingsScreenState();
 }
 
-const _kModes = <(String, String, ThemeMode)>[
-  ('Light', 'Always use light theme', ThemeMode.light),
-  ('Dark', 'Always use dark theme', ThemeMode.dark),
-  ('System', 'Follow device settings', ThemeMode.system),
+const _kModes = <(String, String, ThemeMode, String)>[
+  ('Light', 'Always use light theme', ThemeMode.light, 'sun-1'),
+  ('Dark', 'Always use dark theme', ThemeMode.dark, 'moon'),
+  ('System', 'Follow device settings', ThemeMode.system, 'mobile'),
 ];
 
 class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
@@ -25,32 +25,29 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Theme & Appearance',
+        border: true,
         onBack: () => Navigator.of(context).pop(),
       ),
       body: AnimatedBuilder(
         animation: _themeService,
         builder: (context, child) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              DabblerSpacing.space5,
               DabblerSpacing.space6,
-              DabblerSpacing.space4,
-              DabblerSpacing.space6,
-              DabblerSpacing.space11,
+              DabblerSpacing.space5,
+              DabblerSpacing.space10,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildHero(),
-                const SizedBox(height: DabblerSpacing.space6),
-                _buildCurrentThemeStatus(),
-                const SizedBox(height: DabblerSpacing.space6),
                 _buildThemeModeSection(),
-                const SizedBox(height: DabblerSpacing.space6),
+                const DabblerGap.v(DabblerSpacing.space6),
                 _buildThemeCategorySection(),
-                const SizedBox(height: DabblerSpacing.space6),
+                const DabblerGap.v(DabblerSpacing.space6),
                 _buildAutoThemeSection(),
                 if (_themeService.autoThemeEnabled) ...[
-                  const SizedBox(height: DabblerSpacing.space6),
+                  const DabblerGap.v(DabblerSpacing.space6),
                   _buildTimeScheduleSection(),
                 ],
               ],
@@ -61,70 +58,31 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     );
   }
 
-  bool get _isDark => _themeService.currentBrightness == Brightness.dark;
-
-  Widget _buildHero() {
-    final colors = DabblerColors.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surfaceCard,
-        borderRadius: DabblerRadius.xlAll,
-        border: Border.all(color: colors.borderDefault),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DabblerIcon(
-              _isDark ? 'moon' : 'sun-1',
-              size: DabblerSizing.tileLg,
-              color: colors.brandPrimary,
-            ),
-            const SizedBox(height: DabblerSpacing.space5),
-            DabblerText('Customize your theme', style: DabblerType.title2),
-            const SizedBox(height: DabblerSpacing.space3),
-            DabblerText(
-              'Choose how the app should look and when themes should automatically switch.',
-              style: DabblerType.subheadline,
-              tone: DabblerTextTone.secondary,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCurrentThemeStatus() {
-    final colors = DabblerColors.of(context);
-    return DabblerInputRow(
-      leading: DabblerIcon(
-        _isDark ? 'moon' : 'sun-1',
-        size: DabblerSizing.iconMd,
-        color: colors.brandPrimary,
-      ),
-      title: 'Current Theme',
-      subtitle: _themeService.getThemeDescription(),
-    );
-  }
-
   Widget _buildThemeModeSection() {
     final current = _kModes.firstWhere(
       (m) => m.$3 == _themeService.themeMode,
       orElse: () => _kModes.last,
     );
-    return DabblerSection(
-      title: 'Theme Mode',
-      subtitle: 'Choose how the app should appear',
+    return DabblerRowGroup(
+      header: 'Theme Mode',
+      note: _themeService.autoThemeEnabled
+          ? 'Choose how the app should appear'
+          : current.$2,
       children: [
         DabblerTabs(
           variant: DabblerTabsVariant.segmented,
           label: 'Theme Mode',
+          fullWidth: true,
           // No mode is highlighted while the time-based theme is on.
           allowNoSelection: true,
           value: _themeService.autoThemeEnabled ? null : current.$3.name,
           items: [
-            for (final m in _kModes) DabblerTabItem(id: m.$3.name, label: m.$1),
+            for (final m in _kModes)
+              DabblerTabItem(
+                id: m.$3.name,
+                label: m.$1,
+                icon: DabblerIcon(m.$4),
+              ),
           ],
           onChanged: (id) {
             final mode = _kModes.firstWhere((m) => m.$3.name == id).$3;
@@ -132,20 +90,14 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
             _themeService.setThemeMode(mode);
           },
         ),
-        if (!_themeService.autoThemeEnabled)
-          DabblerText(
-            current.$2,
-            style: DabblerType.footnote,
-            tone: DabblerTextTone.secondary,
-          ),
       ],
     );
   }
 
   Widget _buildThemeCategorySection() {
-    return DabblerSection(
-      title: 'Color Theme',
-      subtitle: 'Apply one token set across the entire app',
+    return DabblerRowGroup(
+      header: 'Color Theme',
+      note: 'Apply one token set across the entire app',
       children: ThemeCategories.supported
           .map(_buildThemeCategoryOption)
           .toList(growable: false),
@@ -159,6 +111,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     final name = ThemeService.getThemeCategoryDisplayName(normalized);
 
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       onTap: () => _themeService.setThemeCategory(normalized),
       leading: _buildThemePreviewSwatches(_previewFor(normalized)),
       title: name,
@@ -177,25 +131,10 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   /// The swatches preview another category's palette, so their colours come
   /// from that category's design-system theme rather than the active tokens.
   Widget _buildThemePreviewSwatches(DabblerColors preview) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _dot(preview.brandPrimary),
-        const SizedBox(width: DabblerSpacing.space2),
-        _dot(preview.accent),
-        const SizedBox(width: DabblerSpacing.space2),
-        _dot(preview.surfaceGrey),
-      ],
+    return DabblerColorDots(
+      colors: [preview.brandPrimary, preview.accent, preview.surfaceGrey],
     );
   }
-
-  Widget _dot(Color color) => SizedBox(
-    width: DabblerSizing.swatch,
-    height: DabblerSizing.swatch,
-    child: DecoratedBox(
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    ),
-  );
 
   DabblerColors _previewFor(String category) => DabblerColors.resolve(
     theme: ThemeCategories.dabblerThemeFor(category),
@@ -204,11 +143,13 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
 
   Widget _buildAutoThemeSection() {
     final colors = DabblerColors.of(context);
-    return DabblerSection(
-      title: 'Automatic Theme',
-      subtitle: 'Automatically switch between light and dark themes',
+    return DabblerRowGroup(
+      header: 'Automatic Theme',
+      note: 'Automatically switch between light and dark themes',
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
           leading: DabblerIcon(
             'clock',
             size: DabblerSizing.iconMd,
@@ -229,9 +170,9 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   }
 
   Widget _buildTimeScheduleSection() {
-    return DabblerSection(
-      title: 'Day & Night Schedule',
-      subtitle: 'Set when light and dark themes should activate',
+    return DabblerRowGroup(
+      header: 'Day & Night Schedule',
+      note: 'Set when light and dark themes should activate',
       children: [
         _buildTimeOption(
           'Day starts at',
@@ -257,6 +198,8 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
   ) {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       onTap: () => _selectTime(title, time, onTimeChanged),
       leading: DabblerIcon(
         'sun-fog',

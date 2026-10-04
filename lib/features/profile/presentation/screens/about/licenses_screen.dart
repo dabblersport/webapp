@@ -103,6 +103,7 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Open Source Licenses',
         onBack: () => context.pop(),
         actions: [

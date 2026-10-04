@@ -68,6 +68,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   Widget build(BuildContext context) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Report a Bug',
         onBack: () => context.pop(),
       ),

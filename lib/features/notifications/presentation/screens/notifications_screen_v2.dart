@@ -17,7 +17,6 @@ import '../widgets/notif_section_header.dart';
 import '../widgets/notif_top_bar.dart';
 import '../widgets/notif_empty_state.dart';
 import '../widgets/notif_row.dart';
-import '../widgets/notif_unread_counter_row.dart';
 import '../widgets/activity_summary_card.dart';
 import '../widgets/activity_search_row.dart';
 import '../widgets/activity_row.dart';
@@ -112,10 +111,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
               forceMode: ViewMode.notifications,
             ),
           ),
-          SizedBox(
-            width: DabblerSizing.borderDefault,
-            child: ColoredBox(color: DabblerColors.of(context).bgTertiary),
-          ),
+          const DabblerDivider.vertical(),
           Expanded(
             child: _buildScrollBody(
               userId,
@@ -190,11 +186,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
               },
             ),
           ),
-          if (isNotif)
-            SliverToBoxAdapter(
-              child: UnreadCounterRow(state: notificationState),
-            )
-          else ...[
+          if (!isNotif) ...[
             SliverToBoxAdapter(
               child: ActivitySummaryCard(state: activityState),
             ),

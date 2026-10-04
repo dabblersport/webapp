@@ -71,21 +71,11 @@ class NotifChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = data.count;
-    final label = (count != null && count > 0)
-        ? '${data.label} ${DabblerType.toWesternDigits('$count')}'
-        : data.label;
     return DabblerChip(
-      label: label,
+      label: data.label,
+      count: (count != null && count > 0) ? '$count' : null,
       selected: active,
       onTap: onTap,
-      leadingIcon: DabblerIcon(
-        data.icon,
-        size: DabblerSizing.iconSm,
-        color: DabblerChip.iconColorFor(
-          DabblerColors.of(context),
-          selected: active,
-        ),
-      ),
     );
   }
 }
