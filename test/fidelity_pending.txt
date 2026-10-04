@@ -4,7 +4,6 @@ lib/features/auth_onboarding/presentation/screens/interests_selection_screen.dar
 lib/features/auth_onboarding/presentation/screens/landing_screen.dart
 lib/features/explore/presentation/widgets/listing_parts.dart
 lib/features/games/presentation/screens/join_game/game_detail_screen.dart
-lib/features/home/presentation/screens/home_screen.dart
 lib/features/notifications/presentation/screens/notifications_screen_v2.dart
 lib/features/notifications/presentation/widgets/notif_row.dart
 lib/features/notifications/presentation/widgets/notif_unread_counter_row.dart

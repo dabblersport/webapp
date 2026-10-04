@@ -2,10 +2,13 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
+import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
+import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
+import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -163,6 +166,37 @@ final List<ActiveEvent> _events = <ActiveEvent>[
   ),
 ];
 
+final List<Game> _upcoming = <Game>[
+  for (final (int i, String t, String v, int h) in <(int, String, String, int)>[
+    (1, 'Tuesday 5-a-side', 'Dubai Sports City', 2),
+    (2, 'Padel doubles', 'Meydan Padel', 50),
+    (3, 'Friday net practice', 'Al Maryah Island', 100),
+  ])
+    Game(
+      id: 'u$i',
+      title: t,
+      description: '',
+      sport: 'Football',
+      venueName: v,
+      scheduledDate: DateTime.now().add(Duration(hours: h)),
+      startTime:
+          '${DateTime.now().add(Duration(hours: h)).hour.toString().padLeft(2, '0')}:${DateTime.now().add(Duration(hours: h)).minute.toString().padLeft(2, '0')}',
+      endTime: '23:59',
+      minPlayers: 2,
+      maxPlayers: 10,
+      currentPlayers: 4,
+      organizerId: 'o',
+      skillLevel: 'mixed',
+      pricePerPlayer: 0,
+      status: GameStatus.upcoming,
+      isPublic: true,
+      allowsWaitlist: false,
+      checkInEnabled: false,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ),
+];
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -206,10 +240,116 @@ void main() {
 
     testWidgets('renders Home (For You, posts + news) — $dir', (tester) async {
       const Key key = Key('shot');
-      await pumpHome(tester, feedState: _feed, locale: locale, boundaryKey: key);
+      await pumpHome(
+        tester,
+        feedState: _feed,
+        locale: locale,
+        boundaryKey: key,
+        upcoming: _upcoming,
+      );
       await tester.pump(const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
       await _shoot(tester, key, 'home-$dir-for-you-posts');
+    }, variant: desktop);
+
+    testWidgets('renders Home in the shell — $dir', (tester) async {
+      const Key key = Key('shot');
+      await pumpHome(
+        tester,
+        feedState: _feed,
+        locale: locale,
+        boundaryKey: key,
+        upcoming: _upcoming,
+        inShell: true,
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(tester.takeException(), isNull);
+      await _shoot(tester, key, 'home-shell-$dir');
+    }, variant: desktop);
+
+    for (final (String tab, String id) in <(String, String)>[
+      ('Following', 'following'),
+      ('Nearby', 'nearby'),
+      ('News', 'news'),
+      ('Active', 'active'),
+    ]) {
+      testWidgets('renders Home in the shell, $id tab — $dir', (tester) async {
+        const Key key = Key('shot');
+        final List<Post> posts = <Post>[
+          for (final FeedItem i in _feed.items)
+            if (i is FeedPostItem) i.post,
+        ];
+        await pumpHome(
+          tester,
+          feedState: _feed,
+          locale: locale,
+          boundaryKey: key,
+          upcoming: _upcoming,
+          inShell: true,
+          activeState: ActiveFeedData(events: _events, hasMore: false),
+          followingState: TabFeedData(posts: posts, hasMore: false),
+          nearbyState: TabFeedData(posts: posts, hasMore: false),
+          newsState: NewsTabState(
+            items: _feed.items.whereType<FeedNewsItem>().toList(),
+            loaded: true,
+            hasMore: false,
+          ),
+        );
+        final AppLocalizations l = lookupAppLocalizations(locale);
+        final String label = switch (id) {
+          'following' => l.tab_following,
+          'nearby' => l.tab_nearby,
+          'news' => l.tab_news,
+          _ => l.tab_active,
+        };
+        await tester.tap(find.text(label).first);
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(tester.takeException(), isNull, reason: tab);
+        await _shoot(tester, key, 'home-shell-$id-$dir');
+      }, variant: desktop);
+    }
+
+    testWidgets('renders the post options sheet — $dir', (tester) async {
+      const Key key = Key('shot');
+      await pumpHome(
+        tester,
+        feedState: _feed,
+        locale: locale,
+        boundaryKey: key,
+        upcoming: _upcoming,
+        inShell: true,
+      );
+      await tester.tap(find.bySemanticsLabel('More options').first);
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
+      expect(find.text('Report post'), findsOneWidget);
+      await _shoot(tester, key, 'home-more-sheet-$dir');
+    }, variant: desktop);
+
+    testWidgets('renders the create menu over Home — $dir', (tester) async {
+      const Key key = Key('shot');
+      await pumpHome(
+        tester,
+        feedState: _feed,
+        locale: locale,
+        boundaryKey: key,
+        upcoming: _upcoming,
+        inShell: true,
+      );
+      await tester.tap(find.bySemanticsLabel('Create'));
+      for (var i = 0; i < 12; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(lookupAppLocalizations(locale).nav_create_post),
+        findsOneWidget,
+      );
+      await _shoot(tester, key, 'home-create-menu-$dir');
     }, variant: desktop);
 
     testWidgets('renders Home (For You, error) — $dir', (tester) async {

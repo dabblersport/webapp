@@ -367,11 +367,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           active: _activeId,
           onSelect: _onSelect,
           menuOpen: _createMenuOpen,
+          actionIcon: _createMenuOpen ? 'close-circle' : 'add',
           onAction: (open) => setState(() => _createMenuOpen = open),
           createItems: <DabblerNavigationCreateItem>[
             DabblerNavigationCreateItem(
               id: _createPost,
-              icon: 'edit-2',
+              icon: 'edit',
               label: l.nav_create_post,
             ),
             DabblerNavigationCreateItem(
