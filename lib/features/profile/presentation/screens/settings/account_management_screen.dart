@@ -265,7 +265,6 @@ class _AccountManagementScreenState
       context: context,
       title: _l10n.acct_email_sheet_title,
       detent: DabblerSheetDetent.content,
-      showCloseButton: false,
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) {
           _sheetSetState = setSheetState;
@@ -365,7 +364,6 @@ class _AccountManagementScreenState
           ? _l10n.acct_password_change_title
           : _l10n.acct_password_set_title,
       detent: DabblerSheetDetent.content,
-      showCloseButton: false,
       builder: (_) => StatefulBuilder(
         builder: (context, setSheetState) {
           _sheetSetState = setSheetState;

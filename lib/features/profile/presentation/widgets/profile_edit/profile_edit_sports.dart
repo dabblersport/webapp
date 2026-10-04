@@ -91,13 +91,9 @@ class _ProfileEditCategorySportsSheetState
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     final selectedCount = widget.sports.where(widget.isSelected).length;
-    return ListView(
-      shrinkWrap: true,
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space6,
-        end: DabblerSpacing.space6,
-        bottom: DabblerSpacing.space8,
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerText(
           '$selectedCount of ${widget.sports.length} selected',

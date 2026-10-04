@@ -79,7 +79,7 @@ Future<void> _showLegal(
   return showDabblerSheet<void>(
     context: context,
     title: title,
-    detents: const <double>[0.5],
+    detent: DabblerSheetDetent.content,
     showCloseButton: false,
     builder: (BuildContext ctx) {
       // The frame's legal sheet is plain paragraphs, 15/22 soft ink, 15 apart

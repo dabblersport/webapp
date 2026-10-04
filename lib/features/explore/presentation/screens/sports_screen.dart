@@ -359,130 +359,119 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               )
             : null;
 
-        return SingleChildScrollView(
-          padding: EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
-            top: DabblerSpacing.space2,
-            bottom:
-                DabblerSpacing.space4 +
-                MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Sport-Specific Filters
-              if (sportFilters != null) ...[
-                sportFilters,
-                const DabblerGap.v(DabblerSpacing.space5),
-              ],
-              // Area
-              DabblerSelect<String>(
-                label: 'Area',
-                placeholder: 'Select Area',
-                value: _selectedArea,
-                options: _areaOptions(),
-                onChanged: (value) =>
-                    setModalState(() => _selectedArea = value),
-              ),
+        // The sheet owns the inset and scrolls; the trailing gap keeps the
+        // last row clear of the keyboard.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sport-Specific Filters
+            if (sportFilters != null) ...[
+              sportFilters,
               const DabblerGap.v(DabblerSpacing.space5),
-              // Price Range
-              label('Price Range (AED)'),
-              DabblerSlider.range(
-                values: _selectedPriceRange,
-                min: 0,
-                max: 500,
-                step: 50,
-                onChanged: (values) =>
-                    setModalState(() => _selectedPriceRange = values),
-              ),
-              caption(
-                'AED ${_selectedPriceRange.low.round()} - AED ${_selectedPriceRange.high.round()}',
-              ),
-              const DabblerGap.v(DabblerSpacing.space5),
-              // Rating
-              label('Minimum Rating'),
-              DabblerSlider(
-                value: _selectedRating,
-                min: 0,
-                max: 5,
-                step: 1,
-                onChanged: (value) =>
-                    setModalState(() => _selectedRating = value),
-              ),
-              caption(
-                _selectedRating == 0
-                    ? 'Any rating'
-                    : '${_selectedRating.toStringAsFixed(1)}+ stars',
-              ),
-              const DabblerGap.v(DabblerSpacing.space5),
-              // Amenities
-              label('Amenities'),
-              const DabblerGap.v(DabblerSpacing.space2),
-              Wrap(
-                spacing: DabblerSpacing.space2,
-                runSpacing: DabblerSpacing.space2,
-                children: [
-                  for (final amenity in const [
-                    'Parking',
-                    'Showers',
-                    'Indoor',
-                    'Outdoor',
-                    'Cafeteria',
-                  ])
-                    DabblerChip(
-                      label: amenity,
-                      selected: _selectedAmenities.contains(amenity),
-                      onTap: () {
-                        setModalState(() {
-                          if (!_selectedAmenities.remove(amenity)) {
-                            _selectedAmenities.add(amenity);
-                          }
-                        });
-                      },
-                    ),
-                ],
-              ),
-              const DabblerGap.v(DabblerSpacing.space8),
-              Row(
-                children: [
-                  Expanded(
-                    child: DabblerButton(
-                      label: 'Clear All',
-                      tone: DabblerButtonTone.text,
-                      fullWidth: true,
-                      onPressed: () {
-                        setModalState(() {
-                          _selectedArea = null;
-                          _selectedPriceRange = const DabblerSliderRange(
-                            0,
-                            500,
-                          );
-                          _selectedRating = 0;
-                          _selectedAmenities.clear();
-                          _sportSpecificFilters.clear();
-                        });
-                      },
-                    ),
-                  ),
-                  const DabblerGap.h(DabblerSpacing.space3),
-                  Expanded(
-                    child: DabblerButton(
-                      label: 'Apply Filters',
-                      fullWidth: true,
-                      onPressed: () {
-                        setState(() {
-                          // Apply filters
-                        });
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const DabblerGap.v(DabblerSpacing.space4),
             ],
-          ),
+            // Area
+            DabblerSelect<String>(
+              label: 'Area',
+              placeholder: 'Select Area',
+              value: _selectedArea,
+              options: _areaOptions(),
+              onChanged: (value) => setModalState(() => _selectedArea = value),
+            ),
+            const DabblerGap.v(DabblerSpacing.space5),
+            // Price Range
+            label('Price Range (AED)'),
+            DabblerSlider.range(
+              values: _selectedPriceRange,
+              min: 0,
+              max: 500,
+              step: 50,
+              onChanged: (values) =>
+                  setModalState(() => _selectedPriceRange = values),
+            ),
+            caption(
+              'AED ${_selectedPriceRange.low.round()} - AED ${_selectedPriceRange.high.round()}',
+            ),
+            const DabblerGap.v(DabblerSpacing.space5),
+            // Rating
+            label('Minimum Rating'),
+            DabblerSlider(
+              value: _selectedRating,
+              min: 0,
+              max: 5,
+              step: 1,
+              onChanged: (value) =>
+                  setModalState(() => _selectedRating = value),
+            ),
+            caption(
+              _selectedRating == 0
+                  ? 'Any rating'
+                  : '${_selectedRating.toStringAsFixed(1)}+ stars',
+            ),
+            const DabblerGap.v(DabblerSpacing.space5),
+            // Amenities
+            label('Amenities'),
+            const DabblerGap.v(DabblerSpacing.space2),
+            Wrap(
+              spacing: DabblerSpacing.space2,
+              runSpacing: DabblerSpacing.space2,
+              children: [
+                for (final amenity in const [
+                  'Parking',
+                  'Showers',
+                  'Indoor',
+                  'Outdoor',
+                  'Cafeteria',
+                ])
+                  DabblerChip(
+                    label: amenity,
+                    selected: _selectedAmenities.contains(amenity),
+                    onTap: () {
+                      setModalState(() {
+                        if (!_selectedAmenities.remove(amenity)) {
+                          _selectedAmenities.add(amenity);
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+            const DabblerGap.v(DabblerSpacing.space8),
+            Row(
+              children: [
+                Expanded(
+                  child: DabblerButton(
+                    label: 'Clear All',
+                    tone: DabblerButtonTone.text,
+                    fullWidth: true,
+                    onPressed: () {
+                      setModalState(() {
+                        _selectedArea = null;
+                        _selectedPriceRange = const DabblerSliderRange(0, 500);
+                        _selectedRating = 0;
+                        _selectedAmenities.clear();
+                        _sportSpecificFilters.clear();
+                      });
+                    },
+                  ),
+                ),
+                const DabblerGap.h(DabblerSpacing.space3),
+                Expanded(
+                  child: DabblerButton(
+                    label: 'Apply Filters',
+                    fullWidth: true,
+                    onPressed: () {
+                      setState(() {
+                        // Apply filters
+                      });
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const DabblerGap.v(DabblerSpacing.space4),
+            SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
+          ],
         );
       },
     );

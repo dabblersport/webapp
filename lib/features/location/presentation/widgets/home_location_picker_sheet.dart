@@ -49,12 +49,15 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
   /// because the sheet route draws the same header.
   final bool showHeader;
 
-  /// Opens the picker in a [DabblerSheet] at 0.66 of the viewport.
+  /// Opens the picker in a [DabblerSheet], content-sized and capped at the
+  /// frame's 66% (`Home Feed.dc.html` `sheetP66`: `max-height: 66%`,
+  /// `height: auto`, page background, Cancel/Done pill, no close button).
   static Future<void> show(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.66],
+      detent: DabblerSheetDetent.content,
+      contentMaxFraction: 0.66,
       pageBackground: true,
       showCloseButton: false,
       headerDivider: true,
@@ -118,103 +121,102 @@ class _HomeLocationPickerSheetState
     final currentState = ref.watch(activeLocationProvider).valueOrNull;
 
     // The DabblerSheet body already scrolls, so this shrink-wraps.
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space9),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.showHeader && widget.frameHeader) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: DabblerText(
-                    l10n.home_location_title,
-                    style: DabblerType.headline,
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.showHeader && widget.frameHeader) ...[
+          Row(
+            children: [
+              Expanded(
+                child: DabblerText(
+                  l10n.home_location_title,
+                  style: DabblerType.headline,
                 ),
-                DabblerButton(
-                  label: l10n.home_location_done,
-                  tone: DabblerButtonTone.neutral,
-                  size: DabblerButtonSize.small,
-                  onPressed: () => Navigator.of(context).pop(),
+              ),
+              DabblerButton(
+                label: l10n.home_location_done,
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          // 12 of header padding and 12 of gap before the search field.
+          const SizedBox(height: DabblerSpacing.space8),
+        ] else if (widget.showHeader) ...[
+          Row(
+            children: [
+              Expanded(
+                child: DabblerText(
+                  l10n.home_location_title,
+                  style: DabblerType.title3,
                 ),
-              ],
-            ),
-            // 12 of header padding and 12 of gap before the search field.
-            const SizedBox(height: DabblerSpacing.space8),
-          ] else if (widget.showHeader) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: DabblerText(
-                    l10n.home_location_title,
-                    style: DabblerType.title3,
-                  ),
-                ),
-                DabblerButton(
-                  label: l10n.home_location_cancel,
-                  tone: DabblerButtonTone.neutral,
-                  size: DabblerButtonSize.small,
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: DabblerSpacing.space4),
-            const DabblerDivider(),
-            const SizedBox(height: DabblerSpacing.space4),
-          ] else
-            const SizedBox(height: DabblerSpacing.space4),
-          DabblerSearchField(
-            controller: _searchController,
-            metrics: widget.frameHeader
-                ? DabblerFeedMetrics.drawn
-                : DabblerFeedMetrics.touch,
-            placeholder: widget.frameHeader
-                ? l10n.home_location_search
-                : l10n.home_location_search_venues,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            onCleared: () => setState(() => _query = ''),
+              ),
+              DabblerButton(
+                label: l10n.home_location_cancel,
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
-          SizedBox(
-            height: widget.frameHeader
-                ? DabblerSpacing.space4
-                : DabblerSpacing.space3,
+          const SizedBox(height: DabblerSpacing.space4),
+          const DabblerDivider(),
+          const SizedBox(height: DabblerSpacing.space4),
+        ] else
+          const SizedBox(height: DabblerSpacing.space4),
+        DabblerSearchField(
+          controller: _searchController,
+          metrics: widget.frameHeader
+              ? DabblerFeedMetrics.drawn
+              : DabblerFeedMetrics.touch,
+          placeholder: widget.frameHeader
+              ? l10n.home_location_search
+              : l10n.home_location_search_venues,
+          onChanged: (v) => setState(() => _query = v.trim()),
+          onCleared: () => setState(() => _query = ''),
+        ),
+        SizedBox(
+          height: widget.frameHeader
+              ? DabblerSpacing.space4
+              : DabblerSpacing.space3,
+        ),
+        DabblerListRow(
+          flat: true,
+          brand: true,
+          metrics: widget.frameHeader
+              ? DabblerFeedMetrics.drawn
+              : DabblerFeedMetrics.touch,
+          leading: DabblerIcon(
+            'gps',
+            size: widget.frameHeader
+                ? DabblerHomeFrame.listRowGlyph
+                : DabblerSizing.iconRow,
+            weight: DabblerIconWeight.bold,
+            color: DabblerColors.of(context).brandPrimary,
           ),
-          DabblerListRow(
-            flat: true,
-            brand: true,
-            metrics: widget.frameHeader
-                ? DabblerFeedMetrics.drawn
-                : DabblerFeedMetrics.touch,
-            leading: DabblerIcon(
-              'gps',
-              size: widget.frameHeader
-                  ? DabblerHomeFrame.listRowGlyph
-                  : DabblerSizing.iconRow,
-              weight: DabblerIconWeight.bold,
-              color: DabblerColors.of(context).brandPrimary,
-            ),
-            title: l10n.home_location_use_current,
-            trailing: _gpsLoading
-                ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
-                : null,
-            onTap: _gpsLoading ? null : _useGps,
+          title: l10n.home_location_use_current,
+          trailing: _gpsLoading
+              ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
+              : null,
+          onTap: _gpsLoading ? null : _useGps,
+        ),
+        HomeLocationPlaces(
+          frame: widget.frameHeader,
+          areas: _areas,
+          saved: saved ?? const <ProfileLocation>[],
+          query: _query,
+          currentState: currentState,
+          onSaved: _useSaved,
+          onArea: _useManual,
+          onAdd: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
           ),
-          HomeLocationPlaces(
-            frame: widget.frameHeader,
-            areas: _areas,
-            saved: saved ?? const <ProfileLocation>[],
-            query: _query,
-            currentState: currentState,
-            onSaved: _useSaved,
-            onArea: _useManual,
-            onAdd: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
-            ),
-          ),
-        ],
-      ),
+        ),
+        // The end-of-list room the root padding gave, as a trailing gap.
+        const SizedBox(height: DabblerSpacing.space9),
+      ],
     );
   }
 

@@ -108,67 +108,60 @@ class _ProfileEditAddAvailabilitySheetState
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space6,
-        end: DabblerSpacing.space6,
-        bottom: DabblerSpacing.space8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const DabblerText(
-            'Day',
-            style: DabblerType.subheadline,
-            weight: DabblerTextWeight.semibold,
-          ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          Wrap(
-            spacing: DabblerSpacing.space3,
-            runSpacing: DabblerSpacing.space3,
-            children: [
-              for (var day = 1; day <= 7; day++)
-                DabblerChip(
-                  label: ProfileEditSports.dayName(day).substring(0, 3),
-                  selected: _selectedDay == day,
-                  onTap: () => setState(() => _selectedDay = day),
-                ),
-            ],
-          ),
-          const DabblerGap.v(DabblerSpacing.space7),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: DabblerSelect<int>(
-                  label: 'Start Time',
-                  value: _startHour,
-                  options: _hours,
-                  searchable: true,
-                  onChanged: (h) => setState(() => _startHour = h),
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const DabblerText(
+          'Day',
+          style: DabblerType.subheadline,
+          weight: DabblerTextWeight.semibold,
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+        Wrap(
+          spacing: DabblerSpacing.space3,
+          runSpacing: DabblerSpacing.space3,
+          children: [
+            for (var day = 1; day <= 7; day++)
+              DabblerChip(
+                label: ProfileEditSports.dayName(day).substring(0, 3),
+                selected: _selectedDay == day,
+                onTap: () => setState(() => _selectedDay = day),
               ),
-              const DabblerGap.h(DabblerSpacing.space5),
-              Expanded(
-                child: DabblerSelect<int>(
-                  label: 'End Time',
-                  value: _endHour,
-                  options: _hours,
-                  searchable: true,
-                  onChanged: (h) => setState(() => _endHour = h),
-                ),
+          ],
+        ),
+        const DabblerGap.v(DabblerSpacing.space7),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: DabblerSelect<int>(
+                label: 'Start Time',
+                value: _startHour,
+                options: _hours,
+                searchable: true,
+                onChanged: (h) => setState(() => _startHour = h),
               ),
-            ],
-          ),
-          const DabblerGap.v(DabblerSpacing.space8),
-          DabblerButton(
-            label: 'Add Availability',
-            fullWidth: true,
-            onPressed: _submit,
-          ),
-        ],
-      ),
+            ),
+            const DabblerGap.h(DabblerSpacing.space5),
+            Expanded(
+              child: DabblerSelect<int>(
+                label: 'End Time',
+                value: _endHour,
+                options: _hours,
+                searchable: true,
+                onChanged: (h) => setState(() => _endHour = h),
+              ),
+            ),
+          ],
+        ),
+        const DabblerGap.v(DabblerSpacing.space8),
+        DabblerButton(
+          label: 'Add Availability',
+          fullWidth: true,
+          onPressed: _submit,
+        ),
+      ],
     );
   }
 }

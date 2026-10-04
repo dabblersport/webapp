@@ -408,17 +408,14 @@ class _QuietTimeSheetState extends State<_QuietTimeSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
-      child: DabblerTimePicker(
-        value: _value,
-        onChanged: (t) => setState(() => _value = t),
-        onConfirm: () {
-          widget.onPicked(_value);
-          Navigator.pop(context);
-        },
-        onCancel: () => Navigator.pop(context),
-      ),
+    return DabblerTimePicker(
+      value: _value,
+      onChanged: (t) => setState(() => _value = t),
+      onConfirm: () {
+        widget.onPicked(_value);
+        Navigator.pop(context);
+      },
+      onCancel: () => Navigator.pop(context),
     );
   }
 }

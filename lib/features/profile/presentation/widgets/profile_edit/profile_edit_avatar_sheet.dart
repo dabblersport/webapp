@@ -47,83 +47,75 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     final choices = widget.choicesFor(_generation);
-    return SingleChildScrollView(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space6,
-        end: DabblerSpacing.space6,
-        bottom: DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerText(
-            'Pick one of 12 generated avatars or upload your own photo.',
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-          const DabblerGap.v(DabblerSpacing.space7),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: DabblerSpacing.space2,
-            crossAxisSpacing: DabblerSpacing.space2,
-            children: [
-              for (final reference in choices)
-                Center(
-                  child: ProfileEditAvatar(
-                    reference: reference,
-                    fallbackSeed: widget.displayName,
-                    size: DabblerAvatarSize.lg,
-                    semanticLabel: 'Avatar option',
-                    ringColor: widget.currentReference == reference
-                        ? colors.brandPrimary
-                        : null,
-                    onTap: widget.uploading
-                        ? null
-                        : () => _closeThen(
-                            () => widget.onPickGenerated(reference),
-                          ),
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerText(
+          'Pick one of 12 generated avatars or upload your own photo.',
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
+        ),
+        const DabblerGap.v(DabblerSpacing.space7),
+        GridView.count(
+          crossAxisCount: 4,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: DabblerSpacing.space2,
+          crossAxisSpacing: DabblerSpacing.space2,
+          children: [
+            for (final reference in choices)
+              Center(
+                child: ProfileEditAvatar(
+                  reference: reference,
+                  fallbackSeed: widget.displayName,
+                  size: DabblerAvatarSize.lg,
+                  semanticLabel: 'Avatar option',
+                  ringColor: widget.currentReference == reference
+                      ? colors.brandPrimary
+                      : null,
+                  onTap: widget.uploading
+                      ? null
+                      : () =>
+                            _closeThen(() => widget.onPickGenerated(reference)),
                 ),
-            ],
-          ),
-          const DabblerGap.v(DabblerSpacing.space5),
-          DabblerButton(
-            label: 'Shuffle avatars',
-            icon: 'refresh',
-            tone: DabblerButtonTone.outlined,
-            fullWidth: true,
-            onPressed: () => setState(() => _generation++),
-          ),
-          const DabblerGap.v(DabblerSpacing.space8),
-          DabblerSection(
-            title: 'Upload options',
-            children: [
-              _sourceRow(
-                icon: 'folder-open',
-                title: 'From file',
-                subtitle: 'Choose an image file from your device',
-                action: widget.onFromFile,
               ),
+          ],
+        ),
+        const DabblerGap.v(DabblerSpacing.space5),
+        DabblerButton(
+          label: 'Shuffle avatars',
+          icon: 'refresh',
+          tone: DabblerButtonTone.outlined,
+          fullWidth: true,
+          onPressed: () => setState(() => _generation++),
+        ),
+        const DabblerGap.v(DabblerSpacing.space8),
+        DabblerSection(
+          title: 'Upload options',
+          children: [
+            _sourceRow(
+              icon: 'folder-open',
+              title: 'From file',
+              subtitle: 'Choose an image file from your device',
+              action: widget.onFromFile,
+            ),
+            _sourceRow(
+              icon: 'gallery',
+              title: 'From gallery',
+              subtitle: 'Pick a photo from your gallery',
+              action: widget.onFromGallery,
+            ),
+            if (widget.onFromCamera != null)
               _sourceRow(
-                icon: 'gallery',
-                title: 'From gallery',
-                subtitle: 'Pick a photo from your gallery',
-                action: widget.onFromGallery,
+                icon: 'camera',
+                title: 'Take a photo',
+                subtitle: 'Open the camera and capture a new avatar',
+                action: widget.onFromCamera!,
               ),
-              if (widget.onFromCamera != null)
-                _sourceRow(
-                  icon: 'camera',
-                  title: 'Take a photo',
-                  subtitle: 'Open the camera and capture a new avatar',
-                  action: widget.onFromCamera!,
-                ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 

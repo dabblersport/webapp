@@ -261,7 +261,8 @@ void main() {
     'save-location': () => _SheetHost(
       open: (c) => showDabblerSheet<void>(
         context: c,
-        detents: const <double>[0.85],
+        detent: DabblerSheetDetent.content,
+        title: 'Save this location',
         builder: (_) => SaveLocationSheet(
           lat: 25.08,
           lng: 55.14,

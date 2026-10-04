@@ -84,11 +84,9 @@ class LocationPickerSheet extends ConsumerStatefulWidget {
   const LocationPickerSheet({super.key});
 
   static Future<LocationPickerResult?> show(BuildContext context) {
-    // Was showAdaptiveSheet + a DraggableScrollableSheet (0.6, 0.4-0.9);
-    // the DabblerSheet snaps between the same 0.6 and 0.9 heights.
     return showDabblerSheet<LocationPickerResult>(
       context: context,
-      detents: const <double>[0.6, 0.9],
+      detent: DabblerSheetDetent.content,
       builder: (_) => const LocationPickerSheet(),
     );
   }
@@ -184,8 +182,6 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
         // ── Title + back ── (handle and close come from DabblerSheet)
         Padding(
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
             bottom: DabblerSpacing.space3,
           ),
           child: Row(
@@ -206,17 +202,12 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
         ),
 
         // ── Content ──
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: switch (_mode) {
-            _PickerMode.menu => _buildMenu(),
-            _PickerMode.venue => _buildVenueSearch(),
-            _PickerMode.area => _buildAreaList(),
-            _PickerMode.placeSearch => _buildPlaceSearch(),
-          },
-        ),
+        switch (_mode) {
+          _PickerMode.menu => _buildMenu(),
+          _PickerMode.venue => _buildVenueSearch(),
+          _PickerMode.area => _buildAreaList(),
+          _PickerMode.placeSearch => _buildPlaceSearch(),
+        },
       ],
     );
   }

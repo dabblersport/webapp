@@ -16,12 +16,11 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 class ManageSportsSheet extends ConsumerStatefulWidget {
   const ManageSportsSheet({super.key});
 
-  /// Presents the sheet. Was `showAdaptiveSheet` + a DraggableScrollableSheet
-  /// (0.6, 0.35-0.85); the DabblerSheet snaps between 0.6 and 0.85.
+  /// Presents the sheet, content-sized.
   static Future<void> show(BuildContext context) {
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.6, 0.85],
+      detent: DabblerSheetDetent.content,
       builder: (_) => const ManageSportsSheet(),
     );
   }
@@ -181,8 +180,6 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         // Title row (handle and close come from DabblerSheet).
         Padding(
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
             bottom: DabblerSpacing.space2,
           ),
           child: Row(
@@ -194,30 +191,20 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             ],
           ),
         ),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: DabblerText(
-            'Tap a sport to add or remove it from your profile.',
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
+        DabblerText(
+          'Tap a sport to add or remove it from your profile.',
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
         ),
         const DabblerGap.v(DabblerSpacing.space4),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: DabblerSearchField(
-            controller: _searchController,
-            enabled: !_isSaving,
-            placeholder: 'Search sports',
-            onChanged: (value) {
-              setState(() => _searchQuery = value.trim().toLowerCase());
-            },
-            onCleared: () => setState(() => _searchQuery = ''),
-          ),
+        DabblerSearchField(
+          controller: _searchController,
+          enabled: !_isSaving,
+          placeholder: 'Search sports',
+          onChanged: (value) {
+            setState(() => _searchQuery = value.trim().toLowerCase());
+          },
+          onCleared: () => setState(() => _searchQuery = ''),
         ),
         const DabblerGap.v(DabblerSpacing.space4),
         sportsAsync.when(
@@ -244,22 +231,17 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
               );
             }
 
-            return Padding(
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space5,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final sport in filteredSports)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        bottom: DabblerSpacing.space2,
-                      ),
-                      child: _sportRow(sport, colors),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final sport in filteredSports)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      bottom: DabblerSpacing.space2,
                     ),
-                ],
-              ),
+                    child: _sportRow(sport, colors),
+                  ),
+              ],
             );
           },
           loading: () => const Padding(

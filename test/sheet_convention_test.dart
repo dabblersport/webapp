@@ -48,20 +48,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// `<path>#<n> | <reason>`. Remove the line when the call is converted.
 const String _allowList = '''
 lib/core/widgets/composer_drawer_kit.dart#1 | tall composer keeps its fixed 0.82 fraction: Home Feed.dc.html:650 draws the vibes sheet at hint-size 100%,82%; every other composer sheet is content-sized
-lib/features/admin/presentation/screens/moderation_queue_screen.dart#1 | pending conversion KAN-434
-lib/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart#1 | pending conversion KAN-434
 lib/features/home/presentation/screens/home_screen.dart#3 | city sheet keeps its fixed 0.66 fraction: Home Feed frame city sheet is 0.66 of the viewport (KAN-433 measure, panel 393x562.31 matches); content padding is HomeLocationPickerSheet's (location seat)
-lib/features/location/presentation/widgets/home_location_picker_sheet.dart#1 | pending conversion KAN-434
-lib/features/location/presentation/widgets/location_picker_sheet.dart#1 | pending conversion KAN-434
-lib/features/location/presentation/widgets/save_location_sheet.dart#1 | pending conversion KAN-434
-lib/features/profile/presentation/screens/profile/user_profile_screen.dart#1 | pending conversion KAN-434
-lib/features/profile/presentation/screens/profile_edit_screen.dart#1 | pending conversion KAN-434
-lib/features/profile/presentation/screens/profile_edit_screen.dart#2 | pending conversion KAN-434
-lib/features/profile/presentation/screens/profile_edit_screen.dart#3 | pending conversion KAN-434
-lib/features/profile/presentation/screens/settings/notification_settings_screen.dart#1 | pending conversion KAN-434
-lib/features/profile/presentation/widgets/manage_sports_sheet.dart#1 | pending conversion KAN-434
 lib/features/social/presentation/widgets/composer_vibes_sheet.dart#1 | `tall: true` keeps the 0.82 fraction: Home Feed.dc.html:650 vibes sheet is drawn at 100%,82%
-lib/features/venues/presentation/widgets/place_picker_sheet.dart#1 | pending conversion KAN-434
 ''';
 
 /// Options a `showDabblerSheet` call may pass (everything the DS route takes

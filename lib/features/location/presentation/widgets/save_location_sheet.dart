@@ -61,7 +61,8 @@ class SaveLocationSheet extends ConsumerStatefulWidget {
   }) {
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.85],
+      detent: DabblerSheetDetent.content,
+      title: 'Save this location',
       builder: (_) => SaveLocationSheet(
         lat: lat,
         lng: lng,
@@ -157,165 +158,148 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     final colors = DabblerColors.of(context);
     final accuracy = _accuracyStatus(colors);
 
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.only(
-          start: DabblerSpacing.space6,
-          end: DabblerSpacing.space6,
-          bottom: DabblerSpacing.space8,
+    // The DabblerSheet owns the surface, the title and the body inset and
+    // scrolls; this returns the content only. The keyboard inset is a trailing
+    // gap so the last row can scroll clear of the keyboard.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Mapbox place search
+        LocationSearchField(
+          hintText: 'Search for a place…',
+          proximity: _activeProximity,
+          onSelected: (place) async {
+            final repo = ref.read(areaRepositoryV2Provider);
+            final resolved = await repo.resolveNearest(place.lat, place.lng);
+            if (!mounted) return;
+            setState(() {
+              _lat = place.lat;
+              _lng = place.lng;
+              _areaName = place.name;
+              if (resolved != null) _areaId = resolved.id;
+            });
+            _mapController.move(LatLng(place.lat, place.lng), 15);
+          },
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Title (handle and close come from DabblerSheet; the emoji the
-            // old title carried is dropped, CEO rule).
-            DabblerText('Save this location', style: DabblerType.title3),
-            const DabblerGap.v(DabblerSpacing.space5),
+        const DabblerGap.v(DabblerSpacing.space4),
 
-            // Mapbox place search
-            LocationSearchField(
-              hintText: 'Search for a place…',
-              proximity: _activeProximity,
-              onSelected: (place) async {
-                final repo = ref.read(areaRepositoryV2Provider);
-                final resolved = await repo.resolveNearest(
-                  place.lat,
-                  place.lng,
-                );
-                if (!mounted) return;
-                setState(() {
-                  _lat = place.lat;
-                  _lng = place.lng;
-                  _areaName = place.name;
-                  if (resolved != null) _areaId = resolved.id;
-                });
-                _mapController.move(LatLng(place.lat, place.lng), 15);
-              },
+        // Map thumbnail — flutter_map tiles are content inside the DS
+        // surface; the marker is a DS icon.
+        DabblerSurface(
+          radius: DabblerRadius.card,
+          height: DabblerSizing.mediaPreviewHeight,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: LatLng(_lat, _lng),
+              initialZoom: 15,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
             ),
-            const DabblerGap.v(DabblerSpacing.space4),
-
-            // Map thumbnail — flutter_map tiles are content inside the DS
-            // surface; the marker is a DS icon.
-            DabblerSurface(
-              radius: DabblerRadius.card,
-              height: DabblerSizing.mediaPreviewHeight,
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: LatLng(_lat, _lng),
-                  initialZoom: 15,
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.none,
-                  ),
+            children: [
+              if (widget.tileLayerBuilder != null)
+                widget.tileLayerBuilder!()
+              else
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.dabbler.app',
                 ),
-                children: [
-                  if (widget.tileLayerBuilder != null)
-                    widget.tileLayerBuilder!()
-                  else
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.dabbler.app',
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: LatLng(_lat, _lng),
+                    width: DabblerSizing.iconLg,
+                    height: DabblerSizing.iconLg,
+                    child: DabblerIcon(
+                      'location',
+                      weight: DabblerIconWeight.bold,
+                      color: colors.brandPrimary,
+                      size: DabblerSizing.iconLg,
                     ),
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: LatLng(_lat, _lng),
-                        width: DabblerSizing.iconLg,
-                        height: DabblerSizing.iconLg,
-                        child: DabblerIcon(
-                          'location',
-                          weight: DabblerIconWeight.bold,
-                          color: colors.brandPrimary,
-                          size: DabblerSizing.iconLg,
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
-            ),
-            const DabblerGap.v(DabblerSpacing.space4),
-
-            // Area name + accuracy badge
-            Row(
-              children: [
-                DabblerIcon(
-                  'location',
-                  size: DabblerSizing.iconInline,
-                  color: colors.brandPrimary,
-                ),
-                const DabblerGap.h(DabblerSpacing.space1),
-                Expanded(
-                  child: DabblerText(_areaName, style: DabblerType.headline),
-                ),
-                DabblerBadge(label: _accuracyText(), status: accuracy),
-              ],
-            ),
-            const DabblerGap.v(DabblerSpacing.space8),
-
-            // Label picker
-            DabblerText('Label', style: DabblerType.headline),
-            const DabblerGap.v(DabblerSpacing.space3),
-            Wrap(
-              spacing: DabblerSpacing.space3,
-              runSpacing: DabblerSpacing.space3,
-              children: ProfileLocationLabel.values.map((label) {
-                return DabblerChip(
-                  label: label.displayName,
-                  selected: _selectedLabel == label,
-                  onTap: () => setState(() => _selectedLabel = label),
-                );
-              }).toList(),
-            ),
-            const DabblerGap.v(DabblerSpacing.space4),
-
-            // Custom name field
-            if (_selectedLabel == ProfileLocationLabel.custom) ...[
-              DabblerTextField(
-                controller: _customNameController,
-                placeholder: 'e.g. My gym, Parents\' house',
-                onChanged: (_) => setState(() {}),
-              ),
-              const DabblerGap.v(DabblerSpacing.space4),
             ],
+          ),
+        ),
+        const DabblerGap.v(DabblerSpacing.space4),
 
-            // Primary toggle
-            DabblerInputRow(
-              title: 'Set as primary location',
-              trailing: DabblerToggle(
-                checked: _isPrimary,
-                semanticLabel: 'Set as primary location',
-                onChanged: (v) => setState(() => _isPrimary = v),
-              ),
-              onTap: () => setState(() => _isPrimary = !_isPrimary),
+        // Area name + accuracy badge
+        Row(
+          children: [
+            DabblerIcon(
+              'location',
+              size: DabblerSizing.iconInline,
+              color: colors.brandPrimary,
             ),
-            const DabblerGap.v(DabblerSpacing.space6),
-
-            // Save button
-            DabblerButton(
-              label: 'Save location',
-              fullWidth: true,
-              loading: _isSaving,
-              disabled: !_canSave || _isSaving,
-              onPressed: _save,
+            const DabblerGap.h(DabblerSpacing.space1),
+            Expanded(
+              child: DabblerText(_areaName, style: DabblerType.headline),
             ),
-            const DabblerGap.v(DabblerSpacing.space3),
-
-            // Use once button
-            if (widget.onUseOnce != null)
-              DabblerButton(
-                label: 'Use once',
-                tone: DabblerButtonTone.text,
-                fullWidth: true,
-                onPressed: _useOnce,
-              ),
+            DabblerBadge(label: _accuracyText(), status: accuracy),
           ],
         ),
-      ),
+        const DabblerGap.v(DabblerSpacing.space8),
+
+        // Label picker
+        DabblerText('Label', style: DabblerType.headline),
+        const DabblerGap.v(DabblerSpacing.space3),
+        Wrap(
+          spacing: DabblerSpacing.space3,
+          runSpacing: DabblerSpacing.space3,
+          children: ProfileLocationLabel.values.map((label) {
+            return DabblerChip(
+              label: label.displayName,
+              selected: _selectedLabel == label,
+              onTap: () => setState(() => _selectedLabel = label),
+            );
+          }).toList(),
+        ),
+        const DabblerGap.v(DabblerSpacing.space4),
+
+        // Custom name field
+        if (_selectedLabel == ProfileLocationLabel.custom) ...[
+          DabblerTextField(
+            controller: _customNameController,
+            placeholder: 'e.g. My gym, Parents\' house',
+            onChanged: (_) => setState(() {}),
+          ),
+          const DabblerGap.v(DabblerSpacing.space4),
+        ],
+
+        // Primary toggle
+        DabblerInputRow(
+          title: 'Set as primary location',
+          trailing: DabblerToggle(
+            checked: _isPrimary,
+            semanticLabel: 'Set as primary location',
+            onChanged: (v) => setState(() => _isPrimary = v),
+          ),
+          onTap: () => setState(() => _isPrimary = !_isPrimary),
+        ),
+        const DabblerGap.v(DabblerSpacing.space6),
+
+        // Save button
+        DabblerButton(
+          label: 'Save location',
+          fullWidth: true,
+          loading: _isSaving,
+          disabled: !_canSave || _isSaving,
+          onPressed: _save,
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+
+        // Use once button
+        if (widget.onUseOnce != null)
+          DabblerButton(
+            label: 'Use once',
+            tone: DabblerButtonTone.text,
+            fullWidth: true,
+            onPressed: _useOnce,
+          ),
+        SizedBox(height: MediaQuery.viewInsetsOf(context).bottom),
+      ],
     );
   }
 }
