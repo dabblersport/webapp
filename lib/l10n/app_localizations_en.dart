@@ -2932,4 +2932,399 @@ class AppLocalizationsEn extends AppLocalizations {
   String home_location_no_match(String query) {
     return 'No areas match \"$query\"';
   }
+
+  @override
+  String get blocked_accounts_note =>
+      'Manage users you\'ve blocked from contacting you.';
+
+  @override
+  String get blocked_accounts_empty => 'You haven\'t blocked anyone.';
+
+  @override
+  String get blocked_accounts_load_failed =>
+      'Could not load your blocked accounts.';
+
+  @override
+  String get blocked_accounts_unknown => 'Unknown';
+
+  @override
+  String get blocked_accounts_unblock => 'Unblock';
+
+  @override
+  String get blocked_accounts_unblocked => 'Unblocked';
+
+  @override
+  String blocked_accounts_unblock_failed(String message) {
+    return 'Could not unblock: $message';
+  }
+
+  @override
+  String get notif_settings_push => 'Push notifications';
+
+  @override
+  String get notif_settings_push_sub =>
+      'Receive push notifications on your device';
+
+  @override
+  String get notif_settings_email => 'Email notifications';
+
+  @override
+  String get notif_settings_email_sub => 'Receive notifications via email';
+
+  @override
+  String get notif_settings_sms => 'SMS notifications';
+
+  @override
+  String get notif_settings_sms_sub => 'Receive important updates via SMS';
+
+  @override
+  String get notif_settings_quiet_header => 'Quiet hours';
+
+  @override
+  String get notif_settings_quiet_mute => 'Mute during quiet hours';
+
+  @override
+  String get notif_settings_quiet_mute_off =>
+      'Pause push notifications overnight';
+
+  @override
+  String notif_settings_quiet_mute_on(String start, String end) {
+    return 'No push between $start and $end';
+  }
+
+  @override
+  String get notif_settings_quiet_start => 'Start';
+
+  @override
+  String get notif_settings_quiet_end => 'End';
+
+  @override
+  String get notif_settings_quiet_urgent => 'Allow urgent notifications';
+
+  @override
+  String get notif_settings_quiet_urgent_sub =>
+      'High-priority alerts still come through during quiet hours';
+
+  @override
+  String get notif_settings_quiet_all => 'Allow all notifications';
+
+  @override
+  String get notif_settings_quiet_all_sub =>
+      'Every push still comes through during quiet hours';
+
+  @override
+  String get notif_settings_group_game => 'Game notifications';
+
+  @override
+  String get notif_settings_group_social => 'Social notifications';
+
+  @override
+  String get notif_settings_group_connections => 'Connections';
+
+  @override
+  String get notif_settings_kind_game_invites => 'Game invites & requests';
+
+  @override
+  String get notif_settings_kind_game_invites_sub =>
+      'Invites, join requests, approvals';
+
+  @override
+  String get notif_settings_kind_game_reminders => 'Game reminders';
+
+  @override
+  String get notif_settings_kind_game_reminders_sub =>
+      'Reminders for upcoming games';
+
+  @override
+  String get notif_settings_kind_game_updates => 'Game updates';
+
+  @override
+  String get notif_settings_kind_game_updates_sub =>
+      'Changes, waitlist promotions, players joining';
+
+  @override
+  String get notif_settings_kind_booking => 'Booking payments';
+
+  @override
+  String get notif_settings_kind_booking_sub => 'When a booking needs payment';
+
+  @override
+  String get notif_settings_kind_likes => 'Likes & reactions';
+
+  @override
+  String get notif_settings_kind_likes_sub =>
+      'Likes and reactions on your content';
+
+  @override
+  String get notif_settings_kind_comments => 'Comments';
+
+  @override
+  String get notif_settings_kind_comments_sub => 'Comments on your posts';
+
+  @override
+  String get notif_settings_kind_mentions => 'Mentions';
+
+  @override
+  String get notif_settings_kind_mentions_sub => 'When someone mentions you';
+
+  @override
+  String get notif_settings_kind_followers => 'New followers';
+
+  @override
+  String get notif_settings_kind_followers_sub => 'When someone follows you';
+
+  @override
+  String get notif_settings_kind_friends => 'Friend requests';
+
+  @override
+  String get notif_settings_kind_friends_sub =>
+      'New and accepted friend requests';
+
+  @override
+  String get notif_settings_kind_squads => 'Squad invites';
+
+  @override
+  String get notif_settings_kind_squads_sub => 'Invites to join a squad';
+
+  @override
+  String get notif_settings_kind_meetups => 'Meetup invites';
+
+  @override
+  String get notif_settings_kind_meetups_sub =>
+      'Invites and players joining meetups';
+
+  @override
+  String notif_settings_update_failed(String error) {
+    return 'Could not update settings: $error';
+  }
+
+  @override
+  String get game_prefs_title => 'Game preferences';
+
+  @override
+  String get game_prefs_save => 'Save';
+
+  @override
+  String get game_prefs_saved => 'Game preferences saved';
+
+  @override
+  String get game_prefs_types_header => 'Preferred game types';
+
+  @override
+  String get game_prefs_types_note =>
+      'Select the types of games you enjoy most';
+
+  @override
+  String get game_prefs_type_pickup => 'Pickup games';
+
+  @override
+  String get game_prefs_type_pickup_sub => 'Casual games with other players';
+
+  @override
+  String get game_prefs_type_tournaments => 'Tournaments';
+
+  @override
+  String get game_prefs_type_tournaments_sub => 'Competitive organized events';
+
+  @override
+  String get game_prefs_type_practice => 'Practice sessions';
+
+  @override
+  String get game_prefs_type_practice_sub => 'Skill development and training';
+
+  @override
+  String get game_prefs_type_leagues => 'Leagues';
+
+  @override
+  String get game_prefs_type_leagues_sub => 'Season-long competitions';
+
+  @override
+  String get game_prefs_type_friendly => 'Friendly matches';
+
+  @override
+  String get game_prefs_type_friendly_sub => 'Non-competitive social games';
+
+  @override
+  String get game_prefs_type_camps => 'Training camps';
+
+  @override
+  String get game_prefs_type_camps_sub => 'Intensive skill workshops';
+
+  @override
+  String get game_prefs_duration_header => 'Game duration';
+
+  @override
+  String get game_prefs_duration_note =>
+      'How long do you prefer games to last?';
+
+  @override
+  String get game_prefs_duration_short => 'Short games';
+
+  @override
+  String get game_prefs_duration_short_sub => '30-60 minutes';
+
+  @override
+  String get game_prefs_duration_medium => 'Medium games';
+
+  @override
+  String get game_prefs_duration_medium_sub => '60-90 minutes';
+
+  @override
+  String get game_prefs_duration_long => 'Long games';
+
+  @override
+  String get game_prefs_duration_long_sub => '90+ minutes';
+
+  @override
+  String get game_prefs_duration_flexible => 'Flexible duration';
+
+  @override
+  String get game_prefs_duration_flexible_sub => 'Any duration';
+
+  @override
+  String get game_prefs_duration_custom => 'Custom duration range';
+
+  @override
+  String get game_prefs_duration_min => 'Min duration';
+
+  @override
+  String get game_prefs_duration_max => 'Max duration';
+
+  @override
+  String game_prefs_minutes_hint(String value) {
+    return '$value min';
+  }
+
+  @override
+  String get game_prefs_minutes_suffix => 'min';
+
+  @override
+  String get game_prefs_team_header => 'Team size';
+
+  @override
+  String get game_prefs_team_note => 'What team sizes do you prefer?';
+
+  @override
+  String get game_prefs_team_flexible => 'Flexible team size';
+
+  @override
+  String get game_prefs_team_flexible_sub => 'Open to various team sizes';
+
+  @override
+  String game_prefs_team_preferred(String low, String high) {
+    return 'Preferred team size: $low - $high players';
+  }
+
+  @override
+  String get game_prefs_team_min_label => '2 players';
+
+  @override
+  String get game_prefs_team_max_label => '22 players';
+
+  @override
+  String get game_prefs_level_header => 'Competition level';
+
+  @override
+  String get game_prefs_level_note =>
+      'What level of competition do you prefer?';
+
+  @override
+  String get game_prefs_level_casual => 'Casual';
+
+  @override
+  String get game_prefs_level_casual_sub => 'Just for fun, relaxed atmosphere';
+
+  @override
+  String get game_prefs_level_recreational => 'Recreational';
+
+  @override
+  String get game_prefs_level_recreational_sub =>
+      'Friendly competition, moderate intensity';
+
+  @override
+  String get game_prefs_level_competitive => 'Competitive';
+
+  @override
+  String get game_prefs_level_competitive_sub =>
+      'Serious competition, high intensity';
+
+  @override
+  String get game_prefs_level_professional => 'Professional';
+
+  @override
+  String get game_prefs_level_professional_sub => 'Elite level competition';
+
+  @override
+  String get game_prefs_equipment_header => 'Equipment';
+
+  @override
+  String get game_prefs_equipment_note => 'What are your equipment needs?';
+
+  @override
+  String get game_prefs_equipment_own => 'I have my own equipment';
+
+  @override
+  String get game_prefs_equipment_own_sub => 'You can bring your own gear';
+
+  @override
+  String get game_prefs_equipment_provide =>
+      'I can provide equipment for others';
+
+  @override
+  String get game_prefs_equipment_provide_sub =>
+      'You can share equipment with teammates';
+
+  @override
+  String get game_prefs_equipment_need => 'I need equipment provided';
+
+  @override
+  String get game_prefs_equipment_need_sub =>
+      'Equipment should be available at the venue';
+
+  @override
+  String get game_prefs_equipment_types => 'Equipment types';
+
+  @override
+  String get game_prefs_equipment_ball => 'Ball';
+
+  @override
+  String get game_prefs_equipment_gear => 'Protective gear';
+
+  @override
+  String get game_prefs_equipment_uniforms => 'Uniforms';
+
+  @override
+  String get game_prefs_equipment_goals => 'Goals';
+
+  @override
+  String get game_prefs_equipment_nets => 'Nets';
+
+  @override
+  String get game_prefs_equipment_markers => 'Markers';
+
+  @override
+  String get game_prefs_referee_header => 'Referee';
+
+  @override
+  String get game_prefs_referee_note =>
+      'How do you prefer games to be officiated?';
+
+  @override
+  String get game_prefs_referee_prefer => 'Prefer games with a referee';
+
+  @override
+  String get game_prefs_referee_prefer_sub => 'Official referee for fair play';
+
+  @override
+  String get game_prefs_referee_can => 'I can referee games';
+
+  @override
+  String get game_prefs_referee_can_sub => 'You\'re qualified to officiate';
+
+  @override
+  String get game_prefs_referee_strict => 'Strict rule enforcement';
+
+  @override
+  String get game_prefs_referee_strict_sub =>
+      'Games should follow official rules closely';
 }

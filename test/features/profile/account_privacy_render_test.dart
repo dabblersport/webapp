@@ -262,7 +262,7 @@ void main() {
         }
         if (entry.key == 'blocked') {
           expect(find.text('Khalid Saeed'), findsOneWidget);
-          expect(find.text('Unblock'), findsNWidgets(2));
+          expect(find.text(lookupAppLocalizations(locale).blocked_accounts_unblock), findsNWidgets(2));
         }
         await _shoot(tester, key, 'privacy-${entry.key}-$dir');
       });
