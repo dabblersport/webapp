@@ -313,6 +313,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       detent: DabblerSheetDetent.content,
       dragHandle: true,
       pageBackground: true,
+      showCloseButton: false,
       builder: (ctx) => Padding(
         padding: const EdgeInsetsDirectional.only(
           start: DabblerSpacing.space6,

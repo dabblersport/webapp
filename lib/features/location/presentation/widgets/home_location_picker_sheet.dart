@@ -38,6 +38,7 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
       context: context,
       detents: const <double>[0.66],
       pageBackground: true,
+      showCloseButton: false,
       builder: (_) => const _PickerHost(),
     );
   }
@@ -116,14 +117,14 @@ class _HomeLocationPickerSheetState
               ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const SizedBox(height: DabblerSpacing.space4),
           DabblerSearchField(
             controller: _searchController,
             placeholder: l10n.home_location_search,
             onChanged: (v) => setState(() => _query = v.trim()),
             onCleared: () => setState(() => _query = ''),
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const SizedBox(height: DabblerSpacing.space4),
           savedAsync.when(
             loading: () => const DabblerSkeleton.text(lines: 1),
             error: (_, __) => const SizedBox.shrink(),
@@ -141,13 +142,19 @@ class _HomeLocationPickerSheetState
                         selected:
                             currentState is ActiveLocationReady &&
                             currentState.location.savedLocationId == loc.id,
-                        leadingIcon: DabblerIcon(_savedIcon(loc)),
+                        leadingIcon: DabblerIcon(
+                          _savedIcon(loc),
+                          size: DabblerSizing.iconSm,
+                        ),
                         onTap: () => _useSaved(loc),
                       ),
                     ),
                   DabblerChip(
                     label: l10n.home_location_add,
-                    leadingIcon: const DabblerIcon('location-add'),
+                    leadingIcon: const DabblerIcon(
+                      'location-add',
+                      size: DabblerSizing.iconSm,
+                    ),
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (_) => const SavedLocationsScreen(),
@@ -158,7 +165,7 @@ class _HomeLocationPickerSheetState
               ),
             ),
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const SizedBox(height: DabblerSpacing.space4),
           _GpsTile(isLoading: _gpsLoading, onTap: () => _useGps()),
           _AreaBrowser(
             query: _query,

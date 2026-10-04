@@ -1165,6 +1165,7 @@ class _HomeHeader extends ConsumerWidget {
       context: context,
       detents: const <double>[0.66],
       pageBackground: true,
+      showCloseButton: false,
       builder: (_) => const _LocationPickerHost(),
     );
   }
