@@ -11,7 +11,9 @@ import 'package:dabbler/data/repositories/public_activity_repository_impl.dart';
 // Repository provider
 // ---------------------------------------------------------------------------
 
-final publicActivityRepositoryProvider = Provider<PublicActivityRepository>((ref) {
+final publicActivityRepositoryProvider = Provider<PublicActivityRepository>((
+  ref,
+) {
   return PublicActivityRepositoryImpl(Supabase.instance.client);
 });
 
@@ -45,15 +47,14 @@ class PublicActivitiesState {
     bool? hasMore,
     bool? loaded,
     Object? error = _sentinel,
-  }) =>
-      PublicActivitiesState(
-        activities: activities ?? this.activities,
-        isLoading: isLoading ?? this.isLoading,
-        isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-        hasMore: hasMore ?? this.hasMore,
-        loaded: loaded ?? this.loaded,
-        error: error == _sentinel ? this.error : error as String?,
-      );
+  }) => PublicActivitiesState(
+    activities: activities ?? this.activities,
+    isLoading: isLoading ?? this.isLoading,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    hasMore: hasMore ?? this.hasMore,
+    loaded: loaded ?? this.loaded,
+    error: error == _sentinel ? this.error : error as String?,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -61,11 +62,8 @@ class PublicActivitiesState {
 // ---------------------------------------------------------------------------
 
 class PublicActivitiesNotifier extends StateNotifier<PublicActivitiesState> {
-  PublicActivitiesNotifier(
-    this._repo, {
-    this.profileId,
-    bool autoLoad = false,
-  }) : super(const PublicActivitiesState()) {
+  PublicActivitiesNotifier(this._repo, {this.profileId, bool autoLoad = false})
+    : super(const PublicActivitiesState()) {
     if (autoLoad) ensureLoaded();
   }
 
@@ -91,10 +89,7 @@ class PublicActivitiesNotifier extends StateNotifier<PublicActivitiesState> {
             limit: _pageSize,
             offset: 0,
           )
-        : await _repo.fetchFollowingActivities(
-            limit: _pageSize,
-            offset: 0,
-          );
+        : await _repo.fetchFollowingActivities(limit: _pageSize, offset: 0);
 
     if (!mounted) return;
     result.fold(
@@ -143,17 +138,24 @@ class PublicActivitiesNotifier extends StateNotifier<PublicActivitiesState> {
 /// Social activities from users the current user follows (Following tab).
 /// NOT autoDispose — caches across tab switches.
 final followingActivitiesProvider =
-    StateNotifierProvider<PublicActivitiesNotifier, PublicActivitiesState>((ref) {
-  final repo = ref.watch(publicActivityRepositoryProvider);
-  return PublicActivitiesNotifier(repo, autoLoad: false);
-});
+    StateNotifierProvider<PublicActivitiesNotifier, PublicActivitiesState>((
+      ref,
+    ) {
+      final repo = ref.watch(publicActivityRepositoryProvider);
+      return PublicActivitiesNotifier(repo, autoLoad: false);
+    });
 
 /// Public activities for a specific profile (Activity tab).
 /// autoDispose — cleaned up when the profile screen closes.
 final userActivitiesProvider = StateNotifierProvider.family
-    .autoDispose<PublicActivitiesNotifier, PublicActivitiesState, String>(
-  (ref, profileId) {
-    final repo = ref.watch(publicActivityRepositoryProvider);
-    return PublicActivitiesNotifier(repo, profileId: profileId, autoLoad: true);
-  },
-);
+    .autoDispose<PublicActivitiesNotifier, PublicActivitiesState, String>((
+      ref,
+      profileId,
+    ) {
+      final repo = ref.watch(publicActivityRepositoryProvider);
+      return PublicActivitiesNotifier(
+        repo,
+        profileId: profileId,
+        autoLoad: true,
+      );
+    });

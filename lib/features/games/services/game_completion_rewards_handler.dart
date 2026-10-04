@@ -213,5 +213,4 @@ class GameCompletionRewardsHandler {
         return 1.0;
     }
   }
-
 }

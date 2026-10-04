@@ -95,10 +95,7 @@ class SearchDefaultView extends StatelessWidget {
                         selected: f.active,
                         leadingIcon: f.icon.isEmpty
                             ? null
-                            : DabblerIcon(
-                                f.icon,
-                                size: DabblerSizing.iconXs,
-                              ),
+                            : DabblerIcon(f.icon, size: DabblerSizing.iconXs),
                       ),
                   ],
                 ),

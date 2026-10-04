@@ -2687,6 +2687,589 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get acct_title => 'الحساب';
+
+  @override
+  String get acct_group_signin => 'تسجيل الدخول';
+
+  @override
+  String get acct_row_email => 'البريد الإلكتروني';
+
+  @override
+  String get acct_row_password => 'كلمة المرور';
+
+  @override
+  String get acct_group_security => 'الأمان';
+
+  @override
+  String get acct_group_security_note => 'احمِ حسابك بإجراءات أمان إضافية';
+
+  @override
+  String get acct_2fa_title => 'التحقق بخطوتين';
+
+  @override
+  String get acct_2fa_sub => 'أضف طبقة حماية إضافية';
+
+  @override
+  String get acct_alerts_title => 'تنبيهات الدخول';
+
+  @override
+  String get acct_alerts_sub => 'تلقَّ إشعارًا بعمليات الدخول الجديدة';
+
+  @override
+  String get acct_group_danger => 'منطقة الخطر';
+
+  @override
+  String get acct_delete_title => 'حذف الحساب';
+
+  @override
+  String get acct_delete_sub => 'احذف حسابك وكل بياناتك نهائيًا';
+
+  @override
+  String get acct_delete_confirm => 'حذف نهائي';
+
+  @override
+  String get acct_cancel => 'إلغاء';
+
+  @override
+  String get acct_delete_type_error => 'اكتب \"DELETE\" للتأكيد';
+
+  @override
+  String acct_delete_failed(String error) {
+    return 'تعذّر حذف الحساب: $error';
+  }
+
+  @override
+  String get acct_email_sheet_title => 'البريد الإلكتروني';
+
+  @override
+  String get acct_email_field => 'البريد';
+
+  @override
+  String get acct_email_helper =>
+      'نرسل رابط تأكيد إلى العنوان الجديد قبل أن يحل محل القديم.';
+
+  @override
+  String get acct_email_update => 'تحديث البريد';
+
+  @override
+  String get acct_email_updating => 'جارٍ التحديث…';
+
+  @override
+  String get acct_email_empty => 'لا يمكن ترك البريد فارغًا';
+
+  @override
+  String get acct_email_invalid => 'أدخل بريدًا إلكترونيًا صالحًا';
+
+  @override
+  String get acct_email_same => 'البريد الجديد هو نفسه الحالي';
+
+  @override
+  String get acct_email_sent => 'تم إرسال التأكيد';
+
+  @override
+  String acct_email_failed(String error) {
+    return 'تعذّر تحديث البريد: $error';
+  }
+
+  @override
+  String get acct_password_change_title => 'تغيير كلمة المرور';
+
+  @override
+  String get acct_password_set_title => 'تعيين كلمة المرور';
+
+  @override
+  String get acct_password_set_note =>
+      'سجّلت الدخول عبر Google أو Apple. عيّن كلمة مرور لتسجّل الدخول ببريدك أيضًا.';
+
+  @override
+  String get acct_password_current => 'كلمة المرور الحالية';
+
+  @override
+  String get acct_password_new => 'كلمة المرور الجديدة';
+
+  @override
+  String get acct_password_new_helper => '8 أحرف على الأقل';
+
+  @override
+  String get acct_password_confirm => 'تأكيد كلمة المرور الجديدة';
+
+  @override
+  String get acct_password_change => 'تغيير كلمة المرور';
+
+  @override
+  String get acct_password_set => 'تعيين كلمة المرور';
+
+  @override
+  String get acct_password_changing => 'جارٍ التغيير…';
+
+  @override
+  String get acct_password_setting => 'جارٍ التعيين…';
+
+  @override
+  String get acct_password_changed => 'تم تغيير كلمة المرور';
+
+  @override
+  String get acct_password_was_set =>
+      'تم تعيين كلمة المرور. يمكنك الآن تسجيل الدخول ببريدك وكلمة المرور.';
+
+  @override
+  String get acct_password_err_current => 'أدخل كلمة المرور الحالية';
+
+  @override
+  String get acct_password_err_new => 'أدخل كلمة مرور جديدة';
+
+  @override
+  String get acct_password_err_short => 'يجب ألا تقل كلمة المرور عن 6 أحرف';
+
+  @override
+  String get acct_password_err_mismatch => 'كلمتا المرور غير متطابقتين';
+
+  @override
+  String get acct_password_err_same =>
+      'يجب أن تختلف كلمة المرور الجديدة عن الحالية';
+
+  @override
+  String get acct_password_err_incorrect => 'كلمة المرور الحالية غير صحيحة';
+
+  @override
+  String acct_password_failed(String error) {
+    return 'تعذّر تغيير كلمة المرور: $error';
+  }
+
+  @override
+  String acct_load_failed(String error) {
+    return 'تعذّر تحميل بيانات الحساب: $error';
+  }
+
+  @override
+  String get acct_export_title => 'صدّر بياناتي';
+
+  @override
+  String get acct_export_sub =>
+      'اطلب نسخة من بياناتك في دابلر (نقل البيانات وفق PDPL)';
+
+  @override
+  String get acct_export_started =>
+      'نجهّز تصدير بياناتك. سنخبرك عبر البريد عندما يصبح جاهزًا.';
+
+  @override
+  String acct_export_failed(String error) {
+    return 'تعذّر طلب تصدير البيانات: $error';
+  }
+
+  @override
+  String get priv_title => 'الخصوصية';
+
+  @override
+  String get priv_preset_header => 'إعداد الخصوصية';
+
+  @override
+  String get priv_preset_note => 'اختر إعدادًا مسبقًا لضبط خصوصيتك بسرعة';
+
+  @override
+  String get priv_preset_public => 'عام';
+
+  @override
+  String get priv_preset_public_desc => 'ملفك ظاهر للجميع لسهولة الاكتشاف';
+
+  @override
+  String get priv_preset_friends => 'الأصدقاء فقط';
+
+  @override
+  String get priv_preset_friends_desc => 'أصدقاؤك فقط يرون ملفك الكامل';
+
+  @override
+  String get priv_preset_private => 'خاص';
+
+  @override
+  String get priv_preset_private_desc =>
+      'الحد الأدنى من المعلومات يُشارك علنًا';
+
+  @override
+  String priv_preset_applied(String preset) {
+    return 'تم تطبيق إعداد $preset';
+  }
+
+  @override
+  String get priv_preset_custom => 'مخصّص';
+
+  @override
+  String get priv_preset_custom_desc => 'مزيجك الخاص من الإعدادات أدناه';
+
+  @override
+  String get priv_hint =>
+      'يمكنك دائمًا تخصيص الإعدادات أدناه. تُحفظ التغييرات تلقائيًا.';
+
+  @override
+  String get priv_group_see => 'ما يراه الآخرون';
+
+  @override
+  String get priv_profile_title => 'الملف والهوية';
+
+  @override
+  String get priv_profile_sub => 'الصورة، الاسم، النبذة، العمر، بيانات الاتصال';
+
+  @override
+  String get priv_activity_title => 'النشاط والإحصاءات';
+
+  @override
+  String get priv_activity_sub => 'الحالة، تسجيلات الحضور، السجل، الإنجازات';
+
+  @override
+  String get priv_discover_title => 'إمكانية الاكتشاف';
+
+  @override
+  String get priv_discover_sub => 'فهرسة البحث واللاعبون القريبون';
+
+  @override
+  String get priv_group_comm => 'التواصل';
+
+  @override
+  String get priv_contact_title => 'من يمكنه التواصل معك';
+
+  @override
+  String get priv_contact_sub => 'الرسائل، دعوات المباريات، طلبات الصداقة';
+
+  @override
+  String get priv_group_data => 'البيانات';
+
+  @override
+  String get priv_data_title => 'البيانات والتحليلات';
+
+  @override
+  String get priv_data_sub => 'الموقع، التوصيات، التحليلات';
+
+  @override
+  String get priv_notif_title => 'الإشعارات';
+
+  @override
+  String get priv_notif_sub => 'الإشعارات والبريد';
+
+  @override
+  String get priv_group_safety => 'السلامة';
+
+  @override
+  String get priv_blocked_title => 'الحسابات المحظورة';
+
+  @override
+  String get priv_blocked_sub => 'الأشخاص الذين حظرتهم من التواصل معك';
+
+  @override
+  String priv_count_all(int total) {
+    return 'الكل مفعّل ($total)';
+  }
+
+  @override
+  String get priv_count_none => 'الكل مغلق';
+
+  @override
+  String priv_count_some(int on, int total) {
+    return '$on من $total مفعّل';
+  }
+
+  @override
+  String get priv_contact_nav => 'التواصل';
+
+  @override
+  String get priv_dm_title => 'الرسائل المباشرة';
+
+  @override
+  String get priv_dm_sub => 'من يمكنه مراسلتك';
+
+  @override
+  String get priv_invites_title => 'دعوات المباريات';
+
+  @override
+  String get priv_invites_sub => 'من يمكنه دعوتك للمباريات';
+
+  @override
+  String get priv_requests_title => 'طلبات الصداقة';
+
+  @override
+  String get priv_requests_sub => 'من يمكنه إرسال طلبات صداقة';
+
+  @override
+  String get priv_audience_anyone => 'أي شخص';
+
+  @override
+  String get priv_audience_friends => 'الأصدقاء فقط';
+
+  @override
+  String get priv_audience_organizers => 'المنظّمون فقط';
+
+  @override
+  String get priv_audience_none => 'لا أحد';
+
+  @override
+  String get priv_unblock => 'إلغاء الحظر';
+
+  @override
+  String get priv_unblocked => 'تم إلغاء الحظر';
+
+  @override
+  String get priv_blocked_empty => 'لم تحظر أحدًا.';
+
+  @override
+  String priv_blocked_failed(String error) {
+    return 'تعذّر إلغاء الحظر: $error';
+  }
+
+  @override
+  String priv_blocked_load_failed(String error) {
+    return 'تعذّر تحميل الحسابات المحظورة: $error';
+  }
+
+  @override
+  String get priv_save_failed => 'تعذّر حفظ الإعدادات. حاول مرة أخرى.';
+
+  @override
+  String get priv_saved => 'تم الحفظ';
+
+  @override
+  String get priv_t_photo => 'صورة الملف';
+
+  @override
+  String get priv_t_photo_sub => 'أظهر صورة ملفك';
+
+  @override
+  String get priv_t_name => 'الاسم الحقيقي';
+
+  @override
+  String get priv_t_name_sub => 'أظهر اسمك الكامل';
+
+  @override
+  String get priv_t_bio => 'النبذة';
+
+  @override
+  String get priv_t_bio_sub => 'أظهر نبذتك في ملفك';
+
+  @override
+  String get priv_t_age => 'العمر';
+
+  @override
+  String get priv_t_age_sub => 'أظهر عمرك في ملفك';
+
+  @override
+  String get priv_t_email => 'البريد الإلكتروني';
+
+  @override
+  String get priv_t_email_sub => 'أظهر بريدك للآخرين';
+
+  @override
+  String get priv_t_phone => 'رقم الهاتف';
+
+  @override
+  String get priv_t_phone_sub => 'أظهر رقم هاتفك';
+
+  @override
+  String get priv_t_location => 'الموقع';
+
+  @override
+  String get priv_t_location_sub => 'أظهر موقعك العام';
+
+  @override
+  String get priv_t_friends => 'قائمة الأصدقاء';
+
+  @override
+  String get priv_t_friends_sub => 'أظهر أصدقاءك علنًا';
+
+  @override
+  String get priv_t_online => 'حالة الاتصال';
+
+  @override
+  String get priv_t_online_sub => 'أظهر متى تكون متصلًا';
+
+  @override
+  String get priv_t_activity => 'حالة النشاط';
+
+  @override
+  String get priv_t_activity_sub => 'أظهر نشاطك الأخير';
+
+  @override
+  String get priv_t_checkins => 'تسجيلات الحضور';
+
+  @override
+  String get priv_t_checkins_sub => 'أظهر تسجيلات حضورك في الملاعب';
+
+  @override
+  String get priv_t_posts => 'المنشورات للعامة';
+
+  @override
+  String get priv_t_posts_sub => 'اجعل منشوراتك ظاهرة للجميع';
+
+  @override
+  String get priv_t_sports => 'ملفات الرياضات';
+
+  @override
+  String get priv_t_sports_sub => 'أظهر رياضاتك ومستوياتك';
+
+  @override
+  String get priv_t_history => 'سجل المباريات';
+
+  @override
+  String get priv_t_history_sub => 'أظهر مبارياتك السابقة';
+
+  @override
+  String get priv_t_stats => 'الإحصاءات';
+
+  @override
+  String get priv_t_stats_sub => 'أظهر إحصاءات أدائك';
+
+  @override
+  String get priv_t_achievements => 'الإنجازات';
+
+  @override
+  String get priv_t_achievements_sub => 'أظهر إنجازاتك';
+
+  @override
+  String get priv_t_indexing => 'فهرسة محركات البحث';
+
+  @override
+  String get priv_t_indexing_sub => 'اسمح للخدمات الخارجية بإيجاد ملفك';
+
+  @override
+  String get priv_t_nearby => 'إخفاء من القريبين';
+
+  @override
+  String get priv_t_nearby_sub => 'لا تظهر في بحث اللاعبين القريبين';
+
+  @override
+  String get priv_t_tracking => 'تتبع الموقع';
+
+  @override
+  String get priv_t_tracking_sub => 'اسمح بالميزات المعتمدة على الموقع';
+
+  @override
+  String get priv_t_recs => 'توصيات المباريات';
+
+  @override
+  String get priv_t_recs_sub => 'اقتراحات مباريات مخصّصة';
+
+  @override
+  String get priv_t_analytics => 'تحليلات مجهولة';
+
+  @override
+  String get priv_t_analytics_sub => 'ساعد في تحسين التطبيق';
+
+  @override
+  String get priv_t_push => 'الإشعارات الفورية';
+
+  @override
+  String get priv_t_push_sub => 'تلقَّ إشعارات فورية على جهازك';
+
+  @override
+  String get priv_t_mail => 'إشعارات البريد';
+
+  @override
+  String get priv_t_mail_sub => 'تلقَّ الإشعارات عبر البريد';
+
+  @override
+  String get appr_title => 'المظهر';
+
+  @override
+  String get appr_group_theme => 'السمة';
+
+  @override
+  String get appr_light => 'فاتح';
+
+  @override
+  String get appr_dark => 'داكن';
+
+  @override
+  String get appr_system => 'النظام';
+
+  @override
+  String appr_theme_applied(String theme) {
+    return 'سمة $theme';
+  }
+
+  @override
+  String get appr_group_color => 'سمة الألوان';
+
+  @override
+  String get appr_group_color_note => 'طبّق مجموعة ألوان واحدة على التطبيق كله';
+
+  @override
+  String appr_color_use(String name) {
+    return 'استخدم ألوان $name في التطبيق كله';
+  }
+
+  @override
+  String get appr_group_auto => 'السمة التلقائية';
+
+  @override
+  String get appr_group_auto_note => 'بدّل تلقائيًا بين السمة الفاتحة والداكنة';
+
+  @override
+  String get appr_auto_title => 'سمة حسب الوقت';
+
+  @override
+  String get appr_auto_sub => 'بدّل السمة حسب وقت اليوم';
+
+  @override
+  String get appr_group_schedule => 'جدول النهار والليل';
+
+  @override
+  String get appr_group_schedule_note => 'حدد متى تعمل السمة الفاتحة والداكنة';
+
+  @override
+  String get appr_day_title => 'يبدأ النهار عند';
+
+  @override
+  String get appr_day_sub => 'تعمل السمة الفاتحة';
+
+  @override
+  String get appr_night_title => 'يبدأ الليل عند';
+
+  @override
+  String get appr_night_sub => 'تعمل السمة الداكنة';
+
+  @override
+  String get region_title => 'اللغة والمنطقة';
+
+  @override
+  String get region_language => 'اللغة';
+
+  @override
+  String get region_language_sub => 'لغة التطبيق والمحتوى';
+
+  @override
+  String get region_language_updated => 'تم تحديث اللغة';
+
+  @override
+  String get region_country => 'دولة التطبيق';
+
+  @override
+  String get region_country_sub => 'المباريات والملاعب والعملة';
+
+  @override
+  String get region_country_updated => 'تم تحديث الدولة';
+
+  @override
+  String get region_lang_en => 'English · English';
+
+  @override
+  String get region_lang_ar => 'Arabic · العربية';
+
+  @override
+  String get region_country_Egypt => 'مصر';
+
+  @override
+  String get region_country_UAE => 'الإمارات';
+
+  @override
+  String get region_country_KSA => 'السعودية';
+
+  @override
+  String get region_country_Morocco => 'المغرب';
+
+  @override
+  String region_error(String error) {
+    return 'خطأ: $error';
+  }
+
+  @override
   String get listing_set_location => 'حدد الموقع';
 
   @override

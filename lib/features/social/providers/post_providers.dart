@@ -326,32 +326,33 @@ final sportsProvider = FutureProvider.autoDispose<List<Sport>>((ref) async {
 /// by popularity_countries. Falls back to all active sports when no match.
 final sportsForSelectedCountryProvider =
     FutureProvider.autoDispose<List<Sport>>((ref) async {
-  final repo = ref.watch(sportsRepositoryProvider);
+      final repo = ref.watch(sportsRepositoryProvider);
 
-  // Resolve country name to ISO code
-  String? countryCode;
-  try {
-    final countryName = ref
-        .watch(selectedCountryProvider)
-        .valueOrNull;
-    if (countryName != null && countryName.isNotEmpty) {
-      final rows = await Supabase.instance.client
-          .from(SupabaseConfig.refCountriesTable)
-          .select('code')
-          .eq('name_en', countryName)
-          .eq('coverage', true)
-          .limit(1);
-      if (rows.isNotEmpty) {
-        countryCode = rows.first['code'] as String?;
+      // Resolve country name to ISO code
+      String? countryCode;
+      try {
+        final countryName = ref.watch(selectedCountryProvider).valueOrNull;
+        if (countryName != null && countryName.isNotEmpty) {
+          final rows = await Supabase.instance.client
+              .from(SupabaseConfig.refCountriesTable)
+              .select('code')
+              .eq('name_en', countryName)
+              .eq('coverage', true)
+              .limit(1);
+          if (rows.isNotEmpty) {
+            countryCode = rows.first['code'] as String?;
+          }
+        }
+      } catch (_) {
+        // If lookup fails, fall through with null countryCode → all sports
       }
-    }
-  } catch (_) {
-    // If lookup fails, fall through with null countryCode → all sports
-  }
 
-  final result = await repo.getActiveSportsForCountry(countryCode);
-  return result.fold((err) => throw Exception(err.message), (sports) => sports);
-});
+      final result = await repo.getActiveSportsForCountry(countryCode);
+      return result.fold(
+        (err) => throw Exception(err.message),
+        (sports) => sports,
+      );
+    });
 
 /// Active sports filtered by the authenticated user's stored country (ISO code).
 /// Falls back to all active sports when country is unset or unmatched.
@@ -360,38 +361,44 @@ final sportsForSelectedCountryProvider =
 /// Falls back to all active sports when country is unset or unmatched.
 final activeSportsByProfileCountryProvider =
     FutureProvider.autoDispose<List<Sport>>((ref) async {
-  final repo = ref.watch(sportsRepositoryProvider);
-  final profile = ref.watch(profileControllerProvider).profile;
-  final countryCode = profile?.country; // already an ISO code (e.g. "AE")
-  final primarySportId = profile?.preferredSport;
+      final repo = ref.watch(sportsRepositoryProvider);
+      final profile = ref.watch(profileControllerProvider).profile;
+      final countryCode = profile?.country; // already an ISO code (e.g. "AE")
+      final primarySportId = profile?.preferredSport;
 
-  final result = await repo.getActiveSportsForCountry(countryCode);
-  final sports = result.fold((err) => throw Exception(err.message), (s) => s);
+      final result = await repo.getActiveSportsForCountry(countryCode);
+      final sports = result.fold(
+        (err) => throw Exception(err.message),
+        (s) => s,
+      );
 
-  if (primarySportId == null) return sports;
+      if (primarySportId == null) return sports;
 
-  final primary = sports.where((s) => s.id == primarySportId).toList();
-  final rest = sports.where((s) => s.id != primarySportId).toList();
-  return [...primary, ...rest];
-});
+      final primary = sports.where((s) => s.id == primarySportId).toList();
+      final rest = sports.where((s) => s.id != primarySportId).toList();
+      return [...primary, ...rest];
+    });
 
 /// Challenge-eligible sports filtered by the user's country, primary sport first.
 /// Used by the game composer sport picker.
 final activeChallengeSportsByProfileCountryProvider =
     FutureProvider.autoDispose<List<Sport>>((ref) async {
-  final repo = ref.watch(sportsRepositoryProvider);
-  final profile = ref.watch(profileControllerProvider).profile;
-  final countryCode = profile?.country;
-  final primarySportId = profile?.preferredSport;
+      final repo = ref.watch(sportsRepositoryProvider);
+      final profile = ref.watch(profileControllerProvider).profile;
+      final countryCode = profile?.country;
+      final primarySportId = profile?.preferredSport;
 
-  final result = await repo.getActiveChallengeSportsForCountry(countryCode);
-  final sports = result.fold((err) => throw Exception(err.message), (s) => s);
+      final result = await repo.getActiveChallengeSportsForCountry(countryCode);
+      final sports = result.fold(
+        (err) => throw Exception(err.message),
+        (s) => s,
+      );
 
-  if (primarySportId == null) return sports;
-  final primary = sports.where((s) => s.id == primarySportId).toList();
-  final rest = sports.where((s) => s.id != primarySportId).toList();
-  return [...primary, ...rest];
-});
+      if (primarySportId == null) return sports;
+      final primary = sports.where((s) => s.id == primarySportId).toList();
+      final rest = sports.where((s) => s.id != primarySportId).toList();
+      return [...primary, ...rest];
+    });
 
 /// Legacy: raw map list for backward compatibility with old pickers.
 final sportsListProvider =

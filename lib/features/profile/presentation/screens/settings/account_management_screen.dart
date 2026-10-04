@@ -1,16 +1,24 @@
-import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings/delete_account_sheet_body.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
+import 'package:dabbler/features/profile/services/data_export_service.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/l10n/app_localizations.dart';
-import '../../../../../core/services/auth_service.dart';
-import 'package:dabbler/features/profile/services/data_export_service.dart';
-import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
-/// Screen for managing account settings like email, password, and security
+import '../../../../../core/services/auth_service.dart';
+
+/// Account and security — `Settings.dc.html` route `account`: the sign-in rows
+/// (email, password), the security switches and the danger zone, with the email
+/// and password forms and the delete confirmation in sheets.
 class AccountManagementScreen extends ConsumerStatefulWidget {
   const AccountManagementScreen({super.key});
 
@@ -20,12 +28,7 @@ class AccountManagementScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountManagementScreenState
-    extends ConsumerState<AccountManagementScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
+    extends ConsumerState<AccountManagementScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _currentPasswordController =
       TextEditingController();
@@ -35,52 +38,44 @@ class _AccountManagementScreenState
 
   bool _isLoading = false;
   bool _isSaving = false;
-  // Release 2 placeholder: kept for future security settings UI.
-  // ignore: unused_field
-  bool _isTwoFactorEnabled = false;
-  String? _errorMessage;
+  String? _generalError;
+  String? _emailError;
+  String? _passwordError;
 
   // True when the account already has an email/password credential. OAuth-only
   // accounts (Google/Apple) have no password, so they get a "Set Password" flow
   // that doesn't ask for a current password.
   bool _hasPassword = true;
 
+  /// The signed-in email shown on the row, and in the form as the draft.
+  String _email = '';
+
+  /// Rebuilds the sheet that is open, if any, so it follows [_isSaving] and the
+  /// field errors.
+  StateSetter? _sheetSetState;
+
   final AuthService _authService = AuthService();
+
+  AppLocalizations get _l10n => AppLocalizations.of(context);
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
     _loadAccountData();
-  }
-
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      duration: DabblerMotion.screenEntrance,
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: DabblerMotion.standardInOut,
-      ),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: DabblerMotion.emphasizedDecelerate,
-          ),
-        );
-
-    _animationController.forward();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userId = ref.read(currentUserIdProvider);
+      if (userId != null) {
+        ref
+            .read(privacyControllerProvider.notifier)
+            .loadPrivacySettings(userId);
+      }
+    });
   }
 
   Future<void> _loadAccountData() async {
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _generalError = null;
     });
 
     try {
@@ -88,11 +83,7 @@ class _AccountManagementScreenState
       // the currently signed-in user. currentUserEmailProvider is a cached
       // (non-reactive) Provider and can be stale after switching accounts.
       final currentEmail = _authService.getCurrentUserEmail();
-
-      // Load 2FA status (if available)
       final user = _authService.getCurrentUser();
-      final factors = user?.factors ?? [];
-      final has2FA = factors.isNotEmpty;
 
       // Detect whether the account actually has a password set. An "email"
       // identity alone is NOT sufficient — email-OTP accounts have an email
@@ -113,14 +104,15 @@ class _AccountManagementScreenState
 
       if (!mounted) return;
       setState(() {
-        _emailController.text = currentEmail ?? '';
-        _isTwoFactorEnabled = has2FA;
+        _email = currentEmail ?? '';
+        _emailController.text = _email;
         _hasPassword = hasPassword;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load account data: $e';
+        _generalError = _l10n.acct_load_failed(e.toString());
         _isLoading = false;
       });
     }
@@ -128,12 +120,18 @@ class _AccountManagementScreenState
 
   @override
   void dispose() {
-    _animationController.dispose();
     _emailController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  /// [setState] for the screen and for the sheet in front of it.
+  void _update(VoidCallback change) {
+    if (!mounted) return;
+    setState(change);
+    _sheetSetState?.call(() {});
   }
 
   void _toast(String message, DabblerToastTone tone) {
@@ -142,214 +140,198 @@ class _AccountManagementScreenState
     ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
+  void _closeSheet() {
+    Navigator.of(context, rootNavigator: true).maybePop();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final generalError =
-        _errorMessage != null &&
-        !_errorMessage!.contains('password') &&
-        !_errorMessage!.contains('email');
-
+    final l10n = AppLocalizations.of(context);
+    final settings = ref.watch(privacyControllerProvider).settings;
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Account Management',
+      topBar: settingsTopBar(
+        context,
+        title: l10n.acct_title,
         onBack: () => context.pop(),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space4,
-          DabblerSpacing.space6,
-          DabblerSpacing.space11,
-        ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: _isLoading
-                ? const SizedBox(
-                    height: DabblerSizing.mediaPreviewHeight,
-                    child: Center(child: DabblerSpinner()),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: _isLoading
+          ? const Center(child: DabblerSpinner())
+          : ListView(
+              padding: kSettingsBodyPadding,
+              children: [
+                if (_generalError != null) ...[
+                  DabblerBanner(
+                    tone: DabblerBannerTone.error,
+                    message: _generalError,
+                    onDismiss: () => setState(() => _generalError = null),
+                  ),
+                  kSettingsGroupGap,
+                ],
+                DabblerRowGroup(
+                  header: l10n.acct_group_signin,
+                  children: [
+                    DabblerInputRow(
+                      flat: true,
+                      showDivider: false,
+                      leading: settingsRowIcon(context, 'sms'),
+                      title: l10n.acct_row_email,
+                      value: _email.isEmpty ? null : _email,
+                      trailing: _email.isEmpty ? const DabblerChevron() : null,
+                      onTap: _showEmailSheet,
+                    ),
+                    DabblerInputRow(
+                      flat: true,
+                      showDivider: false,
+                      leading: settingsRowIcon(context, 'lock'),
+                      title: l10n.acct_row_password,
+                      value: _hasPassword ? '••••••••' : null,
+                      trailing: _hasPassword ? null : const DabblerChevron(),
+                      onTap: _showPasswordSheet,
+                    ),
+                  ],
+                ),
+                if (settings != null) ...[
+                  kSettingsGroupGap,
+                  DabblerRowGroup(
+                    header: l10n.acct_group_security,
+                    note: l10n.acct_group_security_note,
                     children: [
-                      if (generalError) ...[
-                        DabblerBanner(
-                          tone: DabblerBannerTone.error,
-                          message: _errorMessage,
-                          onDismiss: () {
-                            setState(() {
-                              _errorMessage = null;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: DabblerSpacing.space4),
-                      ],
-                      _buildEmailSection(),
-                      const SizedBox(height: DabblerSpacing.space7),
-                      _buildPasswordSection(),
-                      // KAN-52/KAN-103/P-029: hidden until the export
-                      // mechanism covers every data category — see
-                      // FeatureFlags.enableDataExport.
-                      if (FeatureFlags.enableDataExport) ...[
-                        const SizedBox(height: DabblerSpacing.space7),
-                        _buildDataExportSection(),
-                      ],
-                      const SizedBox(height: DabblerSpacing.space7),
-                      AccountDangerZone(onDelete: _showDeleteAccountDialog),
+                      DabblerInputRow.toggle(
+                        flat: true,
+                        showDivider: false,
+                        leading: settingsRowIcon(context, 'shield-tick'),
+                        title: l10n.acct_2fa_title,
+                        subtitle: l10n.acct_2fa_sub,
+                        checked: settings.twoFactorEnabled,
+                        toggleSemanticLabel: l10n.acct_2fa_title,
+                        onChanged: (v) => _setSecurity('twoFactorEnabled', v),
+                      ),
+                      DabblerInputRow.toggle(
+                        flat: true,
+                        showDivider: false,
+                        leading: settingsRowIcon(context, 'login'),
+                        title: l10n.acct_alerts_title,
+                        subtitle: l10n.acct_alerts_sub,
+                        checked: settings.loginAlerts,
+                        toggleSemanticLabel: l10n.acct_alerts_title,
+                        onChanged: (v) => _setSecurity('loginAlerts', v),
+                      ),
                     ],
                   ),
-          ),
-        ),
+                ],
+                // KAN-52/KAN-103/P-029: hidden until the export mechanism
+                // covers every data category — see FeatureFlags.enableDataExport.
+                if (FeatureFlags.enableDataExport) ...[
+                  kSettingsGroupGap,
+                  DabblerRowGroup(
+                    children: [
+                      DabblerInputRow(
+                        flat: true,
+                        showDivider: false,
+                        leading: settingsRowIcon(context, 'document-download'),
+                        title: l10n.acct_export_title,
+                        subtitle: l10n.acct_export_sub,
+                        trailing: const DabblerChevron(),
+                        onTap: _requestDataExport,
+                      ),
+                    ],
+                  ),
+                ],
+                kSettingsGroupGap,
+                AccountDangerZone(onDelete: _showDeleteSheet),
+              ],
+            ),
+    );
+  }
+
+  /// A security switch applies at once, like every Settings control.
+  Future<void> _setSecurity(String key, bool value) async {
+    final ctrl = ref.read(privacyControllerProvider.notifier);
+    ctrl.updateSetting(key, value);
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    final saved = await ctrl.saveAllChanges(userId);
+    if (!mounted || saved) return;
+    _toast(_l10n.priv_save_failed, DabblerToastTone.error);
+  }
+
+  // ─── Email ──────────────────────────────────────────────────────────────
+
+  Future<void> _showEmailSheet() async {
+    _emailController.text = _email;
+    _emailError = null;
+    await showDabblerSheet<void>(
+      context: context,
+      title: _l10n.acct_email_sheet_title,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          _sheetSetState = setSheetState;
+          final l10n = AppLocalizations.of(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DabblerTextField(
+                controller: _emailController,
+                label: l10n.acct_email_field,
+                prefixIcon: const DabblerIcon(
+                  'sms',
+                  size: DabblerSizing.iconSm,
+                ),
+                keyboardType: TextInputType.emailAddress,
+                errorText: _emailError,
+              ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              DabblerText(
+                l10n.acct_email_helper,
+                style: DabblerType.caption1,
+                tone: DabblerTextTone.secondary,
+              ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              DabblerButton(
+                label: _isSaving
+                    ? l10n.acct_email_updating
+                    : l10n.acct_email_update,
+                size: DabblerButtonSize.block,
+                disabled: _isSaving,
+                onPressed: _updateEmail,
+              ),
+            ],
+          );
+        },
       ),
     );
-  }
-
-  Widget _buildEmailSection() {
-    final emailError = _errorMessage != null && _errorMessage!.contains('email')
-        ? _errorMessage
-        : null;
-    return DabblerSection(
-      title: 'Email Address',
-      children: [
-        DabblerTextField(
-          controller: _emailController,
-          label: 'Email',
-          prefixIcon: const DabblerIcon('sms', size: DabblerSizing.iconSm),
-          keyboardType: TextInputType.emailAddress,
-          errorText: emailError,
-        ),
-        DabblerButton(
-          label: _isSaving ? 'Updating...' : 'Update Email',
-          disabled: _isSaving,
-          fullWidth: true,
-          onPressed: _updateEmail,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordSection() {
-    final passwordError =
-        _errorMessage != null && _errorMessage!.contains('password')
-        ? _errorMessage
-        : null;
-    return DabblerSection(
-      title: _hasPassword ? 'Change Password' : 'Set Password',
-      subtitle: _hasPassword
-          ? null
-          : 'You signed in with Google or Apple. Set a password to also '
-                'sign in with your email.',
-      children: [
-        if (_hasPassword)
-          DabblerTextField(
-            variant: DabblerTextFieldVariant.password,
-            controller: _currentPasswordController,
-            label: 'Current Password',
-          ),
-        DabblerTextField(
-          variant: DabblerTextFieldVariant.password,
-          controller: _newPasswordController,
-          label: 'New Password',
-        ),
-        DabblerTextField(
-          variant: DabblerTextFieldVariant.password,
-          controller: _confirmPasswordController,
-          label: 'Confirm New Password',
-          errorText: passwordError,
-        ),
-        DabblerButton(
-          label: _isSaving
-              ? (_hasPassword ? 'Changing...' : 'Setting...')
-              : (_hasPassword ? 'Change Password' : 'Set Password'),
-          disabled: _isSaving,
-          fullWidth: true,
-          onPressed: _changePassword,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDataExportSection() {
-    final colors = DabblerColors.of(context);
-    return DabblerRowGroup(
-      children: [
-        DabblerInputRow(
-          flat: true,
-          showDivider: false,
-          title: 'Export My Data',
-          subtitle:
-              'Request a copy of your Dabbler data (PDPL data portability)',
-          leading: DabblerIcon(
-            'document-download',
-            size: DabblerSizing.iconMd,
-            color: colors.textSecondary,
-          ),
-          trailing: const DabblerChevron(),
-          onTap: _requestDataExport,
-        ),
-      ],
-    );
-  }
-
-  Future<void> _requestDataExport() async {
-    final user = _authService.getCurrentUser();
-    final email = _authService.getCurrentUserEmail();
-    if (user == null || email == null) return;
-
-    try {
-      await DataExportService().requestGDPRDataExport(
-        userId: user.id,
-        format: DataExportFormat.json,
-        userEmail: email,
-      );
-      AnalyticsService.trackEvent('data_export_requested', {'format': 'json'});
-      if (!mounted) return;
-      _toast(
-        "We're preparing your data export. You'll be notified by email when it's ready.",
-        DabblerToastTone.success,
-      );
-    } catch (e) {
-      if (!mounted) return;
-      _toast('Could not request data export: $e', DabblerToastTone.neutral);
-    }
+    _sheetSetState = null;
   }
 
   Future<void> _updateEmail() async {
+    final l10n = _l10n;
     final newEmail = _emailController.text.trim();
 
-    // Clear previous error messages
-    setState(() {
-      _errorMessage = null;
-    });
+    _update(() => _emailError = null);
 
     if (newEmail.isEmpty) {
-      setState(() {
-        _errorMessage = 'email: Email cannot be empty';
-      });
+      _update(() => _emailError = l10n.acct_email_empty);
       return;
     }
 
     // Basic email validation
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(newEmail)) {
-      setState(() {
-        _errorMessage = 'email: Please enter a valid email address';
-      });
+      _update(() => _emailError = l10n.acct_email_invalid);
       return;
     }
 
     final currentEmail = _authService.getCurrentUserEmail();
     if (newEmail == currentEmail) {
-      setState(() {
-        _errorMessage = 'email: New email is the same as current email';
-      });
+      _update(() => _emailError = l10n.acct_email_same);
       return;
     }
 
-    setState(() {
+    _update(() {
       _isSaving = true;
-      _errorMessage = null;
+      _emailError = null;
     });
 
     try {
@@ -358,80 +340,143 @@ class _AccountManagementScreenState
         UserAttributes(email: newEmail),
       );
 
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-
-        _toast(
-          'Email update request sent. Please check your new email for verification.',
-          DabblerToastTone.success,
-        );
-      }
+      if (!mounted) return;
+      _update(() => _isSaving = false);
+      _closeSheet();
+      _toast(l10n.acct_email_sent, DabblerToastTone.success);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-          _errorMessage = 'email: Failed to update email: ${e.toString()}';
-        });
-
-        _toast('Failed to update email: $e', DabblerToastTone.error);
-      }
+      if (!mounted) return;
+      _update(() {
+        _isSaving = false;
+        _emailError = l10n.acct_email_failed(e.toString());
+      });
+      _toast(l10n.acct_email_failed(e.toString()), DabblerToastTone.error);
     }
   }
 
+  // ─── Password ───────────────────────────────────────────────────────────
+
+  Future<void> _showPasswordSheet() async {
+    _passwordError = null;
+    await showDabblerSheet<void>(
+      context: context,
+      title: _hasPassword
+          ? _l10n.acct_password_change_title
+          : _l10n.acct_password_set_title,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          _sheetSetState = setSheetState;
+          final l10n = AppLocalizations.of(context);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (!_hasPassword) ...[
+                DabblerText(
+                  l10n.acct_password_set_note,
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+              ],
+              if (_hasPassword) ...[
+                DabblerTextField(
+                  variant: DabblerTextFieldVariant.password,
+                  controller: _currentPasswordController,
+                  label: l10n.acct_password_current,
+                  prefixIcon: const DabblerIcon(
+                    'lock',
+                    size: DabblerSizing.iconSm,
+                  ),
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+              ],
+              DabblerTextField(
+                variant: DabblerTextFieldVariant.password,
+                controller: _newPasswordController,
+                label: l10n.acct_password_new,
+                helperText: l10n.acct_password_new_helper,
+                prefixIcon: const DabblerIcon(
+                  'lock',
+                  size: DabblerSizing.iconSm,
+                ),
+              ),
+              const DabblerGap.v(DabblerSpacing.space4),
+              DabblerTextField(
+                variant: DabblerTextFieldVariant.password,
+                controller: _confirmPasswordController,
+                label: l10n.acct_password_confirm,
+                errorText: _passwordError,
+                prefixIcon: const DabblerIcon(
+                  'lock',
+                  size: DabblerSizing.iconSm,
+                ),
+              ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              DabblerButton(
+                label: _isSaving
+                    ? (_hasPassword
+                          ? l10n.acct_password_changing
+                          : l10n.acct_password_setting)
+                    : (_hasPassword
+                          ? l10n.acct_password_change
+                          : l10n.acct_password_set),
+                size: DabblerButtonSize.block,
+                disabled: _isSaving,
+                onPressed: _changePassword,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    _sheetSetState = null;
+    _currentPasswordController.clear();
+    _newPasswordController.clear();
+    _confirmPasswordController.clear();
+  }
+
   Future<void> _changePassword() async {
+    final l10n = _l10n;
     final currentPassword = _currentPasswordController.text;
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    // Clear previous error messages
-    setState(() {
-      _errorMessage = null;
-    });
+    _update(() => _passwordError = null);
 
     // Validation. The current password is only required when the account
     // already has one (email/password users); OAuth-only users are setting a
     // password for the first time.
     if (_hasPassword && currentPassword.isEmpty) {
-      setState(() {
-        _errorMessage = 'password: Please enter your current password';
-      });
+      _update(() => _passwordError = l10n.acct_password_err_current);
       return;
     }
 
     if (newPassword.isEmpty) {
-      setState(() {
-        _errorMessage = 'password: Please enter a new password';
-      });
+      _update(() => _passwordError = l10n.acct_password_err_new);
       return;
     }
 
     if (newPassword.length < 6) {
-      setState(() {
-        _errorMessage = 'password: Password must be at least 6 characters long';
-      });
+      _update(() => _passwordError = l10n.acct_password_err_short);
       return;
     }
 
     if (newPassword != confirmPassword) {
-      setState(() {
-        _errorMessage = 'password: Passwords do not match';
-      });
+      _update(() => _passwordError = l10n.acct_password_err_mismatch);
       return;
     }
 
     if (_hasPassword && currentPassword == newPassword) {
-      setState(() {
-        _errorMessage =
-            'password: New password must be different from current password';
-      });
+      _update(() => _passwordError = l10n.acct_password_err_same);
       return;
     }
 
-    setState(() {
+    _update(() {
       _isSaving = true;
-      _errorMessage = null;
+      _passwordError = null;
     });
 
     try {
@@ -450,199 +495,109 @@ class _AccountManagementScreenState
             password: currentPassword,
           );
         } catch (e) {
-          throw Exception('Current password is incorrect');
+          throw Exception(l10n.acct_password_err_incorrect);
         }
       }
 
       // Update (or set) the password.
       await _authService.updatePassword(newPassword);
 
-      if (mounted) {
-        final wasSettingPassword = !_hasPassword;
-        setState(() {
-          _isSaving = false;
-          // The account now has a password, so future visits show "Change".
-          _hasPassword = true;
-          _currentPasswordController.clear();
-          _newPasswordController.clear();
-          _confirmPasswordController.clear();
-        });
-
-        _toast(
-          wasSettingPassword
-              ? 'Password set. You can now sign in with your email and password.'
-              : 'Password updated successfully',
-          DabblerToastTone.success,
-        );
-      }
+      if (!mounted) return;
+      final wasSettingPassword = !_hasPassword;
+      _update(() {
+        _isSaving = false;
+        // The account now has a password, so future visits show "Change".
+        _hasPassword = true;
+      });
+      _closeSheet();
+      _toast(
+        wasSettingPassword
+            ? l10n.acct_password_was_set
+            : l10n.acct_password_changed,
+        DabblerToastTone.success,
+      );
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-          _errorMessage =
-              'password: ${e.toString().replaceAll('Exception: ', '')}';
-        });
-
-        _toast('Failed to change password: $e', DabblerToastTone.error);
-      }
+      if (!mounted) return;
+      final message = e.toString().replaceAll('Exception: ', '');
+      _update(() {
+        _isSaving = false;
+        _passwordError = message;
+      });
+      _toast(l10n.acct_password_failed(message), DabblerToastTone.error);
     }
   }
 
-  // Release 2 placeholder.
-  // ignore: unused_element
-  Future<void> _toggleTwoFactor(bool enabled) async {
+  // ─── Data export ────────────────────────────────────────────────────────
+
+  Future<void> _requestDataExport() async {
+    final user = _authService.getCurrentUser();
+    final email = _authService.getCurrentUserEmail();
+    if (user == null || email == null) return;
+
     try {
-      if (enabled) {
-        // Enable 2FA - Supabase requires TOTP setup
-        // For now, show a message that 2FA setup requires additional configuration
-        if (mounted) {
-          _showInfoDialog(
-            'Enable Two-Factor Authentication',
-            'Two-factor authentication setup requires additional configuration. '
-                'Please use the Supabase dashboard or contact support to enable this feature.',
-            onOk: () => setState(() {
-              _isTwoFactorEnabled = false;
-            }),
-          );
-        }
-      } else {
-        // Disable 2FA
-        setState(() {
-          _isTwoFactorEnabled = false;
-        });
-
-        if (mounted) {
-          _toast(
-            'Two-factor authentication disabled',
-            DabblerToastTone.success,
-          );
-        }
-      }
+      await DataExportService().requestGDPRDataExport(
+        userId: user.id,
+        format: DataExportFormat.json,
+        userEmail: email,
+      );
+      AnalyticsService.trackEvent('data_export_requested', {'format': 'json'});
+      if (!mounted) return;
+      _toast(_l10n.acct_export_started, DabblerToastTone.success);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isTwoFactorEnabled = !enabled; // Revert the toggle
-        });
-
-        _toast('Failed to update 2FA: $e', DabblerToastTone.error);
-      }
+      if (!mounted) return;
+      _toast(_l10n.acct_export_failed(e.toString()), DabblerToastTone.neutral);
     }
   }
 
-  // Release 2 placeholder.
-  // ignore: unused_element
-  void _manageDevices() {
-    _showInfoDialog(
-      'Manage Devices',
-      'Device management allows you to view and revoke access from devices where you\'re logged in. '
-          'This feature will be available in a future update.',
-    );
-  }
+  // ─── Delete ─────────────────────────────────────────────────────────────
 
-  // Release 2 placeholder.
-  // ignore: unused_element
-  void _viewLoginHistory() {
-    _showInfoDialog(
-      'Login History',
-      'Login history shows recent sign-in activity on your account. '
-          'This feature will be available in a future update.',
-    );
-  }
+  Future<void> _showDeleteSheet() async {
+    final confirmTextController = TextEditingController();
+    var isDeleting = false;
 
-  void _showInfoDialog(String title, String body, {VoidCallback? onOk}) {
-    showDabblerDialog<void>(
+    await showDabblerSheet<void>(
       context: context,
-      builder: (dialogContext) => DabblerDialog(
-        title: title,
-        description: body,
-        onClose: () => Navigator.of(dialogContext).pop(),
-        primaryAction: DabblerDialogAction(
-          label: 'OK',
-          onPressed: () {
-            Navigator.of(dialogContext).pop();
-            onOk?.call();
+      title: _l10n.acct_delete_title,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
+      builder: (_) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => DeleteAccountSheetBody(
+          confirmController: confirmTextController,
+          deleting: isDeleting,
+          onCancel: () => Navigator.of(sheetContext).pop(),
+          onConfirm: () async {
+            final l10n = AppLocalizations.of(sheetContext);
+            if (confirmTextController.text != 'DELETE') {
+              DabblerToastProvider.of(sheetContext).show(
+                DabblerToastSpec(
+                  message: l10n.acct_delete_type_error,
+                  tone: DabblerToastTone.error,
+                ),
+              );
+              return;
+            }
+
+            setSheetState(() => isDeleting = true);
+
+            try {
+              await _deleteAccount();
+              if (sheetContext.mounted) Navigator.of(sheetContext).pop();
+            } catch (e) {
+              setSheetState(() => isDeleting = false);
+              if (sheetContext.mounted) {
+                DabblerToastProvider.of(sheetContext).show(
+                  DabblerToastSpec(
+                    message: l10n.acct_delete_failed(e.toString()),
+                    tone: DabblerToastTone.error,
+                  ),
+                );
+              }
+            }
           },
         ),
       ),
     );
-  }
-
-  void _showDeleteAccountDialog() {
-    final confirmTextController = TextEditingController();
-    bool isDeleting = false;
-
-    showDabblerDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => DabblerDialog(
-          title: 'Delete Account',
-          destructive: true,
-          dismissible: !isDeleting,
-          onClose: isDeleting
-              ? null
-              : () {
-                  confirmTextController.dispose();
-                  Navigator.of(context).pop();
-                },
-          secondaryAction: DabblerDialogAction(
-            label: 'Cancel',
-            onPressed: isDeleting
-                ? () {}
-                : () {
-                    confirmTextController.dispose();
-                    Navigator.of(context).pop();
-                  },
-          ),
-          primaryAction: DabblerDialogAction(
-            label: 'Delete Account',
-            // While deleting, the button shows its spinner and the dialog
-            // cannot be dismissed — the original Material dialog's behaviour.
-            loading: isDeleting,
-            onPressed: () async {
-              if (confirmTextController.text != 'DELETE') {
-                DabblerToastProvider.of(context).show(
-                  const DabblerToastSpec(
-                    message: 'Please type "DELETE" to confirm',
-                    tone: DabblerToastTone.error,
-                  ),
-                );
-                return;
-              }
-
-              setDialogState(() {
-                isDeleting = true;
-              });
-
-              try {
-                await _deleteAccount();
-
-                if (context.mounted) {
-                  confirmTextController.dispose();
-                  Navigator.of(context).pop();
-                }
-              } catch (e) {
-                setDialogState(() {
-                  isDeleting = false;
-                });
-
-                if (context.mounted) {
-                  DabblerToastProvider.of(context).show(
-                    DabblerToastSpec(
-                      message: 'Failed to delete account: $e',
-                      tone: DabblerToastTone.error,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-          child: DeleteAccountDialogContent(
-            confirmController: confirmTextController,
-            enabled: !isDeleting,
-          ),
-        ),
-      ),
-    );
+    confirmTextController.dispose();
   }
 
   Future<void> _deleteAccount() async {
@@ -681,10 +636,8 @@ class _AccountManagementScreenState
   }
 }
 
-/// The "Secure your account" intro at the top of the account screen.
-///
-
-/// The delete-account row. Public so the render test can pump it.
+/// The delete-account row in its own "Danger zone" group. Public so the render
+/// test can pump it.
 class AccountDangerZone extends StatelessWidget {
   const AccountDangerZone({super.key, required this.onDelete});
 
@@ -692,70 +645,20 @@ class AccountDangerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DabblerRowGroup(
-      header: 'Danger zone',
+      header: l10n.acct_group_danger,
       children: [
         DabblerInputRow(
           flat: true,
           showDivider: false,
-          title: 'Delete Account',
-          subtitle: 'Permanently delete your account and all data',
+          title: l10n.acct_delete_title,
+          subtitle: l10n.acct_delete_sub,
           tone: DabblerInputRowTone.destructive,
-          leading: const DabblerIcon('trash', size: DabblerSizing.iconMd),
-          trailing: const DabblerChevron(),
+          leading: const DabblerIcon('trash', size: DabblerSizing.iconRow),
           onTap: onDelete,
         ),
       ],
-    );
-  }
-}
-
-/// The body of the delete-account confirmation dialog.
-///
-/// Extracted from [AccountManagementScreen] so KAN-161's AC2 — layout verified
-/// at the new string lengths in Arabic as well as English — can be exercised by
-/// a widget test against the widget the app actually renders, rather than a
-/// reconstruction of it in the test. The screen itself cannot be pumped: it
-/// reaches for `Supabase.instance` and an authenticated session.
-///
-/// The `Type "DELETE"` label is deliberately still a hardcoded English literal.
-/// It is outside KAN-160/KAN-161's scope and `content-manager` ruled the
-/// confirmation token stays a fixed Latin `DELETE`; see the ticket's scope
-/// correction #2.
-class DeleteAccountDialogContent extends StatelessWidget {
-  const DeleteAccountDialogContent({
-    super.key,
-    required this.confirmController,
-    required this.enabled,
-  });
-
-  final TextEditingController confirmController;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerText(
-            AppLocalizations.of(context).account_delete_dialog_warning,
-            style: DabblerType.body,
-            weight: DabblerTextWeight.bold,
-          ),
-          const SizedBox(height: DabblerSpacing.space5),
-          DabblerTextField(
-            controller: confirmController,
-            label: 'Type "DELETE" to confirm',
-            prefixIcon: const DabblerIcon(
-              'warning-2',
-              size: DabblerSizing.iconSm,
-            ),
-            enabled: enabled,
-          ),
-        ],
-      ),
     );
   }
 }

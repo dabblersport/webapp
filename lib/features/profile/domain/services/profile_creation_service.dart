@@ -275,7 +275,9 @@ class ProfileCreationService {
         'skill_level': 1, // Beginner level
       };
 
-      await _client.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
+      await _client
+          .from(SupabaseConfig.sportProfilesTable)
+          .insert(sportProfileData);
     }
 
     // Create persona-specific table row if applicable
@@ -311,7 +313,9 @@ class ProfileCreationService {
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from(SupabaseConfig.playerTable).insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.playerTable).insert({
+          'profile_id': profileId,
+        });
       }
     } catch (e) {
       // Player table insert is best-effort
@@ -329,7 +333,9 @@ class ProfileCreationService {
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from(SupabaseConfig.organiserTable).insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.organiserTable).insert({
+          'profile_id': profileId,
+        });
       }
     } catch (e) {
       // Organiser table insert is best-effort
@@ -346,7 +352,9 @@ class ProfileCreationService {
           .maybeSingle();
 
       if (existing == null) {
-        await _client.from(SupabaseConfig.hostTable).insert({'profile_id': profileId});
+        await _client.from(SupabaseConfig.hostTable).insert({
+          'profile_id': profileId,
+        });
       }
     } catch (e) {
       // Host table insert is best-effort
@@ -394,7 +402,9 @@ class ProfileCreationService {
         params: {'p_username': username.trim()},
       );
       final row = (response is List)
-          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          ? (response.isNotEmpty
+                ? response.first as Map<String, dynamic>
+                : null)
           : response as Map<String, dynamic>?;
       if (row == null) return false;
       return row['available'] as bool? ?? false;

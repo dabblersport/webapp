@@ -320,10 +320,7 @@ class _FullList extends StatelessWidget {
         ),
         const SizedBox(height: DabblerSpacing.space5),
         if (mode == SearchMode.profiles)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: rows,
-          )
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows)
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

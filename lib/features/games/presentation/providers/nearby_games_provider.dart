@@ -15,9 +15,7 @@ final nearbyGamesDatasourceProvider = Provider<NearbyGamesDatasource>((ref) {
 });
 
 final nearbyGamesRepositoryProvider = Provider<NearbyGamesRepository>((ref) {
-  return NearbyGamesRepositoryImpl(
-    ref.watch(nearbyGamesDatasourceProvider),
-  );
+  return NearbyGamesRepositoryImpl(ref.watch(nearbyGamesDatasourceProvider));
 });
 
 /// Per-screen sort state for nearby games.
@@ -36,18 +34,21 @@ enum GamesDateFilter { any, today, tomorrow, thisWeek }
 
 extension GamesDateFilterLabel on GamesDateFilter {
   String get label => switch (this) {
-        GamesDateFilter.any => 'Any date',
-        GamesDateFilter.today => 'Today',
-        GamesDateFilter.tomorrow => 'Tomorrow',
-        GamesDateFilter.thisWeek => 'This week',
-      };
+    GamesDateFilter.any => 'Any date',
+    GamesDateFilter.today => 'Today',
+    GamesDateFilter.tomorrow => 'Tomorrow',
+    GamesDateFilter.thisWeek => 'This week',
+  };
 
   bool matches(DateTime? scheduledAt, DateTime now) {
     if (this == GamesDateFilter.any) return true;
     if (scheduledAt == null) return false;
     final today = DateTime(now.year, now.month, now.day);
-    final gameDay =
-        DateTime(scheduledAt.year, scheduledAt.month, scheduledAt.day);
+    final gameDay = DateTime(
+      scheduledAt.year,
+      scheduledAt.month,
+      scheduledAt.day,
+    );
     final diff = gameDay.difference(today).inDays;
     return switch (this) {
       GamesDateFilter.any => true,
@@ -59,8 +60,9 @@ extension GamesDateFilterLabel on GamesDateFilter {
 }
 
 /// Date window filter for the games list.
-final gamesDateFilterProvider =
-    StateProvider<GamesDateFilter>((ref) => GamesDateFilter.any);
+final gamesDateFilterProvider = StateProvider<GamesDateFilter>(
+  (ref) => GamesDateFilter.any,
+);
 
 /// Only show games with open spots.
 final gamesOpenSpotsOnlyProvider = StateProvider<bool>((ref) => false);
@@ -71,20 +73,20 @@ enum GamesSkillFilter { any, beginner, intermediate, advanced, pro }
 
 extension GamesSkillFilterX on GamesSkillFilter {
   String get label => switch (this) {
-        GamesSkillFilter.any => 'Any skill',
-        GamesSkillFilter.beginner => 'Beginner',
-        GamesSkillFilter.intermediate => 'Intermediate',
-        GamesSkillFilter.advanced => 'Advanced',
-        GamesSkillFilter.pro => 'Pro',
-      };
+    GamesSkillFilter.any => 'Any skill',
+    GamesSkillFilter.beginner => 'Beginner',
+    GamesSkillFilter.intermediate => 'Intermediate',
+    GamesSkillFilter.advanced => 'Advanced',
+    GamesSkillFilter.pro => 'Pro',
+  };
 
   (int, int)? get range => switch (this) {
-        GamesSkillFilter.any => null,
-        GamesSkillFilter.beginner => (1, 3),
-        GamesSkillFilter.intermediate => (4, 6),
-        GamesSkillFilter.advanced => (7, 8),
-        GamesSkillFilter.pro => (9, 10),
-      };
+    GamesSkillFilter.any => null,
+    GamesSkillFilter.beginner => (1, 3),
+    GamesSkillFilter.intermediate => (4, 6),
+    GamesSkillFilter.advanced => (7, 8),
+    GamesSkillFilter.pro => (9, 10),
+  };
 
   /// A game matches when its skill window overlaps this tier. Games without
   /// a skill range are open to everyone and always match.
@@ -99,8 +101,9 @@ extension GamesSkillFilterX on GamesSkillFilter {
 }
 
 /// Selected skill tier for the games list.
-final gamesSkillFilterProvider =
-    StateProvider<GamesSkillFilter>((ref) => GamesSkillFilter.any);
+final gamesSkillFilterProvider = StateProvider<GamesSkillFilter>(
+  (ref) => GamesSkillFilter.any,
+);
 
 // =============================================================================
 // PARAMS
@@ -124,31 +127,31 @@ typedef NearbyGamesParams = ({
 /// When lat/lng are provided, uses the PostGIS RPC for proximity filtering.
 final nearbyGamesProvider = FutureProvider.autoDispose
     .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) async {
-  final repo = ref.read(nearbyGamesRepositoryProvider);
+      final repo = ref.read(nearbyGamesRepositoryProvider);
 
-  final lat = params.lat;
-  final lng = params.lng;
-  final result = (lat != null && lng != null)
-      ? await repo.getNearbyGames(
-          lat: lat,
-          lng: lng,
-          radiusMeters: params.radiusMeters ?? 10000,
-          sportId: params.sportId,
-          sortOrder: params.sortOrder,
-        )
-      : await repo.getAllGames(sportId: params.sportId);
-  return result.fold((f) => throw Exception(f.message), (g) => g);
-});
+      final lat = params.lat;
+      final lng = params.lng;
+      final result = (lat != null && lng != null)
+          ? await repo.getNearbyGames(
+              lat: lat,
+              lng: lng,
+              radiusMeters: params.radiusMeters ?? 10000,
+              sportId: params.sportId,
+              sortOrder: params.sortOrder,
+            )
+          : await repo.getAllGames(sportId: params.sportId);
+      return result.fold((f) => throw Exception(f.message), (g) => g);
+    });
 
 /// The viewer's own upcoming games (created or joined), pinned at the top of
 /// the games list. Location-independent — a quick game without a venue never
 /// shows in the nearby results but still belongs here. Param = sportId.
 final myPinnedGamesProvider = FutureProvider.autoDispose
     .family<List<NearbyGameModel>, String?>((ref, sportId) async {
-  final svc = ref.read(supabaseServiceProvider);
-  if (svc.client.auth.currentUser == null) return const [];
+      final svc = ref.read(supabaseServiceProvider);
+      if (svc.client.auth.currentUser == null) return const [];
 
-  final repo = ref.read(nearbyGamesRepositoryProvider);
-  final result = await repo.getMyUpcomingGames(sportId: sportId);
-  return result.fold((f) => throw Exception(f.message), (g) => g);
-});
+      final repo = ref.read(nearbyGamesRepositoryProvider);
+      final result = await repo.getMyUpcomingGames(sportId: sportId);
+      return result.fold((f) => throw Exception(f.message), (g) => g);
+    });
