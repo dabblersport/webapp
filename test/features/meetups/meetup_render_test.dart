@@ -32,8 +32,9 @@ Future<void> _shoot(
   Widget home,
   FakeMeetupRepository repo,
   Locale locale,
-  String name,
-) async {
+  String name, {
+  Future<void> Function()? before,
+}) async {
   final key = GlobalKey();
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -61,6 +62,7 @@ Future<void> _shoot(
     ),
   );
   await settle(tester);
+  await before?.call();
   if (_shotsDir.isEmpty) return;
   await tester.runAsync(() async {
     final boundary =
@@ -195,6 +197,37 @@ void main() {
           FakeMeetupRepository()..list = e.value,
           l,
           'meetups-listing-${e.key}-${l.languageCode}',
+        );
+      });
+    }
+  }
+
+  for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {
+    for (final pick in <String>['yes', 'maybe', 'no']) {
+      testWidgets('rsvp sheet $pick ${l.languageCode}', (tester) async {
+        final repo = FakeMeetupRepository()
+          ..card = _card(my: 'going')
+          ..eligibility = const RsvpEligibility(
+            allowed: true,
+            cta: RsvpCta.already,
+          );
+        await _shoot(
+          tester,
+          MeetupDetailScreen(meetupId: 'm1', onBack: () {}),
+          repo,
+          l,
+          'meetups-rsvp-sheet-$pick-${l.languageCode}',
+          before: () async {
+            await tester.tap(find.byType(DabblerRsvpCta));
+            await settle(tester);
+            final label = lookupAppLocalizations(l);
+            if (pick == 'maybe') {
+              await tester.tap(find.text(label.meetups_sheet_maybe));
+            } else if (pick == 'no') {
+              await tester.tap(find.text(label.meetups_sheet_no));
+            }
+            await settle(tester);
+          },
         );
       });
     }

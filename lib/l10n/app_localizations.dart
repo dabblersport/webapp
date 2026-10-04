@@ -9790,6 +9790,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Back'**
   String get meetups_back;
+
+  /// No description provided for @meetups_names_and_others.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} and {count} others'**
+  String meetups_names_and_others(String names, int count);
 }
 
 class _AppLocalizationsDelegate

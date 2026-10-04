@@ -1,3 +1,5 @@
+import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
+    show GamesSkillFilter, gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -60,6 +62,7 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
     final action = rsvpActionFor(state);
     final place = m.venueName ?? m.locationName ?? m.areaName;
     final distance = widget.distanceMeters;
+    final skill = gamesSkillTierFor(m.minSkill, m.maxSkill);
     return DabblerCardGame(
       title: m.title,
       tags: <Widget>[
@@ -71,6 +74,15 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
                 ? m.sportNameAr!
                 : m.sportNameEn!,
             status: colors.status(DabblerStatusTone.info),
+          ),
+        if (skill != null)
+          DabblerBadge(
+            label: gamesSkillTierLabel(l, skill),
+            status: colors.status(switch (skill) {
+              GamesSkillFilter.beginner => DabblerStatusTone.success,
+              GamesSkillFilter.intermediate => DabblerStatusTone.warning,
+              _ => DabblerStatusTone.error,
+            }),
           ),
       ],
       dayLabel: meetupDayLabel(l, m.startAt, now, locale),

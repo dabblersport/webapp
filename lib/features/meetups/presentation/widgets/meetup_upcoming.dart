@@ -31,7 +31,7 @@ class MeetupUpcoming extends StatelessWidget {
       final m = meetups[i];
       final c = meetupCountdown(l, m.startAt, clock);
       final place = m.venueName ?? m.locationName ?? m.areaName;
-      final tone = tones[i % tones.length];
+      final tone = tones[(i + 2) % tones.length];
       if (meetups.length == 1) {
         final end = m.endAt;
         tiles.add(

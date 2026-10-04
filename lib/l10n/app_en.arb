@@ -1912,5 +1912,7 @@
   "meetups_tile_meeting_point": "Meeting point",
   "meetups_tile_entry": "Entry",
   "meetups_load_detail_failed": "Couldn't load this meetup",
-  "meetups_back": "Back"
+  "meetups_back": "Back",
+  "meetups_names_and_others": "{names} and {count} others",
+  "@meetups_names_and_others": {"placeholders": {"names": {"type": "String"}, "count": {"type": "int"}}}
 }

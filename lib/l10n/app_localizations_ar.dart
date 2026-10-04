@@ -5319,4 +5319,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meetups_back => 'Back';
+
+  @override
+  String meetups_names_and_others(String names, int count) {
+    return '$names and $count others';
+  }
 }

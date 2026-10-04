@@ -124,6 +124,16 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     );
   }
 
+  /// The first two names, then how many others — `Lina, Yousef and 22 others`.
+  String _names(AppLocalizations l, List<MeetupAttendee> going, int total) {
+    String first(MeetupAttendee a) =>
+        (a.displayName ?? a.username ?? '').split(' ').first;
+    final named = going.take(2).map(first).where((n) => n.isNotEmpty).toList();
+    final others = total - named.length;
+    if (others <= 0) return named.join(', ');
+    return l.meetups_names_and_others(named.join(', '), others);
+  }
+
   Widget _backButton(VoidCallback back) => DabblerOnColorIconButton(
     onTile: true,
     icon: 'arrow-circle-left',
@@ -198,7 +208,10 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
                       : 0,
                 ),
           headline: l.meetups_going_count(c.counts.going),
-          caption: c.capacity == null ? null : l.meetups_max(c.capacity!),
+          caption: <String>[
+            if (c.capacity != null) l.meetups_max(c.capacity!),
+            if (going.isNotEmpty) _names(l, going, c.counts.going),
+          ].join(' · '),
         ),
         DabblerStatGrid(
           rowExtent: DabblerStatGrid.detailsRowHeight,
