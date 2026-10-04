@@ -12,6 +12,7 @@ class OwnProfileStats extends StatelessWidget {
     this.gamesPlayed,
     this.heroSub,
     this.onOpenSport,
+    this.sportKey,
   });
 
   final int posts;
@@ -24,6 +25,10 @@ class OwnProfileStats extends StatelessWidget {
 
   /// Makes the hero a link into the selected sport's profile.
   final VoidCallback? onOpenSport;
+
+  /// The sport whose bundled artwork bleeds off the hero tile (the DS's own
+  /// sport backgrounds); null draws none.
+  final String? sportKey;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +47,10 @@ class OwnProfileStats extends StatelessWidget {
                 : l10n.profile_tab_posts,
             sub: heroSub,
             fitValue: true,
+            art: sportKey == null
+                ? null
+                : DabblerSportBackgroundRegistry.resolveKey(sportKey!)?.image,
+            artFit: BoxFit.cover,
             link: onOpenSport != null,
             onTap: onOpenSport,
             trailing: onOpenSport != null ? const DabblerChevron() : null,

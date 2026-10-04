@@ -72,25 +72,19 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
             children: [
               for (final reference in choices)
                 Center(
-                  child: Semantics(
-                    button: true,
-                    selected: widget.currentReference == reference,
-                    label: 'Avatar option',
-                    child: GestureDetector(
-                      onTap: widget.uploading
-                          ? null
-                          : () => _closeThen(
-                              () => widget.onPickGenerated(reference),
-                            ),
-                      child: ProfileEditAvatar(
-                        reference: reference,
-                        fallbackSeed: widget.displayName,
-                        size: DabblerAvatarSize.lg,
-                        ringColor: widget.currentReference == reference
-                            ? colors.brandPrimary
-                            : null,
-                      ),
-                    ),
+                  child: ProfileEditAvatar(
+                    reference: reference,
+                    fallbackSeed: widget.displayName,
+                    size: DabblerAvatarSize.lg,
+                    semanticLabel: 'Avatar option',
+                    ringColor: widget.currentReference == reference
+                        ? colors.brandPrimary
+                        : null,
+                    onTap: widget.uploading
+                        ? null
+                        : () => _closeThen(
+                            () => widget.onPickGenerated(reference),
+                          ),
                   ),
                 ),
             ],

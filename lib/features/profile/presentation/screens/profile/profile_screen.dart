@@ -378,6 +378,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   (mySports.isEmpty
                       ? null
                       : mySports.map((s) => s.nameEn).take(3).join(' · ')),
+              sportKey: (selected ?? (mySports.isEmpty ? null : mySports.first))
+                  ?.sportKey,
               onOpenSport: selected != null && canOpen
                   ? () => _openSportProfile(profile, selected)
                   : null,

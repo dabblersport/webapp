@@ -38,25 +38,21 @@ class OwnProfileSportPicker extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: DabblerSpacing.space6,
           ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: DabblerText(
-                  l10n.profile_section_sports,
-                  style: DabblerType.headline,
-                ),
-              ),
-              if (onManage != null)
-                DabblerButton.icon(
-                  icon: 'edit',
-                  tone: DabblerButtonTone.neutral,
-                  size: DabblerButtonSize.small,
-                  semanticLabel: l10n.profile_btn_edit,
-                  onPressed: onManage,
-                ),
-            ],
+          child: DabblerSection(
+            title: l10n.profile_section_sports,
+            style: DabblerSectionStyle.label,
+            action: onManage == null
+                ? null
+                : DabblerButton.icon(
+                    icon: 'edit',
+                    tone: DabblerButtonTone.neutral,
+                    size: DabblerButtonSize.small,
+                    semanticLabel: l10n.profile_btn_edit,
+                    onPressed: onManage,
+                  ),
           ),
         ),
+        const DabblerGap.v(DabblerSpacing.space3),
         if (sports.isEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(

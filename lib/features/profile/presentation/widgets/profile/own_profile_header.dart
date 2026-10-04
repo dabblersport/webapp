@@ -107,6 +107,7 @@ class OwnProfileHeader extends StatelessWidget {
                 if (persona != null && persona.isNotEmpty)
                   DabblerBadge(
                     label: personaLabel(context, persona),
+                    comfortable: true,
                     icon: DabblerIcon(
                       personaIcon(persona),
                       weight: DabblerIconWeight.bold,
@@ -114,11 +115,13 @@ class OwnProfileHeader extends StatelessWidget {
                     ),
                   ),
                 if (city != null && city.isNotEmpty)
-                  DabblerChip(
+                  DabblerBadge(
                     label: city,
-                    leadingIcon: const DabblerIcon(
+                    outlined: true,
+                    comfortable: true,
+                    icon: const DabblerIcon(
                       'location',
-                      size: DabblerSizing.iconSm,
+                      size: DabblerSizing.iconXs,
                     ),
                   ),
               ],
