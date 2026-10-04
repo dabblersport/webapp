@@ -5,143 +5,91 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 
-/// Reusable bottom-sheet sport picker. Open it with [showComposerSheet] (the
-/// sheet supplies the title).
+/// Opens the sport picker as a composer sheet (`Home Feed.dc.html:731-760`):
+/// the sport rows, a Clear action when [showClear], and a `Confirm` footer
+/// that applies the pending choice through [onConfirm].
 ///
 /// Pass a [sportsProvider] that returns [AsyncValue<List<Sport>>] so each
 /// call site controls which filtered list it gets (e.g. all active sports vs
 /// challenge-only sports).
-///
-/// [selectedSport] highlights the currently selected item.
-/// [showClear] + [onClear] opt into a "Clear" action.
-class SportSelectionSheet extends ConsumerStatefulWidget {
+Future<void> showComposerSportSheet(
+  BuildContext context, {
+  required String title,
+  required ProviderListenable<AsyncValue<List<Sport>>> sportsProvider,
+  required void Function(Sport) onConfirm,
+  Sport? selected,
+  bool showClear = false,
+  VoidCallback? onClear,
+}) {
+  final pending = ValueNotifier<Sport?>(selected);
+  return showComposerSheet<void>(
+    context,
+    title: title,
+    onClear: showClear ? onClear : null,
+    confirm: ComposerSheetConfirm(
+      label: 'Confirm',
+      onTap: () {
+        final sport = pending.value;
+        if (sport != null) onConfirm(sport);
+        Navigator.of(context).maybePop();
+      },
+    ),
+    builder: (_) =>
+        SportSelectionSheet(sportsProvider: sportsProvider, pending: pending),
+  );
+}
+
+/// The sport rows of [showComposerSportSheet]; a tap marks the pending
+/// choice in [pending].
+class SportSelectionSheet extends ConsumerWidget {
   const SportSelectionSheet({
     super.key,
     required this.sportsProvider,
-    required this.onSelect,
-    this.selectedSport,
-    this.showClear = false,
-    this.onClear,
+    required this.pending,
   });
 
   final ProviderListenable<AsyncValue<List<Sport>>> sportsProvider;
-  final void Function(Sport) onSelect;
-  final Sport? selectedSport;
-  final bool showClear;
-  final VoidCallback? onClear;
+  final ValueNotifier<Sport?> pending;
 
   @override
-  ConsumerState<SportSelectionSheet> createState() =>
-      _SportSelectionSheetState();
-}
-
-class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
-  String? _activeCategoryFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final sportsAsync = ref.watch(widget.sportsProvider);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (widget.showClear && widget.onClear != null)
-          ComposerClearRow(
-            onClear: () {
-              widget.onClear!();
-              Navigator.pop(context);
-            },
-          ),
-        sportsAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-          data: (sports) {
-            final categories =
-                sports
-                    .where((s) => s.category != null && s.category!.isNotEmpty)
-                    .map((s) => s.category!)
-                    .toSet()
-                    .toList()
-                  ..sort();
-            if (categories.length <= 1) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: DabblerSpacing.space6,
-                end: DabblerSpacing.space6,
-                bottom: DabblerSpacing.space3,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    DabblerChip(
-                      label: 'All',
-                      selected: _activeCategoryFilter == null,
-                      onTap: () => setState(() => _activeCategoryFilter = null),
-                    ),
-                    for (final cat in categories) ...[
-                      const SizedBox(width: DabblerSpacing.space2),
-                      DabblerChip(
-                        label: _prettify(cat),
-                        selected: _activeCategoryFilter == cat,
-                        onTap: () =>
-                            setState(() => _activeCategoryFilter = cat),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        sportsAsync.when(
-          loading: () => const Padding(
-            padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space10),
-            child: ComposerCenteredState.loading(),
-          ),
-          error: (_, __) => const Padding(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sportsAsync = ref.watch(sportsProvider);
+    return sportsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space10),
+        child: ComposerCenteredState.loading(),
+      ),
+      error: (_, __) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
+        child: ComposerCenteredState.message('Failed to load sports'),
+      ),
+      data: (sports) {
+        if (sports.isEmpty) {
+          return const Padding(
             padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-            child: ComposerCenteredState.message('Failed to load sports'),
-          ),
-          data: (sports) {
-            var items = sports.toList();
-            if (_activeCategoryFilter != null) {
-              items = items
-                  .where((s) => s.category == _activeCategoryFilter)
-                  .toList();
-            }
-            if (items.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-                child: ComposerCenteredState.message('No sports available'),
-              );
-            }
-            final colors = DabblerColors.of(context);
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
-              itemCount: items.length,
-              itemBuilder: (_, i) {
-                final sport = items[i];
-                final isSelected = sport.id == widget.selectedSport?.id;
-                return DabblerInputRow(
+            child: ComposerCenteredState.message('No sports available'),
+          );
+        }
+        final colors = DabblerColors.of(context);
+        return ValueListenableBuilder<Sport?>(
+          valueListenable: pending,
+          builder: (context, current, _) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final sport in sports)
+                DabblerInputRow(
                   title: sport.localizedName(context),
-                  subtitle: sport.category != null
-                      ? _prettify(sport.category!)
-                      : null,
                   leading: DabblerSportIcon.fromKey(
                     (sport.sportKey ?? '').replaceAll('_', '-'),
                     size: DabblerSizing.iconMd,
-                    weight: isSelected
+                    weight: sport.id == current?.id
                         ? DabblerIconWeight.bold
                         : DabblerIconWeight.linear,
-                    color: isSelected
+                    color: sport.id == current?.id
                         ? colors.brandPrimary
                         : colors.textSecondary,
                   ),
-                  trailing: isSelected
+                  trailing: sport.id == current?.id
                       ? DabblerIcon(
                           'tick-circle',
                           weight: DabblerIconWeight.bold,
@@ -149,22 +97,12 @@ class _SportSelectionSheetState extends ConsumerState<SportSelectionSheet> {
                           color: colors.brandPrimary,
                         )
                       : null,
-                  onTap: () {
-                    widget.onSelect(sport);
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            );
-          },
-        ),
-      ],
+                  onTap: () => pending.value = sport,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
-
-String _prettify(String raw) => raw
-    .replaceAll('_', ' ')
-    .split(' ')
-    .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
-    .join(' ');
