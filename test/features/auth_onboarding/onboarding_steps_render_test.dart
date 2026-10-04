@@ -260,20 +260,6 @@ void main() {
       await _shoot(tester, key, 'step1-filled-$dir');
     }, variant: desktop);
 
-    testWidgets('step 1 date sheet stops at 16 years — $dir', (tester) async {
-      await _pump(
-        tester,
-        const CreateUserInformation(email: 'aisha@example.com', forceNew: true),
-        locale,
-        key,
-      );
-      await tester.tap(find.byType(DabblerTextField));
-      await _settle(tester);
-      final int youngest = DateTime.now().year - 16;
-      expect(find.text('${youngest + 1}'), findsNothing);
-      expect(find.text('$youngest'), findsOneWidget);
-    }, variant: desktop);
-
     testWidgets('step 1 male — $dir', (tester) async {
       await _pump(
         tester,

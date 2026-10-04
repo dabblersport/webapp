@@ -61,6 +61,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               DabblerTextField(
                 borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
+                mutedPasswordToggle: true,
                 label: l10n.reset_password_new_label,
                 onChanged: (v) => _password = v,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -79,6 +80,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               DabblerTextField(
                 borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
+                mutedPasswordToggle: true,
                 label: l10n.reset_password_confirm_label,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (v) {

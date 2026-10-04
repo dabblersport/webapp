@@ -89,7 +89,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            title: l10n.auth_welcome_back_title(name.split(' ').first),
+            title: l10n.auth_welcome_back_title(name),
             titleStyle: DabblerType.displayScreen,
             titleGap: DabblerSpacing.space3,
             bodyGap: DabblerSpacing.space8,

@@ -274,12 +274,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // The message under the boxes: the frame's "not right" and "expired"
     // lines for the failures the server reports as such, else its own text.
     String? message = _errorMessage;
-    bool expired = false;
     if (message != null) {
       final String lower = message.toLowerCase();
       if (lower.contains('expire')) {
         message = l10n.auth_otp_expired;
-        expired = true;
       } else if (lower.contains('invalid') ||
           lower.contains('incorrect') ||
           lower.contains('token') ||
@@ -346,8 +344,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       ),
       Align(
         alignment: AlignmentDirectional.centerStart,
-        // An expired code offers a new one at once (the frame's rule).
-        child: _resendCountdown > 0 && !expired
+        child: _resendCountdown > 0
             ? DabblerText(
                 l10n.auth_otp_resend_in(_resendCountdown),
                 style: DabblerType.copy,
@@ -376,10 +373,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_otp_continue,
       primaryLoading: _isLoading,
-      // The frame disables Continue while the code is flagged wrong.
-      onPrimary: isAllFilled && _errorMessage == null && !_isLoading
-          ? _handleSubmit
-          : null,
+      onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,
       content: body,
     );
   }

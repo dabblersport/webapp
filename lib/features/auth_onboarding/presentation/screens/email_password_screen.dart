@@ -347,6 +347,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       DabblerTextField(
         borderOutside: true,
         variant: DabblerTextFieldVariant.password,
+        mutedPasswordToggle: true,
         controller: _passwordController,
         label: l10n.auth_login_password_label,
         placeholder: l10n.auth_login_password_placeholder,
@@ -376,12 +377,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_login_button,
       primaryLoading: _isLoading,
-      // The frame keeps Log in off until there is a password
-      // (`Auth and Onboarding.dc.html:1921`).
-      onPrimary:
-          _isEmailValid && _passwordController.text.isNotEmpty && !_isLoading
-          ? _handleLogin
-          : null,
+      onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
       secondary: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[

@@ -356,12 +356,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       firstDate: DateTime.now().subtract(
         const Duration(days: 36500),
       ), // 100 years ago
-      // The youngest allowed birth date: the age the screen asks for.
-      lastDate: DateTime(
-        DateTime.now().year - _minAge,
-        DateTime.now().month,
-        DateTime.now().day,
-      ),
+      lastDate: DateTime.now().subtract(
+        const Duration(days: 4745),
+      ), // 13 years ago
     );
     if (!mounted) return;
     setState(() {

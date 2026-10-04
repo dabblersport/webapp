@@ -109,16 +109,18 @@ void main() {
       find.text('That does not look like an email address.'),
       findsNothing,
     );
-    // The frame keeps Log in off until there is a password.
-    expect(_button(tester, 'Log in').onPressed, isNull);
+    expect(_button(tester, 'Log in').onPressed, isNotNull);
 
     await tester.enterText(_field(1), 'x');
     await tester.pump();
-    expect(_button(tester, 'Log in').onPressed, isNotNull);
     await tester.enterText(_field(1), '');
     await tester.pump();
     expect(find.text('Enter password'), findsOneWidget);
-    expect(_button(tester, 'Log in').onPressed, isNull);
+
+    // Submitting with an empty password is stopped by Form.validate().
+    await tester.tap(find.widgetWithText(DabblerButton, 'Log in').first);
+    await tester.pump();
+    expect(find.text('Enter password'), findsOneWidget);
     expect(_button(tester, 'Log in').loading, isFalse);
   });
 

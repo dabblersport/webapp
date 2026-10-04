@@ -37,6 +37,7 @@ class RegisterScreen extends ConsumerWidget {
             DabblerTextField(
               borderOutside: true,
               variant: DabblerTextFieldVariant.password,
+              mutedPasswordToggle: true,
               label: l10n.set_password_password_label,
               onChanged: controller.updatePassword,
               textInputAction: TextInputAction.done,
