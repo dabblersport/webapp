@@ -14,7 +14,7 @@ class OwnProfileSportPicker extends StatelessWidget {
     required this.selectedId,
     required this.primaryId,
     required this.onSelect,
-    required this.onManage,
+    this.onManage,
   });
 
   final List<Sport> sports;
@@ -23,7 +23,9 @@ class OwnProfileSportPicker extends StatelessWidget {
   final String? selectedId;
   final String? primaryId;
   final ValueChanged<String?> onSelect;
-  final VoidCallback onManage;
+
+  /// The edit action; null hides it (another user's profile).
+  final VoidCallback? onManage;
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +46,14 @@ class OwnProfileSportPicker extends StatelessWidget {
                   style: DabblerType.headline,
                 ),
               ),
-              DabblerButton.icon(
-                icon: 'edit',
-                tone: DabblerButtonTone.neutral,
-                size: DabblerButtonSize.small,
-                semanticLabel: l10n.profile_btn_edit,
-                onPressed: onManage,
-              ),
+              if (onManage != null)
+                DabblerButton.icon(
+                  icon: 'edit',
+                  tone: DabblerButtonTone.neutral,
+                  size: DabblerButtonSize.small,
+                  semanticLabel: l10n.profile_btn_edit,
+                  onPressed: onManage,
+                ),
             ],
           ),
         ),

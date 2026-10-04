@@ -306,7 +306,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
       for (final id in profile?.interests ?? const <String>[])
         if (byId.containsKey(id)) byId[id]!,
     ];
-    final selected = _selectedSportId != null &&
+    final selected =
+        _selectedSportId != null &&
             mySports.any((s) => s.id == _selectedSportId)
         ? mySports.firstWhere((s) => s.id == _selectedSportId)
         : null;
@@ -316,7 +317,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         : sportProfiles.where((p) => p.sportId == selected.id).toList();
     final personaType =
         profile?.personaType ?? profile?.profileType ?? 'player';
-    final canOpen = profile?.userId != null &&
+    final canOpen =
+        profile?.userId != null &&
         (personaType == 'player' || personaType == 'organiser');
 
     return DabblerPage(
@@ -371,7 +373,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               gamesPlayed: sportProfiles.isEmpty
                   ? null
                   : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
-              heroSub: selected?.nameEn ??
+              heroSub:
+                  selected?.nameEn ??
                   (mySports.isEmpty
                       ? null
                       : mySports.map((s) => s.nameEn).take(3).join(' · ')),

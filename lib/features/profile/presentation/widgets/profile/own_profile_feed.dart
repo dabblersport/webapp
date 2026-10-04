@@ -110,7 +110,9 @@ class _OwnProfileFeedState extends ConsumerState<OwnProfileFeed> {
         if (posts.isEmpty) return _Empty(empty);
         return Column(
           mainAxisSize: MainAxisSize.min,
-          children: <Widget>[for (final Post post in posts) resolvePostLayout(post)],
+          children: <Widget>[
+            for (final Post post in posts) resolvePostLayout(post),
+          ],
         );
       },
       loading: () => const _Loading(),

@@ -16,6 +16,9 @@ class OwnProfileHeader extends StatelessWidget {
     required this.followers,
     this.onFollowing,
     this.onFollowers,
+    this.onPosts,
+    this.location,
+    this.actions,
   });
 
   final UserProfile? profile;
@@ -24,14 +27,22 @@ class OwnProfileHeader extends StatelessWidget {
   final int followers;
   final VoidCallback? onFollowing;
   final VoidCallback? onFollowers;
+  final VoidCallback? onPosts;
 
-  static String personaIcon(String? persona) => switch (persona
-      ?.toLowerCase()) {
-    'player' => 'activity',
-    'organiser' => 'calendar',
-    'host' => 'location',
-    _ => 'people',
-  };
+  /// Overrides the city badge's label (city, country).
+  final String? location;
+
+  /// The action row under the counters (Follow / Message on another user's
+  /// profile); null on the own profile, which the design draws without one.
+  final Widget? actions;
+
+  static String personaIcon(String? persona) =>
+      switch (persona?.toLowerCase()) {
+        'player' => 'activity',
+        'organiser' => 'calendar',
+        'host' => 'location',
+        _ => 'people',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +51,7 @@ class OwnProfileHeader extends StatelessWidget {
     final String name = p?.getDisplayName() ?? '';
     final String? username = p?.username;
     final String? persona = p?.personaType;
-    final String? city = p?.city;
+    final String? city = location ?? p?.city;
     final String? bio = p?.bio;
 
     return DabblerSurface.brandTintBleed(
@@ -114,7 +125,9 @@ class OwnProfileHeader extends StatelessWidget {
             ),
             const DabblerGap.v(DabblerSpacing.space5),
             DabblerText(
-              bio != null && bio.isNotEmpty ? bio : l10n.profile_bio_placeholder,
+              bio != null && bio.isNotEmpty
+                  ? bio
+                  : l10n.profile_bio_placeholder,
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
               maxLines: 3,
@@ -138,9 +151,14 @@ class OwnProfileHeader extends StatelessWidget {
                 DabblerCounterLink(
                   value: '$posts',
                   label: l10n.profile_post_count(posts),
+                  onTap: onPosts,
                 ),
               ],
             ),
+            if (actions != null) ...<Widget>[
+              const DabblerGap.v(DabblerSpacing.space5),
+              actions!,
+            ],
           ],
         ),
       ),
