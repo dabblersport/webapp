@@ -2576,6 +2576,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get acct_delete_sub => 'احذف حسابك وكل بياناتك نهائيًا';
 
   @override
+  String get acct_delete_body =>
+      'يحذف هذا حسابك وكل بياناتك نهائيًا، بما فيها المباريات والإحصاءات والرسائل. لا يمكن التراجع.';
+
+  @override
   String get acct_delete_confirm => 'حذف نهائي';
 
   @override
@@ -2639,7 +2643,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get acct_password_new => 'كلمة المرور الجديدة';
 
   @override
-  String get acct_password_new_helper => '8 أحرف على الأقل';
+  String get acct_password_new_helper => '6 أحرف على الأقل';
 
   @override
   String get acct_password_confirm => 'تأكيد كلمة المرور الجديدة';
