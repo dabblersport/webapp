@@ -7,7 +7,6 @@ import 'package:dabbler/features/profile/presentation/screens/settings/account_m
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';

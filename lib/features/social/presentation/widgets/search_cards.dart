@@ -294,7 +294,7 @@ class SearchTileCard extends StatelessWidget {
           icon,
           weight: DabblerIconWeight.bold,
           tone: DabblerIconTileTone.sunken,
-          size: DabblerSizing.tileSm,
+          size: DabblerSizing.resultTile,
         ),
         Expanded(
           child: Column(
