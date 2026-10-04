@@ -6,6 +6,7 @@
 // optional suffix) joins the label because that header carries a label only.
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 
 class NotifSectionHeader extends StatelessWidget {
@@ -27,7 +28,13 @@ class NotifSectionHeader extends StatelessWidget {
         horizontal: DabblerSpacing.space6,
       ),
       child: DabblerActivityGroupHeader(
-        suffix == null ? '$title · $n' : '$title · $n $suffix',
+        title,
+        dense: true,
+        count: suffix == null
+            ? DabblerType.toWesternDigits(
+                AppLocalizations.of(context).notif_group_count(count),
+              )
+            : '$n $suffix',
       ),
     );
   }
