@@ -7,16 +7,7 @@
 /// fails). Run with `--dart-define=HOME_MEASURE_OUT=<file>` to write the table.
 library;
 
-import 'package:dabbler/data/models/feed/feed_item.dart';
-import 'package:dabbler/data/models/games/game.dart';
-import 'package:dabbler/data/models/social/post.dart';
-import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
-import 'package:dabbler/features/news/providers/news_providers.dart';
-import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
-import 'package:dabbler/features/social/providers/feed_notifier.dart';
-import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
-import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Override;
 import 'package:flutter/material.dart';
@@ -32,67 +23,8 @@ import 'home_measure_cases_tabs.dart';
 import 'home_measure_support.dart';
 import '../../support/render_mode.dart';
 import 'home_city_fakes.dart';
+import 'home_measure_fixtures.dart';
 import 'home_test_harness.dart';
-
-Post _post(
-  String id,
-  String name,
-  String body,
-  String sport,
-  int likes, {
-  int comments = 0,
-  String? place,
-  int hours = 2,
-}) => Post(
-  id: id,
-  authorProfileId: 'prof-$id',
-  authorUserId: 'user-$id',
-  authorDisplayName: name,
-  kind: PostKind.original,
-  visibility: PostVisibility.public,
-  postType: PostType.dab,
-  personaTypeSnapshot: 'player',
-  body: body,
-  sport: sport,
-  locationName: place,
-  tags: const <String>[],
-  likeCount: likes,
-  commentCount: comments,
-  createdAt: DateTime.now().subtract(Duration(hours: hours, minutes: 5)),
-  updatedAt: DateTime.now(),
-);
-
-List<Game> _games(FrameData d) => <Game>[
-  for (final int h in <int>[19, 50, 100])
-    Game(
-      id: 'u$h',
-      title: d.gameTitle,
-      description: '',
-      sport: 'Football',
-      venueName: d.venue,
-      scheduledDate: DateTime.now().add(Duration(hours: h)),
-      startTime: '19:30',
-      endTime: '23:59',
-      minPlayers: 2,
-      maxPlayers: 10,
-      currentPlayers: 4,
-      organizerId: 'o',
-      skillLevel: 'mixed',
-      pricePerPlayer: 0,
-      status: GameStatus.upcoming,
-      isPublic: true,
-      allowsWaitlist: false,
-      checkInEnabled: false,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    ),
-];
-
-Future<void> _settle(WidgetTester tester) async {
-  for (var i = 0; i < 8; i++) {
-    await tester.pump(const Duration(milliseconds: 120));
-  }
-}
 
 void main() {
   setUpAll(() async {
@@ -114,79 +46,12 @@ void main() {
       WidgetTester tester, {
       List<Override> extra = const <Override>[],
       int postCount = 1,
-    }) async {
-      final List<Post> posts = <Post>[
-        for (var i = 0; i < postCount; i++)
-          _post(
-            'a$i',
-            d.name,
-            d.body,
-            d.cricket,
-            12,
-            comments: 4,
-            place: d.place,
-          ),
-      ];
-      await pumpHome(
-        tester,
-        locale: locale,
-        topInset: 50,
-        locationName: d.location,
-        overrides: <Override>[
-          homeNewsReactionCountsProvider.overrideWith(
-            (ref, id) async => <String, int>{'loving': 128},
-          ),
-          ...extra,
-        ],
-        upcoming: _games(d),
-        feedState: FeedData(
-          items: <FeedItem>[for (final Post p in posts) FeedPostItem(p)],
-          hasMore: false,
-        ),
-        nearbyState: TabFeedData(posts: posts, hasMore: false),
-        activeState: ActiveFeedData(
-          events: <ActiveEvent>[
-            GameCreatedEvent(
-              id: 'g1',
-              createdAt: DateTime.now().subtract(const Duration(minutes: 12)),
-              gameId: 'g1',
-              gameTitle: d.gameTitle,
-              sport: 'Padel',
-              venueName: d.venue,
-            ),
-          ],
-          hasMore: false,
-        ),
-        newsState: NewsTabState(
-          items: <FeedNewsItem>[
-            FeedNewsItem(
-              newsId: 'n1',
-              id: 'n1',
-              title: <String, String>{
-                'en': FrameData.en.newsTitle,
-                'ar': FrameData.ar.newsTitle,
-              },
-              body: <String, String>{
-                'en': FrameData.en.newsExcerpt,
-                'ar': FrameData.ar.newsExcerpt,
-              },
-              likeCount: 0,
-              commentCount: 24,
-              viewCount: 1902,
-              tags: const [],
-              isPinned: false,
-              priorityScore: 0,
-              createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-              feedLabel: d.football,
-              regions: const <String>['Dubai'],
-            ),
-          ],
-          loaded: true,
-          hasMore: false,
-        ),
-      );
-      await _settle(tester);
-    }
+    }) => pumpFrameHome(
+      tester,
+      locale: locale,
+      extra: extra,
+      postCount: postCount,
+    );
 
     testWidgets('Home mirrors the frame: page gutter and bottom - $dir', (
       tester,
@@ -209,7 +74,7 @@ void main() {
         ),
       );
       await tester.tap(find.text(d.location).first);
-      await _settle(tester);
+      await settleHome(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       final MeasureTable table = MeasureTable(rtl: rtl);
       addCityRows(
@@ -234,7 +99,7 @@ void main() {
       await pump(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       await tester.tap(find.bySemanticsLabel(l.home_upcoming_hide).first);
-      await _settle(tester);
+      await settleHome(tester);
       final MeasureTable table = MeasureTable(rtl: rtl);
       addStripRows(
         table,
@@ -254,7 +119,7 @@ void main() {
     ) async {
       await pump(tester);
       await tester.tap(find.bySemanticsLabel('More options').first);
-      await _settle(tester);
+      await settleHome(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       final MeasureTable table = MeasureTable(rtl: rtl);
       addPostSheetRows(
@@ -277,7 +142,7 @@ void main() {
       await pump(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       await tester.tap(find.text(l.tab_news).first);
-      await _settle(tester);
+      await settleHome(tester);
       final MeasureTable table = MeasureTable(rtl: rtl);
       addNewsRows(table, tester, rtl: rtl);
       table.write('Home, News tab (first card), $dir');
@@ -291,7 +156,7 @@ void main() {
       await pump(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       await tester.tap(find.text(l.tab_active).first);
-      await _settle(tester);
+      await settleHome(tester);
       final MeasureTable table = MeasureTable(rtl: rtl);
       addActiveRows(table, tester, rtl: rtl);
       table.write('Home, Active tab (system-kind card), $dir');
