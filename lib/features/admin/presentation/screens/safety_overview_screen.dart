@@ -1,9 +1,10 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:dabbler/services/moderation_service.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'admin_parts.dart';
 import 'moderation_queue_screen.dart';
@@ -41,15 +42,8 @@ class SafetyOverviewScreen extends ConsumerWidget {
           DabblerNavigationAction(
             icon: 'flag',
             label: 'Moderation Queue',
-            onPressed: () {
-              // Navigation wrapper kept as it was (non-visual route type).
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ModerationQueueScreen(),
-                ),
-              );
-            },
+            // The router route carries the app's shared-axis transition.
+            onPressed: () => context.push(RoutePaths.adminModerationQueue),
           ),
         ],
       ),
@@ -114,12 +108,8 @@ class SafetyOverviewScreen extends ConsumerWidget {
 
   Widget _buildOverviewInfo(BuildContext context, SafetyOverview overview) {
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
-    DabblerInputRow row(String label, String value) => DabblerInputRow(
-      title: label,
-      value: value,
-      flat: true,
-      showDivider: false,
-    );
+    DabblerKeyValueRow row(String label, String value) =>
+        DabblerKeyValueRow(label: label, value: value);
     return DabblerCard(
       header: const DabblerText(
         'Overview Information',

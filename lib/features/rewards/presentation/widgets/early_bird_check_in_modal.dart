@@ -59,31 +59,15 @@ class EarlyBirdCheckInModal extends StatelessWidget {
           const DabblerGap.v(DabblerSpacing.space4),
 
           // Progress card
-          DabblerSurface.card(
-            padding: DabblerInsets.card,
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const DabblerText(
-                      'Progress',
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                    const Spacer(),
-                    DabblerText(
-                      '$currentDay/14 days',
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.brand,
-                    ),
-                  ],
-                ),
-                const DabblerGap.v(DabblerSpacing.space3),
-                CheckInProgressIndicator(
-                  completedDays: currentDay,
-                  totalDays: 14,
-                ),
-              ],
+          DabblerCard(
+            header: DabblerKeyValueRow(
+              label: 'Progress',
+              value: '$currentDay/14 days',
+              valueTone: DabblerTextTone.brand,
+            ),
+            child: CheckInProgressIndicator(
+              completedDays: currentDay,
+              totalDays: 14,
             ),
           ),
 

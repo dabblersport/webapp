@@ -78,29 +78,18 @@ class TransactionDetailsSheet extends StatelessWidget {
         DabblerSurface(
           variant: DabblerSurfaceVariant.sunken,
           padding: DabblerInsets.card,
-          child: Column(
-            children: [
-              DabblerText(
-                'Amount',
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
-              ),
-              const DabblerGap.v(DabblerSpacing.space3),
-              DabblerText(
+          child: DabblerKeyValueRow(
+            label: 'Amount',
+            value:
                 '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(2)}',
-                style: DabblerType.largeTitle,
-                tone: isRefund
-                    ? DabblerTextTone.success
-                    : DabblerTextTone.brand,
-              ),
-            ],
+            valueTone: isRefund
+                ? DabblerTextTone.success
+                : DabblerTextTone.brand,
           ),
         ),
         const DabblerGap.v(DabblerSpacing.space4),
-        DabblerInputRow(
-          flat: true,
-          showDivider: false,
-          title: 'Status',
+        DabblerKeyValueRow(
+          label: 'Status',
           trailing: transactionStatusBadge(
             context,
             transaction['status'] as String,
@@ -140,10 +129,6 @@ class TransactionDetailsSheet extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(String label, String value) => DabblerInputRow(
-    flat: true,
-    showDivider: false,
-    title: label,
-    value: value,
-  );
+  Widget _detailRow(String label, String value) =>
+      DabblerKeyValueRow(label: label, value: value);
 }

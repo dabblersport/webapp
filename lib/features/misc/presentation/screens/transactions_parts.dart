@@ -327,83 +327,19 @@ class _TransactionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final isRefund = transaction['type'] == 'refund';
-    final status = transaction['status'] as String;
-
-    return DabblerCard(
+    return DabblerTransactionRow(
+      leading: transactionTypeTile(context, transaction['type'] as String),
+      title: transaction['title'] as String,
+      badge: transactionStatusBadge(context, transaction['status'] as String),
+      detail: transaction['recipient'] as String,
+      detailIcon: 'building',
+      caption: transaction['paymentMethod'] as String,
+      amount:
+          '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(0)}',
+      amountTone: isRefund ? DabblerTextTone.success : DabblerTextTone.primary,
+      amountCaption: _formatTime(transaction['date']),
       onTap: () => showTransactionDetails(context, transaction),
-      child: Row(
-        children: [
-          transactionTypeTile(context, transaction['type'] as String),
-          const DabblerGap.h(DabblerSpacing.space4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: DabblerText(
-                        transaction['title'],
-                        style: DabblerType.subheadline,
-                        weight: DabblerTextWeight.semibold,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const DabblerGap.h(DabblerSpacing.space3),
-                    transactionStatusBadge(context, status),
-                  ],
-                ),
-                const DabblerGap.v(DabblerSpacing.space1),
-                Row(
-                  children: [
-                    DabblerIcon(
-                      'building',
-                      size: DabblerSizing.iconXs,
-                      color: colors.textSecondary,
-                    ),
-                    const DabblerGap.h(DabblerSpacing.space1),
-                    Expanded(
-                      child: DabblerText(
-                        transaction['recipient'],
-                        style: DabblerType.footnote,
-                        tone: DabblerTextTone.secondary,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                DabblerText(
-                  transaction['paymentMethod'],
-                  style: DabblerType.caption2,
-                  tone: DabblerTextTone.secondary,
-                ),
-              ],
-            ),
-          ),
-          const DabblerGap.h(DabblerSpacing.space4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              DabblerText(
-                '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(0)}',
-                style: DabblerType.headline,
-                tone: isRefund
-                    ? DabblerTextTone.success
-                    : DabblerTextTone.primary,
-              ),
-              DabblerText(
-                _formatTime(transaction['date']),
-                style: DabblerType.caption2,
-                tone: DabblerTextTone.secondary,
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

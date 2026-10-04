@@ -228,11 +228,10 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
               DateFormat('MMM dd, yyyy HH:mm').format(report.createdAt),
             ),
             if (report.details != null && report.details!.isNotEmpty)
-              DabblerInputRow(
-                title: 'Details',
-                subtitle: report.details,
-                flat: true,
-                showDivider: false,
+              DabblerKeyValueRow(
+                label: 'Details',
+                value: report.details,
+                layout: DabblerKeyValueLayout.stacked,
               ),
           ],
         );
@@ -240,16 +239,13 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     );
   }
 
-  Widget _detailRow(String label, String value) => DabblerInputRow(
-    title: label,
-    value: value,
-    flat: true,
-    showDivider: false,
-  );
+  Widget _detailRow(String label, String value) =>
+      DabblerKeyValueRow(label: label, value: value);
 
   void _toast(String message, DabblerToastTone tone) {
-    DabblerToastProvider.of(context)
-        .show(DabblerToastSpec(message: message, tone: tone));
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
   Future<void> _resolveReport(

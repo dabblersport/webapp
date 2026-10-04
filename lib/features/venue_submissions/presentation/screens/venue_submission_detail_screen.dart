@@ -80,11 +80,10 @@ class _Details extends StatelessWidget {
     final v = (value ?? '').trim();
     if (v.isEmpty) return const <Widget>[];
     return [
-      DabblerInputRow(
-        flat: true,
-        showDivider: false,
-        title: label,
-        subtitle: v,
+      DabblerKeyValueRow(
+        label: label,
+        value: v,
+        layout: DabblerKeyValueLayout.stacked,
       ),
     ];
   }
