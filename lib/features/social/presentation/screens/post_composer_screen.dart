@@ -9,6 +9,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
@@ -183,21 +185,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showGamePicker() {
-    showComposerSheet<void>(
-      context,
-      title: AppLocalizations.of(context).composer_link_a_game,
-      builder: (ctx) => const _GamePickerSheet(),
-    );
-  }
+  void _showGamePicker() => showComposerGameLinkSheet(context, ref);
 
-  void _showLocationPicker() {
-    showComposerSheet<void>(
-      context,
-      title: AppLocalizations.of(context).composer_location,
-      builder: (ctx) => const _LocationPickerSheet(),
-    );
-  }
+  void _showLocationPicker() => showComposerPlaceSheet(context, ref);
 
   void _showPostTypePicker() {
     final state = ref.read(postComposerProvider);
@@ -249,15 +239,22 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _showMediaInput() {
+    final l = AppLocalizations.of(context);
     showComposerSheet<void>(
       context,
-      title: AppLocalizations.of(context).composer_add_media_title,
+      title: l.composer_add_media_title,
+      confirm: ComposerSheetConfirm(
+        label: l.composer_done,
+        onTap: () => Navigator.of(context).maybePop(),
+      ),
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ComposerPickerRow(
             icon: 'camera',
-            title: AppLocalizations.of(context).composer_take_photo,
+            accent: true,
+            chevron: true,
+            title: l.composer_take_photo,
             onTap: () {
               Navigator.pop(ctx);
               _pickAndUploadMedia(ImageSource.camera);
@@ -265,7 +262,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           ComposerPickerRow(
             icon: 'gallery',
-            title: AppLocalizations.of(context).composer_choose_gallery,
+            accent: true,
+            chevron: true,
+            title: l.composer_choose_gallery,
             onTap: () {
               Navigator.pop(ctx);
               _pickAndUploadMedia(ImageSource.gallery);
@@ -273,8 +272,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           ComposerPickerRow(
             icon: 'search-normal',
-            title: AppLocalizations.of(context).composer_search_gifs,
-            subtitle: AppLocalizations.of(context).composer_powered_giphy,
+            accent: true,
+            chevron: true,
+            title: l.composer_search_gifs,
+            subtitle: l.composer_powered_giphy,
             onTap: () {
               Navigator.pop(ctx);
               _showGifPicker();
@@ -364,7 +365,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                       if (mounted) {
                         _errorToast(
                           ref.read(personaServiceProvider).errorMessage ??
-                              AppLocalizations.of(context).composer_switch_failed,
+                              AppLocalizations.of(
+                                context,
+                              ).composer_switch_failed,
                         );
                       }
                       return;
@@ -634,35 +637,28 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   /// trailing "Add More" button. Each image tile has its own remove button.
   Widget _buildMediaTilesRow(PostComposerState state) {
     final items = state.media;
-    return SizedBox(
-      height: DabblerSizing.mediaRowHeight,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        separatorBuilder: (_, __) =>
-            const SizedBox(width: DabblerSpacing.space2),
-        itemCount: items.length + 1,
-        itemBuilder: (_, i) {
-          if (i == items.length) {
-            return Center(
-              child: DabblerButton.icon(
-                icon: 'add',
-                semanticLabel: AppLocalizations.of(context).composer_add_more_media,
-                tone: DabblerButtonTone.neutral,
-                onPressed: _showMediaInput,
-              ),
-            );
-          }
-          final url = items[i].toString();
-          final isLead = i == 0;
-          return _MediaTile(
-            url: url,
-            width: isLead
-                ? DabblerSizing.railCardWidth
-                : DabblerSizing.illustrationLg,
-            onRemove: () =>
-                ref.read(postComposerProvider.notifier).removeMediaAt(i),
-          );
-        },
+    final l = AppLocalizations.of(context);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          DabblerAttachmentAddTile(
+            semanticLabel: l.composer_add_more_media,
+            icon: 'add',
+            dashed: false,
+            tileWidth: DabblerSizing.mediaRailAddWidth,
+            tileHeight: DabblerSizing.mediaRailHeight,
+            onTap: _showMediaInput,
+          ),
+          for (final (i, item) in items.indexed) ...[
+            const SizedBox(width: DabblerSpacing.space3),
+            _MediaTile(
+              url: item.toString(),
+              onRemove: () =>
+                  ref.read(postComposerProvider.notifier).removeMediaAt(i),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -826,14 +822,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
 /// Single image/GIF tile in the filled-state media row.
 class _MediaTile extends StatelessWidget {
-  const _MediaTile({
-    required this.url,
-    required this.width,
-    required this.onRemove,
-  });
+  const _MediaTile({required this.url, required this.onRemove});
 
   final String url;
-  final double width;
   final VoidCallback onRemove;
 
   bool get _isGif => url.toLowerCase().contains('.gif');
@@ -853,7 +844,11 @@ class _MediaTile extends StatelessWidget {
               )
             : null,
       ),
-      size: Size(width, 150),
+      size: const Size(
+        DabblerSizing.mediaRailTileWidth,
+        DabblerSizing.mediaRailHeight,
+      ),
+      borderRadius: DabblerRadius.lgAll,
       semanticLabel: _isGif ? 'GIF' : 'Image',
       removeLabel: AppLocalizations.of(context).composer_remove_media,
       onRemove: onRemove,
@@ -903,247 +898,6 @@ class _ExpiryPickerSheetState extends State<_ExpiryPickerSheet> {
         },
         onCancel: () => Navigator.pop(context),
       ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// LOCATION PICKER SHEET
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _LocationPickerSheet extends ConsumerStatefulWidget {
-  const _LocationPickerSheet();
-
-  @override
-  ConsumerState<_LocationPickerSheet> createState() =>
-      _LocationPickerSheetState();
-}
-
-class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  // Manual location entry
-  final _manualNameController = TextEditingController();
-  bool _showManualEntry = false;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _manualNameController.dispose();
-    super.dispose();
-  }
-
-  void _commitManual() {
-    final name = _manualNameController.text.trim();
-    if (name.isNotEmpty) {
-      ref.read(postComposerProvider.notifier).setRawLocation(name: name);
-      Navigator.pop(context);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ComposerClearRow(
-          onClear: () {
-            ref.read(postComposerProvider.notifier).clearLocation();
-            Navigator.pop(context);
-          },
-        ),
-        ComposerSearchField(
-          controller: _searchController,
-          placeholder: AppLocalizations.of(context).composer_venue_search,
-          onChanged: (value) => setState(() => _query = value),
-        ),
-        ComposerPickerRow(
-          icon: 'location-add',
-          title: AppLocalizations.of(context).composer_type_location,
-          trailingText: _showManualEntry ? 'Hide' : null,
-          onTap: () => setState(() => _showManualEntry = !_showManualEntry),
-        ),
-        if (_showManualEntry)
-          Padding(
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: DabblerSpacing.space6,
-              vertical: DabblerSpacing.space2,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: DabblerTextField(
-                    controller: _manualNameController,
-                    placeholder: 'e.g. Central Park, NYC',
-                    onSubmitted: (_) => _commitManual(),
-                  ),
-                ),
-                const SizedBox(width: DabblerSpacing.space2),
-                DabblerButton.icon(
-                  icon: 'tick-circle',
-                  semanticLabel: AppLocalizations.of(context).composer_use_location,
-                  onPressed: _commitManual,
-                ),
-              ],
-            ),
-          ),
-        const DabblerDivider(),
-        ComposerScrollArea(
-          fraction: 0.4,
-          child: _query.trim().length >= 2
-              ? Consumer(
-                  builder: (ctx, ref, _) {
-                    final venuesAsync = ref.watch(venueSearchProvider(_query));
-                    return venuesAsync.when(
-                      loading: () => const ComposerCenteredState.loading(),
-                      error: (e, _) =>
-                          ComposerCenteredState.message(AppLocalizations.of(context).composer_search_failed),
-                      data: (venues) {
-                        if (venues.isEmpty) {
-                          return ComposerCenteredState.message(
-                            AppLocalizations.of(context).composer_no_venues,
-                            icon: 'location',
-                          );
-                        }
-                        return ListView.builder(
-                          itemCount: venues.length,
-                          itemBuilder: (ctx, i) {
-                            final venue = venues[i];
-                            return ComposerPickerRow(
-                              icon: 'location',
-                              title: venue['name'] as String? ?? AppLocalizations.of(context).composer_venue,
-                              subtitle: venue['city'] as String?,
-                              onTap: () {
-                                ref
-                                    .read(postComposerProvider.notifier)
-                                    .setVenue(
-                                      id: venue['id'] as String,
-                                      name: venue['name'] as String? ?? AppLocalizations.of(context).composer_venue,
-                                      lat: venue['geo_lat'] as double?,
-                                      lng: venue['geo_lng'] as double?,
-                                    );
-                                Navigator.pop(context);
-                              },
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                )
-              : ComposerCenteredState.message(
-                  AppLocalizations.of(context).composer_venue_hint,
-                  icon: 'search-normal',
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// GAME PICKER SHEET
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _GamePickerSheet extends ConsumerStatefulWidget {
-  const _GamePickerSheet();
-
-  @override
-  ConsumerState<_GamePickerSheet> createState() => _GamePickerSheetState();
-}
-
-class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
-  final _searchController = TextEditingController();
-  String _query = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ComposerClearRow(
-          onClear: () {
-            ref.read(postComposerProvider.notifier).clearGame();
-            Navigator.pop(context);
-          },
-        ),
-        ComposerSearchField(
-          controller: _searchController,
-          placeholder: AppLocalizations.of(context).composer_games_search,
-          onChanged: (value) => setState(() => _query = value),
-        ),
-        ComposerScrollArea(
-          fraction: 0.5,
-          child: _query.trim().length >= 2
-              ? Consumer(
-                  builder: (ctx, ref, _) {
-                    final gamesAsync = ref.watch(gameSearchProvider(_query));
-                    return gamesAsync.when(
-                      loading: () => const ComposerCenteredState.loading(),
-                      error: (e, _) =>
-                          ComposerCenteredState.message(AppLocalizations.of(context).composer_search_failed),
-                      data: (games) {
-                        if (games.isEmpty) {
-                          return ComposerCenteredState.message(
-                            AppLocalizations.of(context).composer_no_games,
-                            icon: 'game',
-                          );
-                        }
-                        return ListView.builder(
-                          itemCount: games.length,
-                          itemBuilder: (ctx, i) {
-                            final game = games[i];
-                            final title =
-                                game['title'] as String? ?? AppLocalizations.of(context).composer_untitled_game;
-                            final sport = game['sport'] as String? ?? '';
-                            final gameType = game['game_type'] as String? ?? '';
-                            final startAt = game['start_at'] as String?;
-                            final parsed = startAt == null
-                                ? null
-                                : DateTime.tryParse(startAt);
-                            final subtitle = [
-                              if (sport.isNotEmpty) sport,
-                              if (gameType.isNotEmpty) gameType,
-                              if (parsed != null)
-                                '${parsed.day}/${parsed.month}/${parsed.year}',
-                            ].where((s) => s.isNotEmpty).join(' · ');
-
-                            return ComposerPickerRow(
-                              icon: 'game',
-                              title: title,
-                              subtitle: subtitle.isNotEmpty ? subtitle : null,
-                              onTap: () {
-                                ref
-                                    .read(postComposerProvider.notifier)
-                                    .setGame(
-                                      id: game['id'] as String,
-                                      name: title,
-                                    );
-                                Navigator.pop(context);
-                              },
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                )
-              : ComposerCenteredState.message(
-                  AppLocalizations.of(context).composer_games_hint,
-                  icon: 'game',
-                ),
-        ),
-      ],
     );
   }
 }

@@ -79,8 +79,9 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
         ),
         vibesAsync.when(
           loading: () => const ComposerCenteredState.loading(),
-          error: (_, __) =>
-              ComposerCenteredState.message(AppLocalizations.of(context).composer_vibe_failed),
+          error: (_, __) => ComposerCenteredState.message(
+            AppLocalizations.of(context).composer_vibe_failed,
+          ),
           data: (vibes) {
             final shown = vibes
                 .where(

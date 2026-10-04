@@ -604,8 +604,12 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     );
 
     return ComposerDrawerShell(
-      title: _isEditing ? AppLocalizations.of(context).game_edit : AppLocalizations.of(context).game_create,
-      ctaLabel: _isEditing ? AppLocalizations.of(context).game_save_changes : AppLocalizations.of(context).game_create,
+      title: _isEditing
+          ? AppLocalizations.of(context).game_edit
+          : AppLocalizations.of(context).game_create,
+      ctaLabel: _isEditing
+          ? AppLocalizations.of(context).game_save_changes
+          : AppLocalizations.of(context).game_create,
       canSubmit: state.canSubmit,
       isSubmitting: state.isSubmitting,
       onCtaTap: _submit,
@@ -617,7 +621,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ComposerSectionLabel(label: AppLocalizations.of(context).game_sport),
+              ComposerSectionLabel(
+                label: AppLocalizations.of(context).game_sport,
+              ),
               const SizedBox(height: DabblerSpacing.space3),
               // Sport is locked in edit mode — capacity and the roster
               // derive from the sport/format chosen at creation.
@@ -722,7 +728,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ComposerSectionLabel(label: AppLocalizations.of(context).game_join_policy),
+              ComposerSectionLabel(
+                label: AppLocalizations.of(context).game_join_policy,
+              ),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
@@ -752,16 +760,27 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ComposerSectionLabel(label: AppLocalizations.of(context).game_visibility),
+              ComposerSectionLabel(
+                label: AppLocalizations.of(context).game_visibility,
+              ),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
                 runSpacing: DabblerSpacing.space3,
                 children: [
                   for (final entry in [
-                    ('public', AppLocalizations.of(context).composer_vis_public),
-                    ('followers', AppLocalizations.of(context).composer_vis_followers),
-                    ('private', AppLocalizations.of(context).composer_vis_private),
+                    (
+                      'public',
+                      AppLocalizations.of(context).composer_vis_public,
+                    ),
+                    (
+                      'followers',
+                      AppLocalizations.of(context).composer_vis_followers,
+                    ),
+                    (
+                      'private',
+                      AppLocalizations.of(context).composer_vis_private,
+                    ),
                   ])
                     ComposerPolicyChip(
                       label: entry.$2,
@@ -783,7 +802,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             title: AppLocalizations.of(context).game_skill_level,
             subtitle: AppLocalizations.of(context).game_skill_sub,
             trailing: ComposerSelectPill(
-              value: state.skillLevel ?? AppLocalizations.of(context).game_any_level,
+              value:
+                  state.skillLevel ??
+                  AppLocalizations.of(context).game_any_level,
               caret: ComposerSelectCaret.down,
               onTap: () => _openSkillPicker(context),
             ),
@@ -853,7 +874,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ComposerSectionLabel(label: AppLocalizations.of(context).game_details),
+              ComposerSectionLabel(
+                label: AppLocalizations.of(context).game_details,
+              ),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,
@@ -908,7 +931,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   }
 
   String _venueLabel(_ComposerState state) {
-    if (state.venueSpaceId == null) return AppLocalizations.of(context).composer_select;
+    if (state.venueSpaceId == null)
+      return AppLocalizations.of(context).composer_select;
     return [
       state.venueName,
       state.venueSpaceName,
@@ -929,13 +953,23 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     }
     if (!context.mounted) return;
 
+    final l = AppLocalizations.of(context);
+    final pending = ValueNotifier<Map<String, dynamic>?>(
+      notifier.variants.where((v) => v['id'] == state.variantId).firstOrNull,
+    );
     await showComposerSheet<void>(
       context,
-      title: AppLocalizations.of(context).game_select_format_title,
-      builder: (_) => _VariantPickerSheet(
-        variants: notifier.variants,
-        onSelect: notifier.selectVariant,
+      title: l.composer_format_title(state.sportNameEn ?? ''),
+      confirm: ComposerSheetConfirm(
+        label: l.composer_confirm,
+        onTap: () {
+          final v = pending.value;
+          if (v != null) notifier.selectVariant(v);
+          Navigator.of(context).maybePop();
+        },
       ),
+      builder: (_) =>
+          ComposerVariantSheet(variants: notifier.variants, pending: pending),
     );
   }
 
@@ -966,30 +1000,64 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     );
   }
 
+  /// Step 1 of the design's date and time flow
+  /// (`Home Feed.dc.html:1070-1100`): the calendar, then — on Continue — the
+  /// time step. [timeOnly] opens the time step directly ("Kickoff time").
   Future<void> _pickDate(BuildContext context) async {
+    final l = AppLocalizations.of(context);
     final now = DateTime.now();
-    final initial = ref.read(_gameComposerProvider).selectedDate ?? now;
+    final notifier = ref.read(_gameComposerProvider.notifier);
+    final pending = ValueNotifier<DateTime?>(
+      ref.read(_gameComposerProvider).selectedDate,
+    );
+    final canContinue = ValueNotifier<bool>(pending.value != null);
+    pending.addListener(() => canContinue.value = pending.value != null);
+    var advance = false;
     await showComposerSheet<void>(
       context,
-      title: AppLocalizations.of(context).game_date,
-      builder: (_) => _DatePickerSheet(
+      title: l.composer_pick_date,
+      subtitle: l.composer_step_1,
+      confirm: ComposerSheetConfirm(
+        label: l.composer_continue_time,
+        enabledWhen: canContinue,
+        onTap: () {
+          final d = pending.value;
+          if (d == null) return;
+          notifier.selectDate(d);
+          advance = true;
+          Navigator.of(context).maybePop();
+        },
+      ),
+      builder: (_) => ComposerDateSheet(
         first: now,
         last: now.add(const Duration(days: 365)),
-        initial: initial,
-        onPicked: ref.read(_gameComposerProvider.notifier).selectDate,
+        pending: pending,
       ),
     );
+    if (advance && context.mounted) {
+      await _pickTime(context, step: 2);
+    }
   }
 
-  Future<void> _pickTime(BuildContext context) async {
-    final current = ref.read(_gameComposerProvider).selectedTime;
+  Future<void> _pickTime(BuildContext context, {int? step}) async {
+    final l = AppLocalizations.of(context);
+    final notifier = ref.read(_gameComposerProvider.notifier);
+    final pending = ValueNotifier<TimeOfDay>(
+      ref.read(_gameComposerProvider).selectedTime ??
+          const TimeOfDay(hour: 18, minute: 0),
+    );
     await showComposerSheet<void>(
       context,
-      title: AppLocalizations.of(context).game_time,
-      builder: (_) => _TimePickerSheet(
-        initial: current ?? const TimeOfDay(hour: 18, minute: 0),
-        onPicked: ref.read(_gameComposerProvider.notifier).selectTime,
+      title: l.composer_pick_time,
+      subtitle: step == 2 ? l.composer_step_2 : l.composer_kickoff_time,
+      confirm: ComposerSheetConfirm(
+        label: l.composer_confirm,
+        onTap: () {
+          notifier.selectTime(pending.value);
+          Navigator.of(context).maybePop();
+        },
       ),
+      builder: (_) => ComposerTimeSheet(pending: pending),
     );
   }
 
@@ -1068,7 +1136,9 @@ class _SportChipsRow extends StatelessWidget {
         for (final sport in sports)
           DabblerSelectableCard(
             layout: DabblerSelectableCardLayout.tile,
-            title: sport['name_en'] as String? ?? AppLocalizations.of(context).game_sport,
+            title:
+                sport['name_en'] as String? ??
+                AppLocalizations.of(context).game_sport,
             leading: DabblerSportIcon.fromKey(
               ((sport['sport_key'] as String?) ?? '').replaceAll('_', '-'),
               size: DabblerSizing.iconLg,
@@ -1086,107 +1156,97 @@ class _SportChipsRow extends StatelessWidget {
 
 // ─── Picker sheets ────────────────────────────────────────────────────────────
 
-class _VariantPickerSheet extends StatelessWidget {
-  const _VariantPickerSheet({required this.variants, required this.onSelect});
+class ComposerVariantSheet extends StatelessWidget {
+  const ComposerVariantSheet({required this.variants, required this.pending});
 
   final List<Map<String, dynamic>> variants;
-  final void Function(Map<String, dynamic>) onSelect;
+  final ValueNotifier<Map<String, dynamic>?> pending;
 
   @override
   Widget build(BuildContext context) {
     if (variants.isEmpty) {
       return Padding(
-        padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-        child: ComposerCenteredState.message(AppLocalizations.of(context).game_no_formats),
+        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
+        child: ComposerCenteredState.message(
+          AppLocalizations.of(context).game_no_formats,
+        ),
       );
     }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final v in variants)
-          ComposerPickerRow(
-            title: v['name_en'] as String,
-            subtitle: (v['required_players'] as int?) != null
-                ? '${v['required_players']} players'
-                : null,
-            onTap: () {
-              onSelect(v);
-              Navigator.pop(context);
-            },
-          ),
-      ],
+    return ValueListenableBuilder<Map<String, dynamic>?>(
+      valueListenable: pending,
+      builder: (context, current, _) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final v in variants)
+            ComposerPickerRow(
+              title: v['name_en'] as String,
+              subtitle: (v['required_players'] as int?) != null
+                  ? AppLocalizations.of(
+                      context,
+                    ).composer_players_count(v['required_players'] as int)
+                  : null,
+              selected: current?['id'] == v['id'],
+              onTap: () => pending.value = v,
+            ),
+        ],
+      ),
     );
   }
 }
 
-class _DatePickerSheet extends StatefulWidget {
-  const _DatePickerSheet({
+class ComposerDateSheet extends StatefulWidget {
+  const ComposerDateSheet({
     required this.first,
     required this.last,
-    required this.initial,
-    required this.onPicked,
+    required this.pending,
   });
 
   final DateTime first;
   final DateTime last;
-  final DateTime initial;
-  final ValueChanged<DateTime> onPicked;
+  final ValueNotifier<DateTime?> pending;
 
   @override
-  State<_DatePickerSheet> createState() => _DatePickerSheetState();
+  State<ComposerDateSheet> createState() => _ComposerDateSheetState();
 }
 
-class _DatePickerSheetState extends State<_DatePickerSheet> {
-  late DateTime _month = DateTime(widget.initial.year, widget.initial.month);
-  late DateTime _selected = widget.initial;
+class _ComposerDateSheetState extends State<ComposerDateSheet> {
+  late DateTime _month = DateTime(
+    (widget.pending.value ?? widget.first).year,
+    (widget.pending.value ?? widget.first).month,
+  );
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
-      child: DabblerCalendar(
-        month: _month,
-        selected: <DateTime>{_selected},
-        minimum: widget.first,
-        maximum: widget.last,
-        onSelect: (d) => setState(() => _selected = d),
-        onMonthChanged: (m) => setState(() => _month = m),
-        onConfirm: () {
-          widget.onPicked(_selected);
-          Navigator.pop(context);
-        },
-        onCancel: () => Navigator.pop(context),
-      ),
+    return DabblerCalendar(
+      month: _month,
+      selected: <DateTime>{
+        if (widget.pending.value != null) widget.pending.value!,
+      },
+      minimum: widget.first,
+      maximum: widget.last,
+      showActions: false,
+      onSelect: (d) => setState(() => widget.pending.value = d),
+      onMonthChanged: (m) => setState(() => _month = m),
     );
   }
 }
 
-class _TimePickerSheet extends StatefulWidget {
-  const _TimePickerSheet({required this.initial, required this.onPicked});
+class ComposerTimeSheet extends StatefulWidget {
+  const ComposerTimeSheet({required this.pending});
 
-  final TimeOfDay initial;
-  final ValueChanged<TimeOfDay> onPicked;
+  final ValueNotifier<TimeOfDay> pending;
 
   @override
-  State<_TimePickerSheet> createState() => _TimePickerSheetState();
+  State<ComposerTimeSheet> createState() => _ComposerTimeSheetState();
 }
 
-class _TimePickerSheetState extends State<_TimePickerSheet> {
-  late TimeOfDay _value = widget.initial;
-
+class _ComposerTimeSheetState extends State<ComposerTimeSheet> {
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
-      child: DabblerTimePicker(
-        value: _value,
-        onChanged: (t) => setState(() => _value = t),
-        onConfirm: () {
-          widget.onPicked(_value);
-          Navigator.pop(context);
-        },
-        onCancel: () => Navigator.pop(context),
-      ),
+    return DabblerTimePicker(
+      value: widget.pending.value,
+      showActions: false,
+      onChanged: (t) => setState(() => widget.pending.value = t),
     );
   }
 }
@@ -1260,14 +1320,18 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
                   'No venues available for this format',
                 )
               : filtered.isEmpty
-              ? ComposerCenteredState.message(AppLocalizations.of(context).game_no_matches)
+              ? ComposerCenteredState.message(
+                  AppLocalizations.of(context).game_no_matches,
+                )
               : ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (_, i) {
                     final sp = filtered[i];
                     final venue =
                         sp['venue'] as Map<String, dynamic>? ?? const {};
-                    final venueName = venue['name_en'] as String? ?? AppLocalizations.of(context).composer_venue;
+                    final venueName =
+                        venue['name_en'] as String? ??
+                        AppLocalizations.of(context).composer_venue;
                     final area = venue['area'] as String?;
                     final spaceName = sp['name_en'] as String?;
                     return ComposerPickerRow(

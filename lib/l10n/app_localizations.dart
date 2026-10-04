@@ -6482,7 +6482,7 @@ abstract class AppLocalizations {
   /// No description provided for @composer_link_a_game.
   ///
   /// In en, this message translates to:
-  /// **'Link a Game'**
+  /// **'Link a game'**
   String get composer_link_a_game;
 
   /// No description provided for @composer_location.
@@ -6494,19 +6494,19 @@ abstract class AppLocalizations {
   /// No description provided for @composer_add_media_title.
   ///
   /// In en, this message translates to:
-  /// **'Add Media'**
+  /// **'Add media'**
   String get composer_add_media_title;
 
   /// No description provided for @composer_take_photo.
   ///
   /// In en, this message translates to:
-  /// **'Take Photo'**
+  /// **'Take photo'**
   String get composer_take_photo;
 
   /// No description provided for @composer_choose_gallery.
   ///
   /// In en, this message translates to:
-  /// **'Choose from Gallery'**
+  /// **'Choose from gallery'**
   String get composer_choose_gallery;
 
   /// No description provided for @composer_search_gifs.
@@ -7234,6 +7234,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel reply'**
   String get post_detail_cancel_reply;
+
+  /// No description provided for @composer_place_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues and areas'**
+  String get composer_place_search;
+
+  /// No description provided for @composer_results.
+  ///
+  /// In en, this message translates to:
+  /// **'Results'**
+  String get composer_results;
+
+  /// No description provided for @composer_places_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No places match that search'**
+  String get composer_places_none;
+
+  /// No description provided for @composer_pick_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get composer_pick_date;
+
+  /// No description provided for @composer_pick_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a time'**
+  String get composer_pick_time;
+
+  /// No description provided for @composer_step_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 1 of 2'**
+  String get composer_step_1;
+
+  /// No description provided for @composer_step_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2 of 2'**
+  String get composer_step_2;
+
+  /// No description provided for @composer_kickoff_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Kickoff time'**
+  String get composer_kickoff_time;
+
+  /// No description provided for @composer_continue_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to time'**
+  String get composer_continue_time;
+
+  /// No description provided for @composer_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get composer_done;
+
+  /// No description provided for @composer_use_typed.
+  ///
+  /// In en, this message translates to:
+  /// **'Use “{query}”'**
+  String composer_use_typed(String query);
+
+  /// No description provided for @composer_format_title.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} format'**
+  String composer_format_title(String sport);
+
+  /// No description provided for @composer_players_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} players'**
+  String composer_players_count(int count);
 }
 
 class _AppLocalizationsDelegate

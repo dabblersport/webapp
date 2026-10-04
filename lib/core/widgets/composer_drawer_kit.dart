@@ -1,4 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
 
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -295,11 +296,16 @@ class ComposerSheetConfirm {
     required this.label,
     required this.onTap,
     this.enabled = true,
+    this.enabledWhen,
   });
 
   final String label;
   final VoidCallback onTap;
   final bool enabled;
+
+  /// A live enabled state (the Continue button of the date step); wins over
+  /// [enabled] when set.
+  final ValueListenable<bool>? enabledWhen;
 }
 
 /// Opens [builder] as a design-system sheet that sizes to its content (capped
@@ -320,22 +326,22 @@ Future<T?> showComposerSheet<T>(
   context: context,
   title: title,
   titleWidget: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DabblerText(
-              title,
-              style: DabblerType.headline,
-              weight: DabblerTextWeight.semibold,
-            ),
-            if (subtitle != null)
-              DabblerText(
-                subtitle,
-                style: DabblerType.caption1,
-                tone: DabblerTextTone.secondary,
-              ),
-          ],
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      DabblerText(
+        title,
+        style: DabblerType.headline,
+        weight: DabblerTextWeight.semibold,
+      ),
+      if (subtitle != null)
+        DabblerText(
+          subtitle,
+          style: DabblerType.caption1,
+          tone: DabblerTextTone.secondary,
         ),
+    ],
+  ),
   detent: tall ? DabblerSheetDetent.fractions : DabblerSheetDetent.content,
   detents: tall ? const [0.82] : const [0.5],
   pageBackground: true,
@@ -363,11 +369,15 @@ Future<T?> showComposerSheet<T>(
   ),
   footerBuilder: confirm == null
       ? null
-      : (ctx) => DabblerButton(
-          label: confirm.label,
-          fullWidth: true,
-          disabled: !confirm.enabled,
-          onPressed: confirm.enabled ? confirm.onTap : null,
+      : (ctx) => ValueListenableBuilder<bool>(
+          valueListenable:
+              confirm.enabledWhen ?? ValueNotifier<bool>(confirm.enabled),
+          builder: (_, on, __) => DabblerButton(
+            label: confirm.label,
+            fullWidth: true,
+            disabled: !on,
+            onPressed: on ? confirm.onTap : null,
+          ),
         ),
   builder: builder,
 );
@@ -395,7 +405,6 @@ Future<void> showComposerChoiceSheet<T>(
   required List<ComposerChoice<T>> choices,
   required T selected,
   required ValueChanged<T> onConfirm,
-  
 }) {
   final picked = ValueNotifier<T>(selected);
   return showComposerSheet<void>(
@@ -438,7 +447,19 @@ class ComposerPickerRow extends StatelessWidget {
     this.subtitle,
     this.selected = false,
     this.trailingText,
+    this.accent = false,
+    this.chevron = false,
+    this.divider = true,
   });
+
+  /// Draws the hairline under the row (every picker list of the frames).
+  final bool divider;
+
+  /// Draws the glyph in the brand ink (the Add media rows).
+  final bool accent;
+
+  /// Draws a trailing `arrow-circle-right` (mirrored in RTL).
+  final bool chevron;
 
   final String title;
   final String? subtitle;
@@ -450,7 +471,7 @@ class ComposerPickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    return DabblerInputRow(
+    final row = DabblerInputRow(
       title: title,
       subtitle: subtitle,
       leading: icon == null
@@ -458,7 +479,9 @@ class ComposerPickerRow extends StatelessWidget {
           : DabblerIcon(
               icon!,
               size: DabblerSizing.iconRow,
-              color: selected ? colors.brandPrimary : colors.textSecondary,
+              color: selected || accent
+                  ? colors.brandPrimary
+                  : colors.textSecondary,
             ),
       trailing: selected
           ? DabblerIcon(
@@ -466,6 +489,14 @@ class ComposerPickerRow extends StatelessWidget {
               weight: DabblerIconWeight.bold,
               size: DabblerSizing.iconRow,
               color: colors.brandPrimary,
+            )
+          : chevron
+          ? DabblerIcon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? 'arrow-circle-left'
+                  : 'arrow-circle-right',
+              size: DabblerSizing.iconSm,
+              color: colors.textTertiary,
             )
           : (trailingText == null
                 ? null
@@ -475,6 +506,12 @@ class ComposerPickerRow extends StatelessWidget {
                     tone: DabblerTextTone.secondary,
                   )),
       onTap: onTap,
+    );
+    if (!divider) return row;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [row, const DabblerDivider()],
     );
   }
 }

@@ -3582,19 +3582,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composer_kind_of_post => 'What kind of post?';
 
   @override
-  String get composer_link_a_game => 'Link a Game';
+  String get composer_link_a_game => 'Link a game';
 
   @override
   String get composer_location => 'Location';
 
   @override
-  String get composer_add_media_title => 'Add Media';
+  String get composer_add_media_title => 'Add media';
 
   @override
-  String get composer_take_photo => 'Take Photo';
+  String get composer_take_photo => 'Take photo';
 
   @override
-  String get composer_choose_gallery => 'Choose from Gallery';
+  String get composer_choose_gallery => 'Choose from gallery';
 
   @override
   String get composer_search_gifs => 'Search GIFs';
@@ -3968,4 +3968,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get post_detail_cancel_reply => 'Cancel reply';
+
+  @override
+  String get composer_place_search => 'Search venues and areas';
+
+  @override
+  String get composer_results => 'Results';
+
+  @override
+  String get composer_places_none => 'No places match that search';
+
+  @override
+  String get composer_pick_date => 'Pick a date';
+
+  @override
+  String get composer_pick_time => 'Pick a time';
+
+  @override
+  String get composer_step_1 => 'Step 1 of 2';
+
+  @override
+  String get composer_step_2 => 'Step 2 of 2';
+
+  @override
+  String get composer_kickoff_time => 'Kickoff time';
+
+  @override
+  String get composer_continue_time => 'Continue to time';
+
+  @override
+  String get composer_done => 'Done';
+
+  @override
+  String composer_use_typed(String query) {
+    return 'Use “$query”';
+  }
+
+  @override
+  String composer_format_title(String sport) {
+    return '$sport format';
+  }
+
+  @override
+  String composer_players_count(int count) {
+    return '$count players';
+  }
 }

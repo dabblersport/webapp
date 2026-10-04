@@ -3913,4 +3913,49 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get post_detail_cancel_reply => 'إلغاء الرد';
+
+  @override
+  String get composer_place_search => 'Search venues and areas';
+
+  @override
+  String get composer_results => 'Results';
+
+  @override
+  String get composer_places_none => 'No places match that search';
+
+  @override
+  String get composer_pick_date => 'Pick a date';
+
+  @override
+  String get composer_pick_time => 'Pick a time';
+
+  @override
+  String get composer_step_1 => 'Step 1 of 2';
+
+  @override
+  String get composer_step_2 => 'Step 2 of 2';
+
+  @override
+  String get composer_kickoff_time => 'Kickoff time';
+
+  @override
+  String get composer_continue_time => 'Continue to time';
+
+  @override
+  String get composer_done => 'Done';
+
+  @override
+  String composer_use_typed(String query) {
+    return 'Use “$query”';
+  }
+
+  @override
+  String composer_format_title(String sport) {
+    return '$sport format';
+  }
+
+  @override
+  String composer_players_count(int count) {
+    return '$count players';
+  }
 }
