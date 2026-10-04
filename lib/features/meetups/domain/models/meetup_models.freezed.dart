@@ -2754,6 +2754,8 @@ mixin _$MeetupAttendee {
   @JsonKey(name: 'display_name')
   String? get displayName => throw _privateConstructorUsedError;
   String? get username => throw _privateConstructorUsedError;
+  @JsonKey(name: 'user_id')
+  String? get userId => throw _privateConstructorUsedError;
   @JsonKey(unknownEnumValue: RsvpStatus.unknown)
   RsvpStatus get status => throw _privateConstructorUsedError;
 
@@ -2778,6 +2780,7 @@ abstract class $MeetupAttendeeCopyWith<$Res> {
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'user_id') String? userId,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) RsvpStatus status,
   });
 }
@@ -2800,6 +2803,7 @@ class _$MeetupAttendeeCopyWithImpl<$Res, $Val extends MeetupAttendee>
     Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
+    Object? userId = freezed,
     Object? status = null,
   }) {
     return _then(
@@ -2815,6 +2819,10 @@ class _$MeetupAttendeeCopyWithImpl<$Res, $Val extends MeetupAttendee>
             username: freezed == username
                 ? _value.username
                 : username // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            userId: freezed == userId
+                ? _value.userId
+                : userId // ignore: cast_nullable_to_non_nullable
                       as String?,
             status: null == status
                 ? _value.status
@@ -2839,6 +2847,7 @@ abstract class _$$MeetupAttendeeImplCopyWith<$Res>
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'user_id') String? userId,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) RsvpStatus status,
   });
 }
@@ -2860,6 +2869,7 @@ class __$$MeetupAttendeeImplCopyWithImpl<$Res>
     Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
+    Object? userId = freezed,
     Object? status = null,
   }) {
     return _then(
@@ -2875,6 +2885,10 @@ class __$$MeetupAttendeeImplCopyWithImpl<$Res>
         username: freezed == username
             ? _value.username
             : username // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        userId: freezed == userId
+            ? _value.userId
+            : userId // ignore: cast_nullable_to_non_nullable
                   as String?,
         status: null == status
             ? _value.status
@@ -2892,6 +2906,7 @@ class _$MeetupAttendeeImpl implements _MeetupAttendee {
     @JsonKey(name: 'actor_profile_id') this.actorProfileId,
     @JsonKey(name: 'display_name') this.displayName,
     this.username,
+    @JsonKey(name: 'user_id') this.userId,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown)
     this.status = RsvpStatus.unknown,
   });
@@ -2909,12 +2924,15 @@ class _$MeetupAttendeeImpl implements _MeetupAttendee {
   @override
   final String? username;
   @override
+  @JsonKey(name: 'user_id')
+  final String? userId;
+  @override
   @JsonKey(unknownEnumValue: RsvpStatus.unknown)
   final RsvpStatus status;
 
   @override
   String toString() {
-    return 'MeetupAttendee(actorProfileId: $actorProfileId, displayName: $displayName, username: $username, status: $status)';
+    return 'MeetupAttendee(actorProfileId: $actorProfileId, displayName: $displayName, username: $username, userId: $userId, status: $status)';
   }
 
   @override
@@ -2928,13 +2946,20 @@ class _$MeetupAttendeeImpl implements _MeetupAttendee {
                 other.displayName == displayName) &&
             (identical(other.username, username) ||
                 other.username == username) &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.status, status) || other.status == status));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, actorProfileId, displayName, username, status);
+  int get hashCode => Object.hash(
+    runtimeType,
+    actorProfileId,
+    displayName,
+    username,
+    userId,
+    status,
+  );
 
   /// Create a copy of MeetupAttendee
   /// with the given fields replaced by the non-null parameter values.
@@ -2958,6 +2983,7 @@ abstract class _MeetupAttendee implements MeetupAttendee {
     @JsonKey(name: 'actor_profile_id') final String? actorProfileId,
     @JsonKey(name: 'display_name') final String? displayName,
     final String? username,
+    @JsonKey(name: 'user_id') final String? userId,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) final RsvpStatus status,
   }) = _$MeetupAttendeeImpl;
 
@@ -2973,6 +2999,9 @@ abstract class _MeetupAttendee implements MeetupAttendee {
   String? get displayName;
   @override
   String? get username;
+  @override
+  @JsonKey(name: 'user_id')
+  String? get userId;
   @override
   @JsonKey(unknownEnumValue: RsvpStatus.unknown)
   RsvpStatus get status;

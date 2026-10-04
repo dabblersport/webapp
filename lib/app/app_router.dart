@@ -383,6 +383,8 @@ class AppRouter {
     sportsGamesGameIdRoute,
     if (FeatureFlags.enableMeetups) meetupDetailRoute,
     if (FeatureFlags.enableMeetups) createMeetupRoute,
+    if (FeatureFlags.enableMeetups) meetupManageRoute,
+    if (FeatureFlags.enableMeetups) meetupEditRoute,
     newsNewsIdRoute,
     sportsVenuesVenueIdRoute,
     gameGameIdRoute,

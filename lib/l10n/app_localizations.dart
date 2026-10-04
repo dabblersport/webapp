@@ -9976,6 +9976,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This option is not available yet.'**
   String get meetups_err_unsupported;
+
+  /// No description provided for @meetups_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage meetup'**
+  String get meetups_manage;
+
+  /// No description provided for @meetups_manage_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage meet-up'**
+  String get meetups_manage_title;
+
+  /// No description provided for @meetups_section_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Going'**
+  String get meetups_section_going;
+
+  /// No description provided for @meetups_section_interested.
+  ///
+  /// In en, this message translates to:
+  /// **'Interested'**
+  String get meetups_section_interested;
+
+  /// No description provided for @meetups_section_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get meetups_section_pending;
+
+  /// No description provided for @meetups_manage_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has responded yet.'**
+  String get meetups_manage_empty;
+
+  /// No description provided for @meetups_approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get meetups_approve;
+
+  /// No description provided for @meetups_decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get meetups_decline;
+
+  /// No description provided for @meetups_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get meetups_remove;
+
+  /// No description provided for @meetups_remove_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String meetups_remove_title(String name);
+
+  /// No description provided for @meetups_remove_body.
+  ///
+  /// In en, this message translates to:
+  /// **'They will lose their spot and be notified.'**
+  String get meetups_remove_body;
+
+  /// No description provided for @meetups_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meet-up'**
+  String get meetups_edit;
+
+  /// No description provided for @meetups_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get meetups_save;
+
+  /// No description provided for @meetups_cancel_meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meetup'**
+  String get meetups_cancel_meetup;
+
+  /// No description provided for @meetups_cancel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this meet-up?'**
+  String get meetups_cancel_title;
+
+  /// No description provided for @meetups_cancel_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who responded will be told. This cannot be undone.'**
+  String get meetups_cancel_body;
+
+  /// No description provided for @meetups_cancel_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meet-up'**
+  String get meetups_cancel_confirm;
+
+  /// No description provided for @meetups_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get meetups_keep;
+
+  /// No description provided for @meetups_err_capacity_below_going.
+  ///
+  /// In en, this message translates to:
+  /// **'The capacity is lower than the number already going.'**
+  String get meetups_err_capacity_below_going;
+
+  /// No description provided for @meetups_err_not_host.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host can do this.'**
+  String get meetups_err_not_host;
+
+  /// No description provided for @meetups_err_attendee_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'That person is no longer on this meet-up.'**
+  String get meetups_err_attendee_not_found;
+
+  /// No description provided for @meetups_err_no_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'That request is no longer pending.'**
+  String get meetups_err_no_pending;
+
+  /// No description provided for @meetups_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the changes'**
+  String get meetups_save_failed;
+
+  /// No description provided for @meetups_action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t work. Try again.'**
+  String get meetups_action_failed;
 }
 
 class _AppLocalizationsDelegate

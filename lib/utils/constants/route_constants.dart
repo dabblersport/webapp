@@ -80,6 +80,8 @@ class RoutePaths {
   static const String meetups = '/meetups';
   static const String createMeetup = '/create-meetup';
   static String meetupDetail(String meetupId) => '/meetups/$meetupId';
+  static String meetupManage(String meetupId) => '/meetups/$meetupId/manage';
+  static String meetupEdit(String meetupId) => '/meetups/$meetupId/edit';
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
   // News detail (root-level, no shell)
@@ -156,6 +158,8 @@ class RouteNames {
   static const String meetups = 'meetups';
   static const String createMeetup = 'create-meetup';
   static const String meetupDetail = 'meetup-detail';
+  static const String meetupManage = 'meetup-manage';
+  static const String meetupEdit = 'meetup-edit';
 
   // Game Creation Routes
   static const String createGame = 'create-game';

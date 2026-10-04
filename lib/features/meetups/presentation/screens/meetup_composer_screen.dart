@@ -1,10 +1,9 @@
-import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
-import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart'
-    show ComposerDateSheet, ComposerTimeSheet;
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
+import 'package:dabbler/features/meetups/presentation/widgets/meetup_error_text.dart';
+import 'package:dabbler/features/meetups/presentation/widgets/meetup_pickers.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -86,17 +85,6 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   DateTime _at(DateTime d, TimeOfDay t) =>
       DateTime(d.year, d.month, d.day, t.hour, t.minute);
 
-  String _message(AppLocalizations l, Failure f) => switch (f.code) {
-    'organiser_required' => l.meetups_err_organiser_required,
-    'title_invalid' => l.meetups_err_title_invalid,
-    'invalid_time_range' => l.meetups_err_invalid_time_range,
-    'invalid_capacity' => l.meetups_err_invalid_capacity,
-    'auth_required' => l.meetups_err_auth_required,
-    'free_meetups_only' ||
-    'visibility_not_supported' => l.meetups_err_unsupported,
-    _ => l.meetups_create_failed,
-  };
-
   Future<void> _submit() async {
     final l = AppLocalizations.of(context);
     setState(() {
@@ -141,7 +129,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     result.fold(
       (f) => setState(() {
         _busy = false;
-        _error = _message(l, f);
+        _error = meetupErrorText(l, f, l.meetups_create_failed);
       }),
       (id) {
         setState(() => _busy = false);
@@ -168,44 +156,15 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
       t == null ? empty : DabblerTimeFormat.format(t);
 
   Future<void> _pickDate() async {
-    final l = AppLocalizations.of(context);
-    final now = DateTime.now();
-    final pending = ValueNotifier<DateTime?>(_date);
-    await showComposerSheet<void>(
-      context,
-      title: l.composer_pick_date,
-      confirm: ComposerSheetConfirm(
-        label: l.composer_confirm,
-        onTap: () {
-          if (pending.value != null) setState(() => _date = pending.value);
-          Navigator.of(context).maybePop();
-        },
-      ),
-      builder: (_) => ComposerDateSheet(
-        first: now,
-        last: DateTime(now.year + 1, now.month, now.day),
-        pending: pending,
-      ),
-    );
+    final d = await pickMeetupDate(context, _date);
+    if (d != null && mounted) setState(() => _date = d);
   }
 
   Future<void> _pickTime({required bool end}) async {
-    final l = AppLocalizations.of(context);
-    final pending = ValueNotifier<TimeOfDay>(
-      (end ? _end : _start) ?? const TimeOfDay(hour: 18, minute: 0),
-    );
-    await showComposerSheet<void>(
-      context,
-      title: l.composer_pick_time,
-      confirm: ComposerSheetConfirm(
-        label: l.composer_confirm,
-        onTap: () {
-          setState(() => end ? _end = pending.value : _start = pending.value);
-          Navigator.of(context).maybePop();
-        },
-      ),
-      builder: (_) => ComposerTimeSheet(pending: pending),
-    );
+    final t = await pickMeetupTime(context, end ? _end : _start);
+    if (t != null && mounted) {
+      setState(() => end ? _end = t : _start = t);
+    }
   }
 
   Future<void> _pickSkill() => showComposerSheet<void>(
@@ -275,22 +234,9 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     ),
   );
 
-  void _pickPlace() {
-    final l = AppLocalizations.of(context);
-    final pending = ValueNotifier<ComposerPlacePick?>(_place);
-    showComposerSheet<void>(
-      context,
-      title: l.composer_add_location,
-      onClear: () => setState(() => _place = null),
-      confirm: ComposerSheetConfirm(
-        label: l.composer_confirm,
-        onTap: () {
-          if (pending.value != null) setState(() => _place = pending.value);
-          Navigator.of(context).maybePop();
-        },
-      ),
-      builder: (_) => ComposerPlaceSheet(pending: pending),
-    );
+  Future<void> _pickPlace() async {
+    final p = await pickMeetupPlace(context, _place);
+    if (p != null && mounted) setState(() => _place = p);
   }
 
   @override

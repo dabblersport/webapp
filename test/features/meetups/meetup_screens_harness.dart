@@ -120,7 +120,11 @@ class FakeMeetupRepository implements MeetupRepository {
   }
 
   @override
-  Future<Result<void, Failure>> cancel(String meetupId) async => const Ok(null);
+  Future<Result<void, Failure>> cancel(String meetupId) async {
+    cancelCalls.add(meetupId);
+    if (manageFailure != null) return Err(manageFailure!);
+    return const Ok(null);
+  }
 
   @override
   Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) async {

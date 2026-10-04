@@ -5422,4 +5422,82 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meetups_err_unsupported => 'This option is not available yet.';
+
+  @override
+  String get meetups_manage => 'Manage meetup';
+
+  @override
+  String get meetups_manage_title => 'Manage meet-up';
+
+  @override
+  String get meetups_section_going => 'Going';
+
+  @override
+  String get meetups_section_interested => 'Interested';
+
+  @override
+  String get meetups_section_pending => 'Requests';
+
+  @override
+  String get meetups_manage_empty => 'Nobody has responded yet.';
+
+  @override
+  String get meetups_approve => 'Approve';
+
+  @override
+  String get meetups_decline => 'Decline';
+
+  @override
+  String get meetups_remove => 'Remove';
+
+  @override
+  String meetups_remove_title(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get meetups_remove_body =>
+      'They will lose their spot and be notified.';
+
+  @override
+  String get meetups_edit => 'Edit meet-up';
+
+  @override
+  String get meetups_save => 'Save changes';
+
+  @override
+  String get meetups_cancel_meetup => 'Cancel meetup';
+
+  @override
+  String get meetups_cancel_title => 'Cancel this meet-up?';
+
+  @override
+  String get meetups_cancel_body =>
+      'Everyone who responded will be told. This cannot be undone.';
+
+  @override
+  String get meetups_cancel_confirm => 'Cancel meet-up';
+
+  @override
+  String get meetups_keep => 'Keep it';
+
+  @override
+  String get meetups_err_capacity_below_going =>
+      'The capacity is lower than the number already going.';
+
+  @override
+  String get meetups_err_not_host => 'Only the host can do this.';
+
+  @override
+  String get meetups_err_attendee_not_found =>
+      'That person is no longer on this meet-up.';
+
+  @override
+  String get meetups_err_no_pending => 'That request is no longer pending.';
+
+  @override
+  String get meetups_save_failed => 'Couldn\'t save the changes';
+
+  @override
+  String get meetups_action_failed => 'That didn\'t work. Try again.';
 }

@@ -248,6 +248,7 @@ _$MeetupAttendeeImpl _$$MeetupAttendeeImplFromJson(Map<String, dynamic> json) =>
       actorProfileId: json['actor_profile_id'] as String?,
       displayName: json['display_name'] as String?,
       username: json['username'] as String?,
+      userId: json['user_id'] as String?,
       status:
           $enumDecodeNullable(
             _$RsvpStatusEnumMap,
@@ -263,6 +264,7 @@ Map<String, dynamic> _$$MeetupAttendeeImplToJson(
   'actor_profile_id': instance.actorProfileId,
   'display_name': instance.displayName,
   'username': instance.username,
+  'user_id': instance.userId,
   'status': _$RsvpStatusEnumMap[instance.status]!,
 };
 

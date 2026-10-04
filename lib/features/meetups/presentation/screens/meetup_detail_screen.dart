@@ -294,6 +294,12 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
           ],
         ),
         if (hostName != null) _HostSection(host: c.host!, name: hostName),
+        if (c.isHost)
+          DabblerActionRow(
+            icon: 'setting-2',
+            label: l.meetups_manage,
+            onTap: () => context.push(RoutePaths.meetupManage(c.id)),
+          ),
       ],
     );
   }

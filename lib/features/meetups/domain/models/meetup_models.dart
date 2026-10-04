@@ -166,6 +166,7 @@ abstract class MeetupAttendee with _$MeetupAttendee {
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'user_id') String? userId,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown)
     @Default(RsvpStatus.unknown)
     RsvpStatus status,
