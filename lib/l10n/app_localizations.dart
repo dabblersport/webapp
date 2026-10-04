@@ -2012,12 +2012,6 @@ abstract class AppLocalizations {
   /// **'Setup did not finish'**
   String get onb_setup_failed_title;
 
-  /// No description provided for @onb_welcome_list_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Don’t forget'**
-  String get onb_welcome_list_title;
-
   /// No description provided for @onb_welcome_socialiser_headline.
   ///
   /// In en, this message translates to:

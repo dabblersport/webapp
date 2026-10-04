@@ -442,6 +442,16 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
           label: l10n.onb_display_name_label,
           placeholder: l10n.set_username_display_name_hint,
           helperText: l10n.onb_display_name_helper,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return l10n.set_username_validate_display_required;
+            }
+            if (value.trim().length < 2) {
+              return l10n.set_username_validate_display_min;
+            }
+            return null;
+          },
         ),
         if (_loadingSuggestions || _suggestions.isNotEmpty)
           Column(

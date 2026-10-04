@@ -1054,9 +1054,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_setup_failed_title => 'لم يكتمل الإعداد';
 
   @override
-  String get onb_welcome_list_title => 'لا تنسَ';
-
-  @override
   String get onb_welcome_socialiser_headline => 'دائرتك الرياضية تبدأ من هنا.';
 
   @override

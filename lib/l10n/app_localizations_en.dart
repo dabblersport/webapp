@@ -1074,9 +1074,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_setup_failed_title => 'Setup did not finish';
 
   @override
-  String get onb_welcome_list_title => 'Don’t forget';
-
-  @override
   String get onb_welcome_socialiser_headline =>
       'Your sports circle starts here.';
 
