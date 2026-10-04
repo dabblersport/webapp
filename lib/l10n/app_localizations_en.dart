@@ -2296,13 +2296,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get user_profile_age_suffix => 'Yo';
 
   @override
-  String get user_profile_stat_games => 'Games';
+  String get user_profile_stat_games => 'Games played';
 
   @override
   String get user_profile_stat_win_rate => 'Win rate';
 
   @override
-  String get user_profile_stat_sports => 'Sports';
+  String get user_profile_stat_sports => 'Sports played';
 
   @override
   String get user_profile_stat_reliability => 'Reliability';
@@ -2702,7 +2702,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String listing_spots_left(int count) {
-    return '$count spots left';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count spots left',
+      one: '1 spot left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listing_spots_almost_full(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count spots left · almost full',
+      one: '1 spot left · almost full',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2931,5 +2948,28 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String home_location_no_match(String query) {
     return 'No areas match \"$query\"';
+  }
+
+  @override
+  String get profile_section_my_sports => 'My sports';
+
+  @override
+  String get profile_section_their_sports => 'Their sports';
+
+  @override
+  String get profile_btn_manage => 'Manage';
+
+  @override
+  String get profile_sport_picker_all => 'All sports';
+
+  @override
+  String get profile_stat_rated => 'Rated by players';
+
+  @override
+  String get profile_stat_primary_sports => 'Primary sports';
+
+  @override
+  String profile_stat_sport_matches(String sport) {
+    return '$sport matches';
   }
 }

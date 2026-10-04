@@ -5,6 +5,8 @@ import 'package:intl/intl.dart' hide TextDirection;
 
 import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
+import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// The sections of Game details (D01), each one a composition of design-system
@@ -63,7 +65,9 @@ Widget gameHeadcount(GameViewState state) {
 }
 
 /// The four fact tiles (`:93-110`): when, how long, what it costs, the level.
-Widget gameFactTiles(GameView game) {
+Widget gameFactTiles(BuildContext context, GameView game) {
+  final l = AppLocalizations.of(context);
+  final tier = gamesSkillTierFor(game.minSkill, game.maxSkill);
   final mins = game.endAt.difference(game.startAt).inMinutes;
   final hasSkill = game.minSkill != null && game.maxSkill != null;
   Widget glyph(String name) =>
@@ -101,7 +105,9 @@ Widget gameFactTiles(GameView game) {
           size: DabblerStatTileSize.detail,
           tone: DabblerStatTileTone.accent,
           icon: glyph('cup'),
-          value: '${game.minSkill}–${game.maxSkill}',
+          value: tier == null
+              ? '${game.minSkill}–${game.maxSkill}'
+              : gamesSkillTierLabel(l, tier),
           label: 'Skill level',
           fitValue: true,
         ),

@@ -2658,6 +2658,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String listing_spots_almost_full(int count) {
+    return 'بقي $count · شبه ممتلئ';
+  }
+
+  @override
   String listing_players_in(int joined, int total) {
     return '$joined من $total لاعبين';
   }
@@ -2883,5 +2888,28 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String home_location_no_match(String query) {
     return 'لا توجد مناطق مطابقة لـ \"$query\"';
+  }
+
+  @override
+  String get profile_section_my_sports => 'رياضاتي';
+
+  @override
+  String get profile_section_their_sports => 'رياضاتهم';
+
+  @override
+  String get profile_btn_manage => 'إدارة';
+
+  @override
+  String get profile_sport_picker_all => 'كل الرياضات';
+
+  @override
+  String get profile_stat_rated => 'تقييم اللاعبين';
+
+  @override
+  String get profile_stat_primary_sports => 'الرياضات الأساسية';
+
+  @override
+  String profile_stat_sport_matches(String sport) {
+    return 'مباريات $sport';
   }
 }

@@ -881,9 +881,9 @@
   "user_profile_btn_following": "Following",
   "user_profile_age_suffix": "Yo",
 
-  "user_profile_stat_games": "Games",
+  "user_profile_stat_games": "Games played",
   "user_profile_stat_win_rate": "Win rate",
-  "user_profile_stat_sports": "Sports",
+  "user_profile_stat_sports": "Sports played",
   "user_profile_stat_reliability": "Reliability",
   "user_profile_stat_activity": "Activity",
   "user_profile_stat_last_play": "Last play",
@@ -1022,8 +1022,10 @@
   "listing_created": "Created",
   "listing_joined": "Joined",
   "listing_full": "Full",
-  "listing_spots_left": "{count} spots left",
+  "listing_spots_left": "{count, plural, =1{1 spot left} other{{count} spots left}}",
   "@listing_spots_left": {"placeholders": {"count": {"type": "int"}}},
+  "listing_spots_almost_full": "{count, plural, =1{1 spot left · almost full} other{{count} spots left · almost full}}",
+  "@listing_spots_almost_full": {"placeholders": {"count": {"type": "int"}}},
   "listing_players_in": "{joined} of {total} players in",
   "@listing_players_in": {"placeholders": {"joined": {"type": "int"}, "total": {"type": "int"}}},
   "listing_show_games": "Show {count} games",
@@ -1104,5 +1106,13 @@
   "home_location_use_current": "Use current location",
   "home_location_add": "Add location",
   "home_location_no_match": "No areas match \"{query}\"",
-  "@home_location_no_match": {"placeholders": {"query": {"type": "String"}}}
+  "@home_location_no_match": {"placeholders": {"query": {"type": "String"}}},
+  "profile_section_my_sports": "My sports",
+  "profile_section_their_sports": "Their sports",
+  "profile_btn_manage": "Manage",
+  "profile_sport_picker_all": "All sports",
+  "profile_stat_rated": "Rated by players",
+  "profile_stat_primary_sports": "Primary sports",
+  "profile_stat_sport_matches": "{sport} matches",
+  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}}
 }

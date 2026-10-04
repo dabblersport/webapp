@@ -8,7 +8,9 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
+import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// Game details (D01), drawn from `Details.dc.html` "Game details".
@@ -172,6 +174,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
           game.statusLabel,
           if (game.sportNameEn != null) game.sportNameEn!,
           if (game.variantNameEn != null) game.variantNameEn!,
+          ?_skillChip(game),
         ],
         title: game.title,
         place: [game.venueName, game.areaName].whereType<String>().join(' · '),
@@ -179,7 +182,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       bottomBar: _actionBar(state, ctrl),
       children: [
         gameHeadcount(state),
-        gameFactTiles(game),
+        gameFactTiles(context, game),
         gameHostCard(context, game),
         ...gameSquadSections(
           context,
@@ -191,6 +194,14 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         ?where,
       ],
     );
+  }
+
+  /// The skill tier as the header's last chip (`Details.dc.html:68`).
+  String? _skillChip(GameView game) {
+    final tier = gamesSkillTierFor(game.minSkill, game.maxSkill);
+    return tier == null
+        ? null
+        : gamesSkillTierLabel(AppLocalizations.of(context), tier);
   }
 
   // ── Loading / error ──────────────────────────────────────────────────────

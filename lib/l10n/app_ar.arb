@@ -995,6 +995,7 @@
   "listing_joined": "منضم",
   "listing_full": "ممتلئة",
   "listing_spots_left": "بقي {count} أماكن",
+  "listing_spots_almost_full": "بقي {count} · شبه ممتلئ",
   "listing_players_in": "{joined} من {total} لاعبين",
   "listing_show_games": "عرض {count} مباراة",
   "listing_show_games_plain": "عرض المباريات",
@@ -1059,5 +1060,13 @@
   "home_location_search": "ابحث عن منطقة أو شارع أو مدينة",
   "home_location_use_current": "استخدم موقعي الحالي",
   "home_location_add": "إضافة موقع",
-  "home_location_no_match": "لا توجد مناطق مطابقة لـ \"{query}\""
+  "home_location_no_match": "لا توجد مناطق مطابقة لـ \"{query}\"",
+  "profile_section_my_sports": "رياضاتي",
+  "profile_section_their_sports": "رياضاتهم",
+  "profile_btn_manage": "إدارة",
+  "profile_sport_picker_all": "كل الرياضات",
+  "profile_stat_rated": "تقييم اللاعبين",
+  "profile_stat_primary_sports": "الرياضات الأساسية",
+  "profile_stat_sport_matches": "مباريات {sport}",
+  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}}
 }

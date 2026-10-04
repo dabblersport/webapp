@@ -453,7 +453,7 @@ class _GameTabBody extends ConsumerWidget {
             ),
             children: [
               if (pinned.isNotEmpty) ...[
-                DabblerText(l.listing_upcoming, style: DabblerType.title2),
+                DabblerText(l.listing_upcoming, style: DabblerType.displayLabel),
                 const DabblerGap.v(DabblerSpacing.space4),
                 _UpcomingRail(games: pinned),
                 const DabblerGap.v(DabblerSpacing.space4),
@@ -561,7 +561,7 @@ class _GameCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final at = game.scheduledAt;
     final colors = DabblerColors.of(context);
-    final skill = _skillTier(game.minSkill, game.maxSkill);
+    final skill = gamesSkillTierFor(game.minSkill, game.maxSkill);
 
     return DabblerCardGame(
       title: game.title,
@@ -602,6 +602,8 @@ class _GameCard extends StatelessWidget {
               capacity: game.playerCount! + game.spotsRemaining!,
               note: game.spotsRemaining! == 0
                   ? l.listing_full
+                  : game.spotsRemaining! <= 2
+                  ? l.listing_spots_almost_full(game.spotsRemaining!)
                   : l.listing_spots_left(game.spotsRemaining!),
               tone: game.spotsRemaining! == 0
                   ? DabblerProgressBarTone.error
@@ -613,18 +615,6 @@ class _GameCard extends StatelessWidget {
       onTap: () => context.push(RoutePaths.gameDetail(game.id)),
       semanticLabel: game.title,
     );
-  }
-
-  /// The tier name for the game's skill window, by its lower bound — the
-  /// same bands the skill filter uses.
-  static GamesSkillFilter? _skillTier(int? min, int? max) {
-    final level = min ?? max;
-    if (level == null) return null;
-    for (final tier in GamesSkillFilter.values) {
-      final r = tier.range;
-      if (r != null && level >= r.$1 && level <= r.$2) return tier;
-    }
-    return null;
   }
 
   static String _dayLabel(AppLocalizations l, DateTime dt, String locale) {
@@ -645,10 +635,5 @@ String _dateLabel(AppLocalizations l, GamesDateFilter f) => switch (f) {
   GamesDateFilter.thisWeek => l.listing_this_week,
 };
 
-String _skillLabel(AppLocalizations l, GamesSkillFilter f) => switch (f) {
-  GamesSkillFilter.any => l.listing_skill_any,
-  GamesSkillFilter.beginner => l.listing_skill_beginner,
-  GamesSkillFilter.intermediate => l.listing_skill_intermediate,
-  GamesSkillFilter.advanced => l.listing_skill_advanced,
-  GamesSkillFilter.pro => l.listing_skill_pro,
-};
+String _skillLabel(AppLocalizations l, GamesSkillFilter f) =>
+    gamesSkillTierLabel(l, f);

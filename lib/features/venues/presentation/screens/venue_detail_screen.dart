@@ -252,7 +252,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       children: [
                         DabblerText(
                           _labelFor(sports[i]),
-                          style: DabblerType.subheadline,
+                          style: DabblerType.smallTight,
                           weight: DabblerTextWeight.semibold,
                         ),
                         const DabblerGap.v(DabblerSpacing.space2),
@@ -260,7 +260,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                           venue.pricePerHour == 0
                               ? 'Free'
                               : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)} / hour',
-                          style: DabblerType.subheadline,
+                          style: DabblerType.smallTight,
                           weight: DabblerTextWeight.bold,
                         ),
                       ],
@@ -327,7 +327,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             children: [
               DabblerText(
                 venue.description,
-                style: DabblerType.footnote,
+                style: DabblerType.footnoteRelaxed,
                 tone: DabblerTextTone.secondary,
               ),
             ],
