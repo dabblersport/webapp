@@ -173,7 +173,6 @@ final bookingsControllerProvider =
       return BookingsController(ref.watch(bookingsRepositoryProvider));
     });
 
-
 // =============================================================================
 // CONVENIENCE PROVIDERS
 // =============================================================================
@@ -463,7 +462,6 @@ final myGamesActionsProvider = Provider.family<MyGamesActions, String>((
 // =============================================================================
 // SUPPORTING CLASSES
 // =============================================================================
-
 
 /// Action wrapper classes for easier UI integration
 class GamesActions {

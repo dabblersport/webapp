@@ -106,7 +106,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   Widget _content(games_venue.Venue venue, bool isFavorited) {
     final sports = venue.supportedSports;
     final isOpen = venue.isOpenAt(DateTime.now());
-    final hasHours = venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty;
+    final hasHours =
+        venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty;
     final address = [
       venue.addressLine1,
       venue.city,
@@ -118,24 +119,25 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       venue.country,
     ].where((p) => p.isNotEmpty).join(', ');
 
-    final contacts = <({String icon, String label, String value, VoidCallback? onTap})>[
-      if (venue.phone?.isNotEmpty ?? false)
-        (
-          icon: 'call',
-          label: 'Phone',
-          value: venue.phone!,
-          onTap: () => _callVenue(venue.phone!),
-        ),
-      if (venue.email?.isNotEmpty ?? false)
-        (icon: 'sms', label: 'Email', value: venue.email!, onTap: null),
-      if (venue.website?.isNotEmpty ?? false)
-        (
-          icon: 'global',
-          label: 'Website',
-          value: venue.website!,
-          onTap: () => _openWebsite(venue.website!),
-        ),
-    ];
+    final contacts =
+        <({String icon, String label, String value, VoidCallback? onTap})>[
+          if (venue.phone?.isNotEmpty ?? false)
+            (
+              icon: 'call',
+              label: 'Phone',
+              value: venue.phone!,
+              onTap: () => _callVenue(venue.phone!),
+            ),
+          if (venue.email?.isNotEmpty ?? false)
+            (icon: 'sms', label: 'Email', value: venue.email!, onTap: null),
+          if (venue.website?.isNotEmpty ?? false)
+            (
+              icon: 'global',
+              label: 'Website',
+              value: venue.website!,
+              onTap: () => _openWebsite(venue.website!),
+            ),
+        ];
 
     return DabblerDetailPage(
       header: DabblerGalleryHero(
@@ -163,7 +165,9 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             color: isFavorited ? DabblerColors.of(context).error.base : null,
             selected: isFavorited,
             semanticLabel: isFavorited ? 'Unsave venue' : 'Save venue',
-            onPressed: _favoriteBusy ? null : () => _toggleFavorite(isFavorited),
+            onPressed: _favoriteBusy
+                ? null
+                : () => _toggleFavorite(isFavorited),
           ),
         ],
       ),

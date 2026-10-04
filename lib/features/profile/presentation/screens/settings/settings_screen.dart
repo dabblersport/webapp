@@ -13,7 +13,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/core/services/theme_service.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart' show currentUserIdProvider;
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart'
     show privacyProfileShownCount, privacyActivityShownCount;
@@ -344,7 +345,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             size: DabblerStatTileSize.setting,
             span: 3,
             icon: const DabblerIcon('slash'),
-            value: DabblerType.toWesternDigits('${blocked.valueOrNull!.length}'),
+            value: DabblerType.toWesternDigits(
+              '${blocked.valueOrNull!.length}',
+            ),
             label: l10n.settings_tile_blocked,
             fitValue: true,
             onTap: () => context.push('/settings/privacy'),
@@ -356,9 +359,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<Widget> _buildFilteredSectionsList(BuildContext context) {
     return _getFilteredSections(context).map((section) {
       return Padding(
-        padding: const EdgeInsetsDirectional.only(
-          top: DabblerSpacing.space6,
-        ),
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space6),
         child: _buildSection(context, section),
       );
     }).toList();

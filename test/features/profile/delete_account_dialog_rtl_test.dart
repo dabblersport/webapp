@@ -1,8 +1,8 @@
 // KAN-161 AC2: layout verified at the new string lengths, in Arabic as well as
-// English.
+// English — now in the delete-account sheet body (Settings.dc.html:403).
 //
-// This pumps `DeleteAccountDialogContent` — the widget the app actually renders
-// inside the delete-account confirmation dialog — rather than a reconstruction
+// This pumps `DeleteAccountSheetBody` — the widget the app actually renders
+// inside the delete-account confirmation sheet — rather than a reconstruction
 // of it, so a regression in the screen fails this test. `AccountManagementScreen`
 // itself cannot be pumped: it reaches for `Supabase.instance` and an
 // authenticated session in `initState`.
@@ -18,8 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings/delete_account_sheet_body.dart';
 import '../../support/render_mode.dart';
 
 const _enWarning =
@@ -46,10 +45,16 @@ Widget _harness({required Locale locale, required TextEditingController c}) {
     // The dialog is a design-system DabblerDialog since the W8 migration; its
     // tokens resolve from the DS theme extension.
     theme: DabblerDesignSystemTheme.withTokens(renderThemeBase()),
-    home: DabblerDialog(
-      title: 'Delete Account',
-      destructive: true,
-      child: DeleteAccountDialogContent(confirmController: c, enabled: true),
+    home: Scaffold(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(18),
+        child: DeleteAccountSheetBody(
+          confirmController: c,
+          deleting: false,
+          onConfirm: () {},
+          onCancel: () {},
+        ),
+      ),
     ),
   );
 }
@@ -62,7 +67,9 @@ void main() {
 
   group('delete-account dialog renders the KAN-160 warning', () {
     testWidgets('in English, with no overflow', (tester) async {
-      await tester.pumpWidget(_harness(locale: const Locale('en'), c: controller));
+      await tester.pumpWidget(
+        _harness(locale: const Locale('en'), c: controller),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(_enWarning), findsOneWidget);
@@ -70,7 +77,9 @@ void main() {
     });
 
     testWidgets('in Arabic, with no overflow', (tester) async {
-      await tester.pumpWidget(_harness(locale: const Locale('ar'), c: controller));
+      await tester.pumpWidget(
+        _harness(locale: const Locale('ar'), c: controller),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(_arWarning), findsOneWidget);
@@ -78,7 +87,9 @@ void main() {
     });
 
     testWidgets('lays the Arabic string out right-to-left', (tester) async {
-      await tester.pumpWidget(_harness(locale: const Locale('ar'), c: controller));
+      await tester.pumpWidget(
+        _harness(locale: const Locale('ar'), c: controller),
+      );
       await tester.pumpAndSettle();
 
       // Arabic is RTL and that changes layout — this is the half of AC2 that a
@@ -98,7 +109,9 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(_harness(locale: const Locale('ar'), c: controller));
+      await tester.pumpWidget(
+        _harness(locale: const Locale('ar'), c: controller),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text(_arWarning), findsOneWidget);

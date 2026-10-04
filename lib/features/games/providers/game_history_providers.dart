@@ -56,50 +56,58 @@ PastGame _rowToGame(Map<String, dynamic> row) {
 /// table directly — it never returned anything.
 final sportGameHistoryProvider = FutureProvider.autoDispose
     .family<SportGameHistory, SportGameHistoryArgs>((ref, args) async {
-  final supabase = Supabase.instance.client;
-  if (supabase.auth.currentUser == null) {
-    return (upcoming: const <PastGame>[], past: const <PastGame>[]);
-  }
+      final supabase = Supabase.instance.client;
+      if (supabase.auth.currentUser == null) {
+        return (upcoming: const <PastGame>[], past: const <PastGame>[]);
+      }
 
-  final isOwn = supabase.auth.currentUser!.id == args.userId;
-  final nowIso = DateTime.now().toUtc().toIso8601String();
+      final isOwn = supabase.auth.currentUser!.id == args.userId;
+      final nowIso = DateTime.now().toUtc().toIso8601String();
 
-  // Membership filter. Own profile: the view's viewer-relative flags.
-  // Other profiles: creator match + the target's active roster game ids
-  // (the game_roster SELECT policy already trims those to games the viewer
-  // can see).
-  final String membershipOr;
-  if (isOwn) {
-    membershipOr = 'is_creator.eq.true,is_joined.eq.true';
-  } else {
-    final rosterRows = await supabase
-        .from(SupabaseConfig.gameRosterTable)
-        .select('game_id')
-        .eq('user_id', args.userId)
-        .eq('status', 'active') as List<dynamic>;
-    final ids = rosterRows
-        .map((r) => (r as Map)['game_id'] as String)
-        .toSet()
-        .join(',');
-    membershipOr = ids.isEmpty
-        ? 'creator_profile_id.eq.${args.profileId}'
-        : 'creator_profile_id.eq.${args.profileId},id.in.($ids)';
-  }
+      // Membership filter. Own profile: the view's viewer-relative flags.
+      // Other profiles: creator match + the target's active roster game ids
+      // (the game_roster SELECT policy already trims those to games the viewer
+      // can see).
+      final String membershipOr;
+      if (isOwn) {
+        membershipOr = 'is_creator.eq.true,is_joined.eq.true';
+      } else {
+        final rosterRows =
+            await supabase
+                    .from(SupabaseConfig.gameRosterTable)
+                    .select('game_id')
+                    .eq('user_id', args.userId)
+                    .eq('status', 'active')
+                as List<dynamic>;
+        final ids = rosterRows
+            .map((r) => (r as Map)['game_id'] as String)
+            .toSet()
+            .join(',');
+        membershipOr = ids.isEmpty
+            ? 'creator_profile_id.eq.${args.profileId}'
+            : 'creator_profile_id.eq.${args.profileId},id.in.($ids)';
+      }
 
-  PostgrestFilterBuilder<List<Map<String, dynamic>>> base() => supabase
-      .from(SupabaseConfig.vGameCardTable)
-      .select(_historyColumns)
-      .or(membershipOr)
-      .eq('sport_id', args.sportId)
-      .eq('is_cancelled', false);
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> base() => supabase
+          .from(SupabaseConfig.vGameCardTable)
+          .select(_historyColumns)
+          .or(membershipOr)
+          .eq('sport_id', args.sportId)
+          .eq('is_cancelled', false);
 
-  final results = await Future.wait([
-    base().gte('end_at', nowIso).order('start_at', ascending: true).limit(10),
-    base().lt('end_at', nowIso).order('start_at', ascending: false).limit(10),
-  ]);
+      final results = await Future.wait([
+        base()
+            .gte('end_at', nowIso)
+            .order('start_at', ascending: true)
+            .limit(10),
+        base()
+            .lt('end_at', nowIso)
+            .order('start_at', ascending: false)
+            .limit(10),
+      ]);
 
-  List<PastGame> mapRows(List<Map<String, dynamic>> rows) =>
-      rows.map(_rowToGame).toList();
+      List<PastGame> mapRows(List<Map<String, dynamic>> rows) =>
+          rows.map(_rowToGame).toList();
 
-  return (upcoming: mapRows(results[0]), past: mapRows(results[1]));
-});
+      return (upcoming: mapRows(results[0]), past: mapRows(results[1]));
+    });

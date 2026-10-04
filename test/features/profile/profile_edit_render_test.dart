@@ -77,12 +77,18 @@ Future<void> _loadFonts() async {
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
+    'Glory-Light.ttf',
+    'Glory-Regular.ttf',
+    'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf',
+    'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
+    'meral-sans-light.ttf',
+    'meral-sans-regular.ttf',
+    'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf',
+    'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -95,9 +101,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -118,7 +124,12 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 
 const _sports = <Sport>[
   Sport(id: 's1', nameEn: 'Football', sportKey: 'football', category: 'team'),
-  Sport(id: 's2', nameEn: 'Basketball', sportKey: 'basketball', category: 'team'),
+  Sport(
+    id: 's2',
+    nameEn: 'Basketball',
+    sportKey: 'basketball',
+    category: 'team',
+  ),
   Sport(id: 's3', nameEn: 'Padel', sportKey: 'padel', category: 'racket'),
   Sport(id: 's4', nameEn: 'Tennis', sportKey: 'tennis', category: 'racket'),
   Sport(id: 's5', nameEn: 'Running', sportKey: 'running'),
@@ -256,6 +267,5 @@ void main() {
       expect(find.byType(DabblerAvatar), findsNWidgets(2));
       await _shoot(tester, key, 'profile-edit-avatar-$dir');
     });
-
   }
 }

@@ -123,45 +123,38 @@ class GameCreationState {
           : sportVariantId as String?,
       requiredPlayers: requiredPlayers ?? this.requiredPlayers,
       playersPerSide: playersPerSide ?? this.playersPerSide,
-      gameType:
-          gameType == _sentinel ? this.gameType : gameType as String?,
+      gameType: gameType == _sentinel ? this.gameType : gameType as String?,
       title: title == _sentinel ? this.title : title as String?,
-      startAt:
-          startAt == _sentinel ? this.startAt : startAt as DateTime?,
+      startAt: startAt == _sentinel ? this.startAt : startAt as DateTime?,
       endAt: endAt == _sentinel ? this.endAt : endAt as DateTime?,
       venueSpaceId: venueSpaceId == _sentinel
           ? this.venueSpaceId
           : venueSpaceId as String?,
-      venueId:
-          venueId == _sentinel ? this.venueId : venueId as String?,
-      venueName:
-          venueName == _sentinel ? this.venueName : venueName as String?,
+      venueId: venueId == _sentinel ? this.venueId : venueId as String?,
+      venueName: venueName == _sentinel ? this.venueName : venueName as String?,
       venueSpaceName: venueSpaceName == _sentinel
           ? this.venueSpaceName
           : venueSpaceName as String?,
       geoLocationId: geoLocationId == _sentinel
           ? this.geoLocationId
           : geoLocationId as String?,
-      areaId:
-          areaId == _sentinel ? this.areaId : areaId as String?,
+      areaId: areaId == _sentinel ? this.areaId : areaId as String?,
       lat: lat == _sentinel ? this.lat : lat as double?,
       lng: lng == _sentinel ? this.lng : lng as double?,
       joiningRule: joiningRule == _sentinel
           ? this.joiningRule
           : joiningRule as String?,
-      costCover:
-          costCover == _sentinel ? this.costCover : costCover as String?,
-      creatorAbsorbsCost:
-          creatorAbsorbsCost ?? this.creatorAbsorbsCost,
+      costCover: costCover == _sentinel ? this.costCover : costCover as String?,
+      creatorAbsorbsCost: creatorAbsorbsCost ?? this.creatorAbsorbsCost,
       benchSlots: benchSlots ?? this.benchSlots,
-      squadId:
-          squadId == _sentinel ? this.squadId : squadId as String?,
+      squadId: squadId == _sentinel ? this.squadId : squadId as String?,
       allowSpectators: allowSpectators ?? this.allowSpectators,
       listingVisibility: listingVisibility == _sentinel
           ? this.listingVisibility
           : listingVisibility as String?,
-      joinPolicy:
-          joinPolicy == _sentinel ? this.joinPolicy : joinPolicy as String?,
+      joinPolicy: joinPolicy == _sentinel
+          ? this.joinPolicy
+          : joinPolicy as String?,
       minSkill: minSkill == _sentinel ? this.minSkill : minSkill as int?,
       maxSkill: maxSkill == _sentinel ? this.maxSkill : maxSkill as int?,
       allowsWaitlist: allowsWaitlist ?? this.allowsWaitlist,
