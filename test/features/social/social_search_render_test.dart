@@ -11,6 +11,7 @@ import 'package:dabbler/data/models/search/search_result_bundle.dart';
 import 'package:dabbler/data/repositories/search_repository.dart';
 import 'package:dabbler/features/social/presentation/providers/search_providers.dart';
 import 'package:dabbler/features/social/presentation/screens/social_search_screen.dart';
+import 'package:dabbler/features/social/presentation/widgets/search_cards.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -184,9 +185,8 @@ void main() {
       await _pump(tester, locale, key, query: 'foot');
       expect(tester.takeException(), isNull);
       expect(find.text('Ahmed Football'), findsOneWidget);
-      expect(find.text('#football'), findsOneWidget);
+      expect(find.byType(SearchHashtagCard), findsNWidgets(2));
       expect(find.byType(DabblerHighlightedText), findsWidgets);
-      expect(find.byType(DabblerTabs), findsOneWidget);
       await _shoot(tester, key, 'search-results-$dir');
     });
 
@@ -196,7 +196,7 @@ void main() {
       await tester.tap(find.text('View all').first);
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('All people for "foot"'), findsOneWidget);
+      expect(find.text('2 people for "foot"'), findsOneWidget);
       await _shoot(tester, key, 'search-viewall-$dir');
     });
 

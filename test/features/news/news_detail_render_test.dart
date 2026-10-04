@@ -192,12 +192,14 @@ void main() {
       );
       expect(like.onLongPress, isNotNull);
       expect(find.text('Dabbler Sports Desk'), findsOneWidget);
-      expect(find.byType(DabblerTextField), findsOneWidget);
       await _shoot(tester, key, 'news-detail-article-$dir');
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Discuss'));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
       expect(tester.takeException(), isNull);
       expect(find.text('Cannot wait for the final!'), findsOneWidget);
+      expect(find.byType(DabblerTextField), findsOneWidget);
       await _shoot(tester, key, 'news-detail-comments-$dir');
     }, variant: desktop);
 

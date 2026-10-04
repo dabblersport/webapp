@@ -5,9 +5,5 @@ lib/features/auth_onboarding/presentation/screens/landing_screen.dart
 lib/features/explore/presentation/widgets/listing_parts.dart
 lib/features/games/presentation/screens/join_game/game_detail_screen.dart
 lib/features/home/presentation/screens/home_screen.dart
-lib/features/news/presentation/screens/news_detail_screen.dart
 lib/features/rewards/presentation/widgets/check_in_progress_indicator.dart
-lib/features/social/presentation/screens/post_composer_screen.dart
-lib/features/social/presentation/screens/social_search_screen.dart
-lib/features/social/presentation/widgets/quote_repost_sheet.dart
 lib/features/venues/presentation/screens/venue_detail_screen.dart

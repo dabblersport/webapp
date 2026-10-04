@@ -1158,19 +1158,15 @@ class _ComposerVibesPickerSheetState
                             );
                         Navigator.pop(context);
                       },
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? (tokens?.selectedSurface ?? colors.surfaceGrey)
-                              : (tokens?.surface ?? colors.surfaceSunken),
-                          borderRadius: BorderRadius.circular(DabblerRadius.lg),
-                          border: Border.all(
-                            color: isSelected
-                                ? (tokens?.selectedBorder ??
-                                      colors.borderStrong)
-                                : (tokens?.border ?? colors.borderDefault),
-                          ),
-                        ),
+                      child: DabblerSurface(
+                        radius: DabblerRadius.lg,
+                        fill: isSelected
+                            ? (tokens?.selectedSurface ?? colors.surfaceGrey)
+                            : (tokens?.surface ?? colors.surfaceSunken),
+                        borderColor: isSelected
+                            ? (tokens?.selectedBorder ?? colors.borderStrong)
+                            : (tokens?.border ?? colors.borderDefault),
+                        borderWidth: 1,
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
