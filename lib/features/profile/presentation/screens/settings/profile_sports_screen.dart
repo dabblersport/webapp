@@ -489,7 +489,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       }
 
       if (mounted) {
-        _toast(AppLocalizations.of(context).sports_prefs_saved, DabblerToastTone.success);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_saved,
+          DabblerToastTone.success,
+        );
         // Navigate back after successful save
         if (mounted) {
           context.pop();
@@ -728,7 +731,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
 
     if (!canRemove) {
       if (mounted) {
-        _toast(AppLocalizations.of(context).sports_prefs_need_one, DabblerToastTone.error);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_need_one,
+          DabblerToastTone.error,
+        );
       }
       return false;
     }
@@ -736,7 +742,9 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
     return await showDabblerDialog<bool>(
           context: context,
           builder: (dialogContext) => DabblerDialog(
-            title: AppLocalizations.of(context).sports_prefs_remove_title(sportName),
+            title: AppLocalizations.of(
+              context,
+            ).sports_prefs_remove_title(sportName),
             description: AppLocalizations.of(
               context,
             ).sports_prefs_remove_body(sportName),

@@ -135,6 +135,7 @@ class ProfileSportsView extends StatelessWidget {
       builder: (context) => DabblerInputRow(
         flat: true,
         showDivider: false,
+        dense: true,
         leading: DabblerIcon(
           icon,
           size: DabblerSizing.iconMd,
@@ -181,6 +182,7 @@ class _SportItem extends StatelessWidget {
         DabblerInputRow(
           flat: true,
           showDivider: false,
+          dense: true,
           // The sport emoji is replaced by the DS sport glyph.
           leading: DabblerSportIcon.fromKey(
             sportKey.replaceAll('_', '-'),

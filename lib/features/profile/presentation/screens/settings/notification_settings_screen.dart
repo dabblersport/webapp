@@ -337,6 +337,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return DabblerInputRow(
       flat: true,
       showDivider: false,
+      dense: true,
       title: label,
       leading: DabblerIcon(
         'clock',
@@ -374,6 +375,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return DabblerInputRow(
       flat: true,
       showDivider: false,
+      dense: true,
       title: title,
       subtitle: subtitle,
       onTap: () => onChanged(!value),

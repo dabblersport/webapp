@@ -15,7 +15,10 @@ class TermsOfServiceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return DabblerPage(
-      topBar: settingsInnerTopBar(context, title: l10n.settings_item_terms_title),
+      topBar: settingsInnerTopBar(
+        context,
+        title: l10n.settings_item_terms_title,
+      ),
       body: LegalDocContent(
         intro: l10n.about_terms_intro,
         sections: kTermsOfServiceSections,

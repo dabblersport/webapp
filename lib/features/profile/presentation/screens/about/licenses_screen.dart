@@ -132,7 +132,9 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
           ),
           const SizedBox(height: DabblerSpacing.space2),
           DabblerText(
-            l10n.licenses_count(DabblerType.toWesternDigits('${_licenses.length}')),
+            l10n.licenses_count(
+              DabblerType.toWesternDigits('${_licenses.length}'),
+            ),
             style: DabblerType.footnote,
             tone: DabblerTextTone.tertiary,
           ),
@@ -157,6 +159,7 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
                   DabblerInputRow(
                     flat: true,
                     showDivider: false,
+                    dense: true,
                     leading: DabblerIcon(
                       'code',
                       size: DabblerSizing.iconMd,
@@ -237,7 +240,10 @@ class _LicenseDetails extends StatelessWidget {
         detail(l10n.licenses_detail_copyright, license.copyright),
         detail(l10n.licenses_detail_url, license.url),
         const SizedBox(height: DabblerSpacing.space3),
-        DabblerText(l10n.licenses_detail_description, style: DabblerType.headline),
+        DabblerText(
+          l10n.licenses_detail_description,
+          style: DabblerType.headline,
+        ),
         const SizedBox(height: DabblerSpacing.space2),
         DabblerText(
           license.description,
