@@ -24,6 +24,7 @@ import '../../support/render_mode.dart';
 const String _shotsDir = String.fromEnvironment('COMPOSER_SHOTS_DIR');
 
 Future<void> _loadFonts() async {
+  await loadRenderFonts();
   final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
