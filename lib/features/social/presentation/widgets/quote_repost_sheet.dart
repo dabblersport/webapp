@@ -75,7 +75,7 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: DabblerSpacing.space4),
-          DabblerCard(
+          DabblerSurface.card(
             padding: const EdgeInsets.all(DabblerSpacing.space4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

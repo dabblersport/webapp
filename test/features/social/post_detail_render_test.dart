@@ -53,6 +53,16 @@ Future<void> _loadFonts() async {
     await family('${prefix}Meral Sans', meral);
     await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
   }
+  final String home = Platform.environment['HOME'] ?? '';
+  final File iconsax = File(
+    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
+  );
+  if (iconsax.existsSync()) {
+    final FontLoader loader =
+        FontLoader('packages/iconsax_flutter/FlutterIconsax')
+          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    await loader.load();
+  }
 }
 
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {
