@@ -5,6 +5,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_presets.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_toggles.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
+import 'package:dabbler/features/profile/presentation/widgets/blocked_accounts_group.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -90,7 +91,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
             : ListView(
                 padding: kSettingsBodyPadding,
                 children: _page == _Page.blocked
-                    ? _blockedPage(l10n)
+                    ? _blockedPage()
                     : settings == null
                     ? const []
                     : _pageBody(l10n, settings),
@@ -432,60 +433,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
 
   // ─── Blocked accounts ───────────────────────────────────────────────────
 
-  List<Widget> _blockedPage(AppLocalizations l10n) {
-    final blocked = ref.watch(blockedUsersWithProfilesProvider);
-    return blocked.when(
-      loading: () => const [Center(child: DabblerSpinner())],
-      error: (e, _) => [
-        DabblerBanner(
-          tone: DabblerBannerTone.error,
-          message: l10n.priv_blocked_load_failed(e.toString()),
-        ),
-      ],
-      data: (users) => users.isEmpty
-          ? [DabblerRowHint(text: l10n.priv_blocked_empty)]
-          : [
-              DabblerRowGroup(
-                children: [for (final user in users) _blockedRow(l10n, user)],
-              ),
-            ],
-    );
-  }
-
-  Widget _blockedRow(AppLocalizations l10n, Map<String, dynamic> user) {
-    final displayName = user['display_name'] as String? ?? '';
-    final username = user['username'] as String? ?? '';
-    final userId = user['user_id'] as String;
-    return DabblerInputRow(
-      flat: true,
-      showDivider: false,
-      title: displayName,
-      subtitle: username.isNotEmpty ? '\u200E@$username' : null,
-      leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.md),
-      trailing: DabblerRowAction(
-        label: l10n.priv_unblock,
-        onPressed: () => _unblockUser(userId),
-      ),
-    );
-  }
-
-  Future<void> _unblockUser(String userId) async {
-    final l10n = AppLocalizations.of(context);
-    final repo = ref.read(blockRepositoryProvider);
-    final result = await repo.unblockUser(userId);
-
-    result.fold(
-      (err) {
-        _toast(l10n.priv_blocked_failed(err.message), DabblerToastTone.neutral);
-      },
-      (_) {
-        ref.invalidate(blockedUserIdsProvider);
-        ref.invalidate(blockedUsersWithProfilesProvider);
-        ref.invalidate(isUserBlockedProvider(userId));
-        _toast(l10n.priv_unblocked, DabblerToastTone.neutral);
-      },
-    );
-  }
+  List<Widget> _blockedPage() => const [BlockedAccountsGroup()];
 
   void _toast(String message, DabblerToastTone tone) {
     DabblerToastProvider.of(

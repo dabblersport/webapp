@@ -2,9 +2,10 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
+import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 
@@ -25,63 +26,82 @@ class _KindToggle {
 class NotificationSettingsScreen extends ConsumerWidget {
   const NotificationSettingsScreen({super.key});
 
-  // ── Category → kind-key mappings (only push-capable kinds) ──────────────
-
-  static const _gameToggles = <_KindToggle>[
+  static List<_KindToggle> _gameToggles(AppLocalizations l) => [
     _KindToggle(
-      'Game Invites & Requests',
-      'Invites, join requests, approvals',
+      l.notif_settings_kind_game_invites,
+      l.notif_settings_kind_game_invites_sub,
       'game',
-      ['game.invited', 'game.join_request', 'game.join_accepted'],
+      const ['game.invited', 'game.join_request', 'game.join_accepted'],
     ),
-    _KindToggle('Game Reminders', 'Reminders for upcoming games', 'alarm', [
-      'game.reminder',
-    ]),
     _KindToggle(
-      'Game Updates',
-      'Changes, waitlist promotions, players joining',
+      l.notif_settings_kind_game_reminders,
+      l.notif_settings_kind_game_reminders_sub,
+      'alarm',
+      const ['game.reminder'],
+    ),
+    _KindToggle(
+      l.notif_settings_kind_game_updates,
+      l.notif_settings_kind_game_updates_sub,
       'refresh-circle',
-      ['game.updated', 'game.waitlist_promoted', 'game.player_joined'],
+      const ['game.updated', 'game.waitlist_promoted', 'game.player_joined'],
     ),
-    _KindToggle('Booking Payments', 'When a booking needs payment', 'card', [
-      'arena.payment_required',
-    ]),
+    _KindToggle(
+      l.notif_settings_kind_booking,
+      l.notif_settings_kind_booking_sub,
+      'card',
+      const ['arena.payment_required'],
+    ),
   ];
 
-  static const _socialToggles = <_KindToggle>[
+  static List<_KindToggle> _socialToggles(AppLocalizations l) => [
     _KindToggle(
-      'Likes & Reactions',
-      'Likes and reactions on your content',
+      l.notif_settings_kind_likes,
+      l.notif_settings_kind_likes_sub,
       'heart',
-      ['social.post_liked', 'social.post_reacted', 'social.comment_liked'],
+      const [
+        'social.post_liked',
+        'social.post_reacted',
+        'social.comment_liked',
+      ],
     ),
-    _KindToggle('Comments', 'Comments on your posts', 'message-text', [
-      'social.post_commented',
-    ]),
-    _KindToggle('Mentions', 'When someone mentions you', 'tag-user', [
-      'social.mentioned_in_post',
-      'social.mentioned_in_comment',
-    ]),
-    _KindToggle('New Followers', 'When someone follows you', 'user-add', [
-      'social.followed',
-    ]),
+    _KindToggle(
+      l.notif_settings_kind_comments,
+      l.notif_settings_kind_comments_sub,
+      'message-text',
+      const ['social.post_commented'],
+    ),
+    _KindToggle(
+      l.notif_settings_kind_mentions,
+      l.notif_settings_kind_mentions_sub,
+      'tag-user',
+      const ['social.mentioned_in_post', 'social.mentioned_in_comment'],
+    ),
+    _KindToggle(
+      l.notif_settings_kind_followers,
+      l.notif_settings_kind_followers_sub,
+      'user-add',
+      const ['social.followed'],
+    ),
   ];
 
-  static const _connectionToggles = <_KindToggle>[
+  static List<_KindToggle> _connectionToggles(AppLocalizations l) => [
     _KindToggle(
-      'Friend Requests',
-      'New and accepted friend requests',
+      l.notif_settings_kind_friends,
+      l.notif_settings_kind_friends_sub,
       'profile-add',
-      ['friend.requested', 'friend.accepted'],
+      const ['friend.requested', 'friend.accepted'],
     ),
-    _KindToggle('Squad Invites', 'Invites to join a squad', 'shield-tick', [
-      'squad.invited',
-    ]),
     _KindToggle(
-      'Meetup Invites',
-      'Invites and players joining meetups',
+      l.notif_settings_kind_squads,
+      l.notif_settings_kind_squads_sub,
+      'shield-tick',
+      const ['squad.invited'],
+    ),
+    _KindToggle(
+      l.notif_settings_kind_meetups,
+      l.notif_settings_kind_meetups_sub,
       'people',
-      ['meetup.invited', 'meetup.player_joined'],
+      const ['meetup.invited', 'meetup.player_joined'],
     ),
   ];
 
@@ -96,7 +116,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
         if (next.error != null && next.error != prev?.error) {
           DabblerToastProvider.of(context).show(
             DabblerToastSpec(
-              message: 'Could not update settings: ${next.error}',
+              message: AppLocalizations.of(
+                context,
+              ).notif_settings_update_failed('${next.error}'),
               tone: DabblerToastTone.error,
             ),
           );
@@ -105,10 +127,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
     );
 
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Notifications',
-        onBack: () => context.pop(),
+      topBar: settingsInnerTopBar(
+        context,
+        title: AppLocalizations.of(context).settings_tile_notifications,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -155,24 +176,24 @@ class NotificationSettingsScreen extends ConsumerWidget {
             children: [
               _buildKindSection(
                 context,
-                'Game Notifications',
-                _gameToggles,
+                AppLocalizations.of(context).notif_settings_group_game,
+                _gameToggles(AppLocalizations.of(context)),
                 settings,
                 controller,
               ),
               const SizedBox(height: DabblerSpacing.space7),
               _buildKindSection(
                 context,
-                'Social Notifications',
-                _socialToggles,
+                AppLocalizations.of(context).notif_settings_group_social,
+                _socialToggles(AppLocalizations.of(context)),
                 settings,
                 controller,
               ),
               const SizedBox(height: DabblerSpacing.space7),
               _buildKindSection(
                 context,
-                'Connections',
-                _connectionToggles,
+                AppLocalizations.of(context).notif_settings_group_connections,
+                _connectionToggles(AppLocalizations.of(context)),
                 settings,
                 controller,
               ),
@@ -188,29 +209,29 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
+    final l10n = AppLocalizations.of(context);
     return DabblerRowGroup(
-      header: 'General Preferences',
       children: [
         _switchRow(
           context,
-          'Push Notifications',
-          'Receive notifications on this device',
+          l10n.notif_settings_push,
+          l10n.notif_settings_push_sub,
           'notification',
           settings.pushEnabled,
           controller.setPushEnabled,
         ),
         _switchRow(
           context,
-          'Email Notifications',
-          'Receive notifications via email',
-          'sms',
+          l10n.notif_settings_email,
+          l10n.notif_settings_email_sub,
+          'sms-notification',
           settings.emailEnabled,
           controller.setEmailEnabled,
         ),
         _switchRow(
           context,
-          'SMS Notifications',
-          'Receive important updates via SMS',
+          l10n.notif_settings_sms,
+          l10n.notif_settings_sms_sub,
           'message',
           settings.smsEnabled,
           controller.setSmsEnabled,
@@ -225,15 +246,19 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettingsController controller,
   ) {
     final enabled = settings.hasQuietHours;
+    final l10n = AppLocalizations.of(context);
     return DabblerRowGroup(
-      header: 'Quiet Hours',
+      header: l10n.notif_settings_quiet_header,
       children: [
         _switchRow(
           context,
-          'Mute during quiet hours',
+          l10n.notif_settings_quiet_mute,
           enabled
-              ? 'No push between ${_fmt(context, settings.quietStartMin!)} and ${_fmt(context, settings.quietEndMin!)}'
-              : 'Pause push notifications overnight',
+              ? l10n.notif_settings_quiet_mute_on(
+                  _fmt(context, settings.quietStartMin!),
+                  _fmt(context, settings.quietEndMin!),
+                )
+              : l10n.notif_settings_quiet_mute_off,
           'moon',
           enabled,
           (value) {
@@ -248,28 +273,28 @@ class NotificationSettingsScreen extends ConsumerWidget {
         if (enabled) ...[
           _timeRow(
             context,
-            'Start',
+            l10n.notif_settings_quiet_start,
             settings.quietStartMin!,
             (m) => controller.setQuietHours(m, settings.quietEndMin!),
           ),
           _timeRow(
             context,
-            'End',
+            l10n.notif_settings_quiet_end,
             settings.quietEndMin!,
             (m) => controller.setQuietHours(settings.quietStartMin!, m),
           ),
           _switchRow(
             context,
-            'Allow urgent notifications',
-            'High-priority alerts still come through during quiet hours',
+            l10n.notif_settings_quiet_urgent,
+            l10n.notif_settings_quiet_urgent_sub,
             'danger',
             settings.allowHighPriorityOverride,
             controller.setAllowHighPriorityOverride,
           ),
           _switchRow(
             context,
-            'Allow all notifications',
-            'Every push still comes through during quiet hours',
+            l10n.notif_settings_quiet_all,
+            l10n.notif_settings_quiet_all_sub,
             'notification-bing',
             settings.allowAllOverride,
             controller.setAllowAllOverride,

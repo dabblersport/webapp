@@ -3467,4 +3467,388 @@ class AppLocalizationsAr extends AppLocalizations {
   String home_location_no_match(String query) {
     return 'لا توجد مناطق مطابقة لـ \"$query\"';
   }
+
+  @override
+  String get blocked_accounts_note => 'أدر المستخدمين الذين حظرتهم.';
+
+  @override
+  String get blocked_accounts_empty => 'لم تحظر أحدًا.';
+
+  @override
+  String get blocked_accounts_load_failed => 'تعذّر تحميل الحسابات المحظورة.';
+
+  @override
+  String get blocked_accounts_unknown => 'غير معروف';
+
+  @override
+  String get blocked_accounts_unblock => 'إلغاء الحظر';
+
+  @override
+  String get blocked_accounts_unblocked => 'تم إلغاء الحظر';
+
+  @override
+  String blocked_accounts_unblock_failed(String message) {
+    return 'تعذّر إلغاء الحظر: $message';
+  }
+
+  @override
+  String get notif_settings_push => 'الإشعارات الفورية';
+
+  @override
+  String get notif_settings_push_sub => 'تلقَّ إشعارات فورية على جهازك';
+
+  @override
+  String get notif_settings_email => 'إشعارات البريد';
+
+  @override
+  String get notif_settings_email_sub => 'تلقَّ الإشعارات عبر البريد';
+
+  @override
+  String get notif_settings_sms => 'إشعارات الرسائل النصية';
+
+  @override
+  String get notif_settings_sms_sub =>
+      'تلقَّ التحديثات المهمة عبر الرسائل النصية';
+
+  @override
+  String get notif_settings_quiet_header => 'ساعات الهدوء';
+
+  @override
+  String get notif_settings_quiet_mute => 'كتم الإشعارات في ساعات الهدوء';
+
+  @override
+  String get notif_settings_quiet_mute_off => 'أوقف الإشعارات الفورية ليلًا';
+
+  @override
+  String notif_settings_quiet_mute_on(String start, String end) {
+    return 'لا إشعارات فورية بين $start و$end';
+  }
+
+  @override
+  String get notif_settings_quiet_start => 'البداية';
+
+  @override
+  String get notif_settings_quiet_end => 'النهاية';
+
+  @override
+  String get notif_settings_quiet_urgent => 'السماح بالإشعارات العاجلة';
+
+  @override
+  String get notif_settings_quiet_urgent_sub =>
+      'تصلك التنبيهات عالية الأولوية حتى في ساعات الهدوء';
+
+  @override
+  String get notif_settings_quiet_all => 'السماح بكل الإشعارات';
+
+  @override
+  String get notif_settings_quiet_all_sub =>
+      'تصلك كل الإشعارات الفورية حتى في ساعات الهدوء';
+
+  @override
+  String get notif_settings_group_game => 'إشعارات المباريات';
+
+  @override
+  String get notif_settings_group_social => 'الإشعارات الاجتماعية';
+
+  @override
+  String get notif_settings_group_connections => 'الاتصالات';
+
+  @override
+  String get notif_settings_kind_game_invites => 'دعوات المباريات وطلباتها';
+
+  @override
+  String get notif_settings_kind_game_invites_sub =>
+      'الدعوات وطلبات الانضمام والموافقات';
+
+  @override
+  String get notif_settings_kind_game_reminders => 'تذكيرات المباريات';
+
+  @override
+  String get notif_settings_kind_game_reminders_sub =>
+      'تذكيرات بالمباريات القادمة';
+
+  @override
+  String get notif_settings_kind_game_updates => 'تحديثات المباريات';
+
+  @override
+  String get notif_settings_kind_game_updates_sub =>
+      'التغييرات وترقيات قائمة الانتظار وانضمام اللاعبين';
+
+  @override
+  String get notif_settings_kind_booking => 'مدفوعات الحجز';
+
+  @override
+  String get notif_settings_kind_booking_sub => 'عندما يحتاج الحجز إلى دفع';
+
+  @override
+  String get notif_settings_kind_likes => 'الإعجابات والتفاعلات';
+
+  @override
+  String get notif_settings_kind_likes_sub => 'الإعجابات والتفاعلات على محتواك';
+
+  @override
+  String get notif_settings_kind_comments => 'التعليقات';
+
+  @override
+  String get notif_settings_kind_comments_sub => 'التعليقات على منشوراتك';
+
+  @override
+  String get notif_settings_kind_mentions => 'الإشارات';
+
+  @override
+  String get notif_settings_kind_mentions_sub => 'عندما يشير إليك أحد';
+
+  @override
+  String get notif_settings_kind_followers => 'متابعون جدد';
+
+  @override
+  String get notif_settings_kind_followers_sub => 'عندما يتابعك أحد';
+
+  @override
+  String get notif_settings_kind_friends => 'طلبات الصداقة';
+
+  @override
+  String get notif_settings_kind_friends_sub =>
+      'طلبات الصداقة الجديدة والمقبولة';
+
+  @override
+  String get notif_settings_kind_squads => 'دعوات الفرق';
+
+  @override
+  String get notif_settings_kind_squads_sub => 'دعوات الانضمام إلى فريق';
+
+  @override
+  String get notif_settings_kind_meetups => 'دعوات اللقاءات';
+
+  @override
+  String get notif_settings_kind_meetups_sub =>
+      'الدعوات وانضمام اللاعبين إلى اللقاءات';
+
+  @override
+  String notif_settings_update_failed(String error) {
+    return 'تعذّر تحديث الإعدادات: $error';
+  }
+
+  @override
+  String get game_prefs_title => 'تفضيلات المباريات';
+
+  @override
+  String get game_prefs_save => 'حفظ';
+
+  @override
+  String get game_prefs_saved => 'تم حفظ تفضيلات المباريات';
+
+  @override
+  String get game_prefs_types_header => 'أنواع المباريات المفضلة';
+
+  @override
+  String get game_prefs_types_note =>
+      'اختر أنواع المباريات التي تستمتع بها أكثر';
+
+  @override
+  String get game_prefs_type_pickup => 'مباريات سريعة';
+
+  @override
+  String get game_prefs_type_pickup_sub => 'مباريات ودية مع لاعبين آخرين';
+
+  @override
+  String get game_prefs_type_tournaments => 'بطولات';
+
+  @override
+  String get game_prefs_type_tournaments_sub => 'فعاليات تنافسية منظمة';
+
+  @override
+  String get game_prefs_type_practice => 'حصص تدريبية';
+
+  @override
+  String get game_prefs_type_practice_sub => 'تطوير المهارات والتدريب';
+
+  @override
+  String get game_prefs_type_leagues => 'دوريات';
+
+  @override
+  String get game_prefs_type_leagues_sub => 'منافسات تمتد طوال الموسم';
+
+  @override
+  String get game_prefs_type_friendly => 'مباريات ودية';
+
+  @override
+  String get game_prefs_type_friendly_sub => 'مباريات اجتماعية غير تنافسية';
+
+  @override
+  String get game_prefs_type_camps => 'معسكرات تدريب';
+
+  @override
+  String get game_prefs_type_camps_sub => 'ورش مهارات مكثفة';
+
+  @override
+  String get game_prefs_duration_header => 'مدة المباراة';
+
+  @override
+  String get game_prefs_duration_note => 'كم تفضل أن تستمر المباريات؟';
+
+  @override
+  String get game_prefs_duration_short => 'مباريات قصيرة';
+
+  @override
+  String get game_prefs_duration_short_sub => '30-60 دقيقة';
+
+  @override
+  String get game_prefs_duration_medium => 'مباريات متوسطة';
+
+  @override
+  String get game_prefs_duration_medium_sub => '60-90 دقيقة';
+
+  @override
+  String get game_prefs_duration_long => 'مباريات طويلة';
+
+  @override
+  String get game_prefs_duration_long_sub => 'أكثر من 90 دقيقة';
+
+  @override
+  String get game_prefs_duration_flexible => 'مدة مرنة';
+
+  @override
+  String get game_prefs_duration_flexible_sub => 'أي مدة';
+
+  @override
+  String get game_prefs_duration_custom => 'نطاق مدة مخصص';
+
+  @override
+  String get game_prefs_duration_min => 'أقل مدة';
+
+  @override
+  String get game_prefs_duration_max => 'أطول مدة';
+
+  @override
+  String game_prefs_minutes_hint(String value) {
+    return '$value د';
+  }
+
+  @override
+  String get game_prefs_minutes_suffix => 'د';
+
+  @override
+  String get game_prefs_team_header => 'حجم الفريق';
+
+  @override
+  String get game_prefs_team_note => 'ما أحجام الفرق التي تفضلها؟';
+
+  @override
+  String get game_prefs_team_flexible => 'حجم فريق مرن';
+
+  @override
+  String get game_prefs_team_flexible_sub => 'منفتح على أحجام فرق مختلفة';
+
+  @override
+  String game_prefs_team_preferred(String low, String high) {
+    return 'حجم الفريق المفضل: $low - $high لاعبًا';
+  }
+
+  @override
+  String get game_prefs_team_min_label => 'لاعبان';
+
+  @override
+  String get game_prefs_team_max_label => '22 لاعبًا';
+
+  @override
+  String get game_prefs_level_header => 'مستوى المنافسة';
+
+  @override
+  String get game_prefs_level_note => 'ما مستوى المنافسة الذي تفضله؟';
+
+  @override
+  String get game_prefs_level_casual => 'ترفيهي';
+
+  @override
+  String get game_prefs_level_casual_sub => 'للمتعة فقط، أجواء مريحة';
+
+  @override
+  String get game_prefs_level_recreational => 'هواة';
+
+  @override
+  String get game_prefs_level_recreational_sub => 'منافسة ودية بحدة معتدلة';
+
+  @override
+  String get game_prefs_level_competitive => 'تنافسي';
+
+  @override
+  String get game_prefs_level_competitive_sub => 'منافسة جادة بحدة عالية';
+
+  @override
+  String get game_prefs_level_professional => 'محترف';
+
+  @override
+  String get game_prefs_level_professional_sub => 'منافسة بمستوى النخبة';
+
+  @override
+  String get game_prefs_equipment_header => 'المعدات';
+
+  @override
+  String get game_prefs_equipment_note => 'ما احتياجاتك من المعدات؟';
+
+  @override
+  String get game_prefs_equipment_own => 'لدي معداتي الخاصة';
+
+  @override
+  String get game_prefs_equipment_own_sub => 'يمكنك إحضار معداتك';
+
+  @override
+  String get game_prefs_equipment_provide => 'أستطيع توفير معدات للآخرين';
+
+  @override
+  String get game_prefs_equipment_provide_sub =>
+      'يمكنك مشاركة المعدات مع زملائك';
+
+  @override
+  String get game_prefs_equipment_need => 'أحتاج إلى توفير المعدات';
+
+  @override
+  String get game_prefs_equipment_need_sub => 'يجب أن تتوفر المعدات في الملعب';
+
+  @override
+  String get game_prefs_equipment_types => 'أنواع المعدات';
+
+  @override
+  String get game_prefs_equipment_ball => 'كرة';
+
+  @override
+  String get game_prefs_equipment_gear => 'معدات الحماية';
+
+  @override
+  String get game_prefs_equipment_uniforms => 'أزياء';
+
+  @override
+  String get game_prefs_equipment_goals => 'مرامٍ';
+
+  @override
+  String get game_prefs_equipment_nets => 'شباك';
+
+  @override
+  String get game_prefs_equipment_markers => 'علامات';
+
+  @override
+  String get game_prefs_referee_header => 'التحكيم';
+
+  @override
+  String get game_prefs_referee_note => 'كيف تفضل أن تُدار المباريات؟';
+
+  @override
+  String get game_prefs_referee_prefer => 'أفضّل المباريات بحكم';
+
+  @override
+  String get game_prefs_referee_prefer_sub => 'حكم رسمي لضمان اللعب النظيف';
+
+  @override
+  String get game_prefs_referee_can => 'أستطيع تحكيم المباريات';
+
+  @override
+  String get game_prefs_referee_can_sub => 'أنت مؤهل للتحكيم';
+
+  @override
+  String get game_prefs_referee_strict => 'تطبيق صارم للقواعد';
+
+  @override
+  String get game_prefs_referee_strict_sub =>
+      'يجب أن تتبع المباريات القواعد الرسمية بدقة';
 }
