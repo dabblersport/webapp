@@ -546,6 +546,39 @@ void main() {
       semantics.dispose();
     });
 
+    for (final ({String id, String en, String ar}) item
+        in const <({String id, String en, String ar})>[
+          (id: 'venues', en: 'Venues', ar: 'ملاعب'),
+          (id: 'games', en: 'Games', ar: 'مباريات'),
+        ]) {
+      testWidgets('active ${item.id}: one white chip with its label — $dir', (
+        tester,
+      ) async {
+        final SemanticsHandle semantics = tester.ensureSemantics();
+        const Key key = Key('nav-shot');
+        await _pump(tester, locale: locale, boundaryKey: key);
+        final String name = rtl ? item.ar : item.en;
+        await tester.tap(find.bySemanticsLabel(name));
+        await _settle(tester);
+        await _shoot(tester, key, 'nav-app-${item.id}-${dir.toLowerCase()}');
+        // Exactly one label is visible: the active one.
+        expect(find.text(name), findsOneWidget);
+        expect(find.text(active), findsNothing);
+        final List<Rect> hits = _hits(tester);
+        // The active chip is the 44-high one wider than 44; the others are 44.
+        expect(
+          hits.sublist(0, 3).where((Rect r) => r.width > 44),
+          hasLength(1),
+        );
+        for (final Rect r in hits.sublist(0, 3)) {
+          expect(r.height, 44);
+        }
+        expect(_pill(tester).left, 18);
+        expect(_hits(tester).last, _r(319, 772, 56, 56));
+        semantics.dispose();
+      });
+    }
+
     testWidgets('create menu open vs the frame — $dir', (tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       const Key key = Key('nav-shot');
