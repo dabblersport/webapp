@@ -3371,7 +3371,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String sfx_posts_count(int count) {
-    return '$count منشور';
+    return '‏$count منشور';
   }
 
   @override

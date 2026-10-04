@@ -64,8 +64,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Recent'), findsOneWidget);
-    expect(find.text('#football'), findsOneWidget);
-    expect(find.text('@ahmed_fc'), findsOneWidget);
+    expect(find.textContaining('#football'), findsOneWidget);
+    expect(find.textContaining('@ahmed_fc'), findsOneWidget);
 
     await tester.tap(find.descendant(
       of: find.byKey(const ValueKey('recent-@ahmed_fc')),
@@ -73,11 +73,11 @@ void main() {
     ));
     await tester.pump();
 
-    expect(find.text('@ahmed_fc'), findsNothing);
-    expect(find.text('#football'), findsOneWidget);
+    expect(find.textContaining('@ahmed_fc'), findsNothing);
+    expect(find.textContaining('#football'), findsOneWidget);
     expect(repository.queries, isEmpty);
 
-    await tester.tap(find.text('#football'));
+    await tester.tap(find.textContaining('#football'));
     await tester.pump();
 
     expect(repository.queries, ['football']);

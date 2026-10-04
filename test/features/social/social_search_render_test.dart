@@ -180,7 +180,7 @@ void main() {
       await tester.tap(find.text(lookupAppLocalizations(locale).sfx_view_all).first);
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text(lookupAppLocalizations(locale).sfx_list_header(2, lookupAppLocalizations(locale).sfx_people.toLowerCase(), 'foot')), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_list_header(2, lookupAppLocalizations(locale).sfx_people.toLowerCase(), '\u2066foot\u2069')), findsOneWidget);
       await _shoot(tester, key, 'search-viewall-$dir');
     });
 
@@ -204,7 +204,7 @@ void main() {
       await _pump(tester, locale, key,
           query: 'zzz', result: const Ok(SearchResultBundle.empty));
       expect(tester.takeException(), isNull);
-      expect(find.text(lookupAppLocalizations(locale).sfx_no_results_for('zzz')), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sfx_no_results_for('\u2066zzz\u2069')), findsOneWidget);
       await _shoot(tester, key, 'search-empty-$dir');
     });
 

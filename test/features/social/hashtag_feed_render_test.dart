@@ -62,6 +62,7 @@ Post _post(String id, String body) => Post(
   postType: PostType.dab,
   body: body,
   tags: const <String>['padel'],
+  sport: 'padel',
   likeCount: 3,
   commentCount: 1,
   createdAt: DateTime.now().subtract(const Duration(hours: 2)),

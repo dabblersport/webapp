@@ -1213,7 +1213,7 @@
   "sfx_kind_meetup": "لقاء",
   "sfx_spots": "أماكن",
   "sfx_spots_meta": "{joined}/{max} أماكن",
-  "sfx_posts_count": "{count} منشور",
+  "sfx_posts_count": "\u200f{count} منشور",
   "sfx_on_post": "على {title}",
   "sfx_no_results_for": "لا نتائج لـ \"{query}\"",
   "sfx_none_found": "لم يتم العثور على {label}",

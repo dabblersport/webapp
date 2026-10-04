@@ -40,7 +40,7 @@ class SearchResultsView extends StatelessWidget {
       return Center(
         child: DabblerEmptyState(
           icon: 'search-normal',
-          title: AppLocalizations.of(context).sfx_no_results_for(state.query),
+          title: AppLocalizations.of(context).sfx_no_results_for('\u2066${state.query}\u2069'),
           size: DabblerEmptyStateSize.page,
         ),
       );
@@ -153,7 +153,7 @@ class _Overview extends StatelessWidget {
                     ),
                   ),
                   DabblerText(
-                    '~${b.totalCount}',
+                    '\u2066~${b.totalCount}\u2069',
                     style: DabblerType.footnote,
                     weight: DabblerTextWeight.semibold,
                   ),
@@ -318,7 +318,7 @@ class _FullList extends StatelessWidget {
       padding: _gutter,
       children: [
         DabblerText(
-          l10n.sfx_list_header(count, label.toLowerCase(), q),
+          l10n.sfx_list_header(count, label.toLowerCase(), '\u2066$q\u2069'),
           style: DabblerType.footnote,
           tone: DabblerTextTone.secondary,
         ),
