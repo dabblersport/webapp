@@ -169,6 +169,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                 ? null
                 : () => _toggleFavorite(isFavorited),
           ),
+          DabblerOnColorIconButton(
+            onSurface: true,
+            icon: 'share',
+            semanticLabel: 'Share venue',
+            onPressed: _shareVenue,
+          ),
         ],
       ),
       bottomBar: DabblerActionBar(
@@ -256,7 +262,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       children: [
                         DabblerText(
                           _labelFor(sports[i]),
-                          style: DabblerType.subheadline,
+                          style: DabblerType.smallTight,
                           weight: DabblerTextWeight.semibold,
                         ),
                         const DabblerGap.v(DabblerSpacing.space2),
@@ -264,7 +270,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                           venue.pricePerHour == 0
                               ? 'Free'
                               : '${venue.currency} ${venue.pricePerHour.toStringAsFixed(0)} / hour',
-                          style: DabblerType.subheadline,
+                          style: DabblerType.smallTight,
                           weight: DabblerTextWeight.bold,
                         ),
                       ],
@@ -296,17 +302,44 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         DabblerSection(
           style: DabblerSectionStyle.label,
           title: 'Where',
-          action: DabblerTextLink(label: 'Open map', onPressed: _getDirections),
           children: [
-            DabblerListGroup(
-              children: [
-                DabblerListRow(
-                  title: venue.name,
-                  subtitle: fullAddress.isEmpty
-                      ? 'Address unavailable'
-                      : fullAddress,
+            DabblerCard(
+              padding: EdgeInsets.zero,
+              media: DabblerImage(
+                height: DabblerSizing.illustrationMd + DabblerSpacing.space11,
+                radius: BorderRadius.zero,
+                semanticLabel: 'Map of the venue',
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(DabblerSpacing.space6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DabblerText(
+                            venue.name,
+                            style: DabblerType.smallTight,
+                            weight: DabblerTextWeight.semibold,
+                          ),
+                          DabblerText(
+                            fullAddress.isEmpty
+                                ? 'Address unavailable'
+                                : fullAddress,
+                            style: DabblerType.footnote,
+                            tone: DabblerTextTone.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    DabblerTextLink(
+                      label: 'Open map',
+                      onPressed: _getDirections,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -331,7 +364,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             children: [
               DabblerText(
                 venue.description,
-                style: DabblerType.footnote,
+                style: DabblerType.footnoteRelaxed,
                 tone: DabblerTextTone.secondary,
               ),
             ],
@@ -410,6 +443,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       },
     );
   }
+
+  void _shareVenue() => _snack('Sharing coming soon');
 
   void _getDirections() {
     final async = ref.read(venueDetailProvider(widget.venueId));

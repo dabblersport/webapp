@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/data/models/profile/profile_statistics.dart';
+import 'package:dabbler/data/models/profile/sports_profile.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
@@ -100,7 +102,8 @@ class _Profile extends StateNotifier<ProfileState>
 
 class _Sports extends StateNotifier<SportsProfileState>
     implements SportsProfileController {
-  _Sports() : super(const SportsProfileState());
+  _Sports(List<SportProfile> profiles)
+    : super(SportsProfileState(profiles: profiles));
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -139,6 +142,11 @@ UserProfile _profile(String persona, {String? name}) => UserProfile(
   primarySport: 'sport-football',
   preferredSport: 'sport-padel',
   interests: const ['sport-football', 'sport-padel', 'sport-basketball'],
+  statistics: const ProfileStatistics(
+    totalGamesPlayed: 99,
+    totalHoursPlayed: 24.5,
+    averageRating: 4.6,
+  ),
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
 );
@@ -188,7 +196,38 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         profileControllerProvider.overrideWith((ref) => _Profile(profileState)),
-        sportsProfileControllerProvider.overrideWith((ref) => _Sports()),
+        sportsProfileControllerProvider.overrideWith(
+          (ref) => _Sports(
+            profileState.profile?.personaType == 'player'
+                ? const <SportProfile>[
+                    SportProfile(
+                      sportId: 'sport-football',
+                      sportName: 'Football',
+                      skillLevel: SkillLevel.advanced,
+                      isPrimarySport: true,
+                      gamesPlayed: 40,
+                      averageRating: 4.6,
+                    ),
+                    SportProfile(
+                      sportId: 'sport-padel',
+                      sportName: 'Padel',
+                      skillLevel: SkillLevel.advanced,
+                      isPrimarySport: true,
+                      gamesPlayed: 35,
+                      averageRating: 4.6,
+                    ),
+                    SportProfile(
+                      sportId: 'sport-basketball',
+                      sportName: 'Basketball',
+                      skillLevel: SkillLevel.intermediate,
+                      isPrimarySport: true,
+                      gamesPlayed: 24,
+                      averageRating: 4.6,
+                    ),
+                  ]
+                : const <SportProfile>[],
+          ),
+        ),
         profileTakedownProvider.overrideWith((ref, id) async => takedown),
         myPostsCountProvider.overrideWith((ref) async => 12),
         followingCountProvider.overrideWith((ref, id) async => 48),
@@ -333,7 +372,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerSheet), findsOneWidget);
       expect(find.text(l10n.profile_manage_profiles_title), findsWidgets);
-      expect(find.text(l10n.profile_add_profile), findsOneWidget);
+      expect(find.text(l10n.profile_create_another_profile), findsOneWidget);
       await _shoot(tester, 'profile-switch-sheet-$dir');
     });
   }

@@ -43,32 +43,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return DabblerPage(
-      topBar: const DabblerNavigationTopBar.titled(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space4,
-          DabblerSpacing.space8,
-          DabblerSpacing.space10,
-        ),
-        child: Form(
+    return DabblerFlowPage(
+      onBack: () => context.go(RoutePaths.authWelcome),
+      backLabel: l10n.auth_back,
+      title: l10n.reset_password_title,
+      titleStyle: DabblerType.displayScreen,
+      headerTopPadding: DabblerSpacing.space4,
+      subtitle: l10n.reset_password_subtitle,
+      subtitleStyle: DabblerType.lead,
+      bodyGap: DabblerSpacing.space4,
+      content: [
+        Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DabblerText(
-                l10n.reset_password_title,
-                style: DabblerType.largeTitle,
-              ),
-              const DabblerGap.v(DabblerSpacing.space3),
-              DabblerText(
-                l10n.reset_password_subtitle,
-                tone: DabblerTextTone.secondary,
-              ),
-              const DabblerGap.v(DabblerSpacing.space9),
               DabblerTextField(
+                borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
+                mutedPasswordToggle: true,
                 label: l10n.reset_password_new_label,
                 onChanged: (v) => _password = v,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -85,7 +78,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const DabblerGap.v(DabblerSpacing.space4),
               DabblerTextField(
+                borderOutside: true,
                 variant: DabblerTextFieldVariant.password,
+                mutedPasswordToggle: true,
                 label: l10n.reset_password_confirm_label,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 validator: (v) {
@@ -99,22 +94,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 },
                 textInputAction: TextInputAction.done,
               ),
-              const DabblerGap.v(DabblerSpacing.space8),
-              DabblerButton(
-                label: l10n.reset_password_update_btn,
-                size: DabblerButtonSize.full,
-                fullWidth: true,
-                loading: _isLoading,
-                onPressed: _isLoading ? null : _submit,
-              ),
-              if (_error != null) ...[
-                const DabblerGap.v(DabblerSpacing.space4),
-                DabblerBanner(tone: DabblerBannerTone.error, message: _error),
-              ],
             ],
           ),
         ),
-      ),
+      ],
+      footerBanner: _error == null
+          ? null
+          : DabblerBanner(tone: DabblerBannerTone.error, message: _error),
+      primaryLabel: l10n.reset_password_update_btn,
+      primaryLoading: _isLoading,
+      onPrimary: _isLoading ? null : _submit,
     );
   }
 }

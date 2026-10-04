@@ -1,3 +1,4 @@
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
@@ -123,13 +124,14 @@ class _PrimarySportSelectionScreenState
       stepLabel: _isOnboarding ? l10n.onb_step_label(4, 5) : null,
       title: title,
       subtitle: subtitle,
-      bodyGap: DabblerSpacing.space3,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: sportsAsync.when<List<Widget>>(
         loading: () => [const Center(child: DabblerSpinner())],
         error: (err, _) => [
           DabblerText(
             l10n.primary_sport_failed_load,
-            style: DabblerType.subheadline,
+            style: DabblerType.copy,
             tone: DabblerTextTone.secondary,
           ),
           DabblerButton(
@@ -153,18 +155,32 @@ class _PrimarySportSelectionScreenState
             return [
               DabblerText(
                 l10n.primary_sport_no_sports,
-                style: DabblerType.subheadline,
+                style: DabblerType.copy,
                 tone: DabblerTextTone.secondary,
               ),
             ];
           }
 
           return [
-            for (final sport in sports) _row(sport),
-            DabblerTextLink(
-              label: l10n.onb_primary_more,
-              underline: false,
-              onPressed: () => context.pop(),
+            // The rows are 9 apart; the link sits 18 under them (`:407-428`).
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < sports.length; i++) ...[
+                  if (i > 0) const DabblerGap.v(DabblerSpacing.space3),
+                  _row(sports[i]),
+                ],
+              ],
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerTextLink(
+                label: l10n.onb_primary_more,
+                style: authLinkStyle(context, DabblerType.small),
+                inline: true,
+                underline: false,
+                onPressed: () => context.pop(),
+              ),
             ),
           ];
         },
@@ -181,6 +197,7 @@ class _PrimarySportSelectionScreenState
     final selected = _selectedSportId == sport.id;
     final tone = onboardingSportTone(sport);
     return DabblerSelectableCard(
+      borderOutside: true,
       layout: DabblerSelectableCardLayout.listRow,
       leading: OnboardingSportGlyph(
         sport: sport,

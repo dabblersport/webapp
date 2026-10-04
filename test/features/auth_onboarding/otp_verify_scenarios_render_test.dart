@@ -76,9 +76,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -121,6 +121,9 @@ Future<void> _pump(
 ) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  // The frames reserve a 50px status bar above the screen.
+  tester.view.padding = const FakeViewPadding(top: 50);
+  tester.view.viewPadding = const FakeViewPadding(top: 50);
   addTearDown(tester.view.reset);
   final GoRouter router = GoRouter(
     routes: <RouteBase>[

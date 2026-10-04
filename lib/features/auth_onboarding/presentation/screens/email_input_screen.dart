@@ -122,6 +122,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
     final List<Widget> body = <Widget>[
       DabblerTextField(
+        borderOutside: true,
         controller: _emailController,
         label: l10n.auth_email_label,
         placeholder: l10n.auth_email_placeholder,
@@ -140,11 +141,12 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           Expanded(
             child: DabblerText(
               l10n.auth_email_marketing,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
             ),
           ),
           const DabblerGap.h(DabblerSpacing.space4),
           DabblerToggle(
+            compactHitArea: true,
             checked: _getUpdates,
             semanticLabel: l10n.auth_email_marketing,
             onChanged: _isLoading
@@ -163,10 +165,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
       title: l10n.auth_email_title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_email_subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_email_send_code,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleSubmit : null,

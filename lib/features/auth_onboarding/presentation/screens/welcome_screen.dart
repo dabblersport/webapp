@@ -51,6 +51,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  /// First word of the display name — presentation only.
+  static String _firstName(String name) {
+    final trimmed = name.trim();
+    final space = trimmed.indexOf(RegExp(r'\s'));
+    return space < 0 ? trimmed : trimmed.substring(0, space);
+  }
+
   void _continue() {
     routerRefreshNotifier.clearPostLoginWelcome();
     context.go(RoutePaths.home);
@@ -89,8 +96,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            title: l10n.auth_welcome_back_title(name),
-            titleStyle: DabblerType.largeTitle,
+            // The frame greets by first name only.
+            title: l10n.auth_welcome_back_title(_firstName(name)),
+            titleStyle: DabblerType.displayScreen,
+            titleGap: DabblerSpacing.space3,
+            bodyGap: DabblerSpacing.space8,
             primaryLabel: l10n.auth_welcome_continue,
             onPrimary: _continue,
             footerBottomPadding: DabblerSpacing.space9,
@@ -101,6 +111,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           background: background,
           spreadChildren: true,
           bodyTopPadding: DabblerSpacing.space8,
+          bodyBottomPadding: DabblerSpacing.space8,
           footerBottomPadding: DabblerSpacing.space9,
           primaryLabel: persona.cta,
           onPrimary: _continue,
@@ -113,15 +124,20 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           content: [
             DabblerCard(
               variant: DabblerCardVariant.white,
+              borderOutside: true,
+              radius: DabblerRadius.xl,
               padding: DabblerInsets.card,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DabblerText(persona.headline, style: DabblerType.largeTitle),
+                  DabblerText(
+                    persona.headline,
+                    style: DabblerType.displayWelcome,
+                  ),
                   const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
                     persona.principle,
-                    style: DabblerType.headline,
+                    style: DabblerType.leadLarge,
                     weight: DabblerTextWeight.semibold,
                   ),
                 ],
@@ -129,6 +145,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
             DabblerCard(
               variant: DabblerCardVariant.white,
+              borderOutside: true,
               padding: DabblerInsets.card,
               child: DabblerIconList(
                 title: persona.listTitle,
@@ -163,7 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             children: [
               DabblerText(
                 name,
-                style: DabblerType.headline,
+                style: DabblerType.rowTitle,
                 weight: DabblerTextWeight.semibold,
                 tone: onArtwork
                     ? DabblerTextTone.onBrand

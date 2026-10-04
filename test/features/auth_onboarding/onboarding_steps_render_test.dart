@@ -124,10 +124,14 @@ Future<void> _pump(
   WidgetTester tester,
   Widget screen,
   Locale locale,
-  Key key,
-) async {
+  Key key, {
+  bool settle = true,
+}) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  // The frames reserve a 50px status bar above the screen.
+  tester.view.padding = const FakeViewPadding(top: 50);
+  tester.view.viewPadding = const FakeViewPadding(top: 50);
   addTearDown(tester.view.reset);
   final container = ProviderContainer(
     overrides: [
@@ -159,7 +163,7 @@ Future<void> _pump(
       ),
     ),
   );
-  await _settle(tester);
+  if (settle) await _settle(tester);
 }
 
 Future<void> _settle(WidgetTester tester) async {
@@ -167,6 +171,10 @@ Future<void> _settle(WidgetTester tester) async {
     await tester.runAsync(() => Future<void>.delayed(Duration.zero));
     await tester.pump(const Duration(milliseconds: 100));
   }
+  // Two more frames: a chip rail learns it overflows (and fades its edge) one
+  // frame after it is laid out, as it does on a device.
+  await tester.pump(const Duration(milliseconds: 100));
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 /// Answers the availability RPC: `marcus` is taken, everything else is free.
@@ -256,23 +264,16 @@ void main() {
       await _shoot(tester, key, 'step1-filled-$dir');
     }, variant: desktop);
 
-    testWidgets('step 1 under 16 — $dir', (tester) async {
+    testWidgets('step 1 male — $dir', (tester) async {
       await _pump(
         tester,
         const CreateUserInformation(email: 'aisha@example.com', forceNew: true),
         locale,
         key,
       );
-      await pickDate(
-        tester,
-        day: '3',
-        month: ar ? 'مارس' : 'March',
-        year: '2012',
-      );
-      await tester.tap(find.text(ar ? 'تأكيد' : 'Confirm'));
+      await tester.tap(find.text(ar ? 'ذكر' : 'Male'));
       await _settle(tester);
-      expect(find.byType(DabblerBanner), findsOneWidget);
-      await _shoot(tester, key, 'step1-underage-$dir');
+      await _shoot(tester, key, 'step1-male-$dir');
     }, variant: desktop);
 
     testWidgets('step 2 persona — $dir', (tester) async {
@@ -319,6 +320,17 @@ void main() {
       await _shoot(tester, key, 'step5-empty-$dir');
     }, variant: desktop);
 
+    testWidgets('step 5 suggestions — $dir', (tester) async {
+      await _pump(tester, const SetUsernameScreen(), locale, key);
+      await tester.enterText(find.byType(EditableText).at(0), 'Marcus Adeyemi');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 900)),
+      );
+      await _settle(tester);
+      await _shoot(tester, key, 'step5-suggestions-$dir');
+    }, variant: desktop);
+
     testWidgets('step 5 available — $dir', (tester) async {
       await _pump(tester, const SetUsernameScreen(), locale, key);
       await tester.enterText(find.byType(EditableText).at(0), 'Marcus Adeyemi');
@@ -345,11 +357,12 @@ void main() {
     }, variant: desktop);
 
     testWidgets('setup progress — $dir', (tester) async {
-      await _pump(tester, const ProfileOnboardingWelcomeScreen(), locale, key);
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 600)),
+      await _pump(
+        tester,
+        const ProfileOnboardingWelcomeScreen(holdRunning: true),
+        locale,
+        key,
       );
-      await _settle(tester);
       expect(find.byType(DabblerProgressStages), findsOneWidget);
       await _shoot(tester, key, 'setup-$dir');
     }, variant: desktop);

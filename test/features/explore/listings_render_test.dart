@@ -130,7 +130,10 @@ List<NearbyGameModel> _games() {
       status: 'upcoming',
       venueName: 'Zayed Sports City',
       distanceMeters: 6300,
-      spotsRemaining: 0,
+      playerCount: 9,
+      spotsRemaining: 1,
+      minSkill: 4,
+      maxSkill: 5,
       isPublic: true,
     ),
     NearbyGameModel(
@@ -141,7 +144,10 @@ List<NearbyGameModel> _games() {
       status: 'live',
       venueName: 'Al Quoz Courts',
       distanceMeters: 1200,
-      spotsRemaining: 2,
+      playerCount: 4,
+      spotsRemaining: 0,
+      minSkill: 2,
+      maxSkill: 3,
       isPublic: true,
     ),
   ];
@@ -288,6 +294,12 @@ void main() {
       expect(find.text('Tuesday 5-a-side'), findsOneWidget);
       expect(find.byType(DabblerCardGame), findsWidgets);
       expect(find.text('Half court pickup'), findsOneWidget);
+      // One spot left reads in the singular and flags the near-full game.
+      expect(find.text(l.listing_spots_almost_full(1)), findsOneWidget);
+      // The full game shows the note and a disabled "Full" button; the open
+      // one the design's "Join game" button (`Listings.dc.html:258`).
+      expect(find.text(l.listing_full), findsNWidgets(2));
+      expect(find.text(l.listing_join_game), findsOneWidget);
       await _shoot(tester, key, 'games-listing-$dir');
     }, variant: desktop);
 
@@ -339,6 +351,8 @@ void main() {
       expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
+      // The favourite is the DS square well, not an icon button.
+      expect(find.byType(DabblerFavouriteButton), findsWidgets);
       await _shoot(tester, key, 'venues-listing-$dir');
     }, variant: desktop);
 
@@ -351,6 +365,8 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l.listing_within_km(5)), findsWidgets);
       expect(find.text(l.listing_reset), findsOneWidget);
+      // The frame's header is the title and Reset only: no close button.
+      expect(find.bySemanticsLabel(DabblerSheet.defaultCloseLabel), findsNothing);
       await _shoot(tester, key, 'venues-filter-sheet-$dir');
     }, variant: desktop);
 

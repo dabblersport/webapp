@@ -333,6 +333,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
     final List<Widget> body = <Widget>[
       DabblerTextField(
+        borderOutside: true,
         controller: _emailController,
         label: l10n.auth_email_label,
         placeholder: l10n.auth_email_placeholder,
@@ -344,7 +345,9 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         onChanged: _onEmailChanged,
       ),
       DabblerTextField(
+        borderOutside: true,
         variant: DabblerTextFieldVariant.password,
+        mutedPasswordToggle: true,
         controller: _passwordController,
         label: l10n.auth_login_password_label,
         placeholder: l10n.auth_login_password_placeholder,
@@ -367,10 +370,11 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
       title: l10n.auth_login_title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_login_subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_login_button,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
@@ -380,12 +384,15 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           Center(
             child: DabblerTextLink(
               label: l10n.auth_login_email_code,
+              style: authLinkStyle(context, DabblerType.copy),
+              inline: true,
               underline: false,
               onPressed: _isLoading || !_isEmailValid
                   ? null
                   : _handleSendEmailOtp,
             ),
           ),
+          const DabblerGap.v(DabblerSpacing.space4),
           DabblerDivider(label: l10n.auth_or),
           const DabblerGap.v(DabblerSpacing.space4),
           DabblerButton(

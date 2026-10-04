@@ -10,6 +10,7 @@ import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -22,6 +23,9 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   /// not-right and expired states).
   final String? initialErrorMessage;
 
+  /// Seeds the typed code (the frames show the digits that were rejected).
+  final String? initialCode;
+
   // Legacy support for phoneNumber parameter
   const OtpVerificationScreen({
     super.key,
@@ -29,6 +33,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
     this.identifierType,
     this.userExistsBeforeOtp,
     @visibleForTesting this.initialErrorMessage,
+    @visibleForTesting this.initialCode,
     @Deprecated('Use identifier instead') String? phoneNumber,
   }) : assert(
          identifier != null || phoneNumber != null,
@@ -59,6 +64,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     super.initState();
 
     _errorMessage = widget.initialErrorMessage;
+    _code = widget.initialCode ?? '';
     _identifier = widget.identifier ?? widget.phoneNumber ?? '';
     if (widget.identifierType != null) {
       _identifierType = widget.identifierType!;
@@ -268,12 +274,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // The message under the boxes: the frame's "not right" and "expired"
     // lines for the failures the server reports as such, else its own text.
     String? message = _errorMessage;
-    String? messageIcon;
     if (message != null) {
       final String lower = message.toLowerCase();
       if (lower.contains('expire')) {
         message = l10n.auth_otp_expired;
-        messageIcon = 'clock';
       } else if (lower.contains('invalid') ||
           lower.contains('incorrect') ||
           lower.contains('token') ||
@@ -286,6 +290,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final List<Widget> body = <Widget>[
       DabblerSurface.card(
         radius: DabblerRadius.lg,
+        // The frame's card pads 12 / 15 inside a hairline drawn outside it.
+        borderOutside: true,
         padding: const EdgeInsetsDirectional.symmetric(
           horizontal: DabblerSpacing.space5,
           vertical: DabblerSpacing.space4,
@@ -303,14 +309,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 textDirection: TextDirection.ltr,
                 child: DabblerText(
                   _identifier,
-                  style: DabblerType.subheadline,
+                  style: DabblerType.copy,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
+            const DabblerGap.h(DabblerSpacing.space4),
             DabblerTextLink(
               label: changeLabel,
+              style: authLinkStyle(context, DabblerType.small),
+              inline: true,
               underline: false,
               onPressed: () => context.go(changeRoute),
             ),
@@ -329,7 +338,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
           if (_errorMessage != null) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space4),
-            DabblerInlineMessage(message!, icon: messageIcon),
+            DabblerInlineMessage(message!),
           ],
         ],
       ),
@@ -338,12 +347,15 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         child: _resendCountdown > 0
             ? DabblerText(
                 l10n.auth_otp_resend_in(_resendCountdown),
+                style: DabblerType.copy,
                 tone: DabblerTextTone.tertiary,
               )
             : DabblerTextLink(
                 label: _isResending
                     ? l10n.otp_verify_sending
                     : l10n.auth_otp_resend,
+                style: authLinkStyle(context, DabblerType.copy),
+                inline: true,
                 underline: false,
                 onPressed: _isResending ? null : _handleResend,
               ),
@@ -354,10 +366,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       onBack: () => context.pop(),
       backLabel: l10n.auth_back,
       title: title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_otp_continue,
       primaryLoading: _isLoading,
       onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,

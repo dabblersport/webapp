@@ -293,7 +293,7 @@ void main() {
         await _shoot(tester, 'activities-$dir');
 
         // Category chip drives changeCategory (behaviour kept).
-        await tester.tap(find.text('Games (2)'));
+        await tester.tap(find.widgetWithText(DabblerChip, 'Games'));
         await _settle(tester);
         expect(feed.lastCategory, 'Games');
         expect(find.byType(DabblerActivityRow), findsNWidgets(2));

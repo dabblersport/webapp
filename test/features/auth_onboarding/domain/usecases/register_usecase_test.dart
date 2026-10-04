@@ -44,42 +44,38 @@ void main() {
         verifyZeroInteractions(mockRepo);
       });
 
-      test('returns AuthFailure when both email and password are empty',
-          () async {
-        final result = await useCase(
-          RegisterParams(email: '', password: ''),
-        );
+      test(
+        'returns AuthFailure when both email and password are empty',
+        () async {
+          final result = await useCase(RegisterParams(email: '', password: ''));
 
-        expect(result.isFailure, true);
-        expect(result.requireError, isA<AuthFailure>());
-        verifyZeroInteractions(mockRepo);
-      });
+          expect(result.isFailure, true);
+          expect(result.requireError, isA<AuthFailure>());
+          verifyZeroInteractions(mockRepo);
+        },
+      );
     });
 
     group('delegation to repository', () {
-      test('calls repo.signUp with correct credentials on valid input',
-          () async {
-        final session = makeAuthSession();
-        when(
-          mockRepo.signUp(
-            email: 'user@example.com',
-            password: 'password123',
-          ),
-        ).thenAnswer((_) async => Ok(session));
+      test(
+        'calls repo.signUp with correct credentials on valid input',
+        () async {
+          final session = makeAuthSession();
+          when(
+            mockRepo.signUp(email: 'user@example.com', password: 'password123'),
+          ).thenAnswer((_) async => Ok(session));
 
-        final result = await useCase(
-          RegisterParams(email: 'user@example.com', password: 'password123'),
-        );
+          final result = await useCase(
+            RegisterParams(email: 'user@example.com', password: 'password123'),
+          );
 
-        expect(result.isSuccess, true);
-        expect(result.requireValue, session);
-        verify(
-          mockRepo.signUp(
-            email: 'user@example.com',
-            password: 'password123',
-          ),
-        ).called(1);
-      });
+          expect(result.isSuccess, true);
+          expect(result.requireValue, session);
+          verify(
+            mockRepo.signUp(email: 'user@example.com', password: 'password123'),
+          ).called(1);
+        },
+      );
 
       test('forwards NetworkFailure from repo unchanged', () async {
         when(

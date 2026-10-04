@@ -7,6 +7,7 @@ import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/manage_profiles_sheet.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_followed_sports.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
@@ -72,6 +73,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
 
   String? _selectedProfileType; // 'player' or 'organiser'
 
+  // Drives the top bar: the tinted bar shows no title until the identity block
+  // has scrolled away, then drops to the page ground with the handle.
+  final ScrollController _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +99,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
   @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -317,6 +323,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         : sportProfiles.where((p) => p.sportId == selected.id).toList();
     final personaType =
         profile?.personaType ?? profile?.profileType ?? 'player';
+    final List<String> primaryNames = [
+      for (final p in sportProfiles)
+        if (p.isPrimarySport) p.sportName,
+    ];
+    final String allSub =
+        (primaryNames.isNotEmpty
+                ? primaryNames
+                : [for (final s in mySports) s.nameEn])
+            .take(3)
+            .join(' · ');
     final canOpen =
         profile?.userId != null &&
         (personaType == 'player' || personaType == 'organiser');
@@ -324,8 +340,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: (profile?.username ?? '').isNotEmpty
-            ? profile!.username!
+            ? '\u200E@${profile!.username!}'
             : l10n.profile_header_fallback,
+        scrollController: _scroll,
+        heroTint: true,
         onBack: () => context.canPop() ? context.pop() : context.go('/home'),
         actions: [
           DabblerNavigationAction(
@@ -343,6 +361,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
       body: DabblerRefresh(
         onRefresh: _refreshProfileWithCacheClear,
         child: ListView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -353,6 +372,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               posts: posts,
               following: following,
               followers: followers,
+              sportsCount: personaType == 'socialiser' ? mySports.length : null,
               onFollowing: profileId == null
                   ? null
                   : () => context.pushNamed(
@@ -371,27 +391,65 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               posts: posts,
               sportsCount: mySports.length,
               gamesPlayed: sportProfiles.isEmpty
-                  ? null
+                  ? (personaType == 'socialiser'
+                        ? null
+                        : profile?.statistics.totalGamesPlayed)
                   : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
-              heroSub:
-                  selected?.nameEn ??
-                  (mySports.isEmpty
+              rating: shown.isEmpty
+                  ? (sportProfiles.isEmpty && personaType != 'socialiser'
+                        ? profile?.statistics.averageRating
+                        : null)
+                  : shown.fold<double>(0, (a, p) => a + p.averageRating) /
+                        shown.length,
+              minutesPlayed: personaType == 'player'
+                  ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
+                  : null,
+              reliability: personaType == 'player'
+                  ? profile?.statistics.getReliabilityScore().round()
+                  : null,
+              primarySports: sportProfiles
+                  .where((p) => p.isPrimarySport)
+                  .length,
+              sportsLabel: personaType == 'socialiser'
+                  ? l10n.profile_stat_sports_followed
+                  : null,
+              sportsTone: personaType == 'socialiser'
+                  ? DabblerStatTileTone.ink
+                  : DabblerStatTileTone.card,
+              scoped: selected != null,
+              heroLabel: selected == null
+                  ? null
+                  : l10n.profile_stat_sport_matches(selected.nameEn),
+              heroSub: selected == null
+                  ? (allSub.isEmpty ? null : allSub)
+                  : (shown.isEmpty ? null : shown.first.getSkillLevelName()),
+              accent: switch (personaType) {
+                'socialiser' => DabblerSportAccent.socialRamp,
+                'organiser' => DabblerSportAccent.mainRamp,
+                _ => DabblerSportAccent.of(
+                  selected == null
                       ? null
-                      : mySports.map((s) => s.nameEn).take(3).join(' · ')),
-              sportKey: (selected ?? (mySports.isEmpty ? null : mySports.first))
-                  ?.sportKey,
+                      : OwnProfileSportPicker.sportKeyOf(selected),
+                ),
+              },
+              heroTone: personaType == 'host'
+                  ? DabblerStatTileTone.amber
+                  : DabblerStatTileTone.brand,
               onOpenSport: selected != null && canOpen
                   ? () => _openSportProfile(profile, selected)
                   : null,
             ),
             const DabblerGap.v(DabblerSpacing.space8),
-            OwnProfileSportPicker(
-              sports: mySports,
-              selectedId: selected?.id,
-              primaryId: profile?.primarySport,
-              onSelect: (id) => setState(() => _selectedSportId = id),
-              onManage: () => ManageSportsSheet.show(context),
-            ),
+            if (personaType == 'socialiser')
+              OwnProfileFollowedSports(sports: mySports)
+            else
+              OwnProfileSportPicker(
+                sports: mySports,
+                selectedId: selected?.id,
+                primaryId: profile?.primarySport,
+                onSelect: (id) => setState(() => _selectedSportId = id),
+                onManage: () => ManageSportsSheet.show(context),
+              ),
             const DabblerGap.v(DabblerSpacing.space8),
             if (profileId == null)
               const Padding(

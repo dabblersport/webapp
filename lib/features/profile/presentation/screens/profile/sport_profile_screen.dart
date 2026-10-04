@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
 import 'package:dabbler/features/profile/presentation/widgets/sport_achievements_section.dart';
@@ -59,6 +60,7 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
       // design fades it in once the display header scrolls away.
       topBar: DabblerNavigationTopBar.titled(
         title: args.sportName,
+        centerTitle: true,
         scrollController: _scroll,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -222,17 +224,21 @@ class _Header extends StatelessWidget {
         ? null
         : (args.isOrganiserPersona
               ? _organiserSubtitle(loaded.organiserProfile)
-              : _playerSubtitle(loaded.playerProfile));
+              : _playerSubtitle(
+                  loaded.playerProfile,
+                  args.sportName,
+                  AppLocalizations.of(context),
+                ));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DabblerText(args.sportName, style: DabblerType.largeTitle),
+        DabblerText(args.sportName, style: DabblerType.displayStat),
         if (subtitle != null)
           DabblerText(
             subtitle,
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
+            style: DabblerType.smallTight,
+            tone: DabblerTextTone.tertiary,
           ),
         const DabblerGap.v(DabblerSpacing.space3),
         Wrap(
@@ -242,11 +248,13 @@ class _Header extends StatelessWidget {
             if (loaded?.playerTier != null)
               DabblerBadge(
                 label: loaded!.playerTier!.key.toUpperCase(),
-                tone: DabblerBadgeTone.defaultTone,
+                outlined: true,
+                comfortable: true,
               ),
             if (loaded?.organiserProfile?.isVerified == true)
               DabblerBadge(
                 label: 'Verified',
+                comfortable: true,
                 status: colors.info,
                 icon: const DabblerIcon(
                   'verify',
@@ -260,16 +268,16 @@ class _Header extends StatelessWidget {
     );
   }
 
-  static String _playerSubtitle(dynamic playerProfile) {
+  static String _playerSubtitle(
+    dynamic playerProfile,
+    String sportName,
+    AppLocalizations l10n,
+  ) {
     if (playerProfile == null) {
       return 'Read-only sport profile';
     }
-    final primaryPosition = playerProfile.primaryPosition as String;
     final level = (playerProfile.overallLevel as double).toStringAsFixed(1);
-    if (primaryPosition.isNotEmpty) {
-      return 'Overall level $level • $primaryPosition';
-    }
-    return 'Overall level $level';
+    return l10n.sport_profile_overall_level(sportName, level);
   }
 
   static String _organiserSubtitle(dynamic organiserProfile) {

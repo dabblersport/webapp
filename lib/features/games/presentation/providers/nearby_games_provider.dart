@@ -1,3 +1,4 @@
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
@@ -99,6 +100,28 @@ extension GamesSkillFilterX on GamesSkillFilter {
     return gMin <= r.$2 && gMax >= r.$1;
   }
 }
+
+/// The tier name for a skill window, by its lower bound — the same bands the
+/// skill filter uses — or null when the game sets no skill range.
+GamesSkillFilter? gamesSkillTierFor(int? min, int? max) {
+  final level = min ?? max;
+  if (level == null) return null;
+  for (final tier in GamesSkillFilter.values) {
+    final r = tier.range;
+    if (r != null && level >= r.$1 && level <= r.$2) return tier;
+  }
+  return null;
+}
+
+/// The tier's localised name.
+String gamesSkillTierLabel(AppLocalizations l, GamesSkillFilter f) =>
+    switch (f) {
+      GamesSkillFilter.any => l.listing_skill_any,
+      GamesSkillFilter.beginner => l.listing_skill_beginner,
+      GamesSkillFilter.intermediate => l.listing_skill_intermediate,
+      GamesSkillFilter.advanced => l.listing_skill_advanced,
+      GamesSkillFilter.pro => l.listing_skill_pro,
+    };
 
 /// Selected skill tier for the games list.
 final gamesSkillFilterProvider = StateProvider<GamesSkillFilter>(

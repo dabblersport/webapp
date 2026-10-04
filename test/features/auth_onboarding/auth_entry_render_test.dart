@@ -9,6 +9,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_sc
 import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart'
+    show debugAuthCountries;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -76,9 +78,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -99,6 +101,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 Future<void> _pump(WidgetTester tester, Widget screen, Locale locale) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  // The frames reserve a 50px status bar above the screen.
+  tester.view.padding = const FakeViewPadding(top: 50);
+  tester.view.viewPadding = const FakeViewPadding(top: 50);
   addTearDown(tester.view.reset);
   const Key key = Key('shot');
   await tester.pumpWidget(
@@ -135,22 +140,33 @@ void main() {
   });
 
   final desktop = TargetPlatformVariant.only(TargetPlatform.macOS);
+  // The frames are drawn for iOS: the entry screens show the Apple button there.
+  final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
+  const Set<String> iosShots = <String>{
+    'auth-welcome',
+    'email',
+    'email-invalid',
+    'sheet-terms',
+    'password',
+    'password-filled',
+  };
 
   final Map<String, Widget Function()> screens = <String, Widget Function()>{
     'landing': () => const LandingPage(),
     'welcome-back': () => const WelcomeScreen(
-      displayName: 'Marcus',
+      displayName: 'Marcus Adeyemi',
       personaType: 'player',
       isFirstTime: false,
     ),
     'welcome-complete': () => const WelcomeScreen(
-      displayName: 'Marcus',
+      displayName: 'Marcus Adeyemi',
       personaType: 'organiser',
       isFirstTime: true,
+      primarySportKey: 'football',
     ),
     'auth-welcome': () => const AuthWelcomeScreen(),
     'email': () => const EmailInputScreen(),
-    'password': () => const EnterPasswordScreen(email: ''),
+    'password': () => const EnterPasswordScreen(email: 'marcus@dabbler.ae'),
   };
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
@@ -159,11 +175,29 @@ void main() {
       testWidgets('renders ${e.key} - $dir', (tester) async {
         await _pump(tester, e.value(), locale);
         expect(tester.takeException(), isNull);
-        expect(find.byType(DabblerPage), findsOneWidget);
+        expect(
+          find.byType(DabblerPage).evaluate().isNotEmpty ||
+              find.byType(DabblerFlowPage).evaluate().isNotEmpty,
+          isTrue,
+        );
         await _shoot(tester, const Key('shot'), '${e.key}-$dir');
-      }, variant: desktop);
+      }, variant: iosShots.contains(e.key) ? ios : desktop);
     }
   }
+
+  testWidgets('welcome-back greets by first name only', (tester) async {
+    await _pump(
+      tester,
+      const WelcomeScreen(
+        displayName: 'Marcus Adeyemi',
+        personaType: 'player',
+        isFirstTime: false,
+      ),
+      const Locale('en'),
+    );
+    expect(find.text('Welcome back, Marcus'), findsOneWidget);
+    expect(find.textContaining('Adeyemi'), findsNothing);
+  }, variant: desktop);
 
   testWidgets('email: continue is disabled until the email is valid', (
     tester,
@@ -186,6 +220,8 @@ void main() {
       () => const EmailInputScreen(),
       (t) async {
         await t.enterText(find.byType(EditableText).first, 'marcus@dabbler');
+        // The frame shows the field at rest in error, not focused.
+        FocusManager.instance.primaryFocus?.unfocus();
         await t.pump();
       },
     ),
@@ -193,6 +229,7 @@ void main() {
       () => const EnterPasswordScreen(email: 'marcus@dabbler.ae'),
       (t) async {
         await t.enterText(find.byType(EditableText).at(1), 'secret');
+        FocusManager.instance.primaryFocus?.unfocus();
         await t.pump();
       },
     ),
@@ -205,11 +242,23 @@ void main() {
         await t.pump();
       },
     ),
+    'otp-typed': (
+      () => const OtpVerificationScreen(
+        identifier: 'marcus@dabbler.ae',
+        identifierType: IdentifierType.email,
+      ),
+      (t) async {
+        await t.enterText(find.byType(EditableText).first, '318');
+        FocusManager.instance.primaryFocus?.unfocus();
+        await t.pump();
+      },
+    ),
     'otp-invalid': (
       () => const OtpVerificationScreen(
         identifier: 'marcus@dabbler.ae',
         identifierType: IdentifierType.email,
         initialErrorMessage: 'Invalid token',
+        initialCode: '000000',
       ),
       (t) async {
         await t.pump();
@@ -220,6 +269,7 @@ void main() {
         identifier: 'marcus@dabbler.ae',
         identifierType: IdentifierType.email,
         initialErrorMessage: 'Token has expired',
+        initialCode: '111111',
       ),
       (t) async {
         await t.pump();
@@ -235,7 +285,19 @@ void main() {
       },
     ),
     'sheet-region': (
-      () => const AuthWelcomeScreen(),
+      () {
+        debugAuthCountries = <Map<String, dynamic>>[
+          for (final String n in <String>[
+            'United Arab Emirates',
+            'Saudi Arabia',
+            'Qatar',
+            'Kuwait',
+            'United Kingdom',
+          ])
+            <String, dynamic>{'name_en': n, 'name_ar': n},
+        ];
+        return const AuthWelcomeScreen();
+      },
       (t) async {
         await t.tap(find.text('United Arab Emirates'));
         for (var i = 0; i < 8; i++) {
@@ -271,7 +333,7 @@ void main() {
         await _shoot(tester, const Key('shot'), '${e.key}-$dir');
         // Let the OTP resend countdown (a Future.delayed chain) finish.
         await tester.pump(const Duration(seconds: 31));
-      }, variant: desktop);
+      }, variant: iosShots.contains(e.key) ? ios : desktop);
     }
   }
 }

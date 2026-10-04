@@ -3956,7 +3956,7 @@ abstract class AppLocalizations {
   /// No description provided for @profile_manage_profiles_title.
   ///
   /// In en, this message translates to:
-  /// **'Manage Profiles'**
+  /// **'Switch profile'**
   String get profile_manage_profiles_title;
 
   /// No description provided for @profile_add_profile.
@@ -4166,7 +4166,7 @@ abstract class AppLocalizations {
   /// No description provided for @user_profile_stat_games.
   ///
   /// In en, this message translates to:
-  /// **'Games'**
+  /// **'Games played'**
   String get user_profile_stat_games;
 
   /// No description provided for @user_profile_stat_win_rate.
@@ -4178,7 +4178,7 @@ abstract class AppLocalizations {
   /// No description provided for @user_profile_stat_sports.
   ///
   /// In en, this message translates to:
-  /// **'Sports'**
+  /// **'Sports played'**
   String get user_profile_stat_sports;
 
   /// No description provided for @user_profile_stat_reliability.
@@ -6239,11 +6239,35 @@ abstract class AppLocalizations {
   /// **'Full'**
   String get listing_full;
 
+  /// No description provided for @listing_join_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Join game'**
+  String get listing_join_game;
+
+  /// No description provided for @listing_on_waitlist.
+  ///
+  /// In en, this message translates to:
+  /// **'On waitlist'**
+  String get listing_on_waitlist;
+
+  /// No description provided for @listing_request_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get listing_request_sent;
+
   /// No description provided for @listing_spots_left.
   ///
   /// In en, this message translates to:
-  /// **'{count} spots left'**
+  /// **'{count, plural, =1{1 spot left} other{{count} spots left}}'**
   String listing_spots_left(int count);
+
+  /// No description provided for @listing_spots_almost_full.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 spot left · almost full} other{{count} spots left · almost full}}'**
+  String listing_spots_almost_full(int count);
 
   /// No description provided for @listing_players_in.
   ///
@@ -6628,6 +6652,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add location'**
   String get home_location_add;
+
+  /// No description provided for @home_location_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get home_location_cancel;
+
+  /// No description provided for @home_location_search_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues and areas'**
+  String get home_location_search_venues;
+
+  /// No description provided for @home_location_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get home_location_recent;
 
   /// No description provided for @home_location_no_match.
   ///
@@ -9484,6 +9526,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 comment} other{{count} comments}}'**
   String sfx_comments_count(int count);
+
+  /// No description provided for @profile_section_my_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'My sports'**
+  String get profile_section_my_sports;
+
+  /// No description provided for @profile_section_their_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Their sports'**
+  String get profile_section_their_sports;
+
+  /// No description provided for @profile_btn_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get profile_btn_manage;
+
+  /// No description provided for @profile_sport_picker_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All sports'**
+  String get profile_sport_picker_all;
+
+  /// No description provided for @profile_stat_rated.
+  ///
+  /// In en, this message translates to:
+  /// **'Rated by players'**
+  String get profile_stat_rated;
+
+  /// No description provided for @profile_stat_primary_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary sports'**
+  String get profile_stat_primary_sports;
+
+  /// No description provided for @profile_stat_sport_matches.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} matches'**
+  String profile_stat_sport_matches(String sport);
+
+  /// No description provided for @profile_create_another_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create another profile'**
+  String get profile_create_another_profile;
+
+  /// No description provided for @profile_create_persona_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create {persona} profile'**
+  String profile_create_persona_profile(String persona);
+
+  /// No description provided for @sport_profile_overall_level.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} · overall level {level}'**
+  String sport_profile_overall_level(String sport, String level);
+
+  /// No description provided for @profile_sports_followed_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports followed — feeds and results only'**
+  String get profile_sports_followed_note;
+
+  /// No description provided for @profile_stat_sports_followed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports followed'**
+  String get profile_stat_sports_followed;
+
+  /// No description provided for @profile_stat_minutes_played.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes played'**
+  String get profile_stat_minutes_played;
 }
 
 class _AppLocalizationsDelegate

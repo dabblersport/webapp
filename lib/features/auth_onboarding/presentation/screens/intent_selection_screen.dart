@@ -121,12 +121,15 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       stepLabel: l10n.onb_step_label(2, 5),
       title: l10n.onb_persona_title,
       subtitle: l10n.onb_persona_subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       bodyGap: DabblerSpacing.space4,
       content: [
         for (final opt in _personaOptions.where(
           (o) => !_hiddenPersonas.contains(o.value),
         ))
           _card(l10n, opt),
+        // `Auth and Onboarding.dc.html:393`.
         DabblerText(
           l10n.onb_persona_footnote,
           style: DabblerType.footnote,
@@ -144,6 +147,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
   Widget _card(AppLocalizations l10n, _PersonaOption opt) {
     final (name, hook, body) = _copy(l10n, opt.value);
     return DabblerSelectableCard(
+      borderOutside: true,
       icon: opt.icon,
       caption: name,
       title: hook,

@@ -342,28 +342,23 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
         child: DabblerSpinner(size: DabblerSpinnerSize.sm),
       );
     }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (var i = 0; i < _suggestions.length; i++) ...[
-            if (i > 0) const DabblerGap.h(DabblerSpacing.space3),
-            DabblerChip(
-              // A username is Latin: keep its `@` on the left under RTL.
-              label: '\u200E@${_suggestions[i]}',
-              selected: _selectedSuggestion == _suggestions[i],
-              onTap: () {
-                final s = _suggestions[i];
-                setState(() {
-                  _selectedSuggestion = s;
-                  _usernameController.text = s;
-                });
-                _checkUsernameAvailability(s);
-              },
-            ),
-          ],
-        ],
-      ),
+    return DabblerChipRail(
+      gap: DabblerSpacing.space3,
+      items: [
+        for (final suggestion in _suggestions)
+          DabblerChipRailItem(
+            // A username is Latin: keep its `@` on the left under RTL.
+            label: '\u200E@$suggestion',
+            selected: _selectedSuggestion == suggestion,
+            onTap: () {
+              setState(() {
+                _selectedSuggestion = suggestion;
+                _usernameController.text = suggestion;
+              });
+              _checkUsernameAvailability(suggestion);
+            },
+          ),
+      ],
     );
   }
 
@@ -436,8 +431,11 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       stepLabel: isPersona ? null : l10n.onb_step_label(5, 5),
       title: title,
       subtitle: subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         DabblerTextField(
+          borderOutside: true,
           controller: _displayNameController,
           label: l10n.onb_display_name_label,
           placeholder: l10n.set_username_display_name_hint,
@@ -468,6 +466,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
             ],
           ),
         DabblerTextField(
+          borderOutside: true,
           controller: _usernameController,
           label: l10n.onb_username_label,
           placeholder: l10n.onb_username_placeholder,

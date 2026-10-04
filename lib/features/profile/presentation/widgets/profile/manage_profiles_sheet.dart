@@ -87,19 +87,25 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
               );
             }),
 
-            // Add persona options section (only if not at limit)
+            // Create another profile (only if not at limit): one outlined
+            // button per persona the user can still add or convert to.
             if (availablePersonas.isNotEmpty && !isAtLimit) ...[
-              const DabblerGap.v(DabblerSpacing.space4),
-              DabblerSection(
-                title: l10n.profile_add_profile,
-                children: [
-                  for (final availability in availablePersonas)
-                    _PersonaOptionTile(
-                      availability: availability,
-                      onTap: () => _startPersonaFlow(availability),
+              const DabblerGap.v(DabblerSpacing.space3),
+              for (final availability in availablePersonas)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),
+                  child: DabblerButton(
+                    label: _createLabel(
+                      l10n,
+                      availability,
+                      single: availablePersonas.length == 1,
                     ),
-                ],
-              ),
+                    icon: 'add-circle',
+                    tone: DabblerButtonTone.outlined,
+                    fullWidth: true,
+                    onPressed: () => _startPersonaFlow(availability),
+                  ),
+                ),
             ],
           ],
         );
@@ -119,6 +125,23 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
         ),
       ),
     );
+  }
+
+  String _createLabel(
+    AppLocalizations l10n,
+    PersonaAvailability availability, {
+    required bool single,
+  }) {
+    final String persona = personaLabel(
+      context,
+      availability.targetPersona.name,
+    );
+    if (availability.actionType == PersonaActionType.convert) {
+      return l10n.profile_convert_to(persona);
+    }
+    return single
+        ? l10n.profile_create_another_profile
+        : l10n.profile_create_persona_profile(persona);
   }
 
   void _startPersonaFlow(PersonaAvailability availability) {
@@ -201,56 +224,6 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
   }
 }
 
-/// Row for displaying an available persona option
-class _PersonaOptionTile extends StatelessWidget {
-  final PersonaAvailability availability;
-  final VoidCallback onTap;
-
-  const _PersonaOptionTile({required this.availability, required this.onTap});
-
-  String get _personaIcon {
-    switch (availability.targetPersona) {
-      case PersonaType.player:
-        return 'user';
-      case PersonaType.organiser:
-        return 'calendar';
-      case PersonaType.host:
-        return 'building';
-      case PersonaType.socialiser:
-        return 'people';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isConversion = availability.actionType == PersonaActionType.convert;
-
-    return DabblerInputRow(
-      onTap: onTap,
-      leading: DabblerIconTile.named(
-        _personaIcon,
-        tone: isConversion
-            ? DabblerIconTileTone.accent
-            : DabblerIconTileTone.brand,
-      ),
-      title: personaLabel(context, availability.targetPersona.name),
-      subtitle: availability.targetPersona.description,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isConversion) ...[
-            DabblerBadge(
-              label: AppLocalizations.of(context).profile_persona_convert_badge,
-            ),
-            const DabblerGap.h(DabblerSpacing.space2),
-          ],
-          const DabblerChevron(),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProfileRow extends StatelessWidget {
   final UserProfile profile;
   final bool isActive;
@@ -266,13 +239,11 @@ class _ProfileRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final String? persona = profile.personaType ?? profile.profileType;
     final String? username = profile.username;
-    return DabblerInputRow(
+    return DabblerProfileRow(
       onTap: onTap,
       selected: isActive,
-      leading: DabblerIconTile.named(
-        OwnProfileHeader.personaIcon(persona),
-        tone: DabblerIconTileTone.brand,
-      ),
+      tone: DabblerProfileRowTone.page,
+      icon: OwnProfileHeader.personaIcon(persona),
       title: personaLabel(context, persona),
       subtitle: username != null && username.isNotEmpty
           ? '\u200E@$username'

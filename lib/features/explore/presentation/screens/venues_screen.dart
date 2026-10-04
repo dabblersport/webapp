@@ -526,11 +526,9 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
           if (_iconFor(a) != null)
             DabblerCardVenue.facility(icon: _iconFor(a)!, label: a),
       ],
-      favourite: DabblerButton.icon(
-        icon: 'heart',
+      favourite: DabblerFavouriteButton(
+        selected: isFav,
         semanticLabel: isFav ? l.listing_remove_saved : l.listing_save_venue,
-        tone: isFav ? DabblerButtonTone.primary : DabblerButtonTone.outlined,
-        size: DabblerButtonSize.small,
         onPressed: _busy ? null : () => _toggle(isFav),
       ),
       price: priceLabel,

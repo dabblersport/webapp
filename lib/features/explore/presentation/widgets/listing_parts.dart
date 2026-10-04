@@ -36,8 +36,13 @@ Future<void> showListingFilterSheet(
 }) {
   return showDabblerSheet<void>(
     context: context,
-    detents: const <double>[0.8],
+    // `max-height: 80%` around its content, on the page colour.
+    detent: DabblerSheetDetent.content,
+    pageBackground: true,
     title: AppLocalizations.of(context).listing_filters,
+    // The frame's header is the title and Reset only.
+    showCloseButton: false,
+    headerDivider: true,
     headerActionBuilder: (BuildContext ctx) => DabblerButton(
       label: AppLocalizations.of(ctx).listing_reset,
       tone: DabblerButtonTone.neutral,

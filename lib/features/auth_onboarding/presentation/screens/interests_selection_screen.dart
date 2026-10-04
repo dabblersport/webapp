@@ -152,8 +152,11 @@ class _InterestsSelectionScreenState
       stepLabel: l10n.onb_step_label(3, 5),
       title: title,
       subtitle: subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         DabblerSearchField(
+          borderOutside: true,
           initialValue: _query,
           placeholder: l10n.onb_sports_search,
           onChanged: (v) => setState(() => _query = v),
@@ -164,7 +167,7 @@ class _InterestsSelectionScreenState
           error: (err, _) => [
             DabblerText(
               l10n.interests_failed_load,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
               tone: DabblerTextTone.secondary,
             ),
             DabblerButton(
@@ -185,7 +188,7 @@ class _InterestsSelectionScreenState
               if (filtered.isEmpty)
                 DabblerText(
                   l10n.onb_sports_none,
-                  style: DabblerType.subheadline,
+                  style: DabblerType.copy,
                   tone: DabblerTextTone.tertiary,
                 ),
               DabblerTileGrid(
@@ -213,6 +216,7 @@ class _InterestsSelectionScreenState
     final selected = _selectedSportIds.contains(sport.id);
     final tone = onboardingSportTone(sport);
     return DabblerSelectableCard(
+      borderOutside: true,
       layout: DabblerSelectableCardLayout.tile,
       leading: OnboardingSportGlyph(
         sport: sport,

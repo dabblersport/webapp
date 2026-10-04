@@ -2,9 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/data/models/profile/profile_statistics.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/data/models/profile/sports_profile.dart' as sp;
+import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_badge.dart';
+import 'package:dabbler/data/models/sport_profiles/sport_profile_tier.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_event.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_history_screen.dart'
     show PastGame;
@@ -116,7 +120,29 @@ class _FakeProfile extends StateNotifier<ProfileState>
 
 class _FakeSports extends StateNotifier<SportsProfileState>
     implements SportsProfileController {
-  _FakeSports() : super(const SportsProfileState());
+  _FakeSports()
+    : super(
+        const SportsProfileState(
+          profiles: <sp.SportProfile>[
+            sp.SportProfile(
+              sportId: 's-padel',
+              sportName: 'Padel',
+              skillLevel: sp.SkillLevel.advanced,
+              isPrimarySport: true,
+              gamesPlayed: 120,
+              averageRating: 4.9,
+            ),
+            sp.SportProfile(
+              sportId: 's-tennis',
+              sportName: 'Tennis',
+              skillLevel: sp.SkillLevel.intermediate,
+              isPrimarySport: true,
+              gamesPlayed: 60,
+              averageRating: 4.9,
+            ),
+          ],
+        ),
+      );
   @override
   Future<void> loadSportsProfiles(String userId, {String? profileId}) async {}
   @override
@@ -137,6 +163,11 @@ UserProfile _aisha() => UserProfile(
   personaType: 'player',
   preferredSport: 's-padel',
   interests: const ['s-padel', 's-tennis', 's-football'],
+  statistics: const ProfileStatistics(
+    totalGamesPlayed: 180,
+    totalHoursPlayed: 54,
+    averageRating: 4.9,
+  ),
   lastSeen: DateTime.now(),
 );
 
@@ -268,6 +299,16 @@ Future<void> _pumpSport(
     _app(SportProfileScreen(args: args), locale, [
       sportProfileCoreProvider.overrideWith(
         (ref, a) async => SportProfileCoreData(
+          playerProfile: empty
+              ? null
+              : const SportProfile(
+                  profileId: 'profile-1',
+                  sportKey: 'padel',
+                  overallLevel: 1.0,
+                ),
+          playerTier: empty
+              ? null
+              : const SportProfileTier(id: 'tier-1', key: 'challenger'),
           metrics: empty
               ? const []
               : const [
@@ -404,7 +445,7 @@ void main() {
       await tester.tap(find.text('History'));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerCardEventMedium), findsNWidgets(2));
+      expect(find.byType(DabblerProfileRow), findsNWidgets(2));
       await _shoot(tester, 'sport-profile-history-$dir');
     });
 

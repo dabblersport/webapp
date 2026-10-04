@@ -63,12 +63,18 @@ void main() {
     tester,
   ) async {
     await _pump(tester, const EmailInputScreen());
-    expect(find.text('That does not look like an email address.'), findsNothing);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
     expect(_button(tester, 'Send me a code').onPressed, isNull);
 
     await tester.enterText(_field(0), 'abc');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsOneWidget);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsOneWidget,
+    );
     expect(_button(tester, 'Send me a code').onPressed, isNull);
 
     await tester.enterText(_field(0), '');
@@ -77,7 +83,10 @@ void main() {
 
     await tester.enterText(_field(0), 'a@b.co');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsNothing);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
     expect(find.text('Email is required'), findsNothing);
     expect(_button(tester, 'Send me a code').onPressed, isNotNull);
   });
@@ -88,12 +97,18 @@ void main() {
 
     await tester.enterText(_field(0), 'nope');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsOneWidget);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsOneWidget,
+    );
     expect(_button(tester, 'Log in').onPressed, isNull);
 
     await tester.enterText(_field(0), 'a@b.co');
     await tester.pump();
-    expect(find.text('That does not look like an email address.'), findsNothing);
+    expect(
+      find.text('That does not look like an email address.'),
+      findsNothing,
+    );
     expect(_button(tester, 'Log in').onPressed, isNotNull);
 
     await tester.enterText(_field(1), 'x');

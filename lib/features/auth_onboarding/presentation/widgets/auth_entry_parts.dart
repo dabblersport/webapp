@@ -3,7 +3,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
     show
         LegalSection,
-        kLegalLastUpdated,
         kPrivacyIntro,
         kPrivacyPolicySections,
         kTermsIntro,
@@ -27,6 +26,12 @@ final RegExp _emojiRun = RegExp(
 /// Removes emoji from a localized string (the design system carries none).
 String authStripEmoji(String text) =>
     text.replaceAll(_emojiRun, '').replaceAll(RegExp(r'\s+$'), '');
+
+/// A link's text style at the frame's [role], medium weight, resolved for the
+/// ambient direction (`DabblerTextLink` takes a resolved style).
+TextStyle authLinkStyle(BuildContext context, DabblerTypeStyle role) => role
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(fontWeight: DabblerType.medium);
 
 /// Wraps [child] with a stable semantics identifier for end-to-end tests.
 Widget authIdentify(String? identifier, Widget child) => identifier == null
@@ -74,33 +79,30 @@ Future<void> _showLegal(
   return showDabblerSheet<void>(
     context: context,
     title: title,
-    detents: const <double>[0.85],
-    footerBuilder: _gotIt,
+    detents: const <double>[0.5],
+    showCloseButton: false,
     builder: (BuildContext ctx) {
+      // The frame's legal sheet is plain paragraphs, 15/22 soft ink, 15 apart
+      // (`Auth and Onboarding.dc.html:551-555`).
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           DabblerText(
             intro,
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-          const DabblerGap.v(DabblerSpacing.space2),
-          DabblerText(
-            'Last updated: $kLegalLastUpdated',
-            style: DabblerType.caption1,
+            style: DabblerType.copyRelaxed,
             tone: DabblerTextTone.secondary,
           ),
           for (final LegalSection s in sections) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space6),
-            DabblerText(s.title, style: DabblerType.headline),
-            const DabblerGap.v(DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space5),
             DabblerText(
               s.content,
-              style: DabblerType.subheadline,
+              style: DabblerType.copyRelaxed,
               tone: DabblerTextTone.secondary,
             ),
           ],
+          // The frame's action is the sheet's last child, 12 under the text.
+          const DabblerGap.v(DabblerSpacing.space4),
+          _gotIt(ctx),
         ],
       );
     },
@@ -129,8 +131,8 @@ class AuthLegalNotice extends StatelessWidget {
         ),
         const DabblerTextSpan('.'),
       ],
-      style: DabblerType.caption1,
-      tone: DabblerTextTone.secondary,
+      style: DabblerType.captionRelaxed,
+      tone: DabblerTextTone.tertiary,
       textAlign: TextAlign.center,
     );
   }
@@ -163,12 +165,16 @@ class AuthAccountLine extends StatelessWidget {
           onTap: onAction,
         ),
       ],
-      style: DabblerType.subheadline,
+      style: DabblerType.copy,
       tone: DabblerTextTone.secondary,
       textAlign: TextAlign.center,
     );
   }
 }
+
+/// Seeds the region sheet's countries (render tests have no network).
+@visibleForTesting
+List<Map<String, dynamic>>? debugAuthCountries;
 
 /// The region and language chips that close the welcome and entry frames, and
 /// the two sheets they open.
@@ -190,6 +196,12 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   }
 
   Future<void> _fetchCountries() async {
+    final List<Map<String, dynamic>>? seeded = debugAuthCountries;
+    if (seeded != null) {
+      _countries = seeded;
+      _countriesLoading = false;
+      return;
+    }
     try {
       final dynamic response = await Supabase.instance.client
           .from(SupabaseConfig.refCountriesTable)
@@ -225,7 +237,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
       context: context,
       title: AppLocalizations.of(context).auth_sheet_language,
       detent: DabblerSheetDetent.content,
-      footerBuilder: _done,
+      showCloseButton: false,
       builder: (BuildContext ctx) => Consumer(
         builder: (BuildContext ctx, WidgetRef ref, Widget? _) {
           final String current = ref.watch(localeProvider).languageCode;
@@ -236,13 +248,20 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
                 ('en', 'English'),
                 ('ar', 'العربية'),
               ])
-                DabblerInputRow(
-                  flat: true,
+                DabblerInputRow.option(
                   title: name,
                   selected: current == code,
+                  // The language's own name reads in its own script
+                  // (`Auth and Onboarding.dc.html:2124`).
+                  textDirection: code == 'ar'
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
                   onTap: () =>
                       ref.read(localeProvider.notifier).setLocale(Locale(code)),
                 ),
+              // The frame's action is the sheet's last child (`:585`).
+              const DabblerGap.v(DabblerSpacing.space4),
+              _done(ctx),
             ],
           );
         },
@@ -254,8 +273,8 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
     return showDabblerSheet<void>(
       context: context,
       title: AppLocalizations.of(context).auth_sheet_region,
-      detents: const <double>[0.6],
-      footerBuilder: _done,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
       builder: (BuildContext ctx) {
         if (_countriesLoading) {
           return const Center(child: DabblerSpinner());
@@ -270,14 +289,15 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 for (final Map<String, dynamic> c in _countries)
-                  DabblerInputRow(
-                    flat: true,
+                  DabblerInputRow.option(
                     title: _localized(c['name_en'] as String, languageCode),
                     selected: c['name_en'] == selected,
                     onTap: () => ref
                         .read(selectedCountryProvider.notifier)
                         .setCountry(c['name_en'] as String),
                   ),
+                const DabblerGap.v(DabblerSpacing.space4),
+                _done(ctx),
               ],
             );
           },
@@ -298,9 +318,14 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        DabblerChip(label: countryName, onTap: _openRegion),
+        DabblerChip(
+          label: countryName,
+          compactHitArea: true,
+          onTap: _openRegion,
+        ),
         const DabblerGap.h(DabblerSpacing.space3),
         DabblerChip(
+          compactHitArea: true,
           label: languageCode == 'ar' ? 'العربية' : 'English',
           onTap: _openLanguage,
         ),

@@ -398,9 +398,13 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       stepLabel: l10n.onb_step_label(1, 5),
       title: l10n.onb_dob_title,
       subtitle: l10n.onb_dob_subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         DabblerTextField(
+          borderOutside: true,
           variant: DabblerTextFieldVariant.select,
+          circledSelectArrow: true,
           label: l10n.onb_dob_label,
           placeholder: l10n.onb_dob_placeholder,
           value: birth == null
@@ -427,24 +431,28 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
               tone: DabblerTextTone.secondary,
             ),
             const DabblerGap.v(DabblerSpacing.space3),
-            Row(
-              children: [
-                Expanded(
-                  child: _genderCard(
-                    value: 'male',
-                    label: l10n.onb_gender_male,
-                    hue: DabblerHueTone.maleHue,
+            // The frame's grid stretches both cards to the taller one.
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _genderCard(
+                      value: 'male',
+                      label: l10n.onb_gender_male,
+                      hue: DabblerHueTone.maleHue,
+                    ),
                   ),
-                ),
-                const DabblerGap.h(DabblerSpacing.space4),
-                Expanded(
-                  child: _genderCard(
-                    value: 'female',
-                    label: l10n.onb_gender_female,
-                    hue: DabblerHueTone.femaleHue,
+                  const DabblerGap.h(DabblerSpacing.space4),
+                  Expanded(
+                    child: _genderCard(
+                      value: 'female',
+                      label: l10n.onb_gender_female,
+                      hue: DabblerHueTone.femaleHue,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -469,6 +477,7 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     required double hue,
   }) {
     return DabblerSelectableCard(
+      borderOutside: true,
       layout: DabblerSelectableCardLayout.stacked,
       leading: DabblerAvatar(seed: label, size: DabblerAvatarSize.md),
       title: label,

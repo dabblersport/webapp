@@ -3390,8 +3390,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_full => 'ممتلئة';
 
   @override
+  String get listing_join_game => 'انضم للمباراة';
+
+  @override
+  String get listing_on_waitlist => 'في قائمة الانتظار';
+
+  @override
+  String get listing_request_sent => 'تم إرسال الطلب';
+
+  @override
   String listing_spots_left(int count) {
     return 'بقي $count أماكن';
+  }
+
+  @override
+  String listing_spots_almost_full(int count) {
+    return 'بقي $count · شبه ممتلئ';
   }
 
   @override
@@ -3616,6 +3630,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get home_location_add => 'إضافة موقع';
+
+  @override
+  String get home_location_cancel => 'إلغاء';
+
+  @override
+  String get home_location_search_venues => 'ابحث عن ملاعب ومناطق';
+
+  @override
+  String get home_location_recent => 'الأخيرة';
 
   @override
   String home_location_no_match(String query) {
@@ -5151,4 +5174,50 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get profile_section_my_sports => 'رياضاتي';
+
+  @override
+  String get profile_section_their_sports => 'رياضاتهم';
+
+  @override
+  String get profile_btn_manage => 'إدارة';
+
+  @override
+  String get profile_sport_picker_all => 'كل الرياضات';
+
+  @override
+  String get profile_stat_rated => 'تقييم اللاعبين';
+
+  @override
+  String get profile_stat_primary_sports => 'الرياضات الأساسية';
+
+  @override
+  String profile_stat_sport_matches(String sport) {
+    return 'مباريات $sport';
+  }
+
+  @override
+  String get profile_create_another_profile => 'إنشاء ملف شخصي آخر';
+
+  @override
+  String profile_create_persona_profile(String persona) {
+    return 'إنشاء ملف $persona';
+  }
+
+  @override
+  String sport_profile_overall_level(String sport, String level) {
+    return '$sport · المستوى العام $level';
+  }
+
+  @override
+  String get profile_sports_followed_note =>
+      'الرياضات المتابَعة — للأخبار والنتائج فقط';
+
+  @override
+  String get profile_stat_sports_followed => 'الرياضات المتابَعة';
+
+  @override
+  String get profile_stat_minutes_played => 'Minutes played';
 }

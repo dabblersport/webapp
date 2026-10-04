@@ -106,6 +106,7 @@ class _LandingPageState extends State<LandingPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   DabblerWordmark(
+                    size: DabblerWordmark.landingSize,
                     color: DabblerColors.of(context).brandPrimary,
                   ),
                   const DabblerGap.v(DabblerSpacing.space9),
@@ -134,12 +135,11 @@ class _LandingPageState extends State<LandingPage> {
                     ],
                   ),
                   const DabblerGap.v(DabblerSpacing.space8),
-                  DabblerText(v.quote, style: DabblerType.largeTitle),
+                  DabblerText(v.quote, style: DabblerType.displayScreen),
                   const DabblerGap.v(DabblerSpacing.space6),
                   DabblerText(
                     v.want,
-                    style: DabblerType.callout,
-                    weight: DabblerTextWeight.regular,
+                    style: DabblerType.leadLarge,
                     tone: DabblerTextTone.secondary,
                   ),
                 ],
@@ -160,6 +160,7 @@ class _LandingPageState extends State<LandingPage> {
                   alignment: AlignmentDirectional.centerStart,
                   child: DabblerPageDots(
                     count: vignettes.length,
+                    compactHitArea: true,
                     index: _index,
                     onSelected: (int i) => setState(() => _index = i),
                   ),
@@ -167,8 +168,8 @@ class _LandingPageState extends State<LandingPage> {
                 const DabblerGap.v(DabblerSpacing.space5),
                 DabblerText(
                   l10n.landing_dc_tagline,
-                  style: DabblerType.subheadline,
-                  tone: DabblerTextTone.secondary,
+                  style: DabblerType.small,
+                  tone: DabblerTextTone.tertiary,
                 ),
                 const DabblerGap.v(DabblerSpacing.space5),
                 authIdentify(
