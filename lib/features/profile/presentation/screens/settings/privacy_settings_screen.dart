@@ -409,14 +409,6 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
               DabblerSpacing.space11,
             ),
             children: [
-              const DabblerBanner(
-                tone: DabblerBannerTone.neutral,
-                icon: DabblerIcon('shield-tick'),
-                title: 'Control your privacy',
-                message:
-                    'Manage what information others can see about you and how your data is used.',
-              ),
-              _gap,
               _buildPresetsSection(),
               if (settings != null) ...[
                 _gap,

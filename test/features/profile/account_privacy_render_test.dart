@@ -155,8 +155,6 @@ void main() {
           body: ListView(
             padding: const EdgeInsets.all(DabblerSpacing.space6),
             children: [
-              const AccountSecurityIntro(),
-              const SizedBox(height: DabblerSpacing.space7),
               AccountDangerZone(onDelete: () {}),
             ],
           ),
