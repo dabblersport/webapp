@@ -96,7 +96,9 @@ class ModeToggle extends StatelessWidget {
         ),
       ],
       onChanged: (id) => onChanged(
-        id == ViewMode.activity.name ? ViewMode.activity : ViewMode.notifications,
+        id == ViewMode.activity.name
+            ? ViewMode.activity
+            : ViewMode.notifications,
       ),
     );
   }

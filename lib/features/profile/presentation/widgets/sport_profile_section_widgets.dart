@@ -23,12 +23,11 @@ class SportSectionCard extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) =>
-      DabblerSection(
-        title: title,
-        style: DabblerSectionStyle.label,
-        children: [child],
-      );
+  Widget build(BuildContext context) => DabblerSection(
+    title: title,
+    style: DabblerSectionStyle.label,
+    children: [child],
+  );
 }
 
 /// Icon + message placeholder for empty sport profile sections.

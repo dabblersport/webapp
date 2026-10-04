@@ -380,7 +380,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     }
 
     final topBar = DabblerNavigationTopBar.titled(
-        border: true,
+      border: true,
       title: 'Privacy Settings',
       onBack: () => context.pop(),
       actions: [
@@ -781,7 +781,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
 }
 
 /// How many of the profile-visibility toggles are on, as `n/total`.
-String privacyProfileShownCount(PrivacySettings s) => _count(_profileToggles, s);
+String privacyProfileShownCount(PrivacySettings s) =>
+    _count(_profileToggles, s);
 
 /// How many of the activity-visibility toggles are on, as `n/total`.
 String privacyActivityShownCount(PrivacySettings s) =>

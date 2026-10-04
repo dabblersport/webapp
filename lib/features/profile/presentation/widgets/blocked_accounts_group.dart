@@ -30,9 +30,7 @@ class BlockedAccountsGroup extends ConsumerWidget {
         return DabblerRowGroup(
           header: header,
           note: note,
-          children: [
-            for (final user in users) _row(context, ref, user),
-          ],
+          children: [for (final user in users) _row(context, ref, user)],
         );
       },
     );

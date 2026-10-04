@@ -19,8 +19,8 @@ import 'notif_visual.dart';
 /// Whether the "Follow back" CTA should show on a follow notification —
 /// false when the recipient already follows the notification's sender.
 /// KAN-101: the CTA must not render on an already-mutual follow.
-final _followBackVisibleProvider =
-    FutureProvider.autoDispose.family<bool, String>((ref, actorUserId) async {
+final _followBackVisibleProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, actorUserId) async {
       final myProfileId = await ref.watch(myProfileIdProvider.future);
       if (myProfileId == null) return true;
       final targetProfileId = await ref.watch(
@@ -124,10 +124,13 @@ class NotificationRow extends ConsumerWidget {
 
   String? _actionLabelFor(BuildContext context, String kindKey) {
     final l10n = AppLocalizations.of(context);
-    if (kindKey.startsWith('friend.requested')) return l10n.notif_action_respond;
-    if (kindKey.startsWith('social.followed')) return l10n.notif_action_follow_back;
+    if (kindKey.startsWith('friend.requested'))
+      return l10n.notif_action_respond;
+    if (kindKey.startsWith('social.followed'))
+      return l10n.notif_action_follow_back;
     if (kindKey.startsWith('game.invited')) return l10n.notif_action_view;
-    if (kindKey.startsWith('social.circle_joined')) return l10n.notif_action_see_circle;
+    if (kindKey.startsWith('social.circle_joined'))
+      return l10n.notif_action_see_circle;
     return null;
   }
 

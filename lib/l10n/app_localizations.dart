@@ -6304,6 +6304,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Link copied'**
   String get sfx_link_copied;
+
+  /// No description provided for @sfx_events.
+  ///
+  /// In en, this message translates to:
+  /// **'games and meet-ups'**
+  String get sfx_events;
 }
 
 class _AppLocalizationsDelegate

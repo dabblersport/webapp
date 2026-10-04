@@ -17,10 +17,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart';
 enum SportActivitySource { authored, commented, reacted }
 
 class SportProfileMetric {
-  const SportProfileMetric({
-    required this.label,
-    required this.value,
-  });
+  const SportProfileMetric({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -150,7 +147,11 @@ final sportAchievementsProvider = FutureProvider.autoDispose
             .getPlayerBadges(args.profileId, args.sportKey)
             .catchError((_) => const <advanced_badge.SportProfileBadge>[]),
         sportProfileService
-            .getRecentSportProfileEvents(args.profileId, args.sportKey, limit: 5)
+            .getRecentSportProfileEvents(
+              args.profileId,
+              args.sportKey,
+              limit: 5,
+            )
             .catchError((_) => const <SportProfileEvent>[]),
       ]);
 
@@ -210,10 +211,9 @@ final sportActivityProvider = FutureProvider.autoDispose
       addPosts(unwrap(1), SportActivitySource.commented);
       addPosts(unwrap(2), SportActivitySource.reacted);
 
-      return activityByPostId.values.toList()
-        ..sort(
-          (left, right) => right.post.createdAt.compareTo(left.post.createdAt),
-        );
+      return activityByPostId.values.toList()..sort(
+        (left, right) => right.post.createdAt.compareTo(left.post.createdAt),
+      );
     });
 
 List<SportProfileMetric> _buildPlayerMetrics(
@@ -277,21 +277,12 @@ List<SportProfileMetric> _buildOrganiserMetricsFrom({
   }).length;
 
   return <SportProfileMetric>[
-    SportProfileMetric(
-      label: 'Hosted',
-      value: totalHosted.toString(),
-    ),
-    SportProfileMetric(
-      label: 'Upcoming',
-      value: upcomingHosted.toString(),
-    ),
+    SportProfileMetric(label: 'Hosted', value: totalHosted.toString()),
+    SportProfileMetric(label: 'Upcoming', value: upcomingHosted.toString()),
     SportProfileMetric(
       label: 'Level',
       value: (organiserProfile?.organiserLevel ?? 0).toString(),
     ),
-    SportProfileMetric(
-      label: 'Active',
-      value: activeHosted.toString(),
-    ),
+    SportProfileMetric(label: 'Active', value: activeHosted.toString()),
   ];
 }

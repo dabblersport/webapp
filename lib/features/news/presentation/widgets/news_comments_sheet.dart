@@ -50,8 +50,7 @@ class _CommentsList extends ConsumerWidget {
                   children: [
                     for (final c in comments)
                       DabblerCommentRow(
-                        name:
-                            c.authorDisplayName ?? c.authorUsername ?? 'User',
+                        name: c.authorDisplayName ?? c.authorUsername ?? 'User',
                         imageUrl: c.authorAvatarUrl,
                         time: timeago.format(c.createdAt, locale: lang),
                         body: c.body,

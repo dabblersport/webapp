@@ -143,6 +143,7 @@ class SearchPersonRow extends StatelessWidget {
       searchNeedle(query),
       DabblerColors.of(context),
     ),
+    titleSemibold: true,
     subtitle: '\u2066@${profile.username}\u2069',
     trailing: DabblerButton(
       label: AppLocalizations.of(context).sfx_follow,

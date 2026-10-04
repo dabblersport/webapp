@@ -79,9 +79,9 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 Clipboard.setData(ClipboardData(text: url));
-                DabblerToastProvider.of(context).show(
-                  DabblerToastSpec(message: l10n.sfx_link_copied),
-                );
+                DabblerToastProvider.of(
+                  context,
+                ).show(DabblerToastSpec(message: l10n.sfx_link_copied));
               },
             ),
           DabblerActionRow(
@@ -215,7 +215,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               if (item.coverImageUrl != null)
                 DabblerImage(
                   url: item.coverImageUrl,
-                  aspectRatio: 4 / 5,
+                  height: 230,
                   semanticLabel: title,
                   headers: _coverHeaders,
                 ),
@@ -224,7 +224,9 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                 Wrap(
                   spacing: DabblerSpacing.space2,
                   runSpacing: DabblerSpacing.space2,
-                  children: [for (final t in item.tags) DabblerChip(label: t, dense: true)],
+                  children: [
+                    for (final t in item.tags) DabblerChip(label: t, tag: true),
+                  ],
                 ),
             ],
           ),

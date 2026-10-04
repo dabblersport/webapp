@@ -3434,4 +3434,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sfx_link_copied => 'تم نسخ الرابط';
+
+  @override
+  String get sfx_events => 'الألعاب واللقاءات';
 }

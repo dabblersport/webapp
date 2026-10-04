@@ -70,11 +70,11 @@ class SearchResultsView extends StatelessWidget {
 String _modeLabel(AppLocalizations l10n, SearchMode mode) => switch (mode) {
   SearchMode.profiles => l10n.sfx_people,
   SearchMode.hashtags => l10n.sfx_hashtags,
-  SearchMode.games => l10n.sfx_games,
+  SearchMode.games => l10n.sfx_events,
   SearchMode.venues => l10n.sfx_venues,
   SearchMode.posts => l10n.sfx_posts,
   SearchMode.comments => l10n.sfx_comments,
-  SearchMode.meetups => l10n.sfx_meetups,
+  SearchMode.meetups => l10n.sfx_events,
   SearchMode.all => '',
 };
 
@@ -302,8 +302,9 @@ class _FullList extends StatelessWidget {
             ),
           ),
       ],
-      SearchMode.games => [
+      SearchMode.games || SearchMode.meetups => [
         for (final g in b.games) SearchGameEventCard(game: g, query: q),
+        for (final m in b.meetups) SearchMeetupEventCard(meetup: m, query: q),
       ],
       SearchMode.venues => [
         for (final v in b.venues) SearchVenueCard(venue: v, query: q),
@@ -313,9 +314,6 @@ class _FullList extends StatelessWidget {
       ],
       SearchMode.comments => [
         for (final c in b.comments) SearchCommentCard(comment: c, query: q),
-      ],
-      SearchMode.meetups => [
-        for (final m in b.meetups) SearchMeetupEventCard(meetup: m, query: q),
       ],
       SearchMode.all => const [],
     };

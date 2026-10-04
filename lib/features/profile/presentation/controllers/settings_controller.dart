@@ -377,7 +377,6 @@ class SettingsController extends StateNotifier<SettingsState> {
     }
     return 'An unexpected error occurred';
   }
-
 }
 
 /// Represents a setting item for UI display

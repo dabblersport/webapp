@@ -163,7 +163,9 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
           children: [
             DabblerEmptyState(
               icon: 'hashtag',
-              title: AppLocalizations.of(context).sfx_hashtag_empty(widget.hashtagSlug),
+              title: AppLocalizations.of(
+                context,
+              ).sfx_hashtag_empty(widget.hashtagSlug),
             ),
           ],
         ),

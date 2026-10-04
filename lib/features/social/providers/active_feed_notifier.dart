@@ -260,7 +260,9 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
   /// Appends the next page.
   Future<void> loadMore() async {
     final data = state;
-    if (data is! ActiveFeedData || data.loadingMore || !data.hasMore ||
+    if (data is! ActiveFeedData ||
+        data.loadingMore ||
+        !data.hasMore ||
         !mounted) {
       return;
     }

@@ -3493,4 +3493,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sfx_link_copied => 'Link copied';
+
+  @override
+  String get sfx_events => 'games and meet-ups';
 }
