@@ -1,24 +1,27 @@
-import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
-import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
-import 'package:dabbler/features/location/presentation/widgets/nearby_filter_bar.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart'
+    as games_providers;
+import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// MaterialPageRoute is the navigation route the archive action pushes, kept
+// MaterialPageRoute is the navigation route the favourites action pushes, kept
 // exactly as it was; it paints nothing of its own.
 import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 // =============================================================================
 // SCREEN
@@ -32,9 +35,11 @@ class VenuesScreen extends ConsumerWidget {
     final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
 
     return sportsAsync.when(
-      loading: () => const ListingPageSpinner(),
-      error: (_, __) => const DabblerPage(
-        body: ListingError(message: 'Failed to load sports'),
+      loading: () => const DabblerPage(body: Center(child: DabblerSpinner())),
+      error: (_, __) => DabblerPage(
+        body: Center(
+          child: DabblerEmptyState.error(title: 'Failed to load sports'),
+        ),
       ),
       data: (sports) => _VenuesTabScreen(
         key: ValueKey(sports.map((s) => s.id).join()),
@@ -60,63 +65,85 @@ class _VenuesTabScreen extends ConsumerStatefulWidget {
 class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
   void _resetFilters() {
     ref.read(nearbyVenuesFilterEnabledProvider.notifier).state = false;
+    ref.read(nearbyVenueSortProvider.notifier).state = NearbySortOrder.nearest;
   }
 
   void _openFilters() {
     showListingFilterSheet(
       context,
       onReset: _resetFilters,
-      builder: (_) => ListingFilterBody(
-        groups: [
-          ListingFilterSection(
-            label: 'Nearby',
-            child: NearbyFilterBar(
-              enabledProvider: nearbyVenuesFilterEnabledProvider,
-              sortProvider: nearbyVenueSortProvider,
-            ),
-          ),
-        ],
+      builder: (_) => const _VenuesFilterBody(),
+      footerBuilder: (ctx) => DabblerButton(
+        label: 'Show venues',
+        fullWidth: true,
+        onPressed: () => Navigator.of(ctx).pop(),
       ),
-    );
-  }
-
-  Widget _buildHeader(int filterCount) {
-    final profileState = ref.watch(profileControllerProvider);
-    final isOrganiser = profileState.profile?.profileType == 'organiser';
-
-    return ListingHeader(
-      title: AppLocalizations.of(context).nav_venues,
-      filterCount: filterCount,
-      onFilter: _openFilters,
-      actions: [
-        if (isOrganiser)
-          DabblerButton.icon(
-            icon: 'add',
-            semanticLabel: 'Add venue',
-            tone: DabblerButtonTone.outlined,
-            onPressed: () => context.push(RoutePaths.createVenueSubmission),
-          ),
-        DabblerButton.icon(
-          icon: 'archive',
-          semanticLabel: 'My sports',
-          tone: DabblerButtonTone.outlined,
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final nearby = ref.watch(nearbyVenuesFilterEnabledProvider);
+    final radius = ref.watch(nearbyRadiusProvider);
+    final sort = ref.watch(nearbyVenueSortProvider);
+    final locState = ref.watch(activeLocationProvider).valueOrNull;
+    final isOrganiser =
+        ref.watch(profileControllerProvider).profile?.profileType ==
+        'organiser';
     final sports = widget.sports;
 
+    final active = <DabblerFilterRailItem>[
+      if (nearby)
+        DabblerFilterRailItem(
+          label: nearbyRadiusLabel(radius),
+          onRemove: () =>
+              ref.read(nearbyVenuesFilterEnabledProvider.notifier).state =
+                  false,
+        ),
+      if (sort != NearbySortOrder.nearest)
+        DabblerFilterRailItem(
+          label: 'Starting soonest',
+          onRemove: () => ref.read(nearbyVenueSortProvider.notifier).state =
+              NearbySortOrder.nearest,
+        ),
+    ];
+
     return DabblerPage(
-      topBar: _buildHeader(nearby ? 1 : 0),
+      topBar: DabblerPageHeader(
+        title: AppLocalizations.of(context).nav_venues,
+        locationLabel: locState is ActiveLocationReady
+            ? locState.location.area.name
+            : 'Set location',
+        onLocationPressed: () => HomeLocationPickerSheet.show(context),
+        actions: <DabblerPageHeaderAction>[
+          if (isOrganiser)
+            DabblerPageHeaderAction(
+              icon: 'add',
+              semanticLabel: 'Add venue',
+              onPressed: () => context.push(RoutePaths.createVenueSubmission),
+            ),
+          DabblerPageHeaderAction(
+            icon: 'heart',
+            semanticLabel: 'Saved venues',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
+              ),
+            ),
+          ),
+          DabblerPageHeaderAction(
+            icon: 'search-normal',
+            semanticLabel: 'Search',
+            onPressed: () => context.push(RoutePaths.socialSearch),
+          ),
+          DabblerPageHeaderAction(
+            icon: 'filter',
+            semanticLabel: 'Filters',
+            onPressed: _openFilters,
+            count: active.length,
+          ),
+        ],
+      ),
       body: sports.isEmpty
           ? const SizedBox.shrink()
           : Padding(
@@ -137,18 +164,19 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                   for (final sport in sports)
                     // The applied-filters rail sits under the tabs.
                     Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        ListingActiveFilters(
-                          filters: [
-                            if (nearby)
-                              ListingActiveFilter(
-                                label: 'Nearby',
-                                onClear: _resetFilters,
-                              ),
-                          ],
+                        DabblerFilterRail(
+                          items: active,
+                          clearAllLabel: 'Clear all',
                           onClearAll: _resetFilters,
                         ),
-                        Expanded(child: _AllVenuesList(sport: sport)),
+                        Expanded(
+                          child: _AllVenuesList(
+                            sport: sport,
+                            onChangeFilters: _openFilters,
+                          ),
+                        ),
                       ],
                     ),
                 ],
@@ -159,34 +187,43 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
 }
 
 // =============================================================================
+// FILTER SHEET
+// =============================================================================
+
+/// Distance and Sort by — the design's groups the app has a feature for.
+/// Indoor / outdoor, price per hour and rating have no filter behind them.
+class _VenuesFilterBody extends ConsumerWidget {
+  const _VenuesFilterBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      spacing: DabblerSpacing.space6,
+      children: [
+        DabblerFilterGroup(
+          label: 'Distance',
+          children: nearbyDistanceChips(ref, nearbyVenuesFilterEnabledProvider),
+        ),
+        DabblerFilterGroup(
+          label: 'Sort by',
+          children: nearbySortChips(ref, nearbyVenueSortProvider),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
 // ALL VENUES LIST
 // =============================================================================
 
-/// venue_id → upcoming games happening there. One lightweight query over
-/// v_game_card (visibility-gated per viewer) shared by every tab.
-final _upcomingGamesByVenueProvider =
-    FutureProvider.autoDispose<Map<String, int>>((ref) async {
-      final rows =
-          await Supabase.instance.client
-                  .from(SupabaseConfig.vGameCardTable)
-                  .select('venue_id')
-                  .eq('is_cancelled', false)
-                  .gt('end_at', DateTime.now().toUtc().toIso8601String())
-                  .not('venue_id', 'is', null)
-                  .limit(300)
-              as List<dynamic>;
-      final counts = <String, int>{};
-      for (final r in rows) {
-        final id = (r as Map)['venue_id'] as String?;
-        if (id != null) counts[id] = (counts[id] ?? 0) + 1;
-      }
-      return counts;
-    });
-
 class _AllVenuesList extends ConsumerWidget {
-  const _AllVenuesList({required this.sport});
+  const _AllVenuesList({required this.sport, required this.onChangeFilters});
 
   final Sport sport;
+  final VoidCallback onChangeFilters;
 
   String get sportId => sport.id;
 
@@ -197,12 +234,10 @@ class _AllVenuesList extends ConsumerWidget {
         ? ref.watch(activeLocationProvider).valueOrNull
         : null;
     final location = locState is ActiveLocationReady ? locState.location : null;
-    final gameCounts =
-        ref.watch(_upcomingGamesByVenueProvider).valueOrNull ?? const {};
 
     // Nearby path: PostGIS RPC filtered by the active location + radius.
     // While the filter is on but location isn't ready (locating/denied),
-    // fall back to the unfiltered list; NearbyFilterBar surfaces the status.
+    // fall back to the unfiltered list.
     if (location != null) {
       final params = (
         lat: location.lat,
@@ -214,14 +249,14 @@ class _AllVenuesList extends ConsumerWidget {
       final nearbyAsync = ref.watch(nearbyVenuesProvider(params));
 
       return nearbyAsync.when(
-        loading: () => const ListingSkeleton(),
-        error: (_, __) => const ListingError(message: "Couldn't load venues"),
+        loading: _loading,
+        error: (_, __) => _error(ref),
         data: (venues) => venues.isEmpty
-            ? _buildEmpty(
+            ? _empty(
                 hint:
                     'No venues within ${(location.nearbyRadiusMeters / 1000).round()} km — try widening your search radius.',
               )
-            : _buildCards(
+            : _cards(
                 ref,
                 venues
                     .map(
@@ -233,7 +268,7 @@ class _AllVenuesList extends ConsumerWidget {
                         pricePerHour: v.pricePerHour,
                         isIndoor: v.isIndoor,
                         distanceLabel: v.distanceLabel,
-                        gamesCount: gameCounts[v.id] ?? 0,
+                        sports: v.sportNames,
                       ),
                     )
                     .toList(),
@@ -245,11 +280,11 @@ class _AllVenuesList extends ConsumerWidget {
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
 
     return venuesAsync.when(
-      loading: () => const ListingSkeleton(),
-      error: (_, __) => const ListingError(message: "Couldn't load venues"),
+      loading: _loading,
+      error: (_, __) => _error(ref),
       data: (venues) => venues.isEmpty
-          ? _buildEmpty()
-          : _buildCards(
+          ? _empty()
+          : _cards(
               ref,
               venues
                   .map(
@@ -260,7 +295,8 @@ class _AllVenuesList extends ConsumerWidget {
                       area: v.area,
                       pricePerHour: v.pricePerHour,
                       isIndoor: v.isIndoor,
-                      gamesCount: gameCounts[v.id] ?? 0,
+                      sports: [sport.nameEn],
+                      amenities: v.amenities,
                     ),
                   )
                   .toList(),
@@ -268,32 +304,61 @@ class _AllVenuesList extends ConsumerWidget {
     );
   }
 
-  Widget _buildCards(WidgetRef ref, List<_VenueCardData> venues) {
+  Widget _loading() => ListView(
+    physics: const NeverScrollableScrollPhysics(),
+    padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
+    children: const [
+      DabblerSkeleton.card(),
+      DabblerGap.v(DabblerSpacing.space4),
+      DabblerSkeleton.card(),
+      DabblerGap.v(DabblerSpacing.space4),
+      DabblerSkeleton.card(),
+    ],
+  );
+
+  Widget _error(WidgetRef ref) => Center(
+    child: DabblerEmptyState.error(
+      title: "Couldn't load venues",
+      size: DabblerEmptyStateSize.inline,
+      onRetry: () {
+        ref.invalidate(nearbyVenuesProvider);
+        ref.invalidate(venuesBySportWithFiltersProvider);
+      },
+      retryLabel: 'Retry',
+    ),
+  );
+
+  Widget _empty({String? hint}) => Center(
+    child: DabblerEmptyState(
+      icon: 'building-3',
+      title: 'No venues found',
+      text: hint ?? 'Try selecting a different sport.',
+      action: DabblerButton(
+        label: 'Change filters',
+        onPressed: onChangeFilters,
+      ),
+    ),
+  );
+
+  Widget _cards(WidgetRef ref, List<_VenueCardData> venues) {
     return DabblerRefresh(
       onRefresh: () async {
         ref.invalidate(nearbyVenuesProvider);
         ref.invalidate(venuesBySportWithFiltersProvider);
-        ref.invalidate(_upcomingGamesByVenueProvider);
       },
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsetsDirectional.only(
           top: DabblerSpacing.space4,
           bottom: DabblerSpacing.space8,
         ),
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: venues.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: DabblerSpacing.space4),
-        itemBuilder: (context, i) => _VenueCard(venue: venues[i]),
+        children: [
+          for (final v in venues) ...[
+            _VenueCard(venue: v),
+            const DabblerGap.v(DabblerSpacing.space4),
+          ],
+        ],
       ),
-    );
-  }
-
-  Widget _buildEmpty({String? hint}) {
-    return ListingEmpty(
-      icon: 'building-3',
-      title: 'No venues found',
-      text: hint ?? 'Try selecting a different sport.',
     );
   }
 }
@@ -313,7 +378,8 @@ class _VenueCardData {
     this.pricePerHour,
     this.isIndoor,
     this.distanceLabel,
-    this.gamesCount = 0,
+    this.sports = const [],
+    this.amenities = const [],
   });
 
   final String id;
@@ -327,21 +393,87 @@ class _VenueCardData {
   /// filter is active.
   final String? distanceLabel;
 
-  /// Upcoming games happening at this venue (0 when none/unknown).
-  final int gamesCount;
+  /// The sports the venue is listed under.
+  final List<String> sports;
+
+  /// Raw amenity names; the ones with a glyph show as facilities.
+  final List<String> amenities;
 }
 
 /// A venue on the design system's venue card (`Listings.dc.html:750-820`).
-/// The app has no venue photo, so the card draws no cover; distance, price,
-/// setting and upcoming games keep their old places as the card's area line,
-/// price row and tags.
-class _VenueCard extends StatelessWidget {
+/// The app has no venue photo, rating or badges, so the card draws no cover
+/// and no rating; the favourite heart toggles `venue_favorites`.
+class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
   final _VenueCardData venue;
 
   @override
+  ConsumerState<_VenueCard> createState() => _VenueCardState();
+}
+
+class _VenueCardState extends ConsumerState<_VenueCard> {
+  bool? _optimistic;
+  bool _busy = false;
+
+  Future<void> _toggle(bool currently) async {
+    if (_busy) return;
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null || userId.isEmpty) return;
+    setState(() {
+      _busy = true;
+      _optimistic = !currently;
+    });
+    final repository = ref.read(games_providers.venuesRepositoryProvider);
+    final result = await repository.toggleVenueFavorite(
+      widget.venue.id,
+      userId,
+    );
+    if (!mounted) return;
+    result.fold(
+      (_) => setState(() {
+        _busy = false;
+        _optimistic = currently;
+      }),
+      (_) {
+        ref.invalidate(favoriteVenuesForCurrentUserProvider);
+        ref.invalidate(favoriteVenueIdsForCurrentUserProvider);
+        setState(() {
+          _busy = false;
+          _optimistic = null;
+        });
+      },
+    );
+  }
+
+  /// Amenity text → the design's facility glyph; unknown amenities draw none.
+  static const Map<String, String> _amenityIcons = {
+    'park': 'car',
+    'shower': 'drop',
+    'locker': 'lock',
+    'changing': 'lock',
+    'cafe': 'cup',
+    'coffee': 'cup',
+    'light': 'flash',
+    'shop': 'shop',
+  };
+
+  static String? _iconFor(String amenity) {
+    final a = amenity.toLowerCase();
+    for (final e in _amenityIcons.entries) {
+      if (a.contains(e.key)) return e.value;
+    }
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final venue = widget.venue;
+    final favIds = ref
+        .watch(favoriteVenueIdsForCurrentUserProvider)
+        .maybeWhen(data: (ids) => ids, orElse: () => <String>{});
+    final isFav = _optimistic ?? favIds.contains(venue.id);
+
     final locationLine = [
       if (venue.area?.isNotEmpty == true) venue.area!,
       venue.city,
@@ -350,29 +482,50 @@ class _VenueCard extends StatelessWidget {
     final String? priceLabel = venue.pricePerHour == null
         ? null
         : (venue.pricePerHour! > 0
-              ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)}/hr'
+              ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)} / hour'
               : 'Free');
-
-    final tags = <Widget>[
-      if (venue.gamesCount > 0)
-        DabblerBadge(
-          label: venue.gamesCount == 1
-              ? '1 upcoming game'
-              : '${venue.gamesCount} upcoming games',
-        ),
-      if (venue.isIndoor != null)
-        DabblerBadge(
-          label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
-          tone: DabblerBadgeTone.warning,
-        ),
-    ];
 
     return DabblerCardVenue(
       name: venue.name,
       area: locationLine,
-      distance: venue.distanceLabel,
-      tags: tags,
+      tags: [
+        if (venue.distanceLabel != null)
+          DabblerBadge(
+            label: '${venue.distanceLabel} away',
+            tone: DabblerBadgeTone.pill,
+            icon: const DabblerIcon(
+              'location',
+              weight: DabblerIconWeight.bold,
+              size: DabblerSizing.iconXs,
+            ),
+          ),
+        if (venue.isIndoor != null)
+          DabblerBadge(
+            label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
+            tone: DabblerBadgeTone.warning,
+          ),
+      ],
+      sports: [
+        for (final s in venue.sports) DabblerBadge(label: s, outlined: true),
+      ],
+      facilities: [
+        for (final a in venue.amenities)
+          if (_iconFor(a) != null)
+            DabblerCardVenue.facility(icon: _iconFor(a)!, label: a),
+      ],
+      favourite: DabblerButton.icon(
+        icon: 'heart',
+        semanticLabel: isFav ? 'Remove from saved' : 'Save venue',
+        tone: isFav ? DabblerButtonTone.primary : DabblerButtonTone.outlined,
+        size: DabblerButtonSize.small,
+        onPressed: _busy ? null : () => _toggle(isFav),
+      ),
       price: priceLabel,
+      priceCaption: priceLabel == null ? null : 'Starting from',
+      trailing: DabblerButton(
+        label: 'View venue',
+        onPressed: () => context.push(RoutePaths.venueDetail(venue.id)),
+      ),
       onTap: () => context.push(RoutePaths.venueDetail(venue.id)),
       semanticLabel: venue.name,
     );

@@ -280,12 +280,12 @@ void main() {
       await _pump(tester, const GamesScreen(), locale);
       expect(tester.takeException(), isNull);
       expect(find.text(dir == 'rtl' ? 'الماتشات' : 'Games'), findsOneWidget);
+      // The viewer's own game counts down in the Upcoming rail.
+      expect(find.text('Upcoming'), findsOneWidget);
+      expect(find.byType(DabblerCardUpcoming), findsOneWidget);
       expect(find.text('Tuesday 5-a-side'), findsOneWidget);
-      expect(find.text('My games'), findsOneWidget);
-      expect(find.byType(DabblerCardEventLarge), findsWidgets);
-      // The roster-sized game carries its spots in the progress slot.
-      expect(find.byType(DabblerCardEventPlayers), findsOneWidget);
-      expect(find.text('3 spots left'), findsOneWidget);
+      expect(find.byType(DabblerCardGame), findsWidgets);
+      expect(find.text('Half court pickup'), findsOneWidget);
       await _shoot(tester, key, 'games-listing-$dir');
     }, variant: desktop);
 
@@ -302,12 +302,14 @@ void main() {
       );
       // The applied rail shows under the header.
       expect(find.text('This week'), findsOneWidget);
-      await tester.tap(find.bySemanticsLabel('Filters'));
+      await tester.tap(find.bySemanticsLabel(RegExp('^Filters')));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
       expect(find.text('Skill level'), findsOneWidget);
+      expect(find.text('Distance'), findsOneWidget);
+      expect(find.textContaining('Show'), findsOneWidget);
       expect(find.text('Open spots'), findsWidgets);
       // "Filters" and Reset sit in the sheet header, Reset once.
       expect(find.text('Filters'), findsOneWidget);
@@ -340,12 +342,12 @@ void main() {
 
     testWidgets('venues listing: filter sheet - $dir', (tester) async {
       await _pump(tester, const VenuesScreen(), locale);
-      await tester.tap(find.bySemanticsLabel('Filters'));
+      await tester.tap(find.bySemanticsLabel(RegExp('^Filters')));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Nearby'), findsWidgets);
+      expect(find.text('Within 5 km'), findsWidgets);
       expect(find.text('Reset'), findsOneWidget);
       await _shoot(tester, key, 'venues-filter-sheet-$dir');
     }, variant: desktop);
