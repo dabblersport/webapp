@@ -335,10 +335,17 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
   Future<void> _save(String savedMessage) async {
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) return;
-    final saved = await ref
-        .read(privacyControllerProvider.notifier)
-        .saveAllChanges(userId);
+    final saved = await savePrivacyOrRevert(
+      ref.read(privacyControllerProvider.notifier),
+      userId,
+    );
     if (!mounted) return;
+    if (!saved) {
+      final stored = ref.read(privacyControllerProvider).settings;
+      if (stored != null) {
+        setState(() => _selectedPreset = detectPrivacyPreset(stored));
+      }
+    }
     final l10n = AppLocalizations.of(context);
     _toast(
       saved ? savedMessage : l10n.priv_save_failed,
