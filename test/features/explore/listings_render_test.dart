@@ -296,7 +296,10 @@ void main() {
       expect(find.text('Half court pickup'), findsOneWidget);
       // One spot left reads in the singular and flags the near-full game.
       expect(find.text(l.listing_spots_almost_full(1)), findsOneWidget);
-      expect(find.text(l.listing_full), findsOneWidget);
+      // The full game shows the note and a disabled "Full" button; the open
+      // one the design's "Join game" button (`Listings.dc.html:258`).
+      expect(find.text(l.listing_full), findsNWidgets(2));
+      expect(find.text(l.listing_join_game), findsOneWidget);
       await _shoot(tester, key, 'games-listing-$dir');
     }, variant: desktop);
 

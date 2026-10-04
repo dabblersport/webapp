@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
+import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -74,11 +75,10 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   }
 
   void _toast(String message, {required bool isError}) {
-    DabblerToastProvider.maybeOf(context)?.show(
-      DabblerToastSpec(
-        message: message,
-        tone: isError ? DabblerToastTone.error : DabblerToastTone.success,
-      ),
+    showGameToast(
+      DabblerToastProvider.maybeOf(context),
+      message,
+      isError: isError,
     );
   }
 
@@ -113,7 +113,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     ref.listen(gameViewControllerProvider(widget.gameId), (prev, next) {
       if (!mounted) return;
       if (next.lastAction != null && prev?.lastAction != next.lastAction) {
-        _toast(_actionMessage(next.lastAction!), isError: false);
+        _toast(joinActionMessage(next.lastAction!), isError: false);
       } else if (next.error != null && prev?.error != next.error) {
         _toast(next.error!, isError: true);
       }
@@ -421,18 +421,4 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     if (confirmed == true) await ctrl.removePlayer(player.profileId);
   }
 
-  String _actionMessage(JoinActionResult action) {
-    switch (action) {
-      case JoinActionResult.joined:
-        return 'You joined the game!';
-      case JoinActionResult.waitlisted:
-        return 'Added to waitlist.';
-      case JoinActionResult.requestSubmitted:
-        return 'Join request sent.';
-      case JoinActionResult.left:
-        return 'You left the game.';
-      case JoinActionResult.cancelledRequest:
-        return 'Join request cancelled.';
-    }
-  }
 }

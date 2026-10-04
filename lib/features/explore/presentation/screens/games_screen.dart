@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
+import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
+import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
@@ -547,8 +551,8 @@ class _UpcomingRail extends StatelessWidget {
 
 /// A game on the design system's game card (`Listings.dc.html:207-262`).
 /// The listing's price, verified-host mark, duration, likes and shares have no
-/// data or feature behind them in the app, so the card draws none; the join
-/// button stays on the detail screen.
+/// data or feature behind them in the app, so the card draws none. The action
+/// slot holds the design's "Join game" button ([_JoinAction]).
 class _GameCard extends StatelessWidget {
   const _GameCard({required this.game, this.showDistance = false});
 
@@ -612,6 +616,7 @@ class _GameCard extends StatelessWidget {
                   : DabblerProgressBarTone.brand,
             )
           : null,
+      action: _JoinAction(game: game),
       onTap: () => context.push(RoutePaths.gameDetail(game.id)),
       semanticLabel: game.title,
     );
@@ -625,6 +630,116 @@ class _GameCard extends StatelessWidget {
     if (diff == 0) return l.listing_today;
     if (diff == 1) return l.listing_tomorrow;
     return DateFormat.MMMd(locale).format(dt);
+  }
+}
+
+// =============================================================================
+// JOIN ACTION — the card's button, on the detail screen's own join flow
+// =============================================================================
+
+enum _JoinOutcome { none, waitlisted, requested }
+
+/// The card's "Join game" button (`Listings.dc.html:258`). It runs the game
+/// detail's own [GameViewController.joinGame] — the same RPC, outcomes, errors
+/// and toast copy — with no confirmation step. The states the frame does not
+/// draw follow the rules the detail uses: already on the game → a disabled
+/// "Joined"/"Created", no spots left → a disabled "Full", and after the server
+/// answers "waitlisted" / "request submitted" the button settles on the
+/// matching disabled label (the detail's "On waitlist" / pending request).
+class _JoinAction extends ConsumerStatefulWidget {
+  const _JoinAction({required this.game});
+
+  final NearbyGameModel game;
+
+  @override
+  ConsumerState<_JoinAction> createState() => _JoinActionState();
+}
+
+class _JoinActionState extends ConsumerState<_JoinAction> {
+  bool _joining = false;
+  _JoinOutcome _outcome = _JoinOutcome.none;
+
+  Future<void> _join() async {
+    if (_joining) return;
+    setState(() => _joining = true);
+    final id = widget.game.id;
+    // Everything the answer needs is taken before the await: the card can be
+    // scrolled out of the list (and disposed) while the server works.
+    final toasts = DabblerToastProvider.maybeOf(context);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final provider = gameViewControllerProvider(id);
+    // The controller is auto-disposed; hold it for the length of the call.
+    final loaded = Completer<void>();
+    final hold = container.listen(provider, (_, next) {
+      if (!next.isLoading && !loaded.isCompleted) loaded.complete();
+    });
+    try {
+      await container.read(provider.notifier).joinGame();
+      // The controller's own first load runs alongside the join; let it land
+      // before the controller is released.
+      if (hold.read().isLoading) await loaded.future;
+      final result = hold.read();
+      final action = result.lastAction;
+      final error = result.error;
+      if (action != null) {
+        showGameToast(toasts, joinActionMessage(action), isError: false);
+      } else if (error != null) {
+        showGameToast(toasts, error, isError: true);
+      }
+      if (mounted) {
+        setState(() {
+          _outcome = switch (action) {
+            JoinActionResult.waitlisted => _JoinOutcome.waitlisted,
+            JoinActionResult.requestSubmitted => _JoinOutcome.requested,
+            _ => _JoinOutcome.none,
+          };
+        });
+      }
+      if (action == JoinActionResult.joined) {
+        container.invalidate(nearbyGamesProvider);
+        container.invalidate(myPinnedGamesProvider);
+      }
+    } finally {
+      hold.close();
+      if (mounted) setState(() => _joining = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final game = widget.game;
+    if (game.isMine) {
+      return DabblerCardEventListing.joinButton(
+        label: game.isCreated ? l.listing_created : l.listing_joined,
+        disabled: true,
+      );
+    }
+    switch (_outcome) {
+      case _JoinOutcome.waitlisted:
+        return DabblerCardEventListing.joinButton(
+          label: l.listing_on_waitlist,
+          disabled: true,
+        );
+      case _JoinOutcome.requested:
+        return DabblerCardEventListing.joinButton(
+          label: l.listing_request_sent,
+          disabled: true,
+        );
+      case _JoinOutcome.none:
+        break;
+    }
+    if (game.spotsRemaining == 0) {
+      return DabblerCardEventListing.joinButton(
+        label: l.listing_full,
+        disabled: true,
+      );
+    }
+    return DabblerCardEventListing.joinButton(
+      label: l.listing_join_game,
+      loading: _joining,
+      onPressed: _join,
+    );
   }
 }
 
