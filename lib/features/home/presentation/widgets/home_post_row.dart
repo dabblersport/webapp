@@ -283,39 +283,30 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space2,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DabblerButton(
-              label: l10n.post_card_menu_repost,
-              icon: 'refresh',
-              tone: DabblerButtonTone.neutral,
-              fullWidth: true,
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                ref.read(postActionsProvider.notifier).repostPost(post.id);
-              },
-            ),
-            const SizedBox(height: DabblerSpacing.space3),
-            DabblerButton(
-              label: l10n.post_card_menu_quote_repost,
-              icon: 'edit-2',
-              tone: DabblerButtonTone.neutral,
-              fullWidth: true,
-              onPressed: () {
-                Navigator.of(ctx).pop();
-                showQuoteRepostSheet(context, post);
-              },
-            ),
-          ],
-        ),
+      builder: (ctx) => DabblerSheetBody(
+        spacing: DabblerSpacing.space3,
+        children: <Widget>[
+          DabblerButton(
+            label: l10n.post_card_menu_repost,
+            icon: 'refresh',
+            tone: DabblerButtonTone.neutral,
+            fullWidth: true,
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ref.read(postActionsProvider.notifier).repostPost(post.id);
+            },
+          ),
+          DabblerButton(
+            label: l10n.post_card_menu_quote_repost,
+            icon: 'edit-2',
+            tone: DabblerButtonTone.neutral,
+            fullWidth: true,
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              showQuoteRepostSheet(context, post);
+            },
+          ),
+        ],
       ),
     );
   }

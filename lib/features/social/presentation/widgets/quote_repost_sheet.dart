@@ -56,63 +56,56 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
         ? 'Anonymous'
         : original.authorDisplayName!.trim();
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerTextField(
-            variant: DabblerTextFieldVariant.multiline,
-            controller: _controller,
-            placeholder: 'Add your thoughts…',
-            rows: 3,
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: DabblerSpacing.space4),
-          DabblerSurface.card(
-            padding: const EdgeInsets.all(DabblerSpacing.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+    // Widgets only: the sheet owns the surface and the content padding.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.multiline,
+          controller: _controller,
+          placeholder: 'Add your thoughts…',
+          rows: 3,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        DabblerSurface.card(
+          padding: const EdgeInsets.all(DabblerSpacing.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DabblerText(
+                authorLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DabblerType.subheadline,
+                weight: DabblerTextWeight.semibold,
+              ),
+              if (original.body != null &&
+                  original.body!.trim().isNotEmpty) ...[
+                const SizedBox(height: DabblerSpacing.space1),
                 DabblerText(
-                  authorLabel,
-                  maxLines: 1,
+                  original.body!,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: DabblerType.subheadline,
-                  weight: DabblerTextWeight.semibold,
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
                 ),
-                if (original.body != null &&
-                    original.body!.trim().isNotEmpty) ...[
-                  const SizedBox(height: DabblerSpacing.space1),
-                  DabblerText(
-                    original.body!,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: DabblerType.footnote,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: DabblerSpacing.space6),
-          DabblerButton(
-            label: 'Post',
-            fullWidth: true,
-            loading: _isSending,
-            onPressed: _controller.text.trim().isEmpty || _isSending
-                ? null
-                : _submit,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: DabblerSpacing.space6),
+        DabblerButton(
+          label: 'Post',
+          fullWidth: true,
+          loading: _isSending,
+          onPressed: _controller.text.trim().isEmpty || _isSending
+              ? null
+              : _submit,
+        ),
+      ],
     );
   }
 }

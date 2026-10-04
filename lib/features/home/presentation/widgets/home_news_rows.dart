@@ -133,39 +133,31 @@ Future<void> showHomeNewsReactionPicker(
   return showDabblerSheet<void>(
     context: context,
     title: 'React',
-    detents: const <double>[0.4],
-    builder: (ctx) => Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
-      ),
-      child: Wrap(
-        spacing: DabblerSpacing.space2,
-        runSpacing: DabblerSpacing.space2,
-        children: [
-          for (final r in _newsReactions)
-            DabblerChip(
-              label: r.label,
-              selected: mine.contains(r.id),
-              onTap: () async {
-                Navigator.of(ctx).pop();
-                final actions = ref.read(postActionsProvider.notifier);
-                if (mine.contains(r.id)) {
-                  await actions.removeReaction(newsId, r.id);
-                } else {
-                  for (final id in mine) {
-                    await actions.removeReaction(newsId, id);
-                  }
-                  await actions.reactToPost(newsId, r.id);
+    detent: DabblerSheetDetent.content,
+    builder: (ctx) => Wrap(
+      spacing: DabblerSpacing.space2,
+      runSpacing: DabblerSpacing.space2,
+      children: [
+        for (final r in _newsReactions)
+          DabblerChip(
+            label: r.label,
+            selected: mine.contains(r.id),
+            onTap: () async {
+              Navigator.of(ctx).pop();
+              final actions = ref.read(postActionsProvider.notifier);
+              if (mine.contains(r.id)) {
+                await actions.removeReaction(newsId, r.id);
+              } else {
+                for (final id in mine) {
+                  await actions.removeReaction(newsId, id);
                 }
-                ref.invalidate(homeNewsReactionCountsProvider(newsId));
-                ref.invalidate(myReactionsProvider(newsId));
-              },
-            ),
-        ],
-      ),
+                await actions.reactToPost(newsId, r.id);
+              }
+              ref.invalidate(homeNewsReactionCountsProvider(newsId));
+              ref.invalidate(myReactionsProvider(newsId));
+            },
+          ),
+      ],
     ),
   );
 }

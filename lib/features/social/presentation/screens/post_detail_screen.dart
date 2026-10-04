@@ -271,22 +271,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space2,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (i, b) in buttons(ctx).indexed) ...[
-              if (i > 0) const SizedBox(height: DabblerSpacing.space3),
-              b,
-            ],
-          ],
-        ),
+      builder: (ctx) => DabblerSheetBody(
+        spacing: DabblerSpacing.space3,
+        children: buttons(ctx),
       ),
     );
   }

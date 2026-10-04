@@ -417,7 +417,7 @@ class _ForYouTabBody extends ConsumerWidget {
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDabblerSheet<bool>(
       context: context,
-      detents: const <double>[0.45],
+      detent: DabblerSheetDetent.content,
       builder: (ctx) => _NewsUnsubscribeSheet(
         onConfirm: () => Navigator.pop(ctx, true),
         onCancel: () => Navigator.pop(ctx, false),
@@ -513,53 +513,46 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        DabblerSpacing.space5,
-        DabblerSpacing.space8,
-        DabblerSpacing.space4,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DabblerIcon(
-            'notification-status',
-            size: DabblerSizing.iconXl,
-            color: colors.brandPrimary,
-          ),
-          const SizedBox(height: DabblerSpacing.space4),
-          DabblerText(l.news_hide_sheet_title, style: DabblerType.headline),
-          const SizedBox(height: DabblerSpacing.space2),
-          DabblerText(
-            l.news_hide_sheet_body,
-            textAlign: TextAlign.center,
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-          const SizedBox(height: DabblerSpacing.space8),
-          Row(
-            children: [
-              Expanded(
-                child: DabblerButton(
-                  label: l.news_hide_cancel,
-                  tone: DabblerButtonTone.secondary,
-                  fullWidth: true,
-                  onPressed: onCancel,
-                ),
+    // Widgets only: the sheet owns the surface and the content padding.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DabblerIcon(
+          'notification-status',
+          size: DabblerSizing.iconXl,
+          color: colors.brandPrimary,
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        DabblerText(l.news_hide_sheet_title, style: DabblerType.headline),
+        const SizedBox(height: DabblerSpacing.space2),
+        DabblerText(
+          l.news_hide_sheet_body,
+          textAlign: TextAlign.center,
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
+        ),
+        const SizedBox(height: DabblerSpacing.space8),
+        Row(
+          children: [
+            Expanded(
+              child: DabblerButton(
+                label: l.news_hide_cancel,
+                tone: DabblerButtonTone.secondary,
+                fullWidth: true,
+                onPressed: onCancel,
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: DabblerButton(
-                  label: l.news_hide_confirm,
-                  fullWidth: true,
-                  onPressed: onConfirm,
-                ),
+            ),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: DabblerButton(
+                label: l.news_hide_confirm,
+                fullWidth: true,
+                onPressed: onConfirm,
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
