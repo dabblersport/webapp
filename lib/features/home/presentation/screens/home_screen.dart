@@ -135,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _showNotificationDrawer() async {
     final didTakeAction = await showDabblerSheet<bool>(
       context: context,
-      detents: const <double>[0.6],
+      detent: DabblerSheetDetent.content,
       builder: (context) {
         return NotificationPermissionDrawer(
           onEnableNotifications: () async {

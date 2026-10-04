@@ -22,34 +22,18 @@ class NotificationPermissionDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space8,
-        end: DabblerSpacing.space8,
-        bottom: DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // Widgets only: the sheet owns the surface and the content padding
+    // (the sheet convention, `components/sheet.md`).
+    return DabblerSheetBody(
+      spacing: DabblerSpacing.space7,
+      actions: DabblerSheetActions(
         children: <Widget>[
-          const DabblerIconTile.named('notification'),
-          const SizedBox(height: DabblerSpacing.space7),
-          DabblerText('Stay Updated', style: DabblerType.title2),
-          const SizedBox(height: DabblerSpacing.space2),
-          DabblerText(
-            'Get notified about game invites, squad updates, and messages. '
-            'Never miss out on the action!',
-            style: DabblerType.body,
-            tone: DabblerTextTone.secondary,
-          ),
-          const SizedBox(height: DabblerSpacing.space10),
           DabblerButton(
             label: 'Enable Notifications',
             icon: 'notification-bing',
             fullWidth: true,
             onPressed: onEnableNotifications,
           ),
-          const SizedBox(height: DabblerSpacing.space4),
           DabblerButton(
             label: 'Remind Me Later',
             icon: 'clock',
@@ -57,7 +41,6 @@ class NotificationPermissionDrawer extends StatelessWidget {
             fullWidth: true,
             onPressed: onRemindLater,
           ),
-          const SizedBox(height: DabblerSpacing.space3),
           DabblerButton(
             label: 'No Thanks',
             tone: DabblerButtonTone.neutral,
@@ -66,6 +49,22 @@ class NotificationPermissionDrawer extends StatelessWidget {
           ),
         ],
       ),
+      children: <Widget>[
+        const DabblerIconTile.named('notification'),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: DabblerSpacing.space2,
+          children: <Widget>[
+            DabblerText('Stay Updated', style: DabblerType.title2),
+            DabblerText(
+              'Get notified about game invites, squad updates, and messages. '
+              'Never miss out on the action!',
+              style: DabblerType.body,
+              tone: DabblerTextTone.secondary,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
