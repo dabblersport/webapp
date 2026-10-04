@@ -41,37 +41,26 @@ class VenueSubmissionDetailScreen extends ConsumerWidget {
           ref.invalidate(venueSubmissionByIdProvider(submissionId));
           await ref.read(venueSubmissionByIdProvider(submissionId).future);
         },
-        child: CustomScrollView(
+        child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space3,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
+          padding: DabblerInsets.screen,
+          children: [
+            submissionAsync.when(
+              loading: () => const Center(child: DabblerSpinner()),
+              error: (e, _) => _ErrorState(
+                message: e.toString(),
+                onRetry: () =>
+                    ref.invalidate(venueSubmissionByIdProvider(submissionId)),
+              ),
+              data: (Result<VenueSubmissionModel> result) => result.match(
+                (failure) => _ErrorState(
+                  message: failure.message,
+                  onRetry: () =>
+                      ref.invalidate(venueSubmissionByIdProvider(submissionId)),
                 ),
-                child: submissionAsync.when(
-                  loading: () => const Center(child: DabblerSpinner()),
-                  error: (e, _) => _ErrorState(
-                    message: e.toString(),
-                    onRetry: () => ref.invalidate(
-                      venueSubmissionByIdProvider(submissionId),
-                    ),
-                  ),
-                  data: (Result<VenueSubmissionModel> result) => result.match(
-                    (failure) => _ErrorState(
-                      message: failure.message,
-                      onRetry: () => ref.invalidate(
-                        venueSubmissionByIdProvider(submissionId),
-                      ),
-                    ),
-                    (submission) => _Details(submission: submission),
-                  ),
-                ),
+                (submission) => _Details(submission: submission),
               ),
             ),
           ],
@@ -86,6 +75,20 @@ class _Details extends StatelessWidget {
 
   final VenueSubmissionModel submission;
 
+  /// One label/value line; empty values are left out.
+  List<Widget> _kv(String label, String? value) {
+    final v = (value ?? '').trim();
+    if (v.isEmpty) return const <Widget>[];
+    return [
+      DabblerInputRow(
+        flat: true,
+        showDivider: false,
+        title: label,
+        subtitle: v,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = (submission.nameEn ?? submission.nameAr ?? 'Untitled venue')
@@ -99,30 +102,13 @@ class _Details extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerCard(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          header: Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DabblerText(
-                      title,
-                      style: DabblerType.title2,
-                      weight: DabblerTextWeight.heavy,
-                    ),
-                    const SizedBox(height: DabblerSpacing.space2),
-                    VenueSubmissionStatusBadge(status: submission.status),
-                    const SizedBox(height: DabblerSpacing.space3),
-                    _Kv(
-                      label: 'Location',
-                      value: <String?>[
-                        submission.city,
-                        submission.district,
-                        submission.area,
-                      ].where((v) => (v ?? '').trim().isNotEmpty).join(', '),
-                    ),
-                  ],
+                child: DabblerText(
+                  title,
+                  style: DabblerType.title2,
+                  weight: DabblerTextWeight.heavy,
                 ),
               ),
               if (canEdit)
@@ -136,84 +122,64 @@ class _Details extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-        const SizedBox(height: DabblerSpacing.space3),
-        if (hasNote) ...[
-          DabblerCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DabblerText('Admin note', style: DabblerType.headline),
-                const SizedBox(height: DabblerSpacing.space2),
-                DabblerText(submission.adminNote!, style: DabblerType.body),
-              ],
-            ),
-          ),
-          const SizedBox(height: DabblerSpacing.space3),
-        ],
-        DabblerCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DabblerText('Details', style: DabblerType.headline),
-              const SizedBox(height: DabblerSpacing.space3),
-              _Kv(label: 'Name (EN)', value: submission.nameEn),
-              _Kv(label: 'Name (AR)', value: submission.nameAr),
-              _Kv(label: 'Description (EN)', value: submission.descriptionEn),
-              _Kv(label: 'Description (AR)', value: submission.descriptionAr),
-              _Kv(label: 'Address', value: submission.addressLine1),
-              _Kv(label: 'Phone', value: submission.phone),
-              _Kv(label: 'Website', value: submission.website),
-              _Kv(label: 'Instagram', value: submission.instagram),
-              _Kv(
-                label: 'Indoor',
-                value: submission.isIndoor == null
+              VenueSubmissionStatusBadge(status: submission.status),
+              ..._kv(
+                'Location',
+                <String?>[
+                  submission.city,
+                  submission.district,
+                  submission.area,
+                ].where((v) => (v ?? '').trim().isNotEmpty).join(', '),
+              ),
+            ],
+          ),
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+        if (hasNote) ...[
+          DabblerCard(
+            header: const DabblerText(
+              'Admin note',
+              style: DabblerType.headline,
+            ),
+            child: DabblerText(submission.adminNote!, style: DabblerType.body),
+          ),
+          const DabblerGap.v(DabblerSpacing.space3),
+        ],
+        DabblerCard(
+          header: const DabblerText('Details', style: DabblerType.headline),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ..._kv('Name (EN)', submission.nameEn),
+              ..._kv('Name (AR)', submission.nameAr),
+              ..._kv('Description (EN)', submission.descriptionEn),
+              ..._kv('Description (AR)', submission.descriptionAr),
+              ..._kv('Address', submission.addressLine1),
+              ..._kv('Phone', submission.phone),
+              ..._kv('Website', submission.website),
+              ..._kv('Instagram', submission.instagram),
+              ..._kv(
+                'Indoor',
+                submission.isIndoor == null
                     ? null
                     : (submission.isIndoor! ? 'Yes' : 'No'),
               ),
-              _Kv(label: 'Surface type', value: submission.surfaceType),
-              _Kv(
-                label: 'Amenities',
-                value: submission.amenities.isEmpty
+              ..._kv('Surface type', submission.surfaceType),
+              ..._kv(
+                'Amenities',
+                submission.amenities.isEmpty
                     ? null
                     : submission.amenities.join(', '),
               ),
             ],
           ),
         ),
-        const SizedBox(height: DabblerSpacing.space3),
+        const DabblerGap.v(DabblerSpacing.space3),
         _ActionBar(submission: submission),
       ],
-    );
-  }
-}
-
-class _Kv extends StatelessWidget {
-  const _Kv({required this.label, this.value});
-
-  final String label;
-  final String? value;
-
-  @override
-  Widget build(BuildContext context) {
-    final v = (value ?? '').trim();
-    if (v.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DabblerText(
-            label,
-            style: DabblerType.footnote,
-            weight: DabblerTextWeight.bold,
-            tone: DabblerTextTone.secondary,
-          ),
-          const SizedBox(height: DabblerSpacing.space1),
-          DabblerText(v, style: DabblerType.body),
-        ],
-      ),
     );
   }
 }
@@ -240,7 +206,7 @@ class _ActionBar extends ConsumerWidget {
               'This submission is read-only while ${submission.status.name}.',
               style: DabblerType.body,
             ),
-            const SizedBox(height: DabblerSpacing.space3),
+            const DabblerGap.v(DabblerSpacing.space3),
           ],
           DabblerButton(
             label: 'Submit for review',

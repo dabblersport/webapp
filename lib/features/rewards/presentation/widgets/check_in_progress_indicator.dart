@@ -38,7 +38,7 @@ class CheckInProgressIndicator extends StatelessWidget {
 
         // Show Week 2 only after Week 1 is complete
         if (completedDays >= 7) ...[
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
           _WeekProgressCard(
             weekNumber: 2,
             completedDays: daysInCurrentWeek,
@@ -77,18 +77,15 @@ class _WeekProgressCard extends StatelessWidget {
       variant: isActive
           ? DabblerSurfaceVariant.brandTint
           : DabblerSurfaceVariant.grey,
-      padding: const EdgeInsets.all(DabblerSpacing.space3),
+      padding: DabblerInsets.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
           Row(
             children: [
               DabblerBadge(label: 'Week $weekNumber'),
-
-              // Completed checkmark
               if (isCompleted) ...[
-                const SizedBox(width: DabblerSpacing.space2),
+                const DabblerGap.h(DabblerSpacing.space2),
                 DabblerIcon(
                   'tick-circle',
                   size: DabblerSizing.iconInline,
@@ -96,10 +93,7 @@ class _WeekProgressCard extends StatelessWidget {
                   color: colors.brandPrimary,
                 ),
               ],
-
               const Spacer(),
-
-              // Days count
               DabblerText(
                 '$completedDays/$totalDays days',
                 style: DabblerType.caption1,
@@ -109,60 +103,12 @@ class _WeekProgressCard extends StatelessWidget {
               ),
             ],
           ),
-
-          const SizedBox(height: DabblerSpacing.space2),
-
+          const DabblerGap.v(DabblerSpacing.space2),
           DabblerProgressBar(
             value: progressValue,
             size: DabblerProgressBarSize.sm,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Compact version: one dot per day.
-class CompactCheckInProgressIndicator extends StatelessWidget {
-  const CompactCheckInProgressIndicator({
-    super.key,
-    required this.completedDays,
-    this.totalDays = 14,
-  });
-
-  final int completedDays;
-  final int totalDays;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(totalDays, (index) {
-          final isCompleted = index < completedDays;
-
-          return Padding(
-            padding: index < totalDays - 1
-                ? const EdgeInsetsDirectional.only(end: DabblerSpacing.space1)
-                : EdgeInsets.zero,
-            child: AnimatedContainer(
-              duration: DabblerMotion.durationOf(
-                context,
-                DabblerMotion.contentSwap,
-              ),
-              curve: DabblerMotion.standardInOut,
-              width: DabblerSizing.iconInline,
-              height: DabblerSizing.iconInline,
-              decoration: BoxDecoration(
-                color: isCompleted ? colors.brandPrimary : colors.surfaceSunken,
-                shape: BoxShape.circle,
-              ),
-            ),
-          );
-        }),
       ),
     );
   }

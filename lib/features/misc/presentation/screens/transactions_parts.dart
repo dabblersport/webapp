@@ -127,69 +127,64 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space6,
-            top: DabblerSpacing.space4,
-            end: DabblerSpacing.space6,
+    return DabblerRefresh(
+      onRefresh: _refreshTransactions,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: DabblerInsets.screen,
+        children: [
+          const DabblerGap.v(DabblerSpacing.space4),
+          DabblerText('Transactions', style: DabblerType.title1),
+          const DabblerGap.v(DabblerSpacing.space1),
+          DabblerText(
+            'View your payment history',
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const DabblerGap.v(DabblerSpacing.space6),
+          DabblerStatGrid(
             children: [
-              DabblerText('Transactions', style: DabblerType.title1),
-              const SizedBox(height: DabblerSpacing.space1),
-              DabblerText(
-                'View your payment history',
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
+              DabblerStatTile(
+                value: 'AED ${_sumCompleted().toStringAsFixed(0)}',
+                label: 'Total Spent',
+                span: 3,
+                trailing: const DabblerIcon(
+                  'trend-up',
+                  size: DabblerSizing.iconMd,
+                ),
               ),
-              const SizedBox(height: DabblerSpacing.space6),
-              DabblerStatGrid(
-                children: [
-                  DabblerStatTile(
-                    value: 'AED ${_sumCompleted().toStringAsFixed(0)}',
-                    label: 'Total Spent',
-                    span: 3,
-                    trailing: const DabblerIcon(
-                      'trend-up',
-                      size: DabblerSizing.iconMd,
-                    ),
-                  ),
-                  DabblerStatTile(
-                    value:
-                        'AED ${_sumCompleted(within: ProfileTiming.month).toStringAsFixed(0)}',
-                    label: 'This Month',
-                    span: 3,
-                    trailing: const DabblerIcon(
-                      'calendar',
-                      size: DabblerSizing.iconMd,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: DabblerSpacing.space6),
-              DabblerSearchField(
-                controller: _searchController,
-                placeholder: 'Search transactions...',
-                onChanged: (_) => setState(() {}),
-                onCleared: () => setState(() {}),
+              DabblerStatTile(
+                value:
+                    'AED ${_sumCompleted(within: ProfileTiming.month).toStringAsFixed(0)}',
+                label: 'This Month',
+                span: 3,
+                trailing: const DabblerIcon(
+                  'calendar',
+                  size: DabblerSizing.iconMd,
+                ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: DabblerSpacing.space4),
-        _chipRail(_filters, _selectedFilter, (f) {
-          setState(() => _selectedFilter = f);
-        }),
-        const SizedBox(height: DabblerSpacing.space3),
-        _chipRail(_periods, _selectedPeriod, (p) {
-          setState(() => _selectedPeriod = p);
-        }),
-        Expanded(child: _buildTransactionsList(context)),
-      ],
+          const DabblerGap.v(DabblerSpacing.space6),
+          DabblerSearchField(
+            controller: _searchController,
+            placeholder: 'Search transactions...',
+            onChanged: (_) => setState(() {}),
+            onCleared: () => setState(() {}),
+          ),
+          const DabblerGap.v(DabblerSpacing.space4),
+          _chipRail(_filters, _selectedFilter, (f) {
+            setState(() => _selectedFilter = f);
+          }),
+          const DabblerGap.v(DabblerSpacing.space3),
+          _chipRail(_periods, _selectedPeriod, (p) {
+            setState(() => _selectedPeriod = p);
+          }),
+          const DabblerGap.v(DabblerSpacing.space6),
+          ..._buildTransactionsList(context),
+          const DabblerGap.v(DabblerSpacing.space8),
+        ],
+      ),
     );
   }
 
@@ -198,45 +193,35 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
     String selected,
     ValueChanged<String> onSelect,
   ) {
-    return SizedBox(
-      height: DabblerSizing.touchTargetMin,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space6,
-        ),
-        itemCount: items.length,
-        separatorBuilder: (_, _) =>
-            const SizedBox(width: DabblerSpacing.space3),
-        itemBuilder: (context, index) {
-          final item = items[index];
-          return Center(
-            child: DabblerChip(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final item in items) ...[
+            DabblerChip(
               label: item,
               selected: selected == item,
               onTap: () => onSelect(item),
             ),
-          );
-        },
+            const DabblerGap.h(DabblerSpacing.space3),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _buildTransactionsList(BuildContext context) {
+  List<Widget> _buildTransactionsList(BuildContext context) {
     final filtered = _getFilteredTransactions();
 
     if (filtered.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(DabblerSpacing.space8),
-          child: DabblerEmptyState(
-            icon: 'receipt-item',
-            size: DabblerEmptyStateSize.page,
-            title: 'No transactions found',
-            text: 'Your transaction history will appear here',
-          ),
+      return const [
+        DabblerEmptyState(
+          icon: 'receipt-item',
+          size: DabblerEmptyStateSize.page,
+          title: 'No transactions found',
+          text: 'Your transaction history will appear here',
         ),
-      );
+      ];
     }
 
     // Group by date
@@ -247,36 +232,17 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
       grouped[dateKey]!.add(transaction);
     }
 
-    return DabblerRefresh(
-      onRefresh: _refreshTransactions,
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(DabblerSpacing.space6),
-        itemCount: grouped.length,
-        itemBuilder: (context, index) {
-          final dateKey = grouped.keys.elementAt(index);
-          final transactions = grouped[dateKey]!;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (index > 0) const SizedBox(height: DabblerSpacing.space7),
-              Padding(
-                padding: const EdgeInsetsDirectional.only(
-                  bottom: DabblerSpacing.space4,
-                ),
-                child: DabblerText(
-                  dateKey,
-                  style: DabblerType.headline,
-                  tone: DabblerTextTone.brand,
-                ),
-              ),
-              ...transactions.map((t) => _TransactionRow(transaction: t)),
-            ],
-          );
-        },
-      ),
-    );
+    return [
+      for (final entry in grouped.entries) ...[
+        DabblerSection(
+          title: entry.key,
+          children: [
+            for (final t in entry.value) _TransactionRow(transaction: t),
+          ],
+        ),
+        const DabblerGap.v(DabblerSpacing.space7),
+      ],
+    ];
   }
 
   String _getDateGroup(DateTime date) {
@@ -365,85 +331,78 @@ class _TransactionRow extends StatelessWidget {
     final isRefund = transaction['type'] == 'refund';
     final status = transaction['status'] as String;
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => showTransactionDetails(context, transaction),
-        child: DabblerSurface.card(
-          padding: const EdgeInsets.all(DabblerSpacing.space6),
-          child: Row(
-            children: [
-              transactionTypeTile(context, transaction['type'] as String),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return DabblerCard(
+      onTap: () => showTransactionDetails(context, transaction),
+      child: Row(
+        children: [
+          transactionTypeTile(context, transaction['type'] as String),
+          const DabblerGap.h(DabblerSpacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DabblerText(
-                            transaction['title'],
-                            style: DabblerType.subheadline,
-                            weight: DabblerTextWeight.semibold,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: DabblerSpacing.space3),
-                        transactionStatusBadge(context, status),
-                      ],
+                    Expanded(
+                      child: DabblerText(
+                        transaction['title'],
+                        style: DabblerType.subheadline,
+                        weight: DabblerTextWeight.semibold,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                    const SizedBox(height: DabblerSpacing.space1),
-                    Row(
-                      children: [
-                        DabblerIcon(
-                          'building',
-                          size: DabblerSizing.iconXs,
-                          color: colors.textSecondary,
-                        ),
-                        const SizedBox(width: DabblerSpacing.space1),
-                        Expanded(
-                          child: DabblerText(
-                            transaction['recipient'],
-                            style: DabblerType.footnote,
-                            tone: DabblerTextTone.secondary,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    const DabblerGap.h(DabblerSpacing.space3),
+                    transactionStatusBadge(context, status),
+                  ],
+                ),
+                const DabblerGap.v(DabblerSpacing.space1),
+                Row(
+                  children: [
+                    DabblerIcon(
+                      'building',
+                      size: DabblerSizing.iconXs,
+                      color: colors.textSecondary,
                     ),
-                    DabblerText(
-                      transaction['paymentMethod'],
-                      style: DabblerType.caption2,
-                      tone: DabblerTextTone.secondary,
+                    const DabblerGap.h(DabblerSpacing.space1),
+                    Expanded(
+                      child: DabblerText(
+                        transaction['recipient'],
+                        style: DabblerType.footnote,
+                        tone: DabblerTextTone.secondary,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
+                DabblerText(
+                  transaction['paymentMethod'],
+                  style: DabblerType.caption2,
+                  tone: DabblerTextTone.secondary,
+                ),
+              ],
+            ),
+          ),
+          const DabblerGap.h(DabblerSpacing.space4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              DabblerText(
+                '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(0)}',
+                style: DabblerType.headline,
+                tone: isRefund
+                    ? DabblerTextTone.success
+                    : DabblerTextTone.primary,
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  DabblerText(
-                    '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(0)}',
-                    style: DabblerType.headline,
-                    tone: isRefund
-                        ? DabblerTextTone.success
-                        : DabblerTextTone.primary,
-                  ),
-                  DabblerText(
-                    _formatTime(transaction['date']),
-                    style: DabblerType.caption2,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                ],
+              DabblerText(
+                _formatTime(transaction['date']),
+                style: DabblerType.caption2,
+                tone: DabblerTextTone.secondary,
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

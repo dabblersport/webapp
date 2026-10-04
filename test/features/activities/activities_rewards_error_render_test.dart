@@ -352,8 +352,6 @@ void main() {
                   CheckInProgressIndicator(completedDays: 9),
                   SizedBox(height: 24),
                   CheckInProgressIndicator(completedDays: 14),
-                  SizedBox(height: 24),
-                  CompactCheckInProgressIndicator(completedDays: 5),
                 ],
               ),
             ),

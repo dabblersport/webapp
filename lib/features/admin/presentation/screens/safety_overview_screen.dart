@@ -62,17 +62,14 @@ class SafetyOverviewScreen extends ConsumerWidget {
               onRefresh: () async {
                 ref.invalidate(safetyOverviewProvider);
               },
-              child: SingleChildScrollView(
+              child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(DabblerSpacing.space6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildSummaryCards(overview),
-                    const SizedBox(height: DabblerSpacing.space7),
-                    _buildOverviewInfo(context, overview),
-                  ],
-                ),
+                padding: DabblerInsets.screen,
+                children: [
+                  _buildSummaryCards(overview),
+                  const DabblerGap.v(DabblerSpacing.space7),
+                  _buildOverviewInfo(context, overview),
+                ],
               ),
             ),
             loading: () => const AdminLoading(),
@@ -117,27 +114,24 @@ class SafetyOverviewScreen extends ConsumerWidget {
 
   Widget _buildOverviewInfo(BuildContext context, SafetyOverview overview) {
     final dateFormat = DateFormat('MMM dd, yyyy HH:mm');
-    return DabblerSurface.card(
-      padding: const EdgeInsets.all(DabblerSpacing.space6),
+    DabblerInputRow row(String label, String value) => DabblerInputRow(
+      title: label,
+      value: value,
+      flat: true,
+      showDivider: false,
+    );
+    return DabblerCard(
+      header: const DabblerText(
+        'Overview Information',
+        style: DabblerType.title3,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DabblerText('Overview Information', style: DabblerType.title3),
-          const SizedBox(height: DabblerSpacing.space6),
-          AdminInfoRow(
-            label: 'Last Updated',
-            value: dateFormat.format(overview.asOf),
-          ),
-          AdminInfoRow(label: 'Open Reports', value: '${overview.reportsOpen}'),
-          AdminInfoRow(
-            label: 'Active Enforcements',
-            value: '${overview.activeEnforcements}',
-          ),
-          AdminInfoRow(
-            label: 'Active Takedowns',
-            value: '${overview.takedownsActive}',
-          ),
-          AdminInfoRow(label: 'Audits (24h)', value: '${overview.audits24h}'),
+          row('Last Updated', dateFormat.format(overview.asOf)),
+          row('Open Reports', '${overview.reportsOpen}'),
+          row('Active Enforcements', '${overview.activeEnforcements}'),
+          row('Active Takedowns', '${overview.takedownsActive}'),
+          row('Audits (24h)', '${overview.audits24h}'),
         ],
       ),
     );

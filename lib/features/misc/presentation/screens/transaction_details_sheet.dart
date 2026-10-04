@@ -63,118 +63,87 @@ class TransactionDetailsSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final isRefund = transaction['type'] == 'refund';
 
-    return Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space7),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerInputRow(
+          flat: true,
+          showDivider: false,
+          leading: transactionTypeTile(context, transaction['type'] as String),
+          title: transaction['title'] as String,
+          subtitle: 'Transaction ID: ${transaction['id']}',
+        ),
+        const DabblerGap.v(DabblerSpacing.space4),
+        DabblerSurface(
+          variant: DabblerSurfaceVariant.sunken,
+          padding: DabblerInsets.card,
+          child: Column(
             children: [
-              transactionTypeTile(context, transaction['type'] as String),
-              const SizedBox(width: DabblerSpacing.space6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DabblerText(
-                      transaction['title'],
-                      style: DabblerType.title3,
-                    ),
-                    DabblerText(
-                      'Transaction ID: ${transaction['id']}',
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                  ],
-                ),
+              DabblerText(
+                'Amount',
+                style: DabblerType.subheadline,
+                tone: DabblerTextTone.secondary,
+              ),
+              const DabblerGap.v(DabblerSpacing.space3),
+              DabblerText(
+                '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(2)}',
+                style: DabblerType.largeTitle,
+                tone: isRefund
+                    ? DabblerTextTone.success
+                    : DabblerTextTone.brand,
               ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space7),
-          DabblerSurface(
-            variant: DabblerSurfaceVariant.sunken,
-            padding: const EdgeInsets.all(DabblerSpacing.space7),
-            child: Column(
-              children: [
-                DabblerText(
-                  'Amount',
-                  style: DabblerType.subheadline,
-                  tone: DabblerTextTone.secondary,
-                ),
-                const SizedBox(height: DabblerSpacing.space3),
-                DabblerText(
-                  '${isRefund ? '+' : '-'}${transaction['currency']} ${transaction['amount'].toStringAsFixed(2)}',
-                  style: DabblerType.largeTitle,
-                  tone: isRefund
-                      ? DabblerTextTone.success
-                      : DabblerTextTone.brand,
-                ),
-              ],
+        ),
+        const DabblerGap.v(DabblerSpacing.space4),
+        DabblerInputRow(
+          flat: true,
+          showDivider: false,
+          title: 'Status',
+          trailing: transactionStatusBadge(
+            context,
+            transaction['status'] as String,
+          ),
+        ),
+        _detailRow(
+          'Date',
+          DateFormat('MMM d, yyyy • h:mm a').format(transaction['date']),
+        ),
+        _detailRow('Payment Method', transaction['paymentMethod'] as String),
+        _detailRow('Recipient', transaction['recipient'] as String),
+        _detailRow('Category', transaction['category'] as String),
+        const DabblerGap.v(DabblerSpacing.space6),
+        Row(
+          children: [
+            Expanded(
+              child: DabblerButton(
+                label: 'Download Receipt',
+                icon: 'document-download',
+                tone: DabblerButtonTone.outlined,
+                fullWidth: true,
+                onPressed: () {},
+              ),
             ),
-          ),
-          const SizedBox(height: DabblerSpacing.space7),
-          _detailRow(
-            context,
-            'Status',
-            transactionStatusBadge(context, transaction['status'] as String),
-          ),
-          _detailRow(
-            context,
-            'Date',
-            DateFormat('MMM d, yyyy • h:mm a').format(transaction['date']),
-          ),
-          _detailRow(context, 'Payment Method', transaction['paymentMethod']),
-          _detailRow(context, 'Recipient', transaction['recipient']),
-          _detailRow(context, 'Category', transaction['category']),
-          const SizedBox(height: DabblerSpacing.space7),
-          Row(
-            children: [
-              Expanded(
-                child: DabblerButton(
-                  label: 'Download Receipt',
-                  icon: 'document-download',
-                  tone: DabblerButtonTone.outlined,
-                  fullWidth: true,
-                  onPressed: () {},
-                ),
+            const DabblerGap.h(DabblerSpacing.space4),
+            Expanded(
+              child: DabblerButton(
+                label: 'Get Help',
+                icon: 'message-question',
+                fullWidth: true,
+                onPressed: () {},
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: DabblerButton(
-                  label: 'Get Help',
-                  icon: 'message-question',
-                  fullWidth: true,
-                  onPressed: () {},
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
-  Widget _detailRow(BuildContext context, String label, dynamic value) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          DabblerText(
-            label,
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-          value is Widget
-              ? value
-              : DabblerText(
-                  value.toString(),
-                  style: DabblerType.subheadline,
-                  weight: DabblerTextWeight.semibold,
-                ),
-        ],
-      ),
-    );
-  }
+  Widget _detailRow(String label, String value) => DabblerInputRow(
+    flat: true,
+    showDivider: false,
+    title: label,
+    value: value,
+  );
 }

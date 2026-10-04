@@ -185,7 +185,7 @@ class _CreateVenueSubmissionScreenState
     final isEditing = initial != null;
     final isEditable = initial?.isEditable ?? true; // new draft is editable
 
-    const gap = SizedBox(height: DabblerSpacing.space3);
+    const gap = DabblerGap.v(DabblerSpacing.space3);
 
     // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
@@ -197,12 +197,7 @@ class _CreateVenueSubmissionScreenState
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space3,
-          DabblerSpacing.space6,
-          DabblerSpacing.space6,
-        ),
+        padding: DabblerInsets.screen,
         children: [
           if (isEditing) ...[
             DabblerBanner(
@@ -246,7 +241,7 @@ class _CreateVenueSubmissionScreenState
                         keyboardType: TextInputType.number,
                       ),
                     ),
-                    const SizedBox(width: DabblerSpacing.space3),
+                    const DabblerGap.h(DabblerSpacing.space3),
                     Expanded(
                       child: _field(
                         'Longitude',
@@ -286,7 +281,7 @@ class _CreateVenueSubmissionScreenState
                         : null,
                   ),
                 ),
-                const SizedBox(height: DabblerSpacing.space2),
+                const DabblerGap.v(DabblerSpacing.space2),
                 _field('Surface type', _surfaceType, isEditable),
                 gap,
                 _field('Amenities (comma separated)', _amenities, isEditable),
