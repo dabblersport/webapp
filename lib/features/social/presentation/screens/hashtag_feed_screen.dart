@@ -134,6 +134,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: _tag,
+        border: true,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: _isInitialLoading
@@ -191,23 +192,39 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
   }
 
   Widget _buildHeader(String totalLabel) {
-    final colors = DabblerColors.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-      ),
-      child: DabblerInputRow(
-        leading: DabblerIcon(
-          'hashtag',
-          size: DabblerSizing.iconMd,
-          color: colors.brandPrimary,
+    final count = widget.initialPostCount ?? _posts.length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space6,
+            vertical: DabblerSpacing.space5,
+          ),
+          child: Row(
+            spacing: DabblerSpacing.space4,
+            children: [
+              const DabblerIconTile.named(
+                'hashtag',
+                weight: DabblerIconWeight.bold,
+              ),
+              Expanded(
+                child: Semantics(
+                  label: totalLabel,
+                  child: DabblerText.rich([
+                    DabblerTextSpan(
+                      '$count',
+                      weight: DabblerTextWeight.semibold,
+                    ),
+                    const DabblerTextSpan(' posts'),
+                  ], style: DabblerType.headline),
+                ),
+              ),
+            ],
+          ),
         ),
-        title: _tag,
-        subtitle: totalLabel,
-      ),
+        const DabblerDivider(),
+      ],
     );
   }
 }
