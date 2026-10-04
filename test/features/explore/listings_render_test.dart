@@ -156,6 +156,7 @@ List<VenueWithSportModel> _venues() => const <VenueWithSportModel>[
     area: 'Sports City',
     isIndoor: false,
     pricePerHour: 180,
+    amenities: ['Parking', 'Changing rooms', 'Cafe', 'Floodlights'],
   ),
   VenueWithSportModel(
     id: 'v2',
