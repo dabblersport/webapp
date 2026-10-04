@@ -173,7 +173,7 @@ abstract class AppLocalizations {
   /// No description provided for @tab_most_recent.
   ///
   /// In en, this message translates to:
-  /// **'Most Recent'**
+  /// **'For you'**
   String get tab_most_recent;
 
   /// No description provided for @tab_following.
@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @news_hide_sheet_body.
   ///
   /// In en, this message translates to:
-  /// **'News cards will no longer appear in Most Recent. You can still read all news in the News tab.'**
+  /// **'News cards will no longer appear in For you. You can still read all news in the News tab.'**
   String get news_hide_sheet_body;
 
   /// No description provided for @news_hide_confirm.
@@ -263,19 +263,19 @@ abstract class AppLocalizations {
   /// No description provided for @news_hidden_snack.
   ///
   /// In en, this message translates to:
-  /// **'News hidden from Most Recent'**
+  /// **'News hidden from For you'**
   String get news_hidden_snack;
 
   /// No description provided for @news_resubscribed_snack.
   ///
   /// In en, this message translates to:
-  /// **'News will now appear in Most Recent'**
+  /// **'News will now appear in For you'**
   String get news_resubscribed_snack;
 
   /// No description provided for @news_resubscribe_banner.
   ///
   /// In en, this message translates to:
-  /// **'News is hidden from Most Recent.'**
+  /// **'News is hidden from For you.'**
   String get news_resubscribe_banner;
 
   /// No description provided for @news_resubscribe_action.
@@ -3592,6 +3592,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You unlocked a new achievement'**
   String get notif_kind_achievement_earned;
+
+  /// No description provided for @home_upcoming_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get home_upcoming_title;
+
+  /// No description provided for @home_upcoming_title_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming · {count}'**
+  String home_upcoming_title_count(int count);
+
+  /// No description provided for @home_upcoming_strip_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} upcoming'**
+  String home_upcoming_strip_count(int count);
+
+  /// No description provided for @home_upcoming_more.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} more this week'**
+  String home_upcoming_more(int count);
+
+  /// No description provided for @home_upcoming_show_less.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get home_upcoming_show_less;
+
+  /// No description provided for @home_upcoming_hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get home_upcoming_hide;
+
+  /// No description provided for @home_upcoming_see_all.
+  ///
+  /// In en, this message translates to:
+  /// **'See all {count} upcoming'**
+  String home_upcoming_see_all(int count);
+
+  /// No description provided for @home_upcoming_day.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get home_upcoming_day;
+
+  /// No description provided for @home_upcoming_days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get home_upcoming_days;
+
+  /// No description provided for @home_upcoming_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'hour'**
+  String get home_upcoming_hour;
+
+  /// No description provided for @home_upcoming_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get home_upcoming_hours;
+
+  /// No description provided for @home_upcoming_min.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get home_upcoming_min;
+
+  /// No description provided for @home_upcoming_in_days.
+  ///
+  /// In en, this message translates to:
+  /// **'in {days}d'**
+  String home_upcoming_in_days(int days);
+
+  /// No description provided for @home_upcoming_in_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'in {hours}h {minutes}m'**
+  String home_upcoming_in_hours(int hours, int minutes);
+
+  /// No description provided for @home_upcoming_in_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'in {minutes}m'**
+  String home_upcoming_in_minutes(int minutes);
+
+  /// No description provided for @home_post_options_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Post options'**
+  String get home_post_options_title;
+
+  /// No description provided for @home_post_options_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted by {name}'**
+  String home_post_options_by(String name);
+
+  /// No description provided for @home_post_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report post'**
+  String get home_post_report;
+
+  /// No description provided for @home_post_report_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what is wrong with this post'**
+  String get home_post_report_note;
+
+  /// No description provided for @home_post_block.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get home_post_block;
+
+  /// No description provided for @home_vibe_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s the vibe?'**
+  String get home_vibe_title;
+
+  /// No description provided for @home_location_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change location'**
+  String get home_location_title;
+
+  /// No description provided for @home_location_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get home_location_done;
+
+  /// No description provided for @home_location_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search area, street or city'**
+  String get home_location_search;
+
+  /// No description provided for @home_location_use_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location'**
+  String get home_location_use_current;
+
+  /// No description provided for @home_location_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get home_location_add;
+
+  /// No description provided for @home_location_no_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No areas match \"{query}\"'**
+  String home_location_no_match(String query);
 }
 
 class _AppLocalizationsDelegate

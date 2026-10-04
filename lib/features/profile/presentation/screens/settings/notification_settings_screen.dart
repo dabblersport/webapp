@@ -118,8 +118,6 @@ class NotificationSettingsScreen extends ConsumerWidget {
           DabblerSpacing.space11,
         ),
         children: [
-          _buildHero(context),
-          const SizedBox(height: DabblerSpacing.space7),
           _buildBody(context, ref, state),
         ],
       ),
@@ -182,26 +180,6 @@ class NotificationSettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHero(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DabblerText(
-          'Stay informed',
-          style: DabblerType.footnote,
-          tone: DabblerTextTone.secondary,
-        ),
-        const SizedBox(height: DabblerSpacing.space2),
-        const DabblerBanner(
-          tone: DabblerBannerTone.neutral,
-          title: 'Manage notifications',
-          message:
-              'Control how and when you receive notifications about games, social activity, and account updates.',
         ),
       ],
     );
