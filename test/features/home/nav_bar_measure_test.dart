@@ -55,6 +55,13 @@ class _Exception {
 
 // ------------------------------------------------------------------ harness
 
+/// The test binding paints box shadows hard-edged (`debugDisableShadows`); a
+/// render must show the real soft ones. Rects are unaffected either way. The
+/// binding checks the flag is back at its default when a test ends.
+void _softShadows(bool on) {
+  if (_shotsDir.isNotEmpty) debugDisableShadows = !on;
+}
+
 Future<void> _loadFonts() async {
   final List<String> dirs = <String>[
     '${Directory.current.parent.path}/dabbler-design-system/fonts',
@@ -518,6 +525,7 @@ void main() {
 
     testWidgets('closed bar vs the Home Feed frame — $dir', (tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
+      _softShadows(true);
       const Key key = Key('nav-shot');
       await _pump(tester, locale: locale, boundaryKey: key);
       await _settle(tester);
@@ -543,6 +551,7 @@ void main() {
       expect(_pill(tester).left, 18);
       expect(_hits(tester).last.right, 393 - 18);
       expect(tester.takeException(), isNull);
+      _softShadows(false);
       semantics.dispose();
     });
 
@@ -555,6 +564,7 @@ void main() {
         tester,
       ) async {
         final SemanticsHandle semantics = tester.ensureSemantics();
+        _softShadows(true);
         const Key key = Key('nav-shot');
         await _pump(tester, locale: locale, boundaryKey: key);
         final String name = rtl ? item.ar : item.en;
@@ -575,12 +585,14 @@ void main() {
         }
         expect(_pill(tester).left, 18);
         expect(_hits(tester).last, _r(319, 772, 56, 56));
+        _softShadows(false);
         semantics.dispose();
       });
     }
 
     testWidgets('create menu open vs the frame — $dir', (tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
+      _softShadows(true);
       const Key key = Key('nav-shot');
       await _pump(tester, locale: locale, boundaryKey: key);
       await tester.tap(
@@ -600,6 +612,7 @@ void main() {
       _check(rows, ex);
       _openFacts(tester, dir, rtl, caption);
       expect(tester.takeException(), isNull);
+      _softShadows(false);
       semantics.dispose();
     });
   }
