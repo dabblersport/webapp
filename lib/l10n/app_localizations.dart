@@ -3929,6 +3929,12 @@ abstract class AppLocalizations {
   /// **'Add a short bio so teammates know what to expect.'**
   String get profile_bio_placeholder;
 
+  /// No description provided for @settings_item_edit_profile_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, photo, bio and sports'**
+  String get settings_item_edit_profile_subtitle;
+
   /// No description provided for @profile_btn_edit.
   ///
   /// In en, this message translates to:

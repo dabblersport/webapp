@@ -2157,6 +2157,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add a short bio so teammates know what to expect.';
 
   @override
+  String get settings_item_edit_profile_subtitle =>
+      'Name, photo, bio and sports';
+
+  @override
   String get profile_btn_edit => 'Edit profile';
 
   @override

@@ -108,12 +108,6 @@ const List<GateAllow> allowList = [
     match: 'progress * 2.5',
   ),
   GateAllow(
-    'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 700',
-  ),
-  GateAllow(
     'lib/features/profile/presentation/screens/profile/sport_profile_screen.dart',
     ['numeric named arg'],
     _maxWidthReason,
@@ -154,12 +148,6 @@ const List<GateAllow> allowList = [
     ['numeric named arg'],
     _aspectReason,
     match: 'aspectRatio: 4 / 5',
-  ),
-  GateAllow(
-    'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
-    ['numeric named arg'],
-    _radiusNoneReason,
-    match: 'radius: 0,',
   ),
   GateAllow(
     'lib/features/social/presentation/screens/post_composer_screen.dart',

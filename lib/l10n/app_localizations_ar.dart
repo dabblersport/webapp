@@ -2120,6 +2120,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'اكتب نبذة قصيرة عشان الناس تعرف تتوقع منك إيه.';
 
   @override
+  String get settings_item_edit_profile_subtitle =>
+      'الاسم والصورة والنبذة والرياضات';
+
+  @override
   String get profile_btn_edit => 'تعديل البروفايل';
 
   @override
