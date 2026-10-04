@@ -24,6 +24,7 @@ import '../../support/render_mode.dart';
 const String _shotsDir = String.fromEnvironment('COMPOSER_SHOTS_DIR');
 
 Future<void> _loadFonts() async {
+  await loadRenderFonts();
   final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
@@ -137,7 +138,7 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text('Create post'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).composer_create_post), findsOneWidget);
       expect(find.byType(DabblerComposerBox), findsOneWidget);
       expect(find.text('Add GIF'), findsNothing);
       await _shoot(tester, key, 'post-$dir');
@@ -146,7 +147,7 @@ void main() {
     testWidgets('post composer: vibe picker sheet — $dir', (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
-      await tester.tap(find.bySemanticsLabel('Add vibe'));
+      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).composer_add_vibe));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -159,12 +160,12 @@ void main() {
         (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
-      await tester.tap(find.bySemanticsLabel('Add media'));
+      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).composer_add_media));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Take Photo'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).composer_take_photo), findsOneWidget);
       await _shoot(tester, key, 'post-media-$dir');
     }, variant: desktop);
 
@@ -172,14 +173,14 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, const GameComposerScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text('Create game'), findsWidgets);
+      expect(find.text(lookupAppLocalizations(locale).game_create), findsWidgets);
       await _shoot(tester, key, 'game-$dir');
     }, variant: desktop);
 
     testWidgets('game composer: date sheet — $dir', (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const GameComposerScreen(), locale, key);
-      await tester.tap(find.text('Date'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).game_date));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -191,7 +192,7 @@ void main() {
     testWidgets('game composer: time sheet — $dir', (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const GameComposerScreen(), locale, key);
-      await tester.tap(find.text('Time'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).game_time));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

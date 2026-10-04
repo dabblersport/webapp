@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens "What's the vibe?" (`Home Feed.dc.html:650-690`): a searchable wrap
 /// of vibe chips, a Clear action when something is chosen and a `Confirm`
@@ -27,7 +28,7 @@ Future<void> showComposerVibesSheet(
     onClear: selectedVibeId == null ? null : onClear,
     tall: true,
     confirm: ComposerSheetConfirm(
-      label: 'Confirm',
+      label: AppLocalizations.of(context).composer_confirm,
       onTap: () {
         final vibe = pending.value;
         if (vibe != null) onConfirm(vibe);
@@ -73,13 +74,13 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
       children: [
         ComposerSearchField(
           controller: _search,
-          placeholder: 'Search vibes',
+          placeholder: AppLocalizations.of(context).composer_vibe_search,
           onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
         ),
         vibesAsync.when(
           loading: () => const ComposerCenteredState.loading(),
           error: (_, __) =>
-              const ComposerCenteredState.message('Failed to load vibes'),
+              ComposerCenteredState.message(AppLocalizations.of(context).composer_vibe_failed),
           data: (vibes) {
             final shown = vibes
                 .where(
@@ -90,8 +91,8 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
                 )
                 .toList();
             if (shown.isEmpty) {
-              return const ComposerCenteredState.message(
-                'No vibes match that search',
+              return ComposerCenteredState.message(
+                AppLocalizations.of(context).composer_vibe_none,
               );
             }
             return ValueListenableBuilder<Vibe?>(
