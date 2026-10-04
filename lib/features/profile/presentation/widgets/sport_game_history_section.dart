@@ -59,14 +59,14 @@ class SportGameHistorySection extends ConsumerWidget {
       children: [
         if (history.upcoming.isNotEmpty) ...[
           _buildGroupHeader(context, 'Upcoming'),
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
           ..._buildTiles(context, history.upcoming),
         ],
         if (history.upcoming.isNotEmpty && history.past.isNotEmpty)
-          const SizedBox(height: DabblerSpacing.space5),
+          const DabblerGap.v(DabblerSpacing.space5),
         if (history.past.isNotEmpty) ...[
           _buildGroupHeader(context, 'Past'),
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
           ..._buildTiles(context, history.past),
         ],
       ],
@@ -133,7 +133,7 @@ class _GameHistoryTile extends StatelessWidget {
                 size: DabblerSizing.iconInline,
                 color: colors.brandPrimary,
               ),
-              const SizedBox(width: DabblerSpacing.space1),
+              const DabblerGap.h(DabblerSpacing.space1),
               DabblerText(
                 '${game.currentPlayers}/${game.maxPlayers}',
                 style: DabblerType.footnote,

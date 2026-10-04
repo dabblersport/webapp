@@ -73,7 +73,7 @@ class SavedLocationsScreen extends ConsumerWidget {
             ),
             itemCount: sorted.length,
             separatorBuilder: (_, __) =>
-                const SizedBox(height: DabblerSpacing.space3),
+                const DabblerGap.v(DabblerSpacing.space3),
             itemBuilder: (ctx, i) => _LocationTile(location: sorted[i]),
           );
         },
@@ -173,7 +173,7 @@ class _LocationTile extends ConsumerWidget {
                   ? DabblerIconTileTone.brand
                   : DabblerIconTileTone.info,
             ),
-            const SizedBox(width: DabblerSpacing.space4),
+            const DabblerGap.h(DabblerSpacing.space4),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +190,7 @@ class _LocationTile extends ConsumerWidget {
                         ),
                       ),
                       if (location.isPrimary) ...[
-                        const SizedBox(width: DabblerSpacing.space2),
+                        const DabblerGap.h(DabblerSpacing.space2),
                         // The old badge text carried a star emoji; the star
                         // is now a DabblerIcon (CEO rule: no emoji).
                         const DabblerBadge(
@@ -298,7 +298,7 @@ class _LocationTile extends ConsumerWidget {
                 }).toList(),
               ),
               if (selectedLabel == ProfileLocationLabel.custom) ...[
-                const SizedBox(height: DabblerSpacing.space4),
+                const DabblerGap.v(DabblerSpacing.space4),
                 DabblerTextField(
                   controller: customController,
                   placeholder: 'Custom name',

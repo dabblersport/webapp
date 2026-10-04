@@ -312,7 +312,10 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text("What's the vibe?"), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).home_vibe_title),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'post-detail-vibes-$dir');
       await _settle(tester);
     });

@@ -1,5 +1,6 @@
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -7,39 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-/// The design's copy for the block, in both languages. English and Arabic are
-/// the design file's own strings (`Home Feed.dc.html:3503-3534`).
-class _UpcomingLabels {
-  const _UpcomingLabels(this.ar);
-  final bool ar;
-
-  String title(int n) => ar
-      ? (n > 1 ? 'القادمة · $n' : 'القادمة')
-      : (n > 1 ? 'Upcoming · $n' : 'Upcoming');
-  String strip(int n) => ar
-      ? (n > 1 ? '$n قادمة' : 'القادمة')
-      : (n > 1 ? '$n upcoming' : 'Upcoming');
-  String more(int n) => ar ? '$n أخرى هذا الأسبوع' : '$n more this week';
-  String get showLess => ar ? 'عرض أقل' : 'Show less';
-  String get hide => ar ? 'إخفاء' : 'Hide';
-  String seeAll(int n) => ar ? 'عرض كل $n القادمة' : 'See all $n upcoming';
-  String days(int n) =>
-      ar ? (n == 1 ? 'يوم' : 'أيام') : (n == 1 ? 'day' : 'days');
-  String hours(int n) =>
-      ar ? (n == 1 ? 'ساعة' : 'ساعات') : (n == 1 ? 'hour' : 'hours');
-  String get min => ar ? 'دقيقة' : 'min';
-  String inDays(int d) => ar ? 'بعد $d ي' : 'in ${d}d';
-  String inHours(int h, int m) => ar ? 'بعد $h س $m د' : 'in ${h}h ${m}m';
-  String inMinutes(int m) => ar ? 'بعد $m د' : 'in ${m}m';
-}
-
 /// The Upcoming block above the feed tabs: the viewer's next games from
 /// [userUpcomingGamesProvider], as the design's reminder (card, stack, list or
 /// strip). Folding and opening are view state kept here.
 ///
-/// The copy lives in [_UpcomingLabels] until `content-manager` moves it into the
-/// localisation files: it has no key there yet, and `lib/l10n/**` is not edited
-/// here.
 class HomeUpcoming extends ConsumerStatefulWidget {
   const HomeUpcoming({super.key});
 
@@ -54,7 +26,7 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
   /// The countdown window the ring fills over — three days (`gauge()`).
   static const int _windowSeconds = 3 * 24 * 60 * 60;
 
-  DabblerUpcomingItem _item(Game game, String locale, _UpcomingLabels l) {
+  DabblerUpcomingItem _item(Game game, String locale, AppLocalizations l) {
     final DateTime start = game.getScheduledStartDateTime();
     final Duration left = start.difference(DateTime.now());
     final Duration safe = left.isNegative ? Duration.zero : left;
@@ -62,15 +34,15 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
     final int hours = safe.inHours % 24;
     final int minutes = safe.inMinutes % 60;
     final (String big, String small) = days > 0
-        ? ('$days', l.days(days))
+        ? ('$days', days == 1 ? l.home_upcoming_day : l.home_upcoming_days)
         : hours > 0
-        ? ('$hours', l.hours(hours))
-        : ('$minutes', l.min);
+        ? ('$hours', hours == 1 ? l.home_upcoming_hour : l.home_upcoming_hours)
+        : ('$minutes', l.home_upcoming_min);
     final String short = days > 0
-        ? l.inDays(days)
+        ? l.home_upcoming_in_days(days)
         : hours > 0
-        ? l.inHours(hours, minutes)
-        : l.inMinutes(minutes);
+        ? l.home_upcoming_in_hours(hours, minutes)
+        : l.home_upcoming_in_minutes(minutes);
     final String time = DateFormat('h:mm a', locale).format(start);
     final String? venue = game.venueName;
     return DabblerUpcomingItem(
@@ -93,9 +65,7 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
     if (games.isEmpty) return const SizedBox.shrink();
     final String locale = Localizations.localeOf(context).toString();
     final int count = games.length;
-    final _UpcomingLabels l = _UpcomingLabels(
-      Localizations.localeOf(context).languageCode == 'ar',
-    );
+    final AppLocalizations l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: DabblerSpacing.space6,
@@ -105,17 +75,21 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
         items: <DabblerUpcomingItem>[
           for (final g in games) _item(g, locale, l),
         ],
-        title: l.title(count),
+        title: count > 1
+            ? l.home_upcoming_title_count(count)
+            : l.home_upcoming_title,
         collapsed: _collapsed,
         expanded: _expanded,
         onDismiss: () => setState(() => _collapsed = true),
         onExpandStrip: () => setState(() => _collapsed = false),
         onToggleExpanded: () => setState(() => _expanded = !_expanded),
-        stripLabel: l.strip(count),
-        moreLabel: l.more(count - 1),
-        showLessLabel: l.showLess,
-        dismissLabel: l.hide,
-        seeAllLabel: l.seeAll(count),
+        stripLabel: count > 1
+            ? l.home_upcoming_strip_count(count)
+            : l.home_upcoming_title,
+        moreLabel: l.home_upcoming_more(count - 1),
+        showLessLabel: l.home_upcoming_show_less,
+        dismissLabel: l.home_upcoming_hide,
+        seeAllLabel: l.home_upcoming_see_all(count),
         onSeeAll: () => context.go(RoutePaths.gamesTab),
       ),
     );

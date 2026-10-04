@@ -112,26 +112,19 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
                 ),
                 slivers: [
                   // Category Filter Chips
+                  const DabblerGap.sliver(DabblerSpacing.space4),
                   SliverPadding(
-                    padding: const EdgeInsetsDirectional.only(
-                      start: DabblerSpacing.space6,
-                      top: DabblerSpacing.space4,
-                      end: DabblerSpacing.space6,
-                    ),
+                    padding: DabblerInsets.screen,
                     sliver: SliverToBoxAdapter(
                       child: _buildCategoryFilters(context),
                     ),
                   ),
                   // Activities List
                   SliverPadding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      DabblerSpacing.space6,
-                      DabblerSpacing.space4,
-                      DabblerSpacing.space6,
-                      DabblerSpacing.space11,
-                    ),
+                    padding: DabblerInsets.screen,
                     sliver: _buildActivitiesList(context),
                   ),
+                  const DabblerGap.sliver(DabblerSpacing.floatingBarClearance),
                 ],
               ),
             ),
@@ -153,33 +146,31 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: categories.map((category) {
-          final categoryValue = category['value'];
-          final isSelected = state.currentCategory == categoryValue;
-          final categoryName = category['name']!;
+        children: categories
+            .map((category) {
+              final categoryValue = category['value'];
+              final isSelected = state.currentCategory == categoryValue;
+              final categoryName = category['name']!;
 
-          // Count activities for this category
-          final count = categoryValue == null
-              ? state.activities.length
-              : _getCategoryCount(state.activities, categoryValue);
+              // Count activities for this category
+              final count = categoryValue == null
+                  ? state.activities.length
+                  : _getCategoryCount(state.activities, categoryValue);
 
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(
-              end: DabblerSpacing.space2,
-            ),
-            child: DabblerChip(
-              label: count > 0 ? '$categoryName ($count)' : categoryName,
-              selected: isSelected,
-              onTap: () {
-                if (!isSelected) {
-                  ref
-                      .read(activityFeedControllerProvider.notifier)
-                      .changeCategory(categoryValue);
-                }
-              },
-            ),
-          );
-        }).toList(),
+              return DabblerChip(
+                label: count > 0 ? '$categoryName ($count)' : categoryName,
+                selected: isSelected,
+                onTap: () {
+                  if (!isSelected) {
+                    ref
+                        .read(activityFeedControllerProvider.notifier)
+                        .changeCategory(categoryValue);
+                  }
+                },
+              );
+            })
+            .expand((chip) => [chip, const DabblerGap.h(DabblerSpacing.space2)])
+            .toList(),
       ),
     );
   }
@@ -251,44 +242,34 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
       final timeBucket = entry.key;
       final activities = entry.value;
 
+      listItems.add(const DabblerGap.v(DabblerSpacing.space4));
       listItems.add(
-        Padding(
-          padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
-          child: DabblerSection(
-            title: _sectionTitle(timeBucket),
-            children: [
-              for (final event in activities)
-                ActivityEventCard(
-                  event: event,
-                  onTap: () => _handleItemTap(event),
-                ),
-            ],
-          ),
+        DabblerSection(
+          title: _sectionTitle(timeBucket),
+          children: [
+            for (final event in activities)
+              ActivityEventCard(
+                event: event,
+                onTap: () => _handleItemTap(event),
+              ),
+          ],
         ),
       );
     }
 
     // Add loading more indicator
     if (state.isLoadingMore) {
-      listItems.add(
-        const Padding(
-          padding: EdgeInsets.all(DabblerSpacing.space4),
-          child: Center(child: DabblerSpinner(label: 'Loading more')),
-        ),
-      );
+      listItems.add(const Center(child: DabblerSpinner(label: 'Loading more')));
     }
 
     // Add "no more items" indicator
     if (!state.hasMore && filteredActivities.isNotEmpty) {
       listItems.add(
-        Padding(
-          padding: const EdgeInsets.all(DabblerSpacing.space4),
-          child: Center(
-            child: DabblerText(
-              'No more activities',
-              style: DabblerType.footnote,
-              tone: DabblerTextTone.secondary,
-            ),
+        Center(
+          child: DabblerText(
+            'No more activities',
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
           ),
         ),
       );
@@ -384,17 +365,14 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
 
   Widget _buildSignInPrompt(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space8),
-        child: DabblerEmptyState(
-          icon: 'user-remove',
-          title: 'Sign in to view activities',
-          text: 'Track your games, bookings, and more',
-          size: DabblerEmptyStateSize.page,
-          action: DabblerButton(
-            label: 'Sign In',
-            onPressed: () => context.go(RoutePaths.authWelcome),
-          ),
+      child: DabblerEmptyState(
+        icon: 'user-remove',
+        title: 'Sign in to view activities',
+        text: 'Track your games, bookings, and more',
+        size: DabblerEmptyStateSize.page,
+        action: DabblerButton(
+          label: 'Sign In',
+          onPressed: () => context.go(RoutePaths.authWelcome),
         ),
       ),
     );

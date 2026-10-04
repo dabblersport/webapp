@@ -2,9 +2,11 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../l10n/app_localizations.dart';
 import '../../../../../utils/constants/route_constants.dart';
 
-/// Find friends screen for social onboarding
+/// Find friends screen for social onboarding. It has no design frame: it is
+/// the design system's flow page with its default parts.
 class SocialOnboardingFriendsScreen extends ConsumerStatefulWidget {
   const SocialOnboardingFriendsScreen({super.key});
 
@@ -30,158 +32,87 @@ class _SocialOnboardingFriendsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final selectedCount = _suggestions.where((s) => s.isSelected).length;
 
-    return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        title: 'Find Friends',
-        onBack: () => context.pop(),
-      ),
-      bottomBar: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-          DabblerSpacing.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DabblerButton(
-              label: selectedCount > 0
-                  ? 'Send ${selectedCount > 1 ? "$selectedCount Requests" : "Request"} & Continue'
-                  : 'Continue',
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: _continue,
-            ),
-            const SizedBox(height: DabblerSpacing.space4),
-            DabblerButton(
-              label: 'Skip',
-              tone: DabblerButtonTone.text,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: () => context.push(RoutePaths.socialOnboardingPrivacy),
-            ),
-            const SizedBox(height: DabblerSpacing.space4),
-            const DabblerProgressBar(
-              value: 0.5,
-              size: DabblerProgressBarSize.sm,
-            ),
-          ],
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space8,
-          vertical: DabblerSpacing.space6,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DabblerText(
-              'Find Your Sports Community',
-              style: DabblerType.title1,
-            ),
-            const SizedBox(height: DabblerSpacing.space3),
-            DabblerText(
-              'Connect with friends to share game experiences and discover new opportunities.',
-              style: DabblerType.subheadline,
-              tone: DabblerTextTone.secondary,
-            ),
-            const SizedBox(height: DabblerSpacing.space10),
-            Row(
-              children: [
-                Expanded(
-                  child: DabblerText(
-                    'Suggested for You',
-                    style: DabblerType.headline,
+    return DabblerFlowPage(
+      onBack: () => context.pop(),
+      backLabel: l10n.onb_back,
+      stepCount: 4,
+      stepIndex: 1,
+      title: l10n.social_onboarding_friends_title,
+      subtitle: l10n.social_onboarding_friends_subtitle,
+      content: [
+        DabblerSection(
+          title: l10n.social_onboarding_friends_suggested,
+          action: selectedCount > 0
+              ? DabblerBadge(
+                  label: l10n.social_onboarding_friends_selected(selectedCount),
+                )
+              : null,
+          children: _suggestions.isEmpty
+              ? [
+                  DabblerText(
+                    'Friend suggestions are coming soon.',
+                    style: DabblerType.subheadline,
+                    tone: DabblerTextTone.secondary,
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                if (selectedCount > 0)
-                  DabblerBadge(label: '$selectedCount selected'),
-              ],
-            ),
-            const SizedBox(height: DabblerSpacing.space5),
-            Expanded(
-              child: _suggestions.isEmpty
-                  ? Center(
-                      child: DabblerText(
-                        'Friend suggestions are coming soon.',
-                        style: DabblerType.subheadline,
-                        tone: DabblerTextTone.secondary,
-                        textAlign: TextAlign.center,
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: _suggestions.length,
-                      itemBuilder: (context, index) {
-                        final suggestion = _suggestions[index];
-                        return _buildFriendSuggestionCard(suggestion, index);
-                      },
-                    ),
-            ),
-          ],
+                ]
+              : [
+                  for (var i = 0; i < _suggestions.length; i++)
+                    _suggestionRow(l10n, _suggestions[i], i),
+                ],
         ),
+      ],
+      primaryLabel: selectedCount > 0
+          ? (selectedCount > 1
+                ? l10n.social_onboarding_friends_send_requests(selectedCount)
+                : l10n.social_onboarding_friends_send_request)
+          : l10n.social_onboarding_friends_continue,
+      onPrimary: _continue,
+      secondary: DabblerButton(
+        label: l10n.social_onboarding_friends_skip,
+        tone: DabblerButtonTone.text,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        onPressed: () => context.push(RoutePaths.socialOnboardingPrivacy),
       ),
     );
   }
 
-  Widget _buildFriendSuggestionCard(_ContactSuggestion suggestion, int index) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        vertical: DabblerSpacing.space1,
+  Widget _suggestionRow(
+    AppLocalizations l10n,
+    _ContactSuggestion suggestion,
+    int index,
+  ) {
+    final mutual = suggestion.mutualFriends;
+    return DabblerInputRow(
+      leading: DabblerAvatar(
+        seed: suggestion.name,
+        imageUrl: suggestion.avatar,
       ),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _toggleSelection(index),
-        child: DabblerSurface.card(
-          radius: DabblerRadius.lg,
-          padding: const EdgeInsetsDirectional.all(DabblerSpacing.space4),
-          child: Row(
-            children: [
-              DabblerAvatar(seed: suggestion.name, imageUrl: suggestion.avatar),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DabblerText(suggestion.name, style: DabblerType.headline),
-                    if (suggestion.mutualFriends > 0)
-                      DabblerText(
-                        '${suggestion.mutualFriends} mutual friend${suggestion.mutualFriends > 1 ? 's' : ''}',
-                        style: DabblerType.footnote,
-                        tone: DabblerTextTone.secondary,
-                      ),
-                    const SizedBox(height: DabblerSpacing.space1),
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: DabblerBadge(label: suggestion.source),
-                    ),
-                  ],
-                ),
+      title: suggestion.name,
+      subtitle: mutual > 0
+          ? (mutual > 1
+                ? l10n.social_onboarding_friends_mutual_many(mutual)
+                : l10n.social_onboarding_friends_mutual_one(mutual))
+          : suggestion.source,
+      onTap: () => _toggleSelection(index),
+      trailing: suggestion.isSelected
+          ? DabblerBadge(
+              label: l10n.social_onboarding_friends_added,
+              tone: DabblerBadgeTone.success,
+              icon: const DabblerIcon(
+                'tick-circle',
+                size: DabblerSizing.iconInline,
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              if (suggestion.isSelected)
-                const DabblerBadge(
-                  label: 'Added',
-                  tone: DabblerBadgeTone.success,
-                  icon: DabblerIcon(
-                    'tick-circle',
-                    size: DabblerSizing.iconInline,
-                  ),
-                )
-              else
-                DabblerButton(
-                  label: 'Add',
-                  size: DabblerButtonSize.small,
-                  onPressed: () => _toggleSelection(index),
-                ),
-            ],
-          ),
-        ),
-      ),
+            )
+          : DabblerButton(
+              label: l10n.social_onboarding_friends_add_btn,
+              size: DabblerButtonSize.small,
+              onPressed: () => _toggleSelection(index),
+            ),
     );
   }
 }

@@ -38,45 +38,35 @@ class MyVenueSubmissionsScreen extends ConsumerWidget {
           ref.invalidate(myVenueSubmissionsProvider);
           await ref.read(myVenueSubmissionsProvider.future);
         },
-        child: CustomScrollView(
+        child: ListView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space3,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
-                ),
-                child: submissionsAsync.when(
-                  loading: () => const Center(child: DabblerSpinner()),
-                  error: (e, _) => _ErrorState(
-                    message: e.toString(),
+          padding: DabblerInsets.screen,
+          children: [
+            submissionsAsync.when(
+              loading: () => const Center(child: DabblerSpinner()),
+              error: (e, _) => _ErrorState(
+                message: e.toString(),
+                onRetry: () => ref.invalidate(myVenueSubmissionsProvider),
+              ),
+              data: (Result<List<VenueSubmissionModel>> result) {
+                return result.match(
+                  (failure) => _ErrorState(
+                    message: failure.message,
                     onRetry: () => ref.invalidate(myVenueSubmissionsProvider),
                   ),
-                  data: (Result<List<VenueSubmissionModel>> result) {
-                    return result.match(
-                      (failure) => _ErrorState(
-                        message: failure.message,
-                        onRetry: () =>
-                            ref.invalidate(myVenueSubmissionsProvider),
-                      ),
-                      (submissions) {
-                        if (submissions.isEmpty) {
-                          return _EmptyState(
-                            onCreate: () =>
-                                context.push(RoutePaths.createVenueSubmission),
-                          );
-                        }
-                        return _SubmissionList(submissions: submissions);
-                      },
-                    );
+                  (submissions) {
+                    if (submissions.isEmpty) {
+                      return _EmptyState(
+                        onCreate: () =>
+                            context.push(RoutePaths.createVenueSubmission),
+                      );
+                    }
+                    return _SubmissionList(submissions: submissions);
                   },
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),
@@ -99,9 +89,9 @@ class _SubmissionList extends StatelessWidget {
           message: 'Drafts can be edited. Pending/approved are read-only.',
           icon: DabblerIcon('info-circle'),
         ),
-        const SizedBox(height: DabblerSpacing.space3),
+        const DabblerGap.v(DabblerSpacing.space3),
         for (var i = 0; i < submissions.length; i++) ...[
-          if (i > 0) const SizedBox(height: DabblerSpacing.space2),
+          if (i > 0) const DabblerGap.v(DabblerSpacing.space2),
           Builder(
             builder: (context) {
               final s = submissions[i];
@@ -126,7 +116,7 @@ class _SubmissionList extends StatelessWidget {
                         children: [
                           DabblerText(title, style: DabblerType.headline),
                           if (location.isNotEmpty) ...[
-                            const SizedBox(height: DabblerSpacing.space1),
+                            const DabblerGap.v(DabblerSpacing.space1),
                             DabblerText(
                               location,
                               style: DabblerType.footnote,
@@ -134,7 +124,7 @@ class _SubmissionList extends StatelessWidget {
                             ),
                           ],
                           if (hasNote) ...[
-                            const SizedBox(height: DabblerSpacing.space2),
+                            const DabblerGap.v(DabblerSpacing.space2),
                             DabblerText(
                               'Admin note: ${s.adminNote}',
                               style: DabblerType.footnote,
@@ -146,7 +136,7 @@ class _SubmissionList extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: DabblerSpacing.space3),
+                    const DabblerGap.h(DabblerSpacing.space3),
                     VenueSubmissionStatusBadge(status: s.status),
                   ],
                 ),
@@ -154,7 +144,7 @@ class _SubmissionList extends StatelessWidget {
             },
           ),
         ],
-        const SizedBox(height: DabblerSpacing.space4),
+        const DabblerGap.v(DabblerSpacing.space4),
         DabblerButton(
           label: 'Create new submission',
           icon: 'add',

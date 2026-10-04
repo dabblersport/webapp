@@ -55,7 +55,7 @@ class SportAchievementsSection extends ConsumerWidget {
                 .toList(),
           ),
         if (data.badges.isNotEmpty && data.recentEvents.isNotEmpty)
-          const SizedBox(height: DabblerSpacing.space5),
+          const DabblerGap.v(DabblerSpacing.space5),
         if (data.recentEvents.isNotEmpty)
           ...data.recentEvents.map(
             (event) => Padding(
@@ -63,7 +63,7 @@ class SportAchievementsSection extends ConsumerWidget {
               child: Row(
                 children: [
                   const DabblerIconTile.named('medal-star'),
-                  const SizedBox(width: DabblerSpacing.space4),
+                  const DabblerGap.h(DabblerSpacing.space4),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -158,7 +158,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
             }).toList(),
           ),
           if (_selectedReason != null) ...[
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
             DabblerTextField(
               variant: DabblerTextFieldVariant.multiline,
               controller: _detailsController,
@@ -167,7 +167,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
             ),
           ],
           if (_errorMessage != null) ...[
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
             DabblerBanner(
               tone: DabblerBannerTone.error,
               message: _errorMessage,
