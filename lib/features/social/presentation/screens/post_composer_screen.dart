@@ -17,6 +17,7 @@ import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Full-featured post composer that exposes all `posts` table capabilities.
 ///
@@ -108,7 +109,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     // (KAN-47) — selecting it always fails at submit time.
     showComposerChoiceSheet<PostVisibility>(
       context,
-      title: 'Who can see this?',
+      title: AppLocalizations.of(context).composer_who_can_see,
       selected: state.visibility,
       onConfirm: ref.read(postComposerProvider.notifier).setVisibility,
       choices: [
@@ -149,7 +150,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     showComposerSportSheet(
       context,
-      title: 'Which sport?',
+      title: AppLocalizations.of(context).composer_which_sport,
       sportsProvider: activeSportsByProfileCountryProvider,
       selected: selectedSport,
       showClear: composerState.sportId != null,
@@ -168,7 +169,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final now = DateTime.now();
     showComposerSheet<void>(
       context,
-      title: 'Set expiry',
+      title: AppLocalizations.of(context).composer_expiry,
       builder: (ctx) => _ExpiryPickerSheet(
         first: now,
         last: now.add(const Duration(days: 365)),
@@ -185,7 +186,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showGamePicker() {
     showComposerSheet<void>(
       context,
-      title: 'Link a Game',
+      title: AppLocalizations.of(context).composer_link_a_game,
       builder: (ctx) => const _GamePickerSheet(),
     );
   }
@@ -193,7 +194,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showLocationPicker() {
     showComposerSheet<void>(
       context,
-      title: 'Location',
+      title: AppLocalizations.of(context).composer_location,
       builder: (ctx) => const _LocationPickerSheet(),
     );
   }
@@ -202,7 +203,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final state = ref.read(postComposerProvider);
     showComposerChoiceSheet<PostType>(
       context,
-      title: 'What kind of post?',
+      title: AppLocalizations.of(context).composer_kind_of_post,
       selected: state.postType,
       onConfirm: ref.read(postComposerProvider.notifier).setPostType,
       choices: [
@@ -250,13 +251,13 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showMediaInput() {
     showComposerSheet<void>(
       context,
-      title: 'Add Media',
+      title: AppLocalizations.of(context).composer_add_media_title,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ComposerPickerRow(
             icon: 'camera',
-            title: 'Take Photo',
+            title: AppLocalizations.of(context).composer_take_photo,
             onTap: () {
               Navigator.pop(ctx);
               _pickAndUploadMedia(ImageSource.camera);
@@ -264,7 +265,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           ComposerPickerRow(
             icon: 'gallery',
-            title: 'Choose from Gallery',
+            title: AppLocalizations.of(context).composer_choose_gallery,
             onTap: () {
               Navigator.pop(ctx);
               _pickAndUploadMedia(ImageSource.gallery);
@@ -272,8 +273,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           ComposerPickerRow(
             icon: 'search-normal',
-            title: 'Search GIFs',
-            subtitle: 'Powered by GIPHY',
+            title: AppLocalizations.of(context).composer_search_gifs,
+            subtitle: AppLocalizations.of(context).composer_powered_giphy,
             onTap: () {
               Navigator.pop(ctx);
               _showGifPicker();
@@ -316,7 +317,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     showComposerSheet<void>(
       context,
-      title: 'Post As',
+      title: AppLocalizations.of(context).composer_post_as,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -363,7 +364,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                       if (mounted) {
                         _errorToast(
                           ref.read(personaServiceProvider).errorMessage ??
-                              'Failed to switch profile',
+                              AppLocalizations.of(context).composer_switch_failed,
                         );
                       }
                       return;
@@ -404,8 +405,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final composerState = ref.watch(postComposerProvider);
 
     final shell = ComposerDrawerShell(
-      title: 'Create post',
-      ctaLabel: 'Post',
+      title: AppLocalizations.of(context).composer_create_post,
+      ctaLabel: AppLocalizations.of(context).composer_post_cta,
       canSubmit: composerState.canSubmit,
       isSubmitting: composerState.isSubmitting,
       onCtaTap: _submit,
@@ -457,7 +458,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final displayName =
         _userProfile?['display_name'] as String? ??
         _userProfile?['username'] as String? ??
-        'You';
+        AppLocalizations.of(context).composer_you;
     final avatarUrl = _userProfile?['avatar_url'] as String?;
     final composerState = ref.watch(postComposerProvider);
     final activePersona = ref.watch(activeProfileTypeProvider);
@@ -517,8 +518,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: _postTypeIcon(composerState.postType),
           tone: colors.info,
           semanticLabel:
-              'Post type: ${_postTypeLabel(composerState.postType)}. '
-              'Tap to change.',
+              '${_postTypeLabel(composerState.postType)}. '
+              '${AppLocalizations.of(context).composer_tap_to_change}',
           onTap: _showPostTypePicker,
         ),
         DabblerSelectPill(
@@ -526,8 +527,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: _visibilityIcon(composerState.visibility),
           tone: colors.success,
           semanticLabel:
-              'Visibility: ${_visibilityLabel(composerState.visibility)}. '
-              'Tap to change.',
+              '${_visibilityLabel(composerState.visibility)}. '
+              '${AppLocalizations.of(context).composer_tap_to_change}',
           onTap: _showVisibilityPicker,
         ),
       ],
@@ -558,7 +559,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     return DabblerComposerBox(
       controller: _bodyController,
       focusNode: _bodyFocusNode,
-      placeholder: "What's on your mind? Use #hashtags",
+      placeholder: AppLocalizations.of(context).composer_body_hint,
       onChanged: (value) =>
           ref.read(postComposerProvider.notifier).setBody(value),
       counter: '$bodyLen/$maxLen',
@@ -582,7 +583,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       tools: [
         DabblerComposerTool(
           icon: 'gallery',
-          label: 'Add media',
+          label: AppLocalizations.of(context).composer_add_media,
           active: composerState.hasMedia,
           onTap: _showMediaInput,
         ),
@@ -590,7 +591,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: 'emoji-happy',
           label: composerState.hasVibe
               ? 'Vibe: ${composerState.vibeName ?? "set"}. Tap to change.'
-              : 'Add vibe',
+              : AppLocalizations.of(context).composer_add_vibe,
           active: composerState.hasVibe,
           onTap: _showVibesPicker,
         ),
@@ -598,7 +599,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: 'cup',
           label: composerState.hasSport
               ? 'Sport: ${composerState.sportName ?? "set"}. Tap to change.'
-              : 'Add sport',
+              : AppLocalizations.of(context).composer_add_sport,
           active: composerState.hasSport,
           onTap: _showSportsPicker,
         ),
@@ -606,7 +607,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: 'location',
           label: hasLocation
               ? 'Location: ${composerState.locationName}. Tap to change.'
-              : 'Add location',
+              : AppLocalizations.of(context).composer_add_location,
           active: hasLocation,
           onTap: _showLocationPicker,
         ),
@@ -614,7 +615,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           icon: 'game',
           label: composerState.hasGame
               ? 'Game: ${composerState.gameName ?? "set"}. Tap to change.'
-              : 'Link a game',
+              : AppLocalizations.of(context).composer_link_game,
           active: composerState.hasGame,
           onTap: _showGamePicker,
         ),
@@ -645,7 +646,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             return Center(
               child: DabblerButton.icon(
                 icon: 'add',
-                semanticLabel: 'Add more media',
+                semanticLabel: AppLocalizations.of(context).composer_add_more_media,
                 tone: DabblerButtonTone.neutral,
                 onPressed: _showMediaInput,
               ),
@@ -682,8 +683,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         children: [
           ComposerSettingsRow(
             icon: 'share',
-            title: 'Allow reposts',
-            subtitle: 'Others can share this post',
+            title: AppLocalizations.of(context).composer_allow_reposts,
+            subtitle: AppLocalizations.of(context).composer_allow_reposts_sub,
             trailing: ComposerToggle(
               value: state.allowReposts,
               onChanged: (_) =>
@@ -692,8 +693,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           ComposerSettingsRow(
             icon: 'star',
-            title: 'Pin to profile',
-            subtitle: 'Keep at the top of your profile',
+            title: AppLocalizations.of(context).composer_pin,
+            subtitle: AppLocalizations.of(context).composer_pin_sub,
             trailing: ComposerToggle(
               value: state.isPinned,
               onChanged: (_) =>
@@ -703,14 +704,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           // Category hidden for now — re-enable when discovery categories ship.
           ComposerSettingsRow(
             icon: 'clock',
-            title: 'Set expiry',
-            subtitle: 'Auto-hides after date',
+            title: AppLocalizations.of(context).composer_expiry,
+            subtitle: AppLocalizations.of(context).composer_expiry_sub,
             showDivider: false,
             onTap: _showExpiryPicker,
             trailing: ComposerSelectPill(
               value: state.expiresAt != null
                   ? _formatDate(state.expiresAt!)
-                  : 'None',
+                  : AppLocalizations.of(context).composer_none,
               caret: ComposerSelectCaret.right,
               onTap: _showExpiryPicker,
             ),
@@ -744,34 +745,34 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   String _visibilityLabel(PostVisibility v) {
     switch (v) {
       case PostVisibility.public:
-        return 'Public';
+        return AppLocalizations.of(context).composer_vis_public;
       case PostVisibility.followers:
-        return 'Followers';
+        return AppLocalizations.of(context).composer_vis_followers;
       case PostVisibility.circle:
-        return 'Circle';
+        return AppLocalizations.of(context).composer_vis_circle;
       case PostVisibility.squad:
-        return 'Squad';
+        return AppLocalizations.of(context).composer_vis_squad;
       case PostVisibility.private:
-        return 'Private';
+        return AppLocalizations.of(context).composer_vis_private;
       case PostVisibility.link:
-        return 'Link Only';
+        return AppLocalizations.of(context).composer_vis_link;
     }
   }
 
   String _visibilityDescription(PostVisibility v) {
     switch (v) {
       case PostVisibility.public:
-        return 'Anyone can see this post';
+        return AppLocalizations.of(context).composer_vis_public_sub;
       case PostVisibility.followers:
-        return 'Only your followers can see this';
+        return AppLocalizations.of(context).composer_vis_followers_sub;
       case PostVisibility.circle:
-        return 'Shared with a specific circle';
+        return AppLocalizations.of(context).composer_vis_circle_sub;
       case PostVisibility.squad:
-        return 'Shared with your squad';
+        return AppLocalizations.of(context).composer_vis_squad_sub;
       case PostVisibility.private:
-        return 'Only you can see this';
+        return AppLocalizations.of(context).composer_vis_private_sub;
       case PostVisibility.link:
-        return 'Only people with the link can see this';
+        return AppLocalizations.of(context).composer_vis_link_sub;
     }
   }
 
@@ -795,11 +796,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   String _postTypeLabel(PostType t) {
     switch (t) {
       case PostType.moment:
-        return 'Moment';
+        return AppLocalizations.of(context).composer_type_moment;
       case PostType.dab:
-        return 'Dab';
+        return AppLocalizations.of(context).composer_type_dab;
       case PostType.kickIn:
-        return 'Kick-in';
+        return AppLocalizations.of(context).composer_type_kickin;
       default:
         return t.name;
     }
@@ -808,11 +809,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   String _postTypeDescription(PostType t) {
     switch (t) {
       case PostType.moment:
-        return 'A quick snapshot of right now';
+        return AppLocalizations.of(context).composer_type_moment_sub;
       case PostType.dab:
         return 'Share what you\'re vibing with';
       case PostType.kickIn:
-        return 'Invite others to join in';
+        return AppLocalizations.of(context).composer_type_kickin_sub;
       default:
         return '';
     }
@@ -854,7 +855,7 @@ class _MediaTile extends StatelessWidget {
       ),
       size: Size(width, 150),
       semanticLabel: _isGif ? 'GIF' : 'Image',
-      removeLabel: 'Remove media',
+      removeLabel: AppLocalizations.of(context).composer_remove_media,
       onRemove: onRemove,
     );
   }
@@ -955,12 +956,12 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
         ),
         ComposerSearchField(
           controller: _searchController,
-          placeholder: 'Search venues...',
+          placeholder: AppLocalizations.of(context).composer_venue_search,
           onChanged: (value) => setState(() => _query = value),
         ),
         ComposerPickerRow(
           icon: 'location-add',
-          title: 'Type a location',
+          title: AppLocalizations.of(context).composer_type_location,
           trailingText: _showManualEntry ? 'Hide' : null,
           onTap: () => setState(() => _showManualEntry = !_showManualEntry),
         ),
@@ -983,7 +984,7 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                 const SizedBox(width: DabblerSpacing.space2),
                 DabblerButton.icon(
                   icon: 'tick-circle',
-                  semanticLabel: 'Use this location',
+                  semanticLabel: AppLocalizations.of(context).composer_use_location,
                   onPressed: _commitManual,
                 ),
               ],
@@ -999,11 +1000,11 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                     return venuesAsync.when(
                       loading: () => const ComposerCenteredState.loading(),
                       error: (e, _) =>
-                          const ComposerCenteredState.message('Search failed'),
+                          ComposerCenteredState.message(AppLocalizations.of(context).composer_search_failed),
                       data: (venues) {
                         if (venues.isEmpty) {
-                          return const ComposerCenteredState.message(
-                            'No venues found',
+                          return ComposerCenteredState.message(
+                            AppLocalizations.of(context).composer_no_venues,
                             icon: 'location',
                           );
                         }
@@ -1013,14 +1014,14 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                             final venue = venues[i];
                             return ComposerPickerRow(
                               icon: 'location',
-                              title: venue['name'] as String? ?? 'Venue',
+                              title: venue['name'] as String? ?? AppLocalizations.of(context).composer_venue,
                               subtitle: venue['city'] as String?,
                               onTap: () {
                                 ref
                                     .read(postComposerProvider.notifier)
                                     .setVenue(
                                       id: venue['id'] as String,
-                                      name: venue['name'] as String? ?? 'Venue',
+                                      name: venue['name'] as String? ?? AppLocalizations.of(context).composer_venue,
                                       lat: venue['geo_lat'] as double?,
                                       lng: venue['geo_lng'] as double?,
                                     );
@@ -1033,8 +1034,8 @@ class _LocationPickerSheetState extends ConsumerState<_LocationPickerSheet> {
                     );
                   },
                 )
-              : const ComposerCenteredState.message(
-                  'Search for a venue or type a location',
+              : ComposerCenteredState.message(
+                  AppLocalizations.of(context).composer_venue_hint,
                   icon: 'search-normal',
                 ),
         ),
@@ -1078,7 +1079,7 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
         ),
         ComposerSearchField(
           controller: _searchController,
-          placeholder: 'Search games by title...',
+          placeholder: AppLocalizations.of(context).composer_games_search,
           onChanged: (value) => setState(() => _query = value),
         ),
         ComposerScrollArea(
@@ -1090,11 +1091,11 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
                     return gamesAsync.when(
                       loading: () => const ComposerCenteredState.loading(),
                       error: (e, _) =>
-                          const ComposerCenteredState.message('Search failed'),
+                          ComposerCenteredState.message(AppLocalizations.of(context).composer_search_failed),
                       data: (games) {
                         if (games.isEmpty) {
-                          return const ComposerCenteredState.message(
-                            'No games found',
+                          return ComposerCenteredState.message(
+                            AppLocalizations.of(context).composer_no_games,
                             icon: 'game',
                           );
                         }
@@ -1103,7 +1104,7 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
                           itemBuilder: (ctx, i) {
                             final game = games[i];
                             final title =
-                                game['title'] as String? ?? 'Untitled Game';
+                                game['title'] as String? ?? AppLocalizations.of(context).composer_untitled_game;
                             final sport = game['sport'] as String? ?? '';
                             final gameType = game['game_type'] as String? ?? '';
                             final startAt = game['start_at'] as String?;
@@ -1137,8 +1138,8 @@ class _GamePickerSheetState extends ConsumerState<_GamePickerSheet> {
                     );
                   },
                 )
-              : const ComposerCenteredState.message(
-                  'Search for a game to link to your post',
+              : ComposerCenteredState.message(
+                  AppLocalizations.of(context).composer_games_hint,
                   icon: 'game',
                 ),
         ),

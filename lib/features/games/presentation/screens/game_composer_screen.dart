@@ -13,6 +13,7 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show activeChallengeSportsByProfileCountryProvider;
 import 'package:dabbler/services/moderation_service.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -603,8 +604,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     );
 
     return ComposerDrawerShell(
-      title: _isEditing ? 'Edit Game' : 'Create game',
-      ctaLabel: _isEditing ? 'Save changes' : 'Create game',
+      title: _isEditing ? AppLocalizations.of(context).game_edit : AppLocalizations.of(context).game_create,
+      ctaLabel: _isEditing ? AppLocalizations.of(context).game_save_changes : AppLocalizations.of(context).game_create,
       canSubmit: state.canSubmit,
       isSubmitting: state.isSubmitting,
       onCtaTap: _submit,
@@ -616,7 +617,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'Sport'),
+              ComposerSectionLabel(label: AppLocalizations.of(context).game_sport),
               const SizedBox(height: DabblerSpacing.space3),
               // Sport is locked in edit mode — capacity and the roster
               // derive from the sport/format chosen at creation.
@@ -639,14 +640,14 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'category',
-            title: 'Format',
-            subtitle: 'Game format',
+            title: AppLocalizations.of(context).game_format,
+            subtitle: AppLocalizations.of(context).game_format_sub,
             trailing: ComposerSelectPill(
               value:
                   state.variantNameEn ??
                   (state.sportId == null
-                      ? 'Select sport first'
-                      : 'Select format'),
+                      ? AppLocalizations.of(context).game_select_sport_first
+                      : AppLocalizations.of(context).game_select_format),
               caret: ComposerSelectCaret.right,
               // Disabled until a sport is picked, and locked in edit mode.
               onTap: (state.sportId == null || _isEditing)
@@ -661,8 +662,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'location',
-            title: 'Venue',
-            subtitle: 'Where to play',
+            title: AppLocalizations.of(context).composer_venue,
+            subtitle: AppLocalizations.of(context).game_venue_sub,
             trailing: ComposerSelectPill(
               value: _venueLabel(state),
               caret: ComposerSelectCaret.right,
@@ -676,8 +677,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'calendar',
-            title: 'Date & Time',
-            subtitle: 'When is the game',
+            title: AppLocalizations.of(context).game_date_time,
+            subtitle: AppLocalizations.of(context).game_date_time_sub,
             trailing: Wrap(
               spacing: DabblerSpacing.space2,
               children: [
@@ -699,8 +700,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'timer',
-            title: 'Duration',
-            subtitle: 'How long it runs',
+            title: AppLocalizations.of(context).game_duration,
+            subtitle: AppLocalizations.of(context).game_duration_sub,
             trailing: Wrap(
               spacing: DabblerSpacing.space2,
               children: [
@@ -721,17 +722,17 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'Join policy'),
+              ComposerSectionLabel(label: AppLocalizations.of(context).game_join_policy),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
                 runSpacing: DabblerSpacing.space3,
                 children: [
-                  for (final entry in const [
-                    ('open', 'Open'),
-                    ('request', 'Request'),
-                    ('invite', 'Invite'),
-                    ('link', 'Link'),
+                  for (final entry in [
+                    ('open', AppLocalizations.of(context).game_join_open),
+                    ('request', AppLocalizations.of(context).game_join_request),
+                    ('invite', AppLocalizations.of(context).game_join_invite),
+                    ('link', AppLocalizations.of(context).game_join_link),
                   ])
                     ComposerPolicyChip(
                       label: entry.$2,
@@ -751,16 +752,16 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'Visibility'),
+              ComposerSectionLabel(label: AppLocalizations.of(context).game_visibility),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
                 runSpacing: DabblerSpacing.space3,
                 children: [
-                  for (final entry in const [
-                    ('public', 'Public'),
-                    ('followers', 'Followers'),
-                    ('private', 'Private'),
+                  for (final entry in [
+                    ('public', AppLocalizations.of(context).composer_vis_public),
+                    ('followers', AppLocalizations.of(context).composer_vis_followers),
+                    ('private', AppLocalizations.of(context).composer_vis_private),
                   ])
                     ComposerPolicyChip(
                       label: entry.$2,
@@ -779,10 +780,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'medal-star',
-            title: 'Skill Level',
-            subtitle: 'Player experience',
+            title: AppLocalizations.of(context).game_skill_level,
+            subtitle: AppLocalizations.of(context).game_skill_sub,
             trailing: ComposerSelectPill(
-              value: state.skillLevel ?? 'Any level',
+              value: state.skillLevel ?? AppLocalizations.of(context).game_any_level,
               caret: ComposerSelectCaret.down,
               onTap: () => _openSkillPicker(context),
             ),
@@ -794,23 +795,23 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           padding: gutter,
           child: ComposerSettingsRow(
             icon: 'people',
-            title: 'Players',
-            subtitle: 'Min & max players',
+            title: AppLocalizations.of(context).game_players,
+            subtitle: AppLocalizations.of(context).game_players_sub,
             trailing: Wrap(
               spacing: DabblerSpacing.space2,
               children: [
                 DabblerStepperPill(
                   value: state.minPlayers ?? state.requiredPlayers ?? 2,
                   min: 1,
-                  decreaseLabel: 'Fewer minimum players',
-                  increaseLabel: 'More minimum players',
+                  decreaseLabel: AppLocalizations.of(context).game_fewer_min,
+                  increaseLabel: AppLocalizations.of(context).game_more_min,
                   onChanged: notifier.setMinPlayers,
                 ),
                 DabblerStepperPill(
                   value: state.maxPlayers ?? state.requiredPlayers ?? 10,
                   min: 1,
-                  decreaseLabel: 'Fewer maximum players',
-                  increaseLabel: 'More maximum players',
+                  decreaseLabel: AppLocalizations.of(context).game_fewer_max,
+                  increaseLabel: AppLocalizations.of(context).game_more_max,
                   onChanged: notifier.setMaxPlayers,
                 ),
               ],
@@ -825,8 +826,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             children: [
               ComposerSettingsRow(
                 icon: 'profile-2user',
-                title: 'Waitlist',
-                subtitle: 'Let players queue when full',
+                title: AppLocalizations.of(context).game_waitlist,
+                subtitle: AppLocalizations.of(context).game_waitlist_sub,
                 trailing: ComposerToggle(
                   value: state.allowWaitlist,
                   onChanged: (_) => notifier.toggleWaitlist(),
@@ -834,8 +835,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
               ),
               ComposerSettingsRow(
                 icon: 'eye',
-                title: 'Spectators',
-                subtitle: 'Allow spectators to watch',
+                title: AppLocalizations.of(context).game_spectators,
+                subtitle: AppLocalizations.of(context).game_spectators_sub,
                 showDivider: false,
                 trailing: ComposerToggle(
                   value: state.allowSpectators,
@@ -852,17 +853,17 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'Details (optional)'),
+              ComposerSectionLabel(label: AppLocalizations.of(context).game_details),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,
-                hint: 'Game title',
+                hint: AppLocalizations.of(context).game_title_hint,
                 onChanged: notifier.setTitle,
               ),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _descController,
-                hint: 'Add a note for players...',
+                hint: AppLocalizations.of(context).game_note_hint,
                 minLines: 3,
                 maxLines: 6,
                 onChanged: notifier.setDescription,
@@ -877,24 +878,24 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   // ─── Format helpers ────────────────────────────────────────────────────────
 
   String _formatDateChip(DateTime? date) {
-    if (date == null) return 'Date';
+    if (date == null) return AppLocalizations.of(context).game_date;
     final now = DateTime.now();
     if (date.year == now.year &&
         date.month == now.month &&
         date.day == now.day) {
-      return 'Today';
+      return AppLocalizations.of(context).game_today;
     }
     final tomorrow = now.add(const Duration(days: 1));
     if (date.year == tomorrow.year &&
         date.month == tomorrow.month &&
         date.day == tomorrow.day) {
-      return 'Tomorrow';
+      return AppLocalizations.of(context).game_tomorrow;
     }
     return DateFormat('MMM d').format(date);
   }
 
   String _formatTimeChip(BuildContext context, TimeOfDay? time) {
-    if (time == null) return 'Time';
+    if (time == null) return AppLocalizations.of(context).game_time;
     return DabblerTimeFormat.format(time);
   }
 
@@ -907,7 +908,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   }
 
   String _venueLabel(_ComposerState state) {
-    if (state.venueSpaceId == null) return 'Select';
+    if (state.venueSpaceId == null) return AppLocalizations.of(context).composer_select;
     return [
       state.venueName,
       state.venueSpaceName,
@@ -930,7 +931,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
     await showComposerSheet<void>(
       context,
-      title: 'Select Format',
+      title: AppLocalizations.of(context).game_select_format_title,
       builder: (_) => _VariantPickerSheet(
         variants: notifier.variants,
         onSelect: notifier.selectVariant,
@@ -952,7 +953,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
     await showComposerSportSheet(
       context,
-      title: 'Which sport?',
+      title: AppLocalizations.of(context).composer_which_sport,
       sportsProvider: activeChallengeSportsByProfileCountryProvider,
       selected: selectedSport,
       onConfirm: (sport) => notifier.selectSport({
@@ -970,7 +971,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final initial = ref.read(_gameComposerProvider).selectedDate ?? now;
     await showComposerSheet<void>(
       context,
-      title: 'Date',
+      title: AppLocalizations.of(context).game_date,
       builder: (_) => _DatePickerSheet(
         first: now,
         last: now.add(const Duration(days: 365)),
@@ -984,7 +985,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final current = ref.read(_gameComposerProvider).selectedTime;
     await showComposerSheet<void>(
       context,
-      title: 'Time',
+      title: AppLocalizations.of(context).game_time,
       builder: (_) => _TimePickerSheet(
         initial: current ?? const TimeOfDay(hour: 18, minute: 0),
         onPicked: ref.read(_gameComposerProvider.notifier).selectTime,
@@ -1000,7 +1001,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
     await showComposerSheet<void>(
       context,
-      title: 'Select Venue',
+      title: AppLocalizations.of(context).game_select_venue,
       builder: (_) => _VenuePickerSheet(
         spaces: spaces,
         onSelect: notifier.selectVenueSpace,
@@ -1013,7 +1014,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   Future<void> _openSkillPicker(BuildContext context) async {
     await showComposerSheet<void>(
       context,
-      title: 'Skill Level',
+      title: AppLocalizations.of(context).game_skill_level,
       builder: (_) => _SkillPickerSheet(
         onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
         onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
@@ -1052,7 +1053,7 @@ class _SportChipsRow extends StatelessWidget {
         child: Align(
           alignment: AlignmentDirectional.centerStart,
           child: DabblerText(
-            'No sports available',
+            AppLocalizations.of(context).composer_sports_none,
             style: DabblerType.footnote,
             tone: DabblerTextTone.secondary,
           ),
@@ -1067,7 +1068,7 @@ class _SportChipsRow extends StatelessWidget {
         for (final sport in sports)
           DabblerSelectableCard(
             layout: DabblerSelectableCardLayout.tile,
-            title: sport['name_en'] as String? ?? 'Sport',
+            title: sport['name_en'] as String? ?? AppLocalizations.of(context).game_sport,
             leading: DabblerSportIcon.fromKey(
               ((sport['sport_key'] as String?) ?? '').replaceAll('_', '-'),
               size: DabblerSizing.iconLg,
@@ -1076,7 +1077,7 @@ class _SportChipsRow extends StatelessWidget {
             selected: (sport['id'] as String) == selectedSportId,
             onChanged: (_) => onSelect(sport),
             semanticLabel:
-                'Sport: ${sport['name_en'] ?? 'Sport'}, tap to select',
+                'Sport: ${sport['name_en'] ?? AppLocalizations.of(context).game_sport}, tap to select',
           ),
       ],
     );
@@ -1094,9 +1095,9 @@ class _VariantPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (variants.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-        child: ComposerCenteredState.message('No formats available'),
+        child: ComposerCenteredState.message(AppLocalizations.of(context).game_no_formats),
       );
     }
     return Column(
@@ -1259,14 +1260,14 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
                   'No venues available for this format',
                 )
               : filtered.isEmpty
-              ? const ComposerCenteredState.message('No matches')
+              ? ComposerCenteredState.message(AppLocalizations.of(context).game_no_matches)
               : ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (_, i) {
                     final sp = filtered[i];
                     final venue =
                         sp['venue'] as Map<String, dynamic>? ?? const {};
-                    final venueName = venue['name_en'] as String? ?? 'Venue';
+                    final venueName = venue['name_en'] as String? ?? AppLocalizations.of(context).composer_venue;
                     final area = venue['area'] as String?;
                     final spaceName = sp['name_en'] as String?;
                     return ComposerPickerRow(
