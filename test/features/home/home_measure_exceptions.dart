@@ -45,6 +45,10 @@ const String kExSheetHairlineReason =
 const String kExMoreRtlReason =
     'frame quirk: the frame\'s `margin-left:auto` collapses in RTL, so More sits 18 after Share; the app keeps More at the far end of the row in both directions';
 
+/// showless
+const String kExShowLessReason =
+    'frame quirk: the Arabic frame leaves the opened list\'s `Show less` label in Latin although its own dictionary translates it (`عرض أقل`); the app shows the l10n Arabic label, so it is narrower and the centred pair shifts';
+
 /// sheetcontent
 const String kExSheetContentReason =
     'content-sized sheet: the frame lists Hide post and Report user (65 high each); the app lists Report post (65) and Block user (48, no note), so the panel is 17 shorter (no Hide-post feature; Block is App Review 1.2: a git grep for Hide post or hide_post on origin/Canary lib/features finds nothing)';
@@ -356,6 +360,54 @@ kMeasureExceptions = <String, MeasureException>{
     dx: 1.36,
     dy: -1.0,
     dw: -1.36,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|title 1 (13/18)': MeasureException(
+    kExArabicRuleReason,
+    dx: 0.0,
+    dy: 0.0,
+    dw: -4.23,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|title 2': MeasureException(
+    kExArabicRuleReason,
+    dx: 0.0,
+    dy: 0.0,
+    dw: -5.3,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|countdown 1 (brand, 12/16)': MeasureException(
+    kExArabicRuleReason,
+    dx: -5.26,
+    dy: 0.0,
+    dw: -5.26,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|countdown 2': MeasureException(
+    kExArabicRuleReason,
+    dx: -2.54,
+    dy: 0.0,
+    dw: -2.54,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|Show less label (13/18)': MeasureException(
+    kExShowLessReason,
+    dx: -6.41,
+    dy: 0.0,
+    dw: -12.82,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Upcoming list (opened)|Show less glyph (16)': MeasureException(
+    kExShowLessReason,
+    dx: 6.4,
+    dy: 0.0,
+    dw: 0.0,
     dh: 0.0,
     tol: 0.06,
   ),

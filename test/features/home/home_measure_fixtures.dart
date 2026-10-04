@@ -47,32 +47,50 @@ Post framePost(
   updatedAt: DateTime.now(),
 );
 
-/// Three upcoming games, the first inside the next day (the frame's "2 hours").
-List<Game> frameGames(FrameData d) => <Game>[
-  for (final int h in <int>[19, 50, 100])
-    Game(
-      id: 'u$h',
-      title: d.gameTitle,
-      description: '',
-      sport: 'Football',
-      venueName: d.venue,
-      scheduledDate: DateTime.now().add(Duration(hours: h)),
-      startTime: '19:30',
-      endTime: '23:59',
-      minPlayers: 2,
-      maxPlayers: 10,
-      currentPlayers: 4,
-      organizerId: 'o',
-      skillLevel: 'mixed',
-      pricePerPlayer: 0,
-      status: GameStatus.upcoming,
-      isPublic: true,
-      allowsWaitlist: false,
-      checkInEnabled: false,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+/// Three upcoming games: the frame's `UPCOMING[0..2]`. The first keeps its
+/// 19:30 start; the other two start 12h 31m and 46h 1m out, so the countdown
+/// reads the frame's "in 12h 30m" and "in 1d" (the minute is floored).
+List<Game> frameGames(FrameData d) {
+  final DateTime now = DateTime.now();
+  String hhmm(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  Game game(String id, String title, String venue, DateTime at, String start) =>
+      Game(
+        id: id,
+        title: title,
+        description: '',
+        sport: 'Football',
+        venueName: venue,
+        scheduledDate: at,
+        startTime: start,
+        endTime: '23:59',
+        minPlayers: 2,
+        maxPlayers: 10,
+        currentPlayers: 4,
+        organizerId: 'o',
+        skillLevel: 'mixed',
+        pricePerPlayer: 0,
+        status: GameStatus.upcoming,
+        isPublic: true,
+        allowsWaitlist: false,
+        checkInEnabled: false,
+        createdAt: now,
+        updatedAt: now,
+      );
+  final DateTime second = now.add(const Duration(hours: 12, minutes: 31));
+  final DateTime third = now.add(const Duration(hours: 46, minutes: 1));
+  return <Game>[
+    game(
+      'u19',
+      d.gameTitle,
+      d.venue,
+      now.add(const Duration(hours: 19)),
+      '19:30',
     ),
-];
+    game('u12', d.listTitle1, d.listVenue1, second, hhmm(second)),
+    game('u46', d.listTitle2, d.listVenue2, third, hhmm(third)),
+  ];
+}
 
 /// Lets the page, the tab pager and every animation settle.
 Future<void> settleHome(WidgetTester tester) async {

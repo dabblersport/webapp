@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'home_measure_cases.dart';
 import 'home_measure_data.dart';
 import 'home_measure_cases_city.dart';
+import 'home_measure_cases_list.dart';
 import 'home_measure_cases_page.dart';
 import 'home_measure_cases_sheets.dart';
 import 'home_measure_cases_strip.dart';
@@ -108,6 +109,30 @@ void main() {
         countLabel: l.home_upcoming_strip_count(3),
       );
       table.write('Home, folded Upcoming strip, $dir');
+      final List<String> failures = table.failures();
+      // ignore: avoid_print
+      failures.forEach(print);
+      expect(failures, isEmpty);
+    }, variant: desktop);
+
+    testWidgets('Home mirrors the frame: opened upcoming list - $dir', (
+      tester,
+    ) async {
+      await pump(tester);
+      final AppLocalizations l = lookupAppLocalizations(locale);
+      await tester.tap(find.text(l.home_upcoming_more(2)).first);
+      await settleHome(tester);
+      final MeasureTable table = MeasureTable(rtl: rtl);
+      addUpcomingListRows(
+        table,
+        tester,
+        title1: d.listTitle1,
+        short1: l.home_upcoming_in_hours(12, 30),
+        title2: d.listTitle2,
+        short2: l.home_upcoming_in_days(1),
+        less: l.home_upcoming_show_less,
+      );
+      table.write('Home, opened Upcoming list, $dir');
       final List<String> failures = table.failures();
       // ignore: avoid_print
       failures.forEach(print);

@@ -54,6 +54,10 @@ void main() {
       'reminderSheetNear': 7,
       'reminderDateGap': 1,
       'reminderTextGap': 2,
+      'upcomingTileWidth': 34,
+      'upcomingRowGap': 10,
+      'upcomingRowPadV': 8,
+      'upcomingRowMinContent': 44,
       'reminderStripDivider': 14,
       'reminderStripGap': 5,
       'postBadgePaddingBlock': 2, // section 7a

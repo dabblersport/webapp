@@ -21,6 +21,10 @@ class FrameData {
     required this.newsTitleKey,
     required this.newsExcerptKey,
     required this.region,
+    required this.listTitle1,
+    required this.listVenue1,
+    required this.listTitle2,
+    required this.listVenue2,
   });
 
   final String location;
@@ -38,6 +42,9 @@ class FrameData {
   final String newsTitleKey;
   final String newsExcerptKey;
   final String region;
+
+  /// The opened Upcoming list's two rows (`UPCOMING[1]`, `UPCOMING[2]`).
+  final String listTitle1, listVenue1, listTitle2, listVenue2;
 
   static const FrameData en = FrameData(
     location: 'Sheikha Fatima Bint Mubarak Street',
@@ -59,6 +66,10 @@ class FrameData {
     newsTitleKey: 'Dubai adds twelve',
     newsExcerptKey: 'The municipality confirmed',
     region: 'Dubai',
+    listTitle1: 'Sunrise run',
+    listVenue1: 'Kite Beach',
+    listTitle2: 'Half court pickup',
+    listVenue2: 'Zayed Sports City',
   );
 
   static const FrameData ar = FrameData(
@@ -79,6 +90,10 @@ class FrameData {
     newsTitleKey: 'دبي تضيف',
     newsExcerptKey: 'أكدت البلدية',
     region: 'دبي',
+    listTitle1: 'جري الشروق',
+    listVenue1: 'شاطئ كايت',
+    listTitle2: 'سلة نصف ملعب',
+    listVenue2: 'مدينة زايد الرياضية',
   );
 
   static FrameData of(bool rtl) => rtl ? ar : en;
