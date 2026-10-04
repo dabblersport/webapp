@@ -144,12 +144,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 480',
   ),
   GateAllow(
-    'lib/features/venues/presentation/screens/venue_detail_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 700',
-  ),
-  GateAllow(
     'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
     ['numeric named arg'],
     _maxWidthReason,
@@ -160,18 +154,6 @@ const List<GateAllow> allowList = [
     ['numeric named arg'],
     _maxWidthReason,
     match: 'maxWidth: 700',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 700',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 120',
   ),
   GateAllow(
     'lib/core/widgets/composer_drawer_kit.dart',
@@ -210,43 +192,7 @@ const List<GateAllow> allowList = [
     match: 'aspectRatio: 4 / 5',
   ),
   GateAllow(
-    'lib/features/venues/presentation/screens/venue_detail_screen.dart',
-    ['withValues literal', 'numeric named arg'],
-    _alphaReason,
-    match: 'alpha: 0.25',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['withValues literal', 'numeric named arg'],
-    _alphaReason,
-    match: 'alpha: 0.2)',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['withValues literal', 'numeric named arg'],
-    _alphaReason,
-    match: 'alpha: 0.06',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['withValues literal', 'numeric named arg'],
-    _alphaReason,
-    match: 'alpha: 0.3',
-  ),
-  GateAllow(
-    'lib/features/venues/presentation/screens/venue_detail_screen.dart',
-    ['numeric named arg'],
-    _radiusNoneReason,
-    match: 'radius: 0,',
-  ),
-  GateAllow(
     'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
-    ['numeric named arg'],
-    _radiusNoneReason,
-    match: 'radius: 0,',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
     ['numeric named arg'],
     _radiusNoneReason,
     match: 'radius: 0,',
@@ -268,13 +214,6 @@ const List<GateAllow> allowList = [
     ['numeric named arg'],
     _pickerReason,
     match: '1200',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['numeric named arg'],
-    'Zero safe-area offset for the hero when the banner already consumes it; '
-        'an absent inset, not a design value.',
-    match: 'showBanner ? 0 : top',
   ),
   GateAllow(
     'lib/data/models/social/chat_message_model.dart',
