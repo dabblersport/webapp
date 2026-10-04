@@ -138,15 +138,10 @@ class SearchPersonRow extends StatelessWidget {
       imageUrl: profile.avatarUrl,
       size: DabblerAvatarSize.md,
     ),
-    titleSpan: TextSpan(
-      style: const TextStyle(fontWeight: DabblerType.semibold),
-      children: [
-        DabblerInputRow.highlightSpan(
-          profile.displayName,
-          searchNeedle(query),
-          DabblerColors.of(context),
-        ),
-      ],
+    titleSpan: DabblerInputRow.highlightSpan(
+      profile.displayName,
+      searchNeedle(query),
+      DabblerColors.of(context),
     ),
     subtitle: '\u2066@${profile.username}\u2069',
     trailing: DabblerButton(
