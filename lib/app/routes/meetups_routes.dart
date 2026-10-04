@@ -4,6 +4,7 @@
 
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
@@ -20,5 +21,19 @@ RouteBase get meetupDetailRoute => GoRoute(
     key: state.pageKey,
     child: MeetupDetailScreen(meetupId: state.pathParameters['meetupId']!),
     type: SharedAxisType.horizontal,
+  ),
+);
+
+// /create-meetup — the Create meet-up drawer (organiser-only entry; the server
+// enforces organiser_required).
+RouteBase get createMeetupRoute => GoRoute(
+  path: RoutePaths.createMeetup,
+  name: RouteNames.createMeetup,
+  parentNavigatorKey: rootNavigatorKey,
+  redirect: (context, state) =>
+      FeatureFlags.enableMeetups ? null : RoutePaths.home,
+  pageBuilder: (context, state) => AdaptiveModalPage(
+    key: state.pageKey,
+    child: const MeetupComposerScreen(),
   ),
 );

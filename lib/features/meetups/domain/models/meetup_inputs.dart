@@ -14,6 +14,9 @@ class CreateMeetupInput {
     this.endAt,
     this.capacity,
     this.rsvpPolicy = 'open',
+    this.minSkill,
+    this.maxSkill,
+    this.vibeKey,
   });
 
   final String sportId;
@@ -30,6 +33,13 @@ class CreateMeetupInput {
 
   /// open | request | closed (db values of RsvpPolicy).
   final String rsvpPolicy;
+
+  /// 1-10 skill bounds, both or neither.
+  final int? minSkill;
+  final int? maxSkill;
+
+  /// A `DabblerVibe.key`.
+  final String? vibeKey;
 }
 
 /// Input for `rpc_meetup_update`. Null = unchanged (the RPC cannot clear

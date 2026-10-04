@@ -36,6 +36,18 @@ class FakeMeetupRepository implements MeetupRepository {
   ];
   List<NearbyMeetup> nearbyList = <NearbyMeetup>[];
   Failure? rsvpFailure;
+  Failure? createFailure;
+  bool canCreateResult = true;
+  final List<CreateMeetupInput> createCalls = <CreateMeetupInput>[];
+  List<MeetupSportVariant> variants = const <MeetupSportVariant>[
+    MeetupSportVariant(id: 'v1', sportId: 's1', nameEn: 'Solo'),
+  ];
+  final List<UpdateMeetupInput> updateCalls = <UpdateMeetupInput>[];
+  final List<(String, String, String)> decideCalls =
+      <(String, String, String)>[];
+  final List<(String, String)> removeCalls = <(String, String)>[];
+  final List<String> cancelCalls = <String>[];
+  Failure? manageFailure;
   final List<(String, RsvpAction)> rsvpCalls = <(String, RsvpAction)>[];
 
   @override
@@ -76,7 +88,7 @@ class FakeMeetupRepository implements MeetupRepository {
 
   @override
   Future<Result<bool, Failure>> canCreate(String actorProfileId) async =>
-      const Ok(false);
+      Ok(canCreateResult);
 
   @override
   Future<Result<List<MeetupSport>, Failure>> soloSports() async => Ok(sports);
@@ -84,13 +96,17 @@ class FakeMeetupRepository implements MeetupRepository {
   @override
   Future<Result<List<MeetupSportVariant>, Failure>> sportVariants(
     String sportId,
-  ) async => const Ok(<MeetupSportVariant>[]);
+  ) async => Ok(variants);
 
   @override
   Future<Result<String, Failure>> create(
     CreateMeetupInput input, {
     String actorType = 'organiser',
-  }) async => const Ok('new');
+  }) async {
+    createCalls.add(input);
+    if (createFailure != null) return Err(createFailure!);
+    return const Ok('new1');
+  }
 
   @override
   Future<Result<RsvpStatus, Failure>> rsvp(
@@ -107,21 +123,32 @@ class FakeMeetupRepository implements MeetupRepository {
   Future<Result<void, Failure>> cancel(String meetupId) async => const Ok(null);
 
   @override
-  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) async =>
-      Ok(card);
+  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) async {
+    updateCalls.add(input);
+    if (manageFailure != null) return Err(manageFailure!);
+    return Ok(card);
+  }
 
   @override
   Future<Result<RsvpStatus, Failure>> decideRequest(
     String meetupId,
     String userId,
     MeetupDecision decision,
-  ) async => const Ok(RsvpStatus.going);
+  ) async {
+    decideCalls.add((meetupId, userId, decision.rpcValue));
+    if (manageFailure != null) return Err(manageFailure!);
+    return const Ok(RsvpStatus.going);
+  }
 
   @override
   Future<Result<RsvpStatus, Failure>> removeAttendee(
     String meetupId,
     String userId,
-  ) async => const Ok(RsvpStatus.cancelled);
+  ) async {
+    removeCalls.add((meetupId, userId));
+    if (manageFailure != null) return Err(manageFailure!);
+    return const Ok(RsvpStatus.cancelled);
+  }
 }
 
 class _DeniedLocation extends ActiveLocationNotifier {
@@ -235,4 +262,19 @@ Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 6; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+}
+
+/// A container with the fake repository, for provider-only tests.
+ProviderContainer makeContainer(
+  FakeMeetupRepository repo, [
+  List<Override> overrides = const <Override>[],
+]) {
+  final c = ProviderContainer(
+    overrides: <Override>[
+      meetupRepositoryProvider.overrideWithValue(repo),
+      ...overrides,
+    ],
+  );
+  addTearDown(c.dispose);
+  return c;
 }

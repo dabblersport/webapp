@@ -9808,6 +9808,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{km} km away'**
   String meetups_km_away(String km);
+
+  /// No description provided for @meetups_create_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Create meet-up'**
+  String get meetups_create_title;
+
+  /// No description provided for @meetups_create_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet up title'**
+  String get meetups_create_title_hint;
+
+  /// No description provided for @meetups_create_note_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add short description for participations...'**
+  String get meetups_create_note_hint;
+
+  /// No description provided for @meetups_create_name_section.
+  ///
+  /// In en, this message translates to:
+  /// **'CHOOSE NAME AND DESCRIPTION'**
+  String get meetups_create_name_section;
+
+  /// No description provided for @meetups_when.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get meetups_when;
+
+  /// No description provided for @meetups_when_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Date and time'**
+  String get meetups_when_sub;
+
+  /// No description provided for @meetups_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get meetups_end;
+
+  /// No description provided for @meetups_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get meetups_location;
+
+  /// No description provided for @meetups_location_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a location or venue'**
+  String get meetups_location_sub;
+
+  /// No description provided for @meetups_capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get meetups_capacity;
+
+  /// No description provided for @meetups_capacity_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Max participants'**
+  String get meetups_capacity_sub;
+
+  /// No description provided for @meetups_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced options'**
+  String get meetups_advanced;
+
+  /// No description provided for @meetups_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'How people join'**
+  String get meetups_policy;
+
+  /// No description provided for @meetups_policy_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join settings'**
+  String get meetups_policy_sub;
+
+  /// No description provided for @meetups_policy_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get meetups_policy_closed;
+
+  /// No description provided for @meetups_skill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill range'**
+  String get meetups_skill;
+
+  /// No description provided for @meetups_skill_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience level'**
+  String get meetups_skill_sub;
+
+  /// No description provided for @meetups_skill_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get meetups_skill_any;
+
+  /// No description provided for @meetups_vibe.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe'**
+  String get meetups_vibe;
+
+  /// No description provided for @meetups_vibe_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the mood'**
+  String get meetups_vibe_sub;
+
+  /// No description provided for @meetups_vibe_choose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get meetups_vibe_choose;
+
+  /// No description provided for @meetups_create_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create meet-up'**
+  String get meetups_create_failed;
+
+  /// No description provided for @meetups_err_organiser_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Only organisers can create meet-ups.'**
+  String get meetups_err_organiser_required;
+
+  /// No description provided for @meetups_err_title_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The title must be 3 to 80 characters.'**
+  String get meetups_err_title_invalid;
+
+  /// No description provided for @meetups_err_invalid_time_range.
+  ///
+  /// In en, this message translates to:
+  /// **'The end time must be after the start time.'**
+  String get meetups_err_invalid_time_range;
+
+  /// No description provided for @meetups_err_invalid_capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'The capacity must be at least 1.'**
+  String get meetups_err_invalid_capacity;
+
+  /// No description provided for @meetups_err_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue.'**
+  String get meetups_err_auth_required;
+
+  /// No description provided for @meetups_err_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This option is not available yet.'**
+  String get meetups_err_unsupported;
 }
 
 class _AppLocalizationsDelegate

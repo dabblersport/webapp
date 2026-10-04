@@ -26,6 +26,9 @@ class MeetupRpcParams {
     'p_listing_visibility': 'public',
     'p_rsvp_policy': i.rsvpPolicy,
     'p_members_only': false,
+    'p_min_skill': i.minSkill,
+    'p_max_skill': i.maxSkill,
+    'p_vibe_key': i.vibeKey,
   };
 
   static Map<String, dynamic> rsvp(
@@ -71,10 +74,8 @@ class MeetupRpcParams {
     String decision,
   ) => {'p_meetup_id': meetupId, 'p_user_id': userId, 'p_decision': decision};
 
-  static Map<String, dynamic> removeAttendee(
-    String meetupId,
-    String userId,
-  ) => {'p_meetup_id': meetupId, 'p_user_id': userId};
+  static Map<String, dynamic> removeAttendee(String meetupId, String userId) =>
+      {'p_meetup_id': meetupId, 'p_user_id': userId};
 
   static Map<String, dynamic> canCreate(String actorProfileId) => {
     'p_actor': actorProfileId,

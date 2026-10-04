@@ -78,6 +78,7 @@ class RoutePaths {
   // Game & Venue detail paths (root-level, no shell)
   static String gameDetail(String gameId) => '/sports/games/$gameId';
   static const String meetups = '/meetups';
+  static const String createMeetup = '/create-meetup';
   static String meetupDetail(String meetupId) => '/meetups/$meetupId';
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
@@ -153,6 +154,7 @@ class RouteNames {
   // Games Routes
   static const String gameDetail = 'game-detail';
   static const String meetups = 'meetups';
+  static const String createMeetup = 'create-meetup';
   static const String meetupDetail = 'meetup-detail';
 
   // Game Creation Routes

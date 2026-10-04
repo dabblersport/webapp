@@ -5334,4 +5334,92 @@ class AppLocalizationsAr extends AppLocalizations {
   String meetups_km_away(String km) {
     return 'على بعد $km كم';
   }
+
+  @override
+  String get meetups_create_title => 'Create meet-up';
+
+  @override
+  String get meetups_create_title_hint => 'Meet up title';
+
+  @override
+  String get meetups_create_note_hint =>
+      'Add short description for participations...';
+
+  @override
+  String get meetups_create_name_section => 'CHOOSE NAME AND DESCRIPTION';
+
+  @override
+  String get meetups_when => 'When';
+
+  @override
+  String get meetups_when_sub => 'Date and time';
+
+  @override
+  String get meetups_end => 'End';
+
+  @override
+  String get meetups_location => 'Location';
+
+  @override
+  String get meetups_location_sub => 'Add a location or venue';
+
+  @override
+  String get meetups_capacity => 'Capacity';
+
+  @override
+  String get meetups_capacity_sub => 'Max participants';
+
+  @override
+  String get meetups_advanced => 'Advanced options';
+
+  @override
+  String get meetups_policy => 'How people join';
+
+  @override
+  String get meetups_policy_sub => 'Join settings';
+
+  @override
+  String get meetups_policy_closed => 'Closed';
+
+  @override
+  String get meetups_skill => 'Skill range';
+
+  @override
+  String get meetups_skill_sub => 'Experience level';
+
+  @override
+  String get meetups_skill_any => 'Any';
+
+  @override
+  String get meetups_vibe => 'Vibe';
+
+  @override
+  String get meetups_vibe_sub => 'Set the mood';
+
+  @override
+  String get meetups_vibe_choose => 'Choose';
+
+  @override
+  String get meetups_create_failed => 'Failed to create meet-up';
+
+  @override
+  String get meetups_err_organiser_required =>
+      'Only organisers can create meet-ups.';
+
+  @override
+  String get meetups_err_title_invalid =>
+      'The title must be 3 to 80 characters.';
+
+  @override
+  String get meetups_err_invalid_time_range =>
+      'The end time must be after the start time.';
+
+  @override
+  String get meetups_err_invalid_capacity => 'The capacity must be at least 1.';
+
+  @override
+  String get meetups_err_auth_required => 'Sign in to continue.';
+
+  @override
+  String get meetups_err_unsupported => 'This option is not available yet.';
 }
