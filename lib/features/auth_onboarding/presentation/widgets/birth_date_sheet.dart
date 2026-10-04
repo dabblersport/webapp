@@ -106,7 +106,10 @@ class _BirthDateColumnsState extends State<_BirthDateColumns> {
           onMonthChanged: (m) => setState(() => _month = m),
           onYearChanged: (y) => setState(() => _year = y),
         ),
-        const DabblerGap.v(DabblerSpacing.space6),
+        // The frame's lists are 200 tall and the action sits 12 below them; the
+        // design system's lists are 192 (the nearest grid step), so the action
+        // takes the nearest step to the 20 that keeps it where the frame has it.
+        const DabblerGap.v(DabblerSpacing.space7),
         DabblerButton(
           label: _complete
               ? l10n.onb_dob_sheet_confirm

@@ -156,6 +156,7 @@ class _InterestsSelectionScreenState
       subtitleStyle: DabblerType.copy,
       content: [
         DabblerSearchField(
+          borderOutside: true,
           initialValue: _query,
           placeholder: l10n.onb_sports_search,
           onChanged: (v) => setState(() => _query = v),

@@ -124,6 +124,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           content: [
             DabblerCard(
               variant: DabblerCardVariant.white,
+              borderOutside: true,
+              radius: DabblerRadius.xl,
               padding: DabblerInsets.card,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -143,6 +145,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             ),
             DabblerCard(
               variant: DabblerCardVariant.white,
+              borderOutside: true,
               padding: DabblerInsets.card,
               child: DabblerIconList(
                 title: persona.listTitle,
