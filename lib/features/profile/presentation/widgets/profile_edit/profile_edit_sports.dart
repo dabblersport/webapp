@@ -104,16 +104,16 @@ class _ProfileEditCategorySportsSheetState
           style: DabblerType.subheadline,
           tone: DabblerTextTone.secondary,
         ),
-        const SizedBox(height: DabblerSpacing.space2),
+        const DabblerGap.v(DabblerSpacing.space2),
         DabblerText(
           'Select sports you want to add to your interests in this category.',
           style: DabblerType.footnote,
           tone: DabblerTextTone.secondary,
         ),
-        const SizedBox(height: DabblerSpacing.space5),
+        const DabblerGap.v(DabblerSpacing.space5),
         for (final sport in widget.sports) ...[
           _sportRow(context, colors, sport),
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
         ],
       ],
     );
@@ -178,7 +178,7 @@ class ProfileEditSkillLevels extends StatelessWidget {
               Expanded(
                 child: DabblerText(labelOf(entry.key), style: DabblerType.body),
               ),
-              const SizedBox(width: DabblerSpacing.space4),
+              const DabblerGap.h(DabblerSpacing.space4),
               SizedBox(
                 width: _selectWidth,
                 child: DabblerSelect<SkillLevel>(
