@@ -1150,7 +1150,7 @@ class _ComposerVibesPickerSheetState
                         borderColor: isSelected
                             ? (tokens?.selectedBorder ?? colors.borderStrong)
                             : (tokens?.border ?? colors.borderDefault),
-                        borderWidth: 1,
+                        borderWidth: DabblerSizing.borderDefault,
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
