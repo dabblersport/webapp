@@ -13,5 +13,4 @@ lib/features/profile/presentation/screens/theme_settings_screen.dart
 lib/features/rewards/presentation/widgets/check_in_progress_indicator.dart
 lib/features/social/presentation/screens/post_composer_screen.dart
 lib/features/social/presentation/screens/social_search_screen.dart
-lib/features/social/presentation/widgets/quote_repost_sheet.dart
 lib/features/venues/presentation/screens/venue_detail_screen.dart

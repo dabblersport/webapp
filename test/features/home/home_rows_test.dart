@@ -272,18 +272,20 @@ void main() {
         ),
       ),
     );
-    expect(find.text('2'), findsOneWidget, reason: 'repost count');
-    expect(find.text('Dab'), findsOneWidget, reason: 'post type badge');
+    // The frame's share glyph carries the repost action, with no count.
+    expect(find.bySemanticsLabel('Share'), findsOneWidget);
+    expect(find.text('2'), findsNothing, reason: 'the frame shows no count');
+    expect(find.text('Dab'), findsOneWidget, reason: 'post type pill');
     expect(find.text('hyped 4'), findsOneWidget, reason: 'reaction chip');
   });
 
-  testWidgets('restored: the view count only for the author', (tester) async {
+  testWidgets('the frame draws no view count on a post row', (tester) async {
     await _pump(
       tester,
       HomePostRow(post: _post(authorProfileId: 'me', viewCount: 77)),
       myProfileId: 'me',
     );
-    expect(find.text('77'), findsOneWidget);
+    expect(find.text('77'), findsNothing);
   });
 
   testWidgets('restored: long press on the news heart opens the picker', (

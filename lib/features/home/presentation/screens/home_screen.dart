@@ -18,6 +18,7 @@ import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
@@ -313,6 +314,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       topBar: _buildHeader(),
       body: Column(
         children: [
+          const HomeUpcoming(),
           if (forYouState.hasNewPosts && _activeIndex == 0)
             Center(
               child: DabblerButton(
@@ -1002,9 +1004,19 @@ class _NewsFilterChips extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    Widget chip(String label, bool selected, VoidCallback onTap) => Padding(
+    Widget chip(
+      String label,
+      bool selected,
+      VoidCallback onTap, {
+      Widget? leading,
+    }) => Padding(
       padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-      child: DabblerChip(label: label, selected: selected, onTap: onTap),
+      child: DabblerChip(
+        label: label,
+        selected: selected,
+        onTap: onTap,
+        leadingIcon: leading,
+      ),
     );
 
     return SingleChildScrollView(
@@ -1026,10 +1038,14 @@ class _NewsFilterChips extends ConsumerWidget {
           // ── One chip per interest sport ──────────────────────────────
           ...interestSports.map((sport) {
             final selected = state.selectedSportId == sport.id;
+            final key = sport.sportKey;
             return chip(
-              '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
+              sport.localizedName(context),
               selected,
               () => notifier.setFilterSport(selected ? null : sport.id),
+              leading: key == null
+                  ? null
+                  : DabblerSportIcon.fromKey(key, size: DabblerSizing.iconXs),
             );
           }),
 

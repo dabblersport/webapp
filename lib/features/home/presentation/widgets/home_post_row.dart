@@ -194,14 +194,16 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     return l10n.post_card_expiring_soon;
   }
 
+  String? _typeLabel(Post post, AppLocalizations l10n) =>
+      post.postType == PostType.allocated
+      ? _kindLabel(post.kind, l10n)
+      : _postTypeLabel(post.postType, l10n);
+
   Widget? _badges(Post post, AppLocalizations l10n) {
-    final typeLabel = post.postType == PostType.allocated
-        ? _kindLabel(post.kind, l10n)
-        : _postTypeLabel(post.postType, l10n);
+    // The post type is the header pill (see `distance`), never a second badge.
     final originLabel = _originLabel(post.originType, l10n);
     final expiry = _expiryLabel(post.expiresAt, l10n);
     final labels = <Widget>[
-      if (typeLabel != null) DabblerBadge(label: typeLabel),
       if (originLabel != null) DabblerBadge(label: originLabel),
       if (post.requiresModeration)
         const DabblerBadge(
@@ -304,26 +306,38 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     );
   }
 
-  void _showMoreMenu({required bool isAuthor}) {
+  void _showMoreMenu({required bool isAuthor, required String authorName}) {
     showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
+      titleWidget: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const DabblerText('Post options', style: DabblerType.title3),
+          DabblerText(
+            'Posted by $authorName',
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.secondary,
+          ),
+        ],
+      ),
       builder: (ctx) => Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
-          DabblerSpacing.space2,
+          DabblerSpacing.space4,
           DabblerSpacing.space6,
           DabblerSpacing.space8,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DabblerButton(
+            DabblerActionRow(
+              icon: 'danger',
               label: 'Report post',
-              icon: 'flag',
-              tone: DabblerButtonTone.destructive,
-              fullWidth: true,
-              onPressed: () {
+              note: 'Tell us what is wrong with this post',
+              destructive: true,
+              onTap: () {
                 Navigator.of(ctx).pop();
                 // The report form is the shared dialog (legacy widgets).
                 _showLegacyReportDialog(
@@ -335,12 +349,11 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
             ),
             if (!isAuthor) ...[
               const SizedBox(height: DabblerSpacing.space3),
-              DabblerButton(
-                label: 'Block user',
+              DabblerActionRow(
                 icon: 'user-remove',
-                tone: DabblerButtonTone.destructive,
-                fullWidth: true,
-                onPressed: () {
+                label: 'Block user',
+                destructive: true,
+                onTap: () {
                   Navigator.of(ctx).pop();
                   _blockAuthor();
                 },
@@ -422,6 +435,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
 
     final sports = ref.watch(sportsProvider).valueOrNull ?? const [];
     final matchedSport = sports.where((s) => s.id == post.sportId).firstOrNull;
+    final sportKey = matchedSport?.sportKey ?? post.sport?.toLowerCase();
     final sportLabel = (post.sport == null || post.sport!.isEmpty)
         ? null
         : (matchedSport?.localizedName(context) ?? post.sport!);
@@ -445,15 +459,19 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               ? null
               : () => _navigateToAuthorProfile(context, post),
           roleLabel: persona,
+          // The design's inline pill: "Near you" on the Nearby tab, the post's
+          // type ("Dab") everywhere else.
           distance: widget.showNearbyChipInHeader
               ? l10n.post_card_near_you
-              : null,
+              : _typeLabel(post, l10n),
           kindBadge: _badges(post, l10n),
           // The post's photos: one image, or a horizontal list of them.
           media: PostMediaCarousel.imageUrls(post.media).isEmpty
               ? null
               : HomePostMedia(urls: PostMediaCarousel.imageUrls(post.media)),
-          onRepost: canRepost
+          // The design's share glyph, with no count: it opens the repost menu
+          // (or undoes a repost), the action the old repost button carried.
+          onShare: canRepost
               ? () {
                   if (hasReposted) {
                     ref.read(postActionsProvider.notifier).undoRepost(post.id);
@@ -462,14 +480,14 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   }
                 }
               : null,
-          reposts: post.repostCount,
-          reposted: hasReposted,
           reactions: _reactionSummary(post, myReactions),
-          views: isAuthor ? post.viewCount : null,
           time: homeRelativeTime(post.createdAt),
           place: place,
           segments: _segments(post),
           sportLabel: sportLabel,
+          sportLeading: sportKey == null
+              ? null
+              : DabblerSportIcon.fromKey(sportKey, size: DabblerSizing.iconXs),
           likes: _localLikeCount,
           replies: post.commentCount,
           liked: hasLiked,
@@ -485,7 +503,8 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           ),
           onComment: () =>
               context.push('${RoutePaths.socialPostDetail}/${post.id}'),
-          onMore: () => _showMoreMenu(isAuthor: isAuthor),
+          onMore: () =>
+              _showMoreMenu(isAuthor: isAuthor, authorName: authorLabel),
         ),
         if (post.commentCount > 0)
           HomeThreadPreview(postId: post.id, isEmbedded: widget.isEmbedded),

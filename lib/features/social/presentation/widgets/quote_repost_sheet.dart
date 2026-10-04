@@ -51,7 +51,6 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final original = widget.originalPost;
     final authorLabel = (original.authorDisplayName ?? '').trim().isEmpty
         ? 'Anonymous'
@@ -76,37 +75,31 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: DabblerSpacing.space4),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              border: Border.all(color: colors.borderDefault),
-              borderRadius: BorderRadius.circular(DabblerRadius.lg),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(DabblerSpacing.space4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+          DabblerCard(
+            padding: const EdgeInsets.all(DabblerSpacing.space4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DabblerText(
+                  authorLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: DabblerType.subheadline,
+                  weight: DabblerTextWeight.semibold,
+                ),
+                if (original.body != null &&
+                    original.body!.trim().isNotEmpty) ...[
+                  const SizedBox(height: DabblerSpacing.space1),
                   DabblerText(
-                    authorLabel,
-                    maxLines: 1,
+                    original.body!,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: DabblerType.subheadline,
-                    weight: DabblerTextWeight.semibold,
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
                   ),
-                  if (original.body != null &&
-                      original.body!.trim().isNotEmpty) ...[
-                    const SizedBox(height: DabblerSpacing.space1),
-                    DabblerText(
-                      original.body!,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
           ),
           const SizedBox(height: DabblerSpacing.space6),
