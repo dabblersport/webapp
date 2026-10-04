@@ -1119,5 +1119,7 @@
   "profile_create_persona_profile": "Create {persona} profile",
   "@profile_create_persona_profile": {"placeholders": {"persona": {"type": "String"}}},
   "sport_profile_overall_level": "{sport} · overall level {level}",
-  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}}
+  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}},
+  "profile_sports_followed_note": "Sports followed — feeds and results only",
+  "profile_stat_sports_followed": "Sports followed"
 }

@@ -7,6 +7,7 @@ import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/manage_profiles_sheet.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_followed_sports.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
@@ -395,11 +396,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   ? null
                   : shown.fold<double>(0, (a, p) => a + p.averageRating) /
                         shown.length,
-              winRate: profile?.statistics.winRateFormatted,
-              reliability: profile?.statistics.getReliabilityScore().round(),
+              winRate: personaType == 'player'
+                  ? profile?.statistics.winRateFormatted
+                  : null,
+              reliability: personaType == 'player'
+                  ? profile?.statistics.getReliabilityScore().round()
+                  : null,
               primarySports: sportProfiles
                   .where((p) => p.isPrimarySport)
                   .length,
+              sportsLabel: personaType == 'socialiser'
+                  ? l10n.profile_stat_sports_followed
+                  : null,
+              sportsTone: personaType == 'socialiser'
+                  ? DabblerStatTileTone.ink
+                  : DabblerStatTileTone.card,
               scoped: selected != null,
               heroLabel: selected == null
                   ? null
@@ -429,13 +440,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   : null,
             ),
             const DabblerGap.v(DabblerSpacing.space8),
-            OwnProfileSportPicker(
-              sports: mySports,
-              selectedId: selected?.id,
-              primaryId: profile?.primarySport,
-              onSelect: (id) => setState(() => _selectedSportId = id),
-              onManage: () => ManageSportsSheet.show(context),
-            ),
+            if (personaType == 'socialiser')
+              OwnProfileFollowedSports(sports: mySports)
+            else
+              OwnProfileSportPicker(
+                sports: mySports,
+                selectedId: selected?.id,
+                primaryId: profile?.primarySport,
+                onSelect: (id) => setState(() => _selectedSportId = id),
+                onManage: () => ManageSportsSheet.show(context),
+              ),
             const DabblerGap.v(DabblerSpacing.space8),
             if (profileId == null)
               const Padding(

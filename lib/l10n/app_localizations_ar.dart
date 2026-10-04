@@ -2925,4 +2925,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String sport_profile_overall_level(String sport, String level) {
     return '$sport · المستوى العام $level';
   }
+
+  @override
+  String get profile_sports_followed_note =>
+      'الرياضات المتابَعة — للأخبار والنتائج فقط';
+
+  @override
+  String get profile_stat_sports_followed => 'الرياضات المتابَعة';
 }

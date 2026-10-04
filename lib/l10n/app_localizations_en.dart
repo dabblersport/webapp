@@ -2985,4 +2985,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String sport_profile_overall_level(String sport, String level) {
     return '$sport · overall level $level';
   }
+
+  @override
+  String get profile_sports_followed_note =>
+      'Sports followed — feeds and results only';
+
+  @override
+  String get profile_stat_sports_followed => 'Sports followed';
 }

@@ -5344,6 +5344,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{sport} · overall level {level}'**
   String sport_profile_overall_level(String sport, String level);
+
+  /// No description provided for @profile_sports_followed_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports followed — feeds and results only'**
+  String get profile_sports_followed_note;
+
+  /// No description provided for @profile_stat_sports_followed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports followed'**
+  String get profile_stat_sports_followed;
 }
 
 class _AppLocalizationsDelegate

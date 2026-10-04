@@ -1073,5 +1073,7 @@
   "profile_create_persona_profile": "إنشاء ملف {persona}",
   "@profile_create_persona_profile": {"placeholders": {"persona": {"type": "String"}}},
   "sport_profile_overall_level": "{sport} · المستوى العام {level}",
-  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}}
+  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}},
+  "profile_sports_followed_note": "الرياضات المتابَعة — للأخبار والنتائج فقط",
+  "profile_stat_sports_followed": "الرياضات المتابَعة"
 }

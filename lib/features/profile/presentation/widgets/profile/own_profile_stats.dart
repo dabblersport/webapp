@@ -22,6 +22,8 @@ class OwnProfileStats extends StatelessWidget {
     this.sportKey,
     this.accent = DabblerSportAccent.all,
     this.heroTone = DabblerStatTileTone.brand,
+    this.sportsLabel,
+    this.sportsTone = DabblerStatTileTone.card,
     this.scoped = false,
     this.otherUser = false,
   });
@@ -63,6 +65,12 @@ class OwnProfileStats extends StatelessWidget {
   /// The hero's fill: the brand (re-tinted by [accent]) for a player,
   /// organiser or socialiser, amber for a host.
   final DabblerStatTileTone heroTone;
+
+  /// The sports tile's caption; defaults to "Sports played".
+  final String? sportsLabel;
+
+  /// The sports tile's fill.
+  final DabblerStatTileTone sportsTone;
 
   /// A sport is chosen: the bento narrows to that sport's own figures.
   final bool scoped;
@@ -129,7 +137,8 @@ class OwnProfileStats extends StatelessWidget {
           if (!scoped)
             DabblerStatTile(
               value: '$sportsCount',
-              label: l10n.user_profile_stat_sports,
+              label: sportsLabel ?? l10n.user_profile_stat_sports,
+              tone: sportsTone,
               fitValue: true,
             ),
           if (!scoped && primary != null && primary > 0)
