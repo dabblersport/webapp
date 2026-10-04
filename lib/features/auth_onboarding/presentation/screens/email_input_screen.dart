@@ -21,23 +21,11 @@ class EmailInputScreen extends ConsumerStatefulWidget {
 }
 
 class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   bool _isLoading = false;
-  String? _errorMessage;
-  String? _successMessage;
   bool _isEmailValid = false;
+  bool _emailTouched = false;
   bool _getUpdates = true;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
 
   @override
   void dispose() {
@@ -45,29 +33,36 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    final l10n = AppLocalizations.of(context);
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return l10n.email_input_validate_required;
-    if (!RegExp(r'^[\w+\-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      return l10n.email_input_validate_invalid;
-    }
-    return null;
+  static final RegExp _emailRegExp = RegExp(
+    r'^[\w+\-.]+@([\w-]+\.)+[\w-]{2,4}$',
+  );
+
+  void _toastError(String message) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
   }
 
   void _onEmailChanged(String value) {
-    final isValid = _validateEmail(value) == null;
-    setState(() => _isEmailValid = isValid);
+    setState(() {
+      _emailTouched = true;
+      _isEmailValid = _emailRegExp.hasMatch(value.trim());
+    });
+  }
+
+  /// Validation shown live under the field once it has been edited.
+  String? _emailError(AppLocalizations l10n) {
+    if (!_emailTouched) return null;
+    if (_emailController.text.trim().isEmpty) {
+      return l10n.email_input_validate_required;
+    }
+    return _isEmailValid ? null : l10n.auth_email_invalid;
   }
 
   Future<void> _handleSubmit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_isEmailValid) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _successMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     final email = _emailController.text.trim();
 
@@ -104,11 +99,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         final message = raw.startsWith('Exception: ')
             ? raw.substring('Exception: '.length)
             : raw;
-        setState(() {
-          _errorMessage = kDebugMode
+        _toastError(
+          kDebugMode
               ? message
-              : AppLocalizations.of(context).email_input_error_generic;
-        });
+              : AppLocalizations.of(context).email_input_error_generic,
+        );
       }
       return; // Don't navigate if there's an error
     } finally {
@@ -123,106 +118,98 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-    return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        onBack: () => context.canPop()
-            ? context.pop()
-            : context.go(RoutePaths.authWelcome),
+    final List<Widget> body = <Widget>[
+      DabblerTextField(
+        controller: _emailController,
+        label: l10n.auth_email_label,
+        placeholder: l10n.auth_email_placeholder,
+        errorText: _emailError(l10n),
+        enabled: !_isLoading,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        textInputAction: TextInputAction.done,
+        onChanged: _onEmailChanged,
+        onSubmitted: (_) {
+          if (_isEmailValid && !_isLoading) _handleSubmit();
+        },
       ),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space8,
-              DabblerSpacing.space4,
-              DabblerSpacing.space8,
-              DabblerSpacing.space6,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DabblerText(
-                  l10n.email_input_title,
-                  style: DabblerType.largeTitle,
-                ),
-                const SizedBox(height: DabblerSpacing.space3),
-                DabblerText(
-                  l10n.email_input_subtitle,
-                  tone: DabblerTextTone.secondary,
-                ),
-                const SizedBox(height: DabblerSpacing.space4),
-                const AuthLegalNotice(center: false),
-                const SizedBox(height: DabblerSpacing.space8),
-                _buildEmailField(context),
-                const SizedBox(height: DabblerSpacing.space5),
-                _buildKeepInLoopRow(context),
-                const SizedBox(height: DabblerSpacing.space8),
-                DabblerButton(
-                  label: l10n.email_input_continue,
-                  size: DabblerButtonSize.full,
-                  fullWidth: true,
-                  loading: _isLoading,
-                  disabled: !(_isEmailValid && !_isLoading),
-                  onPressed: (_isEmailValid && !_isLoading)
-                      ? _handleSubmit
-                      : null,
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: DabblerSpacing.space4),
-                  AuthInlineMessage(message: _errorMessage!),
-                ],
-                if (_successMessage != null) ...[
-                  const SizedBox(height: DabblerSpacing.space4),
-                  AuthInlineMessage(message: _successMessage!, success: true),
-                ],
-                const SizedBox(height: DabblerSpacing.space8),
-                const DabblerDivider(label: 'OR'),
-                const SizedBox(height: DabblerSpacing.space5),
-                DabblerButton(
-                  label: l10n.email_input_btn_google,
-                  tone: DabblerButtonTone.outlined,
-                  size: DabblerButtonSize.full,
-                  fullWidth: true,
-                  disabled: _isLoading,
-                  onPressed: _isLoading ? null : _handleGoogleSignIn,
-                ),
-                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) ...[
-                  const SizedBox(height: DabblerSpacing.space4),
-                  DabblerButton(
-                    label: l10n.email_input_btn_apple,
-                    tone: DabblerButtonTone.outlined,
-                    size: DabblerButtonSize.full,
-                    fullWidth: true,
-                    disabled: _isLoading,
-                    onPressed: _isLoading ? null : _handleAppleSignIn,
-                  ),
-                ],
-                const SizedBox(height: DabblerSpacing.space6),
-                DabblerButton(
-                  label: l10n.email_input_already_account,
-                  tone: DabblerButtonTone.text,
-                  fullWidth: true,
-                  disabled: _isLoading,
-                  onPressed: _isLoading ? null : _goToLogin,
-                ),
-              ],
+      Row(
+        children: <Widget>[
+          Expanded(
+            child: DabblerText(
+              l10n.auth_email_marketing,
+              style: DabblerType.subheadline,
             ),
           ),
-        ),
+          const DabblerGap.h(DabblerSpacing.space4),
+          DabblerToggle(
+            checked: _getUpdates,
+            semanticLabel: l10n.auth_email_marketing,
+            onChanged: _isLoading
+                ? null
+                : (v) {
+                    setState(() => _getUpdates = v);
+                    ref.read(onboardingDataProvider.notifier).setGetUpdates(v);
+                  },
+          ),
+        ],
       ),
+    ];
+
+    return DabblerFlowPage(
+      onBack: () =>
+          context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
+      backLabel: l10n.auth_back,
+      title: l10n.auth_email_title,
+      titleStyle: DabblerType.largeTitle,
+      headerTopPadding: DabblerSpacing.space4,
+      subtitle: l10n.auth_email_subtitle,
+      subtitleStyle: DabblerType.body,
+      primaryLabel: l10n.auth_email_send_code,
+      primaryLoading: _isLoading,
+      onPrimary: _isEmailValid && !_isLoading ? _handleSubmit : null,
+      secondary: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          DabblerDivider(label: l10n.auth_or),
+          const DabblerGap.v(DabblerSpacing.space4),
+          DabblerButton(
+            label: l10n.auth_entry_continue_google,
+            tone: DabblerButtonTone.outlined,
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            disabled: _isLoading,
+            onPressed: _isLoading ? null : _handleGoogleSignIn,
+          ),
+          if (showApple) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerButton(
+              label: l10n.auth_entry_continue_apple,
+              tone: DabblerButtonTone.outlined,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              disabled: _isLoading,
+              onPressed: _isLoading ? null : _handleAppleSignIn,
+            ),
+          ],
+          const DabblerGap.v(DabblerSpacing.space4),
+          AuthAccountLine(
+            prefix: l10n.auth_already_have_account,
+            action: l10n.auth_log_in,
+            onAction: _isLoading ? null : _goToLogin,
+          ),
+          const DabblerGap.v(DabblerSpacing.space4),
+          const AuthLegalNotice(),
+        ],
+      ),
+      content: body,
     );
   }
 
   Future<void> _handleAppleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _successMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -268,13 +255,11 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           );
           break;
         case GoogleSignInResultError():
-          setState(() => _errorMessage = result.message);
+          _toastError(result.message);
           break;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = 'Apple sign-in failed: $e');
-      }
+      if (mounted) _toastError('Apple sign-in failed: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -283,11 +268,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _successMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -350,98 +331,18 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           break;
 
         case GoogleSignInResultError():
-          setState(() {
-            _errorMessage = AppLocalizations.of(
-              context,
-            ).email_input_google_failed;
-          });
+          _toastError(AppLocalizations.of(context).email_input_google_failed);
           break;
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errorMessage = AppLocalizations.of(
-            context,
-          ).email_input_google_failed;
-        });
+        _toastError(AppLocalizations.of(context).email_input_google_failed);
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
-  }
-
-  Widget _buildEmailField(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    Widget? suffix;
-    if (_emailController.text.isNotEmpty) {
-      suffix = _isEmailValid
-          ? DabblerIcon(
-              'tick-circle',
-              key: const ValueKey('valid'),
-              weight: DabblerIconWeight.bold,
-              size: DabblerSizing.iconSm,
-              color: colors.success.strong,
-            )
-          : DabblerIcon(
-              'close-circle',
-              key: const ValueKey('invalid'),
-              weight: DabblerIconWeight.bold,
-              size: DabblerSizing.iconSm,
-              color: colors.error.strong,
-            );
-    }
-    return Form(
-      key: _formKey,
-      child: DabblerTextField(
-        controller: _emailController,
-        label: AppLocalizations.of(context).email_input_label,
-        placeholder: AppLocalizations.of(context).email_input_hint,
-        keyboardType: TextInputType.emailAddress,
-        autofillHints: const [AutofillHints.email],
-        textInputAction: TextInputAction.done,
-        onChanged: _onEmailChanged,
-        onSubmitted: (_) {
-          if (_isEmailValid && !_isLoading) _handleSubmit();
-        },
-        validator: _validateEmail,
-        autovalidateMode: AutovalidateMode.onUserInteraction,
-        suffixIcon: suffix == null
-            ? null
-            : AnimatedSwitcher(
-                duration: DabblerMotion.durationOf(context, DabblerMotion.slow),
-                child: suffix,
-              ),
-      ),
-    );
-  }
-
-  Widget _buildKeepInLoopRow(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: DabblerText(
-            AppLocalizations.of(context).email_input_keep_in_loop,
-            style: DabblerType.subheadline,
-          ),
-        ),
-        const SizedBox(width: DabblerSpacing.space4),
-        DabblerToggle(
-          checked: _getUpdates,
-          semanticLabel: AppLocalizations.of(context).email_input_keep_in_loop,
-          onChanged: _isLoading
-              ? null
-              : (v) {
-                  setState(() => _getUpdates = v);
-                  ref.read(onboardingDataProvider.notifier).setGetUpdates(v);
-                },
-        ),
-      ],
-    );
   }
 
   void _goToLogin() {

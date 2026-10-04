@@ -10,14 +10,11 @@ class AdminAccessDenied extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(DabblerSpacing.space7),
-      child: DabblerEmptyState(
-        icon: 'lock',
-        size: DabblerEmptyStateSize.page,
-        title: 'Access Denied',
-        text: 'You must be an administrator to access this page.',
-      ),
+    child: DabblerEmptyState(
+      icon: 'lock',
+      size: DabblerEmptyStateSize.page,
+      title: 'Access Denied',
+      text: 'You must be an administrator to access this page.',
     ),
   );
 }
@@ -37,74 +34,13 @@ class AdminErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space7),
-      child: DabblerEmptyState.error(
-        title: title,
-        text: text,
-        onRetry: onRetry,
-        retryLabel: 'Retry',
-      ),
+    child: DabblerEmptyState.error(
+      title: title,
+      text: text,
+      onRetry: onRetry,
+      retryLabel: 'Retry',
     ),
   );
-}
-
-/// A label / value line used in the detail sheet and the overview card.
-class AdminInfoRow extends StatelessWidget {
-  const AdminInfoRow({
-    super.key,
-    required this.label,
-    required this.value,
-    this.labelWidth,
-  });
-
-  final String label;
-  final String value;
-
-  /// Fixed label column width; null spreads label and value to both ends.
-  final double? labelWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final labelText = DabblerText(
-      label,
-      style: DabblerType.subheadline,
-      tone: DabblerTextTone.secondary,
-      weight: labelWidth != null ? DabblerTextWeight.semibold : null,
-    );
-    final valueWeight = labelWidth == null ? DabblerTextWeight.semibold : null;
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
-      child: labelWidth != null
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: labelWidth, child: labelText),
-                Expanded(
-                  child: DabblerText(
-                    value,
-                    style: DabblerType.subheadline,
-                    weight: valueWeight,
-                  ),
-                ),
-              ],
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                labelText,
-                Flexible(
-                  child: DabblerText(
-                    value,
-                    style: DabblerType.subheadline,
-                    weight: valueWeight,
-                    textAlign: TextAlign.end,
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
 }
 
 /// The admin pages' loading body.

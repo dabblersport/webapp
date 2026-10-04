@@ -63,13 +63,18 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
           a,
     ];
 
-    if (organiser == null && others.isEmpty && !isAtLimit) {
-      return const SizedBox.shrink();
-    }
-
     return DabblerRowGroup(
       header: l10n.settings_section_profiles,
       children: [
+        DabblerInputRow(
+          flat: true,
+          showDivider: false,
+          onTap: () => context.push('/profile/edit'),
+          leading: leadingIcon('edit'),
+          title: l10n.profile_btn_edit,
+          subtitle: l10n.settings_item_edit_profile_subtitle,
+          trailing: const DabblerChevron(circled: true),
+        ),
         if (isAtLimit) _buildExistingProfilesList(context),
         if (organiser != null)
           DabblerInputRow(

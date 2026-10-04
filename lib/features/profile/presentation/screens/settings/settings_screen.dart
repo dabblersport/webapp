@@ -173,6 +173,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           onTap: () => openOrganiser(organiser),
         ),
       route(
+        'edit',
+        l10n.profile_btn_edit,
+        l10n.settings_path_profiles,
+        '/profile/edit',
+        ['profile', 'name', 'photo', 'avatar', 'bio'],
+      ),
+      route(
         'profile-circle',
         l10n.settings_item_account_management_title,
         l10n.settings_path_account,

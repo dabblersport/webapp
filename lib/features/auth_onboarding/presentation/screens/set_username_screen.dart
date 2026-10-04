@@ -16,6 +16,18 @@ import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding
 
 enum SetUsernameMode { onboarding, addPersona }
 
+/// Where the username check stands, which decides the helper, the error and
+/// the suffix of the username field.
+enum _UsernameState {
+  idle,
+  tooShort,
+  invalid,
+  checking,
+  taken,
+  available,
+  failed,
+}
+
 class SetUsernameScreen extends ConsumerStatefulWidget {
   final SetUsernameMode mode;
 
@@ -26,13 +38,11 @@ class SetUsernameScreen extends ConsumerStatefulWidget {
 }
 
 class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
   final _usernameController = TextEditingController();
 
   bool _isLoading = false;
-  bool _isCheckingUsername = false;
-  String? _usernameError;
+  _UsernameState _usernameState = _UsernameState.idle;
   String? _usernameReason;
   Timer? _debounce;
   Timer? _suggestionDebounce;
@@ -40,6 +50,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   List<String> _suggestions = [];
   String? _selectedSuggestion;
   bool _loadingSuggestions = false;
+
+  static final RegExp _usernamePattern = RegExp(r'^[a-zA-Z0-9_]+$');
 
   @override
   void initState() {
@@ -69,6 +81,8 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
   }
 
   void _onDisplayNameChanged() {
+    // The action depends on the display name.
+    if (mounted) setState(() {});
     if (_suggestionDebounce?.isActive ?? false) _suggestionDebounce!.cancel();
     _suggestionDebounce = Timer(DabblerMotion.debounceSuggestion, () {
       final name = _displayNameController.text.trim();
@@ -156,17 +170,22 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
 
   Future<void> _checkUsernameAvailability(String username) async {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _usernameReason = null;
 
+    if (username.isEmpty) {
+      setState(() => _usernameState = _UsernameState.idle);
+      return;
+    }
     if (username.length < 3) {
-      setState(() {
-        _usernameError = null;
-        _usernameReason = null;
-        _isCheckingUsername = false;
-      });
+      setState(() => _usernameState = _UsernameState.tooShort);
+      return;
+    }
+    if (!_usernamePattern.hasMatch(username)) {
+      setState(() => _usernameState = _UsernameState.invalid);
       return;
     }
 
-    setState(() => _isCheckingUsername = true);
+    setState(() => _usernameState = _UsernameState.checking);
 
     _debounce = Timer(DabblerMotion.debounceValidation, () async {
       try {
@@ -176,36 +195,34 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
         if (mounted) {
           result.fold(
             (failure) => setState(() {
-              _usernameError = 'Error checking username';
-              _usernameReason = null;
-              _isCheckingUsername = false;
+              _usernameState = _UsernameState.failed;
             }),
             (data) => setState(() {
-              _usernameError = data.available ? null : 'Username unavailable';
+              _usernameState = data.available
+                  ? _UsernameState.available
+                  : _UsernameState.taken;
               _usernameReason = data.available ? null : data.reason;
-              _isCheckingUsername = false;
             }),
           );
         }
       } catch (_) {
         if (mounted) {
-          setState(() {
-            _usernameError = 'Error checking username';
-            _usernameReason = null;
-            _isCheckingUsername = false;
-          });
+          setState(() => _usernameState = _UsernameState.failed);
         }
       }
     });
   }
 
-  Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) return;
+  /// The display name is valid once it has two characters.
+  bool get _displayNameValid => _displayNameController.text.trim().length >= 2;
 
-    if (_usernameError != null) {
-      showOnboardingError(context, _usernameError!);
-      return;
-    }
+  bool get _canSubmit =>
+      !_isLoading &&
+      _displayNameValid &&
+      _usernameState == _UsernameState.available;
+
+  Future<void> _handleSubmit() async {
+    if (!_canSubmit) return;
 
     setState(() => _isLoading = true);
 
@@ -316,73 +333,72 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
     }
   }
 
-  /// A DS text field registered with the screen's `_formKey`; validates live
-  /// once the user has edited it.
-  Widget _buildInputField(
-    BuildContext context, {
-    required TextEditingController controller,
-    required String label,
-    required String hintText,
-    required String? Function(String?) validator,
-    Function(String)? onChanged,
-    Widget? suffixIcon,
-    Widget? prefixIcon,
-    String? extraError,
-  }) {
-    return DabblerTextField(
-      controller: controller,
-      label: label,
-      placeholder: hintText,
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      validator: validator,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-      errorText: extraError,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildSuggestionChips() {
+  /// The suggestion chips: a spinner while they load, then one chip each in a
+  /// horizontally scrolling rail.
+  Widget _suggestionChips() {
     if (_loadingSuggestions) {
-      return const SizedBox(
-        height: DabblerSizing.touchTargetMin,
-        child: Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: DabblerSpinner(size: DabblerSpinnerSize.sm),
-        ),
+      return const Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: DabblerSpinner(size: DabblerSpinnerSize.sm),
       );
     }
-
-    if (_suggestions.isEmpty) return const SizedBox.shrink();
-
-    return SizedBox(
-      height: DabblerSizing.touchTargetMin,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _suggestions.length,
-        separatorBuilder: (_, __) =>
-            const SizedBox(width: DabblerSpacing.space3),
-        itemBuilder: (_, i) {
-          final s = _suggestions[i];
-          return Center(
-            child: DabblerChip(
-              label: '@$s',
-              selected: _selectedSuggestion == s,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (var i = 0; i < _suggestions.length; i++) ...[
+            if (i > 0) const DabblerGap.h(DabblerSpacing.space3),
+            DabblerChip(
+              // A username is Latin: keep its `@` on the left under RTL.
+              label: '\u200E@${_suggestions[i]}',
+              selected: _selectedSuggestion == _suggestions[i],
               onTap: () {
+                final s = _suggestions[i];
                 setState(() {
                   _selectedSuggestion = s;
                   _usernameController.text = s;
-                  _usernameError = null;
-                  _usernameReason = null;
                 });
                 _checkUsernameAvailability(s);
               },
             ),
-          );
-        },
+          ],
+        ],
       ),
     );
   }
+
+  /// The helper line under the username field, per the design's states.
+  String? _usernameHelper(AppLocalizations l10n) => switch (_usernameState) {
+    _UsernameState.idle => l10n.onb_username_helper,
+    _UsernameState.checking => l10n.onb_username_checking,
+    _UsernameState.available => l10n.onb_username_available,
+    _ => null,
+  };
+
+  /// The error line under the username field, per the design's states.
+  String? _usernameError(AppLocalizations l10n) => switch (_usernameState) {
+    _UsernameState.tooShort => l10n.onb_username_short,
+    _UsernameState.invalid => l10n.onb_username_invalid,
+    _UsernameState.taken =>
+      (_usernameReason != null && _usernameReason!.isNotEmpty)
+          ? _usernameReason
+          : l10n.onb_username_taken,
+    _UsernameState.failed => l10n.onb_username_check_error,
+    _ => null,
+  };
+
+  Widget? _usernameSuffix(DabblerColors colors) => switch (_usernameState) {
+    _UsernameState.checking => const Center(
+      widthFactor: 1,
+      child: DabblerSpinner(size: DabblerSpinnerSize.sm),
+    ),
+    _UsernameState.available => DabblerIcon(
+      'tick-circle',
+      weight: DabblerIconWeight.bold,
+      color: colors.success.strong,
+    ),
+    _ => null,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -391,130 +407,90 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
         : null;
 
     final l10n = AppLocalizations.of(context);
-    final title = widget.mode == SetUsernameMode.addPersona
+    final isPersona = widget.mode == SetUsernameMode.addPersona;
+    final title = isPersona
         ? (addPersonaData?.isConversion == true
               ? l10n.set_username_title_conversion
               : l10n.set_username_title_new_profile)
-        : l10n.set_username_title_onboarding;
+        : l10n.onb_identity_title;
 
-    final subtitle = widget.mode == SetUsernameMode.addPersona
+    final subtitle = isPersona
         ? l10n.set_username_subtitle_persona(
             addPersonaData?.targetPersona.displayName ?? '',
           )
-        : l10n.set_username_subtitle_onboarding;
+        : l10n.onb_identity_subtitle;
 
-    final buttonText = widget.mode == SetUsernameMode.addPersona
+    final buttonText = isPersona
         ? (addPersonaData?.isConversion == true
               ? l10n.set_username_btn_complete_conversion
               : l10n.set_username_btn_create_profile)
-        : l10n.set_username_btn_complete;
+        : l10n.onb_create_account;
 
     final colors = DabblerColors.of(context);
-    final String? usernameErrorText = _usernameError == null
-        ? null
-        : (_usernameReason != null && _usernameReason!.isNotEmpty
-              ? _usernameReason!
-              : _usernameError!);
 
-    return OnboardingStepFrame(
+    return DabblerFlowPage(
       onBack: () => context.pop(),
-      step: widget.mode == SetUsernameMode.addPersona ? null : 5,
-      stepLabel: widget.mode == SetUsernameMode.addPersona
-          ? null
-          : 'Step 5 of 5',
+      backLabel: l10n.onb_back,
+      stepCount: isPersona ? null : 5,
+      stepIndex: isPersona ? null : 4,
+      stepLabel: isPersona ? null : l10n.onb_step_label(5, 5),
       title: title,
       subtitle: subtitle,
-      ctaLabel: buttonText,
-      ctaLoading: _isLoading,
-      onCta: _isLoading ? null : _handleSubmit,
-      secondary: widget.mode == SetUsernameMode.addPersona
+      content: [
+        DabblerTextField(
+          controller: _displayNameController,
+          label: l10n.onb_display_name_label,
+          placeholder: l10n.set_username_display_name_hint,
+          helperText: l10n.onb_display_name_helper,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return l10n.set_username_validate_display_required;
+            }
+            if (value.trim().length < 2) {
+              return l10n.set_username_validate_display_min;
+            }
+            return null;
+          },
+        ),
+        if (_loadingSuggestions || _suggestions.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DabblerText(
+                l10n.onb_suggestions,
+                style: DabblerType.footnote,
+                weight: DabblerTextWeight.medium,
+                tone: DabblerTextTone.secondary,
+              ),
+              const DabblerGap.v(DabblerSpacing.space3),
+              _suggestionChips(),
+            ],
+          ),
+        DabblerTextField(
+          controller: _usernameController,
+          label: l10n.onb_username_label,
+          placeholder: l10n.onb_username_placeholder,
+          helperText: _usernameHelper(l10n),
+          errorText: _usernameError(l10n),
+          suffixIcon: _usernameSuffix(colors),
+          onChanged: (v) {
+            setState(() => _selectedSuggestion = null);
+            _checkUsernameAvailability(v.trim());
+          },
+        ),
+      ],
+      primaryLabel: buttonText,
+      primaryLoading: _isLoading,
+      onPrimary: _canSubmit ? _handleSubmit : null,
+      secondary: isPersona
           ? DabblerButton(
-              label: 'Back',
+              label: l10n.set_username_back,
               tone: DabblerButtonTone.text,
               fullWidth: true,
               onPressed: () => context.pop(),
             )
           : null,
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space8,
-        ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildInputField(
-                context,
-                controller: _displayNameController,
-                label: l10n.set_username_display_name_label,
-                hintText: l10n.set_username_display_name_hint,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Display name is required';
-                  }
-                  if (value.trim().length < 2) {
-                    return 'Display name must be at least 2 characters';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: DabblerSpacing.space6),
-              if (_loadingSuggestions || _suggestions.isNotEmpty) ...[
-                DabblerText(
-                  'Suggestions',
-                  style: DabblerType.footnote,
-                  weight: DabblerTextWeight.medium,
-                  tone: DabblerTextTone.secondary,
-                ),
-                const SizedBox(height: DabblerSpacing.space3),
-                _buildSuggestionChips(),
-                const SizedBox(height: DabblerSpacing.space6),
-              ],
-              _buildInputField(
-                context,
-                controller: _usernameController,
-                label: l10n.set_username_username_label,
-                hintText: l10n.set_username_username_hint,
-                prefixIcon: Center(
-                  widthFactor: 1,
-                  child: DabblerText('@', tone: DabblerTextTone.secondary),
-                ),
-                extraError: usernameErrorText,
-                onChanged: (v) {
-                  setState(() => _selectedSuggestion = null);
-                  _checkUsernameAvailability(v);
-                },
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Username is required';
-                  }
-                  if (value.trim().length < 3) {
-                    return 'Username must be at least 3 characters';
-                  }
-                  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                    return 'Only letters, numbers, and underscores';
-                  }
-                  return null;
-                },
-                suffixIcon: _isCheckingUsername
-                    ? const Center(
-                        widthFactor: 1,
-                        child: DabblerSpinner(size: DabblerSpinnerSize.sm),
-                      )
-                    : _usernameError == null &&
-                          _usernameController.text.isNotEmpty
-                    ? DabblerIcon(
-                        'tick-circle',
-                        weight: DabblerIconWeight.bold,
-                        color: colors.success.strong,
-                      )
-                    : null,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

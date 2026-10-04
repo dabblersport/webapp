@@ -174,6 +174,298 @@ class AppLocalizationsAr extends AppLocalizations {
   String get landing_choose_language => 'اختار اللغة';
 
   @override
+  String get auth_already_have_account => 'عندك حساب بالفعل؟';
+
+  @override
+  String get auth_log_in => 'سجّل دخولك';
+
+  @override
+  String get auth_new_here => 'جديد هنا؟';
+
+  @override
+  String get auth_create_account => 'اعمل حساب';
+
+  @override
+  String get auth_sheet_done => 'تمام';
+
+  @override
+  String get auth_sheet_got_it => 'تمام';
+
+  @override
+  String get auth_back => 'رجوع';
+
+  @override
+  String get landing_dc_tagline =>
+      'دابلر يجمع اللاعبين والمنظّمين والملاعب، لتتوقف عن البحث وتبدأ باللعب.';
+
+  @override
+  String get landing_dc_continue => 'المتابعة';
+
+  @override
+  String get landing_vignette_marcus_quote =>
+      'نصف مجموعة الدردشة غير ملتزم، والنصف الآخر يغيّر رأيه بحلول الجمعة.';
+
+  @override
+  String get landing_vignette_marcus_want =>
+      'أريد فقط مكانًا واحدًا لتنظيم مباراة خماسية دون ملاحقة الردود.';
+
+  @override
+  String get landing_vignette_aisha_quote =>
+      'مدينة جديدة، قدم يسرى جيدة، ولا أحد أمرّر له.';
+
+  @override
+  String get landing_vignette_aisha_want =>
+      'أريد مباراة هذا الأسبوع، لا محادثة جماعية عن مباراة.';
+
+  @override
+  String get landing_vignette_priya_quote => 'أتابع بادل أكثر مما لعبته فعلًا.';
+
+  @override
+  String get landing_vignette_priya_want => 'أرني من يلعب قربي وسأجد طريقي.';
+
+  @override
+  String get landing_vignette_sevens_quote =>
+      'ثلاثة ملاعب فارغة عند التاسعة مساءً ولا أحد يعلم.';
+
+  @override
+  String get landing_vignette_sevens_want =>
+      'ضع ملاعبي أمام لاعبين يبحثون عن ملعب أصلًا.';
+
+  @override
+  String get auth_entry_title => 'هيّا نلعب';
+
+  @override
+  String get auth_entry_subtitle => 'حساب واحد للمباريات والفِرق والملاعب.';
+
+  @override
+  String get auth_entry_trust_verified =>
+      'لاعبون موثوقون، ملاعب موثّقة، مباريات مقيّمة';
+
+  @override
+  String get auth_entry_trust_personalised =>
+      'مباريات وأشخاص مختارون حسب رياضاتك';
+
+  @override
+  String get auth_entry_trust_privacy => 'لا نبيع بياناتك. الخصوصية أولًا';
+
+  @override
+  String get auth_entry_continue_email => 'المتابعة بالبريد الإلكتروني';
+
+  @override
+  String get auth_entry_continue_google => 'المتابعة عبر Google';
+
+  @override
+  String get auth_entry_continue_apple => 'المتابعة عبر Apple';
+
+  @override
+  String get auth_legal_prefix => 'بالمتابعة أنت توافق على ';
+
+  @override
+  String get auth_legal_terms => 'شروط الخدمة';
+
+  @override
+  String get auth_legal_and => ' و';
+
+  @override
+  String get auth_legal_privacy => 'سياسة الخصوصية';
+
+  @override
+  String get auth_sheet_language => 'اللغة';
+
+  @override
+  String get auth_sheet_region => 'المنطقة';
+
+  @override
+  String get auth_email_title => 'ما بريدك الإلكتروني؟';
+
+  @override
+  String get auth_email_subtitle =>
+      'سنرسل لك رمزًا. وإن سبق أن زرتنا، سنكمل من حيث توقفت.';
+
+  @override
+  String get auth_email_label => 'البريد الإلكتروني';
+
+  @override
+  String get auth_email_placeholder => 'you@email.com';
+
+  @override
+  String get auth_email_marketing =>
+      'أبقِني على اطلاع بالمباريات والمزايا القريبة مني';
+
+  @override
+  String get auth_email_send_code => 'أرسل لي رمزًا';
+
+  @override
+  String get auth_email_invalid => 'هذا لا يبدو كعنوان بريد إلكتروني.';
+
+  @override
+  String get auth_login_title => 'أهلًا بعودتك';
+
+  @override
+  String get auth_login_subtitle =>
+      'سجّل دخولك بالطريقة التي تناسبك — كلمة مرور، أو رمز لمرة واحدة، أو حساب مرتبط.';
+
+  @override
+  String get auth_login_password_label => 'كلمة المرور';
+
+  @override
+  String get auth_login_password_placeholder => 'كلمة مرورك';
+
+  @override
+  String get auth_login_button => 'تسجيل الدخول';
+
+  @override
+  String get auth_login_email_code => 'أرسل لي رمزًا بدلًا من ذلك';
+
+  @override
+  String get auth_login_password_wrong =>
+      'كلمة المرور غير مطابقة. حاول مجددًا، أو أرسل لنفسك رمزًا.';
+
+  @override
+  String get auth_otp_title => 'تحقق من بريدك';
+
+  @override
+  String get auth_otp_subtitle =>
+      'أرسلنا رمزًا من 6 أرقام إلى بريدك الإلكتروني.';
+
+  @override
+  String get auth_otp_change => 'تغيير';
+
+  @override
+  String get auth_otp_invalid =>
+      'هذا الرمز غير صحيح. تحقق من البريد وحاول مرة أخرى.';
+
+  @override
+  String get auth_otp_expired => 'انتهت صلاحية هذا الرمز. أرسل رمزًا جديدًا.';
+
+  @override
+  String get auth_otp_resend => 'أرسل رمزًا جديدًا';
+
+  @override
+  String auth_otp_resend_in(int seconds) {
+    return 'أرسل رمزًا جديدًا خلال $secondsث';
+  }
+
+  @override
+  String get auth_otp_continue => 'المتابعة';
+
+  @override
+  String auth_welcome_back_title(String name) {
+    return 'أهلًا بعودتك، $name';
+  }
+
+  @override
+  String get auth_welcome_continue => 'المتابعة';
+
+  @override
+  String get auth_welcome_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_player_name => 'اللاعب';
+
+  @override
+  String get persona_player_headline => 'أنت جاهز. هيّا نلعب.';
+
+  @override
+  String get persona_player_principle => 'احضر، العب بنزاهة، وابنِ سمعتك.';
+
+  @override
+  String get persona_player_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_player_item1 => 'أكّد فقط حين تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get persona_player_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get persona_player_item3 => 'الحضور هو ما يبني سمعتك.';
+
+  @override
+  String get persona_player_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
+  String get persona_organiser_name => 'المنظّم';
+
+  @override
+  String get persona_organiser_headline => 'حان وقت جمع المباراة.';
+
+  @override
+  String get persona_organiser_principle => 'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get persona_organiser_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_organiser_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get persona_organiser_item2 =>
+      'تغييرات تُشارَك مبكرًا لا عند الانطلاق.';
+
+  @override
+  String get persona_organiser_item3 => 'حضور يُدار بإنصاف في كل مرة.';
+
+  @override
+  String get persona_organiser_cta => 'أنشئ مباراتي الأولى';
+
+  @override
+  String get persona_host_name => 'المضيف';
+
+  @override
+  String get persona_host_headline => 'ملعبك على الخريطة.';
+
+  @override
+  String get persona_host_principle => 'الملاعب الرائعة تجعل اللعب سهلًا.';
+
+  @override
+  String get persona_host_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_host_item1 => 'توفّر يطابق الواقع.';
+
+  @override
+  String get persona_host_item2 => 'أسعار ومرافق محدّثة دائمًا.';
+
+  @override
+  String get persona_host_item3 => 'حجوزات يُوفى بها — وهذا ما يعيدهم.';
+
+  @override
+  String get persona_host_cta => 'جهّز ملعبي';
+
+  @override
+  String get persona_socialiser_name => 'الاجتماعي';
+
+  @override
+  String get persona_socialiser_headline => 'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get persona_socialiser_principle =>
+      'تابع ما تحب، قابل ناسك، وانضم حين يناسبك.';
+
+  @override
+  String get persona_socialiser_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get persona_socialiser_item1 =>
+      'تابع الرياضات والأشخاص الذين تهتم بهم فعلًا.';
+
+  @override
+  String get persona_socialiser_item2 =>
+      'شارك في الحوار قبل أن تشارك في المباراة.';
+
+  @override
+  String get persona_socialiser_item3 =>
+      'كن ودودًا — كل من هنا هو زميل فريق لشخص ما.';
+
+  @override
+  String get persona_socialiser_cta => 'ابدأ الاستكشاف';
+
+  @override
+  String get auth_or => 'أو';
+
+  @override
   String get email_input_title => 'تسجيل';
 
   @override
@@ -765,6 +1057,293 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get primary_sport_no_sports => 'مفيش رياضات متاخترة. ارجع للخلف.';
+
+  @override
+  String get onb_back => 'رجوع';
+
+  @override
+  String get onb_continue => 'المتابعة';
+
+  @override
+  String onb_step_label(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get onb_dob_title => 'عرّفنا بنفسك قليلًا';
+
+  @override
+  String get onb_dob_subtitle =>
+      'عمرك يساعدنا على إبقاء المباريات والمجتمعات مناسبة للأعمار. ولا يظهر في ملفك الشخصي.';
+
+  @override
+  String get onb_dob_label => 'تاريخ الميلاد';
+
+  @override
+  String get onb_dob_placeholder => 'اختر تاريخ ميلادك';
+
+  @override
+  String get onb_dob_helper_min =>
+      'يجب أن يكون عمرك 16 عامًا أو أكثر لاستخدام دابلر.';
+
+  @override
+  String onb_dob_helper_ok(int age) {
+    return 'العمر $age. كل شيء جاهز.';
+  }
+
+  @override
+  String get onb_dob_error_min => 'يجب أن يكون عمرك 16 عامًا أو أكثر.';
+
+  @override
+  String onb_dob_error_max(int max) {
+    return 'يجب أن يكون العمر بين 16 و$max عامًا.';
+  }
+
+  @override
+  String get onb_gender_label => 'الجنس (اختياري)';
+
+  @override
+  String get onb_gender_male => 'ذكر';
+
+  @override
+  String get onb_gender_female => 'أنثى';
+
+  @override
+  String get onb_dob_sheet_confirm => 'تأكيد';
+
+  @override
+  String get onb_dob_sheet_cancel => 'إلغاء';
+
+  @override
+  String get onb_day => 'اليوم';
+
+  @override
+  String get onb_month => 'الشهر';
+
+  @override
+  String get onb_year => 'السنة';
+
+  @override
+  String get onb_month_1 => 'يناير';
+
+  @override
+  String get onb_month_2 => 'فبراير';
+
+  @override
+  String get onb_month_3 => 'مارس';
+
+  @override
+  String get onb_month_4 => 'أبريل';
+
+  @override
+  String get onb_month_5 => 'مايو';
+
+  @override
+  String get onb_month_6 => 'يونيو';
+
+  @override
+  String get onb_month_7 => 'يوليو';
+
+  @override
+  String get onb_month_8 => 'أغسطس';
+
+  @override
+  String get onb_month_9 => 'سبتمبر';
+
+  @override
+  String get onb_month_10 => 'أكتوبر';
+
+  @override
+  String get onb_month_11 => 'نوفمبر';
+
+  @override
+  String get onb_month_12 => 'ديسمبر';
+
+  @override
+  String get onb_persona_title => 'لماذا أنت هنا؟';
+
+  @override
+  String get onb_persona_subtitle =>
+      'اختر ما يناسبك اليوم. يمكنك إضافة غيره لاحقًا.';
+
+  @override
+  String get onb_persona_footnote =>
+      'يمكنك إضافة طريقة أخرى لاستخدام دابلر لاحقًا من الإعدادات.';
+
+  @override
+  String get onb_persona_socialiser_name => 'الاجتماعي';
+
+  @override
+  String get onb_persona_socialiser_hook => 'اعرف ناسك';
+
+  @override
+  String get onb_persona_socialiser_body =>
+      'تابع الرياضات، اكتشف المجتمعات، وابقَ على اطلاع.';
+
+  @override
+  String get onb_sports_title_socialiser => 'ما الذي يهمّك؟';
+
+  @override
+  String get onb_sports_subtitle_socialiser =>
+      'اختر الرياضات التي تريد رؤية المزيد منها.';
+
+  @override
+  String get onb_primary_title_socialiser => 'ما رياضتك المفضلة؟';
+
+  @override
+  String get onb_primary_subtitle_socialiser =>
+      'سنعرض لك المزيد من المجتمعات والأشخاص والنشاط حولها.';
+
+  @override
+  String get onb_persona_player_name => 'اللاعب';
+
+  @override
+  String get onb_persona_player_hook => 'انزل الملعب';
+
+  @override
+  String get onb_persona_player_body =>
+      'انضم للمباريات، ارفع مستواك، والعب أكثر.';
+
+  @override
+  String get onb_sports_title_player => 'ما الرياضات التي تلعبها؟';
+
+  @override
+  String get onb_sports_subtitle_player =>
+      'اختر الرياضات التي تهمّك. يمكنك تغييرها في أي وقت.';
+
+  @override
+  String get onb_primary_title_player => 'ما رياضتك المفضلة للعب؟';
+
+  @override
+  String get onb_primary_subtitle_player =>
+      'سنجعلها الافتراضية ونبني ملف رياضتك الأساسية حولها.';
+
+  @override
+  String get onb_persona_organiser_name => 'المنظّم';
+
+  @override
+  String get onb_persona_organiser_hook => 'اجمع المباراة';
+
+  @override
+  String get onb_persona_organiser_body =>
+      'أنشئ المباريات، أدر اللاعبين، ورتّب كل شيء.';
+
+  @override
+  String get onb_sports_title_organiser => 'ماذا تنظّم؟';
+
+  @override
+  String get onb_sports_subtitle_organiser =>
+      'اختر الرياضات التي تنشئ لها المباريات عادةً.';
+
+  @override
+  String get onb_primary_title_organiser => 'ما الذي تنظّمه أكثر؟';
+
+  @override
+  String get onb_primary_subtitle_organiser =>
+      'سنستخدمها افتراضيًا عند إنشاء المباريات والفعاليات.';
+
+  @override
+  String get onb_persona_host_name => 'المضيف';
+
+  @override
+  String get onb_persona_host_hook => 'املأ ملعبك';
+
+  @override
+  String get onb_persona_host_body =>
+      'اعرض مساحاتك، اوصل للاعبين، وأدر الحجوزات.';
+
+  @override
+  String get onb_sports_title_host => 'ماذا يمكن للناس أن يلعبوا في ملعبك؟';
+
+  @override
+  String get onb_sports_subtitle_host => 'اختر الرياضات التي تستضيفها مساحاتك.';
+
+  @override
+  String get onb_primary_title_host => 'بماذا يشتهر ملعبك؟';
+
+  @override
+  String get onb_primary_subtitle_host =>
+      'سنجعلها الرياضة الأساسية في ملف ملعبك.';
+
+  @override
+  String get onb_sports_search => 'ابحث عن رياضة';
+
+  @override
+  String get onb_sports_none => 'لا نتائج مطابقة. جرّب اسمًا آخر.';
+
+  @override
+  String get onb_sports_count_zero => 'اختر رياضة واحدة على الأقل للمتابعة.';
+
+  @override
+  String get onb_sports_count_one => 'تم اختيار رياضة واحدة';
+
+  @override
+  String onb_sports_count_many(int count) {
+    return 'تم اختيار $count رياضات';
+  }
+
+  @override
+  String get onb_primary_more => 'أضف المزيد من الرياضات';
+
+  @override
+  String get onb_identity_title => 'بماذا يناديك الناس؟';
+
+  @override
+  String get onb_identity_subtitle =>
+      'اضبط الاسم والمعرّف الذي سيظهر لك في دابلر.';
+
+  @override
+  String get onb_display_name_label => 'الاسم الظاهر';
+
+  @override
+  String get onb_display_name_helper =>
+      'هذا هو الاسم الذي يراه الناس في دابلر.';
+
+  @override
+  String get onb_suggestions => 'مقترحات';
+
+  @override
+  String get onb_username_label => 'المعرّف';
+
+  @override
+  String get onb_username_placeholder => '@اسمك';
+
+  @override
+  String get onb_username_helper => 'أحرف وأرقام وشرطة سفلية فقط.';
+
+  @override
+  String get onb_username_short => 'يحتاج المعرّف إلى 3 أحرف على الأقل.';
+
+  @override
+  String get onb_username_invalid => 'أحرف وأرقام وشرطة سفلية فقط.';
+
+  @override
+  String get onb_username_checking => 'جارٍ التحقق من التوفر…';
+
+  @override
+  String get onb_username_taken => 'هذا المعرّف مستخدم. جرّب غيره.';
+
+  @override
+  String get onb_username_available => 'متاح — هذا لك.';
+
+  @override
+  String get onb_username_check_error =>
+      'تعذّر التحقق من المعرّف. حاول مرة أخرى.';
+
+  @override
+  String get onb_create_account => 'إنشاء الحساب';
+
+  @override
+  String get onb_setup_title => 'جارٍ إعداد حسابك';
+
+  @override
+  String get onb_setup_subtitle => 'يستغرق هذا لحظة فقط.';
+
+  @override
+  String get onb_setup_stage_profile => 'إنشاء ملفك الشخصي';
+
+  @override
+  String get onb_setup_failed_title => 'لم يكتمل الإعداد';
 
   @override
   String primary_sport_adding(String label) {
@@ -1541,6 +2120,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'اكتب نبذة قصيرة عشان الناس تعرف تتوقع منك إيه.';
 
   @override
+  String get settings_item_edit_profile_subtitle =>
+      'الاسم والصورة والنبذة والرياضات';
+
+  @override
   String get profile_btn_edit => 'تعديل البروفايل';
 
   @override
@@ -2102,6 +2685,256 @@ class AppLocalizationsAr extends AppLocalizations {
   String notif_quiet_hours_range(String start, String end) {
     return '$start – $end';
   }
+
+  @override
+  String get listing_set_location => 'حدد الموقع';
+
+  @override
+  String get listing_search => 'بحث';
+
+  @override
+  String get listing_filters => 'التصفية';
+
+  @override
+  String get listing_reset => 'إعادة ضبط';
+
+  @override
+  String get listing_clear_all => 'مسح الكل';
+
+  @override
+  String get listing_all_sports => 'كل الرياضات';
+
+  @override
+  String get listing_upcoming => 'القادمة';
+
+  @override
+  String get listing_open_spots => 'أماكن متاحة';
+
+  @override
+  String get listing_sort_nearest => 'الأقرب';
+
+  @override
+  String get listing_sort_soonest => 'الأقرب موعدًا';
+
+  @override
+  String get listing_group_distance => 'المسافة';
+
+  @override
+  String get listing_group_date => 'التاريخ';
+
+  @override
+  String get listing_group_skill => 'المستوى';
+
+  @override
+  String get listing_group_availability => 'التوفر';
+
+  @override
+  String get listing_group_sort => 'ترتيب حسب';
+
+  @override
+  String listing_within_km(int km) {
+    return 'ضمن $km كم';
+  }
+
+  @override
+  String get listing_any_distance => 'أي مسافة';
+
+  @override
+  String get listing_date_any => 'أي تاريخ';
+
+  @override
+  String get listing_today => 'اليوم';
+
+  @override
+  String get listing_tomorrow => 'غدًا';
+
+  @override
+  String get listing_this_week => 'هذا الأسبوع';
+
+  @override
+  String get listing_skill_beginner => 'مبتدئ';
+
+  @override
+  String get listing_skill_intermediate => 'متوسط';
+
+  @override
+  String get listing_skill_advanced => 'متقدم';
+
+  @override
+  String get listing_skill_pro => 'محترف';
+
+  @override
+  String get listing_load_sports_failed => 'تعذر تحميل الرياضات';
+
+  @override
+  String get listing_load_games_failed => 'تعذر تحميل المباريات';
+
+  @override
+  String get listing_load_venues_failed => 'تعذر تحميل الملاعب';
+
+  @override
+  String get listing_games_filtered_title => 'لا توجد مباريات تطابق التصفية';
+
+  @override
+  String get listing_games_filtered_text => 'عدّل التصفية أو امسحها.';
+
+  @override
+  String get listing_games_nearby_title => 'لا توجد مباريات قريبة.';
+
+  @override
+  String get listing_games_nearby_text => 'جرّب توسيع نطاق البحث في التصفية.';
+
+  @override
+  String get listing_games_none_title => 'لا توجد مباريات بعد';
+
+  @override
+  String get listing_games_none_text => 'كن أول من ينشئ مباراة في منطقتك!';
+
+  @override
+  String get listing_change_filters => 'غيّر التصفية';
+
+  @override
+  String get listing_created => 'أنشأتها';
+
+  @override
+  String get listing_joined => 'منضم';
+
+  @override
+  String get listing_full => 'ممتلئة';
+
+  @override
+  String listing_spots_left(int count) {
+    return 'بقي $count أماكن';
+  }
+
+  @override
+  String listing_players_in(int joined, int total) {
+    return '$joined من $total لاعبين';
+  }
+
+  @override
+  String listing_show_games(int count) {
+    return 'عرض $count مباراة';
+  }
+
+  @override
+  String get listing_show_games_plain => 'عرض المباريات';
+
+  @override
+  String get listing_show_venues => 'عرض الملاعب';
+
+  @override
+  String get listing_unit_day => 'يوم';
+
+  @override
+  String get listing_unit_days => 'أيام';
+
+  @override
+  String get listing_unit_hour => 'ساعة';
+
+  @override
+  String get listing_unit_hours => 'ساعات';
+
+  @override
+  String get listing_unit_min => 'د';
+
+  @override
+  String get listing_saved_venues => 'الملاعب المحفوظة';
+
+  @override
+  String get listing_add_venue => 'أضف ملعبًا';
+
+  @override
+  String get listing_venues_none_title => 'لا توجد ملاعب';
+
+  @override
+  String get listing_venues_none_text => 'جرّب رياضة أخرى.';
+
+  @override
+  String listing_venues_radius_text(int km) {
+    return 'لا توجد ملاعب ضمن $km كم — جرّب توسيع نطاق البحث.';
+  }
+
+  @override
+  String get listing_starting_from => 'يبدأ من';
+
+  @override
+  String get listing_view_venue => 'عرض الملعب';
+
+  @override
+  String get listing_save_venue => 'احفظ الملعب';
+
+  @override
+  String get listing_remove_saved => 'أزل من المحفوظ';
+
+  @override
+  String get listing_indoor => 'داخلي';
+
+  @override
+  String get listing_outdoor => 'خارجي';
+
+  @override
+  String listing_km_away(String distance) {
+    return 'على بعد $distance';
+  }
+
+  @override
+  String get listing_free => 'مجاني';
+
+  @override
+  String listing_price_per_hour(String amount) {
+    return '$amount د.إ / ساعة';
+  }
+
+  @override
+  String get location_change_title => 'تغيير الموقع';
+
+  @override
+  String get location_search_areas => 'ابحث عن المناطق…';
+
+  @override
+  String get location_use_current => 'استخدم الموقع الحالي';
+
+  @override
+  String get location_detecting => 'جارٍ التحديد…';
+
+  @override
+  String get location_saved => 'المحفوظة';
+
+  @override
+  String get location_add => 'إضافة موقع';
+
+  @override
+  String location_no_areas(String query) {
+    return 'لا توجد مناطق تطابق \"$query\"';
+  }
+
+  @override
+  String get location_access_required => 'الوصول إلى الموقع مطلوب';
+
+  @override
+  String get location_permission_denied_forever =>
+      'تم رفض إذن الموقع نهائيًا. افتح الإعدادات لتفعيله.';
+
+  @override
+  String get location_open_settings => 'فتح الإعدادات';
+
+  @override
+  String get location_enable_services => 'يرجى تفعيل خدمات الموقع';
+
+  @override
+  String get location_permission_denied => 'تم رفض إذن الموقع';
+
+  @override
+  String get location_timeout => 'تعذر تحديد الموقع — حاول مرة أخرى';
+
+  @override
+  String location_error(String message) {
+    return 'خطأ: $message';
+  }
+
+  @override
+  String get listing_skill_any => 'أي مستوى';
 
   @override
   String get home_upcoming_title => 'القادمة';

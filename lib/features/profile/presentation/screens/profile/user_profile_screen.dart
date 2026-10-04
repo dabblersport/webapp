@@ -4,31 +4,20 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../controllers/profile_controller.dart';
 import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import '../../../../../utils/constants/route_constants.dart';
-import '../../widgets/profile/player_sport_profile_header.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import '../../models/sport_profile_route_args.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
-import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show
-        userPostsProvider,
-        sportsProvider,
-        userLikedPostsProvider,
-        userCommentedPostsProvider,
-        userRepostedPostsProvider;
-import 'package:dabbler/features/social/providers/public_activity_providers.dart';
-import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
-import 'package:dabbler/core/feed/post_layout_resolver.dart';
-import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart'
-    show listingSportFor;
+    show userPostsProvider, sportsProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/profile/utils/persona_label.dart';
 
 /// Another user's profile (design frames PF04 / PF05, "seen by another
 /// user"): a brand-tinted identity header (avatar, name, handle, persona and
@@ -51,16 +40,7 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
-  int _selectedTabIndex = 0;
   final _activitiesKey = GlobalKey();
-
-  static const List<String> _tabIds = <String>[
-    'posts',
-    'replies',
-    'liked',
-    'reposts',
-    'activity',
-  ];
 
   @override
   void initState() {
@@ -118,10 +98,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     ]);
   }
 
-  Future<void> _onRefresh() async {
-    await _loadProfileData();
-  }
-
   void _toast(
     String message, {
     DabblerToastTone tone = DabblerToastTone.neutral,
@@ -136,26 +112,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final sportsState = ref.watch(sportsProfileControllerProvider);
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final sportProfileHeaderAsync = ref.watch(
-      sportProfileHeaderProvider((
-        userId: widget.userId,
-        profileId: widget.profileId,
-      )),
-    );
 
-    // Show loading state
     if (profileState.isLoading) {
       return const DabblerPage(body: Center(child: DabblerSpinner()));
     }
 
-    // Show error state
     if (profileState.errorMessage != null && profileState.profile == null) {
       // Neutral, not alarming: most of the time this fires because the
       // profile isn't visible to this viewer (a benched persona, per
-      // P-028/KAN-100), not because anything actually failed — no
-      // "deleted"/"banned" wording, no danger styling, no avatar.
+      // P-028/KAN-100), not because anything actually failed.
       return DabblerPage(
         body: DabblerEmptyState(
           icon: 'profile-circle',
@@ -177,6 +143,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     final profile = profileState.profile;
     final username = profile?.username;
+    final profileId = profile?.id;
+
+    final posts = profileId == null
+        ? 0
+        : ref
+              .watch(userPostsProvider((profileId: profileId, page: 0)))
+              .maybeWhen(data: (v) => v.length, orElse: () => 0);
+    final following = profileId == null
+        ? 0
+        : ref
+              .watch(followingCountProvider(profileId))
+              .maybeWhen(data: (v) => v, orElse: () => 0);
+    final followers = profileId == null
+        ? 0
+        : ref
+              .watch(followersCountProvider(profileId))
+              .maybeWhen(data: (v) => v, orElse: () => 0);
+
+    final allSports = ref.watch(sportsProvider).valueOrNull ?? [];
+    final byId = {for (final s in allSports) s.id: s};
+    final mySports = [
+      for (final id in profile?.interests ?? const <String>[])
+        if (byId.containsKey(id)) byId[id]!,
+    ];
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
@@ -191,401 +181,139 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         ],
       ),
       body: DabblerRefresh(
-        onRefresh: _onRefresh,
+        onRefresh: _loadProfileData,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
           children: [
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildProfileHeader(context, profileState, colors),
-                    const SizedBox(height: DabblerSpacing.space8),
-                    Padding(
-                      padding: _gutter,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildUnifiedStats(
-                            context,
-                            profileState,
-                            sportsState,
-                          ),
-                          _buildSportsChipsSection(context, profile, colors),
-                          _buildSportProfileHeaderSection(
-                            context,
-                            sportProfileHeaderAsync,
-                          ),
-                        ],
-                      ),
+            OwnProfileHeader(
+              profile: profile,
+              posts: posts,
+              following: following,
+              followers: followers,
+              location: _formatLocation(profile?.city, profile?.country),
+              onPosts: _scrollToFeed,
+              onFollowing: profileId == null
+                  ? null
+                  : () => context.pushNamed(
+                      RouteNames.following,
+                      pathParameters: {'profileId': profileId},
                     ),
-                    const SizedBox(height: DabblerSpacing.space8),
-                    _buildTabbedPostsSection(context),
-                  ],
-                ),
-              ),
+              onFollowers: profileId == null
+                  ? null
+                  : () => context.pushNamed(
+                      RouteNames.followers,
+                      pathParameters: {'profileId': profileId},
+                    ),
+              actions: _buildActionButtons(context),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static const EdgeInsetsGeometry _gutter = EdgeInsets.symmetric(
-    horizontal: DabblerSpacing.space6,
-  );
-
-  // ── Header ───────────────────────────────────────────────────────────
-
-  Widget _buildProfileHeader(
-    BuildContext context,
-    ProfileState profileState,
-    DabblerColors colors,
-  ) {
-    final profile = profileState.profile;
-    final displayName = profile?.getDisplayName();
-    final name = (displayName != null && displayName.trim().isNotEmpty)
-        ? displayName
-        : 'User';
-
-    return DabblerSurface.brandTint(
-      radius: 0,
-      borderWidth: 0,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space6,
-        DabblerSpacing.space6,
-        DabblerSpacing.space7,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Avatar + name / handle ──
-          Row(
-            children: [
-              DabblerAvatar(
-                seed: name,
-                imageUrl: profile?.avatarUrl,
-                size: DabblerAvatarSize.lg,
+            const DabblerGap.v(DabblerSpacing.space8),
+            if (profile != null) _buildStats(context, profile, sportsState),
+            const DabblerGap.v(DabblerSpacing.space8),
+            if (mySports.isNotEmpty) ...[
+              OwnProfileSportPicker(
+                sports: mySports,
+                selectedId: null,
+                primaryId: profile?.primarySport,
+                onSelect: (id) {
+                  if (id == null) return;
+                  _openSportProfile(
+                    profile,
+                    mySports.firstWhere((s) => s.id == id),
+                  );
+                },
               ),
-              const SizedBox(width: DabblerSpacing.space5),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DabblerText(
-                      name,
-                      style: DabblerType.title2,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (profile?.username != null &&
-                        profile!.username!.isNotEmpty)
-                      // LRM keeps the @ on the handle's side in RTL.
-                      DabblerText(
-                        '\u200E@${profile.username}',
-                        style: DabblerType.subheadline,
-                        tone: DabblerTextTone.secondary,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
+              const DabblerGap.v(DabblerSpacing.space8),
             ],
-          ),
-          const SizedBox(height: DabblerSpacing.space5),
-
-          // ── Badges: persona, primary sport, place, age ──
-          _buildInfoPills(context, profile, colors),
-          const SizedBox(height: DabblerSpacing.space3),
-
-          // ── Online / last seen ──
-          if (profile != null) _buildOnlineIndicator(context, profile, colors),
-
-          // ── Bio ──
-          if (profile?.bio?.isNotEmpty == true) ...[
-            const SizedBox(height: DabblerSpacing.space4),
-            DabblerText(
-              profile!.bio!,
-              style: DabblerType.callout,
-              tone: DabblerTextTone.secondary,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-          const SizedBox(height: DabblerSpacing.space5),
-
-          // ── Posts / Following / Followers counters ──
-          _buildPostsAndFollowingCounter(context, colors),
-          const SizedBox(height: DabblerSpacing.space5),
-
-          // ── Follow / Message ──
-          _buildActionButtons(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCounter(
-    BuildContext context,
-    DabblerColors colors, {
-    required int value,
-    required String label,
-    required VoidCallback? onTap,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            DabblerText(
-              '$value',
-              style: DabblerType.headline,
-              weight: DabblerTextWeight.bold,
-            ),
-            const SizedBox(width: DabblerSpacing.space1),
-            DabblerText(
-              label,
-              style: DabblerType.footnote,
-              tone: DabblerTextTone.secondary,
-            ),
+            if (profileId != null)
+              KeyedSubtree(
+                key: _activitiesKey,
+                child: OwnProfileFeed(profileId: profileId),
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPostsAndFollowingCounter(
-    BuildContext context,
-    DabblerColors colors,
-  ) {
-    final l10n = AppLocalizations.of(context);
-    final profileId = ref.watch(profileControllerProvider).profile?.id;
-    final postsAsync = profileId != null
-        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-    final followingCountAsync = profileId != null
-        ? ref.watch(followingCountProvider(profileId))
-        : const AsyncData<int>(0);
-    final followersCountAsync = profileId != null
-        ? ref.watch(followersCountProvider(profileId))
-        : const AsyncData<int>(0);
+  void _scrollToFeed() {
+    final ctx = _activitiesKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(
+        ctx,
+        duration: DabblerMotion.durationOf(context, DabblerMotion.scrollTo),
+        curve: DabblerMotion.standardInOut,
+      );
+    }
+  }
 
-    final postsCount = postsAsync.maybeWhen(
-      data: (posts) => posts.length,
-      orElse: () => 0,
+  void _openSportProfile(UserProfile? profile, dynamic sport) {
+    final profileId = profile?.id;
+    final userId = profile?.userId;
+    final personaType = profile?.personaType ?? profile?.profileType ?? '';
+    if (profileId == null ||
+        userId == null ||
+        (personaType != 'player' && personaType != 'organiser')) {
+      return;
+    }
+    final args = SportProfileRouteArgs(
+      profileId: profileId,
+      userId: userId,
+      displayName: profile?.displayName ?? '',
+      personaType: personaType,
+      sportId: sport.id,
+      sportKey:
+          sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+      sportName: sport.nameEn,
+      avatarUrl: profile?.avatarUrl,
+      sportEmoji: sport.emoji,
     );
-
-    final followingCount = followingCountAsync.maybeWhen(
-      data: (count) => count,
-      orElse: () => 0,
-    );
-
-    final followersCount = followersCountAsync.maybeWhen(
-      data: (count) => count,
-      orElse: () => 0,
-    );
-
-    return Wrap(
-      spacing: DabblerSpacing.space6,
-      children: [
-        // Posts counter
-        _buildCounter(
-          context,
-          colors,
-          value: postsCount,
-          label: l10n.profile_post_count(postsCount),
-          onTap: () {
-            final ctx = _activitiesKey.currentContext;
-            if (ctx != null) {
-              Scrollable.ensureVisible(
-                ctx,
-                duration: DabblerMotion.durationOf(
-                  context,
-                  DabblerMotion.scrollTo,
-                ),
-                curve: DabblerMotion.standardInOut,
-              );
-            }
-          },
-        ),
-        // Following counter
-        _buildCounter(
-          context,
-          colors,
-          value: followingCount,
-          label: l10n.profile_following_label,
-          onTap: profileId != null
-              ? () => context.pushNamed(
-                  RouteNames.following,
-                  pathParameters: {'profileId': profileId},
-                )
-              : null,
-        ),
-        // Followers counter
-        _buildCounter(
-          context,
-          colors,
-          value: followersCount,
-          label: l10n.profile_follower_count(followersCount),
-          onTap: profileId != null
-              ? () => context.pushNamed(
-                  RouteNames.followers,
-                  pathParameters: {'profileId': profileId},
-                )
-              : null,
-        ),
-      ],
+    // Query params keep the route alive across web refresh; extra stays as
+    // the fast path.
+    context.push(
+      Uri(
+        path: RoutePaths.sportProfile,
+        queryParameters: args.toQueryParameters(),
+      ).toString(),
+      extra: args,
     );
   }
 
-  Widget _buildOnlineIndicator(
+  Widget _buildStats(
     BuildContext context,
     UserProfile profile,
-    DabblerColors colors,
-  ) {
-    final isOnline = profile.isOnline;
-    final lastSeenText = profile.getLastSeenText();
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Pulsing dot for online, static neutral dot for offline
-        _OnlineStatusDot(isOnline: isOnline),
-        const SizedBox(width: DabblerSpacing.space2),
-        DabblerText(
-          lastSeenText,
-          style: DabblerType.caption1,
-          tone: isOnline ? DabblerTextTone.success : DabblerTextTone.tertiary,
-          weight: isOnline
-              ? DabblerTextWeight.semibold
-              : DabblerTextWeight.regular,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoPills(
-    BuildContext context,
-    UserProfile? profile,
-    DabblerColors colors,
-  ) {
-    final primarySportId = profile?.preferredSport;
-
-    // Resolve UUID → Sport object to get its name
-    final sportsAsync = ref.watch(sportsProvider);
-    final allSports = sportsAsync.valueOrNull ?? [];
-    final matchedSport = (primarySportId != null && primarySportId.isNotEmpty)
-        ? allSports.cast<dynamic>().firstWhere(
-            (s) => s.id == primarySportId,
-            orElse: () => null,
-          )
-        : null;
-    final sportName = matchedSport != null
-        ? matchedSport.localizedName(context) as String
-        : null;
-    final sport = listingSportFor(matchedSport?.nameEn as String?);
-
-    final location = _formatLocation(profile?.city, profile?.country);
-
-    return Wrap(
-      spacing: DabblerSpacing.space2,
-      runSpacing: DabblerSpacing.space2,
-      children: [
-        // Persona type pill
-        if (profile?.personaType != null && profile!.personaType!.isNotEmpty)
-          DabblerBadge(
-            label: personaLabel(context, profile.personaType),
-            tone: DabblerBadgeTone.defaultTone,
-          ),
-        // Primary sport pill — resolved from public.sports
-        if (sportName != null && sportName.isNotEmpty)
-          DabblerBadge(
-            label: sportName,
-            tone: DabblerBadgeTone.withIcon,
-            icon: sport == null
-                ? null
-                : DabblerSportIcon(sport, size: DabblerSizing.iconInline),
-          ),
-        if (location.isNotEmpty)
-          DabblerBadge(
-            label: location,
-            tone: DabblerBadgeTone.withIcon,
-            icon: const DabblerIcon('location', size: DabblerSizing.iconInline),
-          ),
-        if (profile?.age != null)
-          DabblerBadge(
-            label:
-                '${profile!.age!} ${AppLocalizations.of(context).user_profile_age_suffix}',
-            tone: DabblerBadgeTone.withIcon,
-            icon: const DabblerIcon('cake', size: DabblerSizing.iconInline),
-          ),
-      ],
-    );
-  }
-
-  // ── Stats bento ──────────────────────────────────────────────────────
-
-  Widget _buildUnifiedStats(
-    BuildContext context,
-    ProfileState profileState,
     SportsProfileState sportsState,
   ) {
-    final profile = profileState.profile;
-    if (profile == null) {
-      return const SizedBox.shrink();
-    }
-
     final statistics = profile.statistics;
     final l10n = AppLocalizations.of(context);
-
-    DabblerStatTile tile(
-      String value,
-      String label,
-      DabblerStatTileTone tone,
-    ) => DabblerStatTile(
-      value: value,
-      label: label,
-      tone: tone,
-      span: 2,
-      rows: 1,
-    );
-
     return Padding(
-      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
+      padding: _gutter,
       child: DabblerStatGrid(
         children: [
-          tile(
-            statistics.totalGamesPlayed.toString(),
-            l10n.user_profile_stat_games,
-            DabblerStatTileTone.brand,
+          DabblerStatTile(
+            size: DabblerStatTileSize.hero,
+            tone: DabblerStatTileTone.brand,
+            value: statistics.totalGamesPlayed.toString(),
+            label: l10n.user_profile_stat_games,
+            fitValue: true,
           ),
-          tile(
-            statistics.winRateFormatted,
-            l10n.user_profile_stat_win_rate,
-            DabblerStatTileTone.ink,
+          DabblerStatTile(
+            value: statistics.winRateFormatted,
+            label: l10n.user_profile_stat_win_rate,
+            tone: DabblerStatTileTone.ink,
+            fitValue: true,
           ),
-          tile(
-            sportsState.profiles.length.toString(),
-            l10n.user_profile_stat_sports,
-            DabblerStatTileTone.card,
+          DabblerStatTile(
+            value: '${statistics.getReliabilityScore().round()}%',
+            label: l10n.user_profile_stat_reliability,
+            tone: DabblerStatTileTone.amber,
+            fitValue: true,
           ),
-          tile(
-            '${statistics.getReliabilityScore().round()}%',
-            l10n.user_profile_stat_reliability,
-            DabblerStatTileTone.amber,
+          DabblerStatTile(
+            value: sportsState.profiles.length.toString(),
+            label: l10n.user_profile_stat_sports,
+            fitValue: true,
           ),
-          // Activity and last play carry words, not numbers: one wider tile
-          // with the last play as its sub-line.
           DabblerStatTile(
             value: statistics.getActivityLevel(),
             label: l10n.user_profile_stat_activity,
@@ -600,102 +328,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  // ── Sports ───────────────────────────────────────────────────────────
-
-  Widget _buildSportsChipsSection(
-    BuildContext context,
-    UserProfile? profile,
-    DabblerColors colors,
-  ) {
-    final interestIds = profile?.interests ?? [];
-    final sportsAsync = ref.watch(sportsProvider);
-    final allSports = sportsAsync.valueOrNull ?? [];
-    final sportsById = {for (final s in allSports) s.id: s};
-    final resolvedSports = interestIds
-        .where((id) => sportsById.containsKey(id))
-        .map((id) => sportsById[id]!)
-        .toList();
-
-    if (resolvedSports.isEmpty) return const SizedBox.shrink();
-
-    final isWide = MediaQuery.sizeOf(context).width >= 600;
-    final chips = resolvedSports.map((sport) {
-      final profileId = profile?.id;
-      final userId = profile?.userId;
-      final personaType = profile?.personaType ?? profile?.profileType ?? '';
-      final dsSport = listingSportFor(sport.nameEn as String?);
-
-      return DabblerChip(
-        label: sport.nameEn,
-        leadingIcon: dsSport == null ? null : DabblerSportIcon(dsSport),
-        onTap:
-            profileId == null ||
-                userId == null ||
-                (personaType != 'player' && personaType != 'organiser')
-            ? null
-            : () {
-                final args = SportProfileRouteArgs(
-                  profileId: profileId,
-                  userId: userId,
-                  displayName: profile?.displayName ?? '',
-                  personaType: personaType,
-                  sportId: sport.id,
-                  sportKey:
-                      sport.sportKey ??
-                      sport.nameEn.toLowerCase().replaceAll(' ', '_'),
-                  sportName: sport.nameEn,
-                  avatarUrl: profile?.avatarUrl,
-                  sportEmoji: sport.emoji,
-                );
-                // Query params keep the route alive across web refresh;
-                // extra stays as the fast path.
-                context.push(
-                  Uri(
-                    path: RoutePaths.sportProfile,
-                    queryParameters: args.toQueryParameters(),
-                  ).toString(),
-                  extra: args,
-                );
-              },
-      );
-    }).toList();
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DabblerText(
-            AppLocalizations.of(context).profile_section_sports,
-            style: DabblerType.headline,
-          ),
-          const SizedBox(height: DabblerSpacing.space3),
-          if (isWide)
-            Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: chips,
-            )
-          else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: chips
-                    .map(
-                      (c) => Padding(
-                        padding: const EdgeInsetsDirectional.only(
-                          end: DabblerSpacing.space2,
-                        ),
-                        child: c,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  static const EdgeInsetsGeometry _gutter = EdgeInsets.symmetric(
+    horizontal: DabblerSpacing.space6,
+  );
 
   // ── Actions ──────────────────────────────────────────────────────────
 
@@ -729,7 +364,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         // KAN-45: chat isn't wired up (this route only reaches a
         // "Coming Soon" placeholder) — hide the button until it ships.
         if (FeatureFlags.messaging) ...[
-          const SizedBox(width: DabblerSpacing.space3),
+          const DabblerGap.h(DabblerSpacing.space3),
           DabblerButton.icon(
             icon: 'sms',
             semanticLabel: 'Message',
@@ -807,193 +442,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         currentlyFollowing: false,
       ),
     );
-  }
-
-  // ── Tabbed posts ─────────────────────────────────────────────────────
-
-  /// Tabbed posts section
-  Widget _buildTabbedPostsSection(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final profileId = ref.watch(profileControllerProvider).profile?.id;
-
-    return Column(
-      key: _activitiesKey,
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: _gutter,
-          child: DabblerTabs(
-            scrollable: true,
-            value: _tabIds[_selectedTabIndex],
-            onChanged: (id) =>
-                setState(() => _selectedTabIndex = _tabIds.indexOf(id)),
-            items: [
-              DabblerTabItem(id: _tabIds[0], label: l10n.profile_tab_posts),
-              DabblerTabItem(id: _tabIds[1], label: l10n.profile_tab_replies),
-              DabblerTabItem(id: _tabIds[2], label: l10n.profile_tab_liked),
-              DabblerTabItem(id: _tabIds[3], label: l10n.profile_tab_reposts),
-              DabblerTabItem(id: _tabIds[4], label: l10n.profile_tab_activity),
-            ],
-          ),
-        ),
-        const SizedBox(height: DabblerSpacing.space1),
-        _buildTabContent(context, profileId),
-      ],
-    );
-  }
-
-  Widget _buildTabContent(BuildContext context, String? profileId) {
-    switch (_selectedTabIndex) {
-      case 0:
-        return _buildPostsTabContent(context, profileId);
-      case 1:
-        return _buildRepliesTabContent(context, profileId);
-      case 2:
-        return _buildLikedTabContent(context, profileId);
-      case 3:
-        return _buildRepostsTabContent(context, profileId);
-      case 4:
-        return _buildActivityTabContent(context, profileId);
-      default:
-        return _buildPostsTabContent(context, profileId);
-    }
-  }
-
-  Widget _tabLoading() => const Padding(
-    padding: EdgeInsets.all(DabblerSpacing.space11),
-    child: Center(child: DabblerSpinner()),
-  );
-
-  Widget _buildActivityTabContent(BuildContext context, String? profileId) {
-    if (profileId == null) return const SizedBox.shrink();
-    final state = ref.watch(userActivitiesProvider(profileId));
-
-    if (state.isLoading && state.activities.isEmpty) {
-      return _tabLoading();
-    }
-
-    if (state.activities.isEmpty) {
-      return _buildEmptyTabContent(
-        context,
-        AppLocalizations.of(context).profile_empty_no_activity,
-      );
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: state.activities.map((activity) {
-        return PublicActivityCard(activity: activity);
-      }).toList(),
-    );
-  }
-
-  Widget _buildPostsTabContent(BuildContext context, String? profileId) {
-    final postsAsync = profileId != null
-        ? ref.watch(userPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-
-    return _buildPostsList(
-      postsAsync,
-      AppLocalizations.of(context).profile_empty_no_posts,
-    );
-  }
-
-  Widget _buildRepliesTabContent(BuildContext context, String? profileId) {
-    final postsAsync = profileId != null
-        ? ref.watch(userCommentedPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-
-    return _buildPostsList(
-      postsAsync,
-      AppLocalizations.of(context).profile_empty_no_replies,
-    );
-  }
-
-  Widget _buildLikedTabContent(BuildContext context, String? profileId) {
-    final postsAsync = profileId != null
-        ? ref.watch(userLikedPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-
-    return _buildPostsList(
-      postsAsync,
-      AppLocalizations.of(context).profile_empty_no_liked,
-    );
-  }
-
-  Widget _buildRepostsTabContent(BuildContext context, String? profileId) {
-    final postsAsync = profileId != null
-        ? ref.watch(userRepostedPostsProvider((profileId: profileId, page: 0)))
-        : const AsyncData<List<Post>>([]);
-
-    return _buildPostsList(
-      postsAsync,
-      AppLocalizations.of(context).profile_empty_no_reposts,
-    );
-  }
-
-  Widget _buildPostsList(
-    AsyncValue<List<Post>> postsAsync,
-    String emptyMessage,
-  ) {
-    return postsAsync.when(
-      data: (posts) {
-        if (posts.isEmpty) {
-          return _buildEmptyTabContent(context, emptyMessage);
-        }
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: posts.map((post) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: DabblerSpacing.space1),
-              child: resolvePostLayout(post),
-            );
-          }).toList(),
-        );
-      },
-      loading: _tabLoading,
-      error: (_, _) => Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space11),
-        child: DabblerEmptyState(
-          icon: 'danger',
-          title: AppLocalizations.of(context).profile_error_failed_load_posts,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyTabContent(BuildContext context, String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space11),
-      child: DabblerEmptyState(icon: 'document-text', title: message),
-    );
-  }
-
-  Widget _buildSportProfileHeaderSection(
-    BuildContext context,
-    AsyncValue<SportProfileHeaderData?> headerData,
-  ) {
-    return headerData.when(
-      data: (data) {
-        if (data == null) {
-          return _buildSportProfileEmptyState(context);
-        }
-        return PlayerSportProfileHeader(
-          profile: data.profile,
-          tier: data.tier,
-          badges: data.badges,
-        );
-      },
-      loading: () => const SizedBox(
-        height: DabblerSizing.loadingBlockHeight,
-        child: Center(child: DabblerSpinner()),
-      ),
-      error: (error, stackTrace) => _buildSportProfileEmptyState(context),
-    );
-  }
-
-  Widget _buildSportProfileEmptyState(BuildContext context) {
-    return const SizedBox.shrink();
   }
 
   String _formatLocation(String? city, String? country) {
@@ -1223,7 +671,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                     await _blockUser(this.context);
                   },
                 ),
-              const SizedBox(height: DabblerSpacing.space3),
+              const DabblerGap.v(DabblerSpacing.space3),
               DabblerButton(
                 label: l10n.user_profile_menu_report_user,
                 icon: 'warning-2',
@@ -1238,64 +686,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-/// Dot for online status: a pulsing success dot while online, a static
-/// neutral dot otherwise.
-class _OnlineStatusDot extends StatefulWidget {
-  final bool isOnline;
-  const _OnlineStatusDot({required this.isOnline});
-
-  @override
-  State<_OnlineStatusDot> createState() => _OnlineStatusDotState();
-}
-
-class _OnlineStatusDotState extends State<_OnlineStatusDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: DabblerMotion.ambientLoop,
-    );
-    _animation = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: DabblerMotion.standardInOut),
-    );
-    if (widget.isOnline) _controller.repeat(reverse: true);
-  }
-
-  @override
-  void didUpdateWidget(covariant _OnlineStatusDot oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isOnline && !_controller.isAnimating) {
-      _controller.repeat(reverse: true);
-    } else if (!widget.isOnline && _controller.isAnimating) {
-      _controller.stop();
-      _controller.reset();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!widget.isOnline) {
-      return const DabblerBadge.dot(tone: DabblerBadgeTone.withIcon);
-    }
-
-    return FadeTransition(
-      opacity: _animation,
-      child: DabblerBadge.dot(status: DabblerColors.of(context).success),
     );
   }
 }

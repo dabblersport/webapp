@@ -96,8 +96,8 @@ class CreateUserInformation extends ConsumerStatefulWidget {
 }
 
 class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
-  final _formKey = GlobalKey<FormState>();
   DateTime? _selectedBirthDate;
+  bool _dobOpen = false;
   String _selectedGender = '';
 
   bool _isLoading = false;
@@ -205,7 +205,9 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
           // Different authenticated account than the email/phone we want to register.
           try {
             await _authService.signOut();
-          } catch (e) {}
+          } catch (e) {
+            // A failed sign-out must not stop a fresh registration.
+          }
           // Proceed as fresh registration
           if (mounted) {
             setState(() {
@@ -266,45 +268,15 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     }
   }
 
+  /// The youngest age that may register.
+  static const int _minAge = 16;
+
   Future<void> _handleSubmit() async {
-    // Validate all fields before proceeding
-    if (!_formKey.currentState!.validate()) {
-      showOnboardingError(
-        context,
-        AppLocalizations.of(context).create_info_error_fill_required,
-      );
-      return;
-    }
-
-    // Additional validation checks
-    if (_selectedBirthDate == null) {
-      showOnboardingError(
-        context,
-        AppLocalizations.of(context).create_info_error_select_birth,
-      );
-      return;
-    }
-
-    final ageValue = _calculateAge(_selectedBirthDate!);
-
-    // Age must be >= 16
-    if (ageValue < 16) {
-      showOnboardingError(
-        context,
-        AppLocalizations.of(context).create_info_error_min_age,
-      );
-      return;
-    }
-
-    if (ageValue > AppConstants.maxAge) {
-      showOnboardingError(
-        context,
-        AppLocalizations.of(
-          context,
-        ).create_info_error_max_age(AppConstants.maxAge),
-      );
-      return;
-    }
+    final birth = _selectedBirthDate;
+    if (birth == null) return;
+    final ageValue = _calculateAge(birth);
+    // The page already withholds the action for these; guard regardless.
+    if (ageValue < _minAge || ageValue > AppConstants.maxAge) return;
 
     setState(() => _isLoading = true);
 
@@ -367,18 +339,20 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
   /// Get a random avatar URL based on selected gender
   // (Removed unused _getRandomAvatarUrl helper after refactor; default avatar remains constant.)
 
-  /// Check if all required fields are filled and valid (gender is optional)
+  /// Whether the chosen birth date lets the user continue (gender is optional).
   bool _areAllFieldsValid() {
-    return _selectedBirthDate != null;
+    final birth = _selectedBirthDate;
+    if (birth == null) return false;
+    final age = _calculateAge(birth);
+    return age >= _minAge && age <= AppConstants.maxAge;
   }
 
-  /// Opens the DS birth-date sheet (calendar with a year list).
+  /// Opens the DS birth-date sheet (day, month and year columns).
   Future<void> _showDatePicker(BuildContext context) async {
+    setState(() => _dobOpen = true);
     final DateTime? picked = await showBirthDateSheet(
       context: context,
-      initialDate:
-          _selectedBirthDate ??
-          DateTime.now().subtract(const Duration(days: 6570)), // 18 years ago
+      initialDate: _selectedBirthDate,
       firstDate: DateTime.now().subtract(
         const Duration(days: 36500),
       ), // 100 years ago
@@ -386,12 +360,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
         const Duration(days: 4745),
       ), // 13 years ago
     );
-
-    if (picked != null && picked != _selectedBirthDate) {
-      setState(() {
-        _selectedBirthDate = picked;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _dobOpen = false;
+      if (picked != null) _selectedBirthDate = picked;
+    });
   }
 
   @override
@@ -399,105 +372,111 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
     if (_isLoadingData) return const OnboardingLoading();
 
     final l10n = AppLocalizations.of(context);
-    return OnboardingStepFrame(
+    final birth = _selectedBirthDate;
+    final age = birth == null ? null : _calculateAge(birth);
+    final tooYoung = age != null && age < _minAge;
+    final tooOld = age != null && age > AppConstants.maxAge;
+    final months = <String>[
+      l10n.onb_month_1,
+      l10n.onb_month_2,
+      l10n.onb_month_3,
+      l10n.onb_month_4,
+      l10n.onb_month_5,
+      l10n.onb_month_6,
+      l10n.onb_month_7,
+      l10n.onb_month_8,
+      l10n.onb_month_9,
+      l10n.onb_month_10,
+      l10n.onb_month_11,
+      l10n.onb_month_12,
+    ];
+    return DabblerFlowPage(
       onBack: () => context.pop(),
-      step: 1,
-      stepLabel: 'Step 1 of 5',
-      title: l10n.create_info_title,
-      subtitle: l10n.create_info_subtitle,
-      ctaLabel: l10n.create_info_continue,
-      ctaLoading: _isLoading,
-      onCta: (_isLoading || !_areAllFieldsValid()) ? null : _handleSubmit,
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space8,
+      backLabel: l10n.onb_back,
+      stepCount: 5,
+      stepIndex: 0,
+      stepLabel: l10n.onb_step_label(1, 5),
+      title: l10n.onb_dob_title,
+      subtitle: l10n.onb_dob_subtitle,
+      content: [
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.select,
+          label: l10n.onb_dob_label,
+          placeholder: l10n.onb_dob_placeholder,
+          value: birth == null
+              ? null
+              : '${birth.day} ${months[birth.month - 1]} ${birth.year}',
+          open: _dobOpen,
+          helperText: tooYoung || tooOld
+              ? null
+              : (age == null
+                    ? l10n.onb_dob_helper_min
+                    : l10n.onb_dob_helper_ok(age)),
+          errorText: tooYoung
+              ? l10n.onb_dob_error_min
+              : (tooOld ? l10n.onb_dob_error_max(AppConstants.maxAge) : null),
+          onPressed: () => _showDatePicker(context),
         ),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildBirthDateField(context),
-              const SizedBox(height: DabblerSpacing.space6),
-              _buildGenderGrid(context),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBirthDateField(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final age = _selectedBirthDate != null
-        ? _calculateAge(_selectedBirthDate!)
-        : null;
-    return DabblerTextField(
-      variant: DabblerTextFieldVariant.select,
-      label: l10n.create_info_birth_date,
-      placeholder: l10n.create_info_birth_date_placeholder,
-      value: age != null ? l10n.create_info_age_display(age) : null,
-      onPressed: () => _showDatePicker(context),
-    );
-  }
-
-  Widget _buildGenderGrid(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    const genders = [('male', 'Male', 'man'), ('female', 'Female', 'woman')];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DabblerText(
-          AppLocalizations.of(context).create_info_gender,
-          style: DabblerType.footnote,
-          weight: DabblerTextWeight.medium,
-          tone: DabblerTextTone.secondary,
-        ),
-        const SizedBox(height: DabblerSpacing.space3),
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final g in genders) ...[
-              if (g != genders.first)
-                const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: OnboardingOptionCard(
-                  selected: _selectedGender == g.$1,
-                  semanticLabel: g.$2,
-                  // Tapping the selected option clears it — gender is optional.
-                  onTap: () => setState(
-                    () => _selectedGender = _selectedGender == g.$1 ? '' : g.$1,
-                  ),
-                  child: SizedBox(
-                    height: DabblerSizing.optionTileHeight,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        DabblerIcon(
-                          g.$3,
-                          size: DabblerSizing.iconLg,
-                          weight: _selectedGender == g.$1
-                              ? DabblerIconWeight.bold
-                              : DabblerIconWeight.linear,
-                          color: _selectedGender == g.$1
-                              ? colors.brandPrimary
-                              : colors.textSecondary,
-                        ),
-                        const SizedBox(height: DabblerSpacing.space2),
-                        DabblerText(
-                          g.$2,
-                          style: DabblerType.subheadline,
-                          weight: DabblerTextWeight.medium,
-                        ),
-                      ],
-                    ),
+            DabblerText(
+              l10n.onb_gender_label,
+              style: DabblerType.footnote,
+              weight: DabblerTextWeight.medium,
+              tone: DabblerTextTone.secondary,
+            ),
+            const DabblerGap.v(DabblerSpacing.space3),
+            Row(
+              children: [
+                Expanded(
+                  child: _genderCard(
+                    value: 'male',
+                    label: l10n.onb_gender_male,
+                    hue: DabblerHueTone.maleHue,
                   ),
                 ),
-              ),
-            ],
+                const DabblerGap.h(DabblerSpacing.space4),
+                Expanded(
+                  child: _genderCard(
+                    value: 'female',
+                    label: l10n.onb_gender_female,
+                    hue: DabblerHueTone.femaleHue,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ],
+      footerBanner: tooYoung
+          ? DabblerBanner(
+              tone: DabblerBannerTone.error,
+              message: l10n.onb_dob_helper_min,
+            )
+          : null,
+      primaryLabel: l10n.onb_continue,
+      primaryLoading: _isLoading,
+      onPrimary: (_isLoading || !_areAllFieldsValid()) ? null : _handleSubmit,
+    );
+  }
+
+  /// One gender option. Tapping the selected option clears it — gender is
+  /// optional.
+  Widget _genderCard({
+    required String value,
+    required String label,
+    required double hue,
+  }) {
+    return DabblerSelectableCard(
+      layout: DabblerSelectableCardLayout.stacked,
+      leading: DabblerAvatar(seed: label, size: DabblerAvatarSize.md),
+      title: label,
+      selected: _selectedGender == value,
+      tone: DabblerHueTone.gender(hue),
+      onChanged: (_) => setState(
+        () => _selectedGender = _selectedGender == value ? '' : value,
+      ),
     );
   }
 }

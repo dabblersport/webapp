@@ -31,6 +31,8 @@ class _PrimarySportSelectionScreenState
   String? _selectedSportId;
   bool _isLoading = false;
 
+  bool get _isOnboarding => widget.mode == PrimarySportSelectionMode.onboarding;
+
   List<String> _getInterestIds() {
     if (widget.mode == PrimarySportSelectionMode.addPersona) {
       return ref.read(addPersonaDataProvider)?.interests ?? [];
@@ -87,43 +89,55 @@ class _PrimarySportSelectionScreenState
     }
   }
 
+  /// The title and subtitle the design writes for the chosen persona; the
+  /// add-persona flow keeps its own copy.
+  (String, String) _copy(AppLocalizations l10n) {
+    if (!_isOnboarding) {
+      return (l10n.primary_sport_title, l10n.primary_sport_subtitle);
+    }
+    return switch (ref.read(onboardingDataProvider)?.intention) {
+      'organiser' => (
+        l10n.onb_primary_title_organiser,
+        l10n.onb_primary_subtitle_organiser,
+      ),
+      'host' => (l10n.onb_primary_title_host, l10n.onb_primary_subtitle_host),
+      'socialiser' => (
+        l10n.onb_primary_title_socialiser,
+        l10n.onb_primary_subtitle_socialiser,
+      ),
+      _ => (l10n.onb_primary_title_player, l10n.onb_primary_subtitle_player),
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
     final l10n = AppLocalizations.of(context);
+    final (title, subtitle) = _copy(l10n);
 
-    return OnboardingStepFrame(
+    return DabblerFlowPage(
       onBack: () => context.pop(),
-      step: widget.mode == PrimarySportSelectionMode.addPersona ? null : 4,
-      stepLabel: widget.mode == PrimarySportSelectionMode.addPersona
-          ? 'Primary Sport'
-          : 'Step 4 of 5',
-      title: l10n.primary_sport_title,
-      subtitle: l10n.primary_sport_subtitle,
-      ctaLabel: l10n.primary_sport_continue,
-      ctaLoading: _isLoading,
-      onCta: (_isLoading || _selectedSportId == null) ? null : _handleContinue,
-      body: sportsAsync.when(
-        loading: () => const Center(child: DabblerSpinner()),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DabblerText(
-                'Failed to load sports',
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
-              ),
-              const SizedBox(height: DabblerSpacing.space5),
-              DabblerButton(
-                label: 'Retry',
-                tone: DabblerButtonTone.text,
-                onPressed: () =>
-                    ref.invalidate(sportsForSelectedCountryProvider),
-              ),
-            ],
+      backLabel: l10n.onb_back,
+      stepCount: _isOnboarding ? 5 : null,
+      stepIndex: _isOnboarding ? 3 : null,
+      stepLabel: _isOnboarding ? l10n.onb_step_label(4, 5) : null,
+      title: title,
+      subtitle: subtitle,
+      bodyGap: DabblerSpacing.space3,
+      content: sportsAsync.when<List<Widget>>(
+        loading: () => [const Center(child: DabblerSpinner())],
+        error: (err, _) => [
+          DabblerText(
+            l10n.primary_sport_failed_load,
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
           ),
-        ),
+          DabblerButton(
+            label: l10n.interests_retry,
+            tone: DabblerButtonTone.text,
+            onPressed: () => ref.invalidate(sportsForSelectedCountryProvider),
+          ),
+        ],
         data: (allSports) {
           final sports = _resolveInterestSports(allSports);
 
@@ -136,73 +150,48 @@ class _PrimarySportSelectionScreenState
           }
 
           if (sports.isEmpty) {
-            return Center(
-              child: DabblerText(
-                'No sports selected. Please go back.',
+            return [
+              DabblerText(
+                l10n.primary_sport_no_sports,
                 style: DabblerType.subheadline,
                 tone: DabblerTextTone.secondary,
               ),
-            );
+            ];
           }
 
-          return ListView.separated(
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: DabblerSpacing.space8,
+          return [
+            for (final sport in sports) _row(sport),
+            DabblerTextLink(
+              label: l10n.onb_primary_more,
+              underline: false,
+              onPressed: () => context.pop(),
             ),
-            itemCount: sports.length,
-            separatorBuilder: (_, __) =>
-                const SizedBox(height: DabblerSpacing.space3),
-            itemBuilder: (context, index) {
-              final sport = sports[index];
-              return _SportRow(
-                sport: sport,
-                isSelected: _selectedSportId == sport.id,
-                onTap: () => _selectSport(sport.id),
-              );
-            },
-          );
+          ];
         },
       ),
+      primaryLabel: l10n.onb_continue,
+      primaryLoading: _isLoading,
+      onPrimary: (_isLoading || _selectedSportId == null)
+          ? null
+          : _handleContinue,
     );
   }
-}
 
-class _SportRow extends StatelessWidget {
-  const _SportRow({
-    required this.sport,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final Sport sport;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final name = sport.localizedName(context);
-    return OnboardingOptionCard(
-      selected: isSelected,
-      onTap: onTap,
-      semanticLabel: name,
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: DabblerSpacing.space5,
-        vertical: DabblerSpacing.space4,
+  Widget _row(Sport sport) {
+    final selected = _selectedSportId == sport.id;
+    final tone = onboardingSportTone(sport);
+    return DabblerSelectableCard(
+      layout: DabblerSelectableCardLayout.listRow,
+      leading: OnboardingSportGlyph(
+        sport: sport,
+        selected: selected,
+        size: DabblerSizing.iconMd,
+        color: tone.deep,
       ),
-      child: Row(
-        children: [
-          OnboardingSportGlyph(
-            sport: sport,
-            selected: isSelected,
-            size: DabblerSizing.iconMd,
-            color: isSelected ? colors.brandPrimary : colors.textPrimary,
-          ),
-          const SizedBox(width: DabblerSpacing.space4),
-          Expanded(child: DabblerText(name, style: DabblerType.callout)),
-          OnboardingRadioGlyph(selected: isSelected),
-        ],
-      ),
+      title: sport.localizedName(context),
+      selected: selected,
+      tone: tone,
+      onChanged: (_) => _selectSport(sport.id),
     );
   }
 }

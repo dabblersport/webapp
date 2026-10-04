@@ -410,6 +410,540 @@ abstract class AppLocalizations {
   /// **'Choose language'**
   String get landing_choose_language;
 
+  /// No description provided for @auth_already_have_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get auth_already_have_account;
+
+  /// No description provided for @auth_log_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get auth_log_in;
+
+  /// No description provided for @auth_new_here.
+  ///
+  /// In en, this message translates to:
+  /// **'New here?'**
+  String get auth_new_here;
+
+  /// No description provided for @auth_create_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get auth_create_account;
+
+  /// No description provided for @auth_sheet_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get auth_sheet_done;
+
+  /// No description provided for @auth_sheet_got_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get auth_sheet_got_it;
+
+  /// No description provided for @auth_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get auth_back;
+
+  /// No description provided for @landing_dc_tagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler connects players, organisers and venues, so you can stop searching and start playing.'**
+  String get landing_dc_tagline;
+
+  /// No description provided for @landing_dc_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get landing_dc_continue;
+
+  /// No description provided for @landing_vignette_marcus_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'Half the group chat’s flaky. The other half changes their mind by Friday.'**
+  String get landing_vignette_marcus_quote;
+
+  /// No description provided for @landing_vignette_marcus_want.
+  ///
+  /// In en, this message translates to:
+  /// **'I just want one place to organise a 5-a-side and stop chasing replies.'**
+  String get landing_vignette_marcus_want;
+
+  /// No description provided for @landing_vignette_aisha_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'New city, decent left foot, nobody to pass to.'**
+  String get landing_vignette_aisha_quote;
+
+  /// No description provided for @landing_vignette_aisha_want.
+  ///
+  /// In en, this message translates to:
+  /// **'I want a game this week, not a group chat about a game.'**
+  String get landing_vignette_aisha_want;
+
+  /// No description provided for @landing_vignette_priya_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'I follow more padel than I’ve ever actually played.'**
+  String get landing_vignette_priya_quote;
+
+  /// No description provided for @landing_vignette_priya_want.
+  ///
+  /// In en, this message translates to:
+  /// **'Show me who’s playing near me and I’ll find my way in.'**
+  String get landing_vignette_priya_want;
+
+  /// No description provided for @landing_vignette_sevens_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'Three pitches free at 9pm and nobody knows about it.'**
+  String get landing_vignette_sevens_quote;
+
+  /// No description provided for @landing_vignette_sevens_want.
+  ///
+  /// In en, this message translates to:
+  /// **'Put my courts in front of players already looking for one.'**
+  String get landing_vignette_sevens_want;
+
+  /// No description provided for @auth_entry_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get you playing'**
+  String get auth_entry_title;
+
+  /// No description provided for @auth_entry_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One account for games, squads and venues.'**
+  String get auth_entry_subtitle;
+
+  /// No description provided for @auth_entry_trust_verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed players, verified venues, rated games'**
+  String get auth_entry_trust_verified;
+
+  /// No description provided for @auth_entry_trust_personalised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games and people picked around your sports'**
+  String get auth_entry_trust_personalised;
+
+  /// No description provided for @auth_entry_trust_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'We don’t sell your data. Privacy-first by design'**
+  String get auth_entry_trust_privacy;
+
+  /// No description provided for @auth_entry_continue_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get auth_entry_continue_email;
+
+  /// No description provided for @auth_entry_continue_google.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get auth_entry_continue_google;
+
+  /// No description provided for @auth_entry_continue_apple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get auth_entry_continue_apple;
+
+  /// No description provided for @auth_legal_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to our '**
+  String get auth_legal_prefix;
+
+  /// No description provided for @auth_legal_terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get auth_legal_terms;
+
+  /// No description provided for @auth_legal_and.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get auth_legal_and;
+
+  /// No description provided for @auth_legal_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get auth_legal_privacy;
+
+  /// No description provided for @auth_sheet_language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get auth_sheet_language;
+
+  /// No description provided for @auth_sheet_region.
+  ///
+  /// In en, this message translates to:
+  /// **'Region'**
+  String get auth_sheet_region;
+
+  /// No description provided for @auth_email_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your email?'**
+  String get auth_email_title;
+
+  /// No description provided for @auth_email_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a code. If you\'ve been here before, we\'ll pick up where you left off.'**
+  String get auth_email_subtitle;
+
+  /// No description provided for @auth_email_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get auth_email_label;
+
+  /// No description provided for @auth_email_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'you@email.com'**
+  String get auth_email_placeholder;
+
+  /// No description provided for @auth_email_marketing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep me posted on games and features near me'**
+  String get auth_email_marketing;
+
+  /// No description provided for @auth_email_send_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Send me a code'**
+  String get auth_email_send_code;
+
+  /// No description provided for @auth_email_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like an email address.'**
+  String get auth_email_invalid;
+
+  /// No description provided for @auth_login_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get auth_login_title;
+
+  /// No description provided for @auth_login_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in your way — password, a one-time code, or a connected account.'**
+  String get auth_login_subtitle;
+
+  /// No description provided for @auth_login_password_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get auth_login_password_label;
+
+  /// No description provided for @auth_login_password_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password'**
+  String get auth_login_password_placeholder;
+
+  /// No description provided for @auth_login_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get auth_login_button;
+
+  /// No description provided for @auth_login_email_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Email me a code instead'**
+  String get auth_login_email_code;
+
+  /// No description provided for @auth_login_password_wrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That password does not match. Try again, or email yourself a code.'**
+  String get auth_login_password_wrong;
+
+  /// No description provided for @auth_otp_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inbox'**
+  String get auth_otp_title;
+
+  /// No description provided for @auth_otp_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to your email.'**
+  String get auth_otp_subtitle;
+
+  /// No description provided for @auth_otp_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get auth_otp_change;
+
+  /// No description provided for @auth_otp_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is not right. Check the email and try again.'**
+  String get auth_otp_invalid;
+
+  /// No description provided for @auth_otp_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Send a new one.'**
+  String get auth_otp_expired;
+
+  /// No description provided for @auth_otp_resend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a new code'**
+  String get auth_otp_resend;
+
+  /// No description provided for @auth_otp_resend_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a new code in {seconds}s'**
+  String auth_otp_resend_in(int seconds);
+
+  /// No description provided for @auth_otp_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get auth_otp_continue;
+
+  /// No description provided for @auth_welcome_back_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back, {name}'**
+  String auth_welcome_back_title(String name);
+
+  /// No description provided for @auth_welcome_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get auth_welcome_continue;
+
+  /// No description provided for @auth_welcome_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get auth_welcome_list_title;
+
+  /// No description provided for @persona_player_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get persona_player_name;
+
+  /// No description provided for @persona_player_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re in. Let’s play.'**
+  String get persona_player_headline;
+
+  /// No description provided for @persona_player_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show up, play fair, build your rep.'**
+  String get persona_player_principle;
+
+  /// No description provided for @persona_player_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get persona_player_list_title;
+
+  /// No description provided for @persona_player_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirm when you know you can play.'**
+  String get persona_player_item1;
+
+  /// No description provided for @persona_player_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Respect the organiser’s rules and kickoff time.'**
+  String get persona_player_item2;
+
+  /// No description provided for @persona_player_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning up is what builds your reputation.'**
+  String get persona_player_item3;
+
+  /// No description provided for @persona_player_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my first game'**
+  String get persona_player_cta;
+
+  /// No description provided for @persona_organiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser'**
+  String get persona_organiser_name;
+
+  /// No description provided for @persona_organiser_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_organiser_headline;
+
+  /// No description provided for @persona_organiser_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_organiser_principle;
+
+  /// No description provided for @persona_organiser_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_organiser_list_title;
+
+  /// No description provided for @persona_organiser_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_organiser_item1;
+
+  /// No description provided for @persona_organiser_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_organiser_item2;
+
+  /// No description provided for @persona_organiser_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_organiser_item3;
+
+  /// No description provided for @persona_organiser_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_organiser_cta;
+
+  /// No description provided for @persona_host_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get persona_host_name;
+
+  /// No description provided for @persona_host_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your venue’s on the map.'**
+  String get persona_host_headline;
+
+  /// No description provided for @persona_host_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Great venues make playing easy.'**
+  String get persona_host_principle;
+
+  /// No description provided for @persona_host_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_host_list_title;
+
+  /// No description provided for @persona_host_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability that matches reality.'**
+  String get persona_host_item1;
+
+  /// No description provided for @persona_host_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing and facilities kept current.'**
+  String get persona_host_item2;
+
+  /// No description provided for @persona_host_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings honoured — that’s what brings them back.'**
+  String get persona_host_item3;
+
+  /// No description provided for @persona_host_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up my venue'**
+  String get persona_host_cta;
+
+  /// No description provided for @persona_socialiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Socialiser'**
+  String get persona_socialiser_name;
+
+  /// No description provided for @persona_socialiser_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_socialiser_headline;
+
+  /// No description provided for @persona_socialiser_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_socialiser_principle;
+
+  /// No description provided for @persona_socialiser_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_socialiser_list_title;
+
+  /// No description provided for @persona_socialiser_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you actually care about.'**
+  String get persona_socialiser_item1;
+
+  /// No description provided for @persona_socialiser_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation before you join the game.'**
+  String get persona_socialiser_item2;
+
+  /// No description provided for @persona_socialiser_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_socialiser_item3;
+
+  /// No description provided for @persona_socialiser_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_socialiser_cta;
+
+  /// No description provided for @auth_or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get auth_or;
+
   /// No description provided for @email_input_title.
   ///
   /// In en, this message translates to:
@@ -1489,6 +2023,528 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No sports selected. Please go back.'**
   String get primary_sport_no_sports;
+
+  /// No description provided for @onb_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get onb_back;
+
+  /// No description provided for @onb_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_continue;
+
+  /// No description provided for @onb_step_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String onb_step_label(int current, int total);
+
+  /// No description provided for @onb_dob_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us a bit about you'**
+  String get onb_dob_title;
+
+  /// No description provided for @onb_dob_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your age keeps games and communities age-appropriate. It stays off your profile.'**
+  String get onb_dob_subtitle;
+
+  /// No description provided for @onb_dob_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth'**
+  String get onb_dob_label;
+
+  /// No description provided for @onb_dob_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your date of birth'**
+  String get onb_dob_placeholder;
+
+  /// No description provided for @onb_dob_helper_min.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be 16 or over to use Dabbler.'**
+  String get onb_dob_helper_min;
+
+  /// No description provided for @onb_dob_helper_ok.
+  ///
+  /// In en, this message translates to:
+  /// **'Age {age}. You are all set.'**
+  String onb_dob_helper_ok(int age);
+
+  /// No description provided for @onb_dob_error_min.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be 16 or over.'**
+  String get onb_dob_error_min;
+
+  /// No description provided for @onb_dob_error_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Age must be between 16 and {max}.'**
+  String onb_dob_error_max(int max);
+
+  /// No description provided for @onb_gender_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender (optional)'**
+  String get onb_gender_label;
+
+  /// No description provided for @onb_gender_male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get onb_gender_male;
+
+  /// No description provided for @onb_gender_female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get onb_gender_female;
+
+  /// No description provided for @onb_dob_sheet_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get onb_dob_sheet_confirm;
+
+  /// No description provided for @onb_dob_sheet_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get onb_dob_sheet_cancel;
+
+  /// No description provided for @onb_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get onb_day;
+
+  /// No description provided for @onb_month.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get onb_month;
+
+  /// No description provided for @onb_year.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get onb_year;
+
+  /// No description provided for @onb_month_1.
+  ///
+  /// In en, this message translates to:
+  /// **'January'**
+  String get onb_month_1;
+
+  /// No description provided for @onb_month_2.
+  ///
+  /// In en, this message translates to:
+  /// **'February'**
+  String get onb_month_2;
+
+  /// No description provided for @onb_month_3.
+  ///
+  /// In en, this message translates to:
+  /// **'March'**
+  String get onb_month_3;
+
+  /// No description provided for @onb_month_4.
+  ///
+  /// In en, this message translates to:
+  /// **'April'**
+  String get onb_month_4;
+
+  /// No description provided for @onb_month_5.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get onb_month_5;
+
+  /// No description provided for @onb_month_6.
+  ///
+  /// In en, this message translates to:
+  /// **'June'**
+  String get onb_month_6;
+
+  /// No description provided for @onb_month_7.
+  ///
+  /// In en, this message translates to:
+  /// **'July'**
+  String get onb_month_7;
+
+  /// No description provided for @onb_month_8.
+  ///
+  /// In en, this message translates to:
+  /// **'August'**
+  String get onb_month_8;
+
+  /// No description provided for @onb_month_9.
+  ///
+  /// In en, this message translates to:
+  /// **'September'**
+  String get onb_month_9;
+
+  /// No description provided for @onb_month_10.
+  ///
+  /// In en, this message translates to:
+  /// **'October'**
+  String get onb_month_10;
+
+  /// No description provided for @onb_month_11.
+  ///
+  /// In en, this message translates to:
+  /// **'November'**
+  String get onb_month_11;
+
+  /// No description provided for @onb_month_12.
+  ///
+  /// In en, this message translates to:
+  /// **'December'**
+  String get onb_month_12;
+
+  /// No description provided for @onb_persona_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you here?'**
+  String get onb_persona_title;
+
+  /// No description provided for @onb_persona_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the one that fits best today. You can add another later.'**
+  String get onb_persona_subtitle;
+
+  /// No description provided for @onb_persona_footnote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add another way to use Dabbler later in settings.'**
+  String get onb_persona_footnote;
+
+  /// No description provided for @onb_persona_socialiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Socialiser'**
+  String get onb_persona_socialiser_name;
+
+  /// No description provided for @onb_persona_socialiser_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your people'**
+  String get onb_persona_socialiser_hook;
+
+  /// No description provided for @onb_persona_socialiser_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow sports, discover communities, and stay in the loop.'**
+  String get onb_persona_socialiser_body;
+
+  /// No description provided for @onb_sports_title_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What are you into?'**
+  String get onb_sports_title_socialiser;
+
+  /// No description provided for @onb_sports_subtitle_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you want to see more of.'**
+  String get onb_sports_subtitle_socialiser;
+
+  /// No description provided for @onb_primary_title_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What is your favourite sport?'**
+  String get onb_primary_title_socialiser;
+
+  /// No description provided for @onb_primary_subtitle_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'We will show more communities, people and activity around it.'**
+  String get onb_primary_subtitle_socialiser;
+
+  /// No description provided for @onb_persona_player_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get onb_persona_player_name;
+
+  /// No description provided for @onb_persona_player_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Get in the game'**
+  String get onb_persona_player_hook;
+
+  /// No description provided for @onb_persona_player_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Join matches, build your level, and play more often.'**
+  String get onb_persona_player_body;
+
+  /// No description provided for @onb_sports_title_player.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you play?'**
+  String get onb_sports_title_player;
+
+  /// No description provided for @onb_sports_subtitle_player.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you’re into. You can change these anytime.'**
+  String get onb_sports_subtitle_player;
+
+  /// No description provided for @onb_primary_title_player.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your go-to sport?'**
+  String get onb_primary_title_player;
+
+  /// No description provided for @onb_primary_subtitle_player.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll make it your default and build your main sport profile around it.'**
+  String get onb_primary_subtitle_player;
+
+  /// No description provided for @onb_persona_organiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser'**
+  String get onb_persona_organiser_name;
+
+  /// No description provided for @onb_persona_organiser_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring the game together'**
+  String get onb_persona_organiser_hook;
+
+  /// No description provided for @onb_persona_organiser_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sessions, manage players, and keep everything organised.'**
+  String get onb_persona_organiser_body;
+
+  /// No description provided for @onb_sports_title_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you organise?'**
+  String get onb_sports_title_organiser;
+
+  /// No description provided for @onb_sports_subtitle_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the sports you usually create games for.'**
+  String get onb_sports_subtitle_organiser;
+
+  /// No description provided for @onb_primary_title_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you organise most?'**
+  String get onb_primary_title_organiser;
+
+  /// No description provided for @onb_primary_subtitle_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll use it as the default when you create games and events.'**
+  String get onb_primary_subtitle_organiser;
+
+  /// No description provided for @onb_persona_host_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get onb_persona_host_name;
+
+  /// No description provided for @onb_persona_host_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill your venue'**
+  String get onb_persona_host_hook;
+
+  /// No description provided for @onb_persona_host_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your spaces, reach players, and manage bookings.'**
+  String get onb_persona_host_body;
+
+  /// No description provided for @onb_sports_title_host.
+  ///
+  /// In en, this message translates to:
+  /// **'What can people play at your venue?'**
+  String get onb_sports_title_host;
+
+  /// No description provided for @onb_sports_subtitle_host.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the sports your spaces can host.'**
+  String get onb_sports_subtitle_host;
+
+  /// No description provided for @onb_primary_title_host.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your venue known for?'**
+  String get onb_primary_title_host;
+
+  /// No description provided for @onb_primary_subtitle_host.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll make it the primary sport on your venue profile.'**
+  String get onb_primary_subtitle_host;
+
+  /// No description provided for @onb_sports_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sports'**
+  String get onb_sports_search;
+
+  /// No description provided for @onb_sports_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches that. Try another name.'**
+  String get onb_sports_none;
+
+  /// No description provided for @onb_sports_count_zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one to continue.'**
+  String get onb_sports_count_zero;
+
+  /// No description provided for @onb_sports_count_one.
+  ///
+  /// In en, this message translates to:
+  /// **'1 sport selected'**
+  String get onb_sports_count_one;
+
+  /// No description provided for @onb_sports_count_many.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sports selected'**
+  String onb_sports_count_many(int count);
+
+  /// No description provided for @onb_primary_more.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more sports'**
+  String get onb_primary_more;
+
+  /// No description provided for @onb_identity_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What should people call you?'**
+  String get onb_identity_title;
+
+  /// No description provided for @onb_identity_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the name and username people will see around Dabbler.'**
+  String get onb_identity_subtitle;
+
+  /// No description provided for @onb_display_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get onb_display_name_label;
+
+  /// No description provided for @onb_display_name_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the name people see around Dabbler.'**
+  String get onb_display_name_helper;
+
+  /// No description provided for @onb_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get onb_suggestions;
+
+  /// No description provided for @onb_username_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get onb_username_label;
+
+  /// No description provided for @onb_username_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'@yourname'**
+  String get onb_username_placeholder;
+
+  /// No description provided for @onb_username_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters, numbers and underscores.'**
+  String get onb_username_helper;
+
+  /// No description provided for @onb_username_short.
+  ///
+  /// In en, this message translates to:
+  /// **'A username needs at least 3 characters.'**
+  String get onb_username_short;
+
+  /// No description provided for @onb_username_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters, numbers and underscores only.'**
+  String get onb_username_invalid;
+
+  /// No description provided for @onb_username_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking availability…'**
+  String get onb_username_checking;
+
+  /// No description provided for @onb_username_taken.
+  ///
+  /// In en, this message translates to:
+  /// **'That one is taken. Try another.'**
+  String get onb_username_taken;
+
+  /// No description provided for @onb_username_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available — this one is yours.'**
+  String get onb_username_available;
+
+  /// No description provided for @onb_username_check_error.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not check that username. Try again.'**
+  String get onb_username_check_error;
+
+  /// No description provided for @onb_create_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my account'**
+  String get onb_create_account;
+
+  /// No description provided for @onb_setup_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up your account'**
+  String get onb_setup_title;
+
+  /// No description provided for @onb_setup_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This only takes a moment.'**
+  String get onb_setup_subtitle;
+
+  /// No description provided for @onb_setup_stage_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your profile'**
+  String get onb_setup_stage_profile;
+
+  /// No description provided for @onb_setup_failed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup did not finish'**
+  String get onb_setup_failed_title;
 
   /// No description provided for @primary_sport_adding.
   ///
@@ -2873,6 +3929,12 @@ abstract class AppLocalizations {
   /// **'Add a short bio so teammates know what to expect.'**
   String get profile_bio_placeholder;
 
+  /// No description provided for @settings_item_edit_profile_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, photo, bio and sports'**
+  String get settings_item_edit_profile_subtitle;
+
   /// No description provided for @profile_btn_edit.
   ///
   /// In en, this message translates to:
@@ -3844,6 +4906,468 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{start} – {end}'**
   String notif_quiet_hours_range(String start, String end);
+
+  /// No description provided for @listing_set_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Set location'**
+  String get listing_set_location;
+
+  /// No description provided for @listing_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get listing_search;
+
+  /// No description provided for @listing_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get listing_filters;
+
+  /// No description provided for @listing_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get listing_reset;
+
+  /// No description provided for @listing_clear_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get listing_clear_all;
+
+  /// No description provided for @listing_all_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'All sports'**
+  String get listing_all_sports;
+
+  /// No description provided for @listing_upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get listing_upcoming;
+
+  /// No description provided for @listing_open_spots.
+  ///
+  /// In en, this message translates to:
+  /// **'Open spots'**
+  String get listing_open_spots;
+
+  /// No description provided for @listing_sort_nearest.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest'**
+  String get listing_sort_nearest;
+
+  /// No description provided for @listing_sort_soonest.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting soonest'**
+  String get listing_sort_soonest;
+
+  /// No description provided for @listing_group_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get listing_group_distance;
+
+  /// No description provided for @listing_group_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get listing_group_date;
+
+  /// No description provided for @listing_group_skill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill level'**
+  String get listing_group_skill;
+
+  /// No description provided for @listing_group_availability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get listing_group_availability;
+
+  /// No description provided for @listing_group_sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get listing_group_sort;
+
+  /// No description provided for @listing_within_km.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {km} km'**
+  String listing_within_km(int km);
+
+  /// No description provided for @listing_any_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Any distance'**
+  String get listing_any_distance;
+
+  /// No description provided for @listing_date_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any date'**
+  String get listing_date_any;
+
+  /// No description provided for @listing_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get listing_today;
+
+  /// No description provided for @listing_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get listing_tomorrow;
+
+  /// No description provided for @listing_this_week.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get listing_this_week;
+
+  /// No description provided for @listing_skill_beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get listing_skill_beginner;
+
+  /// No description provided for @listing_skill_intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get listing_skill_intermediate;
+
+  /// No description provided for @listing_skill_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get listing_skill_advanced;
+
+  /// No description provided for @listing_skill_pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get listing_skill_pro;
+
+  /// No description provided for @listing_load_sports_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sports'**
+  String get listing_load_sports_failed;
+
+  /// No description provided for @listing_load_games_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load games'**
+  String get listing_load_games_failed;
+
+  /// No description provided for @listing_load_venues_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load venues'**
+  String get listing_load_venues_failed;
+
+  /// No description provided for @listing_games_filtered_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games match your filters'**
+  String get listing_games_filtered_title;
+
+  /// No description provided for @listing_games_filtered_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust or clear the filters.'**
+  String get listing_games_filtered_text;
+
+  /// No description provided for @listing_games_nearby_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games found nearby.'**
+  String get listing_games_nearby_title;
+
+  /// No description provided for @listing_games_nearby_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try widening your search radius in the filter.'**
+  String get listing_games_nearby_text;
+
+  /// No description provided for @listing_games_none_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet'**
+  String get listing_games_none_title;
+
+  /// No description provided for @listing_games_none_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to create a game in your area!'**
+  String get listing_games_none_text;
+
+  /// No description provided for @listing_change_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Change filters'**
+  String get listing_change_filters;
+
+  /// No description provided for @listing_created.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get listing_created;
+
+  /// No description provided for @listing_joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get listing_joined;
+
+  /// No description provided for @listing_full.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get listing_full;
+
+  /// No description provided for @listing_spots_left.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} spots left'**
+  String listing_spots_left(int count);
+
+  /// No description provided for @listing_players_in.
+  ///
+  /// In en, this message translates to:
+  /// **'{joined} of {total} players in'**
+  String listing_players_in(int joined, int total);
+
+  /// No description provided for @listing_show_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} games'**
+  String listing_show_games(int count);
+
+  /// No description provided for @listing_show_games_plain.
+  ///
+  /// In en, this message translates to:
+  /// **'Show games'**
+  String get listing_show_games_plain;
+
+  /// No description provided for @listing_show_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Show venues'**
+  String get listing_show_venues;
+
+  /// No description provided for @listing_unit_day.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get listing_unit_day;
+
+  /// No description provided for @listing_unit_days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get listing_unit_days;
+
+  /// No description provided for @listing_unit_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'hour'**
+  String get listing_unit_hour;
+
+  /// No description provided for @listing_unit_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get listing_unit_hours;
+
+  /// No description provided for @listing_unit_min.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get listing_unit_min;
+
+  /// No description provided for @listing_saved_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved venues'**
+  String get listing_saved_venues;
+
+  /// No description provided for @listing_add_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add venue'**
+  String get listing_add_venue;
+
+  /// No description provided for @listing_venues_none_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues found'**
+  String get listing_venues_none_title;
+
+  /// No description provided for @listing_venues_none_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try selecting a different sport.'**
+  String get listing_venues_none_text;
+
+  /// No description provided for @listing_venues_radius_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues within {km} km — try widening your search radius.'**
+  String listing_venues_radius_text(int km);
+
+  /// No description provided for @listing_starting_from.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting from'**
+  String get listing_starting_from;
+
+  /// No description provided for @listing_view_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'View venue'**
+  String get listing_view_venue;
+
+  /// No description provided for @listing_save_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save venue'**
+  String get listing_save_venue;
+
+  /// No description provided for @listing_remove_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from saved'**
+  String get listing_remove_saved;
+
+  /// No description provided for @listing_indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor'**
+  String get listing_indoor;
+
+  /// No description provided for @listing_outdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor'**
+  String get listing_outdoor;
+
+  /// No description provided for @listing_km_away.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} away'**
+  String listing_km_away(String distance);
+
+  /// No description provided for @listing_free.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get listing_free;
+
+  /// No description provided for @listing_price_per_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'AED {amount} / hour'**
+  String listing_price_per_hour(String amount);
+
+  /// No description provided for @location_change_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change location'**
+  String get location_change_title;
+
+  /// No description provided for @location_search_areas.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas…'**
+  String get location_search_areas;
+
+  /// No description provided for @location_use_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location'**
+  String get location_use_current;
+
+  /// No description provided for @location_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting…'**
+  String get location_detecting;
+
+  /// No description provided for @location_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get location_saved;
+
+  /// No description provided for @location_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get location_add;
+
+  /// No description provided for @location_no_areas.
+  ///
+  /// In en, this message translates to:
+  /// **'No areas match \"{query}\"'**
+  String location_no_areas(String query);
+
+  /// No description provided for @location_access_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access required'**
+  String get location_access_required;
+
+  /// No description provided for @location_permission_denied_forever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is permanently denied. Open Settings to enable it.'**
+  String get location_permission_denied_forever;
+
+  /// No description provided for @location_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get location_open_settings;
+
+  /// No description provided for @location_enable_services.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services'**
+  String get location_enable_services;
+
+  /// No description provided for @location_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied'**
+  String get location_permission_denied;
+
+  /// No description provided for @location_timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get location — try again'**
+  String get location_timeout;
+
+  /// No description provided for @location_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String location_error(String message);
+
+  /// No description provided for @listing_skill_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any skill'**
+  String get listing_skill_any;
 
   /// No description provided for @home_upcoming_title.
   ///

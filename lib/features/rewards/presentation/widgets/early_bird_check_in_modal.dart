@@ -47,7 +47,7 @@ class EarlyBirdCheckInModal extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: DabblerSpacing.space4),
+          const DabblerGap.v(DabblerSpacing.space4),
           Center(
             child: DabblerHeroIcon(
               isCompleted ? 'medal-star' : 'sun-1',
@@ -56,40 +56,24 @@ class EarlyBirdCheckInModal extends StatelessWidget {
                   : DabblerHeroIconTone.brand,
             ),
           ),
-          const SizedBox(height: DabblerSpacing.space4),
+          const DabblerGap.v(DabblerSpacing.space4),
 
           // Progress card
-          DabblerSurface.card(
-            padding: const EdgeInsets.all(DabblerSpacing.space4),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const DabblerText(
-                      'Progress',
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                    const Spacer(),
-                    DabblerText(
-                      '$currentDay/14 days',
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.brand,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: DabblerSpacing.space3),
-                CheckInProgressIndicator(
-                  completedDays: currentDay,
-                  totalDays: 14,
-                ),
-              ],
+          DabblerCard(
+            header: DabblerKeyValueRow(
+              label: 'Progress',
+              value: '$currentDay/14 days',
+              valueTone: DabblerTextTone.brand,
+            ),
+            child: CheckInProgressIndicator(
+              completedDays: currentDay,
+              totalDays: 14,
             ),
           ),
 
           // Streak badge
           if (streakCount > 1) ...[
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
             Center(
               child: DabblerBadge(
                 label: '$streakCount Day Streak!',
@@ -104,7 +88,7 @@ class EarlyBirdCheckInModal extends StatelessWidget {
 
           // Days remaining info
           if (!isCompleted && daysRemaining > 0) ...[
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
             DabblerBanner(
               tone: DabblerBannerTone.neutral,
               message:

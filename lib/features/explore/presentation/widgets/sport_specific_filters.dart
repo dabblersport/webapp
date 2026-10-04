@@ -69,7 +69,7 @@ class FootballFilters extends SportSpecificFilters {
           SportFiltersConfig.footballGameTypes,
           'gameType',
         ),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Surface Type'),
         buildChipGroup(
           context,
@@ -100,21 +100,21 @@ class CricketFilters extends SportSpecificFilters {
           SportFiltersConfig.cricketGameTypes,
           'gameType',
         ),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Ball Type'),
         buildChipGroup(
           context,
           SportFiltersConfig.cricketBallTypes,
           'ballType',
         ),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Over Format'),
         buildChipGroup(
           context,
           SportFiltersConfig.cricketOverFormats,
           'overFormat',
         ),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Pitch Type'),
         buildChipGroup(
           context,
@@ -141,14 +141,14 @@ class PadelFilters extends SportSpecificFilters {
       children: [
         buildSectionTitle(context, 'Game Type'),
         buildChipGroup(context, SportFiltersConfig.padelGameTypes, 'gameType'),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Court Type'),
         buildChipGroup(
           context,
           SportFiltersConfig.padelCourtTypes,
           'courtType',
         ),
-        const SizedBox(height: DabblerSpacing.space7),
+        const DabblerGap.v(DabblerSpacing.space7),
         buildSectionTitle(context, 'Surface Type'),
         buildChipGroup(
           context,
