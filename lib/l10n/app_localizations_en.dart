@@ -177,6 +177,304 @@ class AppLocalizationsEn extends AppLocalizations {
   String get landing_choose_language => 'Choose language';
 
   @override
+  String get auth_already_have_account => 'Already have an account?';
+
+  @override
+  String get auth_log_in => 'Log in';
+
+  @override
+  String get auth_new_here => 'New here?';
+
+  @override
+  String get auth_create_account => 'Create an account';
+
+  @override
+  String get auth_sheet_done => 'Done';
+
+  @override
+  String get auth_sheet_got_it => 'Got it';
+
+  @override
+  String get auth_back => 'Back';
+
+  @override
+  String get landing_dc_tagline =>
+      'Dabbler connects players, organisers and venues, so you can stop searching and start playing.';
+
+  @override
+  String get landing_dc_continue => 'Continue';
+
+  @override
+  String get landing_vignette_marcus_quote =>
+      'Half the group chat’s flaky. The other half changes their mind by Friday.';
+
+  @override
+  String get landing_vignette_marcus_want =>
+      'I just want one place to organise a 5-a-side and stop chasing replies.';
+
+  @override
+  String get landing_vignette_aisha_quote =>
+      'New city, decent left foot, nobody to pass to.';
+
+  @override
+  String get landing_vignette_aisha_want =>
+      'I want a game this week, not a group chat about a game.';
+
+  @override
+  String get landing_vignette_priya_quote =>
+      'I follow more padel than I’ve ever actually played.';
+
+  @override
+  String get landing_vignette_priya_want =>
+      'Show me who’s playing near me and I’ll find my way in.';
+
+  @override
+  String get landing_vignette_sevens_quote =>
+      'Three pitches free at 9pm and nobody knows about it.';
+
+  @override
+  String get landing_vignette_sevens_want =>
+      'Put my courts in front of players already looking for one.';
+
+  @override
+  String get auth_entry_title => 'Let\'s get you playing';
+
+  @override
+  String get auth_entry_subtitle => 'One account for games, squads and venues.';
+
+  @override
+  String get auth_entry_trust_verified =>
+      'Reviewed players, verified venues, rated games';
+
+  @override
+  String get auth_entry_trust_personalised =>
+      'Games and people picked around your sports';
+
+  @override
+  String get auth_entry_trust_privacy =>
+      'We don’t sell your data. Privacy-first by design';
+
+  @override
+  String get auth_entry_continue_email => 'Continue with email';
+
+  @override
+  String get auth_entry_continue_google => 'Continue with Google';
+
+  @override
+  String get auth_entry_continue_apple => 'Continue with Apple';
+
+  @override
+  String get auth_legal_prefix => 'By continuing you agree to our ';
+
+  @override
+  String get auth_legal_terms => 'Terms of Service';
+
+  @override
+  String get auth_legal_and => ' and ';
+
+  @override
+  String get auth_legal_privacy => 'Privacy Policy';
+
+  @override
+  String get auth_sheet_language => 'Language';
+
+  @override
+  String get auth_sheet_region => 'Region';
+
+  @override
+  String get auth_email_title => 'What\'s your email?';
+
+  @override
+  String get auth_email_subtitle =>
+      'We\'ll send a code. If you\'ve been here before, we\'ll pick up where you left off.';
+
+  @override
+  String get auth_email_label => 'Email';
+
+  @override
+  String get auth_email_placeholder => 'you@email.com';
+
+  @override
+  String get auth_email_marketing =>
+      'Keep me posted on games and features near me';
+
+  @override
+  String get auth_email_send_code => 'Send me a code';
+
+  @override
+  String get auth_email_invalid => 'That does not look like an email address.';
+
+  @override
+  String get auth_login_title => 'Welcome back';
+
+  @override
+  String get auth_login_subtitle =>
+      'Log in your way — password, a one-time code, or a connected account.';
+
+  @override
+  String get auth_login_password_label => 'Password';
+
+  @override
+  String get auth_login_password_placeholder => 'Your password';
+
+  @override
+  String get auth_login_button => 'Log in';
+
+  @override
+  String get auth_login_email_code => 'Email me a code instead';
+
+  @override
+  String get auth_login_password_wrong =>
+      'That password does not match. Try again, or email yourself a code.';
+
+  @override
+  String get auth_otp_title => 'Check your inbox';
+
+  @override
+  String get auth_otp_subtitle => 'We sent a 6-digit code to your email.';
+
+  @override
+  String get auth_otp_change => 'Change';
+
+  @override
+  String get auth_otp_invalid =>
+      'That code is not right. Check the email and try again.';
+
+  @override
+  String get auth_otp_expired => 'This code has expired. Send a new one.';
+
+  @override
+  String get auth_otp_resend => 'Send a new code';
+
+  @override
+  String auth_otp_resend_in(int seconds) {
+    return 'Send a new code in ${seconds}s';
+  }
+
+  @override
+  String get auth_otp_continue => 'Continue';
+
+  @override
+  String auth_welcome_back_title(String name) {
+    return 'Welcome back, $name';
+  }
+
+  @override
+  String get auth_welcome_continue => 'Continue';
+
+  @override
+  String get auth_welcome_list_title => 'Don’t forget';
+
+  @override
+  String get persona_player_name => 'Player';
+
+  @override
+  String get persona_player_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_player_principle => 'Show up, play fair, build your rep.';
+
+  @override
+  String get persona_player_list_title => 'Don’t forget';
+
+  @override
+  String get persona_player_item1 => 'Only confirm when you know you can play.';
+
+  @override
+  String get persona_player_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_player_item3 =>
+      'Turning up is what builds your reputation.';
+
+  @override
+  String get persona_player_cta => 'Find my first game';
+
+  @override
+  String get persona_organiser_name => 'Organiser';
+
+  @override
+  String get persona_organiser_headline => 'Time to bring the game together.';
+
+  @override
+  String get persona_organiser_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_organiser_list_title => 'What players expect';
+
+  @override
+  String get persona_organiser_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_organiser_item2 => 'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_organiser_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_organiser_cta => 'Create my first game';
+
+  @override
+  String get persona_host_name => 'Host';
+
+  @override
+  String get persona_host_headline => 'Your venue’s on the map.';
+
+  @override
+  String get persona_host_principle => 'Great venues make playing easy.';
+
+  @override
+  String get persona_host_list_title => 'What players expect';
+
+  @override
+  String get persona_host_item1 => 'Availability that matches reality.';
+
+  @override
+  String get persona_host_item2 => 'Pricing and facilities kept current.';
+
+  @override
+  String get persona_host_item3 =>
+      'Bookings honoured — that’s what brings them back.';
+
+  @override
+  String get persona_host_cta => 'Set up my venue';
+
+  @override
+  String get persona_socialiser_name => 'Socialiser';
+
+  @override
+  String get persona_socialiser_headline => 'Your sports circle starts here.';
+
+  @override
+  String get persona_socialiser_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_socialiser_list_title => 'How this works';
+
+  @override
+  String get persona_socialiser_item1 =>
+      'Follow the sports and people you actually care about.';
+
+  @override
+  String get persona_socialiser_item2 =>
+      'Join the conversation before you join the game.';
+
+  @override
+  String get persona_socialiser_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_socialiser_cta => 'Start exploring';
+
+  @override
+  String get auth_or => 'or';
+
+  @override
   String get email_input_title => 'Authenticate';
 
   @override
@@ -785,6 +1083,293 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get primary_sport_no_sports => 'No sports selected. Please go back.';
+
+  @override
+  String get onb_back => 'Back';
+
+  @override
+  String get onb_continue => 'Continue';
+
+  @override
+  String onb_step_label(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onb_dob_title => 'Tell us a bit about you';
+
+  @override
+  String get onb_dob_subtitle =>
+      'Your age keeps games and communities age-appropriate. It stays off your profile.';
+
+  @override
+  String get onb_dob_label => 'Date of birth';
+
+  @override
+  String get onb_dob_placeholder => 'Select your date of birth';
+
+  @override
+  String get onb_dob_helper_min => 'You need to be 16 or over to use Dabbler.';
+
+  @override
+  String onb_dob_helper_ok(int age) {
+    return 'Age $age. You are all set.';
+  }
+
+  @override
+  String get onb_dob_error_min => 'You need to be 16 or over.';
+
+  @override
+  String onb_dob_error_max(int max) {
+    return 'Age must be between 16 and $max.';
+  }
+
+  @override
+  String get onb_gender_label => 'Gender (optional)';
+
+  @override
+  String get onb_gender_male => 'Male';
+
+  @override
+  String get onb_gender_female => 'Female';
+
+  @override
+  String get onb_dob_sheet_confirm => 'Confirm';
+
+  @override
+  String get onb_dob_sheet_cancel => 'Cancel';
+
+  @override
+  String get onb_day => 'Day';
+
+  @override
+  String get onb_month => 'Month';
+
+  @override
+  String get onb_year => 'Year';
+
+  @override
+  String get onb_month_1 => 'January';
+
+  @override
+  String get onb_month_2 => 'February';
+
+  @override
+  String get onb_month_3 => 'March';
+
+  @override
+  String get onb_month_4 => 'April';
+
+  @override
+  String get onb_month_5 => 'May';
+
+  @override
+  String get onb_month_6 => 'June';
+
+  @override
+  String get onb_month_7 => 'July';
+
+  @override
+  String get onb_month_8 => 'August';
+
+  @override
+  String get onb_month_9 => 'September';
+
+  @override
+  String get onb_month_10 => 'October';
+
+  @override
+  String get onb_month_11 => 'November';
+
+  @override
+  String get onb_month_12 => 'December';
+
+  @override
+  String get onb_persona_title => 'Why are you here?';
+
+  @override
+  String get onb_persona_subtitle =>
+      'Pick the one that fits best today. You can add another later.';
+
+  @override
+  String get onb_persona_footnote =>
+      'You can add another way to use Dabbler later in settings.';
+
+  @override
+  String get onb_persona_socialiser_name => 'Socialiser';
+
+  @override
+  String get onb_persona_socialiser_hook => 'Find your people';
+
+  @override
+  String get onb_persona_socialiser_body =>
+      'Follow sports, discover communities, and stay in the loop.';
+
+  @override
+  String get onb_sports_title_socialiser => 'What are you into?';
+
+  @override
+  String get onb_sports_subtitle_socialiser =>
+      'Pick the sports you want to see more of.';
+
+  @override
+  String get onb_primary_title_socialiser => 'What is your favourite sport?';
+
+  @override
+  String get onb_primary_subtitle_socialiser =>
+      'We will show more communities, people and activity around it.';
+
+  @override
+  String get onb_persona_player_name => 'Player';
+
+  @override
+  String get onb_persona_player_hook => 'Get in the game';
+
+  @override
+  String get onb_persona_player_body =>
+      'Join matches, build your level, and play more often.';
+
+  @override
+  String get onb_sports_title_player => 'What do you play?';
+
+  @override
+  String get onb_sports_subtitle_player =>
+      'Pick the sports you’re into. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_player => 'What’s your go-to sport?';
+
+  @override
+  String get onb_primary_subtitle_player =>
+      'We’ll make it your default and build your main sport profile around it.';
+
+  @override
+  String get onb_persona_organiser_name => 'Organiser';
+
+  @override
+  String get onb_persona_organiser_hook => 'Bring the game together';
+
+  @override
+  String get onb_persona_organiser_body =>
+      'Create sessions, manage players, and keep everything organised.';
+
+  @override
+  String get onb_sports_title_organiser => 'What do you organise?';
+
+  @override
+  String get onb_sports_subtitle_organiser =>
+      'Choose the sports you usually create games for.';
+
+  @override
+  String get onb_primary_title_organiser => 'What do you organise most?';
+
+  @override
+  String get onb_primary_subtitle_organiser =>
+      'We’ll use it as the default when you create games and events.';
+
+  @override
+  String get onb_persona_host_name => 'Host';
+
+  @override
+  String get onb_persona_host_hook => 'Fill your venue';
+
+  @override
+  String get onb_persona_host_body =>
+      'Show your spaces, reach players, and manage bookings.';
+
+  @override
+  String get onb_sports_title_host => 'What can people play at your venue?';
+
+  @override
+  String get onb_sports_subtitle_host =>
+      'Select the sports your spaces can host.';
+
+  @override
+  String get onb_primary_title_host => 'What’s your venue known for?';
+
+  @override
+  String get onb_primary_subtitle_host =>
+      'We’ll make it the primary sport on your venue profile.';
+
+  @override
+  String get onb_sports_search => 'Search sports';
+
+  @override
+  String get onb_sports_none => 'Nothing matches that. Try another name.';
+
+  @override
+  String get onb_sports_count_zero => 'Pick at least one to continue.';
+
+  @override
+  String get onb_sports_count_one => '1 sport selected';
+
+  @override
+  String onb_sports_count_many(int count) {
+    return '$count sports selected';
+  }
+
+  @override
+  String get onb_primary_more => 'Add more sports';
+
+  @override
+  String get onb_identity_title => 'What should people call you?';
+
+  @override
+  String get onb_identity_subtitle =>
+      'Set the name and username people will see around Dabbler.';
+
+  @override
+  String get onb_display_name_label => 'Display name';
+
+  @override
+  String get onb_display_name_helper =>
+      'This is the name people see around Dabbler.';
+
+  @override
+  String get onb_suggestions => 'Suggestions';
+
+  @override
+  String get onb_username_label => 'Username';
+
+  @override
+  String get onb_username_placeholder => '@yourname';
+
+  @override
+  String get onb_username_helper => 'Letters, numbers and underscores.';
+
+  @override
+  String get onb_username_short => 'A username needs at least 3 characters.';
+
+  @override
+  String get onb_username_invalid => 'Letters, numbers and underscores only.';
+
+  @override
+  String get onb_username_checking => 'Checking availability…';
+
+  @override
+  String get onb_username_taken => 'That one is taken. Try another.';
+
+  @override
+  String get onb_username_available => 'Available — this one is yours.';
+
+  @override
+  String get onb_username_check_error =>
+      'We could not check that username. Try again.';
+
+  @override
+  String get onb_create_account => 'Create my account';
+
+  @override
+  String get onb_setup_title => 'Setting up your account';
+
+  @override
+  String get onb_setup_subtitle => 'This only takes a moment.';
+
+  @override
+  String get onb_setup_stage_profile => 'Creating your profile';
+
+  @override
+  String get onb_setup_failed_title => 'Setup did not finish';
 
   @override
   String primary_sport_adding(String label) {
@@ -1572,6 +2157,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Add a short bio so teammates know what to expect.';
 
   @override
+  String get settings_item_edit_profile_subtitle =>
+      'Name, photo, bio and sports';
+
+  @override
   String get profile_btn_edit => 'Edit profile';
 
   @override
@@ -1992,6 +2581,258 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
+
+  @override
+  String get listing_set_location => 'Set location';
+
+  @override
+  String get listing_search => 'Search';
+
+  @override
+  String get listing_filters => 'Filters';
+
+  @override
+  String get listing_reset => 'Reset';
+
+  @override
+  String get listing_clear_all => 'Clear all';
+
+  @override
+  String get listing_all_sports => 'All sports';
+
+  @override
+  String get listing_upcoming => 'Upcoming';
+
+  @override
+  String get listing_open_spots => 'Open spots';
+
+  @override
+  String get listing_sort_nearest => 'Nearest';
+
+  @override
+  String get listing_sort_soonest => 'Starting soonest';
+
+  @override
+  String get listing_group_distance => 'Distance';
+
+  @override
+  String get listing_group_date => 'Date';
+
+  @override
+  String get listing_group_skill => 'Skill level';
+
+  @override
+  String get listing_group_availability => 'Availability';
+
+  @override
+  String get listing_group_sort => 'Sort by';
+
+  @override
+  String listing_within_km(int km) {
+    return 'Within $km km';
+  }
+
+  @override
+  String get listing_any_distance => 'Any distance';
+
+  @override
+  String get listing_date_any => 'Any date';
+
+  @override
+  String get listing_today => 'Today';
+
+  @override
+  String get listing_tomorrow => 'Tomorrow';
+
+  @override
+  String get listing_this_week => 'This week';
+
+  @override
+  String get listing_skill_beginner => 'Beginner';
+
+  @override
+  String get listing_skill_intermediate => 'Intermediate';
+
+  @override
+  String get listing_skill_advanced => 'Advanced';
+
+  @override
+  String get listing_skill_pro => 'Pro';
+
+  @override
+  String get listing_load_sports_failed => 'Failed to load sports';
+
+  @override
+  String get listing_load_games_failed => 'Couldn\'t load games';
+
+  @override
+  String get listing_load_venues_failed => 'Couldn\'t load venues';
+
+  @override
+  String get listing_games_filtered_title => 'No games match your filters';
+
+  @override
+  String get listing_games_filtered_text => 'Adjust or clear the filters.';
+
+  @override
+  String get listing_games_nearby_title => 'No games found nearby.';
+
+  @override
+  String get listing_games_nearby_text =>
+      'Try widening your search radius in the filter.';
+
+  @override
+  String get listing_games_none_title => 'No games yet';
+
+  @override
+  String get listing_games_none_text =>
+      'Be the first to create a game in your area!';
+
+  @override
+  String get listing_change_filters => 'Change filters';
+
+  @override
+  String get listing_created => 'Created';
+
+  @override
+  String get listing_joined => 'Joined';
+
+  @override
+  String get listing_full => 'Full';
+
+  @override
+  String listing_spots_left(int count) {
+    return '$count spots left';
+  }
+
+  @override
+  String listing_players_in(int joined, int total) {
+    return '$joined of $total players in';
+  }
+
+  @override
+  String listing_show_games(int count) {
+    return 'Show $count games';
+  }
+
+  @override
+  String get listing_show_games_plain => 'Show games';
+
+  @override
+  String get listing_show_venues => 'Show venues';
+
+  @override
+  String get listing_unit_day => 'day';
+
+  @override
+  String get listing_unit_days => 'days';
+
+  @override
+  String get listing_unit_hour => 'hour';
+
+  @override
+  String get listing_unit_hours => 'hours';
+
+  @override
+  String get listing_unit_min => 'min';
+
+  @override
+  String get listing_saved_venues => 'Saved venues';
+
+  @override
+  String get listing_add_venue => 'Add venue';
+
+  @override
+  String get listing_venues_none_title => 'No venues found';
+
+  @override
+  String get listing_venues_none_text => 'Try selecting a different sport.';
+
+  @override
+  String listing_venues_radius_text(int km) {
+    return 'No venues within $km km — try widening your search radius.';
+  }
+
+  @override
+  String get listing_starting_from => 'Starting from';
+
+  @override
+  String get listing_view_venue => 'View venue';
+
+  @override
+  String get listing_save_venue => 'Save venue';
+
+  @override
+  String get listing_remove_saved => 'Remove from saved';
+
+  @override
+  String get listing_indoor => 'Indoor';
+
+  @override
+  String get listing_outdoor => 'Outdoor';
+
+  @override
+  String listing_km_away(String distance) {
+    return '$distance away';
+  }
+
+  @override
+  String get listing_free => 'Free';
+
+  @override
+  String listing_price_per_hour(String amount) {
+    return 'AED $amount / hour';
+  }
+
+  @override
+  String get location_change_title => 'Change location';
+
+  @override
+  String get location_search_areas => 'Search areas…';
+
+  @override
+  String get location_use_current => 'Use current location';
+
+  @override
+  String get location_detecting => 'Detecting…';
+
+  @override
+  String get location_saved => 'Saved';
+
+  @override
+  String get location_add => 'Add location';
+
+  @override
+  String location_no_areas(String query) {
+    return 'No areas match \"$query\"';
+  }
+
+  @override
+  String get location_access_required => 'Location access required';
+
+  @override
+  String get location_permission_denied_forever =>
+      'Location permission is permanently denied. Open Settings to enable it.';
+
+  @override
+  String get location_open_settings => 'Open Settings';
+
+  @override
+  String get location_enable_services => 'Please enable location services';
+
+  @override
+  String get location_permission_denied => 'Location permission denied';
+
+  @override
+  String get location_timeout => 'Could not get location — try again';
+
+  @override
+  String location_error(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get listing_skill_any => 'Any skill';
 
   @override
   String get home_upcoming_title => 'Upcoming';

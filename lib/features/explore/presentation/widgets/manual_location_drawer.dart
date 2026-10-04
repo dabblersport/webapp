@@ -117,7 +117,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
           style: DabblerType.headline,
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: DabblerSpacing.space6),
+        const DabblerGap.v(DabblerSpacing.space6),
         DabblerButton(
           label: 'Use Current Location',
           icon: 'gps',
@@ -127,14 +127,14 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
           disabled: _isLoading,
           onPressed: _useCurrentLocation,
         ),
-        const SizedBox(height: DabblerSpacing.space6),
+        const DabblerGap.v(DabblerSpacing.space6),
         const DabblerDivider(label: 'or choose from list'),
-        const SizedBox(height: DabblerSpacing.space6),
+        const DabblerGap.v(DabblerSpacing.space6),
         DabblerSearchField(
           controller: _searchController,
           placeholder: 'Search locations...',
         ),
-        const SizedBox(height: DabblerSpacing.space4),
+        const DabblerGap.v(DabblerSpacing.space4),
         if (_isLoading)
           const Padding(
             padding: EdgeInsets.all(DabblerSpacing.space10),
@@ -155,7 +155,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
               location: location,
               onTap: () => _selectLocation(location),
             ),
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
           ],
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
+
 import '../../data/models/activity_feed_event.dart';
 
 /// Reusable widget for rendering an activity event card.
@@ -20,16 +21,13 @@ class ActivityEventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final role = event.payload?['role'] as String?;
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space3),
-      child: DabblerActivityRow(
-        leading: DabblerActivitySystemTile(_iconName()),
-        actor: _getTitleText(),
-        subject: _getSubtitleText(),
-        when: _formatDate(event.happenedAt),
-        sportLabel: role?.toUpperCase(),
-        onTap: onTap,
-      ),
+    return DabblerActivityRow(
+      leading: DabblerActivitySystemTile(_iconName()),
+      actor: _getTitleText(),
+      subject: _getSubtitleText(),
+      when: _formatDate(event.happenedAt),
+      sportLabel: role?.toUpperCase(),
+      onTap: onTap,
     );
   }
 

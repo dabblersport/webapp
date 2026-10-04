@@ -42,7 +42,7 @@ class BootstrapErrorApp extends StatelessWidget {
           return DabblerPage(
             body: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(DabblerSpacing.space8),
+                padding: DabblerInsets.screen,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -53,7 +53,7 @@ class BootstrapErrorApp extends StatelessWidget {
                       message: '$error',
                     ),
                     if (kDebugMode && stackTrace != null) ...[
-                      const SizedBox(height: DabblerSpacing.space4),
+                      const DabblerGap.v(DabblerSpacing.space4),
                       DabblerText(
                         '$stackTrace',
                         maxLines: 16,

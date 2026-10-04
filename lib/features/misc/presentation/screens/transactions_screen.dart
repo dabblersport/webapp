@@ -65,17 +65,14 @@ class TransactionsSignInPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space8),
-      child: DabblerEmptyState(
-        icon: 'profile-delete',
-        size: DabblerEmptyStateSize.page,
-        title: 'Sign in to view transactions',
-        text: 'Track your payments and transaction history',
-        action: DabblerButton(
-          label: 'Sign In',
-          onPressed: () => context.go(RoutePaths.authWelcome),
-        ),
+    child: DabblerEmptyState(
+      icon: 'profile-delete',
+      size: DabblerEmptyStateSize.page,
+      title: 'Sign in to view transactions',
+      text: 'Track your payments and transaction history',
+      action: DabblerButton(
+        label: 'Sign In',
+        onPressed: () => context.go(RoutePaths.authWelcome),
       ),
     ),
   );
