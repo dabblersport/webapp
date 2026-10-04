@@ -279,7 +279,7 @@ void main() {
     testWidgets('games listing - $dir', (tester) async {
       await _pump(tester, const GamesScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text(dir == 'rtl' ? 'الماتشات' : 'Games'), findsOneWidget);
+      expect(find.text(dir == 'rtl' ? 'مباريات' : 'Games'), findsOneWidget);
       expect(find.text('Tuesday 5-a-side'), findsOneWidget);
       expect(find.text('My games'), findsOneWidget);
       expect(find.byType(DabblerCardEventLarge), findsWidgets);
@@ -332,7 +332,7 @@ void main() {
     testWidgets('venues listing - $dir', (tester) async {
       await _pump(tester, const VenuesScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text(dir == 'rtl' ? 'الملاعب' : 'Venues'), findsOneWidget);
+      expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
       await _shoot(tester, key, 'venues-listing-$dir');
