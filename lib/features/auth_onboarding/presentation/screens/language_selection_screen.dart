@@ -77,6 +77,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: l10n.language_select_title,
         onBack: () => Navigator.of(context).maybePop(),
       ),

@@ -100,6 +100,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     const gap = SizedBox(height: DabblerSpacing.space7);
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Game Preferences',
         onBack: () => context.pop(),
         actions: [

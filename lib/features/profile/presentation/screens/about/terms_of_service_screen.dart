@@ -14,6 +14,7 @@ class TermsOfServiceScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Terms of Service',
         onBack: () => context.pop(),
       ),

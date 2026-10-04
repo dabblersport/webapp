@@ -11,6 +11,7 @@ import 'package:dabbler/features/profile/presentation/providers/add_persona_prov
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 // ─── Supported options ────────────────────────────────────────────────────────
@@ -36,12 +37,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
   ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final String _appVersion = '1.7.8';
@@ -150,25 +146,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: DabblerMotion.screenEntrance,
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: DabblerMotion.standardInOut,
-      ),
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: DabblerMotion.emphasizedDecelerate,
-          ),
-        );
-    _animationController.forward();
-
     // Fetch user's active personas for dynamic "Add Profile" section
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(personaServiceProvider.notifier).fetchUserPersonas();
@@ -177,7 +154,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -185,69 +161,75 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final email = AuthService().getCurrentUser()?.email ?? '';
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        title: l10n.settings_header_title,
-        onBack: () => context.pop(),
-        actions: [
-          DabblerNavigationAction(
-            icon: 'info-circle',
-            label: l10n.settings_header_help_tooltip,
-            onPressed: () => context.push('/help/center'),
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: SlideTransition(
-            position: _slideAnimation,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: DabblerSpacing.space4),
-                _buildHero(context),
-                _buildSearchBar(context),
-                _buildProfileSection(context),
-                ..._buildFilteredSectionsList(context),
-                _buildSignOutSection(context),
-                _buildVersionInfo(context),
-                const SizedBox(height: DabblerSpacing.space6),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHero(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final l10n = AppLocalizations.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surfaceCard,
-        borderRadius: DabblerRadius.xlAll,
-        border: Border.all(color: colors.borderDefault),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space6),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DabblerText(
-              l10n.settings_hero_eyebrow,
-              style: DabblerType.label,
-              tone: DabblerTextTone.brand,
+            DabblerSettingsHeader(
+              topBar: DabblerNavigationTopBar.titled(
+                onBack: () => context.pop(),
+                transparent: true,
+                actions: [
+                  DabblerNavigationAction(
+                    icon: 'information',
+                    label: l10n.settings_header_help_tooltip,
+                    onPressed: () => context.push('/help/center'),
+                  ),
+                ],
+              ),
+              versionLabel: l10n.settings_version_label(_appVersion),
+              title: l10n.settings_header_title,
+              subtitle: l10n.settings_hero_subtitle,
+              identity: DabblerInputRow(
+                flat: true,
+                showDivider: false,
+                onTap: () => context.push('/settings/account'),
+                leading: DabblerAvatar(
+                  seed: email.isEmpty ? 'dabbler' : email,
+                  size: DabblerAvatarSize.md,
+                ),
+                title: email.isEmpty
+                    ? l10n.settings_item_account_management_title
+                    : email,
+                subtitle: l10n.settings_item_account_management_subtitle,
+                trailing: const DabblerChevron(),
+              ),
             ),
-            const SizedBox(height: DabblerSpacing.space2),
-            DabblerText(l10n.settings_hero_title, style: DabblerType.title3),
-            const SizedBox(height: DabblerSpacing.space3),
-            DabblerText(
-              l10n.settings_hero_subtitle,
-              style: DabblerType.subheadline,
-              tone: DabblerTextTone.secondary,
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                DabblerSpacing.space5,
+                DabblerSpacing.space6,
+                DabblerSpacing.space5,
+                DabblerSpacing.space10,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  DabblerSearchField(
+                    controller: _searchController,
+                    placeholder: l10n.settings_search_hint,
+                    onChanged: (value) {
+                      setState(() => _searchQuery = value.toLowerCase());
+                    },
+                    onCleared: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  ),
+                  const DabblerGap.v(DabblerSpacing.space6),
+                  if (_searchQuery.isEmpty) ...[
+                    _buildTiles(context),
+                    const DabblerGap.v(DabblerSpacing.space6),
+                  ],
+                  _buildProfileSection(context),
+                  ..._buildFilteredSectionsList(context),
+                  const DabblerGap.v(DabblerSpacing.space6),
+                  _buildSignOutSection(context),
+                  _buildVersionInfo(context),
+                ],
+              ),
             ),
           ],
         ),
@@ -255,30 +237,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: DabblerSpacing.space6,
-        bottom: DabblerSpacing.space4,
-      ),
-      child: DabblerSearchField(
-        controller: _searchController,
-        placeholder: AppLocalizations.of(context).settings_search_hint,
-        onChanged: (value) {
-          setState(() => _searchQuery = value.toLowerCase());
-        },
-        onCleared: () {
-          _searchController.clear();
-          setState(() => _searchQuery = '');
-        },
-      ),
+  Widget _buildTiles(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final blocked = ref.watch(blockedUsersWithProfilesProvider);
+    final blockedCount = blocked.valueOrNull?.length;
+    return DabblerStatGrid(
+      rowExtent: DabblerStatGrid.detailsRowHeight,
+      children: [
+        DabblerStatTile(
+          size: DabblerStatTileSize.setting,
+          tone: DabblerStatTileTone.brand,
+          icon: const DabblerIcon('shield-tick'),
+          value: l10n.settings_item_privacy_settings_title,
+          label: '',
+          fitValue: true,
+          onTap: () => context.push('/settings/privacy'),
+        ),
+        DabblerStatTile(
+          size: DabblerStatTileSize.setting,
+          tone: DabblerStatTileTone.accent,
+          icon: const DabblerIcon('notification'),
+          value: l10n.notif_title_notifications,
+          label: '',
+          fitValue: true,
+          onTap: () => context.push('/settings/notifications'),
+        ),
+        DabblerStatTile(
+          size: DabblerStatTileSize.setting,
+          icon: const DabblerIcon('colorfilter'),
+          value: l10n.settings_item_theme_title,
+          label: l10n.settings_item_theme_subtitle,
+          fitValue: true,
+          onTap: () => context.push('/settings/theme'),
+        ),
+        if (blockedCount != null)
+          DabblerStatTile(
+            size: DabblerStatTileSize.setting,
+            icon: const DabblerIcon('slash'),
+            value: '$blockedCount',
+            label: l10n.settings_item_privacy_settings_subtitle,
+            fitValue: true,
+            onTap: () => context.push('/settings/privacy'),
+          ),
+      ],
     );
   }
 
   List<Widget> _buildFilteredSectionsList(BuildContext context) {
     return _getFilteredSections(context).map((section) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
+        padding: const EdgeInsetsDirectional.only(
+          top: DabblerSpacing.space6,
+        ),
         child: _buildSection(context, section),
       );
     }).toList();
@@ -302,8 +312,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
   Widget _buildSection(BuildContext context, SettingsSection section) {
     if (section.items.isEmpty) return const SizedBox.shrink();
-    return DabblerSection(
-      title: section.title,
+    return DabblerRowGroup(
+      header: section.title,
       children: [
         for (final item in section.items) _buildSettingsItem(context, item),
       ],
@@ -340,6 +350,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     }
 
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       onTap: () => _navigateToSetting(item),
       leading: _leadingIcon(item.icon),
       title: item.title,
@@ -386,8 +398,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
-      child: DabblerSection(
-        title: AppLocalizations.of(context).settings_section_profiles,
+      child: DabblerRowGroup(
+        header: AppLocalizations.of(context).settings_section_profiles,
         children: [
           if (showLimitMessage) _buildExistingProfilesList(context),
           for (final availability in filteredPersonas)
@@ -420,6 +432,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       ? profile.getDisplayName()
                       : 'Profile';
                   return DabblerInputRow(
+                    flat: true,
+                    showDivider: false,
                     onTap: () => _switchProfile(isActive, effectiveType),
                     leading: DabblerAvatar(
                       seed: name,
@@ -519,6 +533,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         : availability.targetPersona.description;
 
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       onTap: () => _startPersonaFlow(availability),
       leading: _leadingIcon(
         icon,
@@ -608,17 +624,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   }
 
   Widget _buildSignOutSection(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: DabblerSpacing.space3),
-      child: DabblerInputRow(
-        onTap: _showSignOutDialog,
-        leading: _leadingIcon('logout', color: colors.error.base),
-        title: l10n.settings_sign_out_title,
-        subtitle: l10n.settings_sign_out_subtitle,
-        trailing: const DabblerChevron(),
-      ),
+    return DabblerRowGroup(
+      children: [
+        DabblerInputRow(
+          flat: true,
+          showDivider: false,
+          onTap: _showSignOutDialog,
+          leading: const DabblerIcon('logout'),
+          tone: DabblerInputRowTone.destructive,
+          title: l10n.settings_sign_out_title,
+          subtitle: l10n.settings_sign_out_subtitle,
+        ),
+      ],
     );
   }
 

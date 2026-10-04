@@ -379,6 +379,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     }
 
     final topBar = DabblerNavigationTopBar.titled(
+        border: true,
       title: 'Privacy Settings',
       onBack: () => context.pop(),
       actions: [
@@ -427,9 +428,9 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
                   ctrl.updateSetting,
                 ),
                 _gap,
-                DabblerSection(
-                  title: 'Communication',
-                  subtitle: 'Control who can contact you and how',
+                DabblerRowGroup(
+                  header: 'Communication',
+                  note: 'Control who can contact you and how',
                   children: [
                     for (final p in _communicationPrefs)
                       _prefRow(p, settings, ctrl.updateSetting),
@@ -494,12 +495,14 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   );
 
   Widget _buildPresetsSection() {
-    return DabblerSection(
-      title: 'Privacy Presets',
-      subtitle: 'Choose a preset to quickly configure your privacy settings',
+    return DabblerRowGroup(
+      header: 'Privacy Presets',
+      note: 'Choose a preset to quickly configure your privacy settings',
       children: [
         for (final preset in PrivacyPreset.values)
           DabblerInputRow(
+            flat: true,
+            showDivider: false,
             title: _presetTitle(preset),
             subtitle: _presetDescription(preset),
             leading: _icon(_presetIcon(preset)),
@@ -529,12 +532,14 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     PrivacySettings settings,
     void Function(String, dynamic) update,
   ) {
-    return DabblerSection(
-      title: title,
-      subtitle: description,
+    return DabblerRowGroup(
+      header: title,
+      note: description,
       children: [
         for (final t in toggles)
           DabblerInputRow.toggle(
+            flat: true,
+            showDivider: false,
             title: t.$1,
             subtitle: t.$2,
             leading: _icon(t.$3),
@@ -555,6 +560,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   ) {
     final value = p.$5(settings);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: p.$1,
       subtitle: p.$2,
       leading: _icon(p.$3),
@@ -599,16 +606,16 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
 
     return blockedUsersAsync.when(
       loading: () => const Center(child: DabblerSpinner()),
-      error: (e, _) => DabblerSection(
-        title: 'Blocked Users',
-        subtitle: 'Failed to load blocked users',
+      error: (e, _) => DabblerRowGroup(
+        header: 'Blocked Users',
+        note: 'Failed to load blocked users',
         children: [
           DabblerBanner(tone: DabblerBannerTone.error, message: 'Error: $e'),
         ],
       ),
-      data: (blockedUsers) => DabblerSection(
-        title: 'Blocked Users',
-        subtitle: 'Manage users you\'ve blocked from contacting you',
+      data: (blockedUsers) => DabblerRowGroup(
+        header: 'Blocked Users',
+        note: 'Manage users you\'ve blocked from contacting you',
         children: [
           if (blockedUsers.isEmpty)
             const DabblerEmptyState(
@@ -627,6 +634,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     final username = user['username'] as String? ?? '';
     final userId = user['user_id'] as String;
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: displayName,
       subtitle: username.isNotEmpty ? '@$username' : null,
       leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.sm),

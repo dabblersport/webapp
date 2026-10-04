@@ -2,9 +2,9 @@
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
 //
-// KAN-420: a notification is one DabblerActivityRow. Leading is the actor's DS
+// A notification is one DabblerNotificationRow. Leading is the actor's DS
 // avatar when the payload names one, otherwise a tinted DS icon tile for the
-// kind. The unread marker is DabblerBadge.dot on the leading's top-end corner.
+// kind. The unread dot follows the time (Notifications.dc.html).
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -54,7 +54,7 @@ class NotificationRow extends ConsumerWidget {
     final action = _quickAction(context, ref, notification);
 
     final Widget leading = actor != null
-        ? DabblerAvatar(seed: actor, size: DabblerAvatarSize.md)
+        ? DabblerAvatar(seed: actor, size: DabblerAvatarSize.sm)
         : DabblerIconTile.named(
             visual.icon,
             tone: visual.tone,
@@ -65,26 +65,20 @@ class NotificationRow extends ConsumerWidget {
       padding: const EdgeInsetsDirectional.symmetric(
         horizontal: DabblerSpacing.space6,
       ),
-      child: DabblerActivityRow(
-        leading: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            leading,
-            if (unread)
-              const Positioned.fill(
-                child: Align(
-                  alignment: AlignmentDirectional.topEnd,
-                  child: DabblerBadge.dot(),
-                ),
-              ),
-          ],
-        ),
+      child: DabblerNotificationRow(
+        leading: leading,
         actor: localizedNotificationTitle(context, notification),
         subject: (body != null && body.trim().isNotEmpty) ? body : null,
-        when: _formatTime(context, notification.createdAt),
-        actionLabel: action?.label,
-        actionFilled: action?.filled ?? false,
-        onAction: onTap,
+        time: _formatTime(context, notification.createdAt),
+        unread: unread,
+        actions: [
+          if (action != null)
+            DabblerNotificationAction(
+              action.label,
+              filled: action.filled,
+              onPressed: onTap,
+            ),
+        ],
         onTap: onTap,
       ),
     );

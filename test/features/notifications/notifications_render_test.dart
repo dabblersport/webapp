@@ -257,7 +257,7 @@ void main() {
           notifs: NotificationsState(
               notifications: _sample(), unreadCount: 3, hasMore: true));
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerActivityRow), findsWidgets);
+      expect(find.byType(DabblerNotificationRow), findsWidgets);
       expect(find.byType(DabblerChip), findsWidgets);
       expect(find.text(l10n.notif_title_notifications), findsWidgets);
       await _shoot(tester, key, 'notifications-all-$dir');
@@ -272,7 +272,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerActivityRow), findsNWidgets(2));
+      expect(find.byType(DabblerNotificationRow), findsNWidgets(2));
       await _shoot(tester, key, 'notifications-filtered-$dir');
     });
 
