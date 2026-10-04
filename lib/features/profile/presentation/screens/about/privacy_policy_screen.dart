@@ -14,6 +14,7 @@ class PrivacyPolicyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Privacy Policy',
         onBack: () => context.pop(),
         actions: [

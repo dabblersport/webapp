@@ -151,6 +151,7 @@ class _AccountManagementScreenState
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Account Management',
         onBack: () => context.pop(),
       ),
@@ -274,9 +275,11 @@ class _AccountManagementScreenState
 
   Widget _buildDataExportSection() {
     final colors = DabblerColors.of(context);
-    return DabblerSection(
+    return DabblerRowGroup(
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
           title: 'Export My Data',
           subtitle:
               'Request a copy of your Dabbler data (PDPL data portability)',
@@ -717,9 +720,12 @@ class AccountDangerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DabblerSection(
+    return DabblerRowGroup(
+      header: 'Danger zone',
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
           title: 'Delete Account',
           subtitle: 'Permanently delete your account and all data',
           tone: DabblerInputRowTone.destructive,

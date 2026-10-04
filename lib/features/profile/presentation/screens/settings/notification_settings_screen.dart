@@ -106,6 +106,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Notifications',
         onBack: () => context.pop(),
       ),
@@ -211,8 +212,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    return DabblerSection(
-      title: 'General Preferences',
+    return DabblerRowGroup(
+      header: 'General Preferences',
       children: [
         _switchRow(
           context,
@@ -248,8 +249,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettingsController controller,
   ) {
     final enabled = settings.hasQuietHours;
-    return DabblerSection(
-      title: 'Quiet Hours',
+    return DabblerRowGroup(
+      header: 'Quiet Hours',
       children: [
         _switchRow(
           context,
@@ -309,8 +310,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    return DabblerSection(
-      title: title,
+    return DabblerRowGroup(
+      header: title,
       children: [
         for (final t in toggles)
           _switchRow(
@@ -333,6 +334,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
   ) {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: label,
       leading: DabblerIcon(
         'clock',
@@ -368,6 +371,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
   ) {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: title,
       subtitle: subtitle,
       leading: DabblerIcon(

@@ -53,6 +53,7 @@ class ProfileSportsView extends StatelessWidget {
     // is not a DS component (same call as sports_library_screen, W5).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Sports Preferences',
         onBack: onBack,
         actions: [
