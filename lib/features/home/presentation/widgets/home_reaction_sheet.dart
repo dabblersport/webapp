@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the vibe picker for [postId] as a design-system sheet.
 ///
@@ -14,11 +15,11 @@ Future<void> showHomeReactionSheet(
   BuildContext context, {
   required String postId,
   required Set<String> myReactions,
-  String title = "What's the vibe?",
+  String? title,
 }) {
   return showDabblerSheet<void>(
     context: context,
-    title: title,
+    title: title ?? AppLocalizations.of(context).home_vibe_title,
     detents: const <double>[0.5],
     builder: (_) => HomeReactionSheet(postId: postId, myReactions: myReactions),
   );
