@@ -188,16 +188,17 @@ void main() {
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final AppLocalizations l10n = lookupAppLocalizations(locale);
 
     testWidgets('profile sports view — $dir', (tester) async {
       await _pump(tester, _view(), locale, height: 1500);
       expect(tester.takeException(), isNull);
-      expect(find.text('Sports Preferences'), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_title), findsOneWidget);
       expect(find.byType(DabblerToggle), findsNWidgets(6));
       expect(find.byType(DabblerChip), findsNWidgets(3));
       expect(find.byType(DabblerSelect<String>), findsOneWidget);
       expect(find.byType(DabblerSportIcon), findsNWidgets(3));
-      expect(find.text('Create game'), findsNWidgets(2));
+      expect(find.text(l10n.sports_prefs_create_game), findsOneWidget);
       await _shoot(tester, 'profile-sports-$dir');
     });
 
@@ -205,10 +206,10 @@ void main() {
       // No Supabase in tests: the load fails and surfaces as a DS toast.
       await _pump(tester, const ProfileSportsScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('Sports Preferences'), findsOneWidget);
-      expect(find.text('My Sports'), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_title), findsOneWidget);
+      expect(find.text(l10n.sports_prefs_my_sports), findsOneWidget);
       expect(
-        find.textContaining('Failed to load sports preferences'),
+        find.textContaining(l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), '')),
         findsOneWidget,
       );
     });

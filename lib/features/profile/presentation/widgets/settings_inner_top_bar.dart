@@ -11,6 +11,7 @@ DabblerNavigationTopBar settingsInnerTopBar(
   BuildContext context, {
   required String title,
   List<DabblerNavigationAction> extraActions = const [],
+  bool showHelp = true,
 }) {
   final l10n = AppLocalizations.of(context);
   return DabblerNavigationTopBar.titled(
@@ -19,11 +20,12 @@ DabblerNavigationTopBar settingsInnerTopBar(
     onBack: () => context.pop(),
     actions: [
       ...extraActions,
-      DabblerNavigationAction(
-        icon: 'information',
-        label: l10n.settings_header_help_tooltip,
-        onPressed: () => context.push('/help/center'),
-      ),
+      if (showHelp)
+        DabblerNavigationAction(
+          icon: 'information',
+          label: l10n.settings_header_help_tooltip,
+          onPressed: () => context.push('/help/center'),
+        ),
     ],
   );
 }
