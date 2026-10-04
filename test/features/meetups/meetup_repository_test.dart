@@ -32,28 +32,46 @@ void main() {
   }
 
   test('create ok + failure', () async {
-    when(ds.create(any, actorType: anyNamed('actorType')))
-        .thenAnswer((_) async => 'm1');
+    when(
+      ds.create(any, actorType: anyNamed('actorType')),
+    ).thenAnswer((_) async => 'm1');
     expect((await repo.create(create)).requireValue, 'm1');
     when(ds.create(any, actorType: anyNamed('actorType'))).thenThrow(boom);
     expectFailure(await repo.create(create));
   });
 
   test('rsvp maps each action and result', () async {
-    when(ds.rsvp('m', 'going', profileId: anyNamed('profileId')))
-        .thenAnswer((_) async => 'going');
-    when(ds.rsvp('m', 'request', profileId: anyNamed('profileId')))
-        .thenAnswer((_) async => 'pending');
-    when(ds.rsvp('m', 'cancel', profileId: anyNamed('profileId')))
-        .thenAnswer((_) async => 'cancelled');
-    when(ds.rsvp('m', 'interested', profileId: anyNamed('profileId')))
-        .thenAnswer((_) async => 'interested');
-    expect((await repo.rsvp('m', RsvpAction.going)).requireValue, RsvpStatus.going);
-    expect((await repo.rsvp('m', RsvpAction.request)).requireValue, RsvpStatus.pending);
-    expect((await repo.rsvp('m', RsvpAction.cancel)).requireValue, RsvpStatus.cancelled);
-    expect((await repo.rsvp('m', RsvpAction.interested)).requireValue,
-        RsvpStatus.interested);
-    when(ds.rsvp('x', 'going', profileId: anyNamed('profileId'))).thenThrow(boom);
+    when(
+      ds.rsvp('m', 'going', profileId: anyNamed('profileId')),
+    ).thenAnswer((_) async => 'going');
+    when(
+      ds.rsvp('m', 'request', profileId: anyNamed('profileId')),
+    ).thenAnswer((_) async => 'pending');
+    when(
+      ds.rsvp('m', 'cancel', profileId: anyNamed('profileId')),
+    ).thenAnswer((_) async => 'cancelled');
+    when(
+      ds.rsvp('m', 'interested', profileId: anyNamed('profileId')),
+    ).thenAnswer((_) async => 'interested');
+    expect(
+      (await repo.rsvp('m', RsvpAction.going)).requireValue,
+      RsvpStatus.going,
+    );
+    expect(
+      (await repo.rsvp('m', RsvpAction.request)).requireValue,
+      RsvpStatus.pending,
+    );
+    expect(
+      (await repo.rsvp('m', RsvpAction.cancel)).requireValue,
+      RsvpStatus.cancelled,
+    );
+    expect(
+      (await repo.rsvp('m', RsvpAction.interested)).requireValue,
+      RsvpStatus.interested,
+    );
+    when(
+      ds.rsvp('x', 'going', profileId: anyNamed('profileId')),
+    ).thenThrow(boom);
     expectFailure(await repo.rsvp('x', RsvpAction.going));
   });
 
@@ -65,9 +83,16 @@ void main() {
   });
 
   test('nearby ok + failure', () async {
-    when(ds.nearby(1, 2, 500)).thenAnswer((_) async => [
-          {'id': 'a', 'title': 'T', 'starts_at': '2026-11-01T10:00:00Z', 'distance_m': 12.5}
-        ]);
+    when(ds.nearby(1, 2, 500)).thenAnswer(
+      (_) async => [
+        {
+          'id': 'a',
+          'title': 'T',
+          'starts_at': '2026-11-01T10:00:00Z',
+          'distance_m': 12.5,
+        },
+      ],
+    );
     final r = await repo.nearbyMeetups(lat: 1, lng: 2, radiusMeters: 500);
     expect(r.requireValue.single.distanceM, 12.5);
     when(ds.nearby(1, 2, 500)).thenThrow(boom);
@@ -75,28 +100,39 @@ void main() {
   });
 
   test('card ok + failure', () async {
-    when(ds.card('m', 'player')).thenAnswer((_) async => {'id': 'm', 'title': 'T'});
+    when(
+      ds.card('m', 'player'),
+    ).thenAnswer((_) async => {'id': 'm', 'title': 'T'});
     expect((await repo.meetupCard('m')).requireValue.id, 'm');
     when(ds.card('m', 'player')).thenThrow(boom);
     expectFailure(await repo.meetupCard('m'));
   });
 
   test('attendees ok + status filter + failure', () async {
-    when(ds.attendees('m', status: 'going', limit: 50, offset: 0))
-        .thenAnswer((_) async => [
-              {'actor_profile_id': 'p', 'display_name': 'A', 'username': 'a', 'status': 'going'}
-            ]);
+    when(ds.attendees('m', status: 'going', limit: 50, offset: 0)).thenAnswer(
+      (_) async => [
+        {
+          'actor_profile_id': 'p',
+          'display_name': 'A',
+          'username': 'a',
+          'status': 'going',
+        },
+      ],
+    );
     final r = await repo.attendees('m', status: RsvpStatus.going);
     expect(r.requireValue.single.status, RsvpStatus.going);
-    when(ds.attendees('m', status: 'going', limit: 50, offset: 0)).thenThrow(boom);
+    when(
+      ds.attendees('m', status: 'going', limit: 50, offset: 0),
+    ).thenThrow(boom);
     expectFailure(await repo.attendees('m', status: RsvpStatus.going));
   });
 
   test('canCreate + canRsvp ok + failure', () async {
     when(ds.canCreate('p')).thenAnswer((_) async => true);
     expect((await repo.canCreate('p')).requireValue, isTrue);
-    when(ds.canRsvp('m'))
-        .thenAnswer((_) async => {'allowed': true, 'cta': 'request'});
+    when(
+      ds.canRsvp('m'),
+    ).thenAnswer((_) async => {'allowed': true, 'cta': 'request'});
     expect((await repo.canRsvp('m')).requireValue.cta, RsvpCta.request);
     when(ds.canCreate('p')).thenThrow(boom);
     when(ds.canRsvp('m')).thenThrow(boom);
@@ -106,9 +142,9 @@ void main() {
 
   test('update ok + failure', () async {
     const u = UpdateMeetupInput(meetupId: 'm', title: 'New');
-    when(ds.update(any)).thenAnswer(
-      (_) async => {'id': 'm', 'title': 'New', 'is_host': true},
-    );
+    when(
+      ds.update(any),
+    ).thenAnswer((_) async => {'id': 'm', 'title': 'New', 'is_host': true});
     final card = (await repo.update(u)).requireValue;
     expect(card.title, 'New');
     expect(card.isHost, isTrue);
@@ -117,14 +153,25 @@ void main() {
   });
 
   test('decideRequest and removeAttendee ok + failure', () async {
-    when(ds.decideRequest('m', 'u', 'approve')).thenAnswer((_) async => 'interested');
-    when(ds.decideRequest('m', 'u', 'decline')).thenAnswer((_) async => 'cancelled');
+    when(
+      ds.decideRequest('m', 'u', 'approve'),
+    ).thenAnswer((_) async => 'interested');
+    when(
+      ds.decideRequest('m', 'u', 'decline'),
+    ).thenAnswer((_) async => 'cancelled');
     when(ds.removeAttendee('m', 'u')).thenAnswer((_) async => 'cancelled');
-    expect((await repo.decideRequest('m', 'u', MeetupDecision.approve)).requireValue,
-        RsvpStatus.interested);
-    expect((await repo.decideRequest('m', 'u', MeetupDecision.decline)).requireValue,
-        RsvpStatus.cancelled);
-    expect((await repo.removeAttendee('m', 'u')).requireValue, RsvpStatus.cancelled);
+    expect(
+      (await repo.decideRequest('m', 'u', MeetupDecision.approve)).requireValue,
+      RsvpStatus.interested,
+    );
+    expect(
+      (await repo.decideRequest('m', 'u', MeetupDecision.decline)).requireValue,
+      RsvpStatus.cancelled,
+    );
+    expect(
+      (await repo.removeAttendee('m', 'u')).requireValue,
+      RsvpStatus.cancelled,
+    );
     when(ds.removeAttendee('m', 'u')).thenThrow(boom);
     expectFailure(await repo.removeAttendee('m', 'u'));
   });
@@ -147,7 +194,9 @@ void main() {
       'auth_required': FailureCode.unauthorized,
     };
     for (final e in expected.entries) {
-      when(ds.cancel('m')).thenThrow(Exception('PostgrestException(message: ${e.key}, code: P0001)'));
+      when(ds.cancel('m')).thenThrow(
+        Exception('PostgrestException(message: ${e.key}, code: P0001)'),
+      );
       final f = (await repo.cancel('m')).requireError;
       expect(f.category, e.value, reason: e.key);
       expect(f.code, e.key);
@@ -155,16 +204,24 @@ void main() {
   });
 
   test('list, sports, variants ok + failure', () async {
-    when(ds.soloSports()).thenAnswer((_) async => [
-          {'id': 's', 'name_en': 'Running'}
-        ]);
+    when(ds.soloSports()).thenAnswer(
+      (_) async => [
+        {'id': 's', 'name_en': 'Running'},
+      ],
+    );
     expect((await repo.soloSports()).requireValue.single.nameEn, 'Running');
-    when(ds.sportVariants('s')).thenAnswer((_) async => [
-          {'id': 'v', 'sport_id': 's', 'name_en': '5k'}
-        ]);
-    expect((await repo.sportVariants('s')).requireValue.single.requiredPlayers, 1);
-    when(ds.fetchMeetupList(sportId: null, limit: 20, offset: 0))
-        .thenAnswer((_) async => []);
+    when(ds.sportVariants('s')).thenAnswer(
+      (_) async => [
+        {'id': 'v', 'sport_id': 's', 'name_en': '5k'},
+      ],
+    );
+    expect(
+      (await repo.sportVariants('s')).requireValue.single.requiredPlayers,
+      1,
+    );
+    when(
+      ds.fetchMeetupList(sportId: null, limit: 20, offset: 0),
+    ).thenAnswer((_) async => []);
     expect((await repo.fetchMeetups()).requireValue, isEmpty);
     when(ds.soloSports()).thenThrow(boom);
     expectFailure(await repo.soloSports());
