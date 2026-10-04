@@ -367,18 +367,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           active: _activeId,
           onSelect: _onSelect,
           menuOpen: _createMenuOpen,
-          actionIcon: _createMenuOpen ? 'close-circle' : 'add',
+          // The Home Feed frame keeps the "+" upright while the menu is open
+          // (its `fabIcon: close-circle` never reaches the component), and
+          // draws the Arabic bar unmirrored: pill on the physical left, action
+          // on the right (`Home_feed_—_Arabic.png`).
+          rotateActionOnOpen: false,
+          mirrorInRtl: false,
           onAction: (open) => setState(() => _createMenuOpen = open),
           createItems: <DabblerNavigationCreateItem>[
             DabblerNavigationCreateItem(
               id: _createPost,
               icon: 'edit',
               label: l.nav_create_post,
+              iconTone: DabblerNavigationIconTone.info,
             ),
             DabblerNavigationCreateItem(
               id: _createGame,
               icon: 'game',
               label: l.nav_create_game,
+              iconTone: DabblerNavigationIconTone.success,
             ),
           ],
           onCreate: _onCreate,
