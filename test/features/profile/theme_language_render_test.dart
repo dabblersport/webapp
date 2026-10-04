@@ -1,3 +1,4 @@
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/language_selection_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
@@ -54,7 +55,10 @@ void main() {
     testWidgets('help center renders — $dir', (tester) async {
       await pumpSettings(tester, const HelpCenterScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('This screen is under development'), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).help_center_empty_text),
+        findsOneWidget,
+      );
       await shootSettings(tester, 'help-center-default-$dir');
     });
   }

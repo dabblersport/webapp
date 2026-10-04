@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_sports_view.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 
@@ -196,7 +197,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       });
 
       if (mounted) {
-        _toast('Failed to load sports preferences: $e', DabblerToastTone.error);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_load_failed('$e'),
+          DabblerToastTone.error,
+        );
       }
     }
   }
@@ -485,10 +489,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       }
 
       if (mounted) {
-        _toast(
-          'Sports preferences saved successfully',
-          DabblerToastTone.success,
-        );
+        _toast(AppLocalizations.of(context).sports_prefs_saved, DabblerToastTone.success);
         // Navigate back after successful save
         if (mounted) {
           context.pop();
@@ -496,7 +497,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _toast('Failed to save preferences: $e', DabblerToastTone.error);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_save_failed('$e'),
+          DabblerToastTone.error,
+        );
       }
     } finally {
       if (mounted) {
@@ -612,7 +616,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _toast('Failed to enable sport: $e', DabblerToastTone.error);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_enable_failed('$e'),
+          DabblerToastTone.error,
+        );
       }
     }
   }
@@ -692,7 +699,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _toast('Failed to remove sport: $e', DabblerToastTone.error);
+        _toast(
+          AppLocalizations.of(context).sports_prefs_remove_failed('$e'),
+          DabblerToastTone.error,
+        );
       }
     }
   }
@@ -718,10 +728,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
 
     if (!canRemove) {
       if (mounted) {
-        _toast(
-          'You must have at least one sport enabled',
-          DabblerToastTone.error,
-        );
+        _toast(AppLocalizations.of(context).sports_prefs_need_one, DabblerToastTone.error);
       }
       return false;
     }
@@ -729,17 +736,18 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
     return await showDabblerDialog<bool>(
           context: context,
           builder: (dialogContext) => DabblerDialog(
-            title: 'Remove $sportName?',
-            description:
-                'Are you sure you want to remove $sportName from your profile?',
+            title: AppLocalizations.of(context).sports_prefs_remove_title(sportName),
+            description: AppLocalizations.of(
+              context,
+            ).sports_prefs_remove_body(sportName),
             destructive: true,
             onClose: () => Navigator.of(dialogContext).pop(false),
             secondaryAction: DabblerDialogAction(
-              label: 'Cancel',
+              label: AppLocalizations.of(context).sports_prefs_cancel,
               onPressed: () => Navigator.of(dialogContext).pop(false),
             ),
             primaryAction: DabblerDialogAction(
-              label: 'Remove',
+              label: AppLocalizations.of(context).sports_prefs_remove,
               onPressed: () => Navigator.of(dialogContext).pop(true),
             ),
           ),
@@ -787,14 +795,30 @@ enum SkillLevel {
   intermediate,
   advanced;
 
-  String get displayName {
-    switch (this) {
-      case SkillLevel.beginner:
-        return 'Beginner';
-      case SkillLevel.intermediate:
-        return 'Intermediate';
-      case SkillLevel.advanced:
-        return 'Advanced';
-    }
-  }
+  String label(AppLocalizations l) => switch (this) {
+    SkillLevel.beginner => l.sports_prefs_level_beginner,
+    SkillLevel.intermediate => l.sports_prefs_level_intermediate,
+    SkillLevel.advanced => l.sports_prefs_level_advanced,
+  };
 }
+
+/// The display label of a sport position; the stored value stays the English
+/// position name, and an unknown one is shown as stored.
+String sportPositionLabel(AppLocalizations l, String position) =>
+    switch (position) {
+      'Goalkeeper' => l.sports_pos_goalkeeper,
+      'Defender' => l.sports_pos_defender,
+      'Midfielder' => l.sports_pos_midfielder,
+      'Forward' => l.sports_pos_forward,
+      'Point Guard' => l.sports_pos_point_guard,
+      'Shooting Guard' => l.sports_pos_shooting_guard,
+      'Small Forward' => l.sports_pos_small_forward,
+      'Power Forward' => l.sports_pos_power_forward,
+      'Center' => l.sports_pos_center,
+      'Setter' => l.sports_pos_setter,
+      'Outside Hitter' => l.sports_pos_outside_hitter,
+      'Middle Blocker' => l.sports_pos_middle_blocker,
+      'Opposite Hitter' => l.sports_pos_opposite_hitter,
+      'Libero' => l.sports_pos_libero,
+      _ => position,
+    };
