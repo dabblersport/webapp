@@ -51,6 +51,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  /// First word of the display name — presentation only.
+  static String _firstName(String name) {
+    final trimmed = name.trim();
+    final space = trimmed.indexOf(RegExp(r'\s'));
+    return space < 0 ? trimmed : trimmed.substring(0, space);
+  }
+
   void _continue() {
     routerRefreshNotifier.clearPostLoginWelcome();
     context.go(RoutePaths.home);
@@ -89,7 +96,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            title: l10n.auth_welcome_back_title(name),
+            // The frame greets by first name only.
+            title: l10n.auth_welcome_back_title(_firstName(name)),
             titleStyle: DabblerType.displayScreen,
             titleGap: DabblerSpacing.space3,
             bodyGap: DabblerSpacing.space8,

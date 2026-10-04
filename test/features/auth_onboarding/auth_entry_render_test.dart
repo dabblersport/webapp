@@ -185,6 +185,20 @@ void main() {
     }
   }
 
+  testWidgets('welcome-back greets by first name only', (tester) async {
+    await _pump(
+      tester,
+      const WelcomeScreen(
+        displayName: 'Marcus Adeyemi',
+        personaType: 'player',
+        isFirstTime: false,
+      ),
+      const Locale('en'),
+    );
+    expect(find.text('Welcome back, Marcus'), findsOneWidget);
+    expect(find.textContaining('Adeyemi'), findsNothing);
+  }, variant: desktop);
+
   testWidgets('email: continue is disabled until the email is valid', (
     tester,
   ) async {
