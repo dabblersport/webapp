@@ -108,18 +108,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 700',
   ),
   GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 700',
-  ),
-  GateAllow(
-    'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 120',
-  ),
-  GateAllow(
     'lib/features/location/presentation/widgets/location_search_field.dart',
     ['numeric named arg'],
     _maxWidthReason,
