@@ -3010,4 +3010,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_stat_sports_followed => 'Sports followed';
+
+  @override
+  String get profile_stat_minutes_played => 'Minutes played';
 }

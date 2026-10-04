@@ -1,6 +1,7 @@
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 
 /// The Profiles design's bento: a hero tile in the chosen sport's accent and
 /// small tiles in a six-column [DabblerStatGrid] (rated, win rate, show-up,
@@ -13,19 +14,17 @@ class OwnProfileStats extends StatelessWidget {
     required this.sportsCount,
     this.gamesPlayed,
     this.rating,
-    this.winRate,
+    this.minutesPlayed,
     this.reliability,
     this.primarySports,
     this.heroLabel,
     this.heroSub,
     this.onOpenSport,
-    this.sportKey,
     this.accent = DabblerSportAccent.all,
     this.heroTone = DabblerStatTileTone.brand,
     this.sportsLabel,
     this.sportsTone = DabblerStatTileTone.card,
     this.scoped = false,
-    this.otherUser = false,
   });
 
   final int posts;
@@ -39,8 +38,8 @@ class OwnProfileStats extends StatelessWidget {
   /// no tile.
   final double? rating;
 
-  /// The formatted win rate; null draws no tile.
-  final String? winRate;
+  /// Total minutes played (the frame's ink tile); null or zero draws no tile.
+  final int? minutesPlayed;
 
   /// The reliability score as a percentage; null draws no tile.
   final int? reliability;
@@ -54,10 +53,6 @@ class OwnProfileStats extends StatelessWidget {
 
   /// Makes the hero a link into the selected sport's profile.
   final VoidCallback? onOpenSport;
-
-  /// The sport whose bundled artwork bleeds off the hero tile (the DS's own
-  /// sport backgrounds); null draws none.
-  final String? sportKey;
 
   /// The hero's sport colour (the "All sports" accent when none is chosen).
   final DabblerSportAccent accent;
@@ -75,16 +70,12 @@ class OwnProfileStats extends StatelessWidget {
   /// A sport is chosen: the bento narrows to that sport's own figures.
   final bool scoped;
 
-  /// Another user's profile draws the hero art the way its frame does:
-  /// cover-fitted, wider and bled further off the inline end.
-  final bool otherUser;
-
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final int? games = gamesPlayed;
     final double? stars = rating;
-    final String? win = winRate;
+    final int? minutes = minutesPlayed;
     final int? show = reliability;
     final int? primary = primarySports;
     return Padding(
@@ -101,14 +92,6 @@ class OwnProfileStats extends StatelessWidget {
                 : l10n.profile_tab_posts,
             sub: heroSub,
             fitValue: true,
-            art: sportKey == null
-                ? null
-                : DabblerSportBackgroundRegistry.resolveKey(sportKey!)?.image,
-            artFit: BoxFit.cover,
-            artWidth: otherUser ? 0.66 : null,
-            artHeight: otherUser ? 0.82 : null,
-            artRight: otherUser ? -0.06 : null,
-            artTop: otherUser ? 0 : null,
             link: onOpenSport != null,
             onTap: onOpenSport,
             trailing: onOpenSport != null ? const DabblerChevron() : null,
@@ -120,10 +103,12 @@ class OwnProfileStats extends StatelessWidget {
               tone: DabblerStatTileTone.amber,
               fitValue: true,
             ),
-          if (!scoped && win != null)
+          if (!scoped && minutes != null && minutes > 0)
             DabblerStatTile(
-              value: win,
-              label: l10n.user_profile_stat_win_rate,
+              value: NumberFormat.decimalPattern(
+                Localizations.localeOf(context).toString(),
+              ).format(minutes),
+              label: l10n.profile_stat_minutes_played,
               tone: DabblerStatTileTone.ink,
               fitValue: true,
             ),

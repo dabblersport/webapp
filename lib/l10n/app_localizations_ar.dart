@@ -2950,4 +2950,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profile_stat_sports_followed => 'الرياضات المتابَعة';
+
+  @override
+  String get profile_stat_minutes_played => 'Minutes played';
 }

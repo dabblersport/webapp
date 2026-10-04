@@ -5392,6 +5392,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sports followed'**
   String get profile_stat_sports_followed;
+
+  /// No description provided for @profile_stat_minutes_played.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes played'**
+  String get profile_stat_minutes_played;
 }
 
 class _AppLocalizationsDelegate

@@ -208,6 +208,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               posts: posts,
               following: following,
               followers: followers,
+              sportsCount: mySports.length,
+              sportsLabel: l10n.user_profile_stat_sports,
               location: _formatLocation(profile?.city, profile?.country),
               onPosts: _scrollToFeed,
               onFollowing: profileId == null
@@ -310,13 +312,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     ];
     return OwnProfileStats(
       posts: 0,
-      otherUser: true,
       sportsCount: sports.length,
       gamesPlayed: statistics.totalGamesPlayed,
       rating: rated.isEmpty
           ? null
           : rated.fold<double>(0, (a, p) => a + p.averageRating) / rated.length,
-      winRate: statistics.winRateFormatted,
+      minutesPlayed: (statistics.totalHoursPlayed * 60).round(),
       reliability: statistics.getReliabilityScore().round(),
       primarySports: sports.where((p) => p.isPrimarySport).length,
       heroSub: sports.isEmpty

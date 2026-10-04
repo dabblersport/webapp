@@ -372,6 +372,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               posts: posts,
               following: following,
               followers: followers,
+              sportsCount: personaType == 'socialiser' ? mySports.length : null,
               onFollowing: profileId == null
                   ? null
                   : () => context.pushNamed(
@@ -396,8 +397,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   ? null
                   : shown.fold<double>(0, (a, p) => a + p.averageRating) /
                         shown.length,
-              winRate: personaType == 'player'
-                  ? profile?.statistics.winRateFormatted
+              minutesPlayed: personaType == 'player'
+                  ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
                   : null,
               reliability: personaType == 'player'
                   ? profile?.statistics.getReliabilityScore().round()
@@ -430,11 +431,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               heroTone: personaType == 'host'
                   ? DabblerStatTileTone.amber
                   : DabblerStatTileTone.brand,
-              // The sport artwork belongs to a player's hero only.
-              sportKey: personaType != 'player'
-                  ? null
-                  : (selected ?? (mySports.isEmpty ? null : mySports.first))
-                        ?.sportKey,
               onOpenSport: selected != null && canOpen
                   ? () => _openSportProfile(profile, selected)
                   : null,

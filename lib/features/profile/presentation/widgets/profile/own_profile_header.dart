@@ -17,6 +17,8 @@ class OwnProfileHeader extends StatelessWidget {
     this.onFollowing,
     this.onFollowers,
     this.onPosts,
+    this.sportsCount,
+    this.sportsLabel,
     this.location,
     this.actions,
   });
@@ -28,6 +30,11 @@ class OwnProfileHeader extends StatelessWidget {
   final VoidCallback? onFollowing;
   final VoidCallback? onFollowers;
   final VoidCallback? onPosts;
+
+  /// When set, the third counter counts sports (the frames' socialiser and
+  /// seen-by-another-user rows) instead of posts, captioned [sportsLabel].
+  final int? sportsCount;
+  final String? sportsLabel;
 
   /// Overrides the city badge's label (city, country).
   final String? location;
@@ -167,11 +174,17 @@ class OwnProfileHeader extends StatelessWidget {
                   label: l10n.profile_following_label,
                   onTap: onFollowing,
                 ),
-                DabblerCounterLink(
-                  value: '$posts',
-                  label: l10n.profile_post_count(posts),
-                  onTap: onPosts,
-                ),
+                if (sportsCount != null)
+                  DabblerCounterLink(
+                    value: '$sportsCount',
+                    label: sportsLabel ?? l10n.profile_section_sports,
+                  )
+                else
+                  DabblerCounterLink(
+                    value: '$posts',
+                    label: l10n.profile_post_count(posts),
+                    onTap: onPosts,
+                  ),
               ],
             ),
             if (actions != null) ...<Widget>[

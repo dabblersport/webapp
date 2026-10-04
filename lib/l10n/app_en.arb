@@ -1127,5 +1127,6 @@
   "sport_profile_overall_level": "{sport} · overall level {level}",
   "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}},
   "profile_sports_followed_note": "Sports followed — feeds and results only",
-  "profile_stat_sports_followed": "Sports followed"
+  "profile_stat_sports_followed": "Sports followed",
+  "profile_stat_minutes_played": "Minutes played"
 }
