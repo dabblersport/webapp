@@ -983,7 +983,6 @@
   "notif_kind_arena_payment_required": "Payment required for your booking",
   "notif_kind_reward_badge_awarded": "You earned a new badge",
   "notif_kind_achievement_earned": "You unlocked a new achievement",
-<<<<<<< HEAD
   "acct_title": "Account",
   "acct_group_signin": "Sign-in",
   "acct_row_email": "Email address",
@@ -1179,8 +1178,7 @@
   "region_country_KSA": "Saudi Arabia",
   "region_country_Morocco": "Morocco",
   "region_error": "Error: {error}",
-  "@region_error": {"placeholders": {"error": {"type": "String"}}}
-=======
+  "@region_error": {"placeholders": {"error": {"type": "String"}}},
   "listing_set_location": "Set location",
   "listing_search": "Search",
   "listing_filters": "Filters",
@@ -1303,5 +1301,4 @@
   "home_location_add": "Add location",
   "home_location_no_match": "No areas match \"{query}\"",
   "@home_location_no_match": {"placeholders": {"query": {"type": "String"}}}
->>>>>>> origin/Alpha
 }

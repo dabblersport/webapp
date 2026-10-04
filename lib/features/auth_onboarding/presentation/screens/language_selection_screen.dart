@@ -129,7 +129,6 @@ class _LanguageSelectionScreenState
     final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
 
     return DabblerPage(
-<<<<<<< HEAD
       topBar: settingsTopBar(
         context,
         title: l10n.region_title,
@@ -177,64 +176,6 @@ class _LanguageSelectionScreenState
             ],
           ),
         ],
-=======
-      maxContentWidth: DabblerPage.readableWidth,
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: l10n.language_select_title,
-        onBack: () => Navigator.of(context).maybePop(),
-      ),
-      bottomBar: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-          DabblerSpacing.space10,
-        ),
-        child: DabblerButton(
-          label: _isLoading
-              ? l10n.language_select_saving
-              : l10n.landing_continue,
-          size: DabblerButtonSize.full,
-          fullWidth: true,
-          loading: _isLoading,
-          onPressed: _handleSubmit,
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space10,
-          DabblerSpacing.space8,
-          DabblerSpacing.space8,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DabblerText(
-              'Choose Your Language',
-              style: DabblerType.title1,
-              textAlign: TextAlign.center,
-            ),
-            const DabblerGap.v(DabblerSpacing.space2),
-            DabblerText(
-              'Select your preferred language for the app',
-              tone: DabblerTextTone.secondary,
-              textAlign: TextAlign.center,
-            ),
-            const DabblerGap.v(DabblerSpacing.space11),
-            for (final language in _languages) ...[
-              DabblerInputRow(
-                leading: const DabblerIcon('global'),
-                title: language['native']!,
-                selected: _selectedLanguage == language['code'],
-                onTap: () => _selectLanguage(language['code']!),
-              ),
-              const DabblerGap.v(DabblerSpacing.space3),
-            ],
-          ],
-        ),
->>>>>>> origin/Alpha
       ),
     );
   }

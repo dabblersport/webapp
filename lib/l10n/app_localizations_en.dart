@@ -2583,7 +2583,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
 
   @override
-<<<<<<< HEAD
   String get acct_title => 'Account';
 
   @override
@@ -3173,7 +3172,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String region_error(String error) {
     return 'Error: $error';
-=======
+  }
+
+  @override
   String get listing_set_location => 'Set location';
 
   @override
@@ -3522,6 +3523,5 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String home_location_no_match(String query) {
     return 'No areas match \"$query\"';
->>>>>>> origin/Alpha
   }
 }

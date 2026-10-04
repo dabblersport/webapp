@@ -288,8 +288,9 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
         final rawHasMore = page.rawCount >= _pageSize;
         final existingIds = _itemIds(current.items);
-        final deduped =
-            page.items.where((i) => !existingIds.contains(_itemId(i))).toList();
+        final deduped = page.items
+            .where((i) => !existingIds.contains(_itemId(i)))
+            .toList();
 
         if (deduped.isEmpty && rawHasMore) {
           cursor = page.cursor; // full page, nothing new visible — continue
@@ -337,10 +338,13 @@ class FeedNotifier extends StateNotifier<FeedState> {
   Future<({List<FeedItem> items, DateTime? cursor, int rawCount})> _fetchPage({
     required DateTime? cursor,
   }) async {
-    final response = await _db.rpc(SupabaseConfig.getHomeFeedFn, params: {
-      'p_limit': _pageSize,
-      'p_cursor': cursor?.toUtc().toIso8601String(),
-    });
+    final response = await _db.rpc(
+      SupabaseConfig.getHomeFeedFn,
+      params: {
+        'p_limit': _pageSize,
+        'p_cursor': cursor?.toUtc().toIso8601String(),
+      },
+    );
 
     final rows = (response as List<dynamic>)
         .map((e) => Map<String, dynamic>.from(e as Map))
@@ -392,8 +396,9 @@ class FeedNotifier extends StateNotifier<FeedState> {
             .select()
             .inFilter('id', newsIds);
         for (final row in newsRows as List<dynamic>) {
-          final normalized =
-              _normalizeNewsRow(Map<String, dynamic>.from(row as Map));
+          final normalized = _normalizeNewsRow(
+            Map<String, dynamic>.from(row as Map),
+          );
           try {
             final item = FeedNewsItem.fromJson(normalized);
             newsById[item.newsId] = item;
@@ -422,19 +427,19 @@ class FeedNotifier extends StateNotifier<FeedState> {
   }
 
   static Map<String, dynamic> _normalizeNewsRow(Map<String, dynamic> row) => {
-        ...row,
-        if (!row.containsKey('news_id')) 'news_id': row['id'],
-        if (!row.containsKey('news_title')) 'news_title': row['title'],
-        if (!row.containsKey('news_body')) 'news_body': row['body'],
-        if (!row.containsKey('news_cover_image_url'))
-          'news_cover_image_url': row['cover_image_url'],
-        if (!row.containsKey('news_source_label'))
-          'news_source_label': row['source_label'],
-        if (!row.containsKey('news_source_url'))
-          'news_source_url': row['source_url'],
-        if (!row.containsKey('news_feed_label'))
-          'news_feed_label': row['feed_label'],
-      };
+    ...row,
+    if (!row.containsKey('news_id')) 'news_id': row['id'],
+    if (!row.containsKey('news_title')) 'news_title': row['title'],
+    if (!row.containsKey('news_body')) 'news_body': row['body'],
+    if (!row.containsKey('news_cover_image_url'))
+      'news_cover_image_url': row['cover_image_url'],
+    if (!row.containsKey('news_source_label'))
+      'news_source_label': row['source_label'],
+    if (!row.containsKey('news_source_url'))
+      'news_source_url': row['source_url'],
+    if (!row.containsKey('news_feed_label'))
+      'news_feed_label': row['feed_label'],
+  };
 
   static Set<String> _itemIds(List<FeedItem> items) =>
       items.map(_itemId).whereType<String>().toSet();

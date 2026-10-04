@@ -956,7 +956,6 @@
   "notif_kind_arena_payment_required": "محتاج تدفع لحجزك",
   "notif_kind_reward_badge_awarded": "حصلت على بادج جديد",
   "notif_kind_achievement_earned": "فتحت إنجاز جديد",
-<<<<<<< HEAD
   "acct_title": "الحساب",
   "acct_group_signin": "تسجيل الدخول",
   "acct_row_email": "البريد الإلكتروني",
@@ -1139,8 +1138,7 @@
   "region_country_UAE": "الإمارات",
   "region_country_KSA": "السعودية",
   "region_country_Morocco": "المغرب",
-  "region_error": "خطأ: {error}"
-=======
+  "region_error": "خطأ: {error}",
   "listing_set_location": "حدد الموقع",
   "listing_search": "بحث",
   "listing_filters": "التصفية",
@@ -1245,5 +1243,4 @@
   "home_location_use_current": "استخدم موقعي الحالي",
   "home_location_add": "إضافة موقع",
   "home_location_no_match": "لا توجد مناطق مطابقة لـ \"{query}\""
->>>>>>> origin/Alpha
 }

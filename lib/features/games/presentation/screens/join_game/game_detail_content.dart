@@ -22,9 +22,8 @@ void _openProfile(BuildContext context, String userId, String profileId) =>
     context.push('${RoutePaths.userProfile}/$userId?profileId=$profileId');
 
 /// What the entry costs, in words: `Free` or the cost-cover rule.
-String gameEntryLabel(GameView game) => game.isFree
-    ? 'Free'
-    : _capitalize(game.costCover.replaceAll('_', ' '));
+String gameEntryLabel(GameView game) =>
+    game.isFree ? 'Free' : _capitalize(game.costCover.replaceAll('_', ' '));
 
 String _capitalize(String s) =>
     s.isEmpty ? s : '${s[0].toUpperCase()}${s.substring(1)}';
@@ -66,8 +65,7 @@ Widget gameHeadcount(GameViewState state) {
 Widget gameFactTiles(GameView game) {
   final mins = game.endAt.difference(game.startAt).inMinutes;
   final hasSkill = game.minSkill != null && game.maxSkill != null;
-  Widget glyph(String name) =>
-      DabblerIcon(name, size: DabblerSizing.iconSm);
+  Widget glyph(String name) => DabblerIcon(name, size: DabblerSizing.iconSm);
   return DabblerStatGrid(
     rowExtent: DabblerStatGrid.detailsRowHeight,
     children: [

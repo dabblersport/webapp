@@ -2537,7 +2537,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
 
   @override
-<<<<<<< HEAD
   String get acct_title => 'الحساب';
 
   @override
@@ -3118,7 +3117,9 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String region_error(String error) {
     return 'خطأ: $error';
-=======
+  }
+
+  @override
   String get listing_set_location => 'حدد الموقع';
 
   @override
@@ -3465,6 +3466,5 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String home_location_no_match(String query) {
     return 'لا توجد مناطق مطابقة لـ \"$query\"';
->>>>>>> origin/Alpha
   }
 }

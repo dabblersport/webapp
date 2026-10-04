@@ -44,7 +44,7 @@ class NotificationSettingsState {
 class NotificationSettingsController
     extends StateNotifier<NotificationSettingsState> {
   NotificationSettingsController(this._repository)
-      : super(const NotificationSettingsState()) {
+    : super(const NotificationSettingsState()) {
     load();
   }
 
@@ -54,10 +54,8 @@ class NotificationSettingsController
     state = state.copyWith(isLoading: true, error: null);
     final result = await _repository.load();
     result.fold(
-      (failure) => state = state.copyWith(
-        isLoading: false,
-        error: failure.message,
-      ),
+      (failure) =>
+          state = state.copyWith(isLoading: false, error: failure.message),
       (settings) => state = state.copyWith(
         settings: settings,
         isLoading: false,
@@ -111,11 +109,8 @@ class NotificationSettingsController
         isSaving: false,
         error: failure.message,
       ),
-      (saved) => state = state.copyWith(
-        settings: saved,
-        isSaving: false,
-        error: null,
-      ),
+      (saved) =>
+          state = state.copyWith(settings: saved, isSaving: false, error: null),
     );
   }
 }

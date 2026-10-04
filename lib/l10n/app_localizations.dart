@@ -4655,7 +4655,6 @@ abstract class AppLocalizations {
   /// **'You unlocked a new achievement'**
   String get notif_kind_achievement_earned;
 
-<<<<<<< HEAD
   /// No description provided for @acct_title.
   ///
   /// In en, this message translates to:
@@ -5753,7 +5752,7 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error: {error}'**
   String region_error(String error);
-=======
+
   /// No description provided for @listing_set_location.
   ///
   /// In en, this message translates to:
@@ -6377,7 +6376,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No areas match \"{query}\"'**
   String home_location_no_match(String query);
->>>>>>> origin/Alpha
 }
 
 class _AppLocalizationsDelegate
