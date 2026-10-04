@@ -1471,6 +1471,30 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get settings_tile_privacy => 'الخصوصية';
+
+  @override
+  String get settings_tile_profile_shown => 'ظاهر في ملفك';
+
+  @override
+  String get settings_tile_notifications => 'الإشعارات';
+
+  @override
+  String get settings_tile_appearance => 'المظهر';
+
+  @override
+  String get settings_tile_language_region => 'اللغة والمنطقة';
+
+  @override
+  String get settings_tile_activity_shown => 'النشاط والإحصاءات الظاهرة';
+
+  @override
+  String get settings_tile_blocked => 'الحسابات المحظورة';
+
+  @override
+  String get settings_tile_privacy_label => 'إعدادات الخصوصية';
+
+  @override
   String get settings_version_copyright =>
       '© 2026 Dabbler. جميع الحقوق محفوظة.';
 

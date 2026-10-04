@@ -1502,6 +1502,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settings_tile_privacy => 'Privacy';
+
+  @override
+  String get settings_tile_profile_shown => 'Shown on your profile';
+
+  @override
+  String get settings_tile_notifications => 'Notifications';
+
+  @override
+  String get settings_tile_appearance => 'Appearance';
+
+  @override
+  String get settings_tile_language_region => 'Language & region';
+
+  @override
+  String get settings_tile_activity_shown => 'Activity & stats shown';
+
+  @override
+  String get settings_tile_blocked => 'Blocked accounts';
+
+  @override
+  String get settings_tile_privacy_label => 'Privacy settings';
+
+  @override
   String get settings_version_copyright =>
       '© 2026 Dabbler. All rights reserved.';
 
