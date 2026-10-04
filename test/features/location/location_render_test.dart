@@ -296,10 +296,7 @@ void main() {
       _SheetHost(open: (c) => HomeLocationPickerSheet.show(c)),
       const Locale('en'),
     );
-    expect(
-      find.text(lookupAppLocalizations(const Locale('en')).location_change_title),
-      findsOneWidget,
-    );
+    expect(find.text('Change location'), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
     expect(find.text('JBR'), findsOneWidget);
     expect(find.byType(DabblerSearchField), findsOneWidget);
