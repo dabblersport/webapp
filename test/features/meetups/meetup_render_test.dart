@@ -135,6 +135,8 @@ MeetupCard _card({
     MeetupAvatar(displayName: 'Nadia Saleh'),
     MeetupAvatar(displayName: 'Rami Kassab'),
     MeetupAvatar(displayName: 'Hessa Ali'),
+    MeetupAvatar(displayName: 'Omar Nabil'),
+    MeetupAvatar(displayName: 'Dana Youssef'),
   ],
 );
 
@@ -157,6 +159,7 @@ void main() {
     for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {
       testWidgets('details ${e.key} ${l.languageCode}', (tester) async {
         final repo = FakeMeetupRepository()
+          ..list = [meetupRow('m1', vibeKey: 'supportive')]
           ..nearbyList = const [
             NearbyMeetup(id: 'm1', title: 't', distanceM: 3000),
           ]
@@ -244,8 +247,8 @@ void main() {
   final listings = <String, (int, bool)>{
     'default': (1, true),
     'empty': (-1, false),
-    'upcoming-single': (1, false),
-    'upcoming-multi': (2, false),
+    'upcoming-single': (1, true),
+    'upcoming-multi': (2, true),
   };
   for (final e in listings.entries) {
     for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {

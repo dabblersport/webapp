@@ -93,6 +93,8 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
           l.meetups_distance_km((distance / 1000).toStringAsFixed(1)),
       ],
       progress: DabblerMeetupAttendees(
+        // The frame's card draws four faces (`Listings.dc.html:545`).
+        maxAvatars: 4,
         people: <String>[
           for (final a in m.attendeeAvatars) a.displayName ?? a.avatarUrl ?? '',
         ],

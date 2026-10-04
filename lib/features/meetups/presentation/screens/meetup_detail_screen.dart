@@ -48,6 +48,9 @@ class MeetupDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
+  /// The headcount's faces — the frame's six (`Details.dc.html:84`, `crowd`).
+  static const int maxFaces = 6;
+
   bool _busy = false;
 
   Future<void> _run(RsvpAction action) async {
@@ -178,7 +181,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
               if (a.status == RsvpStatus.going)
                 MeetupAvatar(displayName: a.displayName ?? a.username),
           ];
-    final shown = faces.take(5).toList();
+    final shown = faces.take(maxFaces).toList();
     final state = c.isCancelled
         ? DabblerRsvpCtaState.cancelled
         : elig.valueOrNull == null
@@ -192,6 +195,17 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final loadingCta = !c.isCancelled && elig.valueOrNull == null;
     final hostName = c.host?.displayName ?? c.host?.username;
     final distance = ref.watch(meetupDistancesProvider)[c.id];
+    // The vibe tag comes from the list row (`v_meetup_list.vibe_key`); a deep
+    // link with no cached row simply has none.
+    final vibeKey = ref
+        .watch(meetupListProvider(null))
+        .valueOrNull
+        ?.where((m) => m.id == c.id)
+        .map((m) => m.vibeKey)
+        .firstOrNull;
+    final vibeLabel = vibeKey == null
+        ? null
+        : DabblerVibe.fromKey(vibeKey)?.label;
     final tier = gamesSkillTierFor(c.minSkill, c.maxSkill);
     final skillLabel = tier == null ? null : gamesSkillTierLabel(l, tier);
     Widget glyph(String n) => DabblerIcon(n, size: DabblerSizing.iconSm);
@@ -203,6 +217,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
           if (c.isCancelled) l.meetups_cta_cancelled,
           ?_sportName(c),
           ?skillLabel,
+          ?vibeLabel,
         ],
         title: c.title ?? '',
         place: c.locationName,
@@ -278,8 +293,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
               ),
           ],
         ),
-        if (hostName != null)
-          _HostSection(host: c.host!, name: hostName),
+        if (hostName != null) _HostSection(host: c.host!, name: hostName),
       ],
     );
   }

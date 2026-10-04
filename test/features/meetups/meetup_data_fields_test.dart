@@ -196,6 +196,36 @@ void main() {
       expect(find.text('Dubai Running Club'), findsOneWidget);
     });
 
+    for (final c in <(String, List<MeetupListItem>, bool)>[
+      ('with a vibe key', [meetupRow('m1', vibeKey: 'supportive')], true),
+      ('without a vibe key', [meetupRow('m1')], false),
+      ('with no list row (deep link)', <MeetupListItem>[], false),
+    ]) {
+      testWidgets('vibe tag ${c.$1}', (tester) async {
+        final repo = FakeMeetupRepository()
+          ..card = _card()
+          ..list = c.$2
+          ..eligibility = const RsvpEligibility(
+            allowed: true,
+            cta: RsvpCta.rsvpGoing,
+          );
+        await pumpMeetups(
+          tester,
+          MeetupDetailScreen(meetupId: 'm1', onBack: () {}),
+          repo,
+        );
+        expect(find.text('Supportive'), c.$3 ? findsOneWidget : findsNothing);
+      });
+    }
+
+    testWidgets('no share or favourite placeholder in the header', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(find.bySemanticsLabel('Share'), findsNothing);
+      expect(find.bySemanticsLabel('Favourite'), findsNothing);
+    });
+
     testWidgets('Follow calls the profile follow action', (tester) async {
       final log = await pump(tester);
       await tester.tap(find.text('Follow'));

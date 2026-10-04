@@ -166,6 +166,7 @@ MeetupListItem meetupRow(
   bool cancelled = false,
   int? minSkill,
   int? maxSkill,
+  String? vibeKey,
   List<MeetupAvatar> faces = const <MeetupAvatar>[],
 }) => MeetupListItem(
   id: id,
@@ -181,6 +182,7 @@ MeetupListItem meetupRow(
   minSkill: minSkill,
   maxSkill: maxSkill,
   attendeeAvatars: faces,
+  vibeKey: vibeKey,
 );
 
 /// Builds [home] under the app's localisation and theme, LTR or RTL.
