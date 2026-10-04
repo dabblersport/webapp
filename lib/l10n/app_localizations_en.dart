@@ -5205,4 +5205,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String composer_players_count(int count) {
     return '$count players';
   }
+
+  @override
+  String sfx_comments_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count comments',
+      one: '1 comment',
+    );
+    return '$_temp0';
+  }
 }

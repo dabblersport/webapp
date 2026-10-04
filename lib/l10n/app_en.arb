@@ -1852,5 +1852,7 @@
   "composer_format_title": "{sport} format",
   "@composer_format_title": {"placeholders": {"sport": {"type": "String"}}},
   "composer_players_count": "{count} players",
-  "@composer_players_count": {"placeholders": {"count": {"type": "int"}}}
+  "@composer_players_count": {"placeholders": {"count": {"type": "int"}}},
+  "sfx_comments_count": "{count, plural, =1{1 comment} other{{count} comments}}",
+  "@sfx_comments_count": {"placeholders": {"count": {"type": "int"}}}
 }

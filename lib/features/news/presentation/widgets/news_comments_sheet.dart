@@ -16,12 +16,14 @@ Future<void> showNewsCommentsSheet(
   BuildContext context, {
   required FeedNewsItem item,
   required String lang,
+  required int count,
   required VoidCallback onPosted,
 }) {
   return showDabblerSheet<void>(
     context: context,
-    title: AppLocalizations.of(context).sfx_comments,
-    detents: const [0.75],
+    title: AppLocalizations.of(context).sfx_comments_count(count),
+    detent: DabblerSheetDetent.content,
+    showCloseButton: false,
     builder: (_) => _CommentsList(newsId: item.newsId, lang: lang),
     footerBuilder: (_) => _CommentComposer(item: item, onPosted: onPosted),
   );
@@ -118,6 +120,7 @@ class _CommentComposerState extends ConsumerState<_CommentComposer> {
         ),
         DabblerButton.icon(
           icon: 'send-2',
+          tone: DabblerButtonTone.primary,
           semanticLabel: AppLocalizations.of(context).sfx_send,
           loading: _submitting,
           onPressed: _submit,

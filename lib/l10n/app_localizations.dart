@@ -9478,6 +9478,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} players'**
   String composer_players_count(int count);
+
+  /// No description provided for @sfx_comments_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 comment} other{{count} comments}}'**
+  String sfx_comments_count(int count);
 }
 
 class _AppLocalizationsDelegate

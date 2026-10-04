@@ -59,6 +59,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     context,
     item: widget.item,
     lang: lang,
+    count: _localCommentCount,
     onPosted: () => setState(() => _localCommentCount++),
   );
 
@@ -68,7 +69,8 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     showDabblerSheet<void>(
       context: context,
       title: l10n.sfx_share_article,
-      detents: const [0.4],
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
       builder: (sheetContext) => Column(
         spacing: DabblerSpacing.space2,
         children: [
