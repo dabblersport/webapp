@@ -1,6 +1,5 @@
 # Files that still paint by hand (pre-fidelity). This list may only shrink: remove a file as soon as its screen is rebuilt.
 lib/features/auth_onboarding/presentation/screens/auth_welcome_screen.dart
-lib/features/auth_onboarding/presentation/screens/interests_selection_screen.dart
 lib/features/auth_onboarding/presentation/screens/landing_screen.dart
 lib/features/explore/presentation/widgets/listing_parts.dart
 lib/features/games/presentation/screens/join_game/game_detail_screen.dart

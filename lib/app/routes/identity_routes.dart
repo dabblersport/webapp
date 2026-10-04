@@ -265,6 +265,9 @@ RouteBase get welcomeRoute =>
             displayName: displayName ?? 'Player',
             personaType: personaType ?? 'player',
             isFirstTime: isFirstTime ?? true,
+            primarySportKey: extra is Map
+                ? extra['primarySportKey'] as String?
+                : null,
           ),
         );
       },

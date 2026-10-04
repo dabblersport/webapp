@@ -8,6 +8,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart';
 
 enum _StepStatus { pending, running, done, error }
 
@@ -116,6 +118,7 @@ class _ProfileOnboardingWelcomeScreenState
     if (!mounted) return;
     final displayName = data.displayName ?? '';
     final intention = data.intention ?? 'player';
+    final primarySportKey = await _primarySportKey(data.preferredSport);
     ref.read(onboardingDataProvider.notifier).clear();
     await ref.read(simpleAuthProvider.notifier).refreshAuthState();
     // Ensure the post-login welcome screen is shown (not bypassed by the
@@ -128,58 +131,61 @@ class _ProfileOnboardingWelcomeScreenState
           'displayName': displayName,
           'personaType': intention,
           'isFirstTime': true,
+          'primarySportKey': primarySportKey,
         },
       );
     }
+  }
+
+  /// The DS key of the primary sport, which the welcome draws behind it.
+  Future<String?> _primarySportKey(String? sportId) async {
+    if (sportId == null) return null;
+    try {
+      final sports = await ref.read(sportsForSelectedCountryProvider.future);
+      for (final sport in sports) {
+        if (sport.id == sportId) return onboardingDsSport(sport)?.key;
+      }
+    } catch (_) {
+      // The artwork is decoration; the welcome works without it.
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return DabblerPage(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space11,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DabblerText(
-                l10n.onboarding_welcome_title,
-                style: DabblerType.title1,
-              ),
-              const SizedBox(height: DabblerSpacing.space3),
-              DabblerText(
-                l10n.onboarding_welcome_subtitle,
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
-              ),
-              const SizedBox(height: DabblerSpacing.space9),
-              switch (_step.status) {
-                _StepStatus.pending => const DabblerProgressBar(value: 0),
-                _StepStatus.running => const DabblerProgressBar.indeterminate(),
-                _StepStatus.done => const DabblerProgressBar(
-                  value: 1,
-                  tone: DabblerProgressBarTone.success,
-                ),
-                _StepStatus.error => const DabblerProgressBar(
-                  value: 1,
-                  tone: DabblerProgressBarTone.error,
-                ),
+    return DabblerFlowPage(
+      centered: true,
+      bodyGap: DabblerSpacing.space9,
+      title: l10n.onb_setup_title,
+      subtitle: l10n.onb_setup_subtitle,
+      content: [
+        switch (_step.status) {
+          _StepStatus.running => const DabblerProgressBar.indeterminate(),
+          _StepStatus.done => const DabblerProgressBar(value: 1),
+          _ => const DabblerProgressBar(value: 0),
+        },
+        DabblerProgressStages(
+          stages: [
+            DabblerProgressStage(
+              label: l10n.onb_setup_stage_profile,
+              status: switch (_step.status) {
+                _StepStatus.pending => DabblerStageStatus.pending,
+                _StepStatus.running => DabblerStageStatus.active,
+                _StepStatus.done => DabblerStageStatus.done,
+                _StepStatus.error => DabblerStageStatus.failed,
               },
-              const SizedBox(height: DabblerSpacing.space8),
-              _StepRow(
-                step: _step,
-                label: l10n.onboarding_welcome_step_profile,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+        if (_step.errorMsg != null)
+          DabblerBanner(
+            tone: DabblerBannerTone.error,
+            title: l10n.onb_setup_failed_title,
+            message: _step.errorMsg,
+          ),
+      ],
     );
   }
 }
@@ -189,70 +195,4 @@ class _Step {
   final String? errorMsg;
 
   const _Step({this.status = _StepStatus.pending, this.errorMsg});
-}
-
-class _StepRow extends StatelessWidget {
-  final _Step step;
-  final String label;
-
-  const _StepRow({required this.step, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-
-    final Widget icon = switch (step.status) {
-      _StepStatus.running => const DabblerSpinner(size: DabblerSpinnerSize.sm),
-      _StepStatus.done => DabblerIcon(
-        'tick-circle',
-        weight: DabblerIconWeight.bold,
-        size: DabblerSizing.iconRow,
-        color: colors.success.strong,
-      ),
-      _StepStatus.error => DabblerIcon(
-        'danger',
-        weight: DabblerIconWeight.bold,
-        size: DabblerSizing.iconRow,
-        color: colors.error.strong,
-      ),
-      _StepStatus.pending => DabblerSurface(
-        width: DabblerSizing.dot,
-        height: DabblerSizing.dot,
-        radius: DabblerRadius.pill,
-        fill: colors.borderStrong,
-        borderWidth: 0,
-      ),
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            SizedBox(
-              width: DabblerSizing.iconMd,
-              height: DabblerSizing.iconMd,
-              child: Center(child: icon),
-            ),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: DabblerText(
-                label,
-                weight: step.status == _StepStatus.done
-                    ? DabblerTextWeight.semibold
-                    : DabblerTextWeight.regular,
-                tone: step.status == _StepStatus.pending
-                    ? DabblerTextTone.secondary
-                    : DabblerTextTone.primary,
-              ),
-            ),
-          ],
-        ),
-        if (step.errorMsg != null) ...[
-          const SizedBox(height: DabblerSpacing.space4),
-          DabblerBanner(tone: DabblerBannerTone.error, message: step.errorMsg),
-        ],
-      ],
-    );
-  }
 }

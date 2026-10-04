@@ -7,6 +7,9 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+/// The welcome that closes onboarding (and follows adding a persona): who the
+/// user is, the persona's principle, and what to remember — the "Complete"
+/// frame of `Auth and Onboarding.dc.html`.
 class WelcomeScreen extends StatefulWidget {
   final String displayName;
   final String personaType; // player, organiser, host, socialiser
@@ -14,12 +17,17 @@ class WelcomeScreen extends StatefulWidget {
   isFirstTime; // true = onboarding, false = returning user or add persona
   final bool isConversion; // true = converting from one persona type to another
 
+  /// The DS key of the user's primary sport; its artwork fills the page when
+  /// the design system has one.
+  final String? primarySportKey;
+
   const WelcomeScreen({
     super.key,
     required this.displayName,
     required this.personaType,
     this.isFirstTime = true,
     this.isConversion = false,
+    this.primarySportKey,
   });
 
   @override
@@ -32,6 +40,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
+    // The page's artwork is the primary sport's bundled background; the
+    // registry needs the bundled PNGs registered once (idempotent).
+    DabblerSportBackgroundRegistry.registerConventionalMainArtwork(
+      DabblerSportBackgroundRegistry.mainPopulated,
+      DabblerSportBackgroundRegistry.assetPackage,
+    );
     _profileFuture = AuthService().getUserProfile(
       fields: const ['avatar_url', 'display_name'],
     );
@@ -47,6 +61,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final l10n = AppLocalizations.of(context);
     final persona = _personaContent(widget.personaType);
     final returning = !widget.isFirstTime && !widget.isConversion;
+    final sport = widget.primarySportKey == null
+        ? null
+        : DabblerSport.fromKey(widget.primarySportKey!);
+    final Widget? background = sport == null
+        ? null
+        : DabblerSportBackground.maybe(sport);
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
@@ -78,60 +98,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
 
         return DabblerFlowPage(
+          background: background,
           spreadChildren: true,
+          bodyTopPadding: DabblerSpacing.space8,
           footerBottomPadding: DabblerSpacing.space9,
           primaryLabel: persona.cta,
           onPrimary: _continue,
-          leading: Padding(
-            padding: const EdgeInsetsDirectional.only(
-              top: DabblerSpacing.space4,
-            ),
-            child: Row(
-              children: <Widget>[
-                DabblerAvatar(
-                  seed: name,
-                  imageUrl: avatarUrl,
-                  size: DabblerAvatarSize.lg,
-                ),
-                const DabblerGap.h(DabblerSpacing.space5),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      DabblerText(
-                        name,
-                        style: DabblerType.headline,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const DabblerGap.v(DabblerSpacing.space2),
-                      DabblerBadge(
-                        label: persona.name,
-                        tone: DabblerBadgeTone.defaultTone,
-                        icon: DabblerIcon(
-                          persona.icon,
-                          weight: DabblerIconWeight.bold,
-                          size: DabblerSizing.iconXs,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          leading: _header(
+            persona,
+            name,
+            avatarUrl,
+            onArtwork: background != null,
           ),
-          content: <Widget>[
+          content: [
             DabblerCard(
               variant: DabblerCardVariant.white,
               padding: DabblerInsets.card,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
+                children: [
                   DabblerText(persona.headline, style: DabblerType.largeTitle),
                   const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
                     persona.principle,
-                    style: DabblerType.callout,
+                    style: DabblerType.headline,
                     weight: DabblerTextWeight.semibold,
                   ),
                 ],
@@ -140,42 +130,61 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             DabblerCard(
               variant: DabblerCardVariant.white,
               padding: DabblerInsets.card,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  DabblerText(
-                    persona.listTitle.toUpperCase(),
-                    style: DabblerType.footnote,
-                    weight: DabblerTextWeight.semibold,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                  for (final String line in persona.items) ...<Widget>[
-                    const DabblerGap.v(DabblerSpacing.space4),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        DabblerIcon(
-                          'tick-circle',
-                          weight: DabblerIconWeight.bold,
-                          size: DabblerSizing.iconSm,
-                          color: DabblerColors.of(context).brandPrimary,
-                        ),
-                        const DabblerGap.h(DabblerSpacing.space3),
-                        Expanded(
-                          child: DabblerText(
-                            line,
-                            style: DabblerType.subheadline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
+              child: DabblerIconList(
+                title: persona.listTitle,
+                items: persona.items,
               ),
             ),
           ],
         );
       },
+    );
+  }
+
+  /// Avatar, name and persona badge.
+  Widget _header(
+    _PersonaContent persona,
+    String name,
+    String? avatarUrl, {
+    required bool onArtwork,
+  }) {
+    return Row(
+      children: [
+        DabblerAvatar(
+          size: DabblerAvatarSize.lg,
+          seed: name,
+          imageUrl: avatarUrl,
+        ),
+        const DabblerGap.h(DabblerSpacing.space5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DabblerText(
+                name,
+                style: DabblerType.headline,
+                weight: DabblerTextWeight.semibold,
+                tone: onArtwork
+                    ? DabblerTextTone.onBrand
+                    : DabblerTextTone.primary,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const DabblerGap.v(DabblerSpacing.space2),
+              DabblerBadge(
+                label: persona.name,
+                tone: DabblerBadgeTone.defaultTone,
+                icon: DabblerIcon(
+                  persona.icon,
+                  weight: DabblerIconWeight.bold,
+                  size: DabblerSizing.iconXs,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

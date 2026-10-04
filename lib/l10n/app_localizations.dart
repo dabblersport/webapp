@@ -2024,6 +2024,528 @@ abstract class AppLocalizations {
   /// **'No sports selected. Please go back.'**
   String get primary_sport_no_sports;
 
+  /// No description provided for @onb_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get onb_back;
+
+  /// No description provided for @onb_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_continue;
+
+  /// No description provided for @onb_step_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {current} of {total}'**
+  String onb_step_label(int current, int total);
+
+  /// No description provided for @onb_dob_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us a bit about you'**
+  String get onb_dob_title;
+
+  /// No description provided for @onb_dob_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your age keeps games and communities age-appropriate. It stays off your profile.'**
+  String get onb_dob_subtitle;
+
+  /// No description provided for @onb_dob_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Date of birth'**
+  String get onb_dob_label;
+
+  /// No description provided for @onb_dob_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select your date of birth'**
+  String get onb_dob_placeholder;
+
+  /// No description provided for @onb_dob_helper_min.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be 16 or over to use Dabbler.'**
+  String get onb_dob_helper_min;
+
+  /// No description provided for @onb_dob_helper_ok.
+  ///
+  /// In en, this message translates to:
+  /// **'Age {age}. You are all set.'**
+  String onb_dob_helper_ok(int age);
+
+  /// No description provided for @onb_dob_error_min.
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be 16 or over.'**
+  String get onb_dob_error_min;
+
+  /// No description provided for @onb_dob_error_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Age must be between 16 and {max}.'**
+  String onb_dob_error_max(int max);
+
+  /// No description provided for @onb_gender_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender (optional)'**
+  String get onb_gender_label;
+
+  /// No description provided for @onb_gender_male.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get onb_gender_male;
+
+  /// No description provided for @onb_gender_female.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get onb_gender_female;
+
+  /// No description provided for @onb_dob_sheet_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get onb_dob_sheet_confirm;
+
+  /// No description provided for @onb_dob_sheet_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get onb_dob_sheet_cancel;
+
+  /// No description provided for @onb_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get onb_day;
+
+  /// No description provided for @onb_month.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get onb_month;
+
+  /// No description provided for @onb_year.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get onb_year;
+
+  /// No description provided for @onb_month_1.
+  ///
+  /// In en, this message translates to:
+  /// **'January'**
+  String get onb_month_1;
+
+  /// No description provided for @onb_month_2.
+  ///
+  /// In en, this message translates to:
+  /// **'February'**
+  String get onb_month_2;
+
+  /// No description provided for @onb_month_3.
+  ///
+  /// In en, this message translates to:
+  /// **'March'**
+  String get onb_month_3;
+
+  /// No description provided for @onb_month_4.
+  ///
+  /// In en, this message translates to:
+  /// **'April'**
+  String get onb_month_4;
+
+  /// No description provided for @onb_month_5.
+  ///
+  /// In en, this message translates to:
+  /// **'May'**
+  String get onb_month_5;
+
+  /// No description provided for @onb_month_6.
+  ///
+  /// In en, this message translates to:
+  /// **'June'**
+  String get onb_month_6;
+
+  /// No description provided for @onb_month_7.
+  ///
+  /// In en, this message translates to:
+  /// **'July'**
+  String get onb_month_7;
+
+  /// No description provided for @onb_month_8.
+  ///
+  /// In en, this message translates to:
+  /// **'August'**
+  String get onb_month_8;
+
+  /// No description provided for @onb_month_9.
+  ///
+  /// In en, this message translates to:
+  /// **'September'**
+  String get onb_month_9;
+
+  /// No description provided for @onb_month_10.
+  ///
+  /// In en, this message translates to:
+  /// **'October'**
+  String get onb_month_10;
+
+  /// No description provided for @onb_month_11.
+  ///
+  /// In en, this message translates to:
+  /// **'November'**
+  String get onb_month_11;
+
+  /// No description provided for @onb_month_12.
+  ///
+  /// In en, this message translates to:
+  /// **'December'**
+  String get onb_month_12;
+
+  /// No description provided for @onb_persona_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you here?'**
+  String get onb_persona_title;
+
+  /// No description provided for @onb_persona_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the one that fits best today. You can add another later.'**
+  String get onb_persona_subtitle;
+
+  /// No description provided for @onb_persona_footnote.
+  ///
+  /// In en, this message translates to:
+  /// **'You can add another way to use Dabbler later in settings.'**
+  String get onb_persona_footnote;
+
+  /// No description provided for @onb_persona_socialiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Socialiser'**
+  String get onb_persona_socialiser_name;
+
+  /// No description provided for @onb_persona_socialiser_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Find your people'**
+  String get onb_persona_socialiser_hook;
+
+  /// No description provided for @onb_persona_socialiser_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow sports, discover communities, and stay in the loop.'**
+  String get onb_persona_socialiser_body;
+
+  /// No description provided for @onb_sports_title_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What are you into?'**
+  String get onb_sports_title_socialiser;
+
+  /// No description provided for @onb_sports_subtitle_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you want to see more of.'**
+  String get onb_sports_subtitle_socialiser;
+
+  /// No description provided for @onb_primary_title_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What is your favourite sport?'**
+  String get onb_primary_title_socialiser;
+
+  /// No description provided for @onb_primary_subtitle_socialiser.
+  ///
+  /// In en, this message translates to:
+  /// **'We will show more communities, people and activity around it.'**
+  String get onb_primary_subtitle_socialiser;
+
+  /// No description provided for @onb_persona_player_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get onb_persona_player_name;
+
+  /// No description provided for @onb_persona_player_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Get in the game'**
+  String get onb_persona_player_hook;
+
+  /// No description provided for @onb_persona_player_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Join matches, build your level, and play more often.'**
+  String get onb_persona_player_body;
+
+  /// No description provided for @onb_sports_title_player.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you play?'**
+  String get onb_sports_title_player;
+
+  /// No description provided for @onb_sports_subtitle_player.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you’re into. You can change these anytime.'**
+  String get onb_sports_subtitle_player;
+
+  /// No description provided for @onb_primary_title_player.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your go-to sport?'**
+  String get onb_primary_title_player;
+
+  /// No description provided for @onb_primary_subtitle_player.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll make it your default and build your main sport profile around it.'**
+  String get onb_primary_subtitle_player;
+
+  /// No description provided for @onb_persona_organiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser'**
+  String get onb_persona_organiser_name;
+
+  /// No description provided for @onb_persona_organiser_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring the game together'**
+  String get onb_persona_organiser_hook;
+
+  /// No description provided for @onb_persona_organiser_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Create sessions, manage players, and keep everything organised.'**
+  String get onb_persona_organiser_body;
+
+  /// No description provided for @onb_sports_title_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you organise?'**
+  String get onb_sports_title_organiser;
+
+  /// No description provided for @onb_sports_subtitle_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the sports you usually create games for.'**
+  String get onb_sports_subtitle_organiser;
+
+  /// No description provided for @onb_primary_title_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'What do you organise most?'**
+  String get onb_primary_title_organiser;
+
+  /// No description provided for @onb_primary_subtitle_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll use it as the default when you create games and events.'**
+  String get onb_primary_subtitle_organiser;
+
+  /// No description provided for @onb_persona_host_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get onb_persona_host_name;
+
+  /// No description provided for @onb_persona_host_hook.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill your venue'**
+  String get onb_persona_host_hook;
+
+  /// No description provided for @onb_persona_host_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Show your spaces, reach players, and manage bookings.'**
+  String get onb_persona_host_body;
+
+  /// No description provided for @onb_sports_title_host.
+  ///
+  /// In en, this message translates to:
+  /// **'What can people play at your venue?'**
+  String get onb_sports_title_host;
+
+  /// No description provided for @onb_sports_subtitle_host.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the sports your spaces can host.'**
+  String get onb_sports_subtitle_host;
+
+  /// No description provided for @onb_primary_title_host.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your venue known for?'**
+  String get onb_primary_title_host;
+
+  /// No description provided for @onb_primary_subtitle_host.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll make it the primary sport on your venue profile.'**
+  String get onb_primary_subtitle_host;
+
+  /// No description provided for @onb_sports_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sports'**
+  String get onb_sports_search;
+
+  /// No description provided for @onb_sports_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches that. Try another name.'**
+  String get onb_sports_none;
+
+  /// No description provided for @onb_sports_count_zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick at least one to continue.'**
+  String get onb_sports_count_zero;
+
+  /// No description provided for @onb_sports_count_one.
+  ///
+  /// In en, this message translates to:
+  /// **'1 sport selected'**
+  String get onb_sports_count_one;
+
+  /// No description provided for @onb_sports_count_many.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sports selected'**
+  String onb_sports_count_many(int count);
+
+  /// No description provided for @onb_primary_more.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more sports'**
+  String get onb_primary_more;
+
+  /// No description provided for @onb_identity_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What should people call you?'**
+  String get onb_identity_title;
+
+  /// No description provided for @onb_identity_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the name and username people will see around Dabbler.'**
+  String get onb_identity_subtitle;
+
+  /// No description provided for @onb_display_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Display name'**
+  String get onb_display_name_label;
+
+  /// No description provided for @onb_display_name_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the name people see around Dabbler.'**
+  String get onb_display_name_helper;
+
+  /// No description provided for @onb_suggestions.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggestions'**
+  String get onb_suggestions;
+
+  /// No description provided for @onb_username_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get onb_username_label;
+
+  /// No description provided for @onb_username_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'@yourname'**
+  String get onb_username_placeholder;
+
+  /// No description provided for @onb_username_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters, numbers and underscores.'**
+  String get onb_username_helper;
+
+  /// No description provided for @onb_username_short.
+  ///
+  /// In en, this message translates to:
+  /// **'A username needs at least 3 characters.'**
+  String get onb_username_short;
+
+  /// No description provided for @onb_username_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Letters, numbers and underscores only.'**
+  String get onb_username_invalid;
+
+  /// No description provided for @onb_username_checking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking availability…'**
+  String get onb_username_checking;
+
+  /// No description provided for @onb_username_taken.
+  ///
+  /// In en, this message translates to:
+  /// **'That one is taken. Try another.'**
+  String get onb_username_taken;
+
+  /// No description provided for @onb_username_available.
+  ///
+  /// In en, this message translates to:
+  /// **'Available — this one is yours.'**
+  String get onb_username_available;
+
+  /// No description provided for @onb_username_check_error.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not check that username. Try again.'**
+  String get onb_username_check_error;
+
+  /// No description provided for @onb_create_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my account'**
+  String get onb_create_account;
+
+  /// No description provided for @onb_setup_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up your account'**
+  String get onb_setup_title;
+
+  /// No description provided for @onb_setup_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This only takes a moment.'**
+  String get onb_setup_subtitle;
+
+  /// No description provided for @onb_setup_stage_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your profile'**
+  String get onb_setup_stage_profile;
+
+  /// No description provided for @onb_setup_failed_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup did not finish'**
+  String get onb_setup_failed_title;
+
   /// No description provided for @primary_sport_adding.
   ///
   /// In en, this message translates to:

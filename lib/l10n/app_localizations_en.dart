@@ -1085,6 +1085,293 @@ class AppLocalizationsEn extends AppLocalizations {
   String get primary_sport_no_sports => 'No sports selected. Please go back.';
 
   @override
+  String get onb_back => 'Back';
+
+  @override
+  String get onb_continue => 'Continue';
+
+  @override
+  String onb_step_label(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onb_dob_title => 'Tell us a bit about you';
+
+  @override
+  String get onb_dob_subtitle =>
+      'Your age keeps games and communities age-appropriate. It stays off your profile.';
+
+  @override
+  String get onb_dob_label => 'Date of birth';
+
+  @override
+  String get onb_dob_placeholder => 'Select your date of birth';
+
+  @override
+  String get onb_dob_helper_min => 'You need to be 16 or over to use Dabbler.';
+
+  @override
+  String onb_dob_helper_ok(int age) {
+    return 'Age $age. You are all set.';
+  }
+
+  @override
+  String get onb_dob_error_min => 'You need to be 16 or over.';
+
+  @override
+  String onb_dob_error_max(int max) {
+    return 'Age must be between 16 and $max.';
+  }
+
+  @override
+  String get onb_gender_label => 'Gender (optional)';
+
+  @override
+  String get onb_gender_male => 'Male';
+
+  @override
+  String get onb_gender_female => 'Female';
+
+  @override
+  String get onb_dob_sheet_confirm => 'Confirm';
+
+  @override
+  String get onb_dob_sheet_cancel => 'Cancel';
+
+  @override
+  String get onb_day => 'Day';
+
+  @override
+  String get onb_month => 'Month';
+
+  @override
+  String get onb_year => 'Year';
+
+  @override
+  String get onb_month_1 => 'January';
+
+  @override
+  String get onb_month_2 => 'February';
+
+  @override
+  String get onb_month_3 => 'March';
+
+  @override
+  String get onb_month_4 => 'April';
+
+  @override
+  String get onb_month_5 => 'May';
+
+  @override
+  String get onb_month_6 => 'June';
+
+  @override
+  String get onb_month_7 => 'July';
+
+  @override
+  String get onb_month_8 => 'August';
+
+  @override
+  String get onb_month_9 => 'September';
+
+  @override
+  String get onb_month_10 => 'October';
+
+  @override
+  String get onb_month_11 => 'November';
+
+  @override
+  String get onb_month_12 => 'December';
+
+  @override
+  String get onb_persona_title => 'Why are you here?';
+
+  @override
+  String get onb_persona_subtitle =>
+      'Pick the one that fits best today. You can add another later.';
+
+  @override
+  String get onb_persona_footnote =>
+      'You can add another way to use Dabbler later in settings.';
+
+  @override
+  String get onb_persona_socialiser_name => 'Socialiser';
+
+  @override
+  String get onb_persona_socialiser_hook => 'Find your people';
+
+  @override
+  String get onb_persona_socialiser_body =>
+      'Follow sports, discover communities, and stay in the loop.';
+
+  @override
+  String get onb_sports_title_socialiser => 'What are you into?';
+
+  @override
+  String get onb_sports_subtitle_socialiser =>
+      'Pick the sports you want to see more of.';
+
+  @override
+  String get onb_primary_title_socialiser => 'What is your favourite sport?';
+
+  @override
+  String get onb_primary_subtitle_socialiser =>
+      'We will show more communities, people and activity around it.';
+
+  @override
+  String get onb_persona_player_name => 'Player';
+
+  @override
+  String get onb_persona_player_hook => 'Get in the game';
+
+  @override
+  String get onb_persona_player_body =>
+      'Join matches, build your level, and play more often.';
+
+  @override
+  String get onb_sports_title_player => 'What do you play?';
+
+  @override
+  String get onb_sports_subtitle_player =>
+      'Pick the sports you’re into. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_player => 'What’s your go-to sport?';
+
+  @override
+  String get onb_primary_subtitle_player =>
+      'We’ll make it your default and build your main sport profile around it.';
+
+  @override
+  String get onb_persona_organiser_name => 'Organiser';
+
+  @override
+  String get onb_persona_organiser_hook => 'Bring the game together';
+
+  @override
+  String get onb_persona_organiser_body =>
+      'Create sessions, manage players, and keep everything organised.';
+
+  @override
+  String get onb_sports_title_organiser => 'What do you organise?';
+
+  @override
+  String get onb_sports_subtitle_organiser =>
+      'Choose the sports you usually create games for.';
+
+  @override
+  String get onb_primary_title_organiser => 'What do you organise most?';
+
+  @override
+  String get onb_primary_subtitle_organiser =>
+      'We’ll use it as the default when you create games and events.';
+
+  @override
+  String get onb_persona_host_name => 'Host';
+
+  @override
+  String get onb_persona_host_hook => 'Fill your venue';
+
+  @override
+  String get onb_persona_host_body =>
+      'Show your spaces, reach players, and manage bookings.';
+
+  @override
+  String get onb_sports_title_host => 'What can people play at your venue?';
+
+  @override
+  String get onb_sports_subtitle_host =>
+      'Select the sports your spaces can host.';
+
+  @override
+  String get onb_primary_title_host => 'What’s your venue known for?';
+
+  @override
+  String get onb_primary_subtitle_host =>
+      'We’ll make it the primary sport on your venue profile.';
+
+  @override
+  String get onb_sports_search => 'Search sports';
+
+  @override
+  String get onb_sports_none => 'Nothing matches that. Try another name.';
+
+  @override
+  String get onb_sports_count_zero => 'Pick at least one to continue.';
+
+  @override
+  String get onb_sports_count_one => '1 sport selected';
+
+  @override
+  String onb_sports_count_many(int count) {
+    return '$count sports selected';
+  }
+
+  @override
+  String get onb_primary_more => 'Add more sports';
+
+  @override
+  String get onb_identity_title => 'What should people call you?';
+
+  @override
+  String get onb_identity_subtitle =>
+      'Set the name and username people will see around Dabbler.';
+
+  @override
+  String get onb_display_name_label => 'Display name';
+
+  @override
+  String get onb_display_name_helper =>
+      'This is the name people see around Dabbler.';
+
+  @override
+  String get onb_suggestions => 'Suggestions';
+
+  @override
+  String get onb_username_label => 'Username';
+
+  @override
+  String get onb_username_placeholder => '@yourname';
+
+  @override
+  String get onb_username_helper => 'Letters, numbers and underscores.';
+
+  @override
+  String get onb_username_short => 'A username needs at least 3 characters.';
+
+  @override
+  String get onb_username_invalid => 'Letters, numbers and underscores only.';
+
+  @override
+  String get onb_username_checking => 'Checking availability…';
+
+  @override
+  String get onb_username_taken => 'That one is taken. Try another.';
+
+  @override
+  String get onb_username_available => 'Available — this one is yours.';
+
+  @override
+  String get onb_username_check_error =>
+      'We could not check that username. Try again.';
+
+  @override
+  String get onb_create_account => 'Create my account';
+
+  @override
+  String get onb_setup_title => 'Setting up your account';
+
+  @override
+  String get onb_setup_subtitle => 'This only takes a moment.';
+
+  @override
+  String get onb_setup_stage_profile => 'Creating your profile';
+
+  @override
+  String get onb_setup_failed_title => 'Setup did not finish';
+
+  @override
   String primary_sport_adding(String label) {
     return 'Adding $label Profile';
   }

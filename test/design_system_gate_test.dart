@@ -108,12 +108,6 @@ const List<GateAllow> allowList = [
     match: 'progress * 2.5',
   ),
   GateAllow(
-    'lib/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 480',
-  ),
-  GateAllow(
     'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
     ['numeric named arg'],
     _maxWidthReason,
