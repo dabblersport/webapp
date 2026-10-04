@@ -319,6 +319,36 @@ void main() {
     );
   });
 
+  test(
+    'rsvp readers become SECURITY DEFINER once the table grants are gone',
+    () {
+      for (final sig in <String>[
+        'public.can_current_user_rsvp_meetup(uuid, uuid)',
+        'public.meetup_slots_left(uuid)',
+      ]) {
+        expect(
+          sql,
+          contains('ALTER FUNCTION $sig SECURITY DEFINER;'),
+          reason: sig,
+        );
+        expect(
+          sql,
+          contains('ALTER FUNCTION $sig SET search_path = public;'),
+          reason: sig,
+        );
+        // ...and the post-condition block checks them (single-quoted signature).
+        expect(sql, contains("'$sig'"), reason: sig);
+      }
+      // anon keeps EXECUTE on the rsvp-eligibility check (it answers 'anon').
+      expect(
+        sql.contains(
+          'REVOKE ALL ON FUNCTION public.can_current_user_rsvp_meetup',
+        ),
+        isFalse,
+      );
+    },
+  );
+
   test('post-condition block asserts the closed grants', () {
     expect(sql, contains('POST-CONDITION FAILED'));
     expect(sql, contains("has_function_privilege('anon'"));

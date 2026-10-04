@@ -70,6 +70,16 @@ DROP POLICY IF EXISTS rsvp_self_write ON public.meetup_rsvps;
 ALTER TABLE public.meetup_rsvps ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.meetup_rsvps FROM anon, authenticated;
 
+-- The table grants are gone, so every function that reads meetup_rsvps must run
+-- as its owner. can_current_user_rsvp_meetup (called directly by the app) and
+-- meetup_slots_left (called by rpc_meetup_rsvp) were SECURITY INVOKER: with the
+-- grants revoked they would fail for the caller. Their EXECUTE grants (anon keeps
+-- can_current_user_rsvp_meetup, which answers 'anon' for anon) are unchanged.
+ALTER FUNCTION public.can_current_user_rsvp_meetup(uuid, uuid) SECURITY DEFINER;
+ALTER FUNCTION public.can_current_user_rsvp_meetup(uuid, uuid) SET search_path = public;
+ALTER FUNCTION public.meetup_slots_left(uuid) SECURITY DEFINER;
+ALTER FUNCTION public.meetup_slots_left(uuid) SET search_path = public;
+
 -- ============================================================================
 -- (i) Retire duplicates. git grep over Canary, Alpha, the KAN-428 branch (lib,
 --     supabase/functions, test) found no caller; migrations contain no function
@@ -802,6 +812,21 @@ BEGIN
     IF NOT has_function_privilege('authenticated', v_oid, 'EXECUTE') THEN
       RAISE EXCEPTION 'POST-CONDITION FAILED: authenticated cannot EXECUTE %', v_sig;
     END IF;
+    IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_oid) THEN
+      RAISE EXCEPTION 'POST-CONDITION FAILED: % is not SECURITY DEFINER', v_sig;
+    END IF;
+    IF (SELECT proconfig FROM pg_proc WHERE oid = v_oid) IS NULL THEN
+      RAISE EXCEPTION 'POST-CONDITION FAILED: % has no search_path', v_sig;
+    END IF;
+  END LOOP;
+
+  -- Readers of meetup_rsvps must be definer functions now that the table grants
+  -- are revoked; anon keeps EXECUTE on can_current_user_rsvp_meetup by design.
+  FOREACH v_sig IN ARRAY ARRAY[
+    'public.can_current_user_rsvp_meetup(uuid, uuid)',
+    'public.meetup_slots_left(uuid)'
+  ] LOOP
+    v_oid := v_sig::regprocedure;
     IF NOT (SELECT prosecdef FROM pg_proc WHERE oid = v_oid) THEN
       RAISE EXCEPTION 'POST-CONDITION FAILED: % is not SECURITY DEFINER', v_sig;
     END IF;

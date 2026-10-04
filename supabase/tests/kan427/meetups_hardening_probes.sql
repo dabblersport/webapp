@@ -144,6 +144,24 @@ begin
   raise notice 'B4 PASS';
 end $$;
 
+-- B4b [READ-ONLY] meetup_rsvps readers are SECURITY DEFINER with a pinned search_path
+-- (can_current_user_rsvp_meetup is called directly by the app, meetup_slots_left by
+-- rpc_meetup_rsvp); both would fail for the caller once the table grants are revoked.
+do $$
+declare v_sig text; v_oid oid;
+begin
+  foreach v_sig in array array['public.can_current_user_rsvp_meetup(uuid, uuid)','public.meetup_slots_left(uuid)'] loop
+    v_oid := v_sig::regprocedure;
+    if not (select prosecdef from pg_proc where oid = v_oid) then
+      raise exception 'B4b FAIL: % is not SECURITY DEFINER', v_sig; end if;
+    if (select proconfig from pg_proc where oid = v_oid) is null then
+      raise exception 'B4b FAIL: % has no search_path', v_sig; end if;
+  end loop;
+  if not has_function_privilege('anon','public.can_current_user_rsvp_meetup(uuid, uuid)','EXECUTE') then
+    raise exception 'B4b FAIL: anon lost EXECUTE on can_current_user_rsvp_meetup'; end if;
+  raise notice 'B4b PASS';
+end $$;
+
 -- B5 [READ-ONLY] moderation_reports accepts target_type 'meetup' (enum value).
 do $$
 begin
