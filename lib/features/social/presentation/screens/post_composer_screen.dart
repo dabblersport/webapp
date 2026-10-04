@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/sport.dart';
@@ -124,10 +125,15 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   }
 
   void _showVibesPicker() {
-    showComposerSheet<void>(
+    final state = ref.read(postComposerProvider);
+    final notifier = ref.read(postComposerProvider.notifier);
+    showComposerVibesSheet(
       context,
-      title: 'Vibes',
-      builder: (ctx) => const _ComposerVibesPickerSheet(),
+      ref,
+      selectedVibeId: state.vibeId,
+      onClear: notifier.clearVibe,
+      onConfirm: (vibe) =>
+          notifier.setVibe(id: vibe.id, label: vibe.labelEn, emoji: vibe.emoji),
     );
   }
 
@@ -896,183 +902,6 @@ class _ExpiryPickerSheetState extends State<_ExpiryPickerSheet> {
         },
         onCancel: () => Navigator.pop(context),
       ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// VIBES PICKER SHEET (for composer)
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _ComposerVibesPickerSheet extends ConsumerStatefulWidget {
-  const _ComposerVibesPickerSheet();
-
-  @override
-  ConsumerState<_ComposerVibesPickerSheet> createState() =>
-      _ComposerVibesPickerSheetState();
-}
-
-class _ComposerVibesPickerSheetState
-    extends ConsumerState<_ComposerVibesPickerSheet> {
-  String? _activeTypeFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final vibesAsync = ref.watch(vibesProvider);
-    final composerState = ref.watch(postComposerProvider);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (composerState.vibeId != null)
-          ComposerClearRow(
-            onClear: () {
-              ref.read(postComposerProvider.notifier).clearVibe();
-              Navigator.pop(context);
-            },
-          ),
-        vibesAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-          data: (vibes) {
-            final types =
-                vibes
-                    .where((v) => v.type != null && v.type!.isNotEmpty)
-                    .map((v) => v.type!)
-                    .toSet()
-                    .toList()
-                  ..sort();
-            if (types.length <= 1) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: DabblerSpacing.space6,
-                end: DabblerSpacing.space6,
-                bottom: DabblerSpacing.space3,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    DabblerChip(
-                      label: 'All',
-                      selected: _activeTypeFilter == null,
-                      onTap: () => setState(() => _activeTypeFilter = null),
-                    ),
-                    for (final type in types) ...[
-                      const SizedBox(width: DabblerSpacing.space2),
-                      DabblerChip(
-                        label: _prettifyLabel(type),
-                        selected: _activeTypeFilter == type,
-                        onTap: () => setState(() => _activeTypeFilter = type),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        ComposerScrollArea(
-          fraction: 0.55,
-          child: vibesAsync.when(
-            loading: () => const ComposerCenteredState.loading(),
-            error: (e, _) =>
-                const ComposerCenteredState.message('Failed to load vibes'),
-            data: (vibes) {
-              var filtered = vibes.toList();
-              if (_activeTypeFilter != null) {
-                filtered = filtered
-                    .where((v) => v.type == _activeTypeFilter)
-                    .toList();
-              }
-              if (filtered.isEmpty) {
-                return const ComposerCenteredState.message(
-                  'No vibes available',
-                );
-              }
-              return GridView.builder(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space1,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: DabblerSpacing.space3,
-                  crossAxisSpacing: DabblerSpacing.space3,
-                  childAspectRatio: 2.2,
-                ),
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final vibe = filtered[i];
-                  final isSelected = vibe.id == composerState.vibeId;
-                  final tokens = DabblerVibe.fromKey(vibe.key)?.resolve(colors);
-                  return Semantics(
-                    button: true,
-                    selected: isSelected,
-                    label: vibe.labelEn,
-                    excludeSemantics: true,
-                    child: DabblerFeedTappable(
-                      onTap: () {
-                        ref
-                            .read(postComposerProvider.notifier)
-                            .setVibe(
-                              id: vibe.id,
-                              label: vibe.labelEn,
-                              emoji: vibe.emoji,
-                            );
-                        Navigator.pop(context);
-                      },
-                      child: DabblerSurface(
-                        radius: DabblerRadius.lg,
-                        fill: isSelected
-                            ? (tokens?.selectedSurface ?? colors.surfaceGrey)
-                            : (tokens?.surface ?? colors.surfaceSunken),
-                        borderColor: isSelected
-                            ? (tokens?.selectedBorder ?? colors.borderStrong)
-                            : (tokens?.border ?? colors.borderDefault),
-                        borderWidth: DabblerSizing.borderDefault,
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: DabblerSpacing.space2,
-                            ),
-                            // The vibe's ink is a palette colour, not a text
-                            // tone: make it ambient and let the text inherit.
-                            child: DefaultTextStyle.merge(
-                              style:
-                                  DabblerText.resolveStyle(
-                                    context,
-                                    style: DabblerType.footnote,
-                                  ).copyWith(
-                                    color: tokens?.ink ?? colors.textPrimary,
-                                  ),
-                              child: DabblerText(
-                                vibe.labelEn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: DabblerType.footnote,
-                                tone: DabblerTextTone.inherit,
-                                weight: isSelected
-                                    ? DabblerTextWeight.bold
-                                    : DabblerTextWeight.medium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }

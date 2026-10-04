@@ -151,7 +151,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Happy'), findsWidgets);
+      expect(find.text(dir == 'rtl' ? 'سعيد' : 'Happy'), findsWidgets);
       await _shoot(tester, key, 'post-vibes-$dir');
     }, variant: desktop);
 
