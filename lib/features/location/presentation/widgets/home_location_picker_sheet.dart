@@ -91,14 +91,15 @@ class _HomeLocationPickerSheetState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Title row (the emoji the old title carried is dropped, CEO rule).
+        // Title row, as the design's "Change location" sheet draws it; the
+        // sheet's own close glyph stands in for the design's Cancel.
         Padding(
           padding: const EdgeInsetsDirectional.only(
             start: DabblerSpacing.space6,
             end: DabblerSpacing.space6,
             bottom: DabblerSpacing.space4,
           ),
-          child: DabblerText('Your Location', style: DabblerType.headline),
+          child: DabblerText('Change location', style: DabblerType.headline),
         ),
         Padding(
           padding: const EdgeInsetsDirectional.only(
@@ -110,12 +111,17 @@ class _HomeLocationPickerSheetState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              DabblerSearchField(
+                controller: _searchController,
+                placeholder: 'Search areas…',
+                onChanged: (v) => setState(() => _query = v.trim()),
+                onCleared: () => setState(() => _query = ''),
+              ),
               // ── GPS ────────────────────────────────────────────────────
-              const _SectionLabel(label: 'Current Location'),
               _GpsTile(isLoading: _gpsLoading, onTap: () => _useGps()),
 
               // ── Saved locations ────────────────────────────────────────
-              const _SectionLabel(label: 'Saved Locations'),
+              const _SectionLabel(label: 'Saved'),
               savedAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(
@@ -153,15 +159,6 @@ class _HomeLocationPickerSheetState
                 ),
               ),
 
-              // ── Browse by area ─────────────────────────────────────────
-              const _SectionLabel(label: 'Browse by Area'),
-              DabblerSearchField(
-                controller: _searchController,
-                placeholder: 'Search areas…',
-                onChanged: (v) => setState(() => _query = v.trim()),
-                onCleared: () => setState(() => _query = ''),
-              ),
-              const SizedBox(height: DabblerSpacing.space2),
               _AreaBrowser(
                 query: _query,
                 currentState: currentState,
@@ -273,7 +270,7 @@ class _GpsTile extends StatelessWidget {
         size: DabblerSizing.iconSm,
         color: colors.brandPrimary,
       ),
-      title: 'Use my current location',
+      title: 'Use current location',
       subtitle: isLoading ? 'Detecting…' : null,
       trailing: isLoading
           ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
@@ -313,7 +310,6 @@ class _SavedTile extends StatelessWidget {
         color: isSelected ? colors.brandPrimary : colors.textPrimary,
       ),
       title: location.effectiveLabel,
-      trailing: DabblerRadio(selected: isSelected),
       onTap: onTap,
     );
   }
@@ -416,15 +412,15 @@ class _AreaBrowser extends ConsumerWidget {
                         area.id;
                 return PickerRow(
                   selected: isSelected,
-                  leading: DabblerRadio(selected: isSelected),
+                  leading: DabblerIcon(
+                    'location',
+                    size: DabblerSizing.iconSm,
+                    color: isSelected
+                        ? DabblerColors.of(context).brandPrimary
+                        : DabblerColors.of(context).textTertiary,
+                  ),
                   title: area.name,
-                  trailing: distM != null
-                      ? DabblerText(
-                          _fmt(distM),
-                          style: DabblerType.footnote,
-                          tone: DabblerTextTone.secondary,
-                        )
-                      : null,
+                  subtitle: distM != null ? _fmt(distM) : null,
                   onTap: () => onSelected(area),
                 );
               }),

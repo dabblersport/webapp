@@ -300,7 +300,7 @@ void main() {
       _SheetHost(open: (c) => HomeLocationPickerSheet.show(c)),
       const Locale('en'),
     );
-    expect(find.text('Your Location'), findsOneWidget);
+    expect(find.text('Change location'), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
     expect(find.text('JBR'), findsOneWidget);
     expect(find.byType(DabblerSearchField), findsOneWidget);
