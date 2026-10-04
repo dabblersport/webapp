@@ -10,7 +10,6 @@ import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';

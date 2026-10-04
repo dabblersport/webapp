@@ -270,7 +270,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('React with a Vibe'), findsOneWidget);
+      expect(find.text("What's the vibe?"), findsOneWidget);
       await _shoot(tester, key, 'post-detail-vibes-$dir');
       await _settle(tester);
     });
