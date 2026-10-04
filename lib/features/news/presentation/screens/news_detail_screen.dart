@@ -215,7 +215,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               if (item.coverImageUrl != null)
                 DabblerImage(
                   url: item.coverImageUrl,
-                  height: 230,
+                  height: DabblerSizing.articleHeroHeight,
                   semanticLabel: title,
                   headers: _coverHeaders,
                 ),
