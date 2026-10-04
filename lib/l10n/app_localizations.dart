@@ -410,6 +410,540 @@ abstract class AppLocalizations {
   /// **'Choose language'**
   String get landing_choose_language;
 
+  /// No description provided for @auth_already_have_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get auth_already_have_account;
+
+  /// No description provided for @auth_log_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get auth_log_in;
+
+  /// No description provided for @auth_new_here.
+  ///
+  /// In en, this message translates to:
+  /// **'New here?'**
+  String get auth_new_here;
+
+  /// No description provided for @auth_create_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get auth_create_account;
+
+  /// No description provided for @auth_sheet_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get auth_sheet_done;
+
+  /// No description provided for @auth_sheet_got_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get auth_sheet_got_it;
+
+  /// No description provided for @auth_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get auth_back;
+
+  /// No description provided for @landing_dc_tagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler connects players, organisers and venues, so you can stop searching and start playing.'**
+  String get landing_dc_tagline;
+
+  /// No description provided for @landing_dc_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get landing_dc_continue;
+
+  /// No description provided for @landing_vignette_marcus_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'Half the group chat’s flaky. The other half changes their mind by Friday.'**
+  String get landing_vignette_marcus_quote;
+
+  /// No description provided for @landing_vignette_marcus_want.
+  ///
+  /// In en, this message translates to:
+  /// **'I just want one place to organise a 5-a-side and stop chasing replies.'**
+  String get landing_vignette_marcus_want;
+
+  /// No description provided for @landing_vignette_aisha_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'New city, decent left foot, nobody to pass to.'**
+  String get landing_vignette_aisha_quote;
+
+  /// No description provided for @landing_vignette_aisha_want.
+  ///
+  /// In en, this message translates to:
+  /// **'I want a game this week, not a group chat about a game.'**
+  String get landing_vignette_aisha_want;
+
+  /// No description provided for @landing_vignette_priya_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'I follow more padel than I’ve ever actually played.'**
+  String get landing_vignette_priya_quote;
+
+  /// No description provided for @landing_vignette_priya_want.
+  ///
+  /// In en, this message translates to:
+  /// **'Show me who’s playing near me and I’ll find my way in.'**
+  String get landing_vignette_priya_want;
+
+  /// No description provided for @landing_vignette_sevens_quote.
+  ///
+  /// In en, this message translates to:
+  /// **'Three pitches free at 9pm and nobody knows about it.'**
+  String get landing_vignette_sevens_quote;
+
+  /// No description provided for @landing_vignette_sevens_want.
+  ///
+  /// In en, this message translates to:
+  /// **'Put my courts in front of players already looking for one.'**
+  String get landing_vignette_sevens_want;
+
+  /// No description provided for @auth_entry_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s get you playing'**
+  String get auth_entry_title;
+
+  /// No description provided for @auth_entry_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One account for games, squads and venues.'**
+  String get auth_entry_subtitle;
+
+  /// No description provided for @auth_entry_trust_verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed players, verified venues, rated games'**
+  String get auth_entry_trust_verified;
+
+  /// No description provided for @auth_entry_trust_personalised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games and people picked around your sports'**
+  String get auth_entry_trust_personalised;
+
+  /// No description provided for @auth_entry_trust_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'We don’t sell your data. Privacy-first by design'**
+  String get auth_entry_trust_privacy;
+
+  /// No description provided for @auth_entry_continue_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with email'**
+  String get auth_entry_continue_email;
+
+  /// No description provided for @auth_entry_continue_google.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get auth_entry_continue_google;
+
+  /// No description provided for @auth_entry_continue_apple.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get auth_entry_continue_apple;
+
+  /// No description provided for @auth_legal_prefix.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to our '**
+  String get auth_legal_prefix;
+
+  /// No description provided for @auth_legal_terms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get auth_legal_terms;
+
+  /// No description provided for @auth_legal_and.
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get auth_legal_and;
+
+  /// No description provided for @auth_legal_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get auth_legal_privacy;
+
+  /// No description provided for @auth_sheet_language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get auth_sheet_language;
+
+  /// No description provided for @auth_sheet_region.
+  ///
+  /// In en, this message translates to:
+  /// **'Region'**
+  String get auth_sheet_region;
+
+  /// No description provided for @auth_email_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s your email?'**
+  String get auth_email_title;
+
+  /// No description provided for @auth_email_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send a code. If you\'ve been here before, we\'ll pick up where you left off.'**
+  String get auth_email_subtitle;
+
+  /// No description provided for @auth_email_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get auth_email_label;
+
+  /// No description provided for @auth_email_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'you@email.com'**
+  String get auth_email_placeholder;
+
+  /// No description provided for @auth_email_marketing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep me posted on games and features near me'**
+  String get auth_email_marketing;
+
+  /// No description provided for @auth_email_send_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Send me a code'**
+  String get auth_email_send_code;
+
+  /// No description provided for @auth_email_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That does not look like an email address.'**
+  String get auth_email_invalid;
+
+  /// No description provided for @auth_login_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back'**
+  String get auth_login_title;
+
+  /// No description provided for @auth_login_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in your way — password, a one-time code, or a connected account.'**
+  String get auth_login_subtitle;
+
+  /// No description provided for @auth_login_password_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get auth_login_password_label;
+
+  /// No description provided for @auth_login_password_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your password'**
+  String get auth_login_password_placeholder;
+
+  /// No description provided for @auth_login_button.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get auth_login_button;
+
+  /// No description provided for @auth_login_email_code.
+  ///
+  /// In en, this message translates to:
+  /// **'Email me a code instead'**
+  String get auth_login_email_code;
+
+  /// No description provided for @auth_login_password_wrong.
+  ///
+  /// In en, this message translates to:
+  /// **'That password does not match. Try again, or email yourself a code.'**
+  String get auth_login_password_wrong;
+
+  /// No description provided for @auth_otp_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your inbox'**
+  String get auth_otp_title;
+
+  /// No description provided for @auth_otp_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We sent a 6-digit code to your email.'**
+  String get auth_otp_subtitle;
+
+  /// No description provided for @auth_otp_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get auth_otp_change;
+
+  /// No description provided for @auth_otp_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is not right. Check the email and try again.'**
+  String get auth_otp_invalid;
+
+  /// No description provided for @auth_otp_expired.
+  ///
+  /// In en, this message translates to:
+  /// **'This code has expired. Send a new one.'**
+  String get auth_otp_expired;
+
+  /// No description provided for @auth_otp_resend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a new code'**
+  String get auth_otp_resend;
+
+  /// No description provided for @auth_otp_resend_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a new code in {seconds}s'**
+  String auth_otp_resend_in(int seconds);
+
+  /// No description provided for @auth_otp_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get auth_otp_continue;
+
+  /// No description provided for @auth_welcome_back_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome back, {name}'**
+  String auth_welcome_back_title(String name);
+
+  /// No description provided for @auth_welcome_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get auth_welcome_continue;
+
+  /// No description provided for @auth_welcome_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get auth_welcome_list_title;
+
+  /// No description provided for @persona_player_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get persona_player_name;
+
+  /// No description provided for @persona_player_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re in. Let’s play.'**
+  String get persona_player_headline;
+
+  /// No description provided for @persona_player_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show up, play fair, build your rep.'**
+  String get persona_player_principle;
+
+  /// No description provided for @persona_player_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get persona_player_list_title;
+
+  /// No description provided for @persona_player_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirm when you know you can play.'**
+  String get persona_player_item1;
+
+  /// No description provided for @persona_player_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Respect the organiser’s rules and kickoff time.'**
+  String get persona_player_item2;
+
+  /// No description provided for @persona_player_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning up is what builds your reputation.'**
+  String get persona_player_item3;
+
+  /// No description provided for @persona_player_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my first game'**
+  String get persona_player_cta;
+
+  /// No description provided for @persona_organiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser'**
+  String get persona_organiser_name;
+
+  /// No description provided for @persona_organiser_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_organiser_headline;
+
+  /// No description provided for @persona_organiser_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_organiser_principle;
+
+  /// No description provided for @persona_organiser_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_organiser_list_title;
+
+  /// No description provided for @persona_organiser_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_organiser_item1;
+
+  /// No description provided for @persona_organiser_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_organiser_item2;
+
+  /// No description provided for @persona_organiser_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_organiser_item3;
+
+  /// No description provided for @persona_organiser_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_organiser_cta;
+
+  /// No description provided for @persona_host_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Host'**
+  String get persona_host_name;
+
+  /// No description provided for @persona_host_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your venue’s on the map.'**
+  String get persona_host_headline;
+
+  /// No description provided for @persona_host_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Great venues make playing easy.'**
+  String get persona_host_principle;
+
+  /// No description provided for @persona_host_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_host_list_title;
+
+  /// No description provided for @persona_host_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability that matches reality.'**
+  String get persona_host_item1;
+
+  /// No description provided for @persona_host_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pricing and facilities kept current.'**
+  String get persona_host_item2;
+
+  /// No description provided for @persona_host_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings honoured — that’s what brings them back.'**
+  String get persona_host_item3;
+
+  /// No description provided for @persona_host_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Set up my venue'**
+  String get persona_host_cta;
+
+  /// No description provided for @persona_socialiser_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Socialiser'**
+  String get persona_socialiser_name;
+
+  /// No description provided for @persona_socialiser_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_socialiser_headline;
+
+  /// No description provided for @persona_socialiser_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_socialiser_principle;
+
+  /// No description provided for @persona_socialiser_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_socialiser_list_title;
+
+  /// No description provided for @persona_socialiser_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you actually care about.'**
+  String get persona_socialiser_item1;
+
+  /// No description provided for @persona_socialiser_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation before you join the game.'**
+  String get persona_socialiser_item2;
+
+  /// No description provided for @persona_socialiser_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_socialiser_item3;
+
+  /// No description provided for @persona_socialiser_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_socialiser_cta;
+
+  /// No description provided for @auth_or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get auth_or;
+
   /// No description provided for @email_input_title.
   ///
   /// In en, this message translates to:

@@ -1,7 +1,6 @@
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -38,131 +37,139 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final personaContent = _getPersonaContent(widget.personaType);
-
-    return DabblerPage(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space6,
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space6,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildAvatarRow(context, personaContent),
-                      const SizedBox(height: DabblerSpacing.space8),
-                      DabblerText(
-                        _getWelcomeTitle(),
-                        style: DabblerType.largeTitle,
-                      ),
-                      const SizedBox(height: DabblerSpacing.space4),
-                      DabblerText(
-                        personaContent.guidanceText,
-                        tone: DabblerTextTone.secondary,
-                      ),
-                      const SizedBox(height: DabblerSpacing.space6),
-                      DabblerCard(
-                        variant: DabblerCardVariant.white,
-                        padding: const EdgeInsets.all(DabblerSpacing.space6),
-                        child: DabblerText(
-                          personaContent.philosophyStatement,
-                          style: DabblerType.title3,
-                        ),
-                      ),
-                      const SizedBox(height: DabblerSpacing.space4),
-                      DabblerCard(
-                        variant: DabblerCardVariant.white,
-                        padding: const EdgeInsets.all(DabblerSpacing.space6),
-                        child: _buildReminder(context, personaContent),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space8,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DabblerText(
-                      personaContent.finalEmphasis,
-                      style: DabblerType.callout,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: DabblerSpacing.space5),
-                    DabblerButton(
-                      label: AppLocalizations.of(
-                        context,
-                      ).welcome_screen_continue,
-                      size: DabblerButtonSize.full,
-                      fullWidth: true,
-                      onPressed: () {
-                        routerRefreshNotifier.clearPostLoginWelcome();
-                        context.go(RoutePaths.home);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _continue() {
+    routerRefreshNotifier.clearPostLoginWelcome();
+    context.go(RoutePaths.home);
   }
 
-  Widget _buildAvatarRow(BuildContext context, _PersonaContent personaContent) {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final persona = _personaContent(widget.personaType);
+    final returning = !widget.isFirstTime && !widget.isConversion;
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
       builder: (context, snapshot) {
         final profile = snapshot.data;
         final avatarUrl = profile?['avatar_url'] as String?;
         final profileName = (profile?['display_name'] as String?)?.trim();
-        final resolvedName = (profileName != null && profileName.isNotEmpty)
+        final name = (profileName != null && profileName.isNotEmpty)
             ? profileName
             : widget.displayName;
 
-        return Row(
-          children: [
-            DabblerAvatar(
-              size: DabblerAvatarSize.lg,
-              seed: resolvedName,
-              imageUrl: avatarUrl,
+        if (returning) {
+          return DabblerFlowPage(
+            centered: true,
+            leading: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerAvatar(
+                seed: name,
+                imageUrl: avatarUrl,
+                size: DabblerAvatarSize.xl,
+              ),
             ),
-            const SizedBox(width: DabblerSpacing.space5),
-            Expanded(
+            title: l10n.auth_welcome_back_title(name),
+            titleStyle: DabblerType.largeTitle,
+            primaryLabel: l10n.auth_welcome_continue,
+            onPrimary: _continue,
+            footerBottomPadding: DabblerSpacing.space9,
+          );
+        }
+
+        return DabblerFlowPage(
+          spreadChildren: true,
+          footerBottomPadding: DabblerSpacing.space9,
+          primaryLabel: persona.cta,
+          onPrimary: _continue,
+          leading: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space4,
+            ),
+            child: Row(
+              children: <Widget>[
+                DabblerAvatar(
+                  seed: name,
+                  imageUrl: avatarUrl,
+                  size: DabblerAvatarSize.lg,
+                ),
+                const DabblerGap.h(DabblerSpacing.space5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DabblerText(
+                        name,
+                        style: DabblerType.headline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const DabblerGap.v(DabblerSpacing.space2),
+                      DabblerBadge(
+                        label: persona.name,
+                        tone: DabblerBadgeTone.defaultTone,
+                        icon: DabblerIcon(
+                          persona.icon,
+                          weight: DabblerIconWeight.bold,
+                          size: DabblerSizing.iconXs,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: <Widget>[
+            DabblerCard(
+              variant: DabblerCardVariant.white,
+              padding: DabblerInsets.card,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  DabblerText(persona.headline, style: DabblerType.largeTitle),
+                  const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
-                    resolvedName,
-                    style: DabblerType.headline,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    persona.principle,
+                    style: DabblerType.callout,
+                    weight: DabblerTextWeight.semibold,
                   ),
-                  const SizedBox(height: DabblerSpacing.space2),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: DabblerBadge(label: personaContent.chipLabel),
+                ],
+              ),
+            ),
+            DabblerCard(
+              variant: DabblerCardVariant.white,
+              padding: DabblerInsets.card,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  DabblerText(
+                    persona.listTitle.toUpperCase(),
+                    style: DabblerType.footnote,
+                    weight: DabblerTextWeight.semibold,
+                    tone: DabblerTextTone.secondary,
                   ),
+                  for (final String line in persona.items) ...<Widget>[
+                    const DabblerGap.v(DabblerSpacing.space4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        DabblerIcon(
+                          'tick-circle',
+                          weight: DabblerIconWeight.bold,
+                          size: DabblerSizing.iconSm,
+                          color: DabblerColors.of(context).brandPrimary,
+                        ),
+                        const DabblerGap.h(DabblerSpacing.space3),
+                        Expanded(
+                          child: DabblerText(
+                            line,
+                            style: DabblerType.subheadline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -172,100 +179,87 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildReminder(BuildContext context, _PersonaContent personaContent) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DabblerText(
-          AppLocalizations.of(context).welcome_screen_dont_forget,
-          style: DabblerType.headline,
-        ),
-        const SizedBox(height: DabblerSpacing.space2),
-        DabblerText(
-          personaContent.reminderText,
-          style: DabblerType.subheadline,
-          tone: DabblerTextTone.secondary,
-        ),
-      ],
-    );
-  }
-
-  String _getWelcomeTitle() {
-    final l10n = AppLocalizations.of(context);
-    if (widget.isConversion) {
-      return authStripEmoji(l10n.welcome_screen_title_conversion);
-    } else if (widget.isFirstTime) {
-      return authStripEmoji(l10n.welcome_screen_title_first_time);
-    } else {
-      return authStripEmoji(l10n.welcome_screen_title_returning);
-    }
-  }
-
-  _PersonaContent _getPersonaContent(String persona) {
-    final l10n = AppLocalizations.of(context);
+  _PersonaContent _personaContent(String persona) {
+    final l = AppLocalizations.of(context);
     switch (persona.toLowerCase()) {
-      case 'player':
-        return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_player,
-          guidanceText: l10n.welcome_screen_player_guidance,
-          philosophyStatement: l10n.welcome_screen_player_philosophy,
-          reminderText: l10n.welcome_screen_player_reminder,
-          finalEmphasis: l10n.welcome_screen_player_emphasis,
-        );
-
       case 'organiser':
         return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_organiser,
-          guidanceText: l10n.welcome_screen_organiser_guidance,
-          philosophyStatement: l10n.welcome_screen_organiser_philosophy,
-          reminderText: l10n.welcome_screen_organiser_reminder,
-          finalEmphasis: l10n.welcome_screen_organiser_emphasis,
+          icon: 'calendar',
+          name: l.persona_organiser_name,
+          headline: l.persona_organiser_headline,
+          principle: l.persona_organiser_principle,
+          listTitle: l.persona_organiser_list_title,
+          items: [
+            l.persona_organiser_item1,
+            l.persona_organiser_item2,
+            l.persona_organiser_item3,
+          ],
+          cta: l.persona_organiser_cta,
         );
-
       case 'host':
         return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_host,
-          guidanceText: l10n.welcome_screen_host_guidance,
-          philosophyStatement: l10n.welcome_screen_host_philosophy,
-          reminderText: l10n.welcome_screen_host_reminder,
-          finalEmphasis: l10n.welcome_screen_host_emphasis,
+          icon: 'location',
+          name: l.persona_host_name,
+          headline: l.persona_host_headline,
+          principle: l.persona_host_principle,
+          listTitle: l.persona_host_list_title,
+          items: [
+            l.persona_host_item1,
+            l.persona_host_item2,
+            l.persona_host_item3,
+          ],
+          cta: l.persona_host_cta,
         );
-
       case 'socialiser':
         return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_socialiser,
-          guidanceText: l10n.welcome_screen_socialiser_guidance,
-          philosophyStatement: l10n.welcome_screen_socialiser_philosophy,
-          reminderText: l10n.welcome_screen_socialiser_reminder,
-          finalEmphasis: l10n.welcome_screen_socialiser_emphasis,
+          icon: 'people',
+          name: l.persona_socialiser_name,
+          headline: l.persona_socialiser_headline,
+          principle: l.persona_socialiser_principle,
+          listTitle: l.persona_socialiser_list_title,
+          items: [
+            l.persona_socialiser_item1,
+            l.persona_socialiser_item2,
+            l.persona_socialiser_item3,
+          ],
+          cta: l.persona_socialiser_cta,
         );
-
+      case 'player':
       default:
-        // Fallback to player
         return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_player,
-          guidanceText: l10n.welcome_screen_player_guidance,
-          philosophyStatement: l10n.welcome_screen_player_philosophy,
-          reminderText: l10n.welcome_screen_player_reminder,
-          finalEmphasis: l10n.welcome_screen_player_emphasis,
+          icon: 'game',
+          name: l.persona_player_name,
+          headline: l.persona_player_headline,
+          principle: l.persona_player_principle,
+          listTitle: l.persona_player_list_title,
+          items: [
+            l.persona_player_item1,
+            l.persona_player_item2,
+            l.persona_player_item3,
+          ],
+          cta: l.persona_player_cta,
         );
     }
   }
 }
 
-/// Helper class to hold persona-specific content
+/// The persona-specific words of the welcome frame.
 class _PersonaContent {
-  final String chipLabel;
-  final String guidanceText;
-  final String philosophyStatement;
-  final String reminderText;
-  final String finalEmphasis;
-
-  _PersonaContent({
-    required this.chipLabel,
-    required this.guidanceText,
-    required this.philosophyStatement,
-    required this.reminderText,
-    required this.finalEmphasis,
+  const _PersonaContent({
+    required this.icon,
+    required this.name,
+    required this.headline,
+    required this.principle,
+    required this.listTitle,
+    required this.items,
+    required this.cta,
   });
+
+  final String icon;
+  final String name;
+  final String headline;
+  final String principle;
+  final String listTitle;
+  final List<String> items;
+  final String cta;
 }

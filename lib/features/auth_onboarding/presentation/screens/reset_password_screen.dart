@@ -61,12 +61,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 l10n.reset_password_title,
                 style: DabblerType.largeTitle,
               ),
-              const SizedBox(height: DabblerSpacing.space3),
+              const DabblerGap.v(DabblerSpacing.space3),
               DabblerText(
                 l10n.reset_password_subtitle,
                 tone: DabblerTextTone.secondary,
               ),
-              const SizedBox(height: DabblerSpacing.space9),
+              const DabblerGap.v(DabblerSpacing.space9),
               DabblerTextField(
                 variant: DabblerTextFieldVariant.password,
                 label: l10n.reset_password_new_label,
@@ -83,7 +83,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 },
                 textInputAction: TextInputAction.next,
               ),
-              const SizedBox(height: DabblerSpacing.space4),
+              const DabblerGap.v(DabblerSpacing.space4),
               DabblerTextField(
                 variant: DabblerTextFieldVariant.password,
                 label: l10n.reset_password_confirm_label,
@@ -99,7 +99,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 },
                 textInputAction: TextInputAction.done,
               ),
-              const SizedBox(height: DabblerSpacing.space8),
+              const DabblerGap.v(DabblerSpacing.space8),
               DabblerButton(
                 label: l10n.reset_password_update_btn,
                 size: DabblerButtonSize.full,
@@ -108,7 +108,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 onPressed: _isLoading ? null : _submit,
               ),
               if (_error != null) ...[
-                const SizedBox(height: DabblerSpacing.space4),
+                const DabblerGap.v(DabblerSpacing.space4),
                 DabblerBanner(tone: DabblerBannerTone.error, message: _error),
               ],
             ],

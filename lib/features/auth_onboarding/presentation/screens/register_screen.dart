@@ -32,14 +32,14 @@ class RegisterScreen extends ConsumerWidget {
               keyboardType: TextInputType.emailAddress,
               textInputAction: TextInputAction.next,
             ),
-            const SizedBox(height: DabblerSpacing.space6),
+            const DabblerGap.v(DabblerSpacing.space6),
             DabblerTextField(
               variant: DabblerTextFieldVariant.password,
               label: l10n.set_password_password_label,
               onChanged: controller.updatePassword,
               textInputAction: TextInputAction.done,
             ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
             DabblerButton(
               label: l10n.register_btn,
               size: DabblerButtonSize.full,
