@@ -1163,7 +1163,9 @@ class _HomeHeader extends ConsumerWidget {
   void _openLocationPicker(BuildContext context) {
     showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.85],
+      detents: const <double>[0.66],
+      pageBackground: true,
+      showCloseButton: false,
       builder: (_) => const _LocationPickerHost(),
     );
   }

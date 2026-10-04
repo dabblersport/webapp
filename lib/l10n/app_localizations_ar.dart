@@ -45,19 +45,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get venues_search_disabled_mvp => 'البحث مش متاح في الإصدار ده';
 
   @override
-  String get tab_most_recent => 'الأحدث';
+  String get tab_most_recent => 'لك';
 
   @override
-  String get tab_following => 'المتابَعين';
+  String get tab_following => 'أتابعهم';
 
   @override
-  String get tab_nearby => 'القريبة';
+  String get tab_nearby => 'بالقرب';
 
   @override
-  String get tab_active => 'النشطة';
+  String get tab_active => 'نشط';
 
   @override
-  String get tab_news => 'الأخبار';
+  String get tab_news => 'أخبار';
 
   @override
   String get feed_empty_no_posts => 'مفيش بوستات لسه';
@@ -82,7 +82,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get news_hide_sheet_body =>
-      'كروت الأخبار مش هتبان في الأحدث. تقدر تقراهم كلهم في تبويب الأخبار.';
+      'كروت الأخبار مش هتبان في لك. تقدر تقراهم كلهم في تبويب الأخبار.';
 
   @override
   String get news_hide_confirm => 'خبّي الأخبار';
@@ -91,13 +91,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get news_hide_cancel => 'إلغاء';
 
   @override
-  String get news_hidden_snack => 'الأخبار اتخبت من الأحدث';
+  String get news_hidden_snack => 'الأخبار اتخبت من لك';
 
   @override
-  String get news_resubscribed_snack => 'الأخبار هتبان تاني في الأحدث';
+  String get news_resubscribed_snack => 'الأخبار هتبان تاني في لك';
 
   @override
-  String get news_resubscribe_banner => 'الأخبار متخبية من الأحدث.';
+  String get news_resubscribe_banner => 'الأخبار متخبية من لك.';
 
   @override
   String get news_resubscribe_action => 'وريهم تاني';
@@ -1263,25 +1263,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_card_allocated => 'متحجز';
 
   @override
-  String get nav_feeds => 'الفيد';
+  String get nav_feeds => 'الرئيسية';
 
   @override
   String get nav_community => 'المجتمع';
 
   @override
-  String get nav_venues => 'الملاعب';
+  String get nav_venues => 'ملاعب';
 
   @override
-  String get nav_games => 'الماتشات';
+  String get nav_games => 'مباريات';
 
   @override
   String get nav_meetups => 'اللمّات';
 
   @override
-  String get nav_create_post => 'بوست جديد';
+  String get nav_create_post => 'منشور جديد';
 
   @override
-  String get nav_create_game => 'ماتش جديد';
+  String get nav_create_game => 'مباراة جديدة';
 
   @override
   String get nav_create_meetup => 'لمّة جديدة';
@@ -1952,6 +1952,105 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
+
+  @override
+  String get home_upcoming_title => 'القادمة';
+
+  @override
+  String home_upcoming_title_count(int count) {
+    return 'القادمة · $count';
+  }
+
+  @override
+  String home_upcoming_strip_count(int count) {
+    return '$count قادمة';
+  }
+
+  @override
+  String home_upcoming_more(int count) {
+    return '$count أخرى هذا الأسبوع';
+  }
+
+  @override
+  String get home_upcoming_show_less => 'عرض أقل';
+
+  @override
+  String get home_upcoming_hide => 'إخفاء';
+
+  @override
+  String home_upcoming_see_all(int count) {
+    return 'عرض كل $count القادمة';
+  }
+
+  @override
+  String get home_upcoming_day => 'يوم';
+
+  @override
+  String get home_upcoming_days => 'أيام';
+
+  @override
+  String get home_upcoming_hour => 'ساعة';
+
+  @override
+  String get home_upcoming_hours => 'ساعات';
+
+  @override
+  String get home_upcoming_min => 'دقيقة';
+
+  @override
+  String home_upcoming_in_days(int days) {
+    return 'بعد $days ي';
+  }
+
+  @override
+  String home_upcoming_in_hours(int hours, int minutes) {
+    return 'بعد $hours س $minutes د';
+  }
+
+  @override
+  String home_upcoming_in_minutes(int minutes) {
+    return 'بعد $minutes د';
+  }
+
+  @override
+  String get home_post_options_title => 'خيارات المنشور';
+
+  @override
+  String home_post_options_by(String name) {
+    return 'نشره $name';
+  }
+
+  @override
+  String get home_post_report => 'الإبلاغ عن المنشور';
+
+  @override
+  String get home_post_report_note => 'أخبرنا ما المشكلة في هذا المنشور';
+
+  @override
+  String get home_post_block => 'حظر المستخدم';
+
+  @override
+  String get home_vibe_title => 'ما الأجواء؟';
+
+  @override
+  String get home_location_title => 'تغيير الموقع';
+
+  @override
+  String get home_location_done => 'تم';
+
+  @override
+  String get home_location_search => 'ابحث عن منطقة أو شارع أو مدينة';
+
+  @override
+  String get home_location_use_current => 'استخدم موقعي الحالي';
+
+  @override
+  String get home_location_add => 'إضافة موقع';
+
+  @override
+  String home_location_no_match(String query) {
+    return 'لا توجد مناطق مطابقة لـ \"$query\"';
+  }
 
   @override
   String get blocked_accounts_note => 'أدر المستخدمين الذين حظرتهم.';
