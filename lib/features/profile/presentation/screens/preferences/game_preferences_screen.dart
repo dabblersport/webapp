@@ -1,18 +1,24 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+
+import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 enum CompetitionLevel { casual, recreational, competitive, professional }
 
 enum GameDuration { short, medium, long, flexible }
 
-/// Game preferences — a design-system page of [DabblerSection] groups:
-/// checkbox rows for game types, radio rows for duration and competition
-/// level, toggle rows for team size / equipment / referee, a range slider for
-/// team size and chips for equipment types. State is local (as before) and
-/// "Save" only confirms with a toast. No design frame exists for this screen;
-/// it is a DS-default render.
+enum _GameType { pickup, tournaments, practice, leagues, friendly, camps }
+
+enum _Equipment { ball, gear, uniforms, goals, nets, markers }
+
+/// Game preferences — a page of Settings-style [DabblerRowGroup]s: checkbox
+/// rows for game types, radio rows for duration and competition level, toggle
+/// rows for team size / equipment / referee, a range slider for team size and
+/// chips for equipment types. State is local and "Save" only confirms with a
+/// toast. No design frame exists for this screen; it takes the Settings inner
+/// page pattern with design-system defaults.
 class GamePreferencesScreen extends ConsumerStatefulWidget {
   const GamePreferencesScreen({super.key});
 
@@ -23,54 +29,11 @@ class GamePreferencesScreen extends ConsumerStatefulWidget {
 
 class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   // Game type preferences
-  final Set<String> _preferredGameTypes = {
-    'pickup_games',
-    'tournaments',
-    'practice_sessions',
+  final Set<_GameType> _preferredGameTypes = {
+    _GameType.pickup,
+    _GameType.tournaments,
+    _GameType.practice,
   };
-
-  static const Map<String, ({String title, String description, String icon})>
-  _gameTypes = {
-    'pickup_games': (
-      title: 'Pickup Games',
-      description: 'Casual games with other players',
-      icon: 'game',
-    ),
-    'tournaments': (
-      title: 'Tournaments',
-      description: 'Competitive organized events',
-      icon: 'cup',
-    ),
-    'practice_sessions': (
-      title: 'Practice Sessions',
-      description: 'Skill development and training',
-      icon: 'weight',
-    ),
-    'leagues': (
-      title: 'Leagues',
-      description: 'Season-long competitions',
-      icon: 'ranking',
-    ),
-    'friendly_matches': (
-      title: 'Friendly Matches',
-      description: 'Non-competitive social games',
-      icon: 'people',
-    ),
-    'training_camps': (
-      title: 'Training Camps',
-      description: 'Intensive skill workshops',
-      icon: 'teacher',
-    ),
-  };
-
-  static const List<String> _equipmentOptions = [
-    'ball',
-    'protective_gear',
-    'uniforms',
-    'goals',
-    'nets',
-    'markers',
-  ];
 
   // Duration preferences
   GameDuration _preferredDuration = GameDuration.medium;
@@ -88,7 +51,7 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   bool _hasOwnEquipment = true;
   bool _canProvideEquipment = false;
   bool _needsEquipmentProvided = false;
-  final Set<String> _equipmentTypes = {'ball', 'protective_gear'};
+  final Set<_Equipment> _equipmentTypes = {_Equipment.ball, _Equipment.gear};
 
   // Referee preferences
   bool _preferReferee = false;
@@ -97,21 +60,24 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const gap = SizedBox(height: DabblerSpacing.space7);
+    final l10n = AppLocalizations.of(context);
+    const gap = DabblerGap.v(DabblerSpacing.space6);
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Game Preferences',
-        onBack: () => context.pop(),
-        actions: [
-          DabblerNavigationAction.text(label: 'Save', onPressed: _saveSettings),
+      topBar: settingsInnerTopBar(
+        context,
+        title: l10n.game_prefs_title,
+        extraActions: [
+          DabblerNavigationAction.text(
+            label: l10n.game_prefs_save,
+            onPressed: _saveSettings,
+          ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space5,
           DabblerSpacing.space6,
-          DabblerSpacing.space4,
-          DabblerSpacing.space6,
+          DabblerSpacing.space5,
           DabblerSpacing.space10,
         ),
         children: [
@@ -133,16 +99,32 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
 
   Widget _icon(BuildContext context, String name) => DabblerIcon(
     name,
-    size: DabblerSizing.iconRow,
+    size: DabblerSizing.iconMd,
     color: DabblerColors.of(context).textSecondary,
   );
 
   Widget _subheading(BuildContext context, String text) => Padding(
-    padding: const EdgeInsetsDirectional.only(
-      top: DabblerSpacing.space5,
-      bottom: DabblerSpacing.space3,
+    padding: const EdgeInsetsDirectional.symmetric(
+      vertical: DabblerSpacing.space4,
     ),
-    child: DabblerText(text, style: DabblerType.headline),
+    child: DabblerText(text, style: DabblerType.footnote),
+  );
+
+  Widget _row({
+    required BuildContext context,
+    required String icon,
+    required String title,
+    String? subtitle,
+    VoidCallback? onTap,
+    Widget? trailing,
+  }) => DabblerInputRow(
+    flat: true,
+    showDivider: false,
+    leading: _icon(context, icon),
+    title: title,
+    subtitle: subtitle,
+    onTap: onTap,
+    trailing: trailing,
   );
 
   Widget _toggleRow(
@@ -152,91 +134,131 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     String icon,
     bool value,
     ValueChanged<bool> onChanged,
-  ) {
-    return DabblerInputRow(
-      leading: _icon(context, icon),
-      title: title,
-      subtitle: subtitle,
-      onTap: () => onChanged(!value),
-      trailing: DabblerToggle(
-        checked: value,
-        semanticLabel: title,
-        onChanged: onChanged,
-      ),
-    );
-  }
+  ) => _row(
+    context: context,
+    icon: icon,
+    title: title,
+    subtitle: subtitle,
+    onTap: () => onChanged(!value),
+    trailing: DabblerToggle(
+      checked: value,
+      semanticLabel: title,
+      onChanged: onChanged,
+    ),
+  );
+
+  ({String title, String description, String icon}) _gameType(
+    AppLocalizations l,
+    _GameType t,
+  ) => switch (t) {
+    _GameType.pickup => (
+      title: l.game_prefs_type_pickup,
+      description: l.game_prefs_type_pickup_sub,
+      icon: 'game',
+    ),
+    _GameType.tournaments => (
+      title: l.game_prefs_type_tournaments,
+      description: l.game_prefs_type_tournaments_sub,
+      icon: 'cup',
+    ),
+    _GameType.practice => (
+      title: l.game_prefs_type_practice,
+      description: l.game_prefs_type_practice_sub,
+      icon: 'weight',
+    ),
+    _GameType.leagues => (
+      title: l.game_prefs_type_leagues,
+      description: l.game_prefs_type_leagues_sub,
+      icon: 'ranking',
+    ),
+    _GameType.friendly => (
+      title: l.game_prefs_type_friendly,
+      description: l.game_prefs_type_friendly_sub,
+      icon: 'people',
+    ),
+    _GameType.camps => (
+      title: l.game_prefs_type_camps,
+      description: l.game_prefs_type_camps_sub,
+      icon: 'teacher',
+    ),
+  };
 
   Widget _buildGameTypesSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Preferred Game Types',
-      subtitle: 'Select the types of games you enjoy most',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_types_header,
+      note: l10n.game_prefs_types_note,
       children: [
-        for (final entry in _gameTypes.entries)
-          DabblerInputRow(
-            leading: _icon(context, entry.value.icon),
-            title: entry.value.title,
-            subtitle: entry.value.description,
-            onTap: () => _toggleGameType(entry.key),
+        for (final type in _GameType.values)
+          _row(
+            context: context,
+            icon: _gameType(l10n, type).icon,
+            title: _gameType(l10n, type).title,
+            subtitle: _gameType(l10n, type).description,
+            onTap: () => _toggleGameType(type),
             trailing: DabblerCheckbox(
-              checked: _preferredGameTypes.contains(entry.key),
-              semanticLabel: entry.value.title,
-              onChanged: (_) => _toggleGameType(entry.key),
+              checked: _preferredGameTypes.contains(type),
+              semanticLabel: _gameType(l10n, type).title,
+              onChanged: (_) => _toggleGameType(type),
             ),
           ),
       ],
     );
   }
 
-  void _toggleGameType(String key) {
+  void _toggleGameType(_GameType type) {
     setState(() {
-      if (_preferredGameTypes.contains(key)) {
-        _preferredGameTypes.remove(key);
-      } else {
-        _preferredGameTypes.add(key);
-      }
+      if (!_preferredGameTypes.remove(type)) _preferredGameTypes.add(type);
     });
   }
 
   Widget _buildDurationSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Game Duration',
-      subtitle: 'How long do you prefer games to last?',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_duration_header,
+      note: l10n.game_prefs_duration_note,
       children: [
         for (final duration in GameDuration.values)
-          DabblerInputRow(
-            leading: _icon(context, 'clock'),
-            title: _getDurationTitle(duration),
-            subtitle: _getDurationDescription(duration),
+          _row(
+            context: context,
+            icon: 'clock',
+            title: _getDurationTitle(l10n, duration),
+            subtitle: _getDurationDescription(l10n, duration),
             onTap: () => setState(() => _preferredDuration = duration),
             trailing: DabblerRadio(
               selected: _preferredDuration == duration,
-              semanticLabel: _getDurationTitle(duration),
+              semanticLabel: _getDurationTitle(l10n, duration),
               onChanged: (_) => setState(() => _preferredDuration = duration),
             ),
           ),
-        if (_preferredDuration == GameDuration.flexible) ...[
-          _subheading(context, 'Custom Duration Range'),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if (_preferredDuration == GameDuration.flexible)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: _buildDurationInput(
-                  'Min Duration',
-                  _customMinDuration,
-                  (value) => setState(() => _customMinDuration = value),
-                ),
+              _subheading(context, l10n.game_prefs_duration_custom),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildDurationInput(
+                      l10n.game_prefs_duration_min,
+                      _customMinDuration,
+                      (value) => setState(() => _customMinDuration = value),
+                    ),
+                  ),
+                  const SizedBox(width: DabblerSpacing.space4),
+                  Expanded(
+                    child: _buildDurationInput(
+                      l10n.game_prefs_duration_max,
+                      _customMaxDuration,
+                      (value) => setState(() => _customMaxDuration = value),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: _buildDurationInput(
-                  'Max Duration',
-                  _customMaxDuration,
-                  (value) => setState(() => _customMaxDuration = value),
-                ),
-              ),
+              const DabblerGap.v(DabblerSpacing.space4),
             ],
           ),
-        ],
       ],
     );
   }
@@ -246,10 +268,11 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     int value,
     ValueChanged<int> onChanged,
   ) {
+    final l10n = AppLocalizations.of(context);
     return DabblerTextField(
       label: label,
-      placeholder: '$value min',
-      suffixText: 'min',
+      placeholder: l10n.game_prefs_minutes_hint('$value'),
+      suffixText: l10n.game_prefs_minutes_suffix,
       keyboardType: TextInputType.number,
       onChanged: (text) {
         final newValue = int.tryParse(text);
@@ -261,52 +284,63 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   }
 
   Widget _buildTeamSizeSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Team Size Preferences',
-      subtitle: 'What team sizes do you prefer?',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_team_header,
+      note: l10n.game_prefs_team_note,
       children: [
         _toggleRow(
           context,
-          'Flexible Team Size',
-          'Open to various team sizes',
+          l10n.game_prefs_team_flexible,
+          l10n.game_prefs_team_flexible_sub,
           'people',
           _flexibleTeamSize,
           (value) => setState(() => _flexibleTeamSize = value),
         ),
-        if (!_flexibleTeamSize) ...[
-          _subheading(
-            context,
-            'Preferred Team Size: ${_teamSizeRange.low.round()} - ${_teamSizeRange.high.round()} players',
+        if (!_flexibleTeamSize)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _subheading(
+                context,
+                l10n.game_prefs_team_preferred(
+                  DabblerType.toWesternDigits('${_teamSizeRange.low.round()}'),
+                  DabblerType.toWesternDigits('${_teamSizeRange.high.round()}'),
+                ),
+              ),
+              DabblerSlider.range(
+                values: _teamSizeRange,
+                min: 2,
+                max: 22,
+                step: 1,
+                formatValue: (v) => v.round().toString(),
+                minimumSemanticLabel: l10n.game_prefs_team_min_label,
+                maximumSemanticLabel: l10n.game_prefs_team_max_label,
+                onChanged: (values) => setState(() => _teamSizeRange = values),
+              ),
+              const DabblerGap.v(DabblerSpacing.space4),
+            ],
           ),
-          DabblerSlider.range(
-            values: _teamSizeRange,
-            min: 2,
-            max: 22,
-            step: 1,
-            formatValue: (v) => v.round().toString(),
-            minimumSemanticLabel: '2 players',
-            maximumSemanticLabel: '22 players',
-            onChanged: (values) => setState(() => _teamSizeRange = values),
-          ),
-        ],
       ],
     );
   }
 
   Widget _buildCompetitionLevelSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Competition Level',
-      subtitle: 'What level of competition do you prefer?',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_level_header,
+      note: l10n.game_prefs_level_note,
       children: [
         for (final level in CompetitionLevel.values)
-          DabblerInputRow(
-            leading: _icon(context, _getCompetitionLevelData(level).icon),
-            title: _getCompetitionLevelData(level).title,
-            subtitle: _getCompetitionLevelData(level).description,
+          _row(
+            context: context,
+            icon: _getCompetitionLevelData(l10n, level).icon,
+            title: _getCompetitionLevelData(l10n, level).title,
+            subtitle: _getCompetitionLevelData(l10n, level).description,
             onTap: () => setState(() => _preferredCompetitionLevel = level),
             trailing: DabblerRadio(
               selected: _preferredCompetitionLevel == level,
-              semanticLabel: _getCompetitionLevelData(level).title,
+              semanticLabel: _getCompetitionLevelData(l10n, level).title,
               onChanged: (_) =>
                   setState(() => _preferredCompetitionLevel = level),
             ),
@@ -316,82 +350,89 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
   }
 
   Widget _buildEquipmentSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Equipment Preferences',
-      subtitle: 'What are your equipment needs?',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_equipment_header,
+      note: l10n.game_prefs_equipment_note,
       children: [
         _toggleRow(
           context,
-          'I have my own equipment',
-          'You can bring your own gear',
+          l10n.game_prefs_equipment_own,
+          l10n.game_prefs_equipment_own_sub,
           'bag-2',
           _hasOwnEquipment,
           (value) => setState(() => _hasOwnEquipment = value),
         ),
         _toggleRow(
           context,
-          'I can provide equipment for others',
-          'You can share equipment with teammates',
+          l10n.game_prefs_equipment_provide,
+          l10n.game_prefs_equipment_provide_sub,
           'share',
           _canProvideEquipment,
           (value) => setState(() => _canProvideEquipment = value),
         ),
         _toggleRow(
           context,
-          'I need equipment provided',
-          'Equipment should be available at the venue',
+          l10n.game_prefs_equipment_need,
+          l10n.game_prefs_equipment_need_sub,
           'shop',
           _needsEquipmentProvided,
           (value) => setState(() => _needsEquipmentProvided = value),
         ),
-        if (_hasOwnEquipment || _canProvideEquipment) ...[
-          _subheading(context, 'Equipment Types'),
-          Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
+        if (_hasOwnEquipment || _canProvideEquipment)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (final equipment in _equipmentOptions)
-                DabblerChip(
-                  label: _getEquipmentName(equipment),
-                  selected: _equipmentTypes.contains(equipment),
-                  onTap: () => setState(() {
-                    if (!_equipmentTypes.remove(equipment)) {
-                      _equipmentTypes.add(equipment);
-                    }
-                  }),
-                ),
+              _subheading(context, l10n.game_prefs_equipment_types),
+              Wrap(
+                spacing: DabblerSpacing.space2,
+                runSpacing: DabblerSpacing.space2,
+                children: [
+                  for (final equipment in _Equipment.values)
+                    DabblerChip(
+                      label: _getEquipmentName(l10n, equipment),
+                      selected: _equipmentTypes.contains(equipment),
+                      onTap: () => setState(() {
+                        if (!_equipmentTypes.remove(equipment)) {
+                          _equipmentTypes.add(equipment);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+              const DabblerGap.v(DabblerSpacing.space4),
             ],
           ),
-        ],
       ],
     );
   }
 
   Widget _buildRefereeSection(BuildContext context) {
-    return DabblerSection(
-      title: 'Referee Preferences',
-      subtitle: 'How do you prefer games to be officiated?',
+    final l10n = AppLocalizations.of(context);
+    return DabblerRowGroup(
+      header: l10n.game_prefs_referee_header,
+      note: l10n.game_prefs_referee_note,
       children: [
         _toggleRow(
           context,
-          'Prefer games with referee',
-          'Official referee for fair play',
+          l10n.game_prefs_referee_prefer,
+          l10n.game_prefs_referee_prefer_sub,
           'judge',
           _preferReferee,
           (value) => setState(() => _preferReferee = value),
         ),
         _toggleRow(
           context,
-          'I can referee games',
-          'You\'re qualified to officiate',
+          l10n.game_prefs_referee_can,
+          l10n.game_prefs_referee_can_sub,
           'verify',
           _canReferee,
           (value) => setState(() => _canReferee = value),
         ),
         _toggleRow(
           context,
-          'Strict rule enforcement',
-          'Games should follow official rules closely',
+          l10n.game_prefs_referee_strict,
+          l10n.game_prefs_referee_strict_sub,
           'book',
           _strictRules,
           (value) => setState(() => _strictRules = value),
@@ -400,86 +441,61 @@ class _GamePreferencesScreenState extends ConsumerState<GamePreferencesScreen> {
     );
   }
 
-  String _getDurationTitle(GameDuration duration) {
-    switch (duration) {
-      case GameDuration.short:
-        return 'Short Games';
-      case GameDuration.medium:
-        return 'Medium Games';
-      case GameDuration.long:
-        return 'Long Games';
-      case GameDuration.flexible:
-        return 'Flexible Duration';
-    }
-  }
+  String _getDurationTitle(AppLocalizations l, GameDuration duration) =>
+      switch (duration) {
+        GameDuration.short => l.game_prefs_duration_short,
+        GameDuration.medium => l.game_prefs_duration_medium,
+        GameDuration.long => l.game_prefs_duration_long,
+        GameDuration.flexible => l.game_prefs_duration_flexible,
+      };
 
-  String _getDurationDescription(GameDuration duration) {
-    switch (duration) {
-      case GameDuration.short:
-        return '30-60 minutes';
-      case GameDuration.medium:
-        return '60-90 minutes';
-      case GameDuration.long:
-        return '90+ minutes';
-      case GameDuration.flexible:
-        return 'Any duration';
-    }
-  }
+  String _getDurationDescription(AppLocalizations l, GameDuration duration) =>
+      switch (duration) {
+        GameDuration.short => l.game_prefs_duration_short_sub,
+        GameDuration.medium => l.game_prefs_duration_medium_sub,
+        GameDuration.long => l.game_prefs_duration_long_sub,
+        GameDuration.flexible => l.game_prefs_duration_flexible_sub,
+      };
 
   ({String title, String description, String icon}) _getCompetitionLevelData(
+    AppLocalizations l,
     CompetitionLevel level,
-  ) {
-    switch (level) {
-      case CompetitionLevel.casual:
-        return (
-          title: 'Casual',
-          description: 'Just for fun, relaxed atmosphere',
-          icon: 'emoji-happy',
-        );
-      case CompetitionLevel.recreational:
-        return (
-          title: 'Recreational',
-          description: 'Friendly competition, moderate intensity',
-          icon: 'activity',
-        );
-      case CompetitionLevel.competitive:
-        return (
-          title: 'Competitive',
-          description: 'Serious competition, high intensity',
-          icon: 'trend-up',
-        );
-      case CompetitionLevel.professional:
-        return (
-          title: 'Professional',
-          description: 'Elite level competition',
-          icon: 'cup',
-        );
-    }
-  }
+  ) => switch (level) {
+    CompetitionLevel.casual => (
+      title: l.game_prefs_level_casual,
+      description: l.game_prefs_level_casual_sub,
+      icon: 'emoji-happy',
+    ),
+    CompetitionLevel.recreational => (
+      title: l.game_prefs_level_recreational,
+      description: l.game_prefs_level_recreational_sub,
+      icon: 'activity',
+    ),
+    CompetitionLevel.competitive => (
+      title: l.game_prefs_level_competitive,
+      description: l.game_prefs_level_competitive_sub,
+      icon: 'trend-up',
+    ),
+    CompetitionLevel.professional => (
+      title: l.game_prefs_level_professional,
+      description: l.game_prefs_level_professional_sub,
+      icon: 'cup',
+    ),
+  };
 
-  String _getEquipmentName(String equipment) {
-    switch (equipment) {
-      case 'ball':
-        return 'Ball';
-      case 'protective_gear':
-        return 'Protective Gear';
-      case 'uniforms':
-        return 'Uniforms';
-      case 'goals':
-        return 'Goals';
-      case 'nets':
-        return 'Nets';
-      case 'markers':
-        return 'Markers';
-      default:
-        return equipment;
-    }
-  }
+  String _getEquipmentName(AppLocalizations l, _Equipment e) => switch (e) {
+    _Equipment.ball => l.game_prefs_equipment_ball,
+    _Equipment.gear => l.game_prefs_equipment_gear,
+    _Equipment.uniforms => l.game_prefs_equipment_uniforms,
+    _Equipment.goals => l.game_prefs_equipment_goals,
+    _Equipment.nets => l.game_prefs_equipment_nets,
+    _Equipment.markers => l.game_prefs_equipment_markers,
+  };
 
   void _saveSettings() {
     DabblerToastProvider.of(context).show(
-      const DabblerToastSpec(
-        message: 'Game preferences saved!',
+      DabblerToastSpec(
+        message: AppLocalizations.of(context).game_prefs_saved,
         tone: DabblerToastTone.success,
       ),
     );

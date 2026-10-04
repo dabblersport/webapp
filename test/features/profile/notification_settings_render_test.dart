@@ -166,16 +166,17 @@ void main() {
           ],
         );
         expect(tester.takeException(), isNull);
-        expect(find.text('Notifications'), findsWidgets);
+        final l10n = lookupAppLocalizations(locale);
+        expect(find.text(l10n.settings_tile_notifications), findsWidgets);
         if (entry.value == null) {
           expect(find.byType(DabblerSpinner), findsOneWidget);
         } else {
           expect(find.byType(DabblerToggle), findsWidgets);
-          expect(find.text('Push Notifications'), findsOneWidget);
+          expect(find.text(l10n.notif_settings_push), findsOneWidget);
         }
         if (entry.key == 'quiet-hours') {
-          expect(find.text('Start'), findsOneWidget);
-          expect(find.text('Allow all notifications'), findsOneWidget);
+          expect(find.text(l10n.notif_settings_quiet_start), findsOneWidget);
+          expect(find.text(l10n.notif_settings_quiet_all), findsOneWidget);
         }
         await _shoot(tester, key, 'notifications-${entry.key}-$dir');
       });
@@ -199,7 +200,7 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.text('Start'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).notif_settings_quiet_start));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
