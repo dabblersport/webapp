@@ -40,12 +40,18 @@ Future<void> _loadFonts() async {
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
+    'Glory-Light.ttf',
+    'Glory-Regular.ttf',
+    'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf',
+    'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
+    'meral-sans-light.ttf',
+    'meral-sans-regular.ttf',
+    'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf',
+    'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -58,9 +64,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -71,7 +77,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -84,30 +92,64 @@ class _Actions extends PostActionsNotifier {
 }
 
 const List<Vibe> _vibes = <Vibe>[
-  Vibe(id: '1', key: 'happy', labelEn: 'Happy', labelAr: 'سعيد', type: 'feeling'),
+  Vibe(
+    id: '1',
+    key: 'happy',
+    labelEn: 'Happy',
+    labelAr: 'سعيد',
+    type: 'feeling',
+  ),
   Vibe(id: '2', key: 'calm', labelEn: 'Calm', labelAr: 'هادئ', type: 'feeling'),
-  Vibe(id: '3', key: 'energetic', labelEn: 'Energetic', labelAr: 'نشيط', type: 'action'),
-  Vibe(id: '4', key: 'proud', labelEn: 'Proud', labelAr: 'فخور', type: 'feeling'),
+  Vibe(
+    id: '3',
+    key: 'energetic',
+    labelEn: 'Energetic',
+    labelAr: 'نشيط',
+    type: 'action',
+  ),
+  Vibe(
+    id: '4',
+    key: 'proud',
+    labelEn: 'Proud',
+    labelAr: 'فخور',
+    type: 'feeling',
+  ),
 ];
 
 final Post _post = Post(
   id: 'p1',
   authorProfileId: 'prof-a',
   authorUserId: 'user-a',
-  authorDisplayName: 'Suraj Mehta',
+  authorDisplayName: 'Moataz Mustapha',
+  authorUsername: 'moatazmustapha',
   kind: PostKind.original,
-  visibility: PostVisibility.followers,
+  visibility: PostVisibility.public,
+  lang: 'en',
+  locationName: 'Al Quoz Pond Park',
+  viewCount: 1204,
+  reactionBreakdown: const <String, dynamic>{
+    'breakdown': <String, dynamic>{'calm': 24},
+  },
   postType: PostType.dab,
   personaTypeSnapshot: 'player',
-  body: 'Anyone playing cricket in Dubai this weekend? We need 2 more for a '
-      'full side.',
-  sport: 'Cricket',
-  tags: const <String>['dabblersport', 'cricket'],
-  vibes: const <Vibe>[Vibe(id: '3', key: 'energetic', labelEn: 'Energetic', labelAr: 'نشيط', type: 'action')],
-  likeCount: 12,
-  commentCount: 3,
-  createdAt: DateTime(2026, 10, 3, 9, 30),
-  updatedAt: DateTime(2026, 10, 3, 9, 30),
+  body:
+      'Organising a Dubai football night this Sunday. All levels welcome. '
+      'Drop your name below.',
+  sport: 'Football',
+  tags: const <String>['dabblersport'],
+  vibes: const <Vibe>[
+    Vibe(
+      id: '3',
+      key: 'energetic',
+      labelEn: 'Energetic',
+      labelAr: 'نشيط',
+      type: 'action',
+    ),
+  ],
+  likeCount: 128,
+  commentCount: 6,
+  createdAt: DateTime(2026, 8, 16, 20),
+  updatedAt: DateTime(2026, 8, 16, 20),
 );
 
 PostComment _c(String id, String name, String body, {String? parent}) =>
@@ -144,9 +186,10 @@ Future<void> _pump(
         postActionsProvider.overrideWith((ref) => _Actions(ref)),
         postDetailProvider.overrideWith((ref, id) async => _post),
         postCommentsProvider.overrideWith((ref, id) async => comments),
-        hasLikedProvider.overrideWith((ref, id) async => true),
+        hasLikedProvider.overrideWith((ref, id) async => false),
         hasRepostedProvider.overrideWith((ref, id) async => false),
-        myReactionsProvider.overrideWith((ref, id) async => <String>{'2'}),
+        isFollowingProvider.overrideWith((ref, params) async => false),
+        myReactionsProvider.overrideWith((ref, id) async => <String>{}),
         myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
         sportsProvider.overrideWith((ref) async => []),
         vibesProvider.overrideWith((ref) async => _vibes),
@@ -163,7 +206,10 @@ Future<void> _pump(
           DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
-        home: PostDetailScreen(postId: 'p1', debugAttachedImageUrl: attachedImage),
+        home: PostDetailScreen(
+          postId: 'p1',
+          debugAttachedImageUrl: attachedImage,
+        ),
       ),
     ),
   );
@@ -191,18 +237,13 @@ void main() {
     testWidgets('post with replies — $dir', (tester) async {
       await _pump(tester, locale, key, comments: _comments);
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerPostRow), findsOneWidget);
-      expect(find.text('Replies'), findsOneWidget);
+      expect(find.byType(DabblerOpenPost), findsOneWidget);
+      expect(find.text('6 replies'), findsOneWidget);
+      expect(find.text('Follow'), findsOneWidget);
+      expect(find.text('GIF'), findsNothing);
       expect(find.byType(DabblerAvatar), findsWidgets);
       expect(find.byType(DabblerCommentRow), findsNWidgets(3));
       expect(find.byType(DabblerReplyComposer), findsOneWidget);
-      expect(find.byType(DabblerPostDetailLine), findsOneWidget);
-      expect(
-        find.byWidgetPredicate(
-          (w) => w is DabblerChip && w.vibe != null && w.label == 'Energetic',
-        ),
-        findsOneWidget,
-      );
       await _shoot(tester, key, 'post-detail-replies-$dir');
       await _settle(tester);
     });
@@ -228,6 +269,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerImage), findsWidgets);
       expect(find.byType(DabblerAttachmentChip), findsOneWidget);
+      expect(find.byType(DabblerAttachmentAddTile), findsOneWidget);
       await _shoot(tester, key, 'post-detail-composing-$dir');
       await _settle(tester);
     });
@@ -262,7 +304,7 @@ void main() {
     testWidgets('vibe picker sheet — $dir', (tester) async {
       await _pump(tester, locale, key, comments: _comments);
       showHomeReactionSheet(
-        tester.element(find.byType(DabblerPostRow)),
+        tester.element(find.byType(DabblerOpenPost)),
         postId: 'p1',
         myReactions: const <String>{'2'},
       );
