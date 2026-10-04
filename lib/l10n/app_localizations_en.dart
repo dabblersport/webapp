@@ -5401,4 +5401,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String meetups_names_and_others(String names, int count) {
     return '$names and $count others';
   }
+
+  @override
+  String meetups_show_count(int count) {
+    return 'Show $count meetups';
+  }
+
+  @override
+  String meetups_km_away(String km) {
+    return '$km km away';
+  }
 }

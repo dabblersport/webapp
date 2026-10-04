@@ -90,6 +90,8 @@ mixin _$MeetupListItem {
   // caller's player actor; null when no RSVP.
   @JsonKey(name: 'my_rsvp_status')
   String? get myRsvpStatus => throw _privateConstructorUsedError;
+  @JsonKey(name: 'attendee_avatars')
+  List<MeetupAvatar> get attendeeAvatars => throw _privateConstructorUsedError;
 
   /// Serializes this MeetupListItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -146,6 +148,7 @@ abstract class $MeetupListItemCopyWith<$Res> {
     @JsonKey(name: 'interested_count') int interestedCount,
     @JsonKey(name: 'declined_count') int declinedCount,
     @JsonKey(name: 'my_rsvp_status') String? myRsvpStatus,
+    @JsonKey(name: 'attendee_avatars') List<MeetupAvatar> attendeeAvatars,
   });
 }
 
@@ -200,6 +203,7 @@ class _$MeetupListItemCopyWithImpl<$Res, $Val extends MeetupListItem>
     Object? interestedCount = null,
     Object? declinedCount = null,
     Object? myRsvpStatus = freezed,
+    Object? attendeeAvatars = null,
   }) {
     return _then(
       _value.copyWith(
@@ -347,6 +351,10 @@ class _$MeetupListItemCopyWithImpl<$Res, $Val extends MeetupListItem>
                 ? _value.myRsvpStatus
                 : myRsvpStatus // ignore: cast_nullable_to_non_nullable
                       as String?,
+            attendeeAvatars: null == attendeeAvatars
+                ? _value.attendeeAvatars
+                : attendeeAvatars // ignore: cast_nullable_to_non_nullable
+                      as List<MeetupAvatar>,
           )
           as $Val,
     );
@@ -400,6 +408,7 @@ abstract class _$$MeetupListItemImplCopyWith<$Res>
     @JsonKey(name: 'interested_count') int interestedCount,
     @JsonKey(name: 'declined_count') int declinedCount,
     @JsonKey(name: 'my_rsvp_status') String? myRsvpStatus,
+    @JsonKey(name: 'attendee_avatars') List<MeetupAvatar> attendeeAvatars,
   });
 }
 
@@ -453,6 +462,7 @@ class __$$MeetupListItemImplCopyWithImpl<$Res>
     Object? interestedCount = null,
     Object? declinedCount = null,
     Object? myRsvpStatus = freezed,
+    Object? attendeeAvatars = null,
   }) {
     return _then(
       _$MeetupListItemImpl(
@@ -600,6 +610,10 @@ class __$$MeetupListItemImplCopyWithImpl<$Res>
             ? _value.myRsvpStatus
             : myRsvpStatus // ignore: cast_nullable_to_non_nullable
                   as String?,
+        attendeeAvatars: null == attendeeAvatars
+            ? _value._attendeeAvatars
+            : attendeeAvatars // ignore: cast_nullable_to_non_nullable
+                  as List<MeetupAvatar>,
       ),
     );
   }
@@ -646,7 +660,10 @@ class _$MeetupListItemImpl extends _MeetupListItem {
     @JsonKey(name: 'interested_count') this.interestedCount = 0,
     @JsonKey(name: 'declined_count') this.declinedCount = 0,
     @JsonKey(name: 'my_rsvp_status') this.myRsvpStatus,
-  }) : super._();
+    @JsonKey(name: 'attendee_avatars')
+    final List<MeetupAvatar> attendeeAvatars = const <MeetupAvatar>[],
+  }) : _attendeeAvatars = attendeeAvatars,
+       super._();
 
   factory _$MeetupListItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$MeetupListItemImplFromJson(json);
@@ -757,10 +774,18 @@ class _$MeetupListItemImpl extends _MeetupListItem {
   @override
   @JsonKey(name: 'my_rsvp_status')
   final String? myRsvpStatus;
+  final List<MeetupAvatar> _attendeeAvatars;
+  @override
+  @JsonKey(name: 'attendee_avatars')
+  List<MeetupAvatar> get attendeeAvatars {
+    if (_attendeeAvatars is EqualUnmodifiableListView) return _attendeeAvatars;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_attendeeAvatars);
+  }
 
   @override
   String toString() {
-    return 'MeetupListItem(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, capacity: $capacity, membersOnly: $membersOnly, listingVisibility: $listingVisibility, rsvpPolicy: $rsvpPolicy, isCancelled: $isCancelled, vibeKey: $vibeKey, createdAt: $createdAt, updatedAt: $updatedAt, creatorProfileId: $creatorProfileId, creatorDisplayName: $creatorDisplayName, creatorUsername: $creatorUsername, creatorAvatarUrl: $creatorAvatarUrl, sportId: $sportId, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, sportEmoji: $sportEmoji, areaId: $areaId, areaName: $areaName, venueId: $venueId, venueName: $venueName, locationName: $locationName, geoLocationId: $geoLocationId, minSkill: $minSkill, maxSkill: $maxSkill, joiningRule: $joiningRule, costCover: $costCover, goingCount: $goingCount, interestedCount: $interestedCount, declinedCount: $declinedCount, myRsvpStatus: $myRsvpStatus)';
+    return 'MeetupListItem(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, capacity: $capacity, membersOnly: $membersOnly, listingVisibility: $listingVisibility, rsvpPolicy: $rsvpPolicy, isCancelled: $isCancelled, vibeKey: $vibeKey, createdAt: $createdAt, updatedAt: $updatedAt, creatorProfileId: $creatorProfileId, creatorDisplayName: $creatorDisplayName, creatorUsername: $creatorUsername, creatorAvatarUrl: $creatorAvatarUrl, sportId: $sportId, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, sportEmoji: $sportEmoji, areaId: $areaId, areaName: $areaName, venueId: $venueId, venueName: $venueName, locationName: $locationName, geoLocationId: $geoLocationId, minSkill: $minSkill, maxSkill: $maxSkill, joiningRule: $joiningRule, costCover: $costCover, goingCount: $goingCount, interestedCount: $interestedCount, declinedCount: $declinedCount, myRsvpStatus: $myRsvpStatus, attendeeAvatars: $attendeeAvatars)';
   }
 
   @override
@@ -831,7 +856,11 @@ class _$MeetupListItemImpl extends _MeetupListItem {
             (identical(other.declinedCount, declinedCount) ||
                 other.declinedCount == declinedCount) &&
             (identical(other.myRsvpStatus, myRsvpStatus) ||
-                other.myRsvpStatus == myRsvpStatus));
+                other.myRsvpStatus == myRsvpStatus) &&
+            const DeepCollectionEquality().equals(
+              other._attendeeAvatars,
+              _attendeeAvatars,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -874,6 +903,7 @@ class _$MeetupListItemImpl extends _MeetupListItem {
     interestedCount,
     declinedCount,
     myRsvpStatus,
+    const DeepCollectionEquality().hash(_attendeeAvatars),
   ]);
 
   /// Create a copy of MeetupListItem
@@ -932,6 +962,7 @@ abstract class _MeetupListItem extends MeetupListItem {
     @JsonKey(name: 'interested_count') final int interestedCount,
     @JsonKey(name: 'declined_count') final int declinedCount,
     @JsonKey(name: 'my_rsvp_status') final String? myRsvpStatus,
+    @JsonKey(name: 'attendee_avatars') final List<MeetupAvatar> attendeeAvatars,
   }) = _$MeetupListItemImpl;
   const _MeetupListItem._() : super._();
 
@@ -1043,6 +1074,9 @@ abstract class _MeetupListItem extends MeetupListItem {
   @override
   @JsonKey(name: 'my_rsvp_status')
   String? get myRsvpStatus;
+  @override
+  @JsonKey(name: 'attendee_avatars')
+  List<MeetupAvatar> get attendeeAvatars;
 
   /// Create a copy of MeetupListItem
   /// with the given fields replaced by the non-null parameter values.
@@ -1355,6 +1389,191 @@ abstract class _NearbyMeetup implements NearbyMeetup {
       throw _privateConstructorUsedError;
 }
 
+MeetupAvatar _$MeetupAvatarFromJson(Map<String, dynamic> json) {
+  return _MeetupAvatar.fromJson(json);
+}
+
+/// @nodoc
+mixin _$MeetupAvatar {
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl => throw _privateConstructorUsedError;
+  @JsonKey(name: 'display_name')
+  String? get displayName => throw _privateConstructorUsedError;
+
+  /// Serializes this MeetupAvatar to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of MeetupAvatar
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $MeetupAvatarCopyWith<MeetupAvatar> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $MeetupAvatarCopyWith<$Res> {
+  factory $MeetupAvatarCopyWith(
+    MeetupAvatar value,
+    $Res Function(MeetupAvatar) then,
+  ) = _$MeetupAvatarCopyWithImpl<$Res, MeetupAvatar>;
+  @useResult
+  $Res call({
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'display_name') String? displayName,
+  });
+}
+
+/// @nodoc
+class _$MeetupAvatarCopyWithImpl<$Res, $Val extends MeetupAvatar>
+    implements $MeetupAvatarCopyWith<$Res> {
+  _$MeetupAvatarCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of MeetupAvatar
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? avatarUrl = freezed, Object? displayName = freezed}) {
+    return _then(
+      _value.copyWith(
+            avatarUrl: freezed == avatarUrl
+                ? _value.avatarUrl
+                : avatarUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            displayName: freezed == displayName
+                ? _value.displayName
+                : displayName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$MeetupAvatarImplCopyWith<$Res>
+    implements $MeetupAvatarCopyWith<$Res> {
+  factory _$$MeetupAvatarImplCopyWith(
+    _$MeetupAvatarImpl value,
+    $Res Function(_$MeetupAvatarImpl) then,
+  ) = __$$MeetupAvatarImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'display_name') String? displayName,
+  });
+}
+
+/// @nodoc
+class __$$MeetupAvatarImplCopyWithImpl<$Res>
+    extends _$MeetupAvatarCopyWithImpl<$Res, _$MeetupAvatarImpl>
+    implements _$$MeetupAvatarImplCopyWith<$Res> {
+  __$$MeetupAvatarImplCopyWithImpl(
+    _$MeetupAvatarImpl _value,
+    $Res Function(_$MeetupAvatarImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of MeetupAvatar
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? avatarUrl = freezed, Object? displayName = freezed}) {
+    return _then(
+      _$MeetupAvatarImpl(
+        avatarUrl: freezed == avatarUrl
+            ? _value.avatarUrl
+            : avatarUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        displayName: freezed == displayName
+            ? _value.displayName
+            : displayName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$MeetupAvatarImpl implements _MeetupAvatar {
+  const _$MeetupAvatarImpl({
+    @JsonKey(name: 'avatar_url') this.avatarUrl,
+    @JsonKey(name: 'display_name') this.displayName,
+  });
+
+  factory _$MeetupAvatarImpl.fromJson(Map<String, dynamic> json) =>
+      _$$MeetupAvatarImplFromJson(json);
+
+  @override
+  @JsonKey(name: 'avatar_url')
+  final String? avatarUrl;
+  @override
+  @JsonKey(name: 'display_name')
+  final String? displayName;
+
+  @override
+  String toString() {
+    return 'MeetupAvatar(avatarUrl: $avatarUrl, displayName: $displayName)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$MeetupAvatarImpl &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
+            (identical(other.displayName, displayName) ||
+                other.displayName == displayName));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType, avatarUrl, displayName);
+
+  /// Create a copy of MeetupAvatar
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$MeetupAvatarImplCopyWith<_$MeetupAvatarImpl> get copyWith =>
+      __$$MeetupAvatarImplCopyWithImpl<_$MeetupAvatarImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$MeetupAvatarImplToJson(this);
+  }
+}
+
+abstract class _MeetupAvatar implements MeetupAvatar {
+  const factory _MeetupAvatar({
+    @JsonKey(name: 'avatar_url') final String? avatarUrl,
+    @JsonKey(name: 'display_name') final String? displayName,
+  }) = _$MeetupAvatarImpl;
+
+  factory _MeetupAvatar.fromJson(Map<String, dynamic> json) =
+      _$MeetupAvatarImpl.fromJson;
+
+  @override
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl;
+  @override
+  @JsonKey(name: 'display_name')
+  String? get displayName;
+
+  /// Create a copy of MeetupAvatar
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$MeetupAvatarImplCopyWith<_$MeetupAvatarImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
 MeetupHost _$MeetupHostFromJson(Map<String, dynamic> json) {
   return _MeetupHost.fromJson(json);
 }
@@ -1366,6 +1585,8 @@ mixin _$MeetupHost {
   @JsonKey(name: 'display_name')
   String? get displayName => throw _privateConstructorUsedError;
   String? get username => throw _privateConstructorUsedError;
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl => throw _privateConstructorUsedError;
 
   /// Serializes this MeetupHost to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1388,6 +1609,7 @@ abstract class $MeetupHostCopyWith<$Res> {
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
   });
 }
 
@@ -1409,6 +1631,7 @@ class _$MeetupHostCopyWithImpl<$Res, $Val extends MeetupHost>
     Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
+    Object? avatarUrl = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -1423,6 +1646,10 @@ class _$MeetupHostCopyWithImpl<$Res, $Val extends MeetupHost>
             username: freezed == username
                 ? _value.username
                 : username // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            avatarUrl: freezed == avatarUrl
+                ? _value.avatarUrl
+                : avatarUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
           )
           as $Val,
@@ -1443,6 +1670,7 @@ abstract class _$$MeetupHostImplCopyWith<$Res>
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
   });
 }
 
@@ -1463,6 +1691,7 @@ class __$$MeetupHostImplCopyWithImpl<$Res>
     Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
+    Object? avatarUrl = freezed,
   }) {
     return _then(
       _$MeetupHostImpl(
@@ -1478,6 +1707,10 @@ class __$$MeetupHostImplCopyWithImpl<$Res>
             ? _value.username
             : username // ignore: cast_nullable_to_non_nullable
                   as String?,
+        avatarUrl: freezed == avatarUrl
+            ? _value.avatarUrl
+            : avatarUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -1490,6 +1723,7 @@ class _$MeetupHostImpl implements _MeetupHost {
     @JsonKey(name: 'actor_profile_id') this.actorProfileId,
     @JsonKey(name: 'display_name') this.displayName,
     this.username,
+    @JsonKey(name: 'avatar_url') this.avatarUrl,
   });
 
   factory _$MeetupHostImpl.fromJson(Map<String, dynamic> json) =>
@@ -1503,10 +1737,13 @@ class _$MeetupHostImpl implements _MeetupHost {
   final String? displayName;
   @override
   final String? username;
+  @override
+  @JsonKey(name: 'avatar_url')
+  final String? avatarUrl;
 
   @override
   String toString() {
-    return 'MeetupHost(actorProfileId: $actorProfileId, displayName: $displayName, username: $username)';
+    return 'MeetupHost(actorProfileId: $actorProfileId, displayName: $displayName, username: $username, avatarUrl: $avatarUrl)';
   }
 
   @override
@@ -1519,13 +1756,20 @@ class _$MeetupHostImpl implements _MeetupHost {
             (identical(other.displayName, displayName) ||
                 other.displayName == displayName) &&
             (identical(other.username, username) ||
-                other.username == username));
+                other.username == username) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, actorProfileId, displayName, username);
+  int get hashCode => Object.hash(
+    runtimeType,
+    actorProfileId,
+    displayName,
+    username,
+    avatarUrl,
+  );
 
   /// Create a copy of MeetupHost
   /// with the given fields replaced by the non-null parameter values.
@@ -1546,6 +1790,7 @@ abstract class _MeetupHost implements MeetupHost {
     @JsonKey(name: 'actor_profile_id') final String? actorProfileId,
     @JsonKey(name: 'display_name') final String? displayName,
     final String? username,
+    @JsonKey(name: 'avatar_url') final String? avatarUrl,
   }) = _$MeetupHostImpl;
 
   factory _MeetupHost.fromJson(Map<String, dynamic> json) =
@@ -1559,6 +1804,9 @@ abstract class _MeetupHost implements MeetupHost {
   String? get displayName;
   @override
   String? get username;
+  @override
+  @JsonKey(name: 'avatar_url')
+  String? get avatarUrl;
 
   /// Create a copy of MeetupHost
   /// with the given fields replaced by the non-null parameter values.
@@ -1816,6 +2064,21 @@ mixin _$MeetupCard {
   MeetupCounts get counts => throw _privateConstructorUsedError;
   @JsonKey(name: 'my_status')
   String? get myStatus => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sport_key')
+  String? get sportKey => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sport_name_en')
+  String? get sportNameEn => throw _privateConstructorUsedError;
+  @JsonKey(name: 'sport_name_ar')
+  String? get sportNameAr => throw _privateConstructorUsedError;
+  @JsonKey(name: 'min_skill')
+  int? get minSkill => throw _privateConstructorUsedError;
+  @JsonKey(name: 'max_skill')
+  int? get maxSkill => throw _privateConstructorUsedError;
+  @JsonKey(name: 'area_name')
+  String? get areaName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'venue_name')
+  String? get venueName => throw _privateConstructorUsedError;
+  List<MeetupAvatar> get attendees => throw _privateConstructorUsedError;
 
   /// Serializes this MeetupCard to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1849,6 +2112,14 @@ abstract class $MeetupCardCopyWith<$Res> {
     MeetupHost? host,
     MeetupCounts counts,
     @JsonKey(name: 'my_status') String? myStatus,
+    @JsonKey(name: 'sport_key') String? sportKey,
+    @JsonKey(name: 'sport_name_en') String? sportNameEn,
+    @JsonKey(name: 'sport_name_ar') String? sportNameAr,
+    @JsonKey(name: 'min_skill') int? minSkill,
+    @JsonKey(name: 'max_skill') int? maxSkill,
+    @JsonKey(name: 'area_name') String? areaName,
+    @JsonKey(name: 'venue_name') String? venueName,
+    List<MeetupAvatar> attendees,
   });
 
   $MeetupHostCopyWith<$Res>? get host;
@@ -1884,6 +2155,14 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
     Object? host = freezed,
     Object? counts = null,
     Object? myStatus = freezed,
+    Object? sportKey = freezed,
+    Object? sportNameEn = freezed,
+    Object? sportNameAr = freezed,
+    Object? minSkill = freezed,
+    Object? maxSkill = freezed,
+    Object? areaName = freezed,
+    Object? venueName = freezed,
+    Object? attendees = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1943,6 +2222,38 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
                 ? _value.myStatus
                 : myStatus // ignore: cast_nullable_to_non_nullable
                       as String?,
+            sportKey: freezed == sportKey
+                ? _value.sportKey
+                : sportKey // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            sportNameEn: freezed == sportNameEn
+                ? _value.sportNameEn
+                : sportNameEn // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            sportNameAr: freezed == sportNameAr
+                ? _value.sportNameAr
+                : sportNameAr // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            minSkill: freezed == minSkill
+                ? _value.minSkill
+                : minSkill // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            maxSkill: freezed == maxSkill
+                ? _value.maxSkill
+                : maxSkill // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            areaName: freezed == areaName
+                ? _value.areaName
+                : areaName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            venueName: freezed == venueName
+                ? _value.venueName
+                : venueName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            attendees: null == attendees
+                ? _value.attendees
+                : attendees // ignore: cast_nullable_to_non_nullable
+                      as List<MeetupAvatar>,
           )
           as $Val,
     );
@@ -1997,6 +2308,14 @@ abstract class _$$MeetupCardImplCopyWith<$Res>
     MeetupHost? host,
     MeetupCounts counts,
     @JsonKey(name: 'my_status') String? myStatus,
+    @JsonKey(name: 'sport_key') String? sportKey,
+    @JsonKey(name: 'sport_name_en') String? sportNameEn,
+    @JsonKey(name: 'sport_name_ar') String? sportNameAr,
+    @JsonKey(name: 'min_skill') int? minSkill,
+    @JsonKey(name: 'max_skill') int? maxSkill,
+    @JsonKey(name: 'area_name') String? areaName,
+    @JsonKey(name: 'venue_name') String? venueName,
+    List<MeetupAvatar> attendees,
   });
 
   @override
@@ -2033,6 +2352,14 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
     Object? host = freezed,
     Object? counts = null,
     Object? myStatus = freezed,
+    Object? sportKey = freezed,
+    Object? sportNameEn = freezed,
+    Object? sportNameAr = freezed,
+    Object? minSkill = freezed,
+    Object? maxSkill = freezed,
+    Object? areaName = freezed,
+    Object? venueName = freezed,
+    Object? attendees = null,
   }) {
     return _then(
       _$MeetupCardImpl(
@@ -2092,6 +2419,38 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
             ? _value.myStatus
             : myStatus // ignore: cast_nullable_to_non_nullable
                   as String?,
+        sportKey: freezed == sportKey
+            ? _value.sportKey
+            : sportKey // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        sportNameEn: freezed == sportNameEn
+            ? _value.sportNameEn
+            : sportNameEn // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        sportNameAr: freezed == sportNameAr
+            ? _value.sportNameAr
+            : sportNameAr // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        minSkill: freezed == minSkill
+            ? _value.minSkill
+            : minSkill // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        maxSkill: freezed == maxSkill
+            ? _value.maxSkill
+            : maxSkill // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        areaName: freezed == areaName
+            ? _value.areaName
+            : areaName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        venueName: freezed == venueName
+            ? _value.venueName
+            : venueName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        attendees: null == attendees
+            ? _value._attendees
+            : attendees // ignore: cast_nullable_to_non_nullable
+                  as List<MeetupAvatar>,
       ),
     );
   }
@@ -2115,7 +2474,15 @@ class _$MeetupCardImpl implements _MeetupCard {
     this.host,
     this.counts = const MeetupCounts(),
     @JsonKey(name: 'my_status') this.myStatus,
-  });
+    @JsonKey(name: 'sport_key') this.sportKey,
+    @JsonKey(name: 'sport_name_en') this.sportNameEn,
+    @JsonKey(name: 'sport_name_ar') this.sportNameAr,
+    @JsonKey(name: 'min_skill') this.minSkill,
+    @JsonKey(name: 'max_skill') this.maxSkill,
+    @JsonKey(name: 'area_name') this.areaName,
+    @JsonKey(name: 'venue_name') this.venueName,
+    final List<MeetupAvatar> attendees = const <MeetupAvatar>[],
+  }) : _attendees = attendees;
 
   factory _$MeetupCardImpl.fromJson(Map<String, dynamic> json) =>
       _$$MeetupCardImplFromJson(json);
@@ -2156,10 +2523,39 @@ class _$MeetupCardImpl implements _MeetupCard {
   @override
   @JsonKey(name: 'my_status')
   final String? myStatus;
+  @override
+  @JsonKey(name: 'sport_key')
+  final String? sportKey;
+  @override
+  @JsonKey(name: 'sport_name_en')
+  final String? sportNameEn;
+  @override
+  @JsonKey(name: 'sport_name_ar')
+  final String? sportNameAr;
+  @override
+  @JsonKey(name: 'min_skill')
+  final int? minSkill;
+  @override
+  @JsonKey(name: 'max_skill')
+  final int? maxSkill;
+  @override
+  @JsonKey(name: 'area_name')
+  final String? areaName;
+  @override
+  @JsonKey(name: 'venue_name')
+  final String? venueName;
+  final List<MeetupAvatar> _attendees;
+  @override
+  @JsonKey()
+  List<MeetupAvatar> get attendees {
+    if (_attendees is EqualUnmodifiableListView) return _attendees;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_attendees);
+  }
 
   @override
   String toString() {
-    return 'MeetupCard(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, locationName: $locationName, capacity: $capacity, isCancelled: $isCancelled, isHost: $isHost, visibility: $visibility, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus)';
+    return 'MeetupCard(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, locationName: $locationName, capacity: $capacity, isCancelled: $isCancelled, isHost: $isHost, visibility: $visibility, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, minSkill: $minSkill, maxSkill: $maxSkill, areaName: $areaName, venueName: $venueName, attendees: $attendees)';
   }
 
   @override
@@ -2187,12 +2583,30 @@ class _$MeetupCardImpl implements _MeetupCard {
             (identical(other.host, host) || other.host == host) &&
             (identical(other.counts, counts) || other.counts == counts) &&
             (identical(other.myStatus, myStatus) ||
-                other.myStatus == myStatus));
+                other.myStatus == myStatus) &&
+            (identical(other.sportKey, sportKey) ||
+                other.sportKey == sportKey) &&
+            (identical(other.sportNameEn, sportNameEn) ||
+                other.sportNameEn == sportNameEn) &&
+            (identical(other.sportNameAr, sportNameAr) ||
+                other.sportNameAr == sportNameAr) &&
+            (identical(other.minSkill, minSkill) ||
+                other.minSkill == minSkill) &&
+            (identical(other.maxSkill, maxSkill) ||
+                other.maxSkill == maxSkill) &&
+            (identical(other.areaName, areaName) ||
+                other.areaName == areaName) &&
+            (identical(other.venueName, venueName) ||
+                other.venueName == venueName) &&
+            const DeepCollectionEquality().equals(
+              other._attendees,
+              _attendees,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     title,
@@ -2208,7 +2622,15 @@ class _$MeetupCardImpl implements _MeetupCard {
     host,
     counts,
     myStatus,
-  );
+    sportKey,
+    sportNameEn,
+    sportNameAr,
+    minSkill,
+    maxSkill,
+    areaName,
+    venueName,
+    const DeepCollectionEquality().hash(_attendees),
+  ]);
 
   /// Create a copy of MeetupCard
   /// with the given fields replaced by the non-null parameter values.
@@ -2240,6 +2662,14 @@ abstract class _MeetupCard implements MeetupCard {
     final MeetupHost? host,
     final MeetupCounts counts,
     @JsonKey(name: 'my_status') final String? myStatus,
+    @JsonKey(name: 'sport_key') final String? sportKey,
+    @JsonKey(name: 'sport_name_en') final String? sportNameEn,
+    @JsonKey(name: 'sport_name_ar') final String? sportNameAr,
+    @JsonKey(name: 'min_skill') final int? minSkill,
+    @JsonKey(name: 'max_skill') final int? maxSkill,
+    @JsonKey(name: 'area_name') final String? areaName,
+    @JsonKey(name: 'venue_name') final String? venueName,
+    final List<MeetupAvatar> attendees,
   }) = _$MeetupCardImpl;
 
   factory _MeetupCard.fromJson(Map<String, dynamic> json) =
@@ -2280,6 +2710,29 @@ abstract class _MeetupCard implements MeetupCard {
   @override
   @JsonKey(name: 'my_status')
   String? get myStatus;
+  @override
+  @JsonKey(name: 'sport_key')
+  String? get sportKey;
+  @override
+  @JsonKey(name: 'sport_name_en')
+  String? get sportNameEn;
+  @override
+  @JsonKey(name: 'sport_name_ar')
+  String? get sportNameAr;
+  @override
+  @JsonKey(name: 'min_skill')
+  int? get minSkill;
+  @override
+  @JsonKey(name: 'max_skill')
+  int? get maxSkill;
+  @override
+  @JsonKey(name: 'area_name')
+  String? get areaName;
+  @override
+  @JsonKey(name: 'venue_name')
+  String? get venueName;
+  @override
+  List<MeetupAvatar> get attendees;
 
   /// Create a copy of MeetupCard
   /// with the given fields replaced by the non-null parameter values.

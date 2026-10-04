@@ -56,6 +56,11 @@ _$MeetupListItemImpl _$$MeetupListItemImplFromJson(Map<String, dynamic> json) =>
       interestedCount: (json['interested_count'] as num?)?.toInt() ?? 0,
       declinedCount: (json['declined_count'] as num?)?.toInt() ?? 0,
       myRsvpStatus: json['my_rsvp_status'] as String?,
+      attendeeAvatars:
+          (json['attendee_avatars'] as List<dynamic>?)
+              ?.map((e) => MeetupAvatar.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <MeetupAvatar>[],
     );
 
 Map<String, dynamic> _$$MeetupListItemImplToJson(
@@ -97,6 +102,7 @@ Map<String, dynamic> _$$MeetupListItemImplToJson(
   'interested_count': instance.interestedCount,
   'declined_count': instance.declinedCount,
   'my_rsvp_status': instance.myRsvpStatus,
+  'attendee_avatars': instance.attendeeAvatars,
 };
 
 const _$RsvpPolicyEnumMap = {
@@ -129,11 +135,24 @@ Map<String, dynamic> _$$NearbyMeetupImplToJson(_$NearbyMeetupImpl instance) =>
       'distance_m': instance.distanceM,
     };
 
+_$MeetupAvatarImpl _$$MeetupAvatarImplFromJson(Map<String, dynamic> json) =>
+    _$MeetupAvatarImpl(
+      avatarUrl: json['avatar_url'] as String?,
+      displayName: json['display_name'] as String?,
+    );
+
+Map<String, dynamic> _$$MeetupAvatarImplToJson(_$MeetupAvatarImpl instance) =>
+    <String, dynamic>{
+      'avatar_url': instance.avatarUrl,
+      'display_name': instance.displayName,
+    };
+
 _$MeetupHostImpl _$$MeetupHostImplFromJson(Map<String, dynamic> json) =>
     _$MeetupHostImpl(
       actorProfileId: json['actor_profile_id'] as String?,
       displayName: json['display_name'] as String?,
       username: json['username'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
     );
 
 Map<String, dynamic> _$$MeetupHostImplToJson(_$MeetupHostImpl instance) =>
@@ -141,6 +160,7 @@ Map<String, dynamic> _$$MeetupHostImplToJson(_$MeetupHostImpl instance) =>
       'actor_profile_id': instance.actorProfileId,
       'display_name': instance.displayName,
       'username': instance.username,
+      'avatar_url': instance.avatarUrl,
     };
 
 _$MeetupCountsImpl _$$MeetupCountsImplFromJson(Map<String, dynamic> json) =>
@@ -183,6 +203,18 @@ _$MeetupCardImpl _$$MeetupCardImplFromJson(Map<String, dynamic> json) =>
           ? const MeetupCounts()
           : MeetupCounts.fromJson(json['counts'] as Map<String, dynamic>),
       myStatus: json['my_status'] as String?,
+      sportKey: json['sport_key'] as String?,
+      sportNameEn: json['sport_name_en'] as String?,
+      sportNameAr: json['sport_name_ar'] as String?,
+      minSkill: (json['min_skill'] as num?)?.toInt(),
+      maxSkill: (json['max_skill'] as num?)?.toInt(),
+      areaName: json['area_name'] as String?,
+      venueName: json['venue_name'] as String?,
+      attendees:
+          (json['attendees'] as List<dynamic>?)
+              ?.map((e) => MeetupAvatar.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <MeetupAvatar>[],
     );
 
 Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
@@ -201,6 +233,14 @@ Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
       'host': instance.host,
       'counts': instance.counts,
       'my_status': instance.myStatus,
+      'sport_key': instance.sportKey,
+      'sport_name_en': instance.sportNameEn,
+      'sport_name_ar': instance.sportNameAr,
+      'min_skill': instance.minSkill,
+      'max_skill': instance.maxSkill,
+      'area_name': instance.areaName,
+      'venue_name': instance.venueName,
+      'attendees': instance.attendees,
     };
 
 _$MeetupAttendeeImpl _$$MeetupAttendeeImplFromJson(Map<String, dynamic> json) =>

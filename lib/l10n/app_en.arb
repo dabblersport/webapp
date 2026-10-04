@@ -1914,5 +1914,9 @@
   "meetups_load_detail_failed": "Couldn't load this meetup",
   "meetups_back": "Back",
   "meetups_names_and_others": "{names} and {count} others",
-  "@meetups_names_and_others": {"placeholders": {"names": {"type": "String"}, "count": {"type": "int"}}}
+  "@meetups_names_and_others": {"placeholders": {"names": {"type": "String"}, "count": {"type": "int"}}},
+  "meetups_show_count": "Show {count} meetups",
+  "@meetups_show_count": {"placeholders": {"count": {"type": "int"}}},
+  "meetups_km_away": "{km} km away",
+  "@meetups_km_away": {"placeholders": {"km": {"type": "String"}}}
 }

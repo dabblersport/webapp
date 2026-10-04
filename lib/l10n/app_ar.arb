@@ -1777,5 +1777,7 @@
   "meetups_going_count": "{count} مشاركًا",
   "meetups_max": "حتى {count}",
   "meetups_free_note": "بدون رسوم",
-  "meetups_distance_km": "{km} كم"
+  "meetups_distance_km": "{km} كم",
+  "meetups_show_count": "عرض {count} لقاءات",
+  "meetups_km_away": "على بعد {km} كم"
 }

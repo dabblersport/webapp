@@ -93,6 +93,10 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
           l.meetups_distance_km((distance / 1000).toStringAsFixed(1)),
       ],
       progress: DabblerMeetupAttendees(
+        people: <String>[
+          for (final a in m.attendeeAvatars) a.displayName ?? a.avatarUrl ?? '',
+        ],
+        imageUrls: <String?>[for (final a in m.attendeeAvatars) a.avatarUrl],
         goingLabel: l.meetups_going_count(m.goingCount),
         capacityLabel: m.capacity == null
             ? null

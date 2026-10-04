@@ -9796,6 +9796,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{names} and {count} others'**
   String meetups_names_and_others(String names, int count);
+
+  /// No description provided for @meetups_show_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} meetups'**
+  String meetups_show_count(int count);
+
+  /// No description provided for @meetups_km_away.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km away'**
+  String meetups_km_away(String km);
 }
 
 class _AppLocalizationsDelegate

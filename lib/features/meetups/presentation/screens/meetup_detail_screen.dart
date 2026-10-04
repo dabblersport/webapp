@@ -1,6 +1,12 @@
+import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
+    show gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show isFollowingProvider, myProfileIdProvider;
 import 'package:dabbler/features/meetups/presentation/rsvp_state.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_rsvp_sheet.dart';
@@ -124,10 +130,19 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     );
   }
 
+  String? _sportName(MeetupCard c) {
+    final ar = c.sportNameAr?.trim();
+    if (Localizations.localeOf(context).languageCode == 'ar' &&
+        ar != null &&
+        ar.isNotEmpty) {
+      return ar;
+    }
+    return c.sportNameEn;
+  }
+
   /// The first two names, then how many others — `Lina, Yousef and 22 others`.
-  String _names(AppLocalizations l, List<MeetupAttendee> going, int total) {
-    String first(MeetupAttendee a) =>
-        (a.displayName ?? a.username ?? '').split(' ').first;
+  String _names(AppLocalizations l, List<MeetupAvatar> going, int total) {
+    String first(MeetupAvatar a) => (a.displayName ?? '').split(' ').first;
     final named = going.take(2).map(first).where((n) => n.isNotEmpty).toList();
     final others = total - named.length;
     if (others <= 0) return named.join(', ');
@@ -156,11 +171,14 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final attendees =
         ref.watch(meetupAttendeesProvider(widget.meetupId)).valueOrNull ??
         const <MeetupAttendee>[];
-    final going = <MeetupAttendee>[
-      for (final a in attendees)
-        if (a.status == RsvpStatus.going) a,
-    ];
-    final shown = going.take(5).toList();
+    final faces = c.attendees.isNotEmpty
+        ? c.attendees
+        : <MeetupAvatar>[
+            for (final a in attendees)
+              if (a.status == RsvpStatus.going)
+                MeetupAvatar(displayName: a.displayName ?? a.username),
+          ];
+    final shown = faces.take(5).toList();
     final state = c.isCancelled
         ? DabblerRsvpCtaState.cancelled
         : elig.valueOrNull == null
@@ -172,17 +190,25 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
             going: c.counts.going,
           );
     final loadingCta = !c.isCancelled && elig.valueOrNull == null;
-    String seed(MeetupAttendee a) =>
-        a.displayName ?? a.username ?? a.actorProfileId ?? '';
     final hostName = c.host?.displayName ?? c.host?.username;
+    final distance = ref.watch(meetupDistancesProvider)[c.id];
+    final tier = gamesSkillTierFor(c.minSkill, c.maxSkill);
+    final skillLabel = tier == null ? null : gamesSkillTierLabel(l, tier);
     Widget glyph(String n) => DabblerIcon(n, size: DabblerSizing.iconSm);
     return DabblerDetailPage(
       header: DabblerDetailHeader(
         tile: DabblerDetailHeaderTile.amber,
         leading: _backButton(back),
-        chips: <String>[if (c.isCancelled) l.meetups_cta_cancelled],
+        chips: <String>[
+          if (c.isCancelled) l.meetups_cta_cancelled,
+          ?_sportName(c),
+          ?skillLabel,
+        ],
         title: c.title ?? '',
         place: c.locationName,
+        meta: distance == null
+            ? null
+            : l.meetups_km_away((distance / 1000).toStringAsFixed(1)),
         extra: at == null
             ? null
             : '${meetupDayLabel(l, at, now, locale)} ${DateFormat.jm(locale).format(at)}',
@@ -202,15 +228,18 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
           avatars: shown.isEmpty
               ? null
               : DabblerAvatarGroup(
-                  people: <String>[for (final a in shown) seed(a)],
-                  overflow: going.length > shown.length
-                      ? going.length - shown.length
+                  people: <String>[
+                    for (final a in shown) a.displayName ?? a.avatarUrl ?? '',
+                  ],
+                  imageUrls: <String?>[for (final a in shown) a.avatarUrl],
+                  overflow: c.counts.going > shown.length
+                      ? c.counts.going - shown.length
                       : 0,
                 ),
           headline: l.meetups_going_count(c.counts.going),
           caption: <String>[
             if (c.capacity != null) l.meetups_max(c.capacity!),
-            if (going.isNotEmpty) _names(l, going, c.counts.going),
+            if (faces.isNotEmpty) _names(l, faces, c.counts.going),
           ].join(' · '),
         ),
         DabblerStatGrid(
@@ -250,8 +279,54 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
           ],
         ),
         if (hostName != null)
-          DabblerHostCard(name: hostName, caption: l.meetups_host_caption),
+          _HostSection(host: c.host!, name: hostName),
       ],
+    );
+  }
+}
+
+/// The host card with its Follow pill, wired like the profile screen: the
+/// follow state is `isFollowingProvider` and the press is the same insert or
+/// unfollow RPC ([meetupFollowActionProvider]). No pill for the viewer's own
+/// meetup or while the viewer's profile is unknown.
+class _HostSection extends ConsumerWidget {
+  const _HostSection({required this.host, required this.name});
+
+  final MeetupHost host;
+  final String name;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final hostId = host.actorProfileId;
+    final myId = ref.watch(myProfileIdProvider).valueOrNull;
+    final canFollow = hostId != null && myId != null && hostId != myId;
+    final following = canFollow
+        ? ref
+              .watch(
+                isFollowingProvider((
+                  currentProfileId: myId,
+                  targetProfileId: hostId,
+                )),
+              )
+              .valueOrNull
+        : null;
+    return DabblerHostCard(
+      name: name,
+      imageUrl: host.avatarUrl,
+      caption: l.meetups_host_caption,
+      actionLabel: !canFollow || following == null
+          ? null
+          : (following
+                ? l.user_profile_btn_following
+                : l.user_profile_btn_follow),
+      onAction: !canFollow || following == null
+          ? null
+          : () => ref.read(meetupFollowActionProvider)(
+              myProfileId: myId,
+              targetProfileId: hostId,
+              currentlyFollowing: following,
+            ),
     );
   }
 }

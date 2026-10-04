@@ -52,6 +52,9 @@ abstract class MeetupListItem with _$MeetupListItem {
     // Legacy meetup_attendees status (going/interested/declined) for the
     // caller's player actor; null when no RSVP.
     @JsonKey(name: 'my_rsvp_status') String? myRsvpStatus,
+    @JsonKey(name: 'attendee_avatars')
+    @Default(<MeetupAvatar>[])
+    List<MeetupAvatar> attendeeAvatars,
   }) = _MeetupListItem;
 
   factory MeetupListItem.fromJson(Map<String, dynamic> json) =>
@@ -82,12 +85,26 @@ abstract class NearbyMeetup with _$NearbyMeetup {
       _$NearbyMeetupFromJson(json);
 }
 
+/// One going attendee's face: `{avatar_url, display_name}` from
+/// `v_meetup_list.attendee_avatars` / `rpc_meetup_card.attendees`.
+@freezed
+abstract class MeetupAvatar with _$MeetupAvatar {
+  const factory MeetupAvatar({
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
+    @JsonKey(name: 'display_name') String? displayName,
+  }) = _MeetupAvatar;
+
+  factory MeetupAvatar.fromJson(Map<String, dynamic> json) =>
+      _$MeetupAvatarFromJson(json);
+}
+
 @freezed
 abstract class MeetupHost with _$MeetupHost {
   const factory MeetupHost({
     @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
+    @JsonKey(name: 'avatar_url') String? avatarUrl,
   }) = _MeetupHost;
 
   factory MeetupHost.fromJson(Map<String, dynamic> json) =>
@@ -127,6 +144,14 @@ abstract class MeetupCard with _$MeetupCard {
     MeetupHost? host,
     @Default(MeetupCounts()) MeetupCounts counts,
     @JsonKey(name: 'my_status') String? myStatus,
+    @JsonKey(name: 'sport_key') String? sportKey,
+    @JsonKey(name: 'sport_name_en') String? sportNameEn,
+    @JsonKey(name: 'sport_name_ar') String? sportNameAr,
+    @JsonKey(name: 'min_skill') int? minSkill,
+    @JsonKey(name: 'max_skill') int? maxSkill,
+    @JsonKey(name: 'area_name') String? areaName,
+    @JsonKey(name: 'venue_name') String? venueName,
+    @Default(<MeetupAvatar>[]) List<MeetupAvatar> attendees,
   }) = _MeetupCard;
 
   factory MeetupCard.fromJson(Map<String, dynamic> json) =>

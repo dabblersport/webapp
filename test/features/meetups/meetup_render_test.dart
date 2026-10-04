@@ -3,7 +3,12 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetups_screen.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -22,9 +27,24 @@ import 'meetup_screens_harness.dart';
 /// `--dart-define=MEETUPS_SHOTS_DIR=<dir>`.
 const String _shotsDir = String.fromEnvironment('MEETUPS_SHOTS_DIR');
 
-class _Denied extends ActiveLocationNotifier {
+class _Ready extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationReady(
+    const ActiveLocation(
+      lat: 25.2,
+      lng: 55.27,
+      source: ActiveLocationSource.saved,
+      area: Area(
+        id: 'a1',
+        name: 'Dubai Marina',
+        district: 'Marina',
+        city: 'Dubai',
+        country: 'AE',
+        centerLat: 25.2,
+        centerLng: 55.27,
+      ),
+    ),
+  );
 }
 
 Future<void> _shoot(
@@ -34,6 +54,7 @@ Future<void> _shoot(
   Locale locale,
   String name, {
   Future<void> Function()? before,
+  List<Override> overrides = const <Override>[],
 }) async {
   final key = GlobalKey();
   tester.view.physicalSize = const Size(393, 852);
@@ -43,7 +64,17 @@ Future<void> _shoot(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
-        activeLocationProvider.overrideWith(_Denied.new),
+        activeLocationProvider.overrideWith(_Ready.new),
+        myProfileIdProvider.overrideWith((ref) async => 'me'),
+        isFollowingProvider.overrideWith((ref, p) async => false),
+        meetupFollowActionProvider.overrideWithValue(
+          ({
+            required String myProfileId,
+            required String targetProfileId,
+            required bool currentlyFollowing,
+          }) async {},
+        ),
+        ...overrides,
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -75,13 +106,14 @@ Future<void> _shoot(
 }
 
 MeetupCard _card({
+  String title = 'Sunrise run',
   bool cancelled = false,
   String? my,
   int going = 24,
   int capacity = 40,
 }) => MeetupCard(
   id: 'm1',
-  title: 'Sunrise run',
+  title: title,
   startAt: DateTime.now().add(const Duration(hours: 20)),
   endAt: DateTime.now().add(const Duration(hours: 20, minutes: 45)),
   locationName: 'Kite Beach',
@@ -89,7 +121,21 @@ MeetupCard _card({
   isCancelled: cancelled,
   counts: MeetupCounts(going: going),
   myStatus: my,
-  host: const MeetupHost(displayName: 'Dubai Running Club'),
+  sportNameEn: 'Running',
+  sportNameAr: 'جري',
+  minSkill: 1,
+  maxSkill: 2,
+  host: const MeetupHost(
+    actorProfileId: 'host1',
+    displayName: 'Dubai Running Club',
+  ),
+  attendees: const <MeetupAvatar>[
+    MeetupAvatar(displayName: 'Lina Haddad'),
+    MeetupAvatar(displayName: 'Yousef Amer'),
+    MeetupAvatar(displayName: 'Nadia Saleh'),
+    MeetupAvatar(displayName: 'Rami Kassab'),
+    MeetupAvatar(displayName: 'Hessa Ali'),
+  ],
 );
 
 void main() {
@@ -111,7 +157,11 @@ void main() {
     for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {
       testWidgets('details ${e.key} ${l.languageCode}', (tester) async {
         final repo = FakeMeetupRepository()
+          ..nearbyList = const [
+            NearbyMeetup(id: 'm1', title: 't', distanceM: 3000),
+          ]
           ..card = _card(
+            title: l.languageCode == 'ar' ? 'جري الشروق' : 'Sunrise run',
             cancelled: e.value.$4,
             my: e.value.$2,
             going: e.value.$3,
@@ -142,51 +192,60 @@ void main() {
     }
   }
 
-  final listings = <String, List<MeetupListItem>>{
-    'default': [
-      meetupRow('a', title: 'Sunrise run'),
+  const faces = <MeetupAvatar>[
+    MeetupAvatar(displayName: 'Ahmed Farouk'),
+    MeetupAvatar(displayName: 'Lina Haddad'),
+    MeetupAvatar(displayName: 'Yousef Amer'),
+    MeetupAvatar(displayName: 'Nadia Saleh'),
+  ];
+  final nearby = const [
+    NearbyMeetup(id: 'a', title: 't', distanceM: 3000),
+    NearbyMeetup(id: 'b', title: 't', distanceM: 4200),
+    NearbyMeetup(id: 'u', title: 't', distanceM: 4600),
+    NearbyMeetup(id: 'v', title: 't', distanceM: 5200),
+  ];
+  List<MeetupListItem> rows(String lang, {int upcoming = 1}) {
+    String t(String en, String ar) => lang == 'ar' ? ar : en;
+    return [
+      if (upcoming >= 1)
+        meetupRow(
+          'u',
+          title: t('Sunrise run', 'جري الشروق'),
+          my: 'going',
+          startsIn: const Duration(hours: 20),
+        ),
+      if (upcoming >= 2)
+        meetupRow(
+          'v',
+          title: t('Sunset yoga flow', 'يوغا الغروب'),
+          my: 'interested',
+          startsIn: const Duration(days: 1, hours: 4),
+        ),
       meetupRow(
-        'b',
-        title: 'Hatta trail hike',
-        going: 31,
-        startsIn: const Duration(days: 3),
-      ),
-    ],
-    'empty': const [],
-    'upcoming-single': [
-      meetupRow(
-        'u',
-        title: 'Sunrise run',
-        my: 'going',
-        startsIn: const Duration(hours: 20),
-      ),
-      meetupRow(
-        'b',
-        title: 'Hatta trail hike',
-        going: 31,
-        startsIn: const Duration(days: 3),
-      ),
-    ],
-    'upcoming-multi': [
-      meetupRow(
-        'u',
-        title: 'Sunrise run',
-        my: 'going',
-        startsIn: const Duration(hours: 20),
-      ),
-      meetupRow(
-        'v',
-        title: 'Sunset yoga flow',
-        my: 'interested',
-        startsIn: const Duration(days: 1, hours: 4),
+        'a',
+        title: t('Sunrise run', 'جري الشروق'),
+        minSkill: 1,
+        maxSkill: 2,
+        faces: faces,
       ),
       meetupRow(
         'b',
-        title: 'Hatta trail hike',
+        title: t('Hatta trail hike', 'مسير حتّا'),
         going: 31,
         startsIn: const Duration(days: 3),
+        minSkill: 3,
+        maxSkill: 4,
+        faces: faces,
       ),
-    ],
+    ];
+  }
+
+  // name: (rows, upcoming count, filters applied)
+  final listings = <String, (int, bool)>{
+    'default': (1, true),
+    'empty': (-1, false),
+    'upcoming-single': (1, false),
+    'upcoming-multi': (2, false),
   };
   for (final e in listings.entries) {
     for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {
@@ -194,9 +253,18 @@ void main() {
         await _shoot(
           tester,
           const MeetupsScreen(),
-          FakeMeetupRepository()..list = e.value,
+          FakeMeetupRepository()
+            ..nearbyList = nearby
+            ..list = e.value.$1 < 0
+                ? const <MeetupListItem>[]
+                : rows(l.languageCode, upcoming: e.value.$1),
           l,
           'meetups-listing-${e.key}-${l.languageCode}',
+          overrides: <Override>[
+            if (e.value.$2) meetupRadiusProvider.overrideWith((ref) => 5000),
+            if (e.value.$2)
+              meetupSortProvider.overrideWith((ref) => MeetupSort.nearest),
+          ],
         );
       });
     }
@@ -206,7 +274,10 @@ void main() {
     for (final pick in <String>['yes', 'maybe', 'no']) {
       testWidgets('rsvp sheet $pick ${l.languageCode}', (tester) async {
         final repo = FakeMeetupRepository()
-          ..card = _card(my: 'going')
+          ..card = _card(
+            title: l.languageCode == 'ar' ? 'جري الشروق' : 'Sunrise run',
+            my: 'going',
+          )
           ..eligibility = const RsvpEligibility(
             allowed: true,
             cta: RsvpCta.already,

@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/data/models/active_location.dart';
+import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
@@ -30,6 +34,7 @@ class FakeMeetupRepository implements MeetupRepository {
     MeetupSport(id: 's1', nameEn: 'Running', nameAr: 'جري'),
     MeetupSport(id: 's2', nameEn: 'Yoga', nameAr: 'يوغا'),
   ];
+  List<NearbyMeetup> nearbyList = <NearbyMeetup>[];
   Failure? rsvpFailure;
   final List<(String, RsvpAction)> rsvpCalls = <(String, RsvpAction)>[];
 
@@ -49,7 +54,7 @@ class FakeMeetupRepository implements MeetupRepository {
     required double lat,
     required double lng,
     double radiusMeters = 10000,
-  }) async => const Ok(<NearbyMeetup>[]);
+  }) async => Ok(nearbyList);
 
   @override
   Future<Result<MeetupCard, Failure>> meetupCard(
@@ -124,6 +129,32 @@ class _DeniedLocation extends ActiveLocationNotifier {
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
 }
 
+class _ReadyLocation extends ActiveLocationNotifier {
+  @override
+  Future<ActiveLocationState> build() async => ActiveLocationReady(
+    const ActiveLocation(
+      lat: 25.2,
+      lng: 55.27,
+      source: ActiveLocationSource.saved,
+      area: Area(
+        id: 'a1',
+        name: 'Dubai Marina',
+        district: 'Marina',
+        city: 'Dubai',
+        country: 'AE',
+        centerLat: 25.2,
+        centerLng: 55.27,
+      ),
+    ),
+  );
+}
+
+/// Records follow presses.
+class FollowLog {
+  final List<(String, String, bool)> calls = <(String, String, bool)>[];
+  bool following = false;
+}
+
 MeetupListItem meetupRow(
   String id, {
   String title = 'Sunrise run',
@@ -133,6 +164,9 @@ MeetupListItem meetupRow(
   String? my,
   RsvpPolicy policy = RsvpPolicy.open,
   bool cancelled = false,
+  int? minSkill,
+  int? maxSkill,
+  List<MeetupAvatar> faces = const <MeetupAvatar>[],
 }) => MeetupListItem(
   id: id,
   title: title,
@@ -144,6 +178,9 @@ MeetupListItem meetupRow(
   isCancelled: cancelled,
   sportNameEn: 'Running',
   venueName: 'Kite Beach',
+  minSkill: minSkill,
+  maxSkill: maxSkill,
+  attendeeAvatars: faces,
 );
 
 /// Builds [home] under the app's localisation and theme, LTR or RTL.
@@ -152,7 +189,11 @@ Future<void> pumpMeetups(
   Widget home,
   FakeMeetupRepository repo, {
   Locale locale = const Locale('en'),
+  bool locationReady = false,
+  FollowLog? follow,
+  List<Override> overrides = const <Override>[],
 }) async {
+  final log = follow ?? FollowLog();
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -160,7 +201,19 @@ Future<void> pumpMeetups(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
-        activeLocationProvider.overrideWith(_DeniedLocation.new),
+        activeLocationProvider.overrideWith(
+          locationReady ? _ReadyLocation.new : _DeniedLocation.new,
+        ),
+        myProfileIdProvider.overrideWith((ref) async => 'me'),
+        isFollowingProvider.overrideWith((ref, p) async => log.following),
+        meetupFollowActionProvider.overrideWithValue(({
+          required String myProfileId,
+          required String targetProfileId,
+          required bool currentlyFollowing,
+        }) async {
+          log.calls.add((myProfileId, targetProfileId, currentlyFollowing));
+        }),
+        ...overrides,
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
