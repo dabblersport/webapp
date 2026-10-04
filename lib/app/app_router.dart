@@ -18,6 +18,8 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'routes/home_shell_route.dart';
 import 'routes/identity_routes.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'routes/meetups_routes.dart';
 import 'routes/notification_routes.dart';
 import 'routes/platform_routes.dart';
 import 'routes/play_places_routes.dart';
@@ -379,6 +381,7 @@ class AppRouter {
     onboardingPrimarySportRoute,
     homeShellRoute,
     sportsGamesGameIdRoute,
+    if (FeatureFlags.enableMeetups) meetupDetailRoute,
     newsNewsIdRoute,
     sportsVenuesVenueIdRoute,
     gameGameIdRoute,

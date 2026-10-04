@@ -25,7 +25,8 @@ enum NavigationBranch {
   home,
   community,
   venues,
-  games;
+  games,
+  meetups;
 
   int get shellIndex => index;
 }
@@ -196,6 +197,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   static const String _idCommunity = 'community';
   static const String _idVenues = 'venues';
   static const String _idGames = 'games';
+  static const String _idMeetups = 'meetups';
 
   static const String _createPost = 'post';
   static const String _createGame = 'game';
@@ -210,6 +212,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         return _idVenues;
       case NavigationBranch.games:
         return _idGames;
+      case NavigationBranch.meetups:
+        return _idMeetups;
     }
   }
 
@@ -223,6 +227,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _goBranch(NavigationBranch.venues);
       case _idGames:
         _goBranch(NavigationBranch.games);
+      case _idMeetups:
+        _goBranch(NavigationBranch.meetups);
     }
   }
 
@@ -363,6 +369,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               icon: 'game',
               label: l.nav_games,
             ),
+            if (FeatureFlags.enableMeetups)
+              DabblerNavigationItem(
+                id: _idMeetups,
+                icon: 'calendar',
+                label: l.nav_meetups,
+              ),
           ],
           active: _activeId,
           onSelect: _onSelect,

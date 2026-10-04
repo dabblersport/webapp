@@ -1771,5 +1771,11 @@
   "sport_profile_overall_level": "{sport} · المستوى العام {level}",
   "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}},
   "profile_sports_followed_note": "الرياضات المتابَعة — للأخبار والنتائج فقط",
-  "profile_stat_sports_followed": "الرياضات المتابَعة"
+  "profile_stat_sports_followed": "الرياضات المتابَعة",
+  "meetups_tab_all": "الكل",
+  "meetups_join": "انضم للقاء",
+  "meetups_going_count": "{count} مشاركًا",
+  "meetups_max": "حتى {count}",
+  "meetups_free_note": "بدون رسوم",
+  "meetups_distance_km": "{km} كم"
 }

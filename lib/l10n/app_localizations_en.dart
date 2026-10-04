@@ -5297,4 +5297,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_stat_minutes_played => 'Minutes played';
+
+  @override
+  String get meetups_tab_all => 'All';
+
+  @override
+  String get meetups_none_title => 'No meetups available.';
+
+  @override
+  String get meetups_explore_another => 'Explore another activity';
+
+  @override
+  String get meetups_load_failed => 'Couldn\'t load meetups';
+
+  @override
+  String get meetups_join => 'Join meetup';
+
+  @override
+  String get meetups_request => 'Request to join';
+
+  @override
+  String meetups_going_count(int count) {
+    return '$count going';
+  }
+
+  @override
+  String meetups_max(int count) {
+    return 'Max $count';
+  }
+
+  @override
+  String get meetups_free_note => 'no charge';
+
+  @override
+  String meetups_distance_km(String km) {
+    return '$km km';
+  }
+
+  @override
+  String get meetups_cta_going => 'Joining';
+
+  @override
+  String get meetups_cta_interested => 'Maybe going';
+
+  @override
+  String get meetups_cta_full => 'Full - you\'re interested';
+
+  @override
+  String get meetups_cta_closed => 'Registration closed';
+
+  @override
+  String get meetups_cta_cancelled => 'Cancelled';
+
+  @override
+  String get meetups_cta_started => 'Already started';
+
+  @override
+  String get meetups_cta_unavailable => 'Not available';
+
+  @override
+  String get meetups_cta_not_allowed => 'Switch profile to join';
+
+  @override
+  String get meetups_sheet_title => 'Are you going to this meetup?';
+
+  @override
+  String get meetups_sheet_cancel => 'Cancel';
+
+  @override
+  String get meetups_sheet_yes => 'Yes, I am going';
+
+  @override
+  String get meetups_sheet_maybe => 'Maybe';
+
+  @override
+  String get meetups_sheet_no => 'No, not this time';
+
+  @override
+  String get meetups_sheet_confirm => 'Confirm';
+
+  @override
+  String get meetups_error_generic => 'Something went wrong. Try again.';
+
+  @override
+  String get meetups_error_cancelled => 'This meetup was cancelled.';
+
+  @override
+  String get meetups_host_caption => 'Community host';
+
+  @override
+  String get meetups_tile_meeting_point => 'Meeting point';
+
+  @override
+  String get meetups_tile_entry => 'Entry';
+
+  @override
+  String get meetups_load_detail_failed => 'Couldn\'t load this meetup';
+
+  @override
+  String get meetups_back => 'Back';
 }

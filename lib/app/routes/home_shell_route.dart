@@ -6,6 +6,8 @@
 // preserved by lib/app/app_router.dart's `_routes`, not by this file.
 
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/meetups/presentation/screens/meetups_screen.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
@@ -77,5 +79,20 @@ RouteBase get homeShellRoute =>
             ),
           ],
         ),
+
+        // Branch 4 — Meetups (only while FeatureFlags.enableMeetups)
+        if (FeatureFlags.enableMeetups)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.meetups,
+                name: RouteNames.meetups,
+                pageBuilder: (context, state) => FadeThroughTransitionPage(
+                  key: state.pageKey,
+                  child: const MeetupsScreen(),
+                ),
+              ),
+            ],
+          ),
       ],
     );
