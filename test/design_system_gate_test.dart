@@ -61,12 +61,6 @@ const _maxWidthReason =
 const _aspectReason =
     'Media aspect ratio: the design system has no media aspect-ratio role '
     'yet (filed as a DS gap).';
-const _alphaReason =
-    'Tint alpha over a DS colour: the design system has no tint/overlay alpha '
-    'role yet (filed as a DS gap).';
-const _radiusNoneReason =
-    'Full-bleed square edge: the DS radius ramp has no none step '
-    '(filed as a DS gap).';
 const _pickerReason =
     'Image-picker downscale bound in pixels for upload size; not rendered.';
 const _domainDurationReason =
