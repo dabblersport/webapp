@@ -13,7 +13,9 @@ TextStyle sportProfileText(
       .copyWith(color: color, fontWeight: weight);
 }
 
-/// Titled card container shared by the sport profile sections.
+/// Titled section shared by the sport profile sections — the design's
+/// section header (15 semibold title) over its content, drawn by
+/// [DabblerSection].
 class SportSectionCard extends StatelessWidget {
   const SportSectionCard({super.key, required this.title, required this.child});
 
@@ -21,19 +23,8 @@ class SportSectionCard extends StatelessWidget {
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    return DabblerSurface.card(
-      padding: const EdgeInsets.all(DabblerSpacing.space5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DabblerText(title, style: DabblerType.title3),
-          const SizedBox(height: DabblerSpacing.space4),
-          child,
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      DabblerSection(title: title, children: [child]);
 }
 
 /// Icon + message placeholder for empty sport profile sections.
